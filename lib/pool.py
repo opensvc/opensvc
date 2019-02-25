@@ -5,43 +5,18 @@ import os
 import rcExceptions as ex
 from rcUtilities import lazy, fmt_svcpath, mimport
 from converters import convert_size
-from svc import BaseSvc, Svc
-
-DEFAULT_STATUS_GROUPS = [
-]
-
-class PoolSvc(BaseSvc):
-    @lazy
-    def pool(self):
-        pool_type = self.oget("pool", "type")
-        pool_mod = mimport("pool", pool_type)
-        return pool_mod.Pool(self.svcname, svc=self)
-
-    @lazy
-    def kwdict(self):
-        return __import__("pooldict")
 
 class Pool(object):
     type = None
 
-    def __init__(self, name=None, node=None, svc=None, **kwargs):
+    def __init__(self, name=None, node=None, **kwargs):
         try:
             name = name.strip(os.sep)
         except Exception:
             pass
         self.name = name
-        if node is None:
-            self.node = svc.node
-        else:
-            self.node = node
-        self.svc = svc
-        if svc:
-            self.log = svc.log
-        else:
-            self.log = node.log
-
-        # compat
-        self.pool = self
+        self.node = node
+        self.log = node.log
 
     @lazy
     def volume_env(self):
@@ -59,10 +34,7 @@ class Pool(object):
         return "pool#" + self.name
 
     def oget(self, key, **kwargs):
-        try:
-            return self.svc.oget("pool", key, **kwargs)
-        except AttributeError:
-            return self.node.oget(self.section, key, **kwargs)
+        return self.node.oget(self.section, key, **kwargs)
 
     @lazy
     def fs_type(self):

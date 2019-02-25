@@ -15,7 +15,6 @@ import six
 import rcExceptions as ex
 import rcLogger
 import osvcd_shared as shared
-from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, unset_lazy, ximport
 from lock import lock, unlock
@@ -173,19 +172,11 @@ class Daemon(object):
         """
         self.init_nodeconf()
         try:
-            config = RawConfigParser()
-            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                try:
-                    if six.PY3:
-                        config.read_file(filep)
-                    else:
-                        config.readfp(filep)
-                except AttributeError:
-                    raise
-        except Exception as exc:
+            shared.NODE.load_config()
+        except Exception:
             self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
-        return config
+        return shared.NODE.config
 
     def lock(self):
         try:
@@ -387,9 +378,22 @@ class Daemon(object):
                 self.log.warning("failed to get node config mtime: %s",
                                  str(exc))
                 return
-        return mtime
+        try:
+            cmtime = os.path.getmtime(rcEnv.paths.clusterconf)
+        except Exception as exc:
+            cmtime = 0
+        return mtime if mtime > cmtime else cmtime
 
     def read_config(self):
+        locked = shared.CONFIG_LOCK.acquire(blocking=False)
+        if not locked:
+            return
+        try:
+            self._read_config()
+        finally:
+            shared.CONFIG_LOCK.release()
+
+    def _read_config(self):
         """
         Reload the node configuration file and notify the threads to do the
         same, if the file's mtime has changed since the last load.

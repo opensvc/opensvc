@@ -14,7 +14,6 @@ import six
 from six.moves import queue
 
 import rcExceptions as ex
-from rcConfigParser import RawConfigParser
 from rcUtilities import lazy, unset_lazy, is_string
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -28,7 +27,11 @@ DAEMON = None
 
 # disable orchestration if a peer announces a different compat version than
 # ours
-COMPAT_VERSION = 7
+COMPAT_VERSION = 8
+
+# node and cluster conf lock to block reading changes during a multi-write
+# transaction (ex daemon join)
+CONFIG_LOCK = threading.RLock()
 
 # the event queue to feed to clients listening for changes
 EVENT_Q = queue.Queue()
@@ -345,15 +348,7 @@ class OsvcThread(threading.Thread, Crypt):
     @lazy
     def config(self):
         try:
-            config = RawConfigParser()
-            with codecs.open(rcEnv.paths.nodeconf, "r", "utf8") as filep:
-                try:
-                    if six.PY3:
-                        config.read_file(filep)
-                    else:
-                        config.readfp(filep)
-                except AttributeError:
-                    raise
+            config = NODE.config
         except Exception as exc:
             self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
@@ -647,16 +642,24 @@ class OsvcThread(threading.Thread, Crypt):
         return proc
 
     def add_cluster_node(self, nodename):
-        nodes = " ".join(sorted(list(set(self.cluster_nodes + [nodename]))))
-        cmd = ["set", "--param", "cluster.nodes", "--value", nodes]
-        proc = self.node_command(cmd)
-        ret = proc.wait()
-        return ret
+        if nodename in self.cluster_nodes:
+            return
+        nodes = self.cluster_nodes + [nodename]
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
+        NODE.unset_multi("cluster.nodes")
+        del svc
 
     def remove_cluster_node(self, nodename):
-        cmd = ["set", "--param", "cluster.nodes", "--remove", nodename]
-        proc = self.node_command(cmd)
-        return proc.wait()
+        if nodename not in self.cluster_nodes:
+            return
+        nodes = [node for node in self.cluster_nodes if node != nodename]
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
+        NODE.unset_multi("cluster.nodes")
+        del svc
 
     @lazy
     def quorum(self):

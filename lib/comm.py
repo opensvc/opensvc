@@ -162,14 +162,9 @@ class Crypt(object):
         else:
             nodes = [rcEnv.nodename]
 
-        if hasattr(self, "get_node"):
-            node = getattr(self, "get_node")()
-        elif hasattr(self, "nodename"):
-            node = self
-        else:
-            node = None
-        if node is not None:
-            node.set_multi(["cluster.nodes=" + " ".join(nodes)], validation=False)
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.nodes=" + " ".join(nodes)], validation=False)
         return nodes
 
     @lazy
@@ -203,15 +198,10 @@ class Crypt(object):
             return config.get("cluster", "name").lower()
         except Exception as exc:
             pass
-        if hasattr(self, "node"):
-            node = getattr(self, "node")
-        elif hasattr(self, "nodename"):
-            node = self
-        else:
-            node = None
         name = "default"
-        if node is not None:
-            node.set_multi(["cluster.name="+name], validation=False)
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.name=" + name], validation=False)
         return name
 
     @lazy
@@ -237,7 +227,9 @@ class Crypt(object):
             return
         import uuid
         key = uuid.uuid1().hex
-        node.set_multi(["cluster.secret="+key], validation=False)
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.secret="+key], validation=False)
         return self.prepare_key(key)
 
     @lazy
@@ -261,7 +253,9 @@ class Crypt(object):
             pass
         import uuid
         cluster_id = str(uuid.uuid1())
-        node.set_multi(["cluster.id="+cluster_id], validation=False)
+        from cluster import ClusterSvc
+        svc = ClusterSvc()
+        svc.set_multi(["cluster.id="+cluster_id], validation=False)
         return cluster_id
 
     @staticmethod

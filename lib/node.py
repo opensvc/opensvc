@@ -1002,6 +1002,20 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             svc.purge_status_last()
 
+    def get_config(self, node=True, cluster=True):
+        configs = []
+        if cluster and os.path.exists(rcEnv.paths.clusterconf):
+            configs.append(rcEnv.paths.clusterconf)
+        if node:
+            configs.append(rcEnv.paths.nodeconf)
+        try:
+            return read_cf(configs, CONFIG_DEFAULTS)
+        except rcConfigParser.ParsingError as exc:
+            print(str(exc), file=sys.stderr)
+        except IOError:
+            # some action don't need self.config
+            pass
+
     def load_config(self):
         """
         Parse the node.conf configuration file and store the RawConfigParser
@@ -1010,13 +1024,10 @@ class Node(Crypt, ExtConfigMixin):
         initially is None. So users of self.config should check for this None
         value before use.
         """
-        try:
-            self.config = read_cf(rcEnv.paths.nodeconf, CONFIG_DEFAULTS)
-        except rcConfigParser.ParsingError as exc:
-            print(str(exc), file=sys.stderr)
-        except IOError:
+        config = self.get_config()
+        if config:
             # some action don't need self.config
-            pass
+            self.config = config
 
     def load_auth_config(self):
         """
@@ -4205,12 +4216,19 @@ class Node(Crypt, ExtConfigMixin):
 
         # remove obsolete hb configurations
         todo = ["cluster"]
-        for section in self.config.sections():
+        config = self.get_config(cluster=False)
+        for section in config.sections():
             if section.startswith("hb#") or \
                section.startswith("arbitrator#"):
                 self.log.info("remove configuration %s", section)
                 todo.append(section)
         self.delete_sections(todo)
+
+        # remove cluster config
+        from cluster import ClusterSvc
+        svc = ClusterSvc(node=self)
+        svc.delete()
+
         self.unset_lazy("cluster_nodes")
 
     def daemon_join(self):
@@ -4225,7 +4243,17 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("--node must be set")
         self._daemon_join(self.options.node, self.cluster_key)
 
-    def _daemon_join(self, joined, secret):
+    def _daemon_join(self, *args):
+        from osvcd_shared import CONFIG_LOCK
+        locked = CONFIG_LOCK.acquire()
+        if not locked:
+            return
+        try:
+            self.__daemon_join(*args)
+        finally:
+            CONFIG_LOCK.release()
+
+    def __daemon_join(self, joined, secret):
         # freeze and remember the initial frozen state
         initially_frozen = self.frozen()
         if not initially_frozen:
@@ -4245,34 +4273,46 @@ class Node(Crypt, ExtConfigMixin):
         data = data.get("data")
         if data is None:
             raise ex.excError("join failed: no data in response")
+        toadd = []
+        toremove = []
+        sectoremove = []
         cluster_name = data.get("cluster", {}).get("name")
         if cluster_name is None:
             raise ex.excError("join failed: no cluster.name in response")
-        cluster_id = data.get("cluster", {}).get("id")
-        if cluster_id is None:
-            raise ex.excError("join failed: no cluster.id in response")
         cluster_nodes = data.get("cluster", {}).get("nodes")
         if cluster_nodes is None:
             raise ex.excError("join failed: no cluster.nodes in response")
         if not isinstance(cluster_nodes, list):
             raise ex.excError("join failed: cluster.nodes value is not a list")
+        cluster_id = data.get("cluster", {}).get("id")
         cluster_drpnodes = data.get("cluster", {}).get("drpnodes")
         dns = data.get("cluster", {}).get("dns")
         quorum = data.get("cluster", {}).get("quorum", False)
 
         peer_env = data.get("node", {}).get("env")
-        toadd = []
-        toremove = []
-        sectoremove = []
         if peer_env and peer_env != self.env:
             self.log.info("update node.env %s => %s", self.env, peer_env)
             toadd.append("node.env="+peer_env)
 
-        # secret might be bytes, when passed from rejoin
-        toadd.append("cluster.secret=" + bdecode(secret))
-        toadd.append("cluster.name=" + cluster_name)
-        toadd.append("cluster.id=" + cluster_id)
-        toadd.append("cluster.nodes=" + " ".join(cluster_nodes))
+        try:
+            data["cluster_config"]["data"]["cluster"]["secret"]
+        except KeyError:
+            # secret might be bytes, when passed from rejoin
+            toadd.append("cluster.secret=" + bdecode(secret))
+        try:
+            data["cluster_config"]["data"]["cluster"]["name"]
+        except KeyError:
+            toadd.append("cluster.name=" + cluster_name)
+        try:
+            data["cluster_config"]["data"]["cluster"]["nodes"]
+        except KeyError:
+            toadd.append("cluster.nodes=" + " ".join(cluster_nodes))
+        try:
+            data["cluster_config"]["data"]["cluster"]["id"]
+        except KeyError:
+            if cluster_id:
+                toadd.append("cluster.id=" + cluster_id)
+
         if isinstance(dns, list) and len(dns) > 0:
             toadd.append("cluster.dns=" + " ".join(dns))
         if isinstance(cluster_drpnodes, list) and len(cluster_drpnodes) > 0:
@@ -4282,9 +4322,10 @@ class Node(Crypt, ExtConfigMixin):
         else:
             toremove.append("cluster.quorum")
 
+        config = self.get_config(cluster=False)
         for section, _data in data.items():
             if section.startswith("hb#"):
-                if self.config.has_section(section):
+                if config.has_section(section):
                     self.log.info("update heartbeat %s", section)
                     sectoremove.append(section)
                 else:
@@ -4292,7 +4333,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("stonith#"):
-                if self.config.has_section(section):
+                if config.has_section(section):
                     self.log.info("update stonith %s", section)
                     sectoremove.append(section)
                 else:
@@ -4300,7 +4341,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("arbitrator#"):
-                if self.config.has_section(section):
+                if config.has_section(section):
                     self.log.info("update arbitrator %s", section)
                     sectoremove.append(section)
                 else:
@@ -4308,7 +4349,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("pool#"):
-                if self.config.has_section(section):
+                if config.has_section(section):
                     self.log.info("update pool %s", section)
                     sectoremove.append(section)
                 else:
@@ -4316,7 +4357,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("network#"):
-                if self.config.has_section(section):
+                if config.has_section(section):
                     self.log.info("update network %s", section)
                     sectoremove.append(section)
                 else:
@@ -4325,39 +4366,57 @@ class Node(Crypt, ExtConfigMixin):
                     toadd.append("%s.%s=%s" % (section, option, value))
 
         # remove obsolete hb configurations
-        for section in self.config.sections():
+        for section in config.sections():
             if section.startswith("hb#") and section not in data:
                 self.log.info("remove heartbeat %s", section)
                 sectoremove.append(section)
 
         # remove obsolete stonith configurations
-        for section in self.config.sections():
+        for section in config.sections():
             if section.startswith("stonith#") and section not in data:
                 self.log.info("remove stonith %s", section)
                 sectoremove.append(section)
 
         # remove obsolete arbitrator configurations
-        for section in self.config.sections():
+        for section in config.sections():
             if section.startswith("arbitrator#") and section not in data:
                 self.log.info("remove arbitrator %s", section)
                 sectoremove.append(section)
 
         # remove obsolete pool configurations
-        for section in self.config.sections():
+        for section in config.sections():
             if section.startswith("pool#") and section not in data:
                 self.log.info("remove pool %s", section)
                 sectoremove.append(section)
 
         # remove obsolete network configurations
-        for section in self.config.sections():
+        for section in config.sections():
             if section.startswith("network#") and section not in data:
                 self.log.info("remove network %s", section)
                 sectoremove.append(section)
 
+        self.log.info("join node %s", joined)
         self.delete_sections(sectoremove)
         self.unset_multi(toremove)
         self.set_multi(toadd)
-        self.log.info("join node %s", joined)
+
+        self.load_config()
+        self.unset_lazy("cluster_name")
+        self.unset_lazy("cluster_key")
+
+        # install cluster config
+        cluster_config_data = data.get("cluster_config", {}).get("data")
+        cluster_config_mtime = data.get("cluster_config", {}).get("mtime")
+        if cluster_config_data:
+            self.install_svc_conf_from_data("cluster", "system", cluster_config_data, restore=True)
+            os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
+
+        self.load_config()
+        self.unset_lazy("cluster_name")
+        self.unset_lazy("cluster_key")
+
+        if cluster_config_data:
+            self.install_service_files("cluster", "system")
 
         # join other nodes
         errors = 0
@@ -4525,8 +4584,6 @@ class Node(Crypt, ExtConfigMixin):
         for section in self.config.sections():
             if section.startswith("pool#"):
                 data.add(section.split("#")[-1])
-        for svcpath in self.svcs_selector("*", namespace="pool"):
-            data.add(split_svcpath(svcpath)[0])
         return sorted(list(data))
 
     @formatter
@@ -4626,10 +4683,6 @@ class Node(Crypt, ExtConfigMixin):
         return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):
-        from pool import PoolSvc
-        pool = PoolSvc(poolname, "pool", node=self)
-        if pool.exists():
-            return pool.pool
         try:
             section = "pool#"+poolname
         except TypeError:
@@ -4682,7 +4735,6 @@ class Node(Crypt, ExtConfigMixin):
 
     def networks_data(self):
         import glob
-        from net import NetSvc
         nets = {}
         for cf in glob.glob(self.cni_config+"/*.conf"):
             try:
@@ -4714,19 +4766,6 @@ class Node(Crypt, ExtConfigMixin):
             config["type"] = self.oget(section, "type")
             for key in self.section_kwargs(section, config["type"]):
                 config[key] = self.oget(section, key)
-            if not config:
-                continue
-            nets[name] = {}
-            nets[name]["config"] = config
-            nets[name]["routes"] = self.routes(name, config)
-        svcpaths = self.svcs_selector("*", namespace="net")
-        for svcpath in svcpaths:
-            name, namespace = split_svcpath(svcpath)
-            svc = NetSvc(name, namespace, node=self)
-            config = {}
-            config["type"] = svc.oget("network", "type")
-            for key in svc.section_kwargs("network", config["type"]):
-                config[key] = svc.oget("network", key)
             if not config:
                 continue
             nets[name] = {}

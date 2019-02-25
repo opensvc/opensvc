@@ -974,7 +974,7 @@ def purge_cache_expired():
         except:
             pass
 
-def read_cf(fpath, defaults=None):
+def read_cf(fpaths, defaults=None):
     """
     Read and parse an arbitrary ini-formatted config file, and return
     the RawConfigParser object.
@@ -990,16 +990,19 @@ def read_cf(fpath, defaults=None):
     if defaults is None:
         defaults = {}
     config = RawConfigParser(defaults)
-    if not os.path.exists(fpath):
-        return config
-    with codecs.open(fpath, "r", "utf8") as ofile:
-        try:
-            if six.PY3:
-                config.read_file(ofile)
-            else:
-                config.readfp(ofile)
-        except AttributeError:
-            raise
+    if not isinstance(fpaths, (list, tuple)):
+        fpaths = [fpaths]
+    for fpath in fpaths:
+        if not os.path.exists(fpath):
+            continue
+        with codecs.open(fpath, "r", "utf8") as ofile:
+            try:
+                if six.PY3:
+                    config.read_file(ofile)
+                else:
+                    config.readfp(ofile)
+            except AttributeError:
+                raise
     return config
 
 def has_option(option, cmd):

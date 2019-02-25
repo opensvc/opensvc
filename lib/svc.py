@@ -449,7 +449,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.stats_updated = 0
 
         # needed for kw scoping
-        self.nodes = set()
+        self.nodes = set([rcEnv.nodename])
         self.drpnodes = set()
         self.encapnodes = set()
         self.flex_primary = ""
@@ -458,19 +458,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
         # real values for kw needed by scoping
         try:
             self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
-        except ValueError:
-            pass
+        except (AttributeError, ValueError):
+            self.encapnodes = set()
         try:
             self.ordered_nodes = self.oget("DEFAULT", "nodes")
-        except ValueError:
-            pass
+        except (AttributeError, ValueError):
+            self.ordered_nodes = [rcEnv.nodename]
         try:
             self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
-        except ValueError:
-            pass
+        except (AttributeError, ValueError):
+            self.ordered_nodes = []
         try:
             self.drpnode = self.oget("DEFAULT", "drpnode")
-        except ValueError:
+        except (AttributeError, ValueError):
             self.drpnode = ""
         if self.drpnode and self.drpnode not in self.ordered_drpnodes:
             self.ordered_drpnodes.insert(0, self.drpnode)

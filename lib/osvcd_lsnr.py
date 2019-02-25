@@ -905,23 +905,35 @@ class Listener(shared.OsvcThread):
                 },
                 "cluster": {
                     "nodes": new_nodes,
-                    "drpnodes": self.cluster_drpnodes,
-                    "id": self.cluster_id,
                     "name": self.cluster_name,
-                    "quorum": self.quorum,
-                    "dns": shared.NODE.dns,
                 },
             },
         }
-        for section in self.config.sections():
+        config = shared.NODE.get_config(cluster=False)
+        if config.has_option("cluster", "drpnodes"):
+            result["data"]["cluster"]["drpnodes"] = self.cluster_drpnodes
+        if config.has_option("cluster", "id"):
+            result["data"]["cluster"]["id"] = self.cluster_id
+        if config.has_option("cluster", "quorum"):
+            result["data"]["cluster"]["quorum"] = self.quorum
+        if config.has_option("cluster", "dns"):
+            result["data"]["cluster"]["dns"] = shared.NODE.dns
+        for section in config.sections():
             if section.startswith("hb#") or \
                section.startswith("stonith#") or \
                section.startswith("pool#") or \
                section.startswith("network#") or \
                section.startswith("arbitrator#"):
                 result["data"][section] = {}
-                for key, val in self.config.items(section):
+                for key, val in config.items(section):
                     result["data"][section][key] = val
+        from cluster import ClusterSvc
+        svc = ClusterSvc(volatile=True, node=shared.NODE)
+        if svc.exists():
+            result["data"]["cluster_config"] = {
+                "data": svc.print_config_data(),
+                "mtime": os.stat(svc.paths.cf).st_mtime,
+            }
         return result
 
     def action_node_action(self, nodename, **kwargs):

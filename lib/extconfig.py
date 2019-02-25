@@ -9,7 +9,7 @@ import six
 import rcExceptions as ex
 from converters import *
 from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
-                        lazy
+                        lazy, makedirs
 from rcGlobalEnv import rcEnv
 
 SECRETS = []
@@ -116,7 +116,10 @@ class ExtConfigMixin(object):
                 section, option = kw.split(".")
             except Exception:
                 continue
-            lines = self.unset_line(lines, section, option)
+            try:
+                lines = self.unset_line(lines, section, option)
+            except ex.excError:
+                continue
             changed = True
         if not changed:
             return
@@ -1310,6 +1313,7 @@ class ExtConfigMixin(object):
             if report["errors"]:
                 os.unlink(fpath)
                 raise ex.excError("the change was not saved: %s" % report)
+        makedirs(os.path.dirname(self.paths.cf))
         shutil.move(fpath, self.paths.cf)
 
     def skip_config_section(self, section):

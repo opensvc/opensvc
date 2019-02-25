@@ -5,8 +5,8 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 echo "* update service templates"
 sudo python $PATH_SCRIPT/../../lib/svcdict.py
 
-echo "* update pool templates"
-sudo python $PATH_SCRIPT/../../lib/pooldict.py
+echo "* update cluster templates"
+sudo python $PATH_SCRIPT/../../lib/clusterdict.py
 
 echo "* update node templates"
 sudo python $PATH_SCRIPT/../../lib/nodedict.py
