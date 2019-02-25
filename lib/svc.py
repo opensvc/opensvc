@@ -1402,6 +1402,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def daemon_mon_action(self, action, wait=None, timeout=None):
         global_expect = self.prepare_global_expect(action)
+        if global_expect is None:
+            # not applicable action on this service
+            return
         ret = self.set_service_monitor(global_expect=global_expect)
         self.daemon_log_result(ret)
         self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
@@ -1417,9 +1420,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
             global_expect += self.options.destination_node
         elif action == "switch":
             dst = self.destination_node_sanity_checks() # pylint: disable=assignment-from-none
+            if dst is None:
+                return
             global_expect += dst
         elif action == "takeover":
             dst = self.destination_node_sanity_checks(rcEnv.nodename) # pylint: disable=assignment-from-none
+            if dst is None:
+                return
             global_expect += dst
         return global_expect
 
