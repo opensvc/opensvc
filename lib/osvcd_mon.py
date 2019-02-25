@@ -1286,9 +1286,18 @@ class Monitor(shared.OsvcThread):
                     return
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
-            if smon.status == "unprovisioning":
+            if smon.status in ("unprovisioning", "stopping"):
                 return
-            elif smon.status == "wait children":
+            if instance.avail not in STOPPED_STATES:
+                self.event("instance_stop", {
+                    "reason": "target",
+                    "svcpath": svc.svcpath,
+                })
+                self.service_stop(svc.svcpath)
+                return
+            if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
+                return
+            if smon.status == "wait children":
                 if not self.children_unprovisioned(svc):
                     return
             elif smon.status == "wait non-leader":
@@ -1350,7 +1359,16 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_delete(svc.svcpath)
         elif smon.global_expect == "purged":
-            if smon.status in ("purging", "deleting"):
+            if smon.status in ("purging", "deleting", "stopping"):
+                return
+            if instance.avail not in STOPPED_STATES:
+                self.event("instance_stop", {
+                    "reason": "target",
+                    "svcpath": svc.svcpath,
+                })
+                self.service_stop(svc.svcpath)
+                return
+            if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
                 return
             if smon.status == "wait children":
                 if not self.children_unprovisioned(svc):
@@ -1932,8 +1950,14 @@ class Monitor(shared.OsvcThread):
                 self.log.error("service %s placement ranks list is empty", svc.svcpath)
             return rcEnv.nodename
         if len(ranks) == 1:
+            if not silent:
+                self.log.info("unblock service %s leader last action (no other candidate)",
+                              svc.svcpath)
             return top
         if top != rcEnv.nodename:
+            if not silent:
+                self.log.info("unblock service %s leader last action (not leader)",
+                              svc.svcpath)
             return top
         for node in ranks[1:]:
             instance = self.get_service_instance(svc.svcpath, node)
@@ -1950,6 +1974,8 @@ class Monitor(shared.OsvcThread):
                                   "node %s is still %s", svc.svcpath, node,
                                   "unprovisioned" if provisioned else "provisioned")
                 return
+        self.log.info("unblock service %s leader last action (leader)",
+                      svc.svcpath)
         return rcEnv.nodename
 
     def leader_first(self, svc, provisioned=False, deleted=None, silent=False):
