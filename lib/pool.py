@@ -5,6 +5,7 @@ import os
 import rcExceptions as ex
 from rcUtilities import lazy, fmt_svcpath, mimport
 from converters import convert_size
+from svc import Svc
 
 class Pool(object):
     type = None
