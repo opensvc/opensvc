@@ -57,10 +57,7 @@ class Node(node.Node):
                     continue
                 raw_data[elem[0].rstrip(":")] = int(elem[1])
         data["mem_total"] = raw_data["MemTotal"] // 1024
-        try:
-            data["mem_avail"] = 100 * raw_data["MemAvailable"] // raw_data["MemTotal"]
-        except KeyError:
-            data["mem_avail"] = 100 * (raw_data["MemFree"] + raw_data["Cached"] + raw_data.get("SReclaimable", 0)) // raw_data["MemTotal"]
+        data["mem_avail"] = 100 * (raw_data["MemFree"] + raw_data["Cached"] + raw_data.get("SwapCached", 0) + raw_data.get("SReclaimable", 0)) // raw_data["MemTotal"]
         data["swap_total"] = raw_data["SwapTotal"] // 1024
         try:
             data["swap_avail"] = 100 * raw_data["SwapFree"] // raw_data["SwapTotal"]
