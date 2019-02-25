@@ -1009,7 +1009,7 @@ class Node(Crypt, ExtConfigMixin):
         if node:
             configs.append(rcEnv.paths.nodeconf)
         try:
-            return read_cf(configs, CONFIG_DEFAULTS)
+            return read_cf(configs)
         except rcConfigParser.ParsingError as exc:
             print(str(exc), file=sys.stderr)
         except IOError:
