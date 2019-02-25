@@ -37,6 +37,7 @@ STOPPED_STATES = [
     "down",
     "stdby up",
     "stdby down",
+    None, # base services
 ]
 ORCHESTRATE_STATES = (
     "ready",
@@ -804,7 +805,7 @@ class Monitor(shared.OsvcThread):
                 instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcpath]
                 if instance.get("encap") is True:
                     return
-                resources = instance["resources"]
+                resources = instance.get("resources", {})
         except KeyError:
             return
 
@@ -1305,7 +1306,8 @@ class Monitor(shared.OsvcThread):
                     self.log.info("service %s still waiting non leaders", svc.svcpath)
                     return
             if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
-                self.set_smon(svc.svcpath, status="idle")
+                if smon.status != "idle":
+                    self.set_smon(svc.svcpath, status="idle")
                 return
             if not self.children_unprovisioned(svc):
                 self.set_smon(svc.svcpath, status="wait children")
@@ -1383,8 +1385,17 @@ class Monitor(shared.OsvcThread):
             if not leader:
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
+            if svc.svcpath in shared.SERVICES and svc.kind == "ccfg":
+                # base services do not implement the purge action
+                self.event("instance_delete", {
+                    "reason": "target",
+                    "svcpath": svc.svcpath,
+                })
+                self.service_delete(svc.svcpath)
+                return
             if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
-                self.set_smon(svc.svcpath, status="idle")
+                if smon.status != "idle":
+                    self.set_smon(svc.svcpath, status="idle")
                 return
             self.event("instance_purge", {
                 "reason": "target",
@@ -1928,6 +1939,9 @@ class Monitor(shared.OsvcThread):
           whatever their frozen, and current provisioning state. Still
           honor the constraints and overload discards.
         """
+        if shared.AGG[svc.svcpath].avail is None:
+            # base services can be unprovisioned and purged in parallel
+            return rcEnv.nodename
         instances = self.get_service_instances(svc.svcpath, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
                       if data.get("avail") in ("up", "warn")]
@@ -2350,7 +2364,7 @@ class Monitor(shared.OsvcThread):
 
     def is_instance_shutdown(self, instance):
         def has_stdby(instance):
-            for resource in instance["resources"].values():
+            for resource in instance.get("resources", {}).values():
                 if resource.get("standby"):
                     return True
             return False
@@ -2490,7 +2504,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_purged(self, provisioned, deleted):
         if deleted is False:
             return False
-        if provisioned in (False, "mixed"):
+        if provisioned in (False, None, "mixed"):
             return False
         return True
 
@@ -3336,7 +3350,7 @@ class Monitor(shared.OsvcThread):
     def instance_unprovisioned(self, instance):
         if instance is None:
             return True
-        for resource in instance["resources"].values():
+        for resource in instance.get("resources", {}).values():
             if resource.get("type") in ("disk.scsireserv", "task"):
                 # always provisioned
                 continue
