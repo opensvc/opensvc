@@ -875,11 +875,14 @@ class Listener(shared.OsvcThread):
         if nodename not in self.cluster_nodes:
             self.log.info("node %s already left", nodename)
             return {"status": 0}
-        ret = self.remove_cluster_node(nodename)
-        result = {
-            "status": ret,
-        }
-        return result
+        try:
+            self.remove_cluster_node(nodename)
+            return {"status": 0}
+        except Exception as exc:
+            return {
+                "status": 1,
+                "error": [str(exc)],
+            }
 
     def action_collector_xmlrpc(self, nodename, **kwargs):
         args = kwargs.get("args", [])

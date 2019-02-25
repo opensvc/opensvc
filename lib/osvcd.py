@@ -173,7 +173,7 @@ class Daemon(object):
         self.init_nodeconf()
         try:
             shared.NODE.load_config()
-        except Exception:
+        except Exception as exc:
             self.log.info("error loading config: %s", exc)
             raise ex.excAbortAction()
         return shared.NODE.config
@@ -389,7 +389,7 @@ class Daemon(object):
         if not locked:
             return
         try:
-            self._read_config()
+            return self._read_config()
         finally:
             shared.CONFIG_LOCK.release()
 

@@ -492,14 +492,18 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": "delete failed"},
         )
 
-    def service_purge(self, svc):
+    def service_purge(self, svc, leader=None):
         self.set_smon(svc.svcpath, "unprovisioning")
-        candidates = self.placement_candidates(svc, discard_frozen=False,
-                                               discard_overloaded=False,
-                                               discard_unprovisioned=False,
-                                               discard_constraints_violation=False)
+        if leader is None:
+            candidates = self.placement_candidates(svc, discard_frozen=False,
+                                                   discard_overloaded=False,
+                                                   discard_unprovisioned=False,
+                                                   discard_constraints_violation=False)
+            leader = self.placement_leader(svc, candidates)
+        else:
+            leader = rcEnv.nodename == leader
         cmd = ["unprovision"]
-        if self.placement_leader(svc, candidates):
+        if leader:
             cmd += ["--leader"]
         proc = self.service_command(svc.svcpath, cmd)
         self.push_proc(
@@ -543,14 +547,18 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": "provision failed"},
         )
 
-    def service_unprovision(self, svc):
+    def service_unprovision(self, svc, leader=None):
         self.set_smon(svc.svcpath, "unprovisioning", local_expect="unset")
-        candidates = self.placement_candidates(svc, discard_frozen=False,
-                                               discard_overloaded=False,
-                                               discard_unprovisioned=False,
-                                               discard_constraints_violation=False)
+        if leader is None:
+            candidates = self.placement_candidates(svc, discard_frozen=False,
+                                                   discard_overloaded=False,
+                                                   discard_unprovisioned=False,
+                                                   discard_constraints_violation=False)
+            leader = self.placement_leader(svc, candidates)
+        else:
+            leader = rcEnv.nodename == leader
         cmd = ["unprovision"]
-        if self.placement_leader(svc, candidates):
+        if leader:
             cmd += ["--leader"]
         proc = self.service_command(svc.svcpath, cmd)
         self.push_proc(
@@ -1293,14 +1301,15 @@ class Monitor(shared.OsvcThread):
             if not self.children_unprovisioned(svc):
                 self.set_smon(svc.svcpath, status="wait children")
                 return
-            if not self.leader_last(svc, provisioned=False):
+            leader = self.leader_last(svc, provisioned=False)
+            if not leader:
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
             self.event("instance_unprovision", {
                 "reason": "target",
                 "svcpath": svc.svcpath,
             })
-            self.service_unprovision(svc)
+            self.service_unprovision(svc, leader)
         elif smon.global_expect == "provisioned":
             if smon.status == "wait parents":
                 if not self.parents_available(svc):
@@ -1352,7 +1361,8 @@ class Monitor(shared.OsvcThread):
             if not self.children_unprovisioned(svc):
                 self.set_smon(svc.svcpath, status="wait children")
                 return
-            if not self.leader_last(svc, provisioned=False, deleted=True):
+            leader = self.leader_last(svc, provisioned=False, deleted=True)
+            if not leader:
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
             if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
@@ -1362,7 +1372,7 @@ class Monitor(shared.OsvcThread):
                 "reason": "target",
                 "svcpath": svc.svcpath,
             })
-            self.service_purge(svc)
+            self.service_purge(svc, leader)
         elif smon.global_expect == "aborted" and \
              smon.local_expect not in (None, "started"):
             self.event("instance_abort", {
@@ -1889,9 +1899,9 @@ class Monitor(shared.OsvcThread):
 
     def leader_last(self, svc, provisioned=False, deleted=False, silent=False):
         """
-        Return True if the peers not selected for anteriority are found to have
-        reached the target status, or if the local node is not the one with
-        anteriority.
+        Return the leader nodename if the peers not selected for anteriority are
+        found to have reached the target status, or if the local node is not the
+        one with anteriority.
 
         Anteriority selection is done with these criteria:
 
@@ -1920,11 +1930,11 @@ class Monitor(shared.OsvcThread):
         except IndexError:
             if not silent:
                 self.log.error("service %s placement ranks list is empty", svc.svcpath)
-            return True
+            return rcEnv.nodename
         if len(ranks) == 1:
-            return True
+            return top
         if top != rcEnv.nodename:
-            return True
+            return top
         for node in ranks[1:]:
             instance = self.get_service_instance(svc.svcpath, node)
             if instance is None:
@@ -1933,14 +1943,14 @@ class Monitor(shared.OsvcThread):
                 if not silent:
                     self.log.info("delay leader-last action on service %s: "
                                   "node %s is still not deleted", svc.svcpath, node)
-                return False
+                return
             if instance["provisioned"] is not provisioned:
                 if not silent:
                     self.log.info("delay leader-last action on service %s: "
                                   "node %s is still %s", svc.svcpath, node,
                                   "unprovisioned" if provisioned else "provisioned")
-                return False
-        return True
+                return
+        return rcEnv.nodename
 
     def leader_first(self, svc, provisioned=False, deleted=None, silent=False):
         """
