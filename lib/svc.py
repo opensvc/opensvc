@@ -760,7 +760,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 self.log.info(msg)
             return 0
         self.allow_on_this_node(action)
-        if (self.options.cron and action in ("run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
+        if (self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
             self.configure_scheduler()
         try:
             return self._action(action, options=options)
