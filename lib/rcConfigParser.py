@@ -4,6 +4,7 @@ import sys
 import six
 from six.moves import configparser as ConfigParser
 
+Error = ConfigParser.Error
 ParsingError = ConfigParser.ParsingError
 NoOptionError = ConfigParser.NoOptionError
 

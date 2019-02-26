@@ -1010,7 +1010,7 @@ class Node(Crypt, ExtConfigMixin):
             configs.append(rcEnv.paths.nodeconf)
         try:
             return read_cf(configs)
-        except rcConfigParser.ParsingError as exc:
+        except rcConfigParser.Error as exc:
             print(str(exc), file=sys.stderr)
         except IOError:
             # some action don't need self.config
@@ -1040,7 +1040,7 @@ class Node(Crypt, ExtConfigMixin):
             return
         try:
             self.auth_config = read_cf(rcEnv.paths.authconf)
-        except rcConfigParser.ParsingError as exc:
+        except rcConfigParser.Error as exc:
             print(str(exc), file=sys.stderr)
         except IOError:
             # some action don't need self.auth_config

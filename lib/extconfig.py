@@ -1086,7 +1086,7 @@ class ExtConfigMixin(object):
         else:
             try:
                 config = read_cf(path)
-            except ConfigParser.ParsingError:
+            except ConfigParser.Error:
                 self.log.error("error parsing %s" % path)
                 ret["errors"] += 1
                 return ret
