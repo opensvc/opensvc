@@ -1700,13 +1700,13 @@ def build_services(status=None, svcpaths=None, create_instance=False,
         svcname, namespace = split_svcpath(svcpath)
         try:
             svc = build(svcname, namespace, node=node)
-        except (ex.excError, ex.excInitError, ValueError, rcConfigParser.ParsingError) as e:
+        except (ex.excError, ex.excInitError, ValueError, rcConfigParser.Error) as e:
             errors.append("%s: %s" % (svcpath, str(e)))
             if namespace:
                 log_d = os.path.join(rcEnv.paths.pathlog, namespace)
                 makedirs(log_d)
             else:
-                log_d = None
+                log_d = rcEnv.paths.pathlog
             svclog = rcLogger.initLogger(rcEnv.nodename+"."+svcname,
                                          directory=log_d,
                                          handlers=["file", "syslog"])
