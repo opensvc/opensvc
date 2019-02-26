@@ -3793,7 +3793,8 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         from fmt_cluster import format_cluster
-        return format_cluster(svcpaths=svcpaths, node=self.cluster_nodes, data=data)
+        print(format_cluster(svcpaths=svcpaths, node=self.cluster_nodes, data=data))
+        return 0
 
     def daemon_blacklist_clear(self):
         """
