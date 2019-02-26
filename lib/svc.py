@@ -2539,6 +2539,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_delete(*args, **kwargs)
 
+    def get_node(self):
+        if self.node is None:
+            self.node = node.Node()
+        return self.node
+
     def options_to_rids(self, options, action):
         return set()
 
@@ -2911,11 +2916,6 @@ class Svc(BaseSvc):
         Return the service app code.
         """
         return self.oget("DEFAULT", "app")
-
-    def get_node(self):
-        if self.node is None:
-            self.node = node.Node()
-        return self.node
 
     def __lt__(self, other):
         """
