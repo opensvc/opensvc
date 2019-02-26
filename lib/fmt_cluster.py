@@ -417,19 +417,22 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             load_svc(child, prefix=prefix+" ")
 
     def load_hb(key, _data):
-        if _data["state"] == "running":
-            state = colorize(_data["state"], color.GREEN)
+        state = _data.get("state", "")
+        if state == "running":
+            state = colorize(state, color.GREEN)
         else:
-            state = colorize(_data["state"], color.RED)
-        if "addr" in _data["config"] and "port" in _data["config"]:
-            config = _data["config"]["addr"]+":"+str(_data["config"]["port"])
-        elif "dev" in _data["config"]:
-            if _data["config"]["dev"]:
-                config = os.path.basename(_data["config"]["dev"])
-            else:
-                config = ""
-        elif "relay" in _data["config"]:
-            config = _data["config"]["relay"]
+            state = colorize(state, color.RED)
+        cf = _data.get("config", {})
+        addr = cf.get("addr", "")
+        port = cf.get("port", "")
+        dev = cf.get("dev", "")
+        relay = cf.get("relay", "")
+        if addr and port:
+            config = addr + ":" + str(port)
+        elif dev:
+            config = os.path.basename(dev)
+        elif relay:
+            config = relay
         else:
             config = ""
         line = [
@@ -447,10 +450,12 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "",
             "|" if show_nodenames else "",
         ]
+        peers = _data.get("peers", {})
         for nodename in show_nodenames:
-            if nodename not in _data["peers"] or "beating" not in _data["peers"][nodename]:
+            beating = peers.get(nodename, {}).get("beating")
+            if beating is None:
                 status = "n/a"
-            elif _data["peers"][nodename]["beating"]:
+            elif beating:
                 status = "up"
             else:
                 status = "down"
