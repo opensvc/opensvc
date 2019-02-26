@@ -1942,17 +1942,12 @@ class Monitor(shared.OsvcThread):
         if shared.AGG[svc.svcpath].avail is None:
             # base services can be unprovisioned and purged in parallel
             return rcEnv.nodename
-        instances = self.get_service_instances(svc.svcpath, discard_empty=True)
-        candidates = [nodename for (nodename, data) in instances.items() \
-                      if data.get("avail") in ("up", "warn")]
-        if len(candidates) == 0:
-            if not silent:
-                self.log.info("service %s has no up instance, relax candidates "
-                              "constraints", svc.svcpath)
-            candidates = self.placement_candidates(
-                svc, discard_frozen=False,
-                discard_unprovisioned=False,
-            )
+        candidates = self.placement_candidates(
+            svc, discard_frozen=False,
+            discard_unprovisioned=True,
+            discard_start_failed=False,
+            discard_overloaded=False,
+        )
         try:
             ranks = self.placement_ranks(svc, candidates=candidates)
             top = ranks[0]
@@ -1961,19 +1956,16 @@ class Monitor(shared.OsvcThread):
                               "service %s", top, svc.svcpath)
         except IndexError:
             if not silent:
-                self.log.error("service %s placement ranks list is empty", svc.svcpath)
+                self.log.info("unblock service %s leader last action (placement ranks empty)", svc.svcpath)
             return rcEnv.nodename
-        if len(ranks) == 1:
-            if not silent:
-                self.log.info("unblock service %s leader last action (no other candidate)",
-                              svc.svcpath)
-            return top
         if top != rcEnv.nodename:
             if not silent:
                 self.log.info("unblock service %s leader last action (not leader)",
                               svc.svcpath)
             return top
-        for node in ranks[1:]:
+        for node in svc.peers:
+            if node == rcEnv.nodename:
+                continue
             instance = self.get_service_instance(svc.svcpath, node)
             if instance is None:
                 continue
@@ -3351,7 +3343,7 @@ class Monitor(shared.OsvcThread):
         if instance is None:
             return True
         for resource in instance.get("resources", {}).values():
-            if resource.get("type") in ("disk.scsireserv", "task"):
+            if resource.get("type") in ("disk.scsireserv", "task", "task.docker"):
                 # always provisioned
                 continue
             if resource.get("provisioned", {}).get("state") is True:
