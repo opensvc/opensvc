@@ -46,7 +46,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, exe_link_exists, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
-                        unset_all_lazy, create_svclink
+                        validate_ns_name, unset_all_lazy, create_svclink
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -2915,7 +2915,7 @@ class Node(Crypt, ExtConfigMixin):
     def install_service_info(self, svcname, namespace):
         validate_name(svcname)
         if namespace:
-            validate_name(namespace)
+            validate_ns_name(namespace)
         data = Storage()
         data.pathetc = svc_pathetc(svcname, namespace)
         data.cf = os.path.join(data.pathetc, svcname+'.conf')
