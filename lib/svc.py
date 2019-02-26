@@ -1878,7 +1878,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             nodename=nodename,
             timeout=5,
         )
-        if data is None or data["status"] != 0:
+        if data is None: 
+            raise ex.excError("clear on node %s failed: no return data" % nodename)
+        elif data.get("status") != 0:
             raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
 
     def notify_done(self, action, rids=None):
