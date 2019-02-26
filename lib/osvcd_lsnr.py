@@ -966,7 +966,7 @@ class Listener(shared.OsvcThread):
         cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
         if action_mode and "--local" not in cmd:
             cmd += ["--local"]
-        self.log.info("run '%s' requested by node %s: %s",
+        self.log.info("run '%s' requested by node %s",
                       " ".join(cmd), nodename)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
