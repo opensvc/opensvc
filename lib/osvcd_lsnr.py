@@ -963,11 +963,11 @@ class Listener(shared.OsvcThread):
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        cmd = [rcEnv.paths.nodemgr] + cmd
+        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
         if action_mode and "--local" not in cmd:
             cmd += ["--local"]
-        self.log.info("execute node action requested by node %s: %s",
-                      nodename, " ".join(cmd))
+        self.log.info("run '%s' requested by node %s: %s",
+                      " ".join(cmd), nodename)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
@@ -1054,9 +1054,9 @@ class Listener(shared.OsvcThread):
         cmd = drop_option("--daemon", cmd)
         if action_mode and "--local" not in cmd:
             cmd.append("--local")
-        cmd = [rcEnv.paths.svcmgr, "-s", svcpath] + cmd
-        self.log.info("execute service action requested by node %s: %s",
-                      nodename, " ".join(cmd))
+        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", svcpath] + cmd
+        self.log.info("run '%s' requested by node %s",
+                      " ".join(cmd), nodename)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
