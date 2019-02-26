@@ -282,5 +282,5 @@ class Scheduler(shared.OsvcThread):
         if len(nonprov) > 0:
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
         if len(msg) > 0:
-            self.log.info(" ".join(msg))
+            self.log.debug(" ".join(msg))
 

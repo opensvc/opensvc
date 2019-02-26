@@ -176,7 +176,7 @@ class Collector(shared.OsvcThread):
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
-            self.log.info("send daemon status, changed: %s", ", ".join(sorted(list(self.last_status_changed))))
+            self.log.info("send daemon status, %d changes", len(self.last_status_changed))
         else:
             self.log.info("send daemon status, resync")
         try:
@@ -187,7 +187,7 @@ class Collector(shared.OsvcThread):
         self.last_comm = time.time()
 
     def ping(self, data):
-        self.log.info("ping the collector")
+        self.log.debug("ping the collector")
         try:
             result = shared.NODE.collector.call("daemon_ping")
             if result and result.get("info") == "resync":

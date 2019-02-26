@@ -2920,8 +2920,8 @@ class Monitor(shared.OsvcThread):
         elif (smon.global_expect == "frozen" and frozen == "frozen") or \
              (smon.global_expect == "thawed" and frozen == "thawed") or \
              (smon.global_expect == "unprovisioned" and provisioned is False):
-            self.log.info("service %s global expect is %s, already is",
-                          svcpath, smon.global_expect)
+            self.log.debug("service %s global expect is %s, already is",
+                           svcpath, smon.global_expect)
             self.set_smon(svcpath, global_expect="unset")
         elif smon.global_expect == "provisioned" and provisioned is True:
             if shared.SERVICES[svcpath].placement == "none":
@@ -2933,8 +2933,8 @@ class Monitor(shared.OsvcThread):
                 self.set_smon(svcpath, global_expect="started")
         elif (smon.global_expect == "purged" and purged is True) or \
              (smon.global_expect == "deleted" and deleted is True):
-            self.log.info("service %s global expect is %s, already is",
-                          svcpath, smon.global_expect)
+            self.log.debug("service %s global expect is %s, already is",
+                           svcpath, smon.global_expect)
             with shared.SMON_DATA_LOCK:
                 del shared.SMON_DATA[svcpath]
         elif smon.global_expect == "aborted" and \
@@ -2977,10 +2977,10 @@ class Monitor(shared.OsvcThread):
                shared.SMON_DATA[svcpath].status != "idle" or \
                shared.SMON_DATA[svcpath].local_expect in ("started", "shutdown"):
                 return
+            self.log.info("service %s monitor local_expect "
+                          "%s => %s", svcpath,
+                          shared.SMON_DATA[svcpath].local_expect, "started")
             shared.SMON_DATA[svcpath].local_expect = "started"
-        self.log.info("service %s monitor local_expect change "
-                      "%s => %s", svcpath,
-                      shared.SMON_DATA[svcpath].local_expect, "started")
 
     def get_arbitrators_data(self):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:

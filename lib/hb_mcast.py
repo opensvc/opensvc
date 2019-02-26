@@ -113,10 +113,10 @@ class HbMcast(Hb):
             pass
         if self.src_addr != "0.0.0.0":
             try:
+                self.log.info("set socket options: multicast source address %s", self.src_addr)
                 self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self.src_addr))
-                self.log.info("set mcast if: %s", self.src_addr)
             except Exception as exc:
-                self.log.error("set mcast if: %s", exc)
+                self.log.error("%s", exc)
 
 class HbMcastTx(HbMcast):
     """

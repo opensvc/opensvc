@@ -79,7 +79,7 @@ class Listener(shared.OsvcThread):
         except socket.error as exc:
             self.log.error("bind %s error: %s", rcEnv.paths.lsnruxsock, exc)
             return
-        self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
+        self.log.info("listening on %s", rcEnv.paths.lsnruxsock)
         self.sockmap[self.sockux.fileno()] = self.sockux
 
     def setup_socks(self):
