@@ -1361,6 +1361,23 @@ def convert_to_ns():
         if not os.path.exists(d):
             logit("migrate %s => %s" % (p, d))
             shutil.move(p, d)
+    for p in glob.glob(pathetc+"/namespaces/*/*.conf"):
+        l = p.split("/")
+        l.insert(-1, "svc")
+        d = "/".join(l)
+        make_sure_path_exists(os.path.dirname(d))
+        if not os.path.exists(d):
+            logit("migrate %s => %s" % (p, d))
+            shutil.move(p, d)
+    for p in glob.glob(pathlog+"/*/*.log*"):
+        l = p.split("/")
+        l.insert(-2, "namespace")
+        l.insert(-1, "svc")
+        d = "/".join(l)
+        make_sure_path_exists(os.path.dirname(d))
+        if not os.path.exists(d):
+            logit("migrate %s => %s" % (p, d))
+            shutil.move(p, d)
 
 def convert_to_lsb():
     logit("begin")
