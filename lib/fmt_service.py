@@ -321,7 +321,7 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
 
 
 def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volatile=False, nodename=None):
-    svcname, namespace = split_svcpath(svcpath)
+    svcname, namespace, kind = split_svcpath(svcpath)
     svc_notice = get_svc_notice(idata)
 
     tree = Forest(

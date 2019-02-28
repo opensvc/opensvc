@@ -5,8 +5,14 @@ DEFAULT_STATUS_GROUPS = [
 ]
 
 class ClusterSvc(BaseSvc):
+    kind = "ccfg"
+
     def __init__(self, *args, **kwargs):
-        BaseSvc.__init__(self, svcname="cluster", namespace="system", **kwargs)
+        try:
+            del kwargs["namespace"]
+        except KeyError:
+            pass
+        BaseSvc.__init__(self, svcname="cluster", namespace=None, **kwargs)
 
     @lazy
     def kwdict(self):

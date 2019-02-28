@@ -3,9 +3,8 @@ from __future__ import print_function
 import os
 
 import rcExceptions as ex
-from rcUtilities import lazy, fmt_svcpath, mimport
+from rcUtilities import lazy, mimport, factory
 from converters import convert_size
-from svc import Svc
 
 class Pool(object):
     type = None
@@ -57,7 +56,7 @@ class Pool(object):
         return os.path.join(os.sep, "srv", name)
 
     def default_disk_name(self, volume):
-        return "%s.%s.svc.%s" % (
+        return "%s.%s.vol.%s" % (
             volume.svcname,
             volume.namespace if volume.namespace else "root",
             self.node.cluster_name,
@@ -68,7 +67,6 @@ class Pool(object):
         data = self.translate(name=name, size=size, fmt=fmt, shared=shared)
         defaults = {
             "rtype": "DEFAULT",
-            "kind": "vol",
             "pool": self.name,
             "access": access,
         }
@@ -79,7 +77,7 @@ class Pool(object):
             defaults["nodes"] = nodes
         data.append(defaults)
         volume._update(data)
-        self.node.install_service_files(volume.svcname, namespace=volume.namespace)
+        self.node.install_service_files(volume.svcname, volume.namespace, volume.kind)
 
     def pool_status(self):
         pass
@@ -94,7 +92,7 @@ class Pool(object):
         return {}
 
     def delete_volume(self, name, namespace=None):
-        volume = Svc(svcname=name, namespace=namespace, node=self.node)
+        volume = factory("vol")(svcname=name, namespace=namespace, node=self.node)
         if not volume.exists():
             self.log.info("volume does not exist")
             return
@@ -102,7 +100,7 @@ class Pool(object):
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         
     def create_volume(self, name, namespace=None, size=None, access="rwo", fmt=False, nodes=None, shared=False):
-        volume = Svc(svcname=name, namespace=namespace, node=self.node)
+        volume = factory("vol")(svcname=name, namespace=namespace, node=self.node)
         if volume.exists():
             self.log.info("volume %s already exists", name)
             return volume

@@ -21,10 +21,10 @@ import rcExceptions as ex
 import json_delta
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import bdecode, purge_cache, fsum, glob_services_config, \
+from rcUtilities import bdecode, purge_cache, fsum, \
                         svc_pathetc, svc_pathvar, makedirs, split_svcpath, \
-                        list_services, svc_pathcf, fmt_svcpath, create_svclink
-from svcBuilder import build
+                        list_services, svc_pathcf, fmt_svcpath, create_svclink, \
+                        resolve_svcpath, factory
 from freezer import Freezer
 from jsonpath_ng import jsonpath, parse
 
@@ -167,8 +167,8 @@ class Monitor(shared.OsvcThread):
         """
         for svcpath in shared.SERVICES:
             try:
-                name, namespace = split_svcpath(svcpath)
-                svc = build(name, namespace, node=shared.NODE)
+                name, namespace, kind = split_svcpath(svcpath)
+                svc = factory(kind)(name, namespace, node=shared.NODE)
             except Exception as exc:
                 continue
             with shared.SERVICES_LOCK:
@@ -256,17 +256,17 @@ class Monitor(shared.OsvcThread):
                 self.init_new_service(svcpath)
 
     def init_new_service(self, svcpath):
-        name, namespace = split_svcpath(svcpath)
-        create_svclink(name, namespace, self.cluster_name)
+        name, namespace, kind = split_svcpath(svcpath)
+        create_svclink(name, namespace, kind, self.cluster_name)
         try:
-            shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
+            shared.SERVICES[svcpath] = factory(kind)(name, namespace, node=shared.NODE)
         except Exception as exc:
             self.log.error("unbuildable service %s fetched: %s", svcpath, exc)
             return
 
         try:
             svc = shared.SERVICES[svcpath]
-            if svc.kind == "app":
+            if svc.kind == "svc":
                 self.event("instance_freeze", {
                     "reason": "install",
                     "svcpath": svc.svcpath,
@@ -914,8 +914,8 @@ class Monitor(shared.OsvcThread):
 
     @staticmethod
     def scale_svcpath(svcpath, idx):
-        name, namespace = split_svcpath(svcpath)
-        return fmt_svcpath(str(idx)+"."+name, namespace)
+        name, namespace, kind = split_svcpath(svcpath)
+        return fmt_svcpath(str(idx)+"."+name, namespace, kind)
 
     def service_orchestrator_auto(self, svc, smon, status):
         """
@@ -1385,7 +1385,7 @@ class Monitor(shared.OsvcThread):
             if not leader:
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
-            if svc.svcpath in shared.SERVICES and svc.kind == "ccfg":
+            if svc.svcpath in shared.SERVICES and svc.kind != "ccfg":
                 # base services do not implement the purge action
                 self.event("instance_delete", {
                     "reason": "target",
@@ -1468,12 +1468,12 @@ class Monitor(shared.OsvcThread):
                 self.service_start(svc.svcpath, err_status="place failed" if smon.global_expect == "placed" else "start failed")
 
     def scaler_current_slaves(self, svcpath):
-        name, namespace = split_svcpath(svcpath)
+        name, namespace, kind = split_svcpath(svcpath)
         pattern = "[0-9]+\." + name + "$"
         if namespace:
-            pattern = "^" + namespace + "/" + pattern
+            pattern = "^%s/%s/%s" % (namespace, kind, pattern)
         else:
-            pattern = "^" + pattern
+            pattern = "^%s" % pattern
         return [slave for slave in shared.SERVICES if re.match(pattern, slave)]
 
     def service_orchestrator_scaler(self, svc):
@@ -1790,8 +1790,7 @@ class Monitor(shared.OsvcThread):
         if len(svc.children_and_slaves) == 0:
             return True
         for child in svc.children_and_slaves:
-            if not "/" in child:
-                child = fmt_svcpath(child, svc.namespace)
+            child = resolve_svcpath(child, svc.namespace)
             if child == svc.svcpath:
                 continue
             try:
@@ -1834,23 +1833,18 @@ class Monitor(shared.OsvcThread):
                 parent, nodename = parent.split("@")
             except ValueError:
                 nodename = None
-            if not "/" in parent:
-                svcpath = fmt_svcpath(parent, svc.namespace)
-            elif parent.startswith("root/"):
-                svcpath = parent[5:]
-            else:
-                svcpath = parent
-            if svcpath == svc.svcpath:
+            parent = resolve_svcpath(parent, svc.namespace)
+            if parent == svc.svcpath:
                 continue
             if nodename:
-                instance = self.get_service_instance(svcpath, nodename)
+                instance = self.get_service_instance(parent, nodename)
             else:
                 instance = None
             if instance:
                 avail = instance["avail"] 
             else:
                 try:
-                    avail = shared.AGG[svcpath].avail
+                    avail = shared.AGG[parent].avail
                 except KeyError:
                     avail = "unknown"
             if avail in STARTED_STATES + ["unknown"]:
@@ -2254,12 +2248,10 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
-            svcname, namespace = split_svcpath(svcpath)
+            _, namespace, _ = split_svcpath(svcpath)
             avails = set([avail])
             for child in slaves:
-                if "/" not in child and namespace:
-                    child = fmt_svcpath(child, namespace)
-                child = re.sub("^root/", "", child)
+                child = resolve_svcpath(child, namespace)
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -2313,12 +2305,10 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
-            svcname, namespace = split_svcpath(svcpath)
+            _, namespace, _ = split_svcpath(svcpath)
             avails = set([ostatus])
             for child in slaves:
-                if "/" not in child and namespace:
-                    child = fmt_svcpath(child, namespace)
-                child = re.sub("^root/", "", child)
+                child = resolve_svcpath(child, namespace)
                 try:
                     child_status = shared.AGG[child]["overall"]
                 except KeyError:
@@ -2660,8 +2650,8 @@ class Monitor(shared.OsvcThread):
                     continue
                 try:
                     with shared.SERVICES_LOCK:
-                        name, namespace = split_svcpath(svcpath)
-                        shared.SERVICES[svcpath] = build(name, namespace, node=shared.NODE)
+                        name, namespace, kind = split_svcpath(svcpath)
+                        shared.SERVICES[svcpath] = factory(kind)(name, namespace, node=shared.NODE)
                 except Exception as exc:
                     self.log.error("%s build error: %s", svcpath, str(exc))
                     continue

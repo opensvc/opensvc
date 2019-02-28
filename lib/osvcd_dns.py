@@ -400,7 +400,9 @@ class Dns(shared.OsvcThread):
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
                 for svcpath, svc in status.items():
-                    svcname, namespace = split_svcpath(svcpath)
+                    svcname, namespace, kind = split_svcpath(svcpath)
+                    if kind != "svc":
+                        continue
                     if not namespace:
                         namespace = "root"
                     for rid, resource in status[svcpath].get("resources", {}).items():
@@ -410,7 +412,7 @@ class Dns(shared.OsvcThread):
                         if addr != ref:
                             continue
                         hostname = resource.get("info", {}).get("hostname")
-                        name = "%s.%s.svc.%s." % (svcname, namespace, self.cluster_name)
+                        name = "%s.%s.%s.%s." % (svcname, namespace, kind, self.cluster_name)
                         name = name.lower()
                         if hostname:
                             names.append("%s.%s" % (hostname.split(".")[0], name))
@@ -445,7 +447,9 @@ class Dns(shared.OsvcThread):
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
                 for svcpath, svc in status.items():
-                    svcname, namespace = split_svcpath(svcpath)
+                    svcname, namespace, kind = split_svcpath(svcpath)
+                    if kind != "svc":
+                        continue
                     if namespace:
                         namespace = namespace.lower()
                     else:
@@ -455,7 +459,7 @@ class Dns(shared.OsvcThread):
                         _svcname = svcname[svcname.index(".")+1:]
                     else:
                         _svcname = svcname
-                    zone = "%s.svc.%s." % (namespace, self.cluster_name)
+                    zone = "%s.%s.%s." % (namespace, kind, self.cluster_name)
                     qname = "%s.%s" % (_svcname, zone)
                     if qname not in names:
                         names[qname] = set()
@@ -495,7 +499,9 @@ class Dns(shared.OsvcThread):
                 status = node.get("services", {}).get("status", {})
                 weight = node.get("stats", {}).get("score", 10)
                 for svcpath, svc in status.items():
-                    svcname, namespace = split_svcpath(svcpath)
+                    svcname, namespace, kind = split_svcpath(svcpath)
+                    if kind != "svc":
+                        continue
                     if namespace:
                         namespace = namespace.lower()
                     else:
@@ -526,16 +532,16 @@ class Dns(shared.OsvcThread):
                                 except Exception as exc:
                                     continue
                             qnames = set()
-                            qnames.add("_%s._%s.%s.%s.svc.%s." % (str(port), proto, _svcname, namespace, self.cluster_name))
+                            qnames.add("_%s._%s.%s.%s.%s.%s." % (str(port), proto, _svcname, namespace, kind, self.cluster_name))
                             try:
                                 serv = socket.getservbyport(port)
-                                qnames.add("_%s._%s.%s.%s.svc.%s." % (serv, proto, _svcname, namespace, self.cluster_name))
+                                qnames.add("_%s._%s.%s.%s.%s.%s." % (serv, proto, _svcname, namespace, kind, self.cluster_name))
                             except (socket.error, OSError) as exc:
                                 # port/proto not found
                                 pass
                             except Exception as exc:
                                 self.log.warning("port %d resolution failed: %s", port, exc)
-                            target = "%s.%s.%s.svc.%s." % (self.unique_name(addr), _svcname, namespace, self.cluster_name)
+                            target = "%s.%s.%s.%s.%s." % (self.unique_name(addr), _svcname, namespace, kind, self.cluster_name)
                             content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                                 "prio": 0,
                                 "weight": weight,

@@ -474,6 +474,9 @@ class Listener(shared.OsvcThread):
             self.set_nmon("shutting")
             mon.kill_procs()
             for svcpath in shared.SMON_DATA:
+                _, _, kind = split_svcpath(svcpath)
+                if kind not in ("svc", "vol"):
+                    continue
                 self.set_smon(svcpath, local_expect="shutdown")
             self.wait_shutdown()
 
@@ -629,14 +632,14 @@ class Listener(shared.OsvcThread):
         """
         if slaves is None:
             slaves = set()
-        name, namespace = split_svcpath(svcpath)
+        _, namespace, _ = split_svcpath(svcpath)
 
-        def set_ns(svcpath, parent_ns):
-            name, namespace = split_svcpath(svcpath)
-            if namespace:
-                return svcpath
+        def set_ns(path, parent_ns):
+            name, _namespace, kind = split_svcpath(path)
+            if _namespace:
+                return path
             else:
-                return fmt_svcpath(name, parent_ns)
+                return fmt_svcpath(name, parent_ns, kind)
 
         for nodename in shared.CLUSTER_DATA:
             try:

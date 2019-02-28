@@ -627,7 +627,7 @@ def find_locale():
     if ret > 0:
         logit("error while trying to build locale list with command <%s>"%(cmd), stderr=True)
         return None
-    
+
     try:
         f = open(localetmp, 'r')
         data = f.readlines()
@@ -641,7 +641,7 @@ def find_locale():
     for l in data:
         if any(pattern in l for pattern in utf8patterns):
             candidates.append(l.strip())
-    
+
     logit("utf8 locale candidates <%s>"%(candidates))
     for l in candidates:
         if l.startswith('C'):
@@ -1340,6 +1340,28 @@ def dump_install_content():
                 filepath = os.path.join(dirname, filename)
                 log_file_info(filepath)
 
+def convert_to_ns():
+    import re
+    if sysname == 'Windows':
+        logit("skip : unsupported on Windows")
+        return
+    for p in glob.glob(pathvar+"/services"):
+        d = re.sub("/services$", "/svc", p)
+        if not os.path.exists(d):
+            logit("migrate %s => %s" % (p, d))
+            shutil.move(p, d)
+    for p in glob.glob(pathvar+"/namespaces/*/services"):
+        d = re.sub("/services$", "/svc", p)
+        if not os.path.exists(d):
+            logit("migrate %s => %s" % (p, d))
+            shutil.move(p, d)
+    for p in glob.glob(pathetc+"/namespaces/system/cluster.conf"):
+        d = pathetc+"/cluster.conf"
+        make_sure_path_exists(os.path.dirname(d))
+        if not os.path.exists(d):
+            logit("migrate %s => %s" % (p, d))
+            shutil.move(p, d)
+
 def convert_to_lsb():
     logit("begin")
     if sysname == 'Windows':
@@ -1451,6 +1473,7 @@ try:
     move_env_to_conf()
     move_var_files_19()
     dump_install_content()
+    convert_to_ns()
     restart_daemon()
     init_secret()
     solaris_fmri_setprop()

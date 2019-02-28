@@ -310,7 +310,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         # info
         info = {
             "topology": data.get("topology", ""),
-            "kind": data.get("kind", ""),
             "orchestrate": data.get("orchestrate", "-"),
             "status": "%d/1" % data["n_up"] if data["n_up"] is not None else 0,
         }
@@ -319,7 +318,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
         elif data.get("wrapper"):
             info = {
                 "topology": "",
-                "kind": "",
                 "orchestrate": "",
                 "status": "",
             }
@@ -327,7 +325,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             info["status"] = "%d/%d-%d" % (data["n_up"], data["flex_min_nodes"], data["flex_max_nodes"])
         if data["avail"] == "n/a":
             info["status"] = ""
-        info = "%(orchestrate)-5s %(kind)-4s %(status)-5s" % info
+        info = "%(orchestrate)-5s %(status)-5s" % info
         line = [
             " "+colorize(prefix+svcpath, color.BOLD),
             status,
@@ -881,7 +879,6 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 if svcpath not in services:
                     services[svcpath] = Storage({
                         "drp": _data.get("drp", False),
-                        "kind": _data.get("kind", ""),
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate", "-"),
                         "flex_min_nodes": _data.get("flex_min_nodes"),
@@ -901,11 +898,11 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
-                    svcname, namespace = split_svcpath(svcpath)
+                    svcname, namespace, kind = split_svcpath(svcpath)
                     if namespace:
-                        pattern = "^"+namespace+"/[0-9]+."+svcname+"$"
+                        pattern = "^%s/%s/[0-9]+\.%s$" % (namespace, kind, svcname)
                     else:
-                        pattern = "^[0-9]+."+svcname+"$"
+                        pattern = "^[0-9]+\.%s$" % svcname
                     for child in data["monitor"]["services"]:
                         if re.match(pattern, child) is None:
                             continue

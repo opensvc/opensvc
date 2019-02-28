@@ -1117,7 +1117,7 @@ class Resource(object):
         self._provision()
         try:
             self.prov.start()
-        except Exception:
+        except Exception as exc:
             if self.skip_provision:
                 # best effort
                 pass

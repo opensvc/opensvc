@@ -2,7 +2,7 @@ import provisioning
 import os
 
 import rcExceptions as ex
-from svc import Svc
+from rcUtilities import factory
 from converters import print_size
 
 class Prov(provisioning.Prov):
@@ -62,8 +62,7 @@ class Prov(provisioning.Prov):
     def unprovisioner(self):
         if not self.r.volsvc.exists():
             return
-        if self.r.svc.options.leader:
-            self.unclaim()
+        self.unclaim()
 
     def provisioner_shared_non_leader(self):
         self.provisioner()
@@ -92,7 +91,7 @@ class Prov(provisioning.Prov):
         self.r.unset_lazy("volsvc")
 
     def create_volume(self):
-        volume = Svc(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
+        volume = factory("vol")(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
         if volume.exists():
             self.r.log.info("volume %s already exists", self.r.volname)
             data = volume.print_status_data(mon_data=True)
@@ -149,5 +148,6 @@ class Prov(provisioning.Prov):
                               nodes=nodes,
                               shared=self.r.shared,
                               env=env)
+        volume = factory("vol")(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
         return volume
 

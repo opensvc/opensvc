@@ -16,6 +16,7 @@ import sys
 import time
 from functools import wraps
 from subprocess import Popen, PIPE
+from itertools import chain
 
 import six
 import lock
@@ -24,8 +25,12 @@ from rcGlobalEnv import rcEnv
 
 VALID_NAME_RFC952_NO_DOT = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9]))*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
 VALID_NAME_RFC952 = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
-GLOB_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
-GLOB_SVC_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*.conf")
+GLOB_ROOT_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
+GLOB_ROOT_VOL_CONF = os.path.join(rcEnv.paths.pathetc, "vol", "*.conf")
+GLOB_ROOT_CFG_CONF = os.path.join(rcEnv.paths.pathetc, "cfg", "*.conf")
+GLOB_ROOT_SEC_CONF = os.path.join(rcEnv.paths.pathetc, "sec", "*.conf")
+GLOB_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*", "*.conf")
+GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(b"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]")
@@ -283,31 +288,8 @@ def check_privs():
         return
     if os.geteuid() == 0:
         return
-    import copy
-    l = copy.copy(sys.argv)
-    env = rcEnv.initial_env
-    namespace = env.get("OSVC_NAMESPACE")
-    svclink = env.get("OSVC_SERVICE_LINK")
-    if svclink:
-        path = svcpath_from_link(svclink)
-        try:
-            check_svclink_ns(svclink, namespace)
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            sys.exit(1)
-        l[0] = os.path.join(rcEnv.paths.pathbin, "svcmgr")
-        l.insert(1, "--service=%s" % path)
-    else:
-        l[0] = os.path.join(rcEnv.paths.pathbin, os.path.basename(l[0]).replace(".py", ""))
-    if namespace and "--namespace" not in l and ("svcmgr" in l[0] or "svcmon" in l[0]):
-        l.insert(1, "--namespace=%s" % namespace)
-    if which("sudo"):
-        os.execvpe("sudo", ["sudo"] + l, env=env)
-    elif which("pfexec"):
-        os.execvpe("sudo", ["pfexec"] + l, env=env)
-    else:
-        print("Insufficient privileges", file=sys.stderr)
-        sys.exit(1)
+    print("Insufficient privileges", file=sys.stderr)
+    sys.exit(1)
 
 def banner(text, ch='=', length=78):
     spaced_text = ' %s ' % text
@@ -1118,129 +1100,183 @@ def init_locale():
 def is_service(f, namespace=None):
     if f is None:
         return
-    if f.count("/") == 1 and not f.startswith("/"):
-        f, namespace = split_svcpath(f)
-    basename = os.path.basename(f)
-    if basename in ["node", "auth"]:
+    f = re.sub(".conf$", "", f)
+    f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
+    try:
+        name, namespace, kind = split_svcpath(f)
+    except ValueError:
         return
-    if basename == f and not namespace:
-        f = os.path.join(rcEnv.paths.pathetc, f)
-    elif f.startswith(os.sep):
-        pass
-    elif namespace == "root":
-        f = os.path.join(rcEnv.paths.pathetc, f)
-    elif namespace:
-        f = os.path.join(rcEnv.paths.pathetcns, namespace, f)
-    else:
-        f = os.path.join(rcEnv.paths.pathetc, f)
-    if not os.path.exists(f + '.conf'):
+    path = fmt_svcpath(name, namespace, kind)
+    cf = svc_pathcf(path)
+    if not os.path.exists(cf):
         return
-    return f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
+    return path
 
 def list_services(namespace=None):
-    makedirs(rcEnv.paths.pathetc)
     l = []
     if namespace in (None, "root"):
-        s = glob.glob(GLOB_SVC_CONF)
-        s = [x[:-5] for x in s]
-        for name in s:
+        for name in glob_root_config():
+            s = name[:-5]
             if len(s) == 0:
                 continue
             svcpath = is_service(name)
             if svcpath is None:
                 continue
             l.append(svcpath)
-    if namespace is None:
-        s = glob.glob(GLOB_SVC_CONF_NS)
-    else:
-        s = glob.glob(os.path.join(rcEnv.paths.pathetcns, namespace, "*.conf"))
     n = len(os.path.join(rcEnv.paths.pathetcns, ""))
-    for path in s:
+    for path in glob_ns_config(namespace):
         path = path[n:-5]
         if path[-1] == os.sep:
             continue
         l.append(path)
     return l
 
+def glob_root_config():
+    return chain(
+        glob.iglob(GLOB_ROOT_SVC_CONF),
+        glob.iglob(GLOB_ROOT_VOL_CONF),
+        glob.iglob(GLOB_ROOT_CFG_CONF),
+        glob.iglob(GLOB_ROOT_SEC_CONF),
+    )
+
+def glob_ns_config(namespace=None):
+    if namespace is None:
+        return glob.iglob(GLOB_CONF_NS)
+    else:
+        return glob.iglob(GLOB_CONF_NS_ONE % namespace)
+
 def glob_services_config():
-    return glob.glob(GLOB_SVC_CONF) + glob.glob(GLOB_SVC_CONF_NS)
+    return chain(glob_root_config(), glob_ns_config())
 
 def split_svcpath(path):
     path = path.strip("/")
+    if path in ("node", "auth"):
+        raise ValueError
     if not path:
         raise ValueError
-    svcname = os.path.basename(path)
-    namespace = os.path.dirname(path)
+    nsep = path.count("/")
+    if nsep == 2:
+        namespace, kind, name = path.split("/")
+    elif nsep == 1:
+        kind, name = path.split("/")
+        namespace = "root"
+    elif nsep == 0:
+        name = path
+        namespace = "root"
+        kind = "svc"
+    else:
+        raise ValueError(path)
     if namespace == "root":
         namespace = None
-    return svcname, namespace
+        if name == "cluster":
+            kind = "ccfg"
+    return name, namespace, kind
 
 def svc_pathcf(path, namespace=None):
-    name, _namespace = split_svcpath(path)
+    name, _namespace, kind = split_svcpath(path)
     if namespace:
-        return os.path.join(rcEnv.paths.pathetcns, namespace, name+".conf")
+        return os.path.join(rcEnv.paths.pathetcns, namespace, kind, name+".conf")
     elif _namespace:
-        return os.path.join(rcEnv.paths.pathetcns, _namespace, name+".conf")
-    else:
+        return os.path.join(rcEnv.paths.pathetcns, _namespace, kind, name+".conf")
+    elif kind in ("svc", "ccfg"):
         return os.path.join(rcEnv.paths.pathetc, name+".conf")
+    else:
+        return os.path.join(rcEnv.paths.pathetc, kind, name+".conf")
 
 def svc_pathetc(path, namespace=None):
     return os.path.dirname(svc_pathcf(path, namespace=namespace))
 
-def svc_pathvar(path, relpath=""):
-    name, namespace = split_svcpath(path)
+def svc_pathtmp(path):
+    name, namespace, kind = split_svcpath(path)
     if namespace:
-        l = [rcEnv.paths.pathvar, "namespaces", namespace, "services", name]
+        return os.path.join(rcEnv.paths.pathtmp, "namespaces", namespace, kind)
+    elif kind in ("svc", "ccfg"):
+        return os.path.join(rcEnv.paths.pathtmp)
     else:
-        l = [rcEnv.paths.pathvar, "services", name]
+        return os.path.join(rcEnv.paths.pathtmp, kind)
+
+def svc_pathlog(path):
+    name, namespace, kind = split_svcpath(path)
+    if namespace:
+        return os.path.join(rcEnv.paths.pathlog, "namespaces", namespace, kind)
+    elif kind in ("svc", "ccfg"):
+        return os.path.join(rcEnv.paths.pathlog)
+    else:
+        return os.path.join(rcEnv.paths.pathlog, kind)
+
+def svc_pathvar(path, relpath=""):
+    name, namespace, kind = split_svcpath(path)
+    if namespace:
+        l = [rcEnv.paths.pathvar, "namespaces", namespace, kind, name]
+    else:
+        l = [rcEnv.paths.pathvar, kind, name]
     if relpath:
         l.append(relpath)
     return os.path.join(*l)
 
-def fmt_svcpath(name, namespace):
+def fmt_svcpath(name, namespace, kind):
     if namespace:
-        return "/".join((namespace.strip("/"), name))
+        return "/".join((namespace.strip("/"), kind, name))
+    elif kind not in ("svc", "ccfg"):
+        return "/".join((kind, name))
     else:
         return name
 
-def svc_fullname(svcname, namespace, clustername):
-    return "%s.%s.svc.%s" % (
-        svcname,
+def svc_fullname(name, namespace, kind, clustername):
+    return "%s.%s.%s.%s" % (
+        name,
         namespace if namespace else "root",
+        kind,
         clustername
     )
 
-def split_svclink(svclink):
+def split_svclink(svclink, clustername):
     bn = os.path.basename(svclink)
-    if ".svc." not in bn:
-        return bn, None
-    return bn.split(".svc.", 1)[0].rsplit(".", 1)
+    if bn == "cluster":
+        return bn, None, "ccfg"
+    roff = len(clustername) + 1
+    if not bn.endswith(clustername):
+        return bn, None, "svc"
+    bn = bn[:-roff]
+    name, namespace, kind = bn.split(".svc.", 1)[0].rsplit(".", 2)
+    return name, namespace, kind
 
-def svcpath_from_link(svclink):
-    svcname, namespace = split_svclink(svclink)
+def normalize_path(path):
+    name, namespace, kind = split_svcpath(path)
+    if namespace is None:
+        namespace = "root"
+    return fmt_svcpath(name, namespace, kind)
+
+def normalize_paths(paths):
+    for path in paths:
+        yield normalize_path(path)
+
+def svcpath_from_link(svclink, clustername):
+    name, namespace, kind = split_svclink(svclink, clustername)
     if namespace:
-        return "/".join((namespace, svcname))
-    return svcname
+        return "/".join((namespace, kind, name))
+    return name
 
-def check_svclink_ns(svclink, namespace):
-    svcname, linkns = split_svclink(svclink)
+def check_svclink_ns(svclink, namespace, clustername):
+    _, linkns, _ = split_svclink(svclink, clustername)
     if namespace and linkns != namespace:
         raise ex.excError("Service link '%s' doesn't belong to namespace '%s'.\n"
                           "Use a service selector expression to select a "
                           "service from a foreign namespace." % (os.path.basename(svclink), namespace))
 
-def svclink_path(svcname, namespace, clustername):
-    pathetc = svc_pathetc(svcname, namespace)
+def svclink_path(name, namespace, kind, clustername):
+    path = fmt_svcpath(name, namespace, kind)
+    pathetc = svc_pathetc(path)
     if namespace:
-        bn = svc_fullname(svcname, namespace, clustername)
+        bn = svc_fullname(name, namespace, kind, clustername)
     else:
-        bn = svcname
+        bn = name
     return os.path.join(rcEnv.paths.pathetc, bn)
 
-def exe_link_exists(svcname, namespace, clustername):
+def exe_link_exists(name, namespace, kind, clustername):
     if os.name != 'posix':
         return False
-    path = svclink_path(svcname, namespace, clustername)
+    path = svclink_path(name, namespace, kind, clustername)
     try:
         p = os.readlink(path)
         if p == rcEnv.paths.svcmgr:
@@ -1250,13 +1286,13 @@ def exe_link_exists(svcname, namespace, clustername):
     except:
         return False
 
-def create_svclink(svcname, namespace, clustername):
+def create_svclink(name, namespace, kind, clustername):
     """
-    Create the <svcname> -> svcmgr symlink
+    Create the -> svcmgr symlink
     """
     if os.name != 'posix':
         return
-    path = svclink_path(svcname, namespace, clustername)
+    path = svclink_path(name, namespace, kind, clustername)
     try:
         p = os.readlink(path)
     except:
@@ -1265,8 +1301,20 @@ def create_svclink(svcname, namespace, clustername):
         p = rcEnv.paths.svcmgr
     if p != rcEnv.paths.svcmgr:
         os.chdir(rcEnv.paths.pathetc)
-        os.unlink(svcname)
+        os.unlink(name)
         os.symlink(rcEnv.paths.svcmgr, path)
+
+def resolve_svcpath(path, namespace=None):
+    """
+    Return the path, parented in <namespace> if specified and if not found
+    in <path>.
+    """
+    name, _namespace, kind = split_svcpath(path)
+    if namespace and not _namespace:
+        _namespace = namespace
+    if _namespace is "root":
+        _namespace = None
+    return fmt_svcpath(name, _namespace, kind)
 
 def makedirs(path, mode=0o755):
     """
@@ -1296,3 +1344,19 @@ def validate_name(name):
     raise ex.excError("invalid name '%s'. names must contain only dots, letters, "
                       "digits and hyphens, start with a letter and end with "
                       "a digit or letter (rfc 952)." % name)
+
+def factory(kind):
+    """
+    Instanciate a Svc object
+    """
+    if kind == "ccfg":
+        from cluster import ClusterSvc
+        return ClusterSvc
+    elif kind == "vol":
+        from svc import Vol
+        return Vol
+    else:
+        from svc import Svc
+        return Svc
+    raise ValueError("unknown kind: %s" % kind)
+

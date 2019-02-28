@@ -758,15 +758,6 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "kind",
-        "inheritance": "head",
-        "at": True,
-        "default": "app",
-        "candidates": ("app", "vol", "cfg", "sec"),
-        "text": "Defines the kind of service.",
-    },
-    {
-        "section": "DEFAULT",
         "keyword": "orchestrate",
         "inheritance": "head",
         "at": True,

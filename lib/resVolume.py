@@ -5,8 +5,7 @@ Volume resource driver module.
 import resources as Res
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy
-from svc import Svc
+from rcUtilities import lazy, factory
 
 class Volume(Res.Resource):
     """
@@ -48,7 +47,7 @@ class Volume(Res.Resource):
 
     @lazy
     def volsvc(self):
-        return Svc(svcname=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        return factory("vol")(svcname=self.volname, namespace=self.svc.namespace, node=self.svc.node)
 
     @lazy
     def mount_point(self):

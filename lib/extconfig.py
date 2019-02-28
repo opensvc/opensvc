@@ -9,7 +9,7 @@ import six
 import rcExceptions as ex
 from converters import *
 from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
-                        lazy, makedirs
+                        lazy, makedirs, factory
 from rcGlobalEnv import rcEnv
 
 SECRETS = []
@@ -1250,11 +1250,10 @@ class ExtConfigMixin(object):
             """
             if not hasattr(self, "svcname"):
                 return ret
-            from svcBuilder import build
             svc = None
             try:
-                svc = build(self.svcname, namespace=self.namespace,
-                            svcconf=path, node=self.node, volatile=True)
+                svc = factory(self.kind)(self.svcname, namespace=self.namespace,
+                                         cf=path, node=self.node, volatile=True)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
@@ -1335,6 +1334,17 @@ class ExtConfigMixin(object):
             config = self.config
         else:
             config = src_config
+        meta = {}
+        if hasattr(self, "namespace"):
+            meta.update({
+                "name": self.svcname,
+                "kind": self.kind,
+                "namespace": self.namespace,
+            })
+        else:
+            meta.update({
+                "kind": "node",
+            })
 
         defaults = config.defaults()
         for key in defaults.keys():
@@ -1354,6 +1364,7 @@ class ExtConfigMixin(object):
         if src_config is None:
             unset_lazy(self, "config")
         if not evaluate:
+            data["metadata"] = meta
             return data
         edata = {}
         for section, _data in data.items():
@@ -1375,6 +1386,7 @@ class ExtConfigMixin(object):
                 if isinstance(val, set):
                     val = list(val)
                 edata[section][key] = val
+        edata["metadata"] = meta
         return edata
 
     @lazy

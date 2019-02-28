@@ -44,9 +44,10 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         drop_option, is_string, try_decode, is_service, \
                         bencode, bdecode, set_lazy, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
-                        makedirs, exe_link_exists, fmt_svcpath, \
+                        makedirs, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
-                        validate_ns_name, unset_all_lazy, create_svclink
+                        validate_ns_name, unset_all_lazy, create_svclink, \
+                        factory, resolve_svcpath
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -336,8 +337,7 @@ class Node(Crypt, ExtConfigMixin):
         comp = Compliance(self)
         return comp
 
-    @staticmethod
-    def check_privs(action):
+    def check_privs(self, action):
         """
         Raise if the action requires root privileges but the current
         running user is not root.
@@ -577,7 +577,7 @@ class Node(Crypt, ExtConfigMixin):
     @staticmethod
     def strip_ns(paths, namespace):
         if namespace:
-            return [path.split("/")[-1] for path in paths]
+            return [re.sub("^%s/" % namespace, "", path) for path in paths]
         else:
             return paths
 
@@ -602,12 +602,6 @@ class Node(Crypt, ExtConfigMixin):
         else:
             data = data["monitor"]
 
-        # fully qualified svcname
-        path = is_service(selector, namespace)
-        if path:
-            self.options.single_service = True
-            return [path]
-
         # full listing and namespace full listing
         if selector is None or "*" in selector.split(","):
             if data:
@@ -616,6 +610,12 @@ class Node(Crypt, ExtConfigMixin):
             else:
                 paths = list_services(namespace)
             return paths
+
+        # fully qualified name
+        path = is_service(selector, namespace)
+        if path:
+            self.options.single_service = True
+            return [path]
 
         # fnmatch on names and service config/status filtering
         try:
@@ -673,7 +673,7 @@ class Node(Crypt, ExtConfigMixin):
                     result = _paths
                 else:
                     common = set(result) & set(_paths)
-                    result = [svcname for svcname in result if svcname in common]
+                    result = [name for name in result if name in common]
         return result
 
     def ___svcs_selector(self, selector, paths, cluster_data, namespace):
@@ -754,15 +754,28 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         if len(elts) == 1:
-            if selector.startswith("root/"):
-                selector = selector[5:]
-                return [path for path in paths if negate ^ ("/" not in path and fnmatch.fnmatch(path, selector))]
-            elif "/" in selector:
-                return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
+            from rcUtilities import normalize_paths
+            norm_paths = normalize_paths(paths)
+            norm_elts = selector.split("/")
+            norm_elts_count = len(norm_elts)
+            if norm_elts_count == 3:
+                _namespace, _kind, _name = norm_elts
+                if not _name:
+                    # test/svc/
+                    _name = "*"
+            elif norm_elts_count == 2:
+                _name = norm_elts[1] if norm_elts[1] else "*" # svc/s* : svc/
+                _kind = norm_elts[0]
+                _namespace = "*"
+            elif norm_elts_count == 1:
+                _name = norm_elts[0]
+                _kind = "*"
+                _namespace = "*"
             else:
-                if namespace:
-                    selector = fmt_svcpath(selector, namespace)
-                return [path for path in paths if negate ^ fnmatch.fnmatch(path, selector)]
+                return []
+            _selector = "/".join((_namespace, _kind, _name))
+            filtered_paths = [path  for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
+            return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
         elif len(elts) != 3:
             return []
         param, op, value = elts
@@ -2805,7 +2818,7 @@ class Node(Crypt, ExtConfigMixin):
                 ofile.write(chunk)
         ufile.close()
 
-    def install_svc_conf_from_templ(self, svcname, namespace, template, restore=False, info=None):
+    def install_svc_conf_from_templ(self, name, namespace, kind, template, restore=False, info=None):
         """
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
@@ -2824,9 +2837,9 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("service has an empty configuration")
         with open(info.cf, "w") as ofile:
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
-        self.install_svc_conf_from_file(svcname, namespace, info.cf, restore, info=info)
+        self.install_svc_conf_from_file(name, namespace, kind, info.cf, restore, info=info)
 
-    def install_svc_conf_from_uri(self, svcname, namespace, fpath, restore=False, info=None):
+    def install_svc_conf_from_uri(self, name, namespace, kind, fpath, restore=False, info=None):
         """
         Download a provisioning template from an arbitrary uri,
         and installs it as the service configuration file.
@@ -2844,14 +2857,16 @@ class Node(Crypt, ExtConfigMixin):
                 os.unlink(tmpfpath)
             except OSError:
                 pass
-        self.install_svc_conf_from_file(svcname, namespace, tmpfpath, restore, info=info)
+        self.install_svc_conf_from_file(name, namespace, kind, tmpfpath, restore, info=info)
 
-    def install_svc_conf_from_file(self, svcname, namespace, fpath, restore=False, info=None):
+    def install_svc_conf_from_file(self, name, namespace, kind, fpath, restore=False, info=None):
         """
         Installs a local template as the service configuration file.
         """
         if not os.path.exists(fpath):
             raise ex.excError("%s does not exists" % fpath)
+        if info is None:
+            info = self.install_service_info(name, namespace, kind)
 
         src_cf = os.path.realpath(fpath)
         dst_cf = info.cf
@@ -2866,9 +2881,8 @@ class Node(Crypt, ExtConfigMixin):
         import shutil
         shutil.copy2(src_cf, tmpfpath)
 
-        from svc import Svc
         import uuid
-        svc = Svc(svcname, cf=tmpfpath, node=self)
+        svc = factory("svc")(name, cf=tmpfpath, node=self)
         if not restore:
             try:
                 svc.set_multi(["DEFAULT.id=%s" % info.id])
@@ -2882,13 +2896,13 @@ class Node(Crypt, ExtConfigMixin):
         if src_cf.startswith(rcEnv.paths.pathtmp):
             os.unlink(src_cf)
 
-    def install_svc_conf_from_data(self, svcname, namespace, data, restore=False, info=None):
+    def install_svc_conf_from_data(self, name, namespace, kind, data, restore=False, info=None):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
         if info is None:
-            info = self.install_service_info(svcname, namespace)
+            info = self.install_service_info(name, namespace, kind)
         config = rcConfigParser.RawConfigParser()
 
         config.set("DEFAULT", "id", info.id)
@@ -2912,15 +2926,15 @@ class Node(Crypt, ExtConfigMixin):
             print("failed to write %s: %s" % (info.cf, exc), file=sys.stderr)
             raise Exception()
 
-    def install_service_info(self, svcname, namespace):
-        validate_name(svcname)
+    def install_service_info(self, name, namespace, kind):
+        validate_name(name)
         if namespace:
             validate_ns_name(namespace)
         data = Storage()
-        data.pathetc = svc_pathetc(svcname, namespace)
-        data.cf = os.path.join(data.pathetc, svcname+'.conf')
-        from svc import Svc
-        data.id = Svc(svcname, namespace=namespace, volatile=True, cf=data.cf, node=self).id
+        path = fmt_svcpath(name, namespace, kind)
+        data.pathetc = svc_pathetc(path, namespace)
+        data.cf = os.path.join(data.pathetc, name+'.conf')
+        data.id = factory(kind)(name, namespace=namespace, volatile=True, cf=data.cf, node=self).id
         makedirs(data.pathetc)
         return data
 
@@ -2946,72 +2960,100 @@ class Node(Crypt, ExtConfigMixin):
             # service selector
             svcpaths = self.svcs_selector(fpath)
             data = {}
-            from svc import Svc
             for _svcpath in svcpaths:
-                 name, _namespace = split_svcpath(_svcpath)
-                 svc = Svc(name, _namespace, node=self)
+                 name, _namespace, kind = split_svcpath(_svcpath)
+                 svc = factory(kind)(name, _namespace, node=self)
                  svc.options.format = "json"
                  data[_svcpath] = svc.print_config()
+
+        _data = {}
+        if isinstance(data, dict):
+            if "metadata" in data:
+                path = fmt_svcpath(data["metadata"]["name"], data["metadata"]["namespace"], data["metadata"]["kind"])
+                del data["metadata"]
+                _data = {path: data}
+            else:
+                for path, __data in data.items():
+                    try:
+                        split_svcpath(path)
+                    except ValueError:
+                        raise ex.excError("invalid injected data format: %s is not a path" % path)
+                    if "metadata" in __data:
+                        del __data["metadata"]
+                    data[path] = __data
+        elif isinstance(data, list):
+            for __data in data:
+                 try:
+                     path = fmt_svcpath(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
+                 except (ValueError, KeyError):
+                     raise ex.excError("invalid injected data format: list need a metadata section in each entry")
+                 del __data["metadata"]
+                 data[path] = __data
+
+        if _data:
             if svcpath:
-                 if len(data) == 1:
-                     data = [d for d in data.values()][0]
+                 if len(_data) == 1:
+                     for path, data in _data.items():
+                         pass
                  else:
                      raise ex.excError("multiple configs available to create a single service")
+            else:
+                 data = _data
 
         if fpath is not None and template is not None:
             raise ex.excError("--config and --template can't both be specified")
 
         if svcpath:
-            svcname, namespace = split_svcpath(svcpath)
+            name, namespace, kind = split_svcpath(svcpath)
         elif not data:
             raise ex.excError("feed service configurations to stdin and set --config=-")
         else:
             for _svcpath, _data in data.items():
                 if namespace:
                     # discard namespace in svcpath, use --namespace value instead
-                    svcname, _ = split_svcpath(_svcpath)
+                    name, _, kind = split_svcpath(_svcpath)
                     _namespace = namespace
                 else:
-                    svcname, _namespace = split_svcpath(_svcpath)
-                info = self.install_service_info(svcname, namespace)
-                print("create %s" % fmt_svcpath(svcname, _namespace))
-                self.install_svc_conf_from_data(svcname, _namespace, _data, restore, info)
-                self.install_service_files(svcname, namespace)
+                    name, _namespace, kind = split_svcpath(_svcpath)
+                info = self.install_service_info(name, namespace, kind)
+                print("create %s" % fmt_svcpath(name, _namespace, kind))
+                self.install_svc_conf_from_data(name, _namespace, kind, _data, restore, info)
+                self.install_service_files(name, namespace, kind)
             return
 
-        info = self.install_service_info(svcname, namespace)
+        info = self.install_service_info(name, namespace, kind)
 
-        if not exe_link_exists(svcname, namespace, self.cluster_name):
+        if not os.path.exists(info.cf):
             # freeze before the installing the config so the daemon never
             # has a chance to consider the new service unfrozen and take undue
             # action before we have the change to modify the service config
             Freezer(svcpath).freeze()
 
         if data is not None:
-            self.install_svc_conf_from_data(svcname, namespace, data, restore, info)
+            self.install_svc_conf_from_data(name, namespace, kind, data, restore, info)
         elif template is not None:
             if "://" in template:
-                self.install_svc_conf_from_uri(svcname, namespace, template, restore, info)
+                self.install_svc_conf_from_uri(name, namespace, kind, template, restore, info)
             elif os.path.exists(template):
-                self.install_svc_conf_from_file(svcname, namespace, template, restore, info)
+                self.install_svc_conf_from_file(name, namespace, kind, template, restore, info)
             else:
-                self.install_svc_conf_from_templ(svcname, namespace, template, restore, info)
+                self.install_svc_conf_from_templ(name, namespace, kind, template, restore, info)
         elif fpath is not None:
             if "://" in fpath:
-                self.install_svc_conf_from_uri(svcname, namespace, fpath, restore, info)
+                self.install_svc_conf_from_uri(name, namespace, kind, fpath, restore, info)
             else:
-                self.install_svc_conf_from_file(svcname, namespace, fpath, restore, info)
+                self.install_svc_conf_from_file(name, namespace, kind, fpath, restore, info)
         else:
-            self.install_svc_from_args(svcname, namespace, resources, info)
+            self.install_svc_from_args(name, namespace, kind, resources, info)
 
-        self.install_service_files(svcname, namespace)
+        self.install_service_files(name, namespace, kind)
         self.wake_monitor()
 
-    def install_service_files(self, svcname, namespace=None):
+    def install_service_files(self, name, namespace, kind):
         """
         Given a service name, install the symlink to svcmgr.
         """
-        create_svclink(svcname, namespace, self.cluster_name)
+        create_svclink(name, namespace, kind, self.cluster_name)
 
     def set_rlimit(self, nofile=4096):
         """
@@ -3019,7 +3061,7 @@ class Node(Crypt, ExtConfigMixin):
         number of services configured.
         """
         #self.log.debug("len self.svcs <%s>", len(self.svcs))
-        n_conf = len(glob_services_config())
+        n_conf = sum(1 for _ in glob_services_config())
         proportional_nofile = 64 * n_conf
         if proportional_nofile > nofile:
             nofile = proportional_nofile
@@ -3037,21 +3079,22 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.debug(str(exc))
 
-    def install_svc_from_args(self, svcname, namespace=None, resources=[], info=None):
+    def install_svc_from_args(self, name, namespace, kind, resources=[], info=None):
         """
         Create a new service from resource definitions passed as individual
         dictionaries in json format.
         """
-        if len(svcname) == 0:
+        if len(name) == 0:
             print("service name must not be empty", file=sys.stderr)
             return {"ret": 1}
-        if svcname in list_services(namespace):
-            print("service", svcname, "already exists", file=sys.stderr)
+        path = fmt_svcpath(name, namespace, kind)
+        if path in list_services(namespace):
+            print("service", path, "already exists", file=sys.stderr)
             return {"ret": 1}
         if os.path.exists(info.cf):
             if resources:
                 import shutil
-                bak = os.path.join(rcEnv.paths.pathtmp, svcname + ".conf.bak")
+                bak = os.path.join(rcEnv.paths.pathtmp, name + ".conf.bak")
                 print(info.cf, "already exists. save as", bak, file=sys.stderr)
                 shutil.move(info.cf, bak)
             else:
@@ -3137,26 +3180,22 @@ class Node(Crypt, ExtConfigMixin):
                 conf.set(section, key, val)
 
         conf.write(f)
-        self.install_service_files(svcname, namespace)
+        self.install_service_files(name, namespace, kind)
         return {"ret": 0, "rid": sections.keys()}
 
-    def create_svcpath(self, svcpaths, namespace):
-        if isinstance(svcpaths, list):
-            if len(svcpaths) != 1:
+    def create_svcpath(self, paths, namespace):
+        if isinstance(paths, list):
+            if len(paths) != 1:
                 raise ex.excError("only one service must be specified")
-            svcpath = svcpaths[0]
+            path = paths[0]
 
         try:
-           svcpath.encode("ascii")
+           path.encode("ascii")
         except Exception:
            raise ex.excError("the service name must be ascii-encodable")
 
-        if "/" not in svcpath and namespace:
-            svcpath = fmt_svcpath(svcpath, namespace)
-
-        if svcpath.count("/") > 1:
-            raise ex.excError("invalid namespace name: slash is not allowed.")
-        return svcpath
+        path = resolve_svcpath(path, namespace)
+        return path
 
     def create_service(self, svcpaths, options):
         """
@@ -4226,8 +4265,7 @@ class Node(Crypt, ExtConfigMixin):
         self.delete_sections(todo)
 
         # remove cluster config
-        from cluster import ClusterSvc
-        svc = ClusterSvc(node=self)
+        svc = factory("ccfg")(node=self)
         svc.delete()
 
         self.unset_lazy("cluster_nodes")
@@ -4413,12 +4451,12 @@ class Node(Crypt, ExtConfigMixin):
             self.set_lazy("cluster_name", cluster_name)
             self.set_lazy("cluster_key", bdecode(secret))
 
-            self.install_svc_conf_from_data("cluster", "system", cluster_config_data, restore=True)
+            self.install_svc_conf_from_data("cluster", None, "ccfg", cluster_config_data, restore=True)
             os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
 
 
         if cluster_config_data:
-            self.install_service_files("cluster", "system")
+            self.install_service_files("cluster", None, "ccfg")
 
         # join other nodes
         errors = 0

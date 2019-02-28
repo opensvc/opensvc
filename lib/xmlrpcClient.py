@@ -284,7 +284,7 @@ class Collector(object):
         res_err = None
         pid = None
         msg = None
-        svcname, namespace = split_svcpath(svcpath)
+        name, namespace, kind = split_svcpath(svcpath)
         with open(alogfile, 'r') as ofile:
             lines = ofile.read()
         try:
@@ -296,49 +296,49 @@ class Collector(object):
         """Example logfile line:
         2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL
         """
-        vars = ['svcname',
-                'action',
-                'hostname',
-                'pid',
-                'begin',
-                'end',
-                'status_log',
-                'status',
-                'cron']
+        vars = ["svcname",
+                "action",
+                "hostname",
+                "pid",
+                "begin",
+                "end",
+                "status_log",
+                "status",
+                "cron"]
         vals = []
         last = []
-        for line in lines.split(';;EOL\n'):
-            if line.count(';;') != 4:
+        for line in lines.split(";;EOL\n"):
+            if line.count(";;") != 4:
                 continue
             if ";;status_history;;" in line:
                 continue
-            date = line.split(';;')[0]
+            date = line.split(";;")[0]
 
-            res_err = 'ok'
-            date, res, lvl, msg, pid = line.split(';;')
-            res = res.lower().replace(rcEnv.nodename+'.'+svcname,'').replace(rcEnv.nodename, '').lstrip(".")
-            res_action = res + ' ' + action
+            res_err = "ok"
+            date, res, lvl, msg, pid = line.split(";;")
+            res = res.lower().replace(rcEnv.nodename+"."+kind+"."+name, "").replace(rcEnv.nodename, "").lstrip(".")
+            res_action = res + " " + action
             res_action = res_action.strip()
             date = date.split(",")[0]
 
             # database overflow protection
             trim_lim = 10000
-            trim_tag = ' <trimmed> '
+            trim_tag = " <trimmed> "
             trim_head = trim_lim // 2
             trim_tail = trim_head-len(trim_tag)
             if len(msg) > trim_lim:
-                msg = msg[:trim_head]+' <trimmed> '+msg[-trim_tail:]
+                msg = msg[:trim_head]+" <trimmed> "+msg[-trim_tail:]
 
             pids |= set([pid])
-            if lvl is None or lvl == 'DEBUG':
+            if lvl is None or lvl == "DEBUG":
                 continue
-            elif lvl == 'ERROR':
-                err = 'err'
-                res_err = 'err'
-            elif lvl == 'WARNING' and err != 'err':
-                err = 'warn'
-            elif lvl == 'WARNING' and res_err != 'err':
-                res_err = 'warn'
+            elif lvl == "ERROR":
+                err = "err"
+                res_err = "err"
+            elif lvl == "WARNING" and err != "err":
+                err = "warn"
+            elif lvl == "WARNING" and res_err != "err":
+                res_err = "warn"
 
             try:
                 if last:
@@ -360,7 +360,7 @@ class Collector(object):
                 "",
                 msg,
                 res_err,
-                '1' if cron else '0'
+                "1" if cron else "0"
             ]
 
         if last:

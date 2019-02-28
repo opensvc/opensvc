@@ -17,7 +17,7 @@ import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
 from rcUtilities import ximport, check_privs, svcpath_from_link, \
-                        check_svclink_ns, fmt_svcpath
+                        check_svclink_ns
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -65,12 +65,12 @@ def expand_svcs(options, node):
     svclink = os.environ.get("OSVC_SERVICE_LINK")
     if svclink:
         try:
-            check_svclink_ns(svclink, options.namespace)
+            check_svclink_ns(svclink, options.namespace, node.cluster_name)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return []
         node.options.single_service = True
-        return [svcpath_from_link(svclink)]
+        return [svcpath_from_link(svclink, node.cluster_name)]
     return node.svcs_selector(options.svcs, options.namespace)
 
 def do_svcs_action_detached(argv=None):

@@ -10,8 +10,8 @@ import rcLogger
 import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
-from rcUtilities import mimport, check_privs, list_services, \
-                        svc_pathetc, split_svcpath, makedirs
+from rcUtilities import mimport, list_services, \
+                        svc_pathetc, split_svcpath, makedirs, factory
 
 def get_tags(svc, section):
     try:
@@ -1056,7 +1056,6 @@ def add_mandatory_syncs(svc):
 
     kwargs = {}
     src = []
-    src = add_file(src, svc.paths.exe)
     src = add_file(src, svc.paths.cf)
     src = add_file(src, svc.paths.initd)
     src = add_file(src, svc.paths.alt_initd)
@@ -1598,19 +1597,6 @@ def setup_logging(svcpaths):
     rcLogger.max_svcpath_len = max_svcpath_len
     rcLogger.initLogger(rcEnv.nodename)
 
-def build(name, namespace=None, svcconf=None, node=None, volatile=False):
-    """
-    Instanciate a Svc object
-    """
-    if namespace == "system" and name == "cluster":
-        from cluster import ClusterSvc
-        svc = ClusterSvc(node=node, cf=svcconf)
-    else:
-        from svc import Svc
-        svc = Svc(svcname=name, namespace=namespace, node=node,
-                  cf=svcconf, volatile=volatile)
-    return svc
-
 def add_resources(svc):
     """
     Instanciate resource objects and add them to the service.
@@ -1652,15 +1638,6 @@ def add_resources(svc):
     add_mandatory_syncs(svc)
     return ret
 
-def strip_root_namespace(svcpaths):
-    l = []
-    for path in svcpaths:
-        if path.startswith("root/"):
-            l.append(path[5:])
-        else:
-            l.append(path)
-    return l
-
 def build_services(status=None, svcpaths=None, create_instance=False,
                    node=None):
     """
@@ -1678,8 +1655,6 @@ def build_services(status=None, svcpaths=None, create_instance=False,
     if isinstance(svcpaths, str):
         svcpaths = [svcpaths]
 
-    #svcpaths = strip_root_namespace(svcpaths)
-
     if len(svcpaths) == 0:
         svcpaths = list_services()
         missing_svcpaths = []
@@ -1687,27 +1662,28 @@ def build_services(status=None, svcpaths=None, create_instance=False,
         local_svcpaths = list_services()
         missing_svcpaths = sorted(list(set(svcpaths) - set(local_svcpaths)))
         for m in missing_svcpaths:
+            name, namespace, kind = split_svcpath(m)
             if create_instance:
-                services[m] = svc.Svc(m, node=node)
+                services[m] = factory(kind)(name, namespace, node=node)
             else:
                 # foreign service
-                services[m] = svc.Svc(m, node=node, volatile=True)
+                services[m] = factory(kind)(name, namespace, node=node, volatile=True)
         svcpaths = list(set(svcpaths) & set(local_svcpaths))
 
     setup_logging(svcpaths)
 
     for svcpath in svcpaths:
-        svcname, namespace = split_svcpath(svcpath)
+        svcname, namespace, kind = split_svcpath(svcpath)
         try:
-            svc = build(svcname, namespace, node=node)
+            svc = factory(kind)(svcname, namespace, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.Error) as e:
             errors.append("%s: %s" % (svcpath, str(e)))
             if namespace:
-                log_d = os.path.join(rcEnv.paths.pathlog, namespace)
+                log_d = os.path.join(rcEnv.paths.pathlog, namespace, kind)
                 makedirs(log_d)
             else:
                 log_d = rcEnv.paths.pathlog
-            svclog = rcLogger.initLogger(rcEnv.nodename+"."+svcname,
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+kind+"."+svcname,
                                          directory=log_d,
                                          handlers=["file", "syslog"])
             svclog.error(str(e))

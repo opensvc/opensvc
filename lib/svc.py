@@ -27,7 +27,9 @@ from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, \
                         drop_option, fcache, init_locale, makedirs, \
-                        fmt_svcpath, unset_all_lazy
+                        resolve_svcpath, fmt_svcpath, unset_all_lazy, \
+                        svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
+                        svc_pathcf
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -401,6 +403,8 @@ def _master_action(func):
     return _func
 
 class BaseSvc(Crypt, ExtConfigMixin):
+    kind = "base"
+
     def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.svcname = svcname
@@ -408,24 +412,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.node = node
         self.hostid = rcEnv.nodename
         self.volatile = volatile
-        if self.namespace:
-            self.svcpath = "/".join((self.namespace, svcname))
-            nsetc = os.path.join(rcEnv.paths.pathetc, "namespaces", self.namespace)
-            nstmp = os.path.join(rcEnv.paths.pathtmp, "namespaces", self.namespace)
-        else:
-            self.svcpath = self.svcname
-            nsetc = os.path.join(rcEnv.paths.pathetc)
-            nstmp = os.path.join(rcEnv.paths.pathtmp)
+        self.svcpath = fmt_svcpath(self.svcname, self.namespace, self.kind)
+        nsetc = svc_pathetc(self.svcpath)
+        nstmp = svc_pathtmp(self.svcpath)
 
         self.paths = Storage(
-            exe=os.path.join(nsetc, self.svcname),
-            cf=os.path.join(nsetc, self.svcname+'.conf'),
             initd=os.path.join(nsetc, self.svcname+'.d'),
             alt_initd=os.path.join(nsetc, self.svcname+'.dir'),
             tmp_cf=os.path.join(nstmp, self.svcname+".conf.tmp")
         )
         if cf:
             self.paths.cf = cf
+        else:
+            self.paths.cf = svc_pathcf(self.svcpath)
         self.init_resources_errors = 0
         self.resources_initialized = False
         self.scheduler_configured = False
@@ -508,21 +507,24 @@ class BaseSvc(Crypt, ExtConfigMixin):
         )
 
     @lazy
+    def fullname(self):
+        return "%s.%s.%s.%s" % (
+            self.svcname,
+            self.namespace if self.namespace else "root",
+            self.kind,
+            self.node.cluster_name
+        )
+
+    @lazy
     def var_d(self):
-        if self.namespace:
-            var_d = os.path.join(rcEnv.paths.pathvar, "namespaces", self.namespace, "services", self.svcname)
-        else:
-            var_d = os.path.join(rcEnv.paths.pathvar, "services", self.svcname)
+        var_d = svc_pathvar(self.svcpath)
         if not self.volatile:
             makedirs(var_d)
         return var_d
 
     @lazy
     def log_d(self):
-        if self.namespace:
-            log_d = os.path.join(rcEnv.paths.pathlog, self.namespace)
-        else:
-            log_d = rcEnv.paths.pathlog
+        log_d = svc_pathlog(self.svcpath)
         if not self.volatile:
             makedirs(log_d)
         return log_d
@@ -573,10 +575,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
     @lazy
     def encap(self):
         return False
-
-    @lazy
-    def kind(self):
-        return self.oget("DEFAULT", "kind")
 
     @lazy
     def freezer(self):
@@ -1478,6 +1476,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def current_node(self):
         data = self.node._daemon_status()
+        if not data:
+            raise ex.excError("can not migrate when daemon is down")
         for nodename, _data in data["monitor"]["nodes"].items():
             try:
                 __data = _data["services"]["status"][self.svcpath]
@@ -1637,6 +1637,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             with open(fname, "w") as tmpfile:
                 self.config.write(tmpfile)
                 tmpfile.flush()
+            makedirs(os.path.dirname(self.paths.cf))
             shutil.move(fname, self.paths.cf)
         except (OSError, IOError) as exc:
             print("failed to write new %s (%s)" % (self.paths.cf, str(exc)),
@@ -1878,7 +1879,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             nodename=nodename,
             timeout=5,
         )
-        if data is None: 
+        if data is None:
             raise ex.excError("clear on node %s failed: no return data" % nodename)
         elif data.get("status") != 0:
             raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
@@ -1966,7 +1967,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return data["data"]
 
     def remote_service_config(self):
-        data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
+        try:
+            data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
+        except (AttributeError, KeyError):
+            return
         for ndata in data.values():
             scope = ndata.get("services", {}).get("config", {}).get(self.svcpath, {}).get("scope", [])
             if scope:
@@ -2414,6 +2418,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 self.log.info("remove %s", fpath)
                 os.unlink(fpath)
 
+    def delete_service_sched(self):
+        import shutil
+        dpath = os.path.join(self.var_d, "scheduler")
+        self.log.info("remove %s", dpath)
+        try:
+            shutil.rmtree(dpath)
+        except OSError:
+            # errno 39: not empty (racing with a writer)
+            pass
+
     def delete_service_conf(self):
         """
         Delete the service configuration files
@@ -2427,7 +2441,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         ]
         fpaths = [
             self.paths.cf,
-            svclink_path(self.svcname, self.namespace, self.node.cluster_name),
+            svclink_path(self.svcname, self.namespace, self.kind, self.node.cluster_name),
             self.paths.initd,
         ]
         for fpath in fpaths:
@@ -2646,11 +2660,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
 class Svc(BaseSvc):
     """
-    A OpenSVC service class.
+    The svc kind class.
     A service is a collection of resources.
     It exposes operations methods like provision, unprovision, stop, start,
     and sync.
     """
+    kind = "svc"
+
     @lazy
     def kwdict(self):
         return __import__("svcdict")
@@ -2756,20 +2772,14 @@ class Svc(BaseSvc):
     def children(self):
         children = self.oget('DEFAULT', "children")
         for i, child in enumerate(children):
-            if "/" in child:
-                continue
-            else:
-                children[i] = fmt_svcpath(child, self.namespace)
+            children[i] = resolve_svcpath(child, self.namespace)
         return children
 
     @lazy
     def slaves(self):
         slaves = self.oget('DEFAULT', "slaves")
         for i, slave in enumerate(slaves):
-            if "/" in slave:
-                continue
-            else:
-                slaves[i] = fmt_svcpath(slave, self.namespace)
+            slaves[i] = resolve_svcpath(slave, self.namespace)
         return slaves
 
     @lazy
@@ -4316,6 +4326,7 @@ class Svc(BaseSvc):
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker"]))
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
         self.pg_remove()
+        self.delete_service_sched()
 
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
@@ -5530,5 +5541,8 @@ class Svc(BaseSvc):
             return candidates[0]
         except IndexError:
             return
+
+class Vol(Svc):
+    kind = "vol"
 
 

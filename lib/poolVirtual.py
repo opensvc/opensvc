@@ -6,8 +6,7 @@ import pool
 import rcExceptions as ex
 from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_service, split_svcpath
-from svc import Svc
+from rcUtilities import is_service, split_svcpath, factory
 
 class Pool(pool.Pool):
     type = "virtual"
@@ -31,8 +30,10 @@ class Pool(pool.Pool):
         if not is_service(self.template):
             raise ex.excError("%s template volume not found" % self.template)
         name = self.default_disk_name(volume)
-        tname, tnamespace = split_svcpath(self.template)
-        svc = Svc(tname, namespace=tnamespace, volatile=True, node=self.node)
+        tname, tnamespace, tkind = split_svcpath(self.template)
+        if tkind != "vol":
+            raise ex.excError("%s template kind is not vol")
+        svc = factory(tkind)(tname, tnamespace, volatile=True, node=self.node)
         config = svc.print_config_data()
         try:
             del config["DEFAULT"]["disable"]
@@ -42,7 +43,6 @@ class Pool(pool.Pool):
             config["DEFAULT"] = {}
         if "env" not in config:
             config["env"] = {}
-        config["DEFAULT"]["kind"] = "vol"
         config["DEFAULT"]["pool"] = self.name
         config["DEFAULT"]["access"] = access
         if access in ("rox", "rwx"):
@@ -53,7 +53,7 @@ class Pool(pool.Pool):
         config["env"]["size"] = size
         if env:
             config["env"].update(env)
-        self.node.install_svc_conf_from_data(volume.svcname, volume.namespace, config)
+        self.node.install_svc_conf_from_data(volume.svcname, volume.namespace, volume.kind, config)
 
     def pool_status(self):
         data = {

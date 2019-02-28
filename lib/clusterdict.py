@@ -68,15 +68,6 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "kind",
-        "inheritance": "head",
-        "at": True,
-        "default": "ccfg",
-        "candidates": ("ccfg"),
-        "text": "Defines the kind of service.",
-    },
-    {
-        "section": "DEFAULT",
         "keyword": "nodes",
         "inheritance": "head",
         "at": True,
