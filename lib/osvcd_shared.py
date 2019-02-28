@@ -659,8 +659,11 @@ class OsvcThread(threading.Thread, Crypt):
         nodes = [node for node in self.cluster_nodes if node != nodename]
         from cluster import ClusterSvc
         svc = ClusterSvc()
+        buff = "cluster.nodes="+" ".join(nodes)
+        self.log.info("set %s in cluster config" % buff)
         svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
-        NODE.unset_multi("cluster.nodes")
+        self.log.info("unset cluster.nodes in node config")
+        NODE.unset_multi(["cluster.nodes"])
         del svc
 
     @lazy

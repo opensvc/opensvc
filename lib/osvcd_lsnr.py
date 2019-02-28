@@ -875,6 +875,7 @@ class Listener(shared.OsvcThread):
         return result
 
     def action_leave(self, nodename, **kwargs):
+        self.log.info("node %s is leaving", nodename)
         if nodename not in self.cluster_nodes:
             self.log.info("node %s already left", nodename)
             return {"status": 0}
