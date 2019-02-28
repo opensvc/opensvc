@@ -2931,8 +2931,8 @@ class Node(Crypt, ExtConfigMixin):
         if namespace:
             validate_ns_name(namespace)
         data = Storage()
-        path = fmt_svcpath(name, namespace, kind)
-        data.pathetc = svc_pathetc(path, namespace)
+        data.path = fmt_svcpath(name, namespace, kind)
+        data.pathetc = svc_pathetc(data.path, namespace)
         data.cf = os.path.join(data.pathetc, name+'.conf')
         data.id = factory(kind)(name, namespace=namespace, volatile=True, cf=data.cf, node=self).id
         makedirs(data.pathetc)
@@ -2946,6 +2946,7 @@ class Node(Crypt, ExtConfigMixin):
         service symlinks and launchers directory.
         """
         data = None
+        installed = []
         if sys.stdin and fpath in ("-", "/dev/stdin"):
             feed = ""
             for line in sys.stdin.readlines():
@@ -3016,10 +3017,12 @@ class Node(Crypt, ExtConfigMixin):
                 else:
                     name, _namespace, kind = split_svcpath(_svcpath)
                 info = self.install_service_info(name, namespace, kind)
-                print("create %s" % fmt_svcpath(name, _namespace, kind))
+                print("create %s" % info.path)
                 self.install_svc_conf_from_data(name, _namespace, kind, _data, restore, info)
                 self.install_service_files(name, namespace, kind)
-            return
+                installed.append(info.path)
+            self.wake_monitor()
+            return installed
 
         info = self.install_service_info(name, namespace, kind)
 
@@ -3047,7 +3050,9 @@ class Node(Crypt, ExtConfigMixin):
             self.install_svc_from_args(name, namespace, kind, resources, info)
 
         self.install_service_files(name, namespace, kind)
+        installed.append(info.path)
         self.wake_monitor()
+        return installed
 
     def install_service_files(self, name, namespace, kind):
         """
@@ -3208,11 +3213,11 @@ class Node(Crypt, ExtConfigMixin):
             svcpath = None
 
         try:
-            self.install_service(svcpath, fpath=options.config,
-                                   template=options.template,
-                                   restore=options.restore,
-                                   resources=options.resource,
-                                   namespace=options.namespace)
+            svcpaths = self.install_service(svcpath, fpath=options.config,
+                                            template=options.template,
+                                            restore=options.restore,
+                                            resources=options.resource,
+                                            namespace=options.namespace)
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1
@@ -3224,8 +3229,11 @@ class Node(Crypt, ExtConfigMixin):
             print(exc, file=sys.stderr)
             ret = 1
 
-        if len(self.svcs) == 1:
-            self.svcs[0].setenv(options.env, options.interactive)
+        changed = False
+        for svc in self.svcs:
+            changed |= svc.setenv(options.env, options.interactive)
+
+        if changed:
             # setenv changed the service config file
             # we need to rebuild again
             try:
@@ -3234,8 +3242,9 @@ class Node(Crypt, ExtConfigMixin):
                 print(exc, file=sys.stderr)
                 ret = 1
 
+        for svc in self.svcs:
             if options.provision:
-                self.svcs[0].action("provision", options)
+                svc.action("provision", options)
 
         return ret
 

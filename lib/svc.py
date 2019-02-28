@@ -2494,6 +2494,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         * or leave the value as is, considering the default is accepted
         """
         explicit_options = []
+        changed = False
 
         for arg in args:
             idx = arg.index("=")
@@ -2501,9 +2502,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             value = arg[idx+1:]
             self._set("env", option, value)
             explicit_options.append(option)
+            changed = True
 
         if not interactive:
-            return
+            return changed
 
         if not os.isatty(0):
             raise ex.excError("--interactive is set but input fd is not a tty")
@@ -2536,6 +2538,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             newval = input("%s [%s] > " % (key, str(default_val)))
             if newval != "":
                 self._set("env", key, newval)
+                changed = True
+        return changed
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcpath
