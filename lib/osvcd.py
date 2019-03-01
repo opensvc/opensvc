@@ -323,6 +323,9 @@ class Daemon(object):
         Start threads or restart threads dead of an unexpected cause.
         Stop and delete heartbeat threads whose configuration was deleted.
         """
+        if shared.NMON_DATA.status not in (None, "idle", "init"):
+            return
+
         config_changed = self.read_config()
 
         # a thread can only be started once, allocate a new one if not alive.

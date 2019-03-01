@@ -357,6 +357,8 @@ class OsvcThread(threading.Thread, Crypt):
     def reload_config(self):
         if not self._node_conf_event.is_set():
             return
+        if NMON_DATA.status not in (None, "idle"):
+            return
         self._node_conf_event.clear()
         self.event("node_config_change")
         unset_lazy(self, "config")
