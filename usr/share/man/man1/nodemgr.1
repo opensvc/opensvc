@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-02\-28
+.TH NODEMGR 1 2019\-03\-01
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1302,8 +1302,6 @@ Show this help message and exit
 \fBnodemgr freeze\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Freeze services node-wide, preventing the daemon to orchestrate them. This freeze method preserves the frozen state at service-level (with svcmgr).
 
 .TP
@@ -1777,8 +1775,6 @@ Show this help message and exit
 .RE
 \fBnodemgr thaw\fP
 .RS
-
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
 Thaw services node-wide, allowing the daemon to orchestrate them. This thaw method does not actually thaw services frozen at service-level (with svcmgr).
 

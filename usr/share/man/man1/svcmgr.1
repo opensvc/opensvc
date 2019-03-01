@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-02\-28
+.TH SVCMGR 1 2019\-03\-01
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2876,8 +2876,6 @@ Show this help message and exit.
 \fBsvcmgr abort\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Abort the action asynchronously done by the cluster daemons.
 
 .TP
@@ -3860,54 +3858,8 @@ Show this help message and exit.
 \fBsvcmgr giveback\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Stop the service on its current node and start on the node chosen by the placement policy.
 
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
@@ -4212,50 +4164,6 @@ Show this help message and exit.
 Live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.
 
 .TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
 .TP
@@ -4356,54 +4264,8 @@ Show this help message and exit.
 \fBsvcmgr move\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by :opt:`--to <nodename>,<nodename>`.
 
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
@@ -8574,54 +8436,8 @@ Show this help message and exit.
 \fBsvcmgr switch\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Stop the running failover service instance and start the instance on the peer node specified by :opt:`--to <nodename>`.
 
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
@@ -10616,54 +10432,8 @@ Show this help message and exit.
 \fBsvcmgr takeover\fP
 .RS
 
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
 Stop the service on its current node and start on the local node.
 
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.

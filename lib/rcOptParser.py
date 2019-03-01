@@ -95,7 +95,7 @@ class OptParser(object):
             self.formatter = formatter
         self.formatter.deprecated_options = self.deprecated_options
         if async_actions is None:
-            self.async_actions = []
+            self.async_actions = {}
         else:
             self.async_actions = async_actions
         self.formatter.format_heading = lambda x: "\n"
@@ -143,7 +143,7 @@ class OptParser(object):
         else:
             desc = "  " + fancya
         desc += '\n\n'
-        if action in self.async_actions:
+        if self.async_actions.get(action, {}).get("local"):
             preamble = "Asynchronous orchestrated action, unless --local or --node <node> is specified.\n\n"
         else:
             preamble = ""

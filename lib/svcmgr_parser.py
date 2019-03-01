@@ -815,25 +815,25 @@ ACTIONS = {
             "msg": "Stop the running failover service instance and start the "
                    "instance on the peer node specified by :opt:`--to "
                    "<nodename>`.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+            "options": START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },
         "takeover": {
             "msg": "Stop the service on its current node and start on the "
                    "local node.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
+            "options": START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
         "giveback": {
             "msg": "Stop the service on its current node and start on the "
                    "node chosen by the placement policy.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS
+            "options": START_ACTION_OPTS + ASYNC_ACTION_OPTS
         },
         "migrate": {
             "msg": "Live migrate the service to the remote node. "
                    "--to <node> specify the remote node to migrate the "
                    "service to.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+            "options": START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },
@@ -842,7 +842,7 @@ ACTIONS = {
                    "running on nodes not in the specified target, and start "
                    "instances on the specified target nodes. The target is "
                    "specified by :opt:`--to <nodename>,<nodename>`.",
-            "options": ACTION_OPTS + START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
+            "options": START_ACTION_OPTS + ASYNC_ACTION_OPTS + [
                 OPT.to,
             ],
         },

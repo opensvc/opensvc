@@ -61,10 +61,12 @@ ACTION_ASYNC = {
     "delete": {
         "target": "deleted",
         "progress": "deleting",
+        "local": True,
     },
     "freeze": {
         "target": "frozen",
         "progress": "freezing",
+        "local": True,
     },
     "giveback": {
         "target": "placed",
@@ -77,22 +79,27 @@ ACTION_ASYNC = {
     "provision": {
         "target": "provisioned",
         "progress": "provisioning",
+        "local": True,
     },
     "purge": {
         "target": "purged",
         "progress": "purging",
+        "local": True,
     },
     "shutdown": {
         "target": "shutdown",
         "progress": "shutting",
+        "local": True,
     },
     "start": {
         "target": "started",
         "progress": "starting",
+        "local": True,
     },
     "stop": {
         "target": "stopped",
         "progress": "stopping",
+        "local": True,
     },
     "switch": {
         "target": "placed@",
@@ -104,14 +111,17 @@ ACTION_ASYNC = {
     },
     "toc": {
         "progress": "tocing",
+        "local": True,
     },
     "thaw": {
         "target": "thawed",
         "progress": "thawing",
+        "local": True,
     },
     "unprovision": {
         "target": "unprovisioned",
         "progress": "unprovisioning",
+        "local": True,
     },
 }
 
