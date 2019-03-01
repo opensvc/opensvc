@@ -47,7 +47,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         makedirs, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, create_svclink, \
-                        factory, resolve_svcpath
+                        factory, resolve_svcpath, strip_path
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -575,13 +575,6 @@ class Node(Crypt, ExtConfigMixin):
         return vcall(*args, **kwargs)
 
     @staticmethod
-    def strip_ns(paths, namespace):
-        if namespace:
-            return [re.sub("^%s/" % namespace, "", path) for path in paths]
-        else:
-            return paths
-
-    @staticmethod
     def filter_ns(paths, namespace):
         if not namespace:
             return paths
@@ -603,7 +596,10 @@ class Node(Crypt, ExtConfigMixin):
             data = data["monitor"]
 
         # full listing and namespace full listing
-        if selector is None or "*" in selector.split(","):
+        if selector is None:
+            # only svc kind by default
+            selector = "*"
+        if "**" in selector.split(","):
             if data:
                 paths = [path for path in data["services"]]
                 paths = self.filter_ns(paths, namespace)
@@ -764,12 +760,29 @@ class Node(Crypt, ExtConfigMixin):
                     # test/svc/
                     _name = "*"
             elif norm_elts_count == 2:
-                _name = norm_elts[1] if norm_elts[1] else "*" # svc/s* : svc/
-                _kind = norm_elts[0]
-                _namespace = "*"
+                if not norm_elts[1]:
+                    # svc/
+                    _name = "*"
+                    _kind = norm_elts[0]
+                    _namespace = "*"
+                elif norm_elts[1] == "**":
+                    # prod/**
+                    _name = "*"
+                    _kind = "*"
+                    _namespace = norm_elts[0]
+                elif norm_elts[0] == "**":
+                    # **/s*
+                    _name = norm_elts[1]
+                    _kind = "*"
+                    _namespace = "*"
+                else:
+                    # svc/s*
+                    _name = norm_elts[1]
+                    _kind = norm_elts[0]
+                    _namespace = "*"
             elif norm_elts_count == 1:
                 _name = norm_elts[0]
-                _kind = "*"
+                _kind = "svc"
                 _namespace = "*"
             else:
                 return []
@@ -2432,7 +2445,7 @@ class Node(Crypt, ExtConfigMixin):
         """
         svcs = [] + self.svcs
         if action == "ls":
-            data = self.strip_ns(sorted([svc.svcpath for svc in svcs]), options.namespace)
+            data = strip_path(sorted([svc.svcpath for svc in svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:

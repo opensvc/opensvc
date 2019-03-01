@@ -1,6 +1,7 @@
 import re
+import os
 
-from rcUtilities import split_svcpath
+from rcUtilities import split_svcpath, strip_path
 from rcColor import color, colorize, STATUS_COLOR
 from forest import Forest
 from storage import Storage
@@ -334,7 +335,7 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volati
         ),
     )
     node_svcname = tree.add_node()
-    node_svcname.add_column(svcname, color.BOLD)
+    node_svcname.add_column(strip_path(svcpath, os.environ.get("OSVC_NAMESPACE")), color.BOLD)
     node_svcname.add_column()
     if "cluster" in idata:
         node_svcname.add_column(idata["cluster"].get("avail", "n/a"), STATUS_COLOR[idata["cluster"].get("avail", "n/a")])

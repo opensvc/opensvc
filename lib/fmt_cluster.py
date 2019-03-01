@@ -7,7 +7,7 @@ from converters import print_duration, print_size
 from rcColor import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from rcStatus import Status, colorize_status
-from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath
+from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath, strip_path
 from storage import Storage
 
 DEFAULT_SECTIONS = [
@@ -327,7 +327,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             info["status"] = ""
         info = "%(orchestrate)-5s %(status)-5s" % info
         line = [
-            " "+colorize(prefix+svcpath, color.BOLD),
+            " "+colorize(prefix+strip_path(svcpath, os.environ.get("OSVC_NAMESPACE")), color.BOLD),
             status,
             info,
             fmt_svc_uptime(svcpath, stats_data),

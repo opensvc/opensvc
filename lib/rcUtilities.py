@@ -1241,6 +1241,15 @@ def split_svclink(svclink, clustername):
     name, namespace, kind = bn.split(".svc.", 1)[0].rsplit(".", 2)
     return name, namespace, kind
 
+def strip_path(paths, namespace):
+    if not namespace:
+        return paths
+    if isinstance(paths, (list, tuple)):
+        return [strip_ns(path, namespace) for path in paths]
+    else:
+        path = re.sub("^%s/" % namespace, "", paths)  # strip current ns
+        return re.sub("^svc/", "", path) # strip default kind
+
 def normalize_path(path):
     name, namespace, kind = split_svcpath(path)
     if namespace is None:
