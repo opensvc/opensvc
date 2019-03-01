@@ -228,6 +228,12 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             "DEBIAN_FRONTEND": "noninteractive",
             "DEBIAN_PRIORITY": "critical",
         }
+        for key in ("http_proxy", "https_proxy", "ftp_proxy", "rsync_proxy"):
+            if key in os.environ:
+                env[key] = os.environ[key]
+            key = key.upper()
+            if key in os.environ:
+                env[key] = os.environ[key]
         mirror = self.r.oget("mirror")
         if mirror:
             env["MIRROR"] = mirror
