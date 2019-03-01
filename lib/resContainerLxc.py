@@ -56,6 +56,9 @@ class Lxc(resContainer.Container):
         return False
 
     def files_to_sync(self):
+        if not self.shared:
+            return []
+
         # the config file might be in a umounted fs resource
         # in which case, no need to ask for its sync as the sync won't happen
         data = []
