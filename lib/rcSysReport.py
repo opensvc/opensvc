@@ -18,9 +18,9 @@ POSIX = os.name == "posix"
 class SysReport(object):
     def __init__(self, node=None, collect_d=None, compress=False):
         self.todo = [
-          ('INC', os.path.join(rcEnv.paths.pathetc, 'node.conf')),
-          ('INC', os.path.join(rcEnv.paths.pathetc, '*.conf')),
-          ('INC', os.path.join(rcEnv.paths.pathetc, 'sysreport.conf.d')),
+          ("INC", os.path.join(rcEnv.paths.pathetc, "*.conf")),
+          ("INC", os.path.join(rcEnv.paths.pathetc, "namespaces", "*", "*", "*.conf")),
+          ("INC", os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")),
         ]
 
         self.changed = []
