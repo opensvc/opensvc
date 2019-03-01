@@ -2531,6 +2531,9 @@ class Monitor(shared.OsvcThread):
         specified state.
         """
         nodenames = []
+        if shared.SMON_DATA.get(svcpath, {}).get("global_expect") in global_expect:
+            # relayed smon may no longer have an instance
+            return True
         for nodename, instance in self.get_service_instances(svcpath).items():
             if global_expect and instance.get("monitor", {}).get("global_expect") in global_expect:
                 return True
@@ -3034,7 +3037,8 @@ class Monitor(shared.OsvcThread):
                 global_expect_updated = smon.get("global_expect_updated", 0)
                 if global_expect is not None and time.time() < global_expect_updated + 3:
                     # keep the smon around for a while
-                    self.log.info("relay foreign service %s smon", svcpath)
+                    self.log.info("relay foreign service %s global expect %s",
+                                  svcpath, global_expect)
                     continue
                 else:
                     del shared.SMON_DATA[svcpath]
@@ -3216,7 +3220,7 @@ class Monitor(shared.OsvcThread):
                         # we have a more recent update
                         continue
                     if svcpath in shared.SERVICES and shared.SERVICES[svcpath].disabled and \
-                       global_expect not in ("frozen", "thawed", "aborted", "deleted"):
+                       global_expect not in ("frozen", "thawed", "aborted", "deleted", "purged"):
                         continue
                     if global_expect == current_global_expect:
                         self.log.debug("node %s wants service %s %s, already targeting that",
