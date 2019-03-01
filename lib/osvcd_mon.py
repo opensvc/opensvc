@@ -663,7 +663,8 @@ class Monitor(shared.OsvcThread):
 
     def services_init_status_callback(self, *args, **kwargs):
         self.update_hb_data()
-        self.set_nmon(status="rejoin")
+        if shared.NMON_DATA.status == "init":
+            self.set_nmon(status="rejoin")
         self.rejoin_grace_period_expired = False
 
 
