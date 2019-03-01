@@ -229,10 +229,10 @@ class Daemon(object):
         self.log.info("daemon graceful stop")
 
     def loop(self):
-        self.start_threads()
         if shared.DAEMON_STOP.is_set():
             self.stop_threads()
             return False
+        self.start_threads()
         return True
 
     def stats(self):
