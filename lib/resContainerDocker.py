@@ -331,22 +331,7 @@ class Container(resContainer.Container):
                 continue
             if not elements[0].startswith(os.sep):
                 # vol service
-                volname = elements[0]
-                vol = self.svc.get_volume(volname)
-                if vol.device is None:
-                    if errors != "ignore":
-                        continue
-                    raise ex.excError("referenced volume %s has no "
-                                      "device" % volname)
-                volstatus = vol.status()
-                if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
-                    if errors != "ignore":
-                        raise ex.excError("volume %s is %s" % (volname, volstatus))
-                volrid = self.svc.get_volume_rid(volname)
-                if volrid:
-                    self.svc.register_dependency("stop", volrid, self.rid)
-                    self.svc.register_dependency("start", self.rid, volrid)
-                elements[0] = vol.device
+                elements[0], vol = self.replace_volname(elements[0], mode="blk", strict=False, errors=errors)
                 devices.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
@@ -368,23 +353,7 @@ class Container(resContainer.Container):
                 continue
             if not elements[0].startswith(os.sep):
                 # vol service
-                l = elements[0].split("/")
-                volname = l[0]
-                vol = self.svc.get_volume(volname)
-                if vol.mount_point is None:
-                    if errors != "ignore":
-                        continue
-                    raise ex.excError("referenced volume %s has no "
-                                      "mount point" % l[0])
-                volstatus = vol.status()
-                if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
-                    if errors != "ignore":
-                        raise ex.excError("volume %s is %s" % (volname, volstatus))
-                volrid = self.svc.get_volume_rid(volname)
-                if volrid:
-                    self.svc.register_dependency("stop", volrid, self.rid)
-                    self.svc.register_dependency("start", self.rid, volrid)
-                l[0] = vol.mount_point
+                elements[0], vol = self.replace_volname(elements[0], strict=False, errors=errors)
                 try:
                     options = elements[2].split(",")
                     options = drop_option("ro", options)
@@ -392,12 +361,11 @@ class Container(resContainer.Container):
                     del elements[2]
                 except Exception:
                     options = []
-                if vol.volsvc.access.startswith("ro"):
+                if vol and vol.volsvc.access.startswith("ro"):
                     options.insert(0, "ro")
                 else:
                     options.insert(0, "rw")
                 elements.append(",".join(options))
-                elements[0] = "/".join(l)
                 volumes.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path

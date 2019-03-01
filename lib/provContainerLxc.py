@@ -65,7 +65,7 @@ class Prov(provisioning.Prov):
     def setup_lxc_config(self):
         import tempfile
         f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(DEFAULT_CONFIG % dict(hostname=self.r.vm_hostname, rootfs=self.rootfs))
+        f.write(DEFAULT_CONFIG % dict(hostname=self.r.vm_hostname, rootfs=self.r.rootfs))
         self.config = f.name
         f.close()
 
@@ -125,9 +125,9 @@ class Prov(provisioning.Prov):
 
     def unpack_template(self):
         import tarfile
-        os.chdir(self.rootfs)
+        os.chdir(self.r.rootfs)
         tar = tarfile.open(name=self.template_local, errorlevel=0)
-        if os.path.exists(os.path.join(self.rootfs,'etc')):
+        if os.path.exists(os.path.join(self.r.rootfs,'etc')):
             self.r.log.info("template already unpacked")
             return
         tar.extractall()
@@ -137,18 +137,18 @@ class Prov(provisioning.Prov):
         self.set_hostname()
 
     def disable_udev(self):
-        updaterc = os.path.join(self.rootfs, 'usr', 'sbin', 'update-rc.d')
-        chkconfig = os.path.join(self.rootfs, 'sbin', 'chkconfig')
+        updaterc = os.path.join(self.r.rootfs, 'usr', 'sbin', 'update-rc.d')
+        chkconfig = os.path.join(self.r.rootfs, 'sbin', 'chkconfig')
         if os.path.exists(updaterc):
-            self.r.vcall(['chroot', self.rootfs, 'update-rc.d', '-f', 'udev', 'remove'])
+            self.r.vcall(['chroot', self.r.rootfs, 'update-rc.d', '-f', 'udev', 'remove'])
         elif os.path.exists(chkconfig):
-            self.r.vcall(['chroot', self.rootfs, 'chkconfig', 'udev', 'off'])
+            self.r.vcall(['chroot', self.r.rootfs, 'chkconfig', 'udev', 'off'])
 
     def setup_getty(self):
-         getty = os.path.join(self.rootfs, 'sbin', 'getty')
+         getty = os.path.join(self.r.rootfs, 'sbin', 'getty')
          if os.path.exists(getty):
              self.r.log.info("setup getty")
-             inittab = os.path.join(self.rootfs, 'etc', 'inittab')
+             inittab = os.path.join(self.r.rootfs, 'etc', 'inittab')
              with open(inittab, 'a') as f:
                  f.write("""
 1:2345:respawn:/sbin/getty 38400 console
@@ -157,7 +157,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def setup_authkeys(self):
         pub = os.path.join(os.sep, 'root', '.ssh', 'id_rsa.pub')
-        authkeys = os.path.join(self.rootfs, 'root', '.ssh', 'authorized_keys')
+        authkeys = os.path.join(self.r.rootfs, 'root', '.ssh', 'authorized_keys')
         if not os.path.exists(pub):
             self.r.log.error("no rsa key found on node for root")
             return
@@ -174,7 +174,13 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             cmd = ['ssh-keygen', '-R', ip]
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
+    def unprovisioner_shared_non_leader(self):
+        self.purge_lxc_var()
+
     def unprovisioner(self):
+        self.purge_lxc_var()
+
+    def purge_lxc_var(self):
         self.set_d_lxc()
         path = os.path.join(self.d_lxc, self.r.name)
         if not os.path.exists(path):
@@ -195,15 +201,14 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.d_lxc = None
 
     def provisioner(self):
-        self.rootfs = self.r.oget("rootfs")
         self.template = self.r.oget("template")
 
         # hostname file in the container rootfs
-        self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
+        self.p_hostname = os.path.join(self.r.rootfs, 'etc', 'hostname')
         self.set_d_lxc()
 
-        if not os.path.exists(self.rootfs):
-            os.makedirs(self.rootfs)
+        if not os.path.exists(self.r.rootfs):
+            os.makedirs(self.r.rootfs)
 
         if self.template is None or "://" not in self.template:
             self.provisioner_lxc_create()
@@ -212,7 +217,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def provisioner_lxc_create(self):
         template_options = self.r.oget("template_options")
-        cmd = ['lxc-create', '--name', self.r.name, "--dir", self.rootfs]
+        cmd = ['lxc-create', '--name', self.r.name, "--dir", self.r.rootfs]
         if self.r.cf:
             cmd += ['-f', self.r.cf]
         if self.template:

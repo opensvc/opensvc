@@ -67,10 +67,9 @@ class Lxc(resContainer.Container):
         return data
 
     def rcp_from(self, src, dst):
-        rootfs = self.get_rootfs()
-        if not rootfs:
+        if not self.rootfs:
             raise ex.excError
-        src = rootfs + src
+        src = self.rootfs + src
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -78,10 +77,9 @@ class Lxc(resContainer.Container):
         return out, err, ret
 
     def rcp(self, src, dst):
-        rootfs = self.get_rootfs()
-        if not rootfs:
+        if not self.rootfs:
             raise ex.excError
-        dst = rootfs + dst
+        dst = self.rootfs + dst
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -139,7 +137,13 @@ class Lxc(resContainer.Container):
                 break
         return value
 
-    def get_rootfs(self):
+    @lazy
+    def rootfs(self):
+        rootfs = self.oget("rootfs")
+        if rootfs:
+            rootfs, vol = self.replace_volname(rootfs, strict=False)
+        if rootfs:
+            return rootfs
         rootfs = self.get_cf_value("lxc.rootfs")
         if rootfs is None:
             rootfs = self.get_cf_value("lxc.rootfs.path")
@@ -152,8 +156,7 @@ class Lxc(resContainer.Container):
         return rootfs
 
     def install_drp_flag(self):
-        rootfs = self.get_rootfs()
-        flag = os.path.join(rootfs, ".drp_flag")
+        flag = os.path.join(self.rootfs, ".drp_flag")
         self.log.info("install drp flag in container : %s", flag)
         with open(flag, 'w') as ofile:
             ofile.write(' ')
