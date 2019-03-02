@@ -32,13 +32,43 @@ INTER="$OSVC_PYTHON $OSVC_PYTHON_ARGS"
 help() {
 	OM=`basename $0`
 	echo "Usage:" >&2
-	echo "  $OM getns" >&2
-	echo "  $OM setns <namespace>" >&2
-	echo "  $OM unsetns" >&2
-	echo "  $OM <kind>|<selector> <options>" >&2
+	echo "  $OM setns <namespace>        Set the current namespace" >&2
+	echo "  $OM unsetns                  Unset the current namespace" >&2
+	echo "  $OM getns                    Get the current namespace" >&2
 	echo "" >&2
-	echo "Where:" >&2
-	echo "  kind: node|svc|vol|cfg|net|pool|daemon" >&2
+	echo "  $OM mon                      Monitor the cluster" >&2
+	echo "  $OM node                     Manage Cluster Nodes" >&2
+	echo "  $OM svc                      Manage Services" >&2
+	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
+#	echo "  $OM cfg                      Manage Config Maps" >&2
+#	echo "  $OM sec                      Manage Secrets" >&2
+	echo "  $OM net                      Manage Networks" >&2
+	echo "  $OM pool                     Manage Storage Pools" >&2
+	echo "  $OM daemon                   Manage Agent Daemon" >&2
+	echo "" >&2
+	echo "  $OM <selector> <options>     Manage the selected objects" >&2
+	echo "" >&2
+	echo "" >&2
+	echo "Selector:" >&2
+	echo "  <selector>[,<selector>,...] Unioned selectors" >&2
+	echo "  <selector>[+<selector>,...] Intersected selectors" >&2
+	echo "" >&2
+	echo "Path Selectors:" >&2
+	echo "  <namespace>/<kind>/<name>   Fully qualified path" >&2
+	echo "  <kind>/<name>               Path relative to the current namespace" >&2
+	echo "  <name>                      Service <name> in the current namespace" >&2
+	echo "  **                          All objects" >&2
+	echo "  **/<name>                   All objects named <name>" >&2
+	echo "  <namespace>/**              All objects in the <namespace> namespace" >&2
+	echo "  <namespace>/<kind>/*        All <kind> objects in the <namespace> namespace" >&2
+	echo "" >&2
+	echo "Status Selectors:" >&2
+	echo "  <jsonpath>:                 All objects with the <jsonpath> referenced key existing in the instance status data" >&2
+	echo "  <jsonpath>=<val>            All objects with the <jsonpath> referenced key value equals to <val> in the instance status data" >&2
+	echo "" >&2
+	echo "Config Selectors:" >&2
+	echo "  <keyword>:                  All objects with the <keyword> existing in the instance config data" >&2
+	echo "  <keyword>=<value>           All objects with the <keyword> value equals to <val> in the instance config data" >&2
 	exit 1
 }
 
