@@ -1089,7 +1089,7 @@ om() {
                         echo "om setns <ns>" >&2
                         return 1
                 }
-                test -d /opt/opensvc/etc/namespaces/$2 || {
+                test -d %(pathetc)s/namespaces/$2 || {
                         echo "namespace $2 does not exist" >&2
                         return 1
                 }
@@ -1100,7 +1100,7 @@ om() {
                 unset OSVC_NAMESPACE
                 ;;
         *)
-                /opt/opensvc/bin/om "$@"
+                %(pathbin)s/om "$@"
                 ;;
         esac
 }
