@@ -465,28 +465,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.drp_flex_primary = ""
 
         # real values for kw needed by scoping
-        try:
-            self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
-        except (AttributeError, ValueError):
-            self.encapnodes = set()
-        try:
-            self.ordered_nodes = self.oget("DEFAULT", "nodes")
-        except (AttributeError, ValueError):
-            self.ordered_nodes = [rcEnv.nodename]
-        try:
-            self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
-        except (AttributeError, ValueError):
-            self.ordered_nodes = []
-        try:
-            self.drpnode = self.oget("DEFAULT", "drpnode")
-        except (AttributeError, ValueError):
-            self.drpnode = ""
-        if self.drpnode and self.drpnode not in self.ordered_drpnodes:
-            self.ordered_drpnodes.insert(0, self.drpnode)
-        self.nodes = set(self.ordered_nodes)
-        self.drpnodes = set(self.ordered_drpnodes)
-        self.flex_primary = self.get_flex_primary()
-        self.drp_flex_primary = self.get_drp_flex_primary()
+        self.init_nodes()
 
         # merged by the cmdline parser
         self.options = Storage(
@@ -515,6 +494,34 @@ class BaseSvc(Crypt, ExtConfigMixin):
             waitlock=None,
             wait=False,
         )
+
+    def init_nodes(self):
+        """
+        Called from __init__, and on node labels change by entities
+        holding long-lived BaseSvc objects.
+        """
+        try:
+            self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
+        except (AttributeError, ValueError):
+            self.encapnodes = set()
+        try:
+            self.ordered_nodes = self.oget("DEFAULT", "nodes")
+        except (AttributeError, ValueError):
+            self.ordered_nodes = [rcEnv.nodename]
+        try:
+            self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
+        except (AttributeError, ValueError):
+            self.ordered_nodes = []
+        try:
+            self.drpnode = self.oget("DEFAULT", "drpnode")
+        except (AttributeError, ValueError):
+            self.drpnode = ""
+        if self.drpnode and self.drpnode not in self.ordered_drpnodes:
+            self.ordered_drpnodes.insert(0, self.drpnode)
+        self.nodes = set(self.ordered_nodes)
+        self.drpnodes = set(self.ordered_drpnodes)
+        self.flex_primary = self.get_flex_primary()
+        self.drp_flex_primary = self.get_drp_flex_primary()
 
     @lazy
     def fullname(self):
@@ -2163,6 +2170,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         unset_lazy(self, prop)
 
     def unset_conf_lazy(self):
+        self.init_nodes()
         self.unset_lazy("nodes")
         self.unset_lazy("ordered_nodes")
         self.unset_lazy("peers")
@@ -2171,6 +2179,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.unset_lazy("flex_max_nodes")
 
     def unset_all_lazy(self):
+        self.init_nodes()
         unset_all_lazy(self)
         for res in self.resources_by_id.values():
             unset_all_lazy(res)
