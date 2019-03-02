@@ -12,6 +12,7 @@ class Vbox(resContainer.Container):
                  rid,
                  name,
                  guestos=None,
+                 headless=None,
                  osvc_root_path=None,
                  **kwargs):
         resContainer.Container.__init__(self,
@@ -23,6 +24,7 @@ class Vbox(resContainer.Container):
                                         **kwargs)
         #self.sshbin = '/usr/local/bin/ssh'
         self.vminfo = None
+        self.headless = headless
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.name)
@@ -91,7 +93,10 @@ class Vbox(resContainer.Container):
         if state == 'None':
             raise ex.excError
         elif state == 'off':
-            self.container_action('startvm')
+            if self.headless:
+                self.container_action('startvm', ['--type', 'headless'])
+            else:
+                self.container_action('startvm')
         elif state == 'on':
             self.log.info("container is already up")
 
