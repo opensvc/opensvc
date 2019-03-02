@@ -495,7 +495,7 @@ KEYWORDS = [
         "keyword": "rootfs",
         "rtype": ["lxc", "vz", "zone"],
         "text": "Sets the root fs directory of the container",
-        "required": True,
+        "required": False,
         "provisioning": True
     },
     {

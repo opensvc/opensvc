@@ -151,8 +151,7 @@ class Lxc(resContainer.Container):
         if rootfs is None:
             rootfs = self.get_cf_value("lxc.rootfs.path")
         if rootfs is None:
-            self.log.error("could not determine lxc container rootfs")
-            raise ex.excError
+            raise ex.excError("could not determine lxc container rootfs")
         if ":" in rootfs:
             # zfs:/tank/svc1, nbd:file1, dir:/foo ...
             rootfs = rootfs.split(":", 1)[-1]
