@@ -2313,7 +2313,7 @@ KEYWORDS = [
     },
     {
         "section": "container",
-        "rtype": rcEnv.vt_cloud+["vbox"],
+        "rtype": ["vbox"],
         "keyword": "headless",
         "at": True,
         "candidates": (True, False),
