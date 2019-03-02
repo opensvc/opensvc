@@ -169,28 +169,36 @@ class Lxc(resContainer.Container):
         if not os.path.exists(ppath):
             self.log.debug("set_clone_children: %s does not exist", ppath)
             return
-        path = "/sys/fs/cgroup/cpuset/lxc"
+        if self.capable("cgroup_dir"):
+            path = os.path.join(ppath, self.cgroup_dir)
+        else:
+            path = os.path.join(ppath, "lxc")
         try:
             os.makedirs(path)
             self.log.info("mkdir %s", path)
         except (OSError, IOError):
             # errno 17: file exists
             pass
-        for parm in ("cpuset.mems", "cpuset.cpus"):
+        paths = [path]
+        while path != ppath:
+            path = os.path.dirname(path)
+            paths.append(path)
+        for path in sorted(paths):
+            for parm in ("cpuset.mems", "cpuset.cpus"):
+                current_val = self.get_sysfs(path, parm)
+                if current_val is None:
+                    continue
+                if current_val == "":
+                    parent_val = self.get_sysfs(ppath, parm)
+                    self.set_sysfs(path, parm, parent_val)
+            parm = "cgroup.clone_children"
             current_val = self.get_sysfs(path, parm)
             if current_val is None:
                 continue
-            if current_val == "":
-                parent_val = self.get_sysfs(ppath, parm)
-                self.set_sysfs(path, parm, parent_val)
-        parm = "cgroup.clone_children"
-        current_val = self.get_sysfs(path, parm)
-        if current_val is None:
-            return
-        if current_val == "1":
-            self.log.debug("set_cpuset_clone_children: %s/%s already set to 1", path, parm)
-            return
-        self.set_sysfs(path, parm, "1")
+            if current_val == "1":
+                self.log.debug("set_cpuset_clone_children: %s/%s already set to 1", path, parm)
+                continue
+            self.set_sysfs(path, parm, "1")
 
     def get_sysfs(self, path, parm):
         fpath = os.sep.join([path, parm])
