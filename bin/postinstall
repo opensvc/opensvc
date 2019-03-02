@@ -1073,12 +1073,39 @@ def install_profile():
     logit("begin")
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
-    buff = "if ! echo ${PATH} | grep -q "+pathetc+"; then"+"\n"
-    buff = buff+"    PATH=${PATH}:"+pathetc+"\n"
-    buff = buff+"fi\n\n"
-    buff = buff+"if ! echo ${PATH} | grep -qw "+pathsbin+"; then"+"\n"
-    buff = buff+"    PATH=${PATH}:"+pathsbin+"\n"
-    buff = buff+"fi\n"
+    buff = """
+if ! echo ${PATH} | grep -qw %(pathetc)s; then
+	PATH=${PATH}:%(pathetc)s
+fi
+
+if ! echo ${PATH} | grep -qw %(pathbin)s; then
+	PATH=${PATH}:%(pathbin)s
+fi
+
+om() {
+        case $1 in
+        setns)
+                test -z "$2" && {
+                        echo "om setns <ns>" >&2
+                        return 1
+                }
+                test -d /opt/opensvc/etc/namespaces/$2 || {
+                        echo "namespace $2 does not exist" >&2
+                        return 1
+                }
+                echo "namespace switch: $OSVC_NAMESPACE => $2"
+                export OSVC_NAMESPACE=$2
+                ;;
+        unsetns)
+                unset OSVC_NAMESPACE
+                ;;
+        *)
+                /opt/opensvc/bin/om "$@"
+                ;;
+        esac
+}
+""" % dict(pathetc=pathetc, pathbin=pathbin)
+
     if not os.path.exists(prof_d):
         logit("no profile directory found")
         return

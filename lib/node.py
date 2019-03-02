@@ -782,7 +782,7 @@ class Node(Crypt, ExtConfigMixin):
                     _namespace = "*"
             elif norm_elts_count == 1:
                 _name = norm_elts[0]
-                _kind = "svc"
+                _kind = os.environ.get("OSVC_KIND", "svc")
                 _namespace = "*"
             else:
                 return []

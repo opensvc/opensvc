@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# variables users can override in the defaults file
+OSVC_ROOT_PATH="/usr/share/opensvc"
+OSVC_PYTHON="python"
+OSVC_PYTHON_ARGS=""
+
+if [ -r "/etc/defaults/opensvc" ]
+then
+	# FreeBSD, Darwin
+	. "/etc/defaults/opensvc"
+elif [ -r "/etc/default/opensvc" ]
+then
+	# Debian-like, Tru64, SunOS and HP-UX
+	. "/etc/default/opensvc"
+elif [ -r "/etc/sysconfig/opensvc" ]
+then
+	# Red Hat-like
+	. "/etc/sysconfig/opensvc"
+elif [ -r "/etc/conf.d/opensvc" ]
+then
+	# Alpine, Gentoo
+	. "/etc/conf.d/opensvc"
+elif [ -r "/etc/rc.config.d/opensvc" ]
+then
+	# AIX
+	. "/etc/rc.config.d/opensvc"
+fi
+
+INTER="$OSVC_PYTHON $OSVC_PYTHON_ARGS"
+
+help() {
+	OM=`basename $0`
+	echo "Usage:" >&2
+	echo "  $OM getns" >&2
+	echo "  $OM setns <namespace>" >&2
+	echo "  $OM unsetns" >&2
+	echo "  $OM <kind>|<selector> <options>" >&2
+	echo "" >&2
+	echo "Where:" >&2
+	echo "  kind: node|svc|vol|cfg|net|pool|daemon" >&2
+	exit 1
+}
+
+main() {
+	test -z "$*" && help
+	test "`id -u`" -eq 0 || SUDO=`which sudo 2>/dev/null`
+	test -z $SUDO && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
+	case $1 in
+	setns)
+		echo "The 'om' alias must be sourced to handle setns" >&2
+		exit 1
+		;;
+	unsetns)
+		echo "The 'om' alias must be sourced to handle unsetns" >&2
+		exit 1
+		;;
+	getns)
+		echo $OSVC_NAMESPACE
+		;;
+	svc)
+		shift
+		$SUDO OSVC_KIND=svc $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		;;
+	vol)
+		shift
+		$SUDO OSVC_KIND=vol $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		;;
+	cfg)
+		shift
+		$SUDO OSVC_KIND=cfg $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		;;
+	sec)
+		shift
+		$SUDO OSVC_KIND=sec $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		;;
+	node)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py "$@"
+		;;
+	pool)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py pool "$@"
+		;;
+	net)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py network "$@"
+		;;
+	daemon)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py daemon "$@"
+		;;
+	mon)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/svcmon.py "$@"
+		;;
+	*)
+		SELECTOR=$1
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/svcmgr.py -s "$SELECTOR" "$@"
+		;;
+	esac
+}
+
+main "$@"
