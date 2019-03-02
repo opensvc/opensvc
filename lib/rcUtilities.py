@@ -1245,7 +1245,7 @@ def strip_path(paths, namespace):
     if not namespace:
         return paths
     if isinstance(paths, (list, tuple)):
-        return [strip_ns(path, namespace) for path in paths]
+        return [strip_path(path, namespace) for path in paths]
     else:
         path = re.sub("^%s/" % namespace, "", paths)  # strip current ns
         return re.sub("^svc/", "", path) # strip default kind
