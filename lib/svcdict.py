@@ -2312,6 +2312,16 @@ KEYWORDS = [
         "example": "180"
     },
     {
+        "section": "container",
+        "rtype": rcEnv.vt_cloud+["vbox"],
+        "keyword": "headless",
+        "at": True,
+        "candidates": (True, False),
+        "default": False,
+        "convert": "boolean",
+        "text": "Enable VM startup in headless mode",
+    },
+    {
         "section": "disk",
         "rtype": ["lvm", "vg", "veritas", "vxdg"],
         "keyword": "pvs",

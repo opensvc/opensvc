@@ -899,6 +899,7 @@ def add_container_ldom(svc, s):
 def add_container_vbox(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
+    kwargs["headless"] = svc.oget(s, "headless")
     m = __import__("resContainerVbox")
     r = m.Vbox(**kwargs)
     svc += r
