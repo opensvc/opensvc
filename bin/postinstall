@@ -1089,7 +1089,7 @@ om() {
                         echo "om setns <ns>" >&2
                         return 1
                 }
-                test -d %(pathetc)s/namespaces/$2 || {
+                test "$2" == "root" -o -d %(pathetc)s/namespaces/$2 || {
                         echo "namespace $2 does not exist" >&2
                         return 1
                 }
