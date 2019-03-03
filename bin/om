@@ -46,6 +46,7 @@ help() {
 	echo "  $OM net                      Manage Networks" >&2
 	echo "  $OM pool                     Manage Storage Pools" >&2
 	echo "  $OM daemon                   Manage Agent Daemon" >&2
+	echo "  $OM array                    Manage Storage Arrays" >&2
 	echo "" >&2
 	echo "  $OM <selector> <options>     Manage the selected objects" >&2
 	echo "" >&2
@@ -120,6 +121,10 @@ main() {
 	daemon)
 		shift
 		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py daemon "$@"
+		;;
+	array)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py array "$@"
 		;;
 	mon)
 		shift
