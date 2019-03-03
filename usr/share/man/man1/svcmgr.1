@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-03\-01
+.TH SVCMGR 1 2019\-03\-03
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -4175,6 +4175,109 @@ Wait for asynchronous action termination.
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<svcname> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr monitor\fP
+.RS
+
+Display or watch the synthetic service status, and perf metrics.
+
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.

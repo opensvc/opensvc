@@ -7,7 +7,7 @@ from converters import print_duration, print_size
 from rcColor import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from rcStatus import Status, colorize_status
-from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath, strip_path
+from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath, strip_path, format_path_selector
 from storage import Storage
 
 DEFAULT_SECTIONS = [
@@ -254,7 +254,7 @@ def print_section(data):
     return list_print(data)
 
 def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
-                   stats_data=None, sections=None):
+                   stats_data=None, sections=None, selector=None, namespace=None):
     if not data or data.get("status", 0) != 0:
         return
     if sections is None:
@@ -898,9 +898,9 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
-                    svcname, namespace, kind = split_svcpath(svcpath)
-                    if namespace:
-                        pattern = "^%s/%s/[0-9]+\.%s$" % (namespace, kind, svcname)
+                    svcname, _namespace, kind = split_svcpath(svcpath)
+                    if _namespace:
+                        pattern = "^%s/%s/[0-9]+\.%s$" % (_namespace, kind, svcname)
                     else:
                         pattern = "^[0-9]+\.%s$" % svcname
                     for child in data["monitor"]["services"]:
@@ -958,11 +958,12 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             services[svcpath].overall = _data.get("overall", "n/a")
             services[svcpath].placement = _data.get("placement", "n/a")
 
-    def load_services():
+    def load_services(selector, namespace=None):
         if "services" not in sections:
             return
+        selector = format_path_selector(selector, namespace)
         load_header([
-            "Services",
+            selector,
             "",
             "",
             "since" if stats_data else "",
@@ -983,7 +984,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
     load_threads()
     load_arbitrators()
     load_nodes()
-    load_services()
+    load_services(selector, namespace)
 
     # print tabulated lists
     return print_section(out)

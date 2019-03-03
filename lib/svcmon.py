@@ -44,7 +44,7 @@ def setup_parser(node):
                       help="colorize output. possible values are : auto=guess based "
                            "on tty presence, always|yes=always colorize, never|no="
                            "never colorize")
-    parser.add_option("--node", action="store", dest="node", default="*",
+    parser.add_option("--node", action="store", dest="node",
                       help="The node to send a request to. If not specified the "
                            "local node is targeted."),
     parser.add_option("--namespace", action="store", dest="namespace",
@@ -130,7 +130,12 @@ def _main(node, argv=None):
     parser = setup_parser(node)
     (options, args) = parser.parse_args(argv)
     node.check_privs(argv)
+    svcmon(node, options)
+
+def svcmon(node, options=None):
     rcColor.use_color = options.color
+    if not options.node:
+        options.node = "*"
     chars = 0
     last_refresh = 0
 
@@ -156,11 +161,13 @@ def _main(node, argv=None):
 
     if options.watch:
         start_events_thread(node, endpoint)
-        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
         outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
-                              data=status_data, sections=options.sections)
+                              data=status_data, sections=options.sections,
+                              selector=options.parm_svcs,
+                              namespace=namespace)
 
         if outs is not None:
             print(CURSORHOME+preamble+CLEAREOLNEW+CLEAREOL)
@@ -188,14 +195,16 @@ def _main(node, argv=None):
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
-            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             outs = format_cluster(
                 svcpaths=expanded_svcs,
                 node=nodes,
                 data=status_data,
                 prev_stats_data=prev_stats_data,
                 stats_data=stats_data,
-                sections=options.sections
+                sections=options.sections,
+                selector=options.parm_svcs,
+                namespace=namespace,
             )
             if outs is not None:
                 print(CURSORHOME+preamble+CLEAREOLNEW+CLEAREOL)
@@ -206,7 +215,9 @@ def _main(node, argv=None):
             time.sleep(0.2)
     else:
         outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
-                              data=status_data, sections=options.sections)
+                              data=status_data, sections=options.sections,
+                              selector=options.parm_svcs,
+                              namespace=namespace)
         if outs is not None:
             print(outs)
 

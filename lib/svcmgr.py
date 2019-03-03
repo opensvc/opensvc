@@ -139,6 +139,8 @@ def prepare_options(options):
     and Node::do_svcs_action methods.
     """
     opts = Storage()
+    # preserve parm_svcs, as svcs will be expanded
+    opts.parm_svcs = options.parm_svcs
     for key, val in options.__dict__.items():
         opts[key.replace("parm_", "")] = val
     try:

@@ -1369,3 +1369,53 @@ def factory(kind):
         return Svc
     raise ValueError("unknown kind: %s" % kind)
 
+def parse_path_selector(selector, namespace=None):
+    if selector is None:
+        return "*", "*", "svc"
+    elts = selector.split("/")
+    elts_count = len(elts)
+    if elts_count == 1:
+        if elts[0] == "**":
+            _namespace = namespace if namespace else "*"
+            _kind = "*"
+            _name = "*"
+        elif elts[0] == "*":
+            _namespace = namespace if namespace else "*"
+            _kind = "svc"
+            _name = "*"
+        else:
+            _namespace = namespace if namespace else "*"
+            _kind = "svc"
+            _name = elts[0]
+    elif elts_count == 2:
+        if elts[0] == "**":
+            _namespace = namespace if namespace else "*"
+            _kind = "*"
+            _name = elts[1] if elts[1] not in ("**", "") else "*"
+        elif elts[0] == "*":
+            _namespace = namespace if namespace else "*"
+            _kind = "svc"
+            _name = elts[1] if elts[1] not in ("**", "") else "*"
+        elif elts[1] == "**":
+            _namespace = namespace if namespace else elts[0]
+            _kind = "*"
+            _name = "*"
+        elif elts[0] == "*":
+            _namespace = namespace if namespace else elts[0]
+            _kind = "svc"
+            _name = "*"
+    elif elts_count == 3:
+        _namespace = namespace if namespace else elts[0]
+        _kind = elts[1]
+        _name = elts[2]
+    else:
+        raise ValueError("invalid path selector %s" % selector)
+    return _name, _namespace, _kind
+
+def format_path_selector(selector, namespace=None):
+    try:
+        _name, _namespace, _kind = parse_path_selector(selector, namespace)
+    except ValueError:
+        return selector
+    return "%s/%s/%s" % (_namespace, _kind, _name)
+

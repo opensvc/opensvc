@@ -163,6 +163,11 @@ OPT = Storage({
         action="store_true", dest="interactive",
         help="Prompt the user for a choice instead of using defaults, "
              "or failing if no default is defined."),
+    "interval": Option(
+        "--interval", default=0, action="store",
+        dest="interval", type="int",
+        help="with --watch, set the refresh interval. defaults "
+             "to 0, to refresh on event only."),
     "kw": Option(
         "--kw", action="append", dest="kw",
         help="An expression like ``[<section>.]<keyword>[@<scope>][[<index>]]<op><value>`` where\n\n"
@@ -356,6 +361,10 @@ OPT = Storage({
              ":cmd:`push resinfo --sync` before a compliance run makes sure "
              "the pushed data has hit the collector database before the "
              "rulesets are contextualized."),
+    "stats": Option(
+        "--stats", default=False,
+        action="store_true", dest="stats",
+        help="refresh the information every --interval."),
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
@@ -412,6 +421,10 @@ OPT = Storage({
         action="store", dest="parm_waitlock",
         help="A duration expression like ``5s``. The maximum wait time when acquiring "
              "the service action lock."),
+    "watch": Option(
+        "-w", "--watch", default=False,
+        action="store_true", dest="watch",
+        help="refresh the information every --interval."),
 })
 
 SVC_SELECT_OPTS = [
@@ -556,6 +569,15 @@ ACTIONS = {
             "options": [
                 OPT.cron,
                 OPT.refresh,
+            ],
+        },
+        "monitor": {
+            "msg": "Display or watch the synthetic service status, and perf metrics.",
+            "options": [
+                OPT.node,
+                OPT.stats,
+                OPT.watch,
+                OPT.interval,
             ],
         },
         "print_status": {

@@ -47,7 +47,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         makedirs, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, create_svclink, \
-                        factory, resolve_svcpath, strip_path
+                        factory, resolve_svcpath, strip_path, normalize_paths
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -579,8 +579,8 @@ class Node(Crypt, ExtConfigMixin):
         if not namespace:
             return paths
         if namespace == "root":
-            return [path for path in paths if "/" not in path]
-        return [path for path in paths if path.startswith(namespace+"/")]
+            return [path for path in paths if split_svcpath(path)[1] is None]
+        return [path for path in paths if split_svcpath(path)[1] == namespace]
 
     def svcs_selector(self, selector, namespace=None, data=None):
         """
@@ -611,7 +611,8 @@ class Node(Crypt, ExtConfigMixin):
         path = is_service(selector, namespace)
         if path:
             self.options.single_service = True
-            return [path]
+            paths = self.filter_ns([path], namespace)
+            return paths
 
         # fnmatch on names and service config/status filtering
         try:
@@ -619,6 +620,7 @@ class Node(Crypt, ExtConfigMixin):
         finally:
             del self.services
             self.services = None
+        paths = self.filter_ns(paths, namespace)
         return paths
 
     def _svcs_selector(self, selector, data=None, namespace=None):
@@ -750,7 +752,6 @@ class Node(Crypt, ExtConfigMixin):
             return False
 
         if len(elts) == 1:
-            from rcUtilities import normalize_paths
             norm_paths = normalize_paths(paths)
             norm_elts = selector.split("/")
             norm_elts_count = len(norm_elts)
@@ -2444,6 +2445,11 @@ class Node(Crypt, ExtConfigMixin):
         * collection and aggregation of returned data and errors
         """
         svcs = [] + self.svcs
+        if action == "monitor":
+            import svcmon
+            options.sections = ["services"]
+            svcmon.svcmon(self, options)
+            return
         if action == "ls":
             data = strip_path(sorted([svc.svcpath for svc in svcs]), options.namespace)
             if options.format == "json":
