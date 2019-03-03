@@ -38,6 +38,7 @@ help() {
 	echo "" >&2
 	echo "  $OM mon                      Monitor the cluster" >&2
 	echo "  $OM node                     Manage Cluster Nodes" >&2
+	echo "  $OM cluster                  Manage Cluster Configuration" >&2
 	echo "  $OM svc                      Manage Services" >&2
 	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
 #	echo "  $OM cfg                      Manage Config Maps" >&2
