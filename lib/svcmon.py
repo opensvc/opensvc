@@ -161,7 +161,7 @@ def svcmon(node, options=None):
 
     if options.watch:
         start_events_thread(node, endpoint)
-        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
         outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
@@ -195,7 +195,7 @@ def svcmon(node, options=None):
             if chars == 0:
                 print(CURSORHOME+CLEAREOS)
                 chars = 1
-            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             outs = format_cluster(
                 svcpaths=expanded_svcs,
                 node=nodes,
