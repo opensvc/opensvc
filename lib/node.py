@@ -4082,6 +4082,8 @@ class Node(Crypt, ExtConfigMixin):
         """
         Tell the daemon to shutdown all local service instances then die.
         """
+        if not self._daemon_running():
+            return
         data = self.daemon_send(
             {"action": "daemon_shutdown"},
             nodename=self.options.node,
