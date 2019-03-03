@@ -45,8 +45,8 @@ def get_solaris_version():
         cmd = ['uname', '-v']
         out, err, ret = justcall(cmd)
         if ret == 0:
-            lines = out.split('\n')
-            osver = lines[0]
+            elts = out.split("\n")[0].split(".")[:2]
+            osver = ".".join(elts)
 
     return float(osver)
 
