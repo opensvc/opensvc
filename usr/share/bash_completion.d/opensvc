@@ -1,6 +1,6 @@
 
 
-svcmgr="abort boot clear collector compliance create delete deploy disable dns docker edit enable eval freeze frozen get giveback logs ls migrate monitor move pg postsync presync print provision prstatus pull purge push resource restart resync run scale set shutdown snooze start startstandby status stop support switch sync takeover thaw toc unprovision unset unsnooze update validate"
+svcmgr="abort boot clear collector compliance create delete deploy disable dns docker edit enable eval freeze frozen get giveback logs ls migrate monitor move pg podman postsync presync print provision prstatus pull purge push resource restart resync run scale set shutdown snooze start startstandby status stop support switch sync takeover thaw toc unprovision unset unsnooze update validate"
 svcmgr_collector="ack alerts asset checks create disks events list log networks show tag untag"
 svcmgr_collector_ack="action unavailability"
 svcmgr_collector_create="tag"
@@ -113,6 +113,7 @@ svcmgr_stop="--color --debug --downto --dry-run --env --local --master --namespa
 svcmgr_print_exposed_devs="--color --debug --env --filter --format --namespace --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_sync_restore="--color --debug --dry-run --env --local --master --namespace --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_startstandby="--color --debug --disable-rollback --dry-run --env --local --master --namespace --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
+svcmgr_podman="--color --debug --env --namespace --status --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_disable="--color --debug --env --namespace --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
 svcmgr_unprovision="--color --debug --dry-run --env --leader --local --master --namespace --node --nolock --rid --slave --slaves --status --subsets --tags --time --wait --waitlock -c --cluster -f --force -h --help -p --parallel -s --service"
 svcmgr_print_devs="--color --debug --env --filter --format --namespace --rid --status --subsets --tags --waitlock -c --cluster -h --help -p --parallel -s --service"
@@ -287,7 +288,9 @@ opts_with_arg=( "--access" "--add" "--api" "--app" "--author" "--backlog" "--beg
 
 
 
-svcs=$(find /etc/opensvc /opt/opensvc/etc -maxdepth 1 -lname "*/bin/svcmgr" -a ! -name "*.*" -exec basename {} \; 2>/dev/null)
+svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
+nodes=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
+om="setns getns unsetns node cluster svc vol net pool daemon array $svcs"
 
 opt_has_arg()
 {
@@ -305,10 +308,17 @@ _comp_handler()
 {
     local a prev action opts
     COMPREPLY=()
-    if [ "${COMP_WORDS[0]}" != "nodemgr" ]
-    then
-        COMP_WORDS[0]="svcmgr"
-    fi
+    case "${COMP_WORDS[0]}" in
+        nodemgr)
+            ;;
+        svcmgr)
+            ;;
+        om)
+            ;;
+        *)
+            COMP_WORDS[0]="svcmgr"
+            ;;
+    esac
     a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
@@ -318,15 +328,54 @@ _comp_handler()
             return 0
             ;;
         --format)
-            COMPREPLY=( $(compgen -W "csv json table" -- ${a}) )
+            COMPREPLY=( $(compgen -W "csv flat_json json table" -- ${a}) )
             return 0
             ;;
         --service|-s)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
             return 0
             ;;
+        --node)
+            COMPREPLY=( $(compgen -W "${nodes}" -- ${a}) )
+            return 0
+            ;;
         *)
-        ;;
+            ;;
+    esac
+
+    case "${COMP_WORDS[0]} ${COMP_WORDS[1]} "
+    in
+        "om node ")
+            unset COMP_WORDS[0]
+            COMP_WORDS[0]="nodemgr"
+            COMP_CWORD=${COMP_CWORD-1}
+            ;;
+        "om net ")
+            COMP_WORDS[0]="nodemgr"
+            COMP_WORDS[1]="network"
+            ;;
+        "om pool ")
+            COMP_WORDS[0]="nodemgr"
+            ;;
+        "om daemon "|"om array ")
+            COMP_WORDS[0]="nodemgr"
+            ;;
+        "om svc "|"om vol ")
+            unset COMP_WORDS[0]
+            COMP_WORDS[0]="svcmgr"
+            COMP_CWORD=${COMP_CWORD-1}
+            ;;
+        "om getns "|"om setns "|"om unsetns ")
+            ;;
+        "om  ")
+            ;;
+        om\ *)
+            if [ $COMP_CWORD -ge 2 ]
+            then
+                COMP_WORDS[0]="svcmgr"
+                unset COMP_WORDS[1]
+            fi
+            ;;
     esac
 
     action=()
@@ -334,6 +383,8 @@ _comp_handler()
 
     for word in ${COMP_WORDS[@]}
     do
+        # prevent "Bad substitution" on action deref
+        word=${word//[^abcdefghijklmnopqrstuvwxyz0-9_.]/}
         if [ "${word#-}" != "${word}" ]
         then
             opt_has_arg ${word} && skip=1
@@ -373,4 +424,6 @@ for s in ${svcs} ; do
 done
 
 complete -F _comp_handler nodemgr
+
+complete -F _comp_handler om
 

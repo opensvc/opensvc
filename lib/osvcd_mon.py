@@ -179,6 +179,9 @@ class Monitor(shared.OsvcThread):
         changed = self.mon_changed()
         if terminated == 0 and not changed and self.shortloops < self.max_shortloops:
             self.shortloops += 1
+            if self.shortloops == self.max_shortloops:
+                # we're very idle, take time to ...
+                self.update_completions()
             with shared.MON_TICKER:
                 shared.MON_TICKER.wait(self.monitor_period)
             return
@@ -3376,6 +3379,22 @@ class Monitor(shared.OsvcThread):
         with shared.AGG_LOCK:
             shared.AGG = data
         return data
+
+    def update_completions(self):
+        self.update_completion("services")
+        self.update_completion("nodes")
+
+    def update_completion(self, otype):
+        try:
+            if otype == "services":
+                olist = [path for path in shared.AGG]
+            else:
+                olist = [path for path in shared.CLUSTER_DATA]
+            with open(os.path.join(rcEnv.paths.pathvar, "list."+otype), "w") as filep:
+                filep.write("\n".join(olist)+"\n")
+        except Exception as exc:
+            print(exc)
+            pass
 
     def status(self, **kwargs):
         if kwargs.get("refresh"):
