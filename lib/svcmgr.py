@@ -133,14 +133,18 @@ def do_svcs_action(node, options, action, argv):
             ret = 1
     return ret
 
-def prepare_options(options):
+def prepare_options(options, node):
     """
     Prepare and return the options Storage() as expected by the Svc::action
     and Node::do_svcs_action methods.
     """
     opts = Storage()
     # preserve parm_svcs, as svcs will be expanded
-    opts.parm_svcs = options.parm_svcs
+    svclink = os.environ.get("OSVC_SERVICE_LINK")
+    if svclink:
+        opts.parm_svcs = svcpath_from_link(svclink, node.cluster_name)
+    else:
+        opts.parm_svcs = options.parm_svcs
     for key, val in options.__dict__.items():
         opts[key.replace("parm_", "")] = val
     try:
@@ -183,7 +187,7 @@ def _main(node, argv=None):
     if action == "deploy":
         action = "create"
         options.provision = True
-    options = prepare_options(options)
+    options = prepare_options(options, node)
     export_env_from_options(options)
     options.docker_argv = docker_argv
     rcColor.use_color = options.color
