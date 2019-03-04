@@ -8,6 +8,12 @@ then
 	ARGS=0
 fi
 
+if [ $OSFLAVOR = 'Linux' -a $ARGS = 'remove' ]
+then
+	ARGS=0
+fi
+
+
 if [ -z "$OSVC_ROOT_PATH" ]
 then
 	FLAG=/var/lib/opensvc/postinstall.restart

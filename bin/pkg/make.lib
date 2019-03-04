@@ -117,6 +117,7 @@ function prepare_chroot {
 
 	# purge unwanted files
 	rm -rf $CHROOT/opt/opensvc
+        rmdir $CHROOT/opt
 
 	cd $OSVC
 	$SUDO chown -Rh 0:0 $CHROOT/* || return 1

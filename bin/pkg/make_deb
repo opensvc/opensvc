@@ -68,6 +68,12 @@ Provides: opensvc
 Description: $SUMMARY
 EOF
 
+cp $PATH_SCRIPT/../preuninstall $CHROOT/DEBIAN/prerm
+chmod 755 $CHROOT/DEBIAN/prerm
+
+cp $PATH_SCRIPT/../postremove $CHROOT/DEBIAN/postrm
+chmod 755 $CHROOT/DEBIAN/postrm
+
 echo "$DESCRIPTION" | sed -e "s/^/ /" >>$CHROOT/DEBIAN/control
 
 $SUDO chown -R root:root $CHROOT/DEBIAN
