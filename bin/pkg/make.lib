@@ -104,13 +104,13 @@ function prepare_chroot {
 	mkdir -p $DOCDIR
 	mkdir -p $CHROOT/usr/share/man/man1
 	mkdir -p $CHROOT/etc/bash_completion.d
-	mv $CHROOT/opt/opensvc/bin/om $CHROOT/usr/bin/om
 	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $DOCDIR/
 	mv $CHROOT/opt/opensvc/usr/share/man/man1/* $CHROOT/usr/share/man/man1/
 	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
+	ln -sf ../share/opensvc/bin/om $CHROOT/usr/bin/om
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmon

@@ -98,6 +98,7 @@ $(cat $OSVC/bin/preuninstall)
 %{_datadir}/opensvc/bin/nodemgr
 %{_datadir}/opensvc/bin/svcmgr
 %{_datadir}/opensvc/bin/svcmon
+%{_datadir}/opensvc/bin/om
 %attr(0755,-,-) %{_datadir}/opensvc/bin/opensvc
 %attr(0755,-,-) %{_datadir}/opensvc/bin/postinstall
 %attr(0755,-,-) %{_datadir}/opensvc/bin/preinstall
