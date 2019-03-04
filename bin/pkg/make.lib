@@ -104,6 +104,7 @@ function prepare_chroot {
 	mkdir -p $DOCDIR
 	mkdir -p $CHROOT/usr/share/man/man1
 	mkdir -p $CHROOT/etc/bash_completion.d
+	mv $CHROOT/opt/opensvc/bin/om $CHROOT/usr/bin/om
 	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
