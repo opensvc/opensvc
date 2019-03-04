@@ -1280,11 +1280,11 @@ class Resource(object):
             if strict or errors == "ignore":
                 raise ex.excError("a volume path can't start with /")
             else:
-                return buff
+                return buff, None
         vol = self.svc.get_volume(volname)
         if vol.mount_point is None:
             if errors == "ignore":
-                return buff
+                return buff, None
             raise ex.excError("referenced volume %s has no "
                               "mount point" % l[0])
         volstatus = vol.status()
