@@ -804,14 +804,16 @@ class ExtConfigMixin(object):
             raise ex.excError(str(exc))
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, config=None, verbose=True):
+                 use_default=True, config=None, verbose=True, rtype=None):
         """
         Handle keyword and section deprecation.
         """
         if config is None:
             config = self.config
         section = s.split("#")[0]
-        if section in self.kwdict.DEPRECATED_SECTIONS:
+        if rtype:
+            fkey = ".".join((section, rtype, o))
+        elif section in self.kwdict.DEPRECATED_SECTIONS:
             section, rtype = self.kwdict.DEPRECATED_SECTIONS[section]
             fkey = ".".join((section, rtype, o))
         else:
@@ -1409,7 +1411,7 @@ class ExtConfigMixin(object):
             return kwargs
         for keyword in self.kwdict.KEYS.all_keys(cat, rtype):
             try:
-                kwargs[keyword.keyword] = self.conf_get(section, keyword.keyword)
+                kwargs[keyword.keyword] = self.conf_get(section, keyword.keyword, rtype=rtype)
             except ex.RequiredOptNotFound:
                 raise
             except ex.OptNotFound as exc:
