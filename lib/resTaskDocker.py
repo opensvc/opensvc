@@ -9,4 +9,9 @@ class Task(resContainerDocker.Container, resTask.Task):
         resTask.Task.__init__(self, *args, **kwargs)
 
     _info = resContainerDocker.Container._info
-    _run_call = resContainerDocker.Container.start
+
+    def _run_call(self):
+        resContainerDocker.Container.start(self)
+        if self.rm:
+            self.container_rm()
+

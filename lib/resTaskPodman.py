@@ -9,4 +9,8 @@ class Task(resContainerPodman.Container, resTask.Task):
         resTask.Task.__init__(self, *args, **kwargs)
 
     _info = resContainerPodman.Container._info
-    _run_call = resContainerPodman.Container.start
+
+    def _run_call(self):
+        resContainerPodman.Container.start(self)
+        if self.rm:
+            self.container_rm()
