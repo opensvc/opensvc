@@ -552,9 +552,9 @@ class Container(resContainer.Container):
     def _stop(self):
         if not self.lib.docker_running():
             return
+        resContainer.Container.stop(self)
         if self.rm:
             self.container_rm()
-        resContainer.Container.stop(self)
         self.lib.get_running_instance_ids(refresh=True)
         self.lib.docker_stop()
 
