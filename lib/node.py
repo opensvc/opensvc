@@ -4841,6 +4841,12 @@ class Node(Crypt, ExtConfigMixin):
             nets[name] = {}
             nets[name]["config"] = config
             nets[name]["routes"] = self.routes(name, config)
+        nets["lo"] = {
+            "config": {
+                "type": "loopback",
+                "network": "127.0.0.1/32",
+            },
+        }
         return nets
 
     @formatter
@@ -4992,7 +4998,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self.network_data(name)
         network = data["config"]["network"]
         conf = {
-            "cniVersion": "0.2.0",
+            "cniVersion": "0.3.0",
             "name": name,
             "type": "weave-net",
             "ipam": {
@@ -5009,7 +5015,7 @@ class Node(Crypt, ExtConfigMixin):
             return
         self.log.info("create %s", cf)
         conf = {
-            "cniVersion": "0.2.0",
+            "cniVersion": "0.3.0",
             "name": name,
             "type": "bridge",
             "bridge": "obr_"+name,
@@ -5033,7 +5039,7 @@ class Node(Crypt, ExtConfigMixin):
             return
         self.log.info("create %s", cf)
         conf = {
-            "cniVersion": "0.2.0",
+            "cniVersion": "0.3.0",
             "name": name,
             "type": "bridge",
             "bridge": "obr_"+name,
@@ -5050,6 +5056,26 @@ class Node(Crypt, ExtConfigMixin):
         data = self.network_data(name)
         network = data["config"]["network"]
         conf["ipam"]["subnet"] = network
+        with open(cf, "w") as ofile:
+            json.dump(conf, ofile, indent=4)
+
+    def network_create_loopback_config(self, name="lo"):
+        cf = os.path.join(self.cni_config, name+".conf")
+        if os.path.exists(cf):
+            return
+        self.log.info("create %s", cf)
+        conf = {
+            "cniVersion": "0.3.0",
+            "name": name,
+            "type": "loopback",
+        }
+        makedirs(self.cni_config)
+        data = self.network_data(name)
+        try:
+            network = data["config"]["network"]
+            conf["ipam"]["subnet"] = network
+        except KeyError:
+            pass
         with open(cf, "w") as ofile:
             json.dump(conf, ofile, indent=4)
 
@@ -5118,13 +5144,21 @@ class Node(Crypt, ExtConfigMixin):
         for _name, ndata in nets.items():
             if name and name != _name:
                 continue
-            network = ip_network(six.text_type(ndata["config"]["network"]))
-            _data = {
-                "type": ndata["config"]["type"],
-                "network": ndata["config"]["network"],
-                "size": network.num_addresses,
-                "ips": [],
-            }
+            try:
+                network = ip_network(six.text_type(ndata["config"]["network"]))
+                _data = {
+                    "type": ndata["config"]["type"],
+                    "network": ndata["config"]["network"],
+                    "size": network.num_addresses,
+                    "ips": [],
+                }
+            except Exception:
+                _data = {
+                    "type": ndata["config"]["type"],
+                    "network": ndata["config"]["network"],
+                    "size": 1,
+                    "ips": [],
+                }
             for idata in ipdata:
                 ip = ip_address(idata["ip"])
                 if ip not in network:

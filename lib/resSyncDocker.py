@@ -2,7 +2,7 @@ import os
 from subprocess import Popen, PIPE
 
 import rcStatus
-from rcUtilities import justcall
+from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 import resSync
 import rcExceptions as ex
@@ -25,6 +25,21 @@ class SyncDocker(resSync.Sync):
         self.dst = "docker images"
         self.targets = set()
 
+    @lazy
+    def lib(self):
+        """
+        Lazy allocator for the dockerlib object.
+        """
+        try:
+            return self.svc.dockerlib
+        except AttributeError:
+            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            return self.svc.dockerlib
+
+    def handled_resources(self):
+        for res in self.svc.get_resources("container.docker"):
+            yield res
+
     def _info(self):
         data = [
           ["target", " ".join(self.target) if self.target else ""],
@@ -32,12 +47,12 @@ class SyncDocker(resSync.Sync):
         data += self.stats_keys()
         return data
 
-    def get_docker_data_dir_svc_fs(self):
+    def get_container_data_dir_svc_fs(self):
         l = []
         for r in self.svc.get_resources("fs"):
             l.append(r.mount_point)
         l = sorted(l)
-        v = self.svc.dockerlib.docker_data_dir.split("/")
+        v = self.lib.container_data_dir.split("/")
         while len(v) > 0:
             path = "/".join(v)
             if path in l:
@@ -45,8 +60,8 @@ class SyncDocker(resSync.Sync):
             v = v[:-1]
 
     def get_images(self):
-        for r in self.svc.get_resources("container.docker"):
-            image_id = self.svc.dockerlib.get_image_id(r)
+        for r in self.handled_resources():
+            image_id = self.lib.get_image_id(r)
             self.image_id_name[image_id] = r.image
             self.images.append(image_id)
 
@@ -65,7 +80,7 @@ class SyncDocker(resSync.Sync):
         return images
 
     def on_add(self):
-        self.dstfs = self.get_docker_data_dir_svc_fs()
+        self.dstfs = self.get_container_data_dir_svc_fs()
 
     def get_targets(self, action=None):
         self.targets = set()

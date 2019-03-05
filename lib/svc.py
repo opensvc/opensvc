@@ -168,6 +168,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "json_sub_devs",
     "json_base_devs",
     "logs",
+    "podman",
     "print_config",
     "print_devs",
     "print_exposed_devs",
@@ -274,6 +275,7 @@ ACTIONS_NO_LOCK = [
     "eval",
     "get",
     "logs",
+    "podman",
     "push_resinfo",
     "push_status",
     "push_config",
@@ -818,7 +820,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
            'compliance' not in action and \
            'collector' not in action and \
             not options.dry_run and \
-            not action.startswith("docker"):
+            not action.startswith("docker") and \
+            not action.startswith("podman"):
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
@@ -876,6 +879,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if rcEnv.dbopensvc is None or action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
+           action.startswith("podman") or \
            options.dry_run:
             return False
         return True
@@ -998,8 +1002,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
 
         args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
-        if options.docker_argv and len(options.docker_argv) > 0:
-            args += options.docker_argv
+        if options.extra_argv and len(options.extra_argv) > 0:
+            args += options.extra_argv
 
         def wrapper(queue, **kwargs):
             """
@@ -2705,14 +2709,6 @@ class Svc(BaseSvc):
         return False
 
     @lazy
-    def dockerlib(self):
-        """
-        Lazy allocator for the dockerlib object.
-        """
-        import rcDocker
-        return rcDocker.DockerLib(self)
-
-    @lazy
     def parents(self):
         return self.oget("DEFAULT", "parents")
 
@@ -3171,7 +3167,7 @@ class Svc(BaseSvc):
                 'sync_resync', 'sync_break',
                 'sync_update',
             ]
-        if resource.type in ("task", "task.docker"):
+        if resource.type in ("task", "task.docker", "task.podman"):
             actions += [
                 'run',
             ]
@@ -4285,7 +4281,7 @@ class Svc(BaseSvc):
 
     @_master_action
     def master_startstandby(self):
-        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "startstandby", xtags=set(["zone", "docker", "podman"]))
 
     @_slave_action
     def slave_startstandby(self):
@@ -4299,7 +4295,7 @@ class Svc(BaseSvc):
 
     @_master_action
     def master_start(self):
-        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker", "podman"]))
 
     @_slave_action
     def slave_start(self):
@@ -4307,7 +4303,7 @@ class Svc(BaseSvc):
         self.encap_cmd(cmd, verbose=True)
 
     def rollback(self):
-        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "rollback", xtags=set(["zone", "docker", "podman"]))
 
     def stop(self):
         self.slave_stop()
@@ -4315,7 +4311,7 @@ class Svc(BaseSvc):
 
     @_master_action
     def master_stop(self):
-        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "stop", xtags=set(["zone", "docker", "podman"]))
         self.pg_remove()
 
     @_slave_action
@@ -4338,7 +4334,7 @@ class Svc(BaseSvc):
 
     @_master_action
     def master_shutdown(self):
-        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker"]))
+        self.sub_set_action(STOP_GROUPS, "shutdown", xtags=set(["zone", "docker", "podman"]))
         self.pg_remove()
 
     @_slave_action
@@ -4346,13 +4342,13 @@ class Svc(BaseSvc):
         self.encap_cmd(['shutdown'], verbose=True, error="continue")
 
     def unprovision(self):
-        self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker"]))
-        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker"]))
+        self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker", "podman"]))
+        self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker", "podman"]))
         self.pg_remove()
         self.delete_service_sched()
 
     def provision(self):
-        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker"]))
+        self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker", "podman"]))
 
         if not self.options.disable_rollback and len(self.peers) > 1:
             # set by the daemon on the placement leaders.
@@ -5311,16 +5307,22 @@ class Svc(BaseSvc):
             self.delete_resources()
 
     def docker(self):
+        self.container_manager_passthrough("docker")
+
+    def podman(self):
+        self.container_manager_passthrough("podman")
+
+    def container_manager_passthrough(self, ctype):
         """
-        The 'docker' action entry point.
+        The 'docker|podman' action entry point.
         Parse the docker argv and substitute known patterns before relaying
         the argv to the docker command.
         Set the socket to point the service-private docker daemon if
         the service has such a daemon.
         """
         import subprocess
-        containers = self.get_resources('container.docker')
-        if self.options.docker_argv is None:
+        containers = self.get_resources("container." + ctype)
+        if self.options.extra_argv is None:
             print("no docker command arguments supplied", file=sys.stderr)
             return 1
 
@@ -5357,15 +5359,16 @@ class Svc(BaseSvc):
             for idx, arg in enumerate(argv):
                 if arg in ("%as_service%", "{as_service}"):
                     del argv[idx]
-                    argv[idx:idx] = self.dockerlib.login_as_service_args()
+                    argv[idx:idx] = container.lib.login_as_service_args()
             return argv
 
         if len(containers) == 0:
-            print("this service has no docker resource", file=sys.stderr)
+            print("this service has no %s resource" % ctype, file=sys.stderr)
             return 1
 
-        self.dockerlib.docker_start(verbose=False)
-        cmd = self.dockerlib.docker_cmd + subst(self.options.docker_argv)
+        if ctype == "docker":
+            containers[0].lib.docker_start(verbose=False)
+        cmd = containers[0].lib.docker_cmd + subst(self.options.extra_argv)
         proc = subprocess.Popen(cmd)
         proc.communicate()
         return proc.returncode

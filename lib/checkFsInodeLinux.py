@@ -29,6 +29,8 @@ class check(checks.check):
             # discard bind mounts: we get metric from the source anyway
             if l[0].startswith('/') and not l[0].startswith('/dev') and not l[0].startswith('//'):
                 continue
+            if l[0] in ("overlay", "overlay2", "aufs"):
+                continue
             if l[5].startswith('/Volumes'):
                 continue
             if l[5].startswith('/media/'):

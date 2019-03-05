@@ -13,7 +13,7 @@ class Prov(provisioning.Prov):
         return self.r.has_it()
 
     def provisioner(self):
-        self.r.svc.dockerlib.docker_start()
+        self.r.lib.docker_start()
         self.r.create_vol()
         self.populate()
 
@@ -33,7 +33,7 @@ class Prov(provisioning.Prov):
     def unprovisioner(self):
         if not self.r.has_it():
             return
-        cmd = self.r.svc.dockerlib.docker_cmd + ["volume", "rm", "-f", self.r.volname]
+        cmd = self.r.lib.docker_cmd + ["volume", "rm", "-f", self.r.volname]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError

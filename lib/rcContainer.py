@@ -16,99 +16,33 @@ import rcExceptions as ex
 from rcUtilities import which, justcall, lazy, unset_lazy
 from rcGlobalEnv import rcEnv
 
-class DockerLib(object):
+class ContainerLib(object):
     """
     Instanciated as the 'dockerlib' Svc lazy attribute, this class abstracts
     docker daemon ops.
     """
+    json_opt = ["--format", "{{json .}}"]
+
     def __init__(self, svc=None):
         self.svc = svc
-        self.max_wait_for_dockerd = 5
         self.docker_info_done = False
-
-        try:
-            self.docker_data_dir = \
-                self.svc.conf_get('DEFAULT', 'docker_data_dir')
-        except ex.OptNotFound as exc:
-            self.docker_data_dir = exc.default
-
-        try:
-            self.docker_daemon_private = \
-                self.svc.conf_get('DEFAULT', 'docker_daemon_private')
-        except ex.OptNotFound:
-            if self.docker_data_dir:
-                self.docker_daemon_private = True
-            else:
-                self.docker_daemon_private = False
-        if rcEnv.sysname != "Linux":
-            self.docker_daemon_private = False
-
-        try:
-            self.docker_exe_init = \
-                self.svc.conf_get('DEFAULT', 'docker_exe')
-        except ex.OptNotFound as exc:
-            self.docker_exe_init = exc.default
-
-        try:
-            self.dockerd_exe_init = \
-                self.svc.conf_get('DEFAULT', 'dockerd_exe')
-        except ex.OptNotFound as exc:
-            self.dockerd_exe_init = exc.default
-
-        try:
-            self.docker_daemon_args = \
-                self.svc.conf_get('DEFAULT', 'docker_daemon_args')
-        except ex.OptNotFound as exc:
-            self.docker_daemon_args = exc.default
-
-        if self.docker_data_dir:
-            if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
-                self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
-
-        self.docker_var_d = self.svc.var_d
-
-        if self.docker_daemon_private:
-            self.docker_socket = os.path.join(self.docker_var_d, 'docker.sock')
-            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.sock')
-        else:
-            self.docker_socket = None
-
-        if self.docker_daemon_private:
-            self.docker_pid_file = os.path.join(self.docker_var_d, 'docker.pid')
-            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, 'docker.pid')
-        else:
-            self.docker_pid_file = None
-            try:
-                self.docker_data_dir = self.docker_info["DockerRootDir"]
-            except (KeyError, TypeError):
-                self.docker_data_dir = None
-
-        try:
-            self.docker_cmd = [self.docker_exe]
-            if self.docker_socket:
-                if self.test_sock(self.docker_socket) or not self.test_sock(self.compat_docker_socket):
-                    sock = self.docker_socket
-                else:
-                    sock = self.compat_docker_socket
-                self.docker_cmd += ['-H', "unix://"+sock]
-        except:
-            self.docker_cmd = None
+        self.container_data_dir = self.svc.oget("DEFAULT", "container_data_dir")
 
     def get_ps(self, refresh=False):
         """
-        Return the 'docker ps' output from cache or from the command
+        Return the "docker ps" output from cache or from the command
         execution depending on <refresh>.
         """
         if refresh:
-            unset_lazy(self, "docker_ps")
-        return self.docker_ps
+            unset_lazy(self, "container_ps")
+        return self.container_ps
 
     @lazy
-    def docker_ps(self):
+    def container_ps(self):
         """
         The "docker ps -a --no-trunc" json loaded dicts assembled in a list.
         """
-        cmd = self.docker_cmd + ['ps', '-a', '--no-trunc', "--format", "{{json .}}"]
+        cmd = self.docker_cmd + ["ps", "-a", "--no-trunc"] + self.json_opt
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError(err)
@@ -124,7 +58,7 @@ class DockerLib(object):
         instance label.
         """
         data = {}
-        for container in self.docker_ps:
+        for container in self.container_ps:
             for label in container.get("Labels", "").split(","):
                 try:
                     data[label].append(container)
@@ -139,7 +73,7 @@ class DockerLib(object):
         instance id.
         """
         data = {}
-        for container in self.docker_ps:
+        for container in self.container_ps:
             for name in container.get("Names", "").split(","):
                 try:
                     data[name].append(container)
@@ -154,7 +88,7 @@ class DockerLib(object):
         <n> is the identifier part of the resource id.
         """
         if refresh:
-            unset_lazy(self, "docker_ps")
+            unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_name")
         try:
             return self.container_by_name[resource.name][0]["ID"]
@@ -167,7 +101,7 @@ class DockerLib(object):
         Lookup in docker ps by docker label com.opensvc.id=<...>.
         """
         if refresh:
-            unset_lazy(self, "docker_ps")
+            unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_label")
         try:
             return self.container_by_label[resource.container_label_id][0]["ID"]
@@ -176,14 +110,14 @@ class DockerLib(object):
 
     def get_container_id(self, resource, refresh=False):
         if refresh:
-            unset_lazy(self, "docker_ps")
+            unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_label")
             unset_lazy(self, "container_by_name")
         cid = self.get_container_id_by_label(resource, refresh=False)
         if cid:
             return cid
         try:
-            return self.svc.dockerlib.get_container_id_by_name(resource, refresh=False)
+            return self.get_container_id_by_name(resource, refresh=False)
         except:
             return
 
@@ -196,7 +130,7 @@ class DockerLib(object):
             self.docker_exe
         except ex.excInitError:
             return ""
-        cmd = [self.docker_exe, "info", "--format", "{{json .}}"]
+        cmd = [self.docker_exe, "info"] + self.json_opt
         try:
             data = json.loads(justcall(cmd)[0])
         except ValueError:
@@ -245,9 +179,9 @@ class DockerLib(object):
         """
         if self.docker_cmd is None:
             return []
-        cmd = self.docker_cmd + ['ps', '-q', '--no-trunc']
+        cmd = self.docker_cmd + ["ps", "-q", "--no-trunc"]
         out = justcall(cmd)[0]
-        return out.replace('\n', ' ').split()
+        return out.replace("\n", " ").split()
 
     def get_image_id(self, resource, image=None, pull=True):
         """
@@ -255,13 +189,13 @@ class DockerLib(object):
         """
         if image is None and hasattr(resource, "image"):
             image = resource.image
-        if len(image) == 12 and re.match('^[a-f0-9]*$', image):
+        if len(image) == 12 and re.match("^[a-f0-9]*$", image):
             return image
         if image.startswith("sha256:"):
             return image
 
         try:
-            image_name, image_tag = image.split(':')
+            image_name, image_tag = image.split(":")
         except ValueError:
             image_name = image
             image_tag = "latest"
@@ -277,7 +211,7 @@ class DockerLib(object):
                 raise ValueError("image %s not pullable" % image)
             return data["Id"]
 
-        cmd = self.docker_cmd + ['images', '--no-trunc', image_name]
+        cmd = self.docker_cmd + ["images", "--no-trunc", image_name]
         results = justcall(cmd)
         if results[2] != 0:
             return image
@@ -314,7 +248,7 @@ class DockerLib(object):
     def docker_pull(self, ref):
         self.docker_login(ref)
         self.svc.log.info("pulling docker image %s" % ref)
-        cmd = self.docker_cmd + ['pull', ref]
+        cmd = self.docker_cmd + ["pull", ref]
         results = justcall(cmd)
         if results[2] != 0:
             raise ex.excError(results[1])
@@ -326,7 +260,7 @@ class DockerLib(object):
         """
         if self.docker_cmd is None:
             return {}
-        cmd = self.docker_cmd + ['images', '--no-trunc']
+        cmd = self.docker_cmd + ["images", "--no-trunc"]
         results = justcall(cmd)
         if results[2] != 0:
             return {}
@@ -337,7 +271,7 @@ class DockerLib(object):
                 continue
             if elements[2] == "IMAGE":
                 continue
-            data[elements[2]] = elements[0]+':'+elements[1]
+            data[elements[2]] = elements[0]+":"+elements[1]
         return data
 
     def _info(self):
@@ -381,20 +315,20 @@ class DockerLib(object):
         images_done = []
 
         # referenced images
-        for resource in self.svc.get_resources("container.docker"):
+        for resource in self.svc.get_resources(self.type):
             image_id = self.get_image_id(resource, pull=False)
             if image_id is None:
                 continue
             images_done.append(image_id)
             data.append([resource.rid, "image", resource.image])
-            data.append([resource.rid, "docker_image_id", image_id])
-            data.append([resource.rid, "docker_instance_id", resource.container_id])
+            data.append([resource.rid, "image_id", image_id])
+            data.append([resource.rid, "instance_id", resource.container_id])
 
         # unreferenced images
         for image_id in self.images:
             if image_id in images_done:
                 continue
-            data.append(["", "docker_image_id", image_id])
+            data.append(["", "image_id", image_id])
         self.docker_info_done = True
 
         return data
@@ -404,7 +338,7 @@ class DockerLib(object):
         Return the container resource docker image name if possible,
         else return the image id.
         """
-        if ':' in resource.image:
+        if ":" in resource.image:
             return resource.image
         if self.images is None:
             return resource.image
@@ -423,12 +357,12 @@ class DockerLib(object):
         if container_id is None:
             raise IndexError("container id is None")
         elif isinstance(container_id, list):
-            cmd = self.docker_cmd + ['inspect'] + container_id
+            cmd = self.docker_cmd + ["inspect"] + container_id
             out = justcall(cmd)[0]
             data = json.loads(out)
             return data
         else:
-            cmd = self.docker_cmd + ['inspect', container_id]
+            cmd = self.docker_cmd + ["inspect", container_id]
             out = justcall(cmd)[0]
             data = json.loads(out)
             return data[0]
@@ -458,7 +392,7 @@ class DockerLib(object):
         """
         Return the "docker image inspect" data dict.
         """
-        cmd = self.docker_cmd + ['image', 'inspect', image_id]
+        cmd = self.docker_cmd + ["image", "inspect", image_id]
         out = justcall(cmd)[0]
         data = json.loads(out)
         if len(data) == 0:
@@ -470,6 +404,167 @@ class DockerLib(object):
         if data is None:
             return
         return data["Id"]
+
+    @lazy
+    def dockerd_cmd(self):
+        """
+        The docker daemon startup command, adapted to the docker version.
+        """
+        if self.docker_cmd is None:
+            return []
+
+        if self.docker_min_version("17.05"):
+            cmd = [
+                self.dockerd_exe,
+                "-H", "unix://"+self.docker_socket,
+                "--data-root", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.13"):
+            cmd = [
+                self.dockerd_exe,
+                "-H", "unix://"+self.docker_socket,
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.8"):
+            cmd = [
+                self.docker_exe, "daemon",
+                "-H", "unix://"+self.docker_socket,
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        else:
+            cmd = self.docker_cmd + [
+                "-r=false", "-d",
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        if self.docker_min_version("1.9") and "--exec-root" not in str(self.docker_daemon_args):
+            # keep <104 length to please dockerd
+            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
+        cmd += self.docker_daemon_args
+        return cmd
+
+    def _container_data_dir_resource(self):
+        """
+        Return the service fs resource handling the docker data dir, or
+        None if any.
+        """
+        mntpts = []
+        mntpt_res = {}
+        for resource in self.svc.get_resources("fs"):
+            if resource.type == "fs.docker":
+                continue
+            if not hasattr(resource, "mount_point"):
+                continue
+            mntpts.append(resource.mount_point)
+            mntpt_res[resource.mount_point] = resource
+        for mntpt in sorted(mntpts, reverse=True):
+            if self.container_data_dir.startswith(mntpt):
+                return mntpt_res[mntpt]
+
+    @lazy
+    def docker_exe(self):
+        """
+        Return the docker executable to use, using the service configuration
+        docker_exe as the first choice, and a docker.io or docker exe found
+        in PATH as a fallback.
+        """
+        if self.docker_exe_init and which(self.docker_exe_init):
+            return self.docker_exe_init
+        elif which("docker.io"):
+            return "docker.io"
+        elif which("docker"):
+            return "docker"
+        else:
+            raise ex.excInitError("docker executable not found")
+
+    @lazy
+    def dockerd_exe(self):
+        if self.dockerd_exe_init and which(self.dockerd_exe_init):
+            return self.dockerd_exe_init
+        elif which("dockerd"):
+            return "dockerd"
+        else:
+            raise ex.excInitError("dockerd executable not found")
+
+    def test_sock(self, path):
+        import socket
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock.connect(path)
+        except Exception as exc:
+            return False
+        finally:
+            sock.close()
+        return True
+
+
+class DockerLib(ContainerLib):
+    def __init__(self, svc=None):
+        ContainerLib.__init__(self, svc=svc)
+        self.max_wait_for_dockerd = 5
+
+        try:
+            self.docker_daemon_private = \
+                self.svc.conf_get("DEFAULT", "docker_daemon_private")
+        except ex.OptNotFound:
+            if self.container_data_dir:
+                self.docker_daemon_private = True
+            else:
+                self.docker_daemon_private = False
+        if rcEnv.sysname != "Linux":
+            self.docker_daemon_private = False
+
+        try:
+            self.docker_exe_init = \
+                self.svc.conf_get("DEFAULT", "docker_exe")
+        except ex.OptNotFound as exc:
+            self.docker_exe_init = exc.default
+
+        try:
+            self.dockerd_exe_init = \
+                self.svc.conf_get("DEFAULT", "dockerd_exe")
+        except ex.OptNotFound as exc:
+            self.dockerd_exe_init = exc.default
+
+        try:
+            self.docker_daemon_args = \
+                self.svc.conf_get("DEFAULT", "docker_daemon_args")
+        except ex.OptNotFound as exc:
+            self.docker_daemon_args = exc.default
+
+        if self.container_data_dir:
+            if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
+                self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
+
+        if self.docker_daemon_private:
+            self.docker_socket = os.path.join(self.svc.var_d, "docker.sock")
+            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "docker.sock")
+        else:
+            self.docker_socket = None
+
+        if self.docker_daemon_private:
+            self.docker_pid_file = os.path.join(self.svc.var_d, "docker.pid")
+            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "docker.pid")
+        else:
+            self.docker_pid_file = None
+            try:
+                self.container_data_dir = self.docker_info["DockerRootDir"]
+            except (KeyError, TypeError):
+                self.container_data_dir = None
+
+        try:
+            self.docker_cmd = [self.docker_exe]
+            if self.docker_socket:
+                if self.test_sock(self.docker_socket) or not self.test_sock(self.compat_docker_socket):
+                    sock = self.docker_socket
+                else:
+                    sock = self.compat_docker_socket
+                self.docker_cmd += ["-H", "unix://"+sock]
+        except:
+            self.docker_cmd = None
 
     def docker_stop(self):
         """
@@ -483,7 +578,7 @@ class DockerLib(object):
                 return False
             if not self.docker_running():
                 return False
-            if self.docker_data_dir is None:
+            if self.container_data_dir is None:
                 return False
             if not os.path.exists(self.docker_pid_file):
                 return False
@@ -495,7 +590,7 @@ class DockerLib(object):
             return
 
         try:
-            with open(self.docker_pid_file, 'r') as ofile:
+            with open(self.docker_pid_file, "r") as ofile:
                 pid = int(ofile.read())
         except (OSError, IOError):
             self.svc.log.warning("can't read %s. skip docker daemon kill",
@@ -526,76 +621,6 @@ class DockerLib(object):
                 else:
                     raise ex.excError("failed to kill docker daemon: %s" % str(exc))
 
-    def test_sock(self, path):
-        import socket
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            sock.connect(path)
-        except Exception as exc:
-            return False
-        finally:
-            sock.close()
-        return True
-
-    @lazy
-    def dockerd_cmd(self):
-        """
-        The docker daemon startup command, adapted to the docker version.
-        """
-        if self.docker_cmd is None:
-            return []
-
-        if self.docker_min_version("17.05"):
-            cmd = [
-                self.dockerd_exe,
-                '-H', "unix://"+self.docker_socket,
-                '--data-root', self.docker_data_dir,
-                '-p', self.docker_pid_file
-            ]
-        elif self.docker_min_version("1.13"):
-            cmd = [
-                self.dockerd_exe,
-                '-H', "unix://"+self.docker_socket,
-                '-g', self.docker_data_dir,
-                '-p', self.docker_pid_file
-            ]
-        elif self.docker_min_version("1.8"):
-            cmd = [
-                self.docker_exe, 'daemon',
-                '-H', "unix://"+self.docker_socket,
-                '-g', self.docker_data_dir,
-                '-p', self.docker_pid_file
-            ]
-        else:
-            cmd = self.docker_cmd + [
-                '-r=false', '-d',
-                '-g', self.docker_data_dir,
-                '-p', self.docker_pid_file
-            ]
-        if self.docker_min_version("1.9") and '--exec-root' not in str(self.docker_daemon_args):
-            # keep <104 length to please dockerd
-            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
-        cmd += self.docker_daemon_args
-        return cmd
-
-    def _docker_data_dir_resource(self):
-        """
-        Return the service fs resource handling the docker data dir, or
-        None if any.
-        """
-        mntpts = []
-        mntpt_res = {}
-        for resource in self.svc.get_resources('fs'):
-            if resource.type == "fs.docker":
-                continue
-            if not hasattr(resource, "mount_point"):
-                continue
-            mntpts.append(resource.mount_point)
-            mntpt_res[resource.mount_point] = resource
-        for mntpt in sorted(mntpts, reverse=True):
-            if self.docker_data_dir.startswith(mntpt):
-                return mntpt_res[mntpt]
-
     def docker_start(self, verbose=True):
         """
         Start the docker daemon if in private mode and not already running.
@@ -618,11 +643,11 @@ class DockerLib(object):
             lock.unlock(lockfd)
             return
 
-        if self.docker_data_dir is None:
+        if self.container_data_dir is None:
             lock.unlock(lockfd)
             return
 
-        resource = self._docker_data_dir_resource()
+        resource = self._container_data_dir_resource()
         if resource is not None:
             state = resource._status()
             if state not in (rcStatus.UP, rcStatus.STDBY_UP):
@@ -644,9 +669,9 @@ class DockerLib(object):
             self.svc.log.info(" ".join(cmd))
         import subprocess
         subprocess.Popen(
-            ['nohup'] + cmd,
-            stdout=open('/dev/null', 'w'),
-            stderr=open('/dev/null', 'a'),
+            ["nohup"] + cmd,
+            stdout=open("/dev/null", "w"),
+            stderr=open("/dev/null", "a"),
             preexec_fn=os.setpgrp,
             close_fds=True,
         )
@@ -660,7 +685,7 @@ class DockerLib(object):
         finally:
             lock.unlock(lockfd)
 
-        unset_lazy(self, "docker_ps")
+        unset_lazy(self, "container_ps")
         unset_lazy(self, "container_by_name")
         unset_lazy(self, "container_by_label")
         unset_lazy(self, "docker_info")
@@ -727,34 +752,64 @@ class DockerLib(object):
         """
         Return True if the docker daemon responds to a simple 'info' request.
         """
-        cmd = self.docker_cmd + ['info']
+        cmd = self.docker_cmd + ["info"]
         ret = justcall(cmd)[2]
         if ret != 0:
             return False
         return True
 
-    @lazy
-    def docker_exe(self):
-        """
-        Return the docker executable to use, using the service configuration
-        docker_exe as the first choice, and a docker.io or docker exe found
-        in PATH as a fallback.
-        """
-        if self.docker_exe_init and which(self.docker_exe_init):
-            return self.docker_exe_init
-        elif which("docker.io"):
-            return "docker.io"
-        elif which("docker"):
-            return "docker"
+
+class PodmanLib(ContainerLib):
+    json_opt = ["--format=json"]
+    def __init__(self, svc=None):
+        ContainerLib.__init__(self, svc=svc)
+
+        self.docker_daemon_args = []
+        self.docker_daemon_args += [
+            "--cgroup-manager", "cgroupfs",
+            "--namespace", self.svc.svcpath,
+            "--cni-config-dir", self.svc.node.cni_config,
+        ]
+
+        if self.container_data_dir:
+            self.docker_daemon_private = True
+            self.docker_daemon_args += ["--root", self.container_data_dir]
+            self.docker_daemon_args += ["--runroot", self.container_data_dir+"/run"]
         else:
-            raise ex.excInitError("docker executable not found")
+            self.docker_daemon_private = False
+        if rcEnv.sysname != "Linux":
+            self.docker_daemon_private = False
+
+
+        self.docker_cmd = [self.docker_exe] + self.docker_daemon_args
 
     @lazy
-    def dockerd_exe(self):
-        if self.dockerd_exe_init and which(self.dockerd_exe_init):
-            return self.dockerd_exe_init
-        elif which("dockerd"):
-            return "dockerd"
-        else:
-            raise ex.excInitError("dockerd executable not found")
+    def docker_exe(self):
+        return "podman"
+
+    @lazy
+    def container_ps(self):
+        """
+        The "docker ps -a --no-trunc" json loaded dicts assembled in a list.
+        """
+        cmd = self.docker_cmd + ["ps", "-a", "--no-trunc"] + self.json_opt
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        return json.loads(out)
+
+    def get_image_id(self, *args, **kwargs):
+        """
+        Return the full docker image id
+        """
+        image = ContainerLib.get_image_id(self, *args, **kwargs)
+        if image.startswith("sha256:"):
+            image = image[7:]
+        return image
+
+    def docker_stop(self):
+        pass
+
+    def docker_start(self):
+        pass
 

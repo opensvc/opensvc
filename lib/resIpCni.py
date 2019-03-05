@@ -15,7 +15,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from rcColor import format_str_flat_json
 
-CNI_VERSION = "0.2.0"
+CNI_VERSION = "0.3.0"
 PORTMAP_CONF = {
     "cniVersion": CNI_VERSION,
     "name": "osvc-portmap",

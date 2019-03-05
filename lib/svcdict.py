@@ -22,6 +22,7 @@ DEPRECATED_KEYWORDS = {
   "DEFAULT.service_type": "env",
   "DEFAULT.affinity": "hard_affinity",
   "DEFAULT.anti_affinity": "hard_anti_affinity",
+  "DEFAULT.docker_data_dir": "container_data_dir",
   "disk.lvm.vgname": "name",
   "disk.pool.poolname": "name",
   "disk.vg.vgname": "name",
@@ -31,7 +32,11 @@ DEPRECATED_KEYWORDS = {
   "container.docker.run_image": "image",
   "container.docker.run_command": "command",
   "container.docker.net": "netns",
+  "container.podman.run_image": "image",
+  "container.podman.run_command": "command",
+  "container.podman.net": "netns",
   "task.docker.run_command": "command",
+  "task.podman.run_command": "command",
   "ip.docker.container_rid": "netns",
   "ip.netns.container_rid": "netns",
   "ip.cni.container_rid": "netns",
@@ -43,9 +48,13 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "DEFAULT.env": "service_type",
   "DEFAULT.hard_affinity": "affinity",
   "DEFAULT.hard_anti_affinity": "anti_affinity",
+  "DEFAULT.container_data_dir": "docker_data_dir",
   "container.docker.image": "run_image",
   "container.docker.command": "run_command",
   "container.docker.netns": "net",
+  "container.podman.image": "run_image",
+  "container.podman.command": "run_command",
+  "container.podman.netns": "net",
   "disk.lvm.name": "vgname",
   "disk.pool.name": "poolname",
   "disk.vg.name": "vgname",
@@ -54,6 +63,7 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "ip.netns.netns": "container_rid",
   "ip.cni.netns": "container_rid",
   "task.docker.command": "run_command",
+  "task.podman.command": "run_command",
 }
 
 DEPRECATED_SECTIONS = {
@@ -192,16 +202,16 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "docker_data_dir",
+        "keyword": "container_data_dir",
         "at": True,
-        "text": "If the service has docker-type container resources and this keyword is set, the service starts a service-private docker daemon. Its socket is <pathvar>/services/<svcname>/docker.sock, and its data directory is specified by this keyword. This organization is necessary to enable stateful service relocalization.",
-        "example": "/srv/svc1/data/docker"
+        "text": "If the service has docker or podman-type container resources and this keyword is set, the service configures a service-private containers data store. This setup is allows stateful service relocalization.",
+        "example": "/srv/svc1/data/containers"
     },
     {
         "section": "DEFAULT",
         "keyword": "docker_daemon_private",
         "at": True,
-        "default_text": "<True if docker_data_dir is set, else False>",
+        "default_text": "<True if container_data_dir is set, else False>",
         "convert": "boolean",
         "text": "If set to False, this service will use the system's shared docker daemon instance. This is parameter is forced to False on non-Linux systems.",
         "example": "True"
@@ -275,7 +285,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "detach",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "default": True,
         "convert": "boolean",
         "text": "Run container in background. Set to False only for init containers, alongside start_timeout and the nostatus tag.",
@@ -284,7 +294,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "entrypoint",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "text": "The script or binary executed in the container. Args must be set in :kw:`command`.",
         "example": "/bin/sh"
     },
@@ -292,7 +302,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "rm",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "default": False,
         "convert": "boolean",
         "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
@@ -302,7 +312,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "volume_mounts",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of <volume name>:<containerized mount path>:<mount options>.",
@@ -312,7 +322,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "devices",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of <host devpath>:<containerized devpath>, specifying the host devices the container should have access to.",
@@ -322,7 +332,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "netns",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "text": "Sets the docker run --net argument. The default is ``none`` if --net is not specified in run_args, meaning the container will have a private netns other containers can share. A ip.netns or ip.cni resource can configure an ip address in this container. A container with netns=container#0 will share the container#0 netns. In this case agent format a --net=container:<name of container#0 docker instance>. netns=host shares the host netns.",
         "example": "container#0"
     },
@@ -330,7 +340,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "userns",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "candidates": ("host", None),
         "text": "Sets the docker run --userns argument. If not set, the container will have a private userns other containers can share. A container with userns=host will share the host's userns.",
         "example": "container#0"
@@ -339,7 +349,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "pidns",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "text": "Sets the docker run --pid argument. If not set, the container will have a private pidns other containers can share. Usually a pidns sharer will run a google/pause image to reap zombies. A container with pidns=container#0 will share the container#0 pidns. In this case agent format a --pid=container:<name of container#0 docker instance>. Use pidns=host to share the host's pidns.",
         "example": "container#0"
     },
@@ -347,7 +357,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "ipcns",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "text": "Sets the docker run --ipc argument. If not set, the docker daemon's default value is used. ipcns=none does not mount /dev/shm. ipcns=private creates a ipcns other containers can not share. ipcns=shareable creates a netns other containers can share. ipcns=container#0 will share the container#0 ipcns.",
         "example": "container#0"
     },
@@ -355,7 +365,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "utsns",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "candidates": (None, "host"),
         "text": "Sets the docker run --uts argument. If not set, the container will have a private utsns. A container with utsns=host will share the host's hostname.",
         "example": "container#0"
@@ -364,7 +374,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "privileged",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "tristate",
         "text": "Give extended privileges to the container.",
         "example": "container#0"
@@ -373,7 +383,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "interactive",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "tristate",
         "text": "Keep stdin open even if not attached. To use if the container entrypoint is a shell.",
         "example": "container#0"
@@ -382,7 +392,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "tty",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "tristate",
         "text": "Allocate a pseudo-tty.",
         "example": "container#0"
@@ -391,7 +401,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "name",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "default_text": "<autogenerated>",
         "text": "The name to assign to the container on docker run. If none is specified a <svcname>.container.<rid idx> name is automatically assigned."
     },
@@ -400,7 +410,7 @@ KEYWORDS = [
         "keyword": "image",
         "at": True,
         "required": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "text": "The docker image pull, and run the container with.",
         "example": "83f2a3dd2980"
     },
@@ -408,7 +418,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "command",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "shlex",
         "text": "The command to execute in the docker container on run.",
         "example": "/opt/tomcat/bin/catalina.sh"
@@ -417,7 +427,7 @@ KEYWORDS = [
         "sections": ["task", "container"],
         "keyword": "run_args",
         "at": True,
-        "rtype": "docker",
+        "rtype": ["docker", "podman"],
         "convert": "expanded_shlex",
         "text": "Extra arguments to pass to the docker run command, like volume and port mappings.",
         "example": "-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
@@ -2283,7 +2293,7 @@ KEYWORDS = [
     },
     {
         "sections": ["task", "container"],
-        "rtype": ["docker"],
+        "rtype": ["docker", "podman"],
         "keyword": "start_timeout",
         "convert": "duration",
         "at": True,
@@ -2303,7 +2313,7 @@ KEYWORDS = [
     },
     {
         "section": "container",
-        "rtype": rcEnv.vt_cloud+["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx", "zone", "lxd", "lxc", "jail", "vz", "srp", "docker"],
+        "rtype": rcEnv.vt_cloud+["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx", "zone", "lxd", "lxc", "jail", "vz", "srp", "docker", "podman"],
         "keyword": "stop_timeout",
         "convert": "duration",
         "at": True,
@@ -2887,7 +2897,7 @@ KEYWORDS = [
     {
         "section": "task",
         "keyword": "type",
-        "candidates": [None, "docker"],
+        "candidates": [None, "docker", "podman"],
         "text": "The type of task. Default tasks run on the host, their use is limited to the cluster admin population. Containerized tasks are safe for unprivileged population."
     },
     {

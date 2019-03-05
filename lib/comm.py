@@ -24,6 +24,7 @@ else:
     def to_bytes(x):
         return bytes(x) if not isinstance(x, bytes) else x
 
+# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, ECONNREFUSED, EHOSTUNREACH, EPIPE ?
 RETRYABLE = (
     11,		# EBUSY
     146,	# EREFUSED

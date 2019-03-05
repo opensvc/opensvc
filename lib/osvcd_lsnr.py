@@ -623,6 +623,7 @@ class Listener(shared.OsvcThread):
         smon = self.get_service_monitor(svcpath)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
+        self.log.info("service %s clear requested", svcpath)
         self.set_smon(svcpath, status="idle", reset_retries=True)
         return {"status": 0}
 

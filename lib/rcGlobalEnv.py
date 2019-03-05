@@ -146,8 +146,7 @@ class rcEnv:
     fqdn = socket.getfqdn().lower()
     listener_port = 1214
 
-    """program used to execute remote command on other nodes or virtual hosts
-    """
+    # programs to execute remote command on other nodes or virtual hosts
     if _platform == "sunos5" :
         if os.path.exists('/usr/local/bin/ssh'):
             rsh = "/usr/local/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
@@ -165,10 +164,10 @@ class rcEnv:
         rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
 
-    vt_cloud = ['vcloud', 'openstack', 'amazon']
-    vt_libvirt = ['kvm']
-    vt_vm = ['ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx'] + vt_cloud
-    vt_container = ['zone', 'lxd', 'lxc', 'jail', 'vz', 'srp', 'docker']
+    vt_cloud = ["vcloud", "openstack", "amazon"]
+    vt_libvirt = ["kvm"]
+    vt_vm = ["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx"] + vt_cloud
+    vt_container = ["zone", "lxd", "lxc", "jail", "vz", "srp", "docker", "podman"]
     vt_supported = vt_vm + vt_container
 
     dbopensvc = None

@@ -90,8 +90,13 @@ class Ip(Res.Ip):
     def container_id(self, refresh=False):
         if self.container.type in ("container.lxd", "container.lxc"):
             return self.container.name
+        elif self.container.type in ("container.docker", "container.podman"):
+            return self.container.lib.get_container_id(self.container, refresh=refresh)
         else:
-            return self.svc.dockerlib.get_container_id(self.container, refresh=refresh)
+            raise ex.excError("unsupported container %s type: %s" % (
+                self.container.rid,
+                self.container.type,
+            ))
 
     def arp_announce(self):
         """ disable the generic arping. We do that in the guest namespace.
@@ -114,10 +119,7 @@ class Ip(Res.Ip):
         return ifconfig
 
     def abort_start(self):
-        if not hasattr(self.container, "docker_service") or \
-           not self.container.docker_service:
-            return Res.Ip.abort_start(self)
-        return False
+        return Res.Ip.abort_start(self)
 
     def is_up(self):
         if not self.container.is_up():
@@ -140,13 +142,6 @@ class Ip(Res.Ip):
         return
 
     def container_running_elsewhere(self):
-        if not hasattr(self.container, "docker_service"):
-            return False
-        if not self.container.docker_service:
-            return False
-        if len(self.container.service_hosted_instances()) == 0 and \
-           len(self.container.service_running_instances()) > 0:
-            return True
         return False
 
     def _status(self, verbose=False):
@@ -155,23 +150,10 @@ class Ip(Res.Ip):
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
             return rcStatus.NA
         ret = Res.Ip._status(self)
-        if (hasattr(self.container, "docker_service") and self.container.docker_service) and ret == rcStatus.DOWN:
-            if check_ping(self.addr, timeout=1, count=1):
-                return rcStatus.STDBY_UP
-            else:
-                self.status_log("ip is not up in the swarm. declare ourself 'stdby down' so we can takeover.")
-                return rcStatus.STDBY_DOWN
         return ret
 
     def startip_cmd(self):
         self.unset_lazy("netns")
-        if hasattr(self.container, "docker_service") and \
-           self.container.docker_service and \
-           self._status() != rcStatus.STDBY_DOWN:
-            return 0, "", ""
-        if self.container_running_elsewhere():
-            return 0, "", ""
-
         if "dedicated" in self.tags or self.mode == "dedicated":
             self.log.info("dedicated mode")
             return self.startip_cmd_dedicated()
@@ -469,7 +451,7 @@ class Ip(Res.Ip):
         out, err, ret = justcall(cmd)
 
     def get_nspid(self):
-        if self.container.type == "container.docker":
+        if self.container.type in ("container.docker", "container.podman"):
             return self.get_nspid_docker()
         elif self.container.type in ("container.lxd", "container.lxc"):
             return self.get_nspid_lxc()
@@ -481,7 +463,7 @@ class Ip(Res.Ip):
         container_id = self.container_id(refresh=True)
         if container_id is None:
             return
-        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", container_id]
+        cmd = self.container.lib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", container_id]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to get nspid: %s" % err)
@@ -494,7 +476,7 @@ class Ip(Res.Ip):
 
     @lazy
     def netns(self):
-        if self.container.type == "container.docker":
+        if self.container.type in ("container.docker", "container.podman"):
             return self.sandboxkey()
         elif self.container.type in ("container.lxd", "container.lxc"):
             return self.container.cni_netns()
@@ -504,7 +486,7 @@ class Ip(Res.Ip):
         container_id = self.container_id(refresh=True)
         if container_id is None:
             return
-        cmd = self.svc.dockerlib.docker_cmd + ["inspect", "--format='{{ .NetworkSettings.SandboxKey }}'", container_id]
+        cmd = self.container.lib.docker_cmd + ["inspect", "--format='{{ .NetworkSettings.SandboxKey }}'", container_id]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.excError("failed to get sandboxkey: %s" % err)

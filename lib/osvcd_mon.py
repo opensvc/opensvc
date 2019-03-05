@@ -3341,7 +3341,7 @@ class Monitor(shared.OsvcThread):
         if instance is None:
             return True
         for resource in instance.get("resources", {}).values():
-            if resource.get("type") in ("disk.scsireserv", "task", "task.docker"):
+            if resource.get("type") in ("disk.scsireserv", "task", "task.docker", "task.podman"):
                 # always provisioned
                 continue
             if resource.get("provisioned", {}).get("state") is True:

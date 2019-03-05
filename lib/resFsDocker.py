@@ -19,6 +19,17 @@ class Fs(resources.Resource):
         self.options = options
 
     @lazy
+    def lib(self):
+        """
+        Lazy allocator for the dockerlib object.
+        """
+        try:
+            return self.svc.dockerlib
+        except AttributeError:
+            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            return self.svc.dockerlib
+
+    @lazy
     def label(self): # pylint: disable=method-hidden
         return "%s volume %s" % (self.driver, self.volname)
 
@@ -35,17 +46,17 @@ class Fs(resources.Resource):
         return data
 
     def on_add(self):
-        self.mount_point = self.svc.dockerlib.docker_data_dir
+        self.mount_point = self.lib.container_data_dir
         if self.mount_point is None:
             self.mount_point = "/var/tmp"
 
     @lazy
     def vol_path(self):
-        return self.svc.dockerlib.docker_volume_inspect(self.volname).get("Mountpoint")
+        return self.lib.docker_volume_inspect(self.volname).get("Mountpoint")
 
     def has_it(self):
         try:
-            data = self.svc.dockerlib.docker_volume_inspect(self.volname)
+            data = self.lib.docker_volume_inspect(self.volname)
             return True
         except (ValueError, IndexError):
             return False
@@ -66,7 +77,7 @@ class Fs(resources.Resource):
     def create_vol(self):
         if self.has_it():
             return 0
-        cmd = self.svc.dockerlib.docker_cmd + ["volume", "create", "--name", self.volname]
+        cmd = self.lib.docker_cmd + ["volume", "create", "--name", self.volname]
         if self.options:
             cmd += self.options
         ret, out, err = self.vcall(cmd)

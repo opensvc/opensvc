@@ -21,26 +21,27 @@ from rcUtilities import ximport, check_privs, svcpath_from_link, \
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
-def get_docker_argv(argv=None):
+def get_extra_argv(argv=None):
     """
-    Extract docker argv from svcmgr argv.
+    Extract docker/podman/... passed-through argv from svcmgr argv.
 
-    svcmgr acts as a wrapper for docker, setting the service-specific socket
-    if necessary.
+    svcmgr acts as a wrapper for those commands, setting the service-specific
+    socket if necessary.
     """
+    commands = ["podman", "docker"]
     if argv is None:
         argv = sys.argv[1:]
     if len(argv) < 2:
         return argv, []
-    if "docker" not in argv:
-        return argv, []
-    pos = argv.index("docker")
-    if len(argv) > pos + 1:
-        docker_argv = argv[pos+1:]
-    else:
-        docker_argv = []
-    argv = argv[:pos+1]
-    return argv, docker_argv
+    for command in commands:
+        try:
+            pos = argv.index(command)
+            extra_argv = argv[pos+1:]
+            argv = argv[:pos+1]
+            return argv, extra_argv
+        except Exception:
+            extra_argv = []
+    return argv, []
 
 def get_build_kwargs(optparser, options, action):
     """
@@ -181,7 +182,7 @@ def _main(node, argv=None):
     svcpaths = []
     ret = 0
 
-    argv, docker_argv = get_docker_argv(argv)
+    argv, extra_argv = get_extra_argv(argv)
     optparser = SvcmgrOptParser()
     options, action = optparser.parse_args(argv)
     if action == "deploy":
@@ -189,7 +190,7 @@ def _main(node, argv=None):
         options.provision = True
     options = prepare_options(options, node)
     export_env_from_options(options)
-    options.docker_argv = docker_argv
+    options.extra_argv = extra_argv
     rcColor.use_color = options.color
     try:
         node.options.format = options.format

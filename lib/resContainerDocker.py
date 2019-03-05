@@ -8,6 +8,7 @@ from itertools import chain
 
 import resources
 import resContainer
+import rcContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
@@ -27,7 +28,7 @@ ATTR_MAP = {
     },
     "entrypoint": {
         "path": ["Config", "Entrypoint"],
-        "mangle_attr": lambda x: shlex.split(x),
+        "cmp": "cmp_entrypoint",
     },
     "tty": {
         "path": ["Config", "Tty"],
@@ -65,6 +66,7 @@ class Container(resContainer.Container):
     Docker container resource driver.
     """
     default_start_timeout = 2
+    default_net = "none"
 
     def __init__(self,
                  rid,
@@ -118,6 +120,17 @@ class Container(resContainer.Container):
             self.rm = True
             self.tags.add("nostatus")
 
+    @lazy
+    def lib(self):
+        """
+        Lazy allocator for the dockerlib object.
+        """
+        try:
+            return self.svc.dockerlib
+        except AttributeError:
+            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            return self.svc.dockerlib
+
     def on_add(self):
         try:
             self.volume_options()
@@ -163,37 +176,37 @@ class Container(resContainer.Container):
 
     @lazy
     def container_id(self):
-        return self.svc.dockerlib.get_container_id(self, refresh=True)
+        return self.lib.get_container_id(self, refresh=True)
 
     @lazy
     def label(self): # pylint: disable=method-hidden
-        return "docker " + self.svc.dockerlib.image_userfriendly_name(self)
+        return "docker " + self.lib.image_userfriendly_name(self)
 
     def __str__(self):
         return "%s name=%s" % (resources.Resource.__str__(self), self.name)
 
     def rcmd(self, cmd):
-        cmd = self.svc.dockerlib.docker_cmd + ['exec', '-t', self.container_name] + cmd
+        cmd = self.lib.docker_cmd + ['exec', '-t', self.container_name] + cmd
         return justcall(cmd)
 
     def rcp_from(self, src, dst):
         """
         Copy <src> from the container's rootfs to <dst> in the host's fs.
         """
-        cmd = self.svc.dockerlib.docker_cmd + ['cp', self.container_name+":"+src, dst]
+        cmd = self.lib.docker_cmd + ["cp", self.container_name+":"+src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
         """
         Copy <src> from the host's fs to the container's rootfs.
         """
-        cmd = self.svc.dockerlib.docker_cmd + ['cp', src, self.container_name+":"+dst]
+        cmd = self.lib.docker_cmd + ["cp", src, self.container_name+":"+dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
         return out, err, ret
 
     def files_to_sync(self):
@@ -219,21 +232,6 @@ class Container(resContainer.Container):
             hostname = ""
         return hostname
 
-    def get_rootfs(self):
-        """
-        Return the rootgs layer path.
-        """
-        import glob
-        inspect = self.svc.dockerlib.docker_inspect(self.container_id)
-        instance_id = str(inspect['Id'])
-        pattern = str(self.svc.dockerlib.docker_data_dir)+"/*/mnt/"+instance_id
-        fpaths = glob.glob(pattern)
-        if len(fpaths) == 0:
-            raise ex.excError("no candidates rootfs paths matching %s" % pattern)
-        elif len(fpaths) != 1:
-            raise ex.excError("too many candidates rootfs paths: %s" % ', '.join(fpaths))
-        return fpaths[0]
-
     def wait_for_startup(self):
         if not self.detach:
             return
@@ -251,9 +249,9 @@ class Container(resContainer.Container):
         """
         Remove the resource docker instance.
         """
-        if not self.svc.dockerlib.docker_running():
+        if not self.lib.docker_running():
             return
-        cmd = self.svc.dockerlib.docker_cmd + ['rm', self.container_name]
+        cmd = self.lib.docker_cmd + ['rm', self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "No such container" in err:
@@ -271,10 +269,10 @@ class Container(resContainer.Container):
         """
         Wrap docker commands to honor <action>.
         """
-        if self.svc.dockerlib.docker_cmd is None:
+        if self.lib.docker_cmd is None:
             raise ex.excError("docker executable not found")
-        cmd = self.svc.dockerlib.docker_cmd + []
-        if action == 'start':
+        cmd = self.lib.docker_cmd + []
+        if action == "start":
             if not self.detach:
                 signal.signal(signal.SIGALRM, alarm_handler)
                 signal.alarm(self.start_timeout)
@@ -284,22 +282,22 @@ class Container(resContainer.Container):
                 self.unset_lazy("container_id")
             if self.container_id is None:
                 try:
-                    image_id = self.svc.dockerlib.get_image_id(self)
+                    image_id = self.lib.get_image_id(self)
                 except ValueError as exc:
                     raise ex.excError(str(exc))
                 if image_id is None:
-                    self.svc.dockerlib.docker_login(self.image)
-                cmd += ['run']
+                    self.lib.docker_login(self.image)
+                cmd += ["run"]
                 cmd += self._add_run_args()
                 cmd += [self.image]
                 if self.run_command:
                     cmd += self.run_command
             else:
-                cmd += ['start', self.container_id]
-        elif action == 'stop':
-            cmd += ['stop', self.container_id]
-        elif action == 'kill':
-            cmd += ['kill', self.container_id]
+                cmd += ["start", self.container_id]
+        elif action == "stop":
+            cmd += ["stop", self.container_id]
+        elif action == "kill":
+            cmd += ["kill", self.container_id]
         else:
             self.log.error("unsupported docker action: %s", action)
             return 1
@@ -310,14 +308,14 @@ class Container(resContainer.Container):
         if ret != 0:
             raise ex.excError
 
-        if action == 'start':
+        if action == "start":
             self.unset_lazy("container_id")
-            self.svc.dockerlib.get_running_instance_ids(refresh=True)
+            self.lib.get_running_instance_ids(refresh=True)
         elif action in ("stop", "kill"):
             if self.rm:
                 self.container_rm()
             self.unset_lazy("container_id")
-            self.svc.dockerlib.docker_stop()
+            self.lib.docker_stop()
 
     def device_options(self, errors="raise"):
         if self.run_args is None:
@@ -375,6 +373,13 @@ class Container(resContainer.Container):
                 volumes.append(volarg)
         return volumes
 
+    def cgroup_options(self):
+        if not self.lib.docker_min_version("1.7"):
+            return []
+        if self.lib.docker_info.get("CgroupDriver") != "cgroupfs":
+            return []
+        return ["--cgroup-parent", self.cgroup_dir]
+
     def _add_run_args(self, errors="raise"):
         if self.run_args is None:
             args = []
@@ -423,7 +428,7 @@ class Container(resContainer.Container):
             else:
                 args += ["--net="+self.netns]
         elif not has_option("--net", args):
-            args += ["--net=none"]
+            args += ["--net=" + self.default_net]
 
         if self.pidns:
             args = drop_option("--pid", args, drop_value=True)
@@ -484,11 +489,7 @@ class Container(resContainer.Container):
         for dev in self.device_options(errors=errors):
              args.append("--device=%s" % dev)
 
-        if self.svc.dockerlib.docker_min_version("1.7"):
-            if self.svc.dockerlib.docker_info.get("CgroupDriver") == "cgroupfs":
-                args += ["--cgroup-parent", self.cgroup_dir]
-        if not self.svc.dockerlib.docker_min_version("1.13") and "--rm" in args:
-            del args[args.index("--rm")]
+        args += self.cgroup_options()
 
         def dns_opts(args):
             if not self.svc.node.dns or "--dns" in args:
@@ -516,7 +517,7 @@ class Container(resContainer.Container):
         self.docker('start')
 
     def _start(self):
-        self.svc.dockerlib.docker_start()
+        self.lib.docker_start()
         resContainer.Container.start(self)
 
     def provision(self):
@@ -549,17 +550,19 @@ class Container(resContainer.Container):
         self._stop()
 
     def _stop(self):
-        if not self.svc.dockerlib.docker_running():
+        if not self.lib.docker_running():
             return
+        if self.rm:
+            self.container_rm()
         resContainer.Container.stop(self)
-        self.svc.dockerlib.get_running_instance_ids(refresh=True)
-        self.svc.dockerlib.docker_stop()
+        self.lib.get_running_instance_ids(refresh=True)
+        self.lib.docker_stop()
 
     def _info(self):
         """
         Return keys to contribute to resinfo.
         """
-        data = self.svc.dockerlib._info()
+        data = self.lib._info()
         data.append([self.rid, "run_args", " ".join(self._add_run_args(errors="ignore"))])
         data.append([self.rid, "rm", str(self.rm)])
         data.append([self.rid, "container_name", str(self.container_name)])
@@ -571,22 +574,32 @@ class Container(resContainer.Container):
 
     def _status_container_image(self):
         try:
-            image_id = self.svc.dockerlib.get_image_id(self, pull=False)
+            image_id = self.lib.get_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
         try:
-            inspect = self.svc.dockerlib.docker_inspect(self.container_id)
+            inspect = self.lib.docker_inspect(self.container_id)
         except Exception:
             return
-        running_image_id = inspect['Image']
+        running_image_id = inspect["Image"]
         if image_id is None:
             self.status_log("image '%s' is not pulled yet."%(self.image))
         elif image_id != running_image_id:
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
 
-    def cmp_ns(self, current, data):
+    def cmp_entrypoint(self, current, target, data):
+        try:
+            alt_target = shlex.split(target)
+            if current == target or current == alt_target:
+                return
+            self.status_log("%s=%s, but %s=%s" % \
+                            (".".join(data["path"]), current, data["attr"], target))
+        except Exception as exc:
+            pass
+
+    def cmp_ns(self, current, target, data):
         try:
             res = self.svc.get_resource(self.netns)
             target = "container:"+res.container_name
@@ -601,7 +614,7 @@ class Container(resContainer.Container):
 
     def _status_inspect(self):
         try:
-            inspect_data = self.svc.dockerlib.docker_inspect(self.container_id)
+            inspect_data = self.lib.docker_inspect(self.container_id)
         except Exception:
             return
 
@@ -623,9 +636,7 @@ class Container(resContainer.Container):
                 return
             if _fn:
                 _fn = getattr(self, _fn)
-                return _fn(current, data)
-            if "mangle_attr" in data:
-                target = data["mangle_attr"](target)
+                return _fn(current, target, data)
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
                                 (".".join(data["path"]), current, attr, target))
@@ -637,11 +648,11 @@ class Container(resContainer.Container):
 
     def _status(self, verbose=False):
         try:
-            self.svc.dockerlib.docker_exe
+            self.lib.docker_exe
         except ex.excInitError as exc:
             self.status_log(str(exc), "warn")
             return rcStatus.DOWN
-        if not self.svc.dockerlib.docker_running():
+        if not self.lib.docker_running():
             self.status_log("docker daemon is not running", "info")
             return rcStatus.DOWN
         sta = resContainer.Container._status(self, verbose)
@@ -659,17 +670,17 @@ class Container(resContainer.Container):
         return not self.is_up()
 
     def is_up(self):
-        if self.svc.dockerlib.docker_daemon_private and \
-           self.svc.dockerlib.docker_data_dir is None:
-            self.status_log("DEFAULT.docker_data_dir must be defined")
+        if self.lib.docker_daemon_private and \
+           self.lib.container_data_dir is None:
+            self.status_log("DEFAULT.container_data_dir must be defined")
 
-        if not self.svc.dockerlib.docker_running():
+        if not self.lib.docker_running():
             return False
 
         if self.container_id is None:
             self.status_log("can not find container id", "info")
             return False
-        if self.container_id in self.svc.dockerlib.get_running_instance_ids(refresh=True):
+        if self.container_id in self.lib.get_running_instance_ids(refresh=True):
             return True
         return False
 
@@ -684,14 +695,14 @@ class Container(resContainer.Container):
 
     def container_pid(self):
         try:
-            data = self.svc.dockerlib.docker_inspect(self.container_id)
+            data = self.lib.docker_inspect(self.container_id)
             return data["State"]["Pid"]
         except (IndexError, KeyError):
             return
 
     def container_sandboxkey(self):
         try:
-            data = self.svc.dockerlib.docker_inspect(self.container_id)
+            data = self.lib.docker_inspect(self.container_id)
             return data["NetworkSettings"]["SandboxKey"]
         except (AttributeError, IndexError, KeyError):
             return
