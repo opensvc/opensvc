@@ -307,18 +307,22 @@ class Section(object):
             for k in self.keywords:
                 if k.keyword != keyword:
                     continue
+                if isinstance(k.rtype, (tuple, list)) and rtype in k.rtype:
+                    return k
+                if rtype == k.rtype:
+                    return k
                 if k.rtype is None:
-                    return k
-                elif isinstance(k.rtype, list) and rtype in k.rtype:
-                    return k
-                elif rtype == k.rtype:
                     return k
         else:
             fkey = ".".join((self.section, keyword))
             if self.top is not None and fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
             for k in self.keywords:
-                if k.keyword == keyword:
+                if k.keyword != keyword:
+                    continue
+                if isinstance(k.rtype, (tuple, list)) and None in k.rtype:
+                    return k
+                if k.rtype is None:
                     return k
         return
 
