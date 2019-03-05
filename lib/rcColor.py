@@ -354,8 +354,8 @@ def formatter(fn):
 
         try:
             _fmt(data)
-        except IOError as exc:
-            if exc.errno == 32:
+        except IOError as ioexc:
+            if ioexc.errno == 32:
                 # broken pipe (ex: tail, pager, ...)
                 pass
             else:

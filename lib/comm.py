@@ -692,10 +692,10 @@ class Crypt(object):
                         reconnect.add(sp.nodename)
                         del socks[sock]
                         continue
-                    except socket.error as exc:
+                    except socket.error as exc2:
                         # [Errno 10054] An existing connection was forcibly
                         #               closed by the remote host
-                        if exc.errno in (104, 10054):
+                        if exc2.errno in (104, 10054):
                             # connection reset by peer
                             sp = socks[sock]
                             sock.close()

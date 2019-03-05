@@ -3,6 +3,7 @@ import rcExceptions as ex
 import resources
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
+import rcContainer
 import rcStatus
 
 class Fs(resources.Resource):

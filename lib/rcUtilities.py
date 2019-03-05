@@ -711,12 +711,12 @@ def action_triggers(self, trigger="", action=None, **kwargs):
 
     try:
         ret = self.lcall(cmdv, **kwargs)
-    except OSError as exc:
+    except OSError as osexc:
         ret = 1
-        if exc.errno == 8:
+        if osexc.errno == 8:
             self.log.error("%s exec format error: check the script shebang", cmd)
         else:
-            self.log.error("%s error: %s", cmd, str(exc))
+            self.log.error("%s error: %s", cmd, str(osexc))
     except Exception as exc:
         ret = 1
         self.log.error("%s error: %s", cmd, str(exc))

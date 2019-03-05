@@ -6,6 +6,7 @@ from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 import resSync
 import rcExceptions as ex
+import rcContainer
 
 class SyncDocker(resSync.Sync):
     def __init__(self,

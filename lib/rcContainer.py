@@ -21,12 +21,18 @@ class ContainerLib(object):
     Instanciated as the 'dockerlib' Svc lazy attribute, this class abstracts
     docker daemon ops.
     """
+    docker_cmd = ["/bin/true"]
     json_opt = ["--format", "{{json .}}"]
+    container_type = "none"
 
     def __init__(self, svc=None):
         self.svc = svc
         self.docker_info_done = False
         self.container_data_dir = self.svc.oget("DEFAULT", "container_data_dir")
+
+    @lazy
+    def docker_exe(self):
+        return "/bin/true"
 
     def get_ps(self, refresh=False):
         """
@@ -315,7 +321,7 @@ class ContainerLib(object):
         images_done = []
 
         # referenced images
-        for resource in self.svc.get_resources(self.type):
+        for resource in self.svc.get_resources(self.container_type):
             image_id = self.get_image_id(resource, pull=False)
             if image_id is None:
                 continue
@@ -405,47 +411,6 @@ class ContainerLib(object):
             return
         return data["Id"]
 
-    @lazy
-    def dockerd_cmd(self):
-        """
-        The docker daemon startup command, adapted to the docker version.
-        """
-        if self.docker_cmd is None:
-            return []
-
-        if self.docker_min_version("17.05"):
-            cmd = [
-                self.dockerd_exe,
-                "-H", "unix://"+self.docker_socket,
-                "--data-root", self.container_data_dir,
-                "-p", self.docker_pid_file
-            ]
-        elif self.docker_min_version("1.13"):
-            cmd = [
-                self.dockerd_exe,
-                "-H", "unix://"+self.docker_socket,
-                "-g", self.container_data_dir,
-                "-p", self.docker_pid_file
-            ]
-        elif self.docker_min_version("1.8"):
-            cmd = [
-                self.docker_exe, "daemon",
-                "-H", "unix://"+self.docker_socket,
-                "-g", self.container_data_dir,
-                "-p", self.docker_pid_file
-            ]
-        else:
-            cmd = self.docker_cmd + [
-                "-r=false", "-d",
-                "-g", self.container_data_dir,
-                "-p", self.docker_pid_file
-            ]
-        if self.docker_min_version("1.9") and "--exec-root" not in str(self.docker_daemon_args):
-            # keep <104 length to please dockerd
-            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
-        cmd += self.docker_daemon_args
-        return cmd
-
     def _container_data_dir_resource(self):
         """
         Return the service fs resource handling the docker data dir, or
@@ -464,44 +429,11 @@ class ContainerLib(object):
             if self.container_data_dir.startswith(mntpt):
                 return mntpt_res[mntpt]
 
-    @lazy
-    def docker_exe(self):
-        """
-        Return the docker executable to use, using the service configuration
-        docker_exe as the first choice, and a docker.io or docker exe found
-        in PATH as a fallback.
-        """
-        if self.docker_exe_init and which(self.docker_exe_init):
-            return self.docker_exe_init
-        elif which("docker.io"):
-            return "docker.io"
-        elif which("docker"):
-            return "docker"
-        else:
-            raise ex.excInitError("docker executable not found")
-
-    @lazy
-    def dockerd_exe(self):
-        if self.dockerd_exe_init and which(self.dockerd_exe_init):
-            return self.dockerd_exe_init
-        elif which("dockerd"):
-            return "dockerd"
-        else:
-            raise ex.excInitError("dockerd executable not found")
-
-    def test_sock(self, path):
-        import socket
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            sock.connect(path)
-        except Exception as exc:
-            return False
-        finally:
-            sock.close()
-        return True
 
 
 class DockerLib(ContainerLib):
+    container_type = ["container.docker", "task.docker"]
+
     def __init__(self, svc=None):
         ContainerLib.__init__(self, svc=svc)
         self.max_wait_for_dockerd = 5
@@ -565,6 +497,83 @@ class DockerLib(ContainerLib):
                 self.docker_cmd += ["-H", "unix://"+sock]
         except:
             self.docker_cmd = None
+
+    @lazy
+    def docker_exe(self):
+        """
+        Return the docker executable to use, using the service configuration
+        docker_exe as the first choice, and a docker.io or docker exe found
+        in PATH as a fallback.
+        """
+        if self.docker_exe_init and which(self.docker_exe_init):
+            return self.docker_exe_init
+        elif which("docker.io"):
+            return "docker.io"
+        elif which("docker"):
+            return "docker"
+        else:
+            raise ex.excInitError("docker executable not found")
+
+    @lazy
+    def dockerd_exe(self):
+        if self.dockerd_exe_init and which(self.dockerd_exe_init):
+            return self.dockerd_exe_init
+        elif which("dockerd"):
+            return "dockerd"
+        else:
+            raise ex.excInitError("dockerd executable not found")
+
+    def test_sock(self, path):
+        import socket
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock.connect(path)
+        except Exception as exc:
+            return False
+        finally:
+            sock.close()
+        return True
+
+    @lazy
+    def dockerd_cmd(self):
+        """
+        The docker daemon startup command, adapted to the docker version.
+        """
+        if self.docker_cmd is None:
+            return []
+
+        if self.docker_min_version("17.05"):
+            cmd = [
+                self.dockerd_exe,
+                "-H", "unix://"+self.docker_socket,
+                "--data-root", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.13"):
+            cmd = [
+                self.dockerd_exe,
+                "-H", "unix://"+self.docker_socket,
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        elif self.docker_min_version("1.8"):
+            cmd = [
+                self.docker_exe, "daemon",
+                "-H", "unix://"+self.docker_socket,
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        else:
+            cmd = self.docker_cmd + [
+                "-r=false", "-d",
+                "-g", self.container_data_dir,
+                "-p", self.docker_pid_file
+            ]
+        if self.docker_min_version("1.9") and "--exec-root" not in str(self.docker_daemon_args):
+            # keep <104 length to please dockerd
+            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
+        cmd += self.docker_daemon_args
+        return cmd
 
     def docker_stop(self):
         """
@@ -761,6 +770,8 @@ class DockerLib(ContainerLib):
 
 class PodmanLib(ContainerLib):
     json_opt = ["--format=json"]
+    container_type = ["container.podman", "task.podman"]
+
     def __init__(self, svc=None):
         ContainerLib.__init__(self, svc=svc)
 
