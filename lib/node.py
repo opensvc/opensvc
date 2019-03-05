@@ -2901,7 +2901,7 @@ class Node(Crypt, ExtConfigMixin):
         shutil.copy2(src_cf, tmpfpath)
 
         import uuid
-        svc = factory("svc")(name, cf=tmpfpath, node=self)
+        svc = factory(kind)(name, cf=tmpfpath, node=self)
         if not restore:
             try:
                 svc.set_multi(["DEFAULT.id=%s" % info.id])
