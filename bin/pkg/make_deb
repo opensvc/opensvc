@@ -60,7 +60,7 @@ Version: $VERSION-$RELEASE
 Section: admin 
 Priority: optional
 Architecture: all
-Depends: python (>= 2.6), psmisc
+Depends: python (>= 2.6) | python3 (>=3.4), psmisc
 Recommends: sg3-utils, python-crypto
 Installed-Size: 5000
 Maintainer: OpenSVC <support@opensvc.com>
