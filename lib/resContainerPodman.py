@@ -89,6 +89,3 @@ class Container(resContainerDocker.Container):
     def cgroup_options(self):
         return ["--cgroup-parent", self.cgroup_dir+"/libpod"]
 
-    def get_image_id_from_inspect(self, resource, image=None, pull=True):
-        return self._get_image_id_from_inspect(resource, image, pull)
-

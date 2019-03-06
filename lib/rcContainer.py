@@ -831,3 +831,6 @@ class PodmanLib(ContainerLib):
     def docker_start(self):
         pass
 
+    def get_image_id_from_inspect(self, resource, image=None, pull=True):
+        return self._get_image_id_from_inspect(resource, image, pull)
+
