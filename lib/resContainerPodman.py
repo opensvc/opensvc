@@ -75,7 +75,6 @@ class Container(resContainerDocker.Container):
             self.status_log(str(exc), "warn")
             return rcStatus.DOWN
         sta = resContainer.Container._status(self, verbose)
-        self._status_container_image()
         self._status_inspect()
         return sta
 
@@ -89,4 +88,7 @@ class Container(resContainerDocker.Container):
 
     def cgroup_options(self):
         return ["--cgroup-parent", self.cgroup_dir+"/libpod"]
+
+    def get_image_id_from_inspect(self, resource, image=None, pull=True):
+        return self._get_image_id_from_inspect(resource, image, pull)
 

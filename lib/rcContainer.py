@@ -189,16 +189,30 @@ class ContainerLib(object):
         out = justcall(cmd)[0]
         return out.replace("\n", " ").split()
 
+    def get_image_id_from_inspect(self, resource, image=None, pull=True):
+        if not self.docker_min_version("1.13"):
+            return
+        return self._get_image_id_from_inspect(resource, image, pull)
+
+    def _get_image_id_from_inspect(self, resource, image=None, pull=True):
+        data = self.docker_image_inspect(image)
+        if data is None:
+            if not pull:
+                return
+            self.docker_pull(image)
+            data = self.docker_image_inspect(image)
+        if data is None:
+            raise ValueError("image %s not pullable" % image)
+        return data["Id"]
+
     def get_image_id(self, resource, image=None, pull=True):
         """
-        Return the full docker image id
+        Return the full image id
         """
         if image is None and hasattr(resource, "image"):
             image = resource.image
-        if len(image) == 12 and re.match("^[a-f0-9]*$", image):
-            return image
         if image.startswith("sha256:"):
-            return image
+            return image[7:]
 
         try:
             image_name, image_tag = image.split(":")
@@ -206,16 +220,9 @@ class ContainerLib(object):
             image_name = image
             image_tag = "latest"
 
-        if self.docker_min_version("1.13"):
-            data = self.docker_image_inspect(image)
-            if data is None:
-                if not pull:
-                    return
-                self.docker_pull(image)
-                data = self.docker_image_inspect(image)
-            if data is None:
-                raise ValueError("image %s not pullable" % image)
-            return data["Id"]
+        image_id = self._get_image_id_from_inspect(resource, image, pull)
+        if image_id:
+            return image_id
 
         cmd = self.docker_cmd + ["images", "--no-trunc", image_name]
         results = justcall(cmd)

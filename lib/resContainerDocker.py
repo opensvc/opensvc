@@ -572,19 +572,15 @@ class Container(resContainer.Container):
             data.append([self.rid, "run_command", " ".join(self.run_command)])
         return data
 
-    def _status_container_image(self):
+    def _status_container_image(self, inspect_data):
         try:
             image_id = self.lib.get_image_id(self, pull=False)
         except ValueError as exc:
             self.status_log(str(exc))
             return
-        try:
-            inspect = self.lib.docker_inspect(self.container_id)
-        except Exception:
-            return
-        running_image_id = inspect["Image"]
+        running_image_id = inspect_data["Image"]
         if image_id is None:
-            self.status_log("image '%s' is not pulled yet."%(self.image))
+            self.status_log("image '%s' is not pulled yet." % self.image)
         elif image_id != running_image_id:
             self.status_log("the current container is based on image '%s' "
                             "instead of '%s'"%(running_image_id, image_id))
@@ -617,6 +613,7 @@ class Container(resContainer.Container):
             inspect_data = self.lib.docker_inspect(self.container_id)
         except Exception:
             return
+        self._status_container_image(inspect_data)
 
         def get(path, data=None):
             try:
@@ -656,7 +653,6 @@ class Container(resContainer.Container):
             self.status_log("docker daemon is not running", "info")
             return rcStatus.DOWN
         sta = resContainer.Container._status(self, verbose)
-        self._status_container_image()
         self._status_inspect()
         return sta
 
