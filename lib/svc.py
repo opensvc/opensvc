@@ -2451,6 +2451,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             # errno 39: not empty (racing with a writer)
             pass
 
+    def purge_var_d(self):
+        for res in self.get_resources():
+            res.purge_var_d()
+
     def delete_service_conf(self):
         """
         Delete the service configuration files
@@ -2460,7 +2464,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         dpaths = [
             self.paths.alt_initd,
             self.paths.initd,
-            os.path.join(self.var_d),
+            self.var_d,
         ]
         fpaths = [
             self.paths.cf,
@@ -4346,6 +4350,7 @@ class Svc(BaseSvc):
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker", "podman"]))
         self.pg_remove()
         self.delete_service_sched()
+        self.purge_var_d()
 
     def provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker", "podman"]))

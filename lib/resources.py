@@ -541,6 +541,17 @@ class Resource(object):
         except:
             pass
 
+    def purge_var_d(self):
+        import glob
+        import shutil
+        paths = glob.glob(os.path.join(self.var_d, "*"))
+        for path in paths:
+            try:
+                shutil.rmtree(path)
+            except OSError:
+                # errno 39: not empty (racing with a writer)
+                pass
+
     def has_status_last(self):
         return os.path.exists(self.fpath_status_last)
 
