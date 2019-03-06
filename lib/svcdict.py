@@ -586,7 +586,7 @@ KEYWORDS = [
         "at": True,
         "rtype": rcEnv.vt_supported,
         "example": "/opt/opensvc",
-        "text": "If the OpenSVC agent is installed via package in the container, this parameter must not be set or set to 'None'. Else the value can be set to the fullpath hosting the agent installed from sources."
+        "text": "If the OpenSVC agent is installed via package in the container, this parameter must not be set. Else the value can be set to the fullpath hosting the agent installed from sources."
     },
     {
         "section": "container",

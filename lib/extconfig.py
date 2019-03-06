@@ -803,6 +803,18 @@ class ExtConfigMixin(object):
         except ex.RequiredOptNotFound as exc:
             raise ex.excError(str(exc))
 
+    def get_rtype(self, s, section, config):
+        if section == "DEFAULT":
+            return
+        try:
+            return config.get(s, "type")
+        except Exception as exc:
+            pass
+        try:
+            return self.kwdict.KEYS[section].getkey("type").default
+        except AttributeError:
+            pass
+
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
                  use_default=True, config=None, verbose=True, rtype=None):
         """
@@ -812,21 +824,16 @@ class ExtConfigMixin(object):
             config = self.config
         section = s.split("#")[0]
         if rtype:
-            fkey = ".".join((section, rtype, o))
+            pass
         elif section in self.kwdict.DEPRECATED_SECTIONS:
             section, rtype = self.kwdict.DEPRECATED_SECTIONS[section]
+        else:
+            rtype = self.get_rtype(s, section, config)
+
+        if rtype:
             fkey = ".".join((section, rtype, o))
         else:
-            try:
-                rtype = config.get(s, "type")
-                fkey = ".".join((section, rtype, o))
-            except Exception:
-                if hasattr(self, "svcname") and section == "sync":
-                    rtype = "rsync"
-                    fkey = ".".join((section, rtype, o))
-                else:
-                    rtype = None
-                    fkey = ".".join((section, o))
+            fkey = ".".join((section, o))
 
         deprecated_keywords = self.kwdict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
         if deprecated_keywords is not None and not isinstance(deprecated_keywords, list):
@@ -1220,10 +1227,7 @@ class ExtConfigMixin(object):
                     # unknown to the self.kwdict. Just ignore it.
                     continue
                 family = section.split("#")[0]
-                if config.has_option(section, "type"):
-                    rtype = config.get(section, "type")
-                else:
-                    rtype = None
+                rtype = self.get_rtype(section, family, config)
                 if family not in list(self.kwdict.KEYS.sections.keys()) + list(self.kwdict.DEPRECATED_SECTIONS.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
