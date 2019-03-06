@@ -215,6 +215,7 @@ def add_ip(svc, s):
         kwargs["mask"] = svc.oget(s, "netmask")
         kwargs["gateway"] = svc.oget(s, "gateway")
         kwargs["netns"] = svc.oget(s, "netns")
+        kwargs["nsdev"] = svc.oget(s, "nsdev")
         kwargs["mode"] = svc.oget(s, "mode")
         kwargs["network"] = svc.oget(s, "network")
         kwargs["del_net_route"] = svc.oget(s, "del_net_route")

@@ -1778,6 +1778,14 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "rtype": ["netns"],
+        "keyword": "nsdev",
+        "at": True,
+        "required": False,
+        "text": "If specified, use this interface name in the netns. If not specified the first free eth<n> is chosen."
+    },
+    {
+        "section": "ip",
         "rtype": "cni",
         "keyword": "ipdev",
         "default": "eth12",

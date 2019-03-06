@@ -18,6 +18,7 @@ class Ip(Res.Ip):
                  network=None,
                  del_net_route=False,
                  netns=None,
+                 nsdev=None,
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
@@ -31,6 +32,7 @@ class Ip(Res.Ip):
                         **kwargs)
         self.mode = mode if mode else "bridge"
         self.network = network
+        self.nsdev = nsdev
         self.del_net_route = del_net_route
         self.container_rid = str(netns)
         self.vlan_tag = vlan_tag
@@ -80,6 +82,13 @@ class Ip(Res.Ip):
             if idx not in used:
                 return "eth%d" % idx
             idx += 1
+
+    @lazy
+    def final_guest_dev(self):
+        if self.nsdev:
+            return self.nsdev
+        else:
+            return self.guest_dev
 
     @lazy
     def container(self):
@@ -189,32 +198,32 @@ class Ip(Res.Ip):
         nspid = self.get_nspid()
         if nspid is None:
             raise ex.excError("could not determine nspid")
-        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # add default route
         if self.gateway:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
@@ -264,13 +273,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -309,13 +318,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -350,13 +359,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -391,13 +400,13 @@ class Ip(Res.Ip):
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.guest_dev]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -417,7 +426,7 @@ class Ip(Res.Ip):
         return mtu
 
     def ip_setup_route(self):
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.guest_dev, "up"]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -434,19 +443,19 @@ class Ip(Res.Ip):
             if ret != 0:
                 return ret, out, err
         else:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.guest_dev]
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.guest_dev, self.addr]
+        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
