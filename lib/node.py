@@ -4835,7 +4835,7 @@ class Node(Crypt, ExtConfigMixin):
             config = {}
             config["type"] = self.oget(section, "type")
             for key in self.section_kwargs(section, config["type"]):
-                config[key] = self.oget(section, key)
+                config[key] = self.oget(section, key, rtype=config["type"])
             if not config:
                 continue
             nets[name] = {}
