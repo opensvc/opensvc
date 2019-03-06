@@ -2,6 +2,7 @@
 Docker container resource driver module.
 """
 import os
+import re
 import shlex
 import signal
 from itertools import chain
@@ -12,7 +13,7 @@ import rcContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get_options
+from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
@@ -176,7 +177,7 @@ class Container(resContainer.Container):
 
     @lazy
     def container_id(self):
-        return self.lib.get_container_id(self, refresh=True)
+        return self.lib.get_container_id(self)
 
     @lazy
     def label(self): # pylint: disable=method-hidden
@@ -239,7 +240,7 @@ class Container(resContainer.Container):
 
     def wait_for_removed(self):
         def removed():
-            self.unset_lazy("container_id")
+            self.is_up_clear_cache()
             if self.container_id:
                 return False
             return True
@@ -263,7 +264,7 @@ class Container(resContainer.Container):
                 raise ex.excError(err)
         else:
             self.log.info(" ".join(cmd))
-        self.unset_lazy("container_id")
+        self.is_up_clear_cache()
 
     def docker(self, action):
         """
@@ -279,10 +280,10 @@ class Container(resContainer.Container):
             if self.rm:
                 self.container_rm()
             if self.container_id is None:
-                self.unset_lazy("container_id")
+                self.is_up_clear_cache()
             if self.container_id is None:
                 try:
-                    image_id = self.lib.get_image_id(self)
+                    image_id = self.lib.get_image_id(self.image)
                 except ValueError as exc:
                     raise ex.excError(str(exc))
                 if image_id is None:
@@ -309,12 +310,11 @@ class Container(resContainer.Container):
             raise ex.excError
 
         if action == "start":
-            self.unset_lazy("container_id")
-            self.lib.get_running_instance_ids(refresh=True)
+            self.is_up_clear_cache()
         elif action in ("stop", "kill"):
             if self.rm:
                 self.container_rm()
-            self.unset_lazy("container_id")
+            self.is_up_clear_cache()
             self.lib.docker_stop()
 
     def device_options(self, errors="raise"):
@@ -534,7 +534,7 @@ class Container(resContainer.Container):
             self._start()
         except KeyboardInterrupt:
             if not self.detach:
-                self.unset_lazy("container_id")
+                self.is_up_clear_cache()
                 self.container_forcestop()
                 self.container_rm()
                 raise ex.excError("timeout")
@@ -555,7 +555,7 @@ class Container(resContainer.Container):
         resContainer.Container.stop(self)
         if self.rm:
             self.container_rm()
-        self.lib.get_running_instance_ids(refresh=True)
+        self.is_up_clear_cache()
         self.lib.docker_stop()
 
     def _info(self):
@@ -574,11 +574,11 @@ class Container(resContainer.Container):
 
     def _status_container_image(self, inspect_data):
         try:
-            image_id = self.lib.get_image_id(self, pull=False)
+            image_id = self.lib.get_image_id(self.image)
         except ValueError as exc:
             self.status_log(str(exc))
             return
-        running_image_id = inspect_data["Image"]
+        running_image_id = re.sub("^sha256:", "", inspect_data["Image"])
         if image_id is None:
             self.status_log("image '%s' is not pulled yet." % self.image)
         elif image_id != running_image_id:
@@ -665,6 +665,14 @@ class Container(resContainer.Container):
     def is_down(self):
         return not self.is_up()
 
+    def is_up_clear_cache(self):
+        self.unset_lazy("container_id")
+        unset_lazy(self.lib, "container_ps")
+        unset_lazy(self.lib, "running_instance_ids")
+        unset_lazy(self.lib, "container_by_label")
+        unset_lazy(self.lib, "container_by_name")
+        unset_lazy(self.lib, "containers_inspect")
+
     def is_up(self):
         if self.lib.docker_daemon_private and \
            self.lib.container_data_dir is None:
@@ -676,7 +684,7 @@ class Container(resContainer.Container):
         if self.container_id is None:
             self.status_log("can not find container id", "info")
             return False
-        if self.container_id in self.lib.get_running_instance_ids(refresh=True):
+        if self.container_id in self.lib.get_running_instance_ids():
             return True
         return False
 

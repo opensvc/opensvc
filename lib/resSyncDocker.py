@@ -62,7 +62,9 @@ class SyncDocker(resSync.Sync):
 
     def get_images(self):
         for r in self.handled_resources():
-            image_id = self.lib.get_image_id(r)
+            image_id = self.lib.get_image_id(r.image)
+            if image_id is None:
+                continue
             self.image_id_name[image_id] = r.image
             self.images.append(image_id)
 

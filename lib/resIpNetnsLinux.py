@@ -460,14 +460,10 @@ class Ip(Res.Ip):
         return str(self.container.get_pid())
 
     def get_nspid_docker(self):
-        container_id = self.container_id(refresh=True)
-        if container_id is None:
-            return
-        cmd = self.container.lib.docker_cmd + ["inspect", "--format='{{ .State.Pid }}'", container_id]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError("failed to get nspid: %s" % err)
-        nspid = out.strip()
+        nspid = self.container.container_pid()
+        if nspid is None:
+            raise ex.excError("failed to get nspid")
+        nspid = str(nspid).strip()
         if "'" in nspid:
             nspid = nspid.replace("'","")
         if nspid == "0":
@@ -483,14 +479,10 @@ class Ip(Res.Ip):
         raise ex.excError("unsupported container type: %s" % self.container.type)
 
     def sandboxkey(self):
-        container_id = self.container_id(refresh=True)
-        if container_id is None:
-            return
-        cmd = self.container.lib.docker_cmd + ["inspect", "--format='{{ .NetworkSettings.SandboxKey }}'", container_id]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.excError("failed to get sandboxkey: %s" % err)
-        sandboxkey = out.strip()
+        sandboxkey = self.container.container_sandboxkey()
+        if sandboxkey is None:
+            raise ex.excError("failed to get sandboxkey")
+        sandboxkey = str(sandboxkey).strip()
         if "'" in sandboxkey:
             sandboxkey = sandboxkey.replace("'","")
         if sandboxkey == "":

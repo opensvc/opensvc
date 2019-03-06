@@ -175,6 +175,7 @@ class ContainerLib(object):
         Return the list of running docker instances id.
         """
         if refresh:
+            unset_lazy(self, "container_ps")
             unset_lazy(self, "running_instance_ids")
         return self.running_instance_ids
 
@@ -185,56 +186,38 @@ class ContainerLib(object):
         """
         if self.docker_cmd is None:
             return []
-        cmd = self.docker_cmd + ["ps", "-q", "--no-trunc"]
-        out = justcall(cmd)[0]
-        return out.replace("\n", " ").split()
+        return [ps["ID"] for ps in self.container_ps if ps["Status"].startswith("Up ")]
 
-    def get_image_id_from_inspect(self, resource, image=None, pull=True):
-        if not self.docker_min_version("1.13"):
-            return
-        return self._get_image_id_from_inspect(resource, image, pull)
-
-    def _get_image_id_from_inspect(self, resource, image=None, pull=True):
-        data = self.docker_image_inspect(image)
-        if data is None:
-            if not pull:
-                return
-            self.docker_pull(image)
-            data = self.docker_image_inspect(image)
-        if data is None:
-            raise ValueError("image %s not pullable" % image)
-        return data["Id"]
-
-    def get_image_id(self, resource, image=None, pull=True):
+    def get_image_id(self, name):
         """
         Return the full image id
         """
-        if image is None and hasattr(resource, "image"):
-            image = resource.image
-        if image.startswith("sha256:"):
-            return image[7:]
+        if name.startswith("sha256:"):
+            return name[7:]
+        image = self.get_image(name)
+        if not image:
+            return
+        return image["id"]
 
+    def get_image(self, name):
+        """
+        Lookup the image data by name
+        """
         try:
-            image_name, image_tag = image.split(":")
+            image_name, image_tag = name.split(":")
         except ValueError:
-            image_name = image
+            image_name = name
             image_tag = "latest"
 
-        image_id = self._get_image_id_from_inspect(resource, image, pull)
-        if image_id:
-            return image_id
-
-        cmd = self.docker_cmd + ["images", "--no-trunc", image_name]
-        results = justcall(cmd)
-        if results[2] != 0:
-            return image
-        for line in results[0].splitlines():
-            elements = line.split()
-            if len(elements) < 3:
+        for data in self.images:
+            if data["tag"] != image_tag:
                 continue
-            if elements[1] == image_tag:
-                return elements[2]
-        return image
+            if data["name"] == image_name:
+                return data
+            if data["name"] == "docker.io/library/"+image_name:
+                return data
+            if data["name"] == "docker.io/"+image_name:
+                return data
 
     def login_as_service_args(self):
         args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
@@ -277,14 +260,19 @@ class ContainerLib(object):
         results = justcall(cmd)
         if results[2] != 0:
             return {}
-        data = {}
+        data = []
         for line in results[0].splitlines():
             elements = line.split()
             if len(elements) < 3:
                 continue
             if elements[2] == "IMAGE":
                 continue
-            data[elements[2]] = elements[0]+":"+elements[1]
+            image_id = re.sub("^sha256:", "", elements[2])
+            data.append({
+                "name": elements[0],
+                "tag": elements[1],
+                "id": image_id,
+            })
         return data
 
     def _info(self):
@@ -329,19 +317,19 @@ class ContainerLib(object):
 
         # referenced images
         for resource in self.svc.get_resources(self.container_type):
-            image_id = self.get_image_id(resource, pull=False)
-            if image_id is None:
+            image = self.get_image(resource.image)
+            if image is None:
                 continue
-            images_done.append(image_id)
+            images_done.append(image["id"])
             data.append([resource.rid, "image", resource.image])
-            data.append([resource.rid, "image_id", image_id])
+            data.append([resource.rid, "image_id", image["id"]])
             data.append([resource.rid, "instance_id", resource.container_id])
 
         # unreferenced images
-        for image_id in self.images:
-            if image_id in images_done:
+        for image in self.images:
+            if image["id"] in images_done:
                 continue
-            data.append(["", "image_id", image_id])
+            data.append(["", "image_id", image["id"]])
         self.docker_info_done = True
 
         return data
@@ -355,30 +343,39 @@ class ContainerLib(object):
             return resource.image
         if self.images is None:
             return resource.image
-        if resource.image in self.images:
-            return self.images[resource.image]
+        image = self.get_image(resource.image)
+        if image:
+            return image["name"]
         return resource.image
 
     def docker_inspect(self, container_id):
         """
         Return the "docker inspect" data dict.
         """
+        if container_id is None:
+            raise IndexError("container id is None")
+        for data in self.containers_inspect:
+            if data and data.get("Id", data.get("ID")) == container_id:
+                return data
+        return {}
+
+    @lazy
+    def containers_inspect(self):
+        ids = []
+        for resource in self.svc.get_resources(self.container_type):
+            if not resource.container_id:
+                continue
+            ids.append(resource.container_id)
+        if not ids:
+            return []
         try:
             self.docker_exe
         except ex.excInitError:
-            return {}
-        if container_id is None:
-            raise IndexError("container id is None")
-        elif isinstance(container_id, list):
-            cmd = self.docker_cmd + ["inspect"] + container_id
-            out = justcall(cmd)[0]
-            data = json.loads(out)
-            return data
-        else:
-            cmd = self.docker_cmd + ["inspect", container_id]
-            out = justcall(cmd)[0]
-            data = json.loads(out)
-            return data[0]
+            return []
+        cmd = self.docker_cmd + ["inspect"] + ids
+        out = justcall(cmd)[0]
+        data = json.loads(out)
+        return data
 
     def docker_volume_inspect(self, vol_id):
         """
@@ -400,23 +397,6 @@ class ContainerLib(object):
             out = justcall(cmd)[0]
             data = json.loads(out)
             return data[0]
-
-    def docker_image_inspect(self, image_id):
-        """
-        Return the "docker image inspect" data dict.
-        """
-        cmd = self.docker_cmd + ["image", "inspect", image_id]
-        out = justcall(cmd)[0]
-        data = json.loads(out)
-        if len(data) == 0:
-            return
-        return data[0]
-
-    def repotag_to_image_id(self, repotag):
-        data = self.docker_image_inspect(repotag)
-        if data is None:
-            return
-        return data["Id"]
 
     def _container_data_dir_resource(self):
         """
@@ -707,6 +687,7 @@ class DockerLib(ContainerLib):
         unset_lazy(self, "docker_info")
         unset_lazy(self, "running_instance_ids")
         unset_lazy(self, "images")
+        unset_lazy(self, "containers_inspect")
 
     def docker_running(self):
         """
@@ -798,7 +779,6 @@ class PodmanLib(ContainerLib):
         if rcEnv.sysname != "Linux":
             self.docker_daemon_private = False
 
-
         self.docker_cmd = [self.docker_exe] + self.docker_daemon_args
 
     @lazy
@@ -816,21 +796,15 @@ class PodmanLib(ContainerLib):
             raise ex.excError(err)
         return json.loads(out)
 
-    def get_image_id(self, *args, **kwargs):
-        """
-        Return the full docker image id
-        """
-        image = ContainerLib.get_image_id(self, *args, **kwargs)
-        if image.startswith("sha256:"):
-            image = image[7:]
-        return image
-
     def docker_stop(self):
         pass
 
     def docker_start(self):
         pass
 
-    def get_image_id_from_inspect(self, resource, image=None, pull=True):
-        return self._get_image_id_from_inspect(resource, image, pull)
+    def login_as_service_args(self):
+        args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
+        args += ["-p", self.svc.node.config.get("node", "uuid")]
+        return args
+
 

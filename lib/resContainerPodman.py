@@ -57,14 +57,15 @@ class Container(resContainerDocker.Container):
                 raise ex.excError(err)
         else:
             self.log.info(" ".join(cmd))
-        self.unset_lazy("container_id")
+        self.is_up_clear_cache()
 
     def _start(self):
         resContainer.Container.start(self)
+        self.is_up_clear_cache()
 
     def _stop(self):
         resContainer.Container.stop(self)
-        self.lib.get_running_instance_ids(refresh=True)
+        self.is_up_clear_cache()
         if self.rm:
             self.container_rm()
 
@@ -82,7 +83,7 @@ class Container(resContainerDocker.Container):
         if self.container_id is None:
             self.status_log("can not find container id", "info")
             return False
-        if self.container_id in self.lib.get_running_instance_ids(refresh=True):
+        if self.container_id in self.lib.get_running_instance_ids():
             return True
         return False
 
