@@ -3000,7 +3000,7 @@ class Node(Crypt, ExtConfigMixin):
                         raise ex.excError("invalid injected data format: %s is not a path" % path)
                     if "metadata" in __data:
                         del __data["metadata"]
-                    data[path] = __data
+                    _data[path] = __data
         elif isinstance(data, list):
             for __data in data:
                  try:
@@ -3008,7 +3008,7 @@ class Node(Crypt, ExtConfigMixin):
                  except (ValueError, KeyError):
                      raise ex.excError("invalid injected data format: list need a metadata section in each entry")
                  del __data["metadata"]
-                 data[path] = __data
+                 _data[path] = __data
 
         if _data:
             if svcpath:
