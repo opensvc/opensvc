@@ -796,7 +796,7 @@ class PodmanLib(ContainerLib):
 
     @lazy
     def docker_exe(self):
-        return "podman"
+        return "/usr/bin/podman"
 
     @lazy
     def container_ps(self):
