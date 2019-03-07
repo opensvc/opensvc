@@ -53,7 +53,7 @@ help() {
 	echo "" >&2
 	echo "Selector:" >&2
 	echo "  <selector>[,<selector>,...] Unioned selectors" >&2
-	echo "  <selector>[+<selector>,...] Intersected selectors" >&2
+	echo "  <selector>[+<selector>+...] Intersected selectors" >&2
 	echo "" >&2
 	echo "Path Selectors:" >&2
 	echo "  <namespace>/<kind>/<name>   Fully qualified path" >&2
@@ -88,7 +88,7 @@ main() {
 		exit 1
 		;;
 	getns)
-		echo $OSVC_NAMESPACE
+		[ -z "$OSVC_NAMESPACE" ] && echo "(none)" || echo $OSVC_NAMESPACE
 		;;
 	svc)
 		shift
