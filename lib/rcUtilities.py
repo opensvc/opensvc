@@ -1371,7 +1371,10 @@ def factory(kind):
 
 def parse_path_selector(selector, namespace=None):
     if selector is None:
-        return "*", "*", "svc"
+        if namespace:
+            return "*", namespace, "svc"
+        else:
+            return "*", "*", "svc"
     elts = selector.split("/")
     elts_count = len(elts)
     if elts_count == 1:
