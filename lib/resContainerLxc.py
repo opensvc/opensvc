@@ -511,14 +511,14 @@ class Lxc(resContainer.Container):
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def stop(self):
-        resContainer.Container.stop(self)
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
+        resContainer.Container.stop(self)
 
     def provision(self):
         resContainer.Container.provision(self)
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
-        resContainer.Container.unprovision(self)
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
+        resContainer.Container.unprovision(self)
 
