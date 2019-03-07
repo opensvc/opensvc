@@ -582,6 +582,8 @@ class ExtConfigMixin(object):
             val = rcEnv.paths.pathetc
         elif _ref == "var":
             val = rcEnv.paths.pathvar
+        elif _ref == "private_var":
+            val = self.var_d
         elif _ref == "collector_api":
             if rcEnv.dbopensvc:
                 val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
