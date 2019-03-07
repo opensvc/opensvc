@@ -66,6 +66,9 @@ class Ip(Res.Ip):
         """
         if self.netns is None:
             raise ex.excError("could not determine netns")
+        with open("/proc/net/dev", "r") as filep:
+            local_devs = [line.split(":", 1)[0] for line in filep.readlines() if ":" in line]
+
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip" , "link"]
         out, err, ret = justcall(cmd)
         used = []
@@ -76,11 +79,18 @@ class Ip(Res.Ip):
             if "@" in idx:
                 # strip "@if<n>" suffix
                 idx = idx[:idx.index("@")]
-            used.append(int(idx))
+            try:
+                used.append(int(idx))
+            except ValueError:
+                # user named interface. ex: eth-metier
+                continue
         idx = 0
+        nspid = self.get_nspid()
         while True:
-            if idx not in used:
-                return "eth%d" % idx
+            guest_dev = "eth%d" % idx
+            local_dev = "v%spl%s" % (guest_dev, nspid)
+            if idx not in used and local_dev not in local_devs:
+                return guest_dev
             idx += 1
 
     @lazy
