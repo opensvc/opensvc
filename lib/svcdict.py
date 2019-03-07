@@ -1786,7 +1786,7 @@ KEYWORDS = [
     },
     {
         "section": "ip",
-        "rtype": ["netns"],
+        "rtype": ["netns", "docker"],
         "keyword": "nsdev",
         "at": True,
         "required": False,
