@@ -2995,9 +2995,13 @@ class Svc(BaseSvc):
                 dependency_of.add(_rid)
         return dependency_of
 
+    def resource_handling_file(self, path):
+        path = os.path.dirname(path)
+        return self.resource_handling_dir(path)
+
     def resource_handling_dir(self, path):
         mntpts = {}
-        for res in self.get_resources(["fs"]):
+        for res in self.get_resources(["fs", "volume"]):
             mntpts[res.mount_point] = res
         while True:
             if path in mntpts.keys():
