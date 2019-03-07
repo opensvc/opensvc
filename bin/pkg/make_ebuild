@@ -72,7 +72,8 @@ pkg_preinst() (
 )
 
 pkg_postinst() {
-	python /usr/share/opensvc/bin/postinstall
+        which python3 >> /dev/null 2>&1 && PYTHON=python3 || PYTHON=python
+        \${PYTHON} /usr/share/opensvc/bin/postinstall
 }
 
 pkg_prerm() (

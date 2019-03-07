@@ -49,7 +49,7 @@ chmod 755 $CHROOT/DEBIAN/preinst
 
 cat - <<-EOF >$CHROOT/DEBIAN/postinst
 #!/bin/sh -e
-which python3 && PYTHON=python3 || PYTHON=python
+which python3 >> /dev/null 2>&1 && PYTHON=python3 || PYTHON=python
 \$PYTHON /usr/share/opensvc/bin/postinstall
 EOF
 chmod 755 $CHROOT/DEBIAN/postinst
