@@ -10,6 +10,7 @@ from rcUtilities import which, justcall, lazy, makedirs
 from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
+import rcStatus
 
 CAPABILITIES = {
     "cgroup_dir": "2.1",
@@ -100,17 +101,15 @@ class Lxc(resContainer.Container):
                 cmd = ["lxc-start", "-d", "-n", self.name, "-o", outf]
             if self.cf:
                 cmd += ['-f', self.cf]
-            if self.container_data_dir:
-                makedirs(self.container_data_dir)
-                cmd += ["-P", self.container_data_dir]
+            if self.lxcpath:
+                makedirs(self.lxcpath)
+                cmd += self.lxcpath_args
         elif action == 'stop':
             cmd = ['lxc-stop', '-n', self.name]
-            if self.container_data_dir:
-                cmd += ["-P", self.container_data_dir]
+            cmd += self.lxcpath_args
         elif action == 'kill':
             cmd = ['lxc-stop', '--kill', '--name', self.name]
-            if self.container_data_dir:
-                cmd += ["-P", self.container_data_dir]
+            cmd += self.lxcpath_args
         else:
             raise ex.excError("unsupported lxc action: %s" % action)
 
@@ -163,6 +162,18 @@ class Lxc(resContainer.Container):
             # zfs:/tank/svc1, nbd:file1, dir:/foo ...
             rootfs = rootfs.split(":", 1)[-1]
         return rootfs
+
+    @lazy
+    def lxcpath(self):
+        if self.container_data_dir:
+            path, _ = self.replace_volname(self.container_data_dir, strict=False, errors="ignore")
+            return path
+
+    @lazy
+    def lxcpath_args(self):
+        if self.lxcpath:
+            return ["-P", self.lxcpath]
+        return []
 
     def install_drp_flag(self):
         flag = os.path.join(self.rootfs, ".drp_flag")
@@ -252,8 +263,7 @@ class Lxc(resContainer.Container):
 
     def get_pid(self):
         cmd = ['lxc-info', '--name', self.name, '-p']
-        if self.container_data_dir:
-            cmd += ["-P", self.container_data_dir]
+        cmd += self.lxcpath_args
         out, _, ret = justcall(cmd)
         if ret != 0:
             return
@@ -265,8 +275,7 @@ class Lxc(resContainer.Container):
     def get_links(self):
         links = []
         cmd = ['lxc-info', '--name', self.name]
-        if self.container_data_dir:
-            cmd += ["-P", self.container_data_dir]
+        cmd += self.lxcpath_args
         out, _, ret = justcall(cmd)
         if ret != 0:
             return []
@@ -304,8 +313,7 @@ class Lxc(resContainer.Container):
 
     def is_up_info(self, nodename=None):
         cmd = ['lxc-info', '--name', self.name]
-        if self.container_data_dir:
-            cmd += ["-P", self.container_data_dir]
+        cmd += self.lxcpath_args
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
         out, _, ret = justcall(cmd)
@@ -366,8 +374,8 @@ class Lxc(resContainer.Container):
             raise ex.excError(str(exc))
 
     def get_cf_path(self):
-        if self.container_data_dir:
-            return os.path.join(self.container_data_dir, self.name, "config")
+        if self.lxcpath:
+            return os.path.join(self.lxcpath, self.name, "config")
         path = which('lxc-info')
         if path is None:
             return
@@ -385,6 +393,11 @@ class Lxc(resContainer.Container):
 
     def check_installed_cf(self):
         cfg = self.get_cf_path()
+        if not self.is_provisioned():
+            return True
+        res = self.svc.resource_handling_file(cfg)
+        if res and res.status() not in (rcStatus.NA, rcStatus.UP, rcStatus.STDBY_UP):
+            return True
         if cfg is None:
             self.status_log("could not determine the config file standard hosting directory")
             return False
@@ -401,8 +414,8 @@ class Lxc(resContainer.Container):
         if self.cf is not None:
             return
 
-        if self.container_data_dir:
-            d_lxc = self.container_data_dir
+        if self.lxcpath:
+            d_lxc = self.lxcpath
         else:
             d_lxc = os.path.join('var', 'lib', 'lxc')
 
