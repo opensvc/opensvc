@@ -547,8 +547,11 @@ class Resource(object):
         paths = glob.glob(os.path.join(self.var_d, "*"))
         for path in paths:
             try:
-                shutil.rmtree(path)
-            except OSError:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.unlink(path)
+            except OSError as exc:
                 # errno 39: not empty (racing with a writer)
                 pass
 
