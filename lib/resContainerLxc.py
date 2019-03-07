@@ -366,6 +366,8 @@ class Lxc(resContainer.Container):
             raise ex.excError(str(exc))
 
     def get_cf_path(self):
+        if self.container_data_dir:
+            return os.path.join(self.container_data_dir, self.name, "config")
         path = which('lxc-info')
         if path is None:
             return
