@@ -6,7 +6,7 @@ from datetime import datetime
 
 import resources as Res
 from rcUtilitiesLinux import check_ping
-from rcUtilities import which, justcall, lazy
+from rcUtilities import which, justcall, lazy, makedirs
 from rcGlobalEnv import rcEnv
 import resContainer
 import rcExceptions as ex
@@ -100,10 +100,17 @@ class Lxc(resContainer.Container):
                 cmd = ["lxc-start", "-d", "-n", self.name, "-o", outf]
             if self.cf:
                 cmd += ['-f', self.cf]
+            if self.container_data_dir:
+                makedirs(self.container_data_dir)
+                cmd += ["-P", self.container_data_dir]
         elif action == 'stop':
             cmd = ['lxc-stop', '-n', self.name]
+            if self.container_data_dir:
+                cmd += ["-P", self.container_data_dir]
         elif action == 'kill':
             cmd = ['lxc-stop', '--kill', '--name', self.name]
+            if self.container_data_dir:
+                cmd += ["-P", self.container_data_dir]
         else:
             raise ex.excError("unsupported lxc action: %s" % action)
 
@@ -245,6 +252,8 @@ class Lxc(resContainer.Container):
 
     def get_pid(self):
         cmd = ['lxc-info', '--name', self.name, '-p']
+        if self.container_data_dir:
+            cmd += ["-P", self.container_data_dir]
         out, _, ret = justcall(cmd)
         if ret != 0:
             return
@@ -256,6 +265,8 @@ class Lxc(resContainer.Container):
     def get_links(self):
         links = []
         cmd = ['lxc-info', '--name', self.name]
+        if self.container_data_dir:
+            cmd += ["-P", self.container_data_dir]
         out, _, ret = justcall(cmd)
         if ret != 0:
             return []
@@ -293,6 +304,8 @@ class Lxc(resContainer.Container):
 
     def is_up_info(self, nodename=None):
         cmd = ['lxc-info', '--name', self.name]
+        if self.container_data_dir:
+            cmd += ["-P", self.container_data_dir]
         if nodename is not None:
             cmd = rcEnv.rsh.split() + [nodename] + cmd
         out, _, ret = justcall(cmd)
@@ -386,7 +399,10 @@ class Lxc(resContainer.Container):
         if self.cf is not None:
             return
 
-        d_lxc = os.path.join('var', 'lib', 'lxc')
+        if self.container_data_dir:
+            d_lxc = self.container_data_dir
+        else:
+            d_lxc = os.path.join('var', 'lib', 'lxc')
 
         # seen on debian squeeze : prefix is /usr, but containers'
         # config files paths are /var/lib/lxc/$name/config
@@ -398,8 +414,7 @@ class Lxc(resContainer.Container):
             cfg = os.path.join(prefix, d_lxc, self.name, 'config')
             if os.path.exists(cfg):
                 cfg_d = os.path.dirname(cfg)
-                if not os.path.exists(cfg_d):
-                    os.makedirs(cfg_d)
+                makedirs(cfg_d)
                 self.cf = cfg
                 return
 
@@ -429,6 +444,7 @@ class Lxc(resContainer.Container):
                  cf=None,
                  rcmd=None,
                  osvc_root_path=None,
+                 container_data_dir=None,
                  **kwargs):
         resContainer.Container.__init__(self,
                                         rid=rid,
@@ -441,6 +457,7 @@ class Lxc(resContainer.Container):
         self.refresh_provisioned_on_unprovision = True
         self.always_pg = True
         self.label = "lxc " + self.label
+        self.container_data_dir = container_data_dir
 
         self.links = None
         if rcmd is not None:

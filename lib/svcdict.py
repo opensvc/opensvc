@@ -204,7 +204,15 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "container_data_dir",
         "at": True,
-        "text": "If the service has docker or podman-type container resources and this keyword is set, the service configures a service-private containers data store. This setup is allows stateful service relocalization.",
+        "text": "If the service has lxc, docker or podman-type container resources and this keyword is set, the service configures a service-private containers data store. This setup is allows stateful service relocalization.",
+        "example": "/srv/svc1/data/containers"
+    },
+    {
+        "section": "container",
+        "rtype": "lxc",
+        "keyword": "container_data_dir",
+        "at": True,
+        "text": "If this keyword is set, the service configures a resource-private container data store. This setup is allows stateful service relocalization.",
         "example": "/srv/svc1/data/containers"
     },
     {

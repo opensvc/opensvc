@@ -3,7 +3,7 @@ import shutil
 
 import provisioning
 from rcGlobalEnv import rcEnv
-from rcUtilities import protected_dir
+from rcUtilities import protected_dir, makedirs
 import rcExceptions as ex
 
 DEFAULT_CONFIG = """\
@@ -77,6 +77,9 @@ class Prov(provisioning.Prov):
         with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.r.name), "a+") as f:
             f.write("")
         cmd = ['lxc-create', '-n', self.r.name, '-f', self.config]
+        if self.r.container_data_dir:
+            makedirs(self.r.container_data_dir)
+            cmd += ["-P", self.r.container_data_dir]
         ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
@@ -194,6 +197,9 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def set_d_lxc(self):
         # lxc root conf dir
+        if self.r.container_data_dir:
+            self.d_lxc = self.r.container_data_dir
+            return
         self.d_lxc = os.path.join(os.sep, 'var', 'lib', 'lxc')
         if not os.path.exists(self.d_lxc):
             self.d_lxc = os.path.join(os.sep, 'usr', 'local', 'var', 'lib', 'lxc')
@@ -220,6 +226,11 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         cmd = ['lxc-create', '--name', self.r.name, "--dir", self.r.rootfs]
         if self.r.cf:
             cmd += ['-f', self.r.cf]
+        if self.r.container_data_dir:
+            makedirs(self.r.container_data_dir)
+            cmd += ["-P", self.r.container_data_dir]
+            if not self.r.cf:
+                cmd += ["-f", os.path.join(self.r.container_data_dir, self.r.name, "config")]
         if self.template:
             cmd += ['--template', self.template]
             if template_options:

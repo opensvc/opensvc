@@ -988,6 +988,7 @@ def add_container_lxc(svc, s):
     kwargs.update(container_kwargs(svc, s))
     kwargs["rcmd"] = get_rcmd(svc, s)
     kwargs["cf"] = svc.oget(s, "cf")
+    kwargs["container_data_dir"] = svc.oget(s, "container_data_dir")
     m = __import__("resContainerLxc")
     r = m.Lxc(**kwargs)
     svc += r
