@@ -153,6 +153,8 @@ class Lxc(resContainer.Container):
             rootfs, vol = self.replace_volname(rootfs, strict=False)
         if rootfs:
             return rootfs
+        if self.lxcpath:
+            return os.path.join(self.lxcpath, "config")
         rootfs = self.get_cf_value("lxc.rootfs")
         if rootfs is None:
             rootfs = self.get_cf_value("lxc.rootfs.path")
@@ -416,8 +418,10 @@ class Lxc(resContainer.Container):
 
         if self.lxcpath:
             d_lxc = self.lxcpath
-        else:
-            d_lxc = os.path.join('var', 'lib', 'lxc')
+            cfg = os.path.join(d_lxc, self.name, 'config')
+            return cfg
+
+        d_lxc = os.path.join('var', 'lib', 'lxc')
 
         # seen on debian squeeze : prefix is /usr, but containers'
         # config files paths are /var/lib/lxc/$name/config
