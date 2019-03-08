@@ -3349,7 +3349,7 @@ class Monitor(shared.OsvcThread):
                 continue
             if resource.get("provisioned", {}).get("state") is True:
                 return False
-        return True
+        return not instance.get("provisioned", False)
 
     def get_agg(self, svcpath):
         data = Storage()
