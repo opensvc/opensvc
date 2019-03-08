@@ -1861,7 +1861,7 @@ class Node(Crypt, ExtConfigMixin):
         import checks
         if self.svcs is None:
             self.build_services()
-        checkers = checks.checks(self.svcs)
+        checkers = checks.checks([svc for svc in self.svcs if svc.kind in ["vol", "svc"]])
         checkers.node = self
         data = checkers.do_checks()
         self.print_data(data)
