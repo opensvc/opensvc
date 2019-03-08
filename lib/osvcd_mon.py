@@ -1389,7 +1389,7 @@ class Monitor(shared.OsvcThread):
             if not leader:
                 self.set_smon(svc.svcpath, status="wait non-leader")
                 return
-            if svc.svcpath in shared.SERVICES and svc.kind != "ccfg":
+            if svc.svcpath in shared.SERVICES and svc.kind not in ("vol", "svc"):
                 # base services do not implement the purge action
                 self.event("instance_delete", {
                     "reason": "target",
