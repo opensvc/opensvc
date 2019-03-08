@@ -1291,7 +1291,7 @@ class Resource(object):
         l = buff.split("/")
         volname = l[0]
         if not volname:
-            if strict or errors == "ignore":
+            if strict and errors != "ignore":
                 raise ex.excError("a volume path can't start with /")
             else:
                 return buff, None
