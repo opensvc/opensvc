@@ -492,7 +492,14 @@ class Ip(Res.Ip):
     @lazy
     def netns(self):
         if self.container.type in ("container.docker", "container.podman"):
-            return self.sandboxkey()
+            path = self.sandboxkey()
+            if os.path.exists(path):
+                return path
+            # compat with older netns location
+            path = path.replace("/services/", "/svc/")
+            if os.path.exists(path):
+                return path
+            return
         elif self.container.type in ("container.lxd", "container.lxc"):
             return self.container.cni_netns()
         raise ex.excError("unsupported container type: %s" % self.container.type)
