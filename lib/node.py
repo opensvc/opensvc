@@ -4711,8 +4711,15 @@ class Node(Crypt, ExtConfigMixin):
         data = {}
         volumes = self.pools_volumes()
         for name in self.pool_ls_data():
-            pool = self.get_pool(name)
-            data[name] = pool.pool_status()
+            try:
+                pool = self.get_pool(name)
+                data[name] = pool.pool_status()
+            except Exception as exc:
+                data[name] = {
+                    "type": "unknown",
+                    "capabilities": [],
+                    "head": "err: " + str(exc),
+                }
             if name in volumes:
                 data[name]["volumes"] = sorted(list(volumes[name]))
             else:
