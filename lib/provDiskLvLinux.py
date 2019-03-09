@@ -99,6 +99,14 @@ class Prov(provisioning.Prov):
             raise ex.excError
         self.r.svc.node.unset_lazy("devtree")
 
+    def is_provisioned(self):
+        dev = self.get_dev()
+        cmd = ["lvdisplay", dev]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            return True
+        return False
+
     def provisioner(self):
         if not which('vgdisplay'):
             self.r.log.error("vgdisplay command not found")
@@ -113,13 +121,6 @@ class Prov(provisioning.Prov):
             raise ex.excError
 
         dev = self.get_dev()
-        cmd = ["lvdisplay", dev]
-        out, err, ret = justcall(cmd)
-        if ret == 0:
-            self.r.log.debug("skip lv provision: %s already exists" % dev)
-            if "NOT available" in out:
-                self.activate(dev)
-            return
 
         try:
             self.size = self.r.conf_get("size")

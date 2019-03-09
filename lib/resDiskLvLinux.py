@@ -21,6 +21,8 @@ class Disk(resDisk.Disk):
         self.fullname = "%s/%s" % (vg, name)
         self.label = "lv %s" % self.fullname
         self.vg = vg
+        self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
 
     def _info(self):
         data = [
