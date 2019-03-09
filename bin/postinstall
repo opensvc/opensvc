@@ -892,31 +892,6 @@ def missing_dirs():
     missing_dir(pathetc)
     missing_dir(pathlck)
 
-def convert_svclinks():
-    logit("begin")
-    missing_dir(pathetc)
-    svcmgr = os.path.join(pathsbin, 'svcmgr')
-    if not os.path.exists(svcmgr):
-        logit("%s does not exist"%svcmgr)
-        return 1
-    rcService = os.path.realpath(os.path.join(pathbin, 'rcService'))
-    if not os.path.exists(rcService):
-        logit("%s does not exist"%rcService)
-        return 1
-    for fname in os.listdir(pathetc):
-        fpath = os.path.join(pathetc, fname)
-        if not os.path.islink(fpath):
-            logit("%s is not a symlink"%fpath)
-            continue
-        rpath = os.path.realpath(fpath)
-        if rpath != rcService:
-            logit("%s != %s"%(rpath, rcService))
-            continue
-        logit("removing %s"%fpath)
-        os.unlink(fpath)
-        logit("create link %s -> %s"%(fpath, svcmgr))
-        os.symlink(svcmgr, fpath)
-
 def move_env_to_conf():
     for fpath in glob.glob(os.path.join(pathetc, "*.env")):
         svcname = os.path.basename(fpath)[:-4]
@@ -1074,10 +1049,6 @@ def install_profile():
     prof_d = os.path.join(os.sep, 'etc', 'profile.d')
     prof = os.path.join(prof_d, 'opensvc.sh')
     buff = """
-if ! echo ${PATH} | grep -qw %(pathetc)s; then
-	PATH=${PATH}:%(pathetc)s
-fi
-
 if ! echo ${PATH} | grep -qw %(pathbin)s; then
 	PATH=${PATH}:%(pathbin)s
 fi
@@ -1497,11 +1468,24 @@ def solaris_fmri_setprop():
             if ret == 0:
                 logit("fmri refresh successfully executed", stdout=False)
 
+def remove_svclinks():
+    logit("remove svclinks (deprecated)", stdout=False)
+    svcmgr = os.path.realpath(os.path.join(pathsbin, 'svcmgr'))
+    for path in glob.glob(os.path.join(pathetc, "*", "*", "*", "*")) + \
+                glob.glob(os.path.join(pathetc, "*", "*", "*")) + \
+                glob.glob(os.path.join(pathetc, "*", "*")) + \
+                glob.glob(os.path.join(pathetc, "*")):
+        if not os.path.islink(path):
+            continue
+        if os.path.realpath(path) != svcmgr:
+            continue
+        logit(" rm %s" % path, stdout=False)
+        os.unlink(path)
+
 try:
     move_var_files_in_subdirs()
     move_usr_to_opt()
     missing_dirs()
-    convert_svclinks()
     install_cron()
     install_rc()
     gen_keys()
@@ -1521,6 +1505,7 @@ try:
     restart_daemon()
     init_secret()
     solaris_fmri_setprop()
+    remove_svclinks()
     logit("\nOpenSVC postinstall terminated\n", stdout=True)
 except:
     save_exc()

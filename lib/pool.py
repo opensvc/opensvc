@@ -77,7 +77,6 @@ class Pool(object):
             defaults["nodes"] = nodes
         data.append(defaults)
         volume._update(data)
-        self.node.install_service_files(volume.svcname, volume.namespace, volume.kind)
 
     def pool_status(self):
         pass

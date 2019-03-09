@@ -46,7 +46,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
                         makedirs, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
-                        validate_ns_name, unset_all_lazy, create_svclink, \
+                        validate_ns_name, unset_all_lazy, \
                         factory, resolve_svcpath, strip_path, normalize_paths
 from converters import *
 from comm import Crypt
@@ -3038,7 +3038,6 @@ class Node(Crypt, ExtConfigMixin):
                 info = self.install_service_info(name, namespace, kind)
                 print("create %s" % info.path)
                 self.install_svc_conf_from_data(name, _namespace, kind, _data, restore, info)
-                self.install_service_files(name, namespace, kind)
                 installed.append(info.path)
             self.wake_monitor()
             return installed
@@ -3068,16 +3067,9 @@ class Node(Crypt, ExtConfigMixin):
         else:
             self.install_svc_from_args(name, namespace, kind, resources, info)
 
-        self.install_service_files(name, namespace, kind)
         installed.append(info.path)
         self.wake_monitor()
         return installed
-
-    def install_service_files(self, name, namespace, kind):
-        """
-        Given a service name, install the symlink to svcmgr.
-        """
-        create_svclink(name, namespace, kind, self.cluster_name)
 
     def set_rlimit(self, nofile=4096):
         """
@@ -3204,7 +3196,6 @@ class Node(Crypt, ExtConfigMixin):
                 conf.set(section, key, val)
 
         conf.write(f)
-        self.install_service_files(name, namespace, kind)
         return {"ret": 0, "rid": sections.keys()}
 
     def create_svcpath(self, paths, namespace):
@@ -4484,9 +4475,6 @@ class Node(Crypt, ExtConfigMixin):
             self.install_svc_conf_from_data("cluster", None, "ccfg", cluster_config_data, restore=True)
             os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
 
-
-        if cluster_config_data:
-            self.install_service_files("cluster", None, "ccfg")
 
         # join other nodes
         errors = 0

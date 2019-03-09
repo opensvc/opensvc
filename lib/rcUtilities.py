@@ -1230,17 +1230,6 @@ def svc_fullname(name, namespace, kind, clustername):
         clustername
     )
 
-def split_svclink(svclink, clustername):
-    bn = os.path.basename(svclink)
-    if bn == "cluster":
-        return bn, None, "ccfg"
-    roff = len(clustername) + 1
-    if not bn.endswith(clustername):
-        return bn, None, "svc"
-    bn = bn[:-roff]
-    name, namespace, kind = bn.split(".svc.", 1)[0].rsplit(".", 2)
-    return name, namespace, kind
-
 def strip_path(paths, namespace):
     if not namespace:
         return paths
@@ -1259,59 +1248,6 @@ def normalize_path(path):
 def normalize_paths(paths):
     for path in paths:
         yield normalize_path(path)
-
-def svcpath_from_link(svclink, clustername):
-    name, namespace, kind = split_svclink(svclink, clustername)
-    if namespace:
-        return "/".join((namespace, kind, name))
-    return name
-
-def check_svclink_ns(svclink, namespace, clustername):
-    _, linkns, _ = split_svclink(svclink, clustername)
-    if namespace and linkns != namespace:
-        raise ex.excError("Service link '%s' doesn't belong to namespace '%s'.\n"
-                          "Use a service selector expression to select a "
-                          "service from a foreign namespace." % (os.path.basename(svclink), namespace))
-
-def svclink_path(name, namespace, kind, clustername):
-    path = fmt_svcpath(name, namespace, kind)
-    pathetc = svc_pathetc(path)
-    if namespace:
-        bn = svc_fullname(name, namespace, kind, clustername)
-    else:
-        bn = name
-    return os.path.join(rcEnv.paths.pathetc, bn)
-
-def exe_link_exists(name, namespace, kind, clustername):
-    if os.name != 'posix':
-        return False
-    path = svclink_path(name, namespace, kind, clustername)
-    try:
-        p = os.readlink(path)
-        if p == rcEnv.paths.svcmgr:
-            return True
-        else:
-            return False
-    except:
-        return False
-
-def create_svclink(name, namespace, kind, clustername):
-    """
-    Create the -> svcmgr symlink
-    """
-    if os.name != 'posix':
-        return
-    path = svclink_path(name, namespace, kind, clustername)
-    try:
-        p = os.readlink(path)
-    except:
-        os.chdir(rcEnv.paths.pathetc)
-        os.symlink(rcEnv.paths.svcmgr, path)
-        p = rcEnv.paths.svcmgr
-    if p != rcEnv.paths.svcmgr:
-        os.chdir(rcEnv.paths.pathetc)
-        os.unlink(name)
-        os.symlink(rcEnv.paths.svcmgr, path)
 
 def resolve_svcpath(path, namespace=None):
     """

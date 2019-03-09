@@ -2460,7 +2460,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Delete the service configuration files
         """
         import shutil
-        from rcUtilities import svclink_path
         dpaths = [
             self.paths.alt_initd,
             self.paths.initd,
@@ -2468,7 +2467,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         ]
         fpaths = [
             self.paths.cf,
-            svclink_path(self.svcname, self.namespace, self.kind, self.node.cluster_name),
             self.paths.initd,
         ]
         for fpath in fpaths:
@@ -5445,7 +5443,6 @@ class Svc(BaseSvc):
             ofile.write(buff)
             ofile.flush()
         self.log.info("%s pulled", self.paths.cf)
-        self.node.install_service_files(self.svcname, namespace=self.namespace)
 
         if self.options.provision:
             self.action("provision")

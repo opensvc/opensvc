@@ -125,8 +125,6 @@ class OptParser(object):
         for option in self.actions[section][action].get("options", []):
             parser.add_option(option)
         for option in self.global_options:
-            if self.svclink() and option in self.svc_select_options:
-                continue
             parser.add_option(option)
         desc += self.subsequent_indent + parser.format_option_help()
         return desc
@@ -216,14 +214,6 @@ class OptParser(object):
             actions += self.actions[section].keys()
         actions += self.deprecated_actions
         return actions
-
-    @staticmethod
-    def svclink():
-        """
-        Return True if the service link was used to call svcmgr,
-        else return False
-        """
-        return os.environ.get("OSVC_SERVICE_LINK", False)
 
     def actions_next_words(self, base=""):
         """
@@ -334,8 +324,6 @@ class OptParser(object):
         )
 
         for option in self.options.values():
-            if self.svclink() and option in self.svc_select_options:
-                continue
             self.parser.add_option(option)
 
     def set_full_usage(self):
@@ -386,8 +374,6 @@ class OptParser(object):
                 continue
             action_options = section_data[action].get("options", [])
         for option in action_options + self.global_options:
-            if self.svclink() and option in self.svc_select_options:
-                continue
             parser.add_option(option)
         options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
         return options, action

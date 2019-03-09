@@ -43,13 +43,9 @@ esac
 
 if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon" ]
 then
-	unset OSVC_SERVICE_LINK
 	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
 else
-	# exec from a service link: add the --service parameter
-	OSVC_SERVICE_LINK="$BASENAME"
-	export OSVC_SERVICE_LINK
-	BIN="$OSVC_ROOT_PATH/lib/svcmgr.py"
+	exit 1
 fi
 
 "$OSVC_PYTHON" $OSVC_PYTHON_ARGS "$BIN" $BIN_ARGS "$@"

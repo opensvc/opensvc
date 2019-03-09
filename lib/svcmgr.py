@@ -16,8 +16,7 @@ import rcStatus
 import rcColor
 from svcmgr_parser import SvcmgrOptParser
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs, svcpath_from_link, \
-                        check_svclink_ns
+from rcUtilities import ximport, check_privs
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -60,19 +59,6 @@ def get_build_kwargs(optparser, options, action):
     build_kwargs["create_instance"] = action in ("create", "pull")
 
     return build_kwargs
-
-def expand_svcs(options, node):
-    # selection trough symlink to svcmgr
-    svclink = os.environ.get("OSVC_SERVICE_LINK")
-    if svclink:
-        try:
-            check_svclink_ns(svclink, options.namespace, node.cluster_name)
-        except ex.excError as exc:
-            print(exc, file=sys.stderr)
-            return []
-        node.options.single_service = True
-        return [svcpath_from_link(svclink, node.cluster_name)]
-    return node.svcs_selector(options.svcs, options.namespace)
 
 def do_svcs_action_detached(argv=None):
     """
@@ -141,17 +127,12 @@ def prepare_options(options, node):
     """
     opts = Storage()
     # preserve parm_svcs, as svcs will be expanded
-    svclink = os.environ.get("OSVC_SERVICE_LINK")
-    if svclink:
-        opts.parm_svcs = svcpath_from_link(svclink, node.cluster_name)
-    else:
-        opts.parm_svcs = options.parm_svcs
+    opts.parm_svcs = options.parm_svcs
     for key, val in options.__dict__.items():
         opts[key.replace("parm_", "")] = val
     try:
         namespace = options.namespace
     except AttributeError:
-        # svclink parser doesn't include the namespace option
         namespace = None
     if namespace:
         opts.namespace = namespace
@@ -197,14 +178,13 @@ def _main(node, argv=None):
         node.options.jsonpath_filter = options.jsonpath_filter
     except AttributeError:
         pass
-    if os.environ.get("OSVC_SERVICE_LINK") is None and \
-       action not in ("ls", "create") and options.svcs is None and options.status is None:
-        raise ex.excError("no service specified. set --service or --status.")
+    if action not in ("ls", "monitor", "create") and options.svcs is None and options.status is None:
+        raise ex.excError("no service selected.")
     if action == "create":
         if options.svcs:
             options.svcs = options.svcs.split(",")
     else:
-        expanded_svcs = expand_svcs(options, node)
+        expanded_svcs = node.svcs_selector(options.svcs, options.namespace)
         if options.svcs in (None, "*") and expanded_svcs == []:
             return
         options.svcs = expanded_svcs
