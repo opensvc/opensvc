@@ -396,7 +396,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                     else:
                         leader = ""
                 # provisioned
-                if data["nodes"][nodename]["provisioned"] is False:
+                if data["nodes"][nodename].get("provisioned") is False:
                     provisioned = colorize("P", color.RED)
                 else:
                     provisioned = ""

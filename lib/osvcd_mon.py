@@ -1974,7 +1974,7 @@ class Monitor(shared.OsvcThread):
                     self.log.info("delay leader-last action on service %s: "
                                   "node %s is still not deleted", svc.svcpath, node)
                 return
-            if instance["provisioned"] is not provisioned:
+            if instance.get("provisioned", False) is not provisioned:
                 if not silent:
                     self.log.info("delay leader-last action on service %s: "
                                   "node %s is still %s", svc.svcpath, node,
@@ -2022,7 +2022,7 @@ class Monitor(shared.OsvcThread):
         instance = self.get_service_instance(svc.svcpath, top)
         if instance is None and deleted:
             return True
-        if instance["provisioned"] is provisioned:
+        if instance.get("provisioned", True) is provisioned:
             return True
         if not silent:
             self.log.info("delay leader-first action on service %s", svc.svcpath)
@@ -2458,7 +2458,7 @@ class Monitor(shared.OsvcThread):
             if "provisioned" not in instance:
                 continue
             total += 1
-            if instance["provisioned"]:
+            if instance.get("provisioned", True):
                 provisioned += 1
         if total == 0:
             return "n/a"
@@ -2892,8 +2892,8 @@ class Monitor(shared.OsvcThread):
         provisioned = shared.AGG[svcpath].provisioned
         deleted = self.get_agg_deleted(svcpath)
         purged = self.get_agg_purged(provisioned, deleted)
-        if smon.global_expect == "stopped" and status in STOPPED_STATES and \
-           local_frozen:
+        stopped = status in STOPPED_STATES
+        if smon.global_expect == "stopped" and stopped and local_frozen:
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", svcpath, smon.global_expect, status)
             self.set_smon(svcpath, global_expect="unset")
@@ -2918,11 +2918,11 @@ class Monitor(shared.OsvcThread):
                 return
         elif (smon.global_expect == "frozen" and frozen == "frozen") or \
              (smon.global_expect == "thawed" and frozen == "thawed") or \
-             (smon.global_expect == "unprovisioned" and provisioned is False):
+             (smon.global_expect == "unprovisioned" and provisioned in (False, "n/a") and stopped):
             self.log.debug("service %s global expect is %s, already is",
                            svcpath, smon.global_expect)
             self.set_smon(svcpath, global_expect="unset")
-        elif smon.global_expect == "provisioned" and provisioned is True:
+        elif smon.global_expect == "provisioned" and provisioned in (True, "n/a"):
             if shared.SERVICES[svcpath].placement == "none":
                 self.set_smon(svcpath, global_expect="unset")
             if shared.AGG[svcpath].avail in ("up", "n/a"):
@@ -3337,7 +3337,7 @@ class Monitor(shared.OsvcThread):
     def instance_provisioned(self, instance):
         if instance is None:
             return False
-        return instance.get("provisioned")
+        return instance.get("provisioned", True)
 
     def instance_unprovisioned(self, instance):
         if instance is None:

@@ -43,7 +43,7 @@ class Prov(provisioning.Prov):
 
     def is_provisioned(self):
         if "bind" in self.r.mount_options or self.r.fs_type in ("bind", "lofs"):
-            return True
+            return
         try:
             self.dev = self.r.conf_get("dev")
             self.mnt = self.r.conf_get("mnt")
@@ -56,7 +56,7 @@ class Prov(provisioning.Prov):
         if not os.path.exists(self.mnt):
             return False
         if self.r.fs_type in self.r.netfs + ["tmpfs"]:
-            return True
+            return
         try:
             self.get_mkfs_dev()
         except ex.excError:
@@ -94,7 +94,7 @@ class Prov(provisioning.Prov):
         if self.r.fs_type in self.r.netfs + ["tmpfs"]:
             return
         if "bind" in self.r.mount_options or self.r.fs_type in ("bind", "lofs"):
-            return True
+            return
 
         self.dev = self.r.conf_get("dev")
         self.mnt = self.r.conf_get("mnt")

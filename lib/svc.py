@@ -3533,10 +3533,10 @@ class Svc(BaseSvc):
             "env": self.svc_env,
             "placement": self.placement,
             "topology": self.topology,
-            "provisioned": True,
             "subsets": {},
             "resources": {},
         }
+        provisioned = None
         running = self.get_running()
         if running:
             data["running"] = running
@@ -3628,8 +3628,10 @@ class Svc(BaseSvc):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data.get("provisioned", {}).get("state") is False and not resource.is_disabled():
-                    data["provisioned"] = False
+                if _data.get("provisioned", {}).get("state") is False and not disable:
+                    provisioned = False
+                elif _data.get("provisioned", {}).get("state") is True and not disable and provisioned is None:
+                    provisioned = True
                 if resource.subset:
                     _data["subset"] = resource.subset
                 data["resources"][resource.rid] = _data
@@ -3638,6 +3640,8 @@ class Svc(BaseSvc):
         for group in group_status["status_group"]:
             group_status["status_group"][group] = str(group_status["status_group"][group])
         data.update(group_status)
+        if provisioned is not None:
+            data["provisioned"] = provisioned
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
             data["stonith"] = True
         if write_data:

@@ -14,7 +14,7 @@ class Prov(provisioning.Prov):
             return False
         if not self.owned():
             return False
-        return self.r.volsvc.print_status_data()["provisioned"]
+        return self.r.volsvc.print_status_data().get("provisioned")
 
     def claimed(self, volume=None):
         if not volume:
