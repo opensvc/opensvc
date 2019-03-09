@@ -461,6 +461,9 @@ ACTION_OPTS = [
 ASYNC_ACTION_OPTS = [
     OPT.time,
     OPT.wait,
+    OPT.stats,
+    OPT.watch,
+    OPT.interval,
 ]
 
 START_ACTION_OPTS = [
@@ -476,6 +479,7 @@ ACTIONS = {
     "Service actions": {
         "abort": {
             "msg": "Abort the action asynchronously done by the cluster daemons.",
+            "options": ASYNC_ACTION_OPTS,
         },
         "clear": {
             "msg": "Clear the monitor status of the service on the node pointed "

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-03\-03
+.TH SVCMGR 1 2019\-03\-09
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2879,6 +2879,21 @@ Show this help message and exit.
 Abort the action asynchronously done by the cluster daemons.
 
 .TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
@@ -3664,6 +3679,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
 .TP
@@ -3869,6 +3893,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -4173,6 +4206,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
@@ -4378,6 +4420,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
@@ -4786,6 +4837,97 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 .TP
 .B --tags=PARM_TAGS
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<svcname> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B -c, --cluster
+Execute the action on all cluster nodes. Aggregate the json outputs.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr podman\fP
+.RS
+
+Wrap the podman client command, setting automatically the namespace, cni-config-dir options and eventually the --root and --runroot options for services configured for private storage. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <svcname>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of podman container names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
+
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -6056,6 +6198,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -7736,6 +7887,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
@@ -7975,6 +8135,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --upto=UPTO
 Start the service up to the specified rid or driver group.
@@ -8357,6 +8526,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --downto=UPTO
 Stop the service down to the specified rid or driver group.
 .TP
@@ -8550,6 +8728,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
@@ -10547,6 +10734,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .B --wait
 Wait for asynchronous action termination.
 .TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
 .TP
@@ -10645,6 +10841,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --node=NODE
 The node to send a request to. If not specified the local node is targeted.
@@ -10896,6 +11101,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -11294,6 +11508,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --dry-run
 Show the action execution plan.
@@ -12240,6 +12463,15 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 .TP
 .B --wait
 Wait for asynchronous action termination.
+.TP
+.B --stats
+refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --dry-run
 Show the action execution plan.

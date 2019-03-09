@@ -2559,6 +2559,10 @@ class Node(Crypt, ExtConfigMixin):
             else:
                 self.print_data(data.outs)
 
+        if options.watch or options.stats:
+            import svcmon
+            options.sections = ["services"]
+            svcmon.svcmon(self, options)
         return err
 
     def collector_cli(self):
