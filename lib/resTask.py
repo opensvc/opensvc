@@ -133,6 +133,7 @@ class Task(Res.Resource):
             self.svc.notify_done("run", rids=[self.rid])
 
     def _run(self):
+        self.create_pg()
         if self.snooze:
             try:
                 data = self.svc._snooze(self.snooze)
