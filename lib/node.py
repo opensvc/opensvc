@@ -4642,7 +4642,7 @@ class Node(Crypt, ExtConfigMixin):
         print("\n".join([name for name in data]))
 
     def pool_ls_data(self):
-        data = set(["default"])
+        data = set(["default", "shm"])
         for section in self.config.sections():
             if section.startswith("pool#"):
                 data.add(section.split("#")[-1])
@@ -4756,12 +4756,15 @@ class Node(Crypt, ExtConfigMixin):
             section = "pool#"+poolname
         except TypeError:
             raise ex.excError("invalid pool name: %s" % poolname)
-        if poolname != "default" and not self.config.has_section(section):
+        if poolname not in ("shm", "default") and not self.config.has_section(section):
             raise ex.excError("pool not found: %s" % poolname)
-        try:
-            ptype = self.conf_get(section, "type")
-        except ex.OptNotFound as exc:
-            ptype = exc.default
+        if poolname == "shm":
+            ptype = "shm"
+        else:
+            try:
+                ptype = self.conf_get(section, "type")
+            except ex.OptNotFound as exc:
+                ptype = exc.default
         from rcUtilities import mimport
         mod = mimport("pool", ptype)
         return mod.Pool(node=self, name=poolname, log=self.log)
