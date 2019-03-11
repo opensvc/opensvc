@@ -22,8 +22,7 @@ TimeoutStopSec=5m
 ExecStart=/usr/share/opensvc/bin/nodemgr daemon start
 ExecStop=/usr/share/opensvc/bin/nodemgr daemon stop
 KillMode=process
-Restart=always
-RestartSec=2s
+Restart=on-failure
 OOMScoreAdjust=-1000
 
 [Install]
