@@ -4,7 +4,7 @@ import time
 import os
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache, clear_cache, lazy
+from rcUtilities import justcall, cache, clear_cache, lazy, which
 from rcUtilitiesLinux import check_ping
 import resContainer
 
@@ -78,7 +78,7 @@ class Kvm(resContainer.Container):
             raise ex.excError
 
     def container_start(self):
-        if self.svc.create_pg:
+        if self.svc.create_pg and which("machinectl") is None and self.capable("partitions"):
             self.set_partition()
         else:
             self.unset_partition()
@@ -199,8 +199,6 @@ class Kvm(resContainer.Container):
         tree.write(self.cf)
 
     def set_partition(self):
-        if not self.capable("partitions"):
-            return
         self.svc.pg.create_pg(self)
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
