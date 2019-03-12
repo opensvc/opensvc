@@ -288,9 +288,7 @@ opts_with_arg=( "--access" "--add" "--api" "--app" "--author" "--backlog" "--beg
 
 
 
-svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
-nodes=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
-om="setns getns unsetns node cluster svc vol net pool daemon array $svcs"
+om="setns getns unsetns node cluster svc vol net pool daemon array"
 
 opt_has_arg()
 {
@@ -308,19 +306,15 @@ _comp_handler()
 {
     local a prev action opts
     COMPREPLY=()
-    case "${COMP_WORDS[0]}" in
-        nodemgr)
-            ;;
-        svcmgr)
-            ;;
-        om)
-            ;;
-        *)
-            COMP_WORDS[0]="svcmgr"
-            ;;
-    esac
     a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [ $COMP_CWORD -eq 1 -a "${COMP_WORDS[0]}" == "om" ]
+    then
+        svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
+        COMPREPLY=( $(compgen -W "$om $svcs" -- ${a}) )
+        return 0
+    fi
 
     case "${prev}" in
         --color)
@@ -332,10 +326,12 @@ _comp_handler()
             return 0
             ;;
         --service|-s)
+            svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
             return 0
             ;;
         --node)
+            nodes=$(cat /var/lib/opensvc/list.nodes /opt/opensvc/var/list.nodes 2>/dev/null)
             COMPREPLY=( $(compgen -W "${nodes}" -- ${a}) )
             return 0
             ;;
@@ -384,7 +380,7 @@ _comp_handler()
     for word in ${COMP_WORDS[@]}
     do
         # prevent "Bad substitution" on action deref
-        word=${word//[^abcdefghijklmnopqrstuvwxyz0-9_]/}
+        word=${word//[^abcdefghijklmnopqrstuvwxyz0-9_.]/}
         if [ "${word#-}" != "${word}" ]
         then
             opt_has_arg ${word} && skip=1
@@ -418,12 +414,6 @@ _comp_handler()
 }
 
 complete -F _comp_handler svcmgr
-
-for s in ${svcs} ; do
-    complete -F _comp_handler $s
-done
-
 complete -F _comp_handler nodemgr
-
 complete -F _comp_handler om
 
