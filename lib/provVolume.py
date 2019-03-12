@@ -2,7 +2,7 @@ import provisioning
 import os
 
 import rcExceptions as ex
-from rcUtilities import factory
+from rcUtilities import factory, is_string
 from converters import print_size
 
 class Prov(provisioning.Prov):
@@ -138,7 +138,9 @@ class Prov(provisioning.Prov):
                 continue
             args = src.split(".", 1)
             val = self.r.svc.oget(*args)
-            if ".." in val:
+            if val is None:
+                raise ex.excError("missing mapped key in %s: %s" % (self.r.svc.svcpath, mapping))
+            if is_string(val) and ".." in val:
                 raise ex.excError("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
         pool.configure_volume(volume,
