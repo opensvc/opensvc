@@ -528,6 +528,8 @@ class ExtConfigMixin(object):
             val = rcEnv.nodename.split(".")[0]
         elif _ref == "namespace" and is_svc:
             val = self.namespace if self.namespace else "root"
+        elif _ref == "kind" and is_svc:
+            val = self.kind
         elif _ref == "id" and is_svc:
             val = self.id
         elif _ref == "svcpath" and is_svc:
@@ -884,7 +886,7 @@ class ExtConfigMixin(object):
             "use_default": use_default,
             "config": config,
         }
-        if s not in ("labels", "env"):
+        if s not in ("labels", "env", "data"):
             key = self.kwdict.KEYS[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
@@ -1224,7 +1226,7 @@ class ExtConfigMixin(object):
             Validate resource sections options.
             """
             for section in config.sections():
-                if section in ("labels", "env"):
+                if section in ("labels", "env", "data"):
                     # the "env" section is not handled by a resource driver, and is
                     # unknown to the self.kwdict. Just ignore it.
                     continue
