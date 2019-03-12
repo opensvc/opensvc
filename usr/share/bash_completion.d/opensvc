@@ -384,7 +384,7 @@ _comp_handler()
     for word in ${COMP_WORDS[@]}
     do
         # prevent "Bad substitution" on action deref
-        word=${word//[^abcdefghijklmnopqrstuvwxyz0-9_.]/}
+        word=${word//[^abcdefghijklmnopqrstuvwxyz0-9_]/}
         if [ "${word#-}" != "${word}" ]
         then
             opt_has_arg ${word} && skip=1
