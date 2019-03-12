@@ -186,6 +186,9 @@ def svcmon(node, options=None):
                 continue
             if status_changed:
                 status_data = node._daemon_status(node=endpoint)
+                if status_data is None:
+                    # can happen when the secret is being reset on daemon join
+                    continue
                 expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
                 nodes_info = nodes_info_from_cluster_data(node, status_data.get("monitor", {}).get("nodes", {}))
                 nodes = node.nodes_selector(options.node, data=nodes_info)
