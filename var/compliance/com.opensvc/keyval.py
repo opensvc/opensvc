@@ -128,7 +128,7 @@ class KeyVal(CompObject):
                     else:
                         data["target_n_key"][key['key']] += 1
             try:
-                data["conf"] = Parser(path, separator=data["separator"])
+                data["conf"] = Parser(path, separator=data.get("separator", self.separator))
             except ParserError as e:
                 perror(e)
                 raise ComplianceError()
