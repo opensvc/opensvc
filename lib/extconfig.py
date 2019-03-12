@@ -521,6 +521,23 @@ class ExtConfigMixin(object):
         is_svc = hasattr(self, "svcname")
         has_node = hasattr(self, "node")
 
+        modifier = None
+        if _ref.startswith("upper:"):
+            _ref = _ref[6:]
+            modifier = lambda x: x.upper()
+        elif _ref.startswith("lower:"):
+            _ref = _ref[6:]
+            modifier = lambda x: x.lower()
+        elif _ref.startswith("capitalize:"):
+            _ref = _ref[11:]
+            modifier = lambda x: x.capitalize()
+        elif _ref.startswith("title:"):
+            _ref = _ref[6:]
+            modifier = lambda x: x.title()
+        elif _ref.startswith("swapcase:"):
+            _ref = _ref[9:]
+            modifier = lambda x: x.swapcase()
+
         # hardcoded references
         if _ref == "nodename":
             val = rcEnv.nodename
@@ -611,31 +628,25 @@ class ExtConfigMixin(object):
         _v = None
         if val is None:
             # use DEFAULT as the implicit section
-            n_dots = ref.count(".")
+            n_dots = _ref.count(".")
             if n_dots == 0 and section and section != "DEFAULT":
                 _section = section
-                _v = ref
+                _v = _ref
             elif n_dots == 0 and self.has_default_section:
                 _section = "DEFAULT"
-                _v = ref
+                _v = _ref
             elif n_dots == 1:
-                _section, _v = ref.split(".")
+                _section, _v = _ref.split(".")
             else:
-                raise ex.excError("%s: reference can have only one dot" % ref)
+                raise ex.excError("%s: reference can have only one dot" % _ref)
 
             if len(_section) == 0:
-                raise ex.excError("%s: reference section can not be empty" % ref)
+                raise ex.excError("%s: reference section can not be empty" % _ref)
             if len(_v) == 0:
-                raise ex.excError("%s: reference option can not be empty" % ref)
-
-            if _v[0] == "#":
-                return_length = True
-                _v = _v[1:]
-            else:
-                return_length = False
+                raise ex.excError("%s: reference option can not be empty" % _ref)
 
             try:
-                val = self._handle_reference(ref, _section, _v, scope=scope,
+                val = self._handle_reference(_ref, _section, _v, scope=scope,
                                              impersonate=impersonate,
                                              config=config)
             except Exception:
@@ -663,6 +674,11 @@ class ExtConfigMixin(object):
                         return
                     return ""
 
+        if modifier:
+            try:
+                return modifier(val)
+            except Exception as exc:
+                pass
         return val
 
     def _handle_reference(self, ref, _section, _v, scope=False,
