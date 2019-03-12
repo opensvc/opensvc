@@ -168,7 +168,7 @@ $SUMMARY
 $ARCH
 $VERSION,REV=$RELEASE
 
-http://www.opensvc.com
+https://www.opensvc.com
 support@opensvc.com
 OPENSVC-${VERSION},REV=${RELEASE}
 $CHROOT=$BASE

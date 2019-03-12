@@ -28,7 +28,7 @@ cat - <<-EOF >$SPEC
 Summary: $SUMMARY
 Name: opensvc
 Packager: OpenSVC
-URL: http://www.opensvc.com
+URL: https://www.opensvc.com
 Version: $VERSION
 Release: $RELEASE%{?custom_dist}
 Source0: %{name}-${VERSION}-${RELEASE}.tar.gz
