@@ -3041,6 +3041,22 @@ KEYWORDS = [
     },
     {
         "section": "expose",
+        "keyword": "cluster_data",
+        "rtype": ["envoy"],
+        "convert": "json",
+        "at": True,
+        "text": "The envoy protocol compliant data in json format used to bootstrap the Cluster config messages. Parts of this structure, like endpoints, are amended to reflect the actual cluster state."
+    },
+    {
+        "section": "expose",
+        "keyword": "filter_config_data",
+        "rtype": ["envoy"],
+        "convert": "json",
+        "at": True,
+        "text": "The envoy protocol compliant data in json format used to bootstrap the Listener filter config messages. Parts of this structure, like routes, are amended by more specific keywords."
+    },
+    {
+        "section": "expose",
         "keyword": "port",
         "rtype": ["envoy", "gobetween"],
         "convert": "integer",
