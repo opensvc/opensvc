@@ -5,6 +5,7 @@ import re
 import shlex
 import datetime
 import six
+import json
 
 try:
     NUMERIC_TYPES = (int, float, long)
@@ -32,6 +33,12 @@ def convert_datetime(s):
     s = s.replace(":", ".")
     s = s.replace("-", ".")
     return datetime.datetime.strptime(s, "%Y.%m.%d.%H.%M.%S")
+
+def convert_json(s):
+    try:
+        return json.loads(s)
+    except Exception:
+        return
 
 def convert_shlex(s):
     if s is None:
