@@ -1,7 +1,7 @@
 import re
 import os
 
-from rcUtilities import split_svcpath, strip_path
+from rcUtilities import split_svcpath, strip_path, resolve_svcpath
 from rcColor import color, colorize, STATUS_COLOR
 from forest import Forest
 from storage import Storage
@@ -217,65 +217,67 @@ def add_instance(node, nodename, svcpath, mon_data):
                              monitor=data.get("monitor"))
     node_child.add_column(notice, color.LIGHTBLUE)
 
-def add_parents(node, idata, mon_data):
+def add_parents(node, idata, mon_data, namespace):
     parents = idata.get("parents", [])
     if len(parents) == 0:
         return
     node_parents = node.add_node()
     node_parents.add_column("parents")
     for parent in parents:
-        add_parent(parent, node_parents, mon_data)
+        add_parent(parent, node_parents, mon_data, namespace)
 
-def add_parent(svcpath, node, mon_data):
+def add_parent(svcpath, node, mon_data, namespace):
     node_parent = node.add_node()
     node_parent.add_column(svcpath, color.BOLD)
     node_parent.add_column()
     try:
         svcpath, nodename = svcpath.split("@")
+        svcpath = resolve_svcpath(svcpath, namespace)
         try:
             avail = mon_data["nodes"][nodename]["services"]["status"][svcpath].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     except ValueError:
         nodename = None
+        svcpath = resolve_svcpath(svcpath, namespace)
         try:
             avail = mon_data["services"][svcpath].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     node_parent.add_column(avail, STATUS_COLOR[avail])
 
-def add_children(node, idata, mon_data):
+def add_children(node, idata, mon_data, namespace):
     children = idata.get("children", [])
     if not children:
         return
     node_children = node.add_node()
     node_children.add_column("children")
     for child in children:
-        add_child(child, node_children, mon_data)
+        add_child(child, node_children, mon_data, namespace)
 
-def add_slaves(node, idata, mon_data):
+def add_slaves(node, idata, mon_data, namespace):
     slaves = idata.get("slaves", [])
     if not slaves:
         return
     node_slaves = node.add_node()
     node_slaves.add_column("slaves")
     for child in slaves:
-        add_child(child, node_slaves, mon_data)
+        add_child(child, node_slaves, mon_data, namespace)
 
-def add_scaler_slaves(node, idata, mon_data):
+def add_scaler_slaves(node, idata, mon_data, namespace):
     slaves = idata.get("scaler_slaves", [])
     if not slaves:
         return
     node_slaves = node.add_node()
     node_slaves.add_column("scaler")
     for child in slaves:
-        add_child(child, node_slaves, mon_data)
+        add_child(child, node_slaves, mon_data, namespace)
 
-def add_child(svcpath, node, mon_data):
+def add_child(svcpath, node, mon_data, namespace):
     node_child = node.add_node()
     node_child.add_column(svcpath, color.BOLD)
     node_child.add_column()
-    svcpath = re.sub("^root/", "", svcpath)
+    svcpath = resolve_svcpath(svcpath, namespace)
     try:
         avail = mon_data["services"][svcpath].get("avail", "n/a")
     except KeyError:
@@ -347,10 +349,10 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volati
     add_instances(node_instances, svcpath, nodename, mon_data)
     if not volatile:
         add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=discard_disabled)
-    add_parents(node_svcname, idata, mon_data)
-    add_children(node_svcname, idata, mon_data)
-    add_scaler_slaves(node_svcname, idata, mon_data)
-    add_slaves(node_svcname, idata, mon_data)
+    add_parents(node_svcname, idata, mon_data, namespace)
+    add_children(node_svcname, idata, mon_data, namespace)
+    add_scaler_slaves(node_svcname, idata, mon_data, namespace)
+    add_slaves(node_svcname, idata, mon_data, namespace)
 
     tree.out()
 
