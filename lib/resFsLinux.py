@@ -48,7 +48,7 @@ class Mount(Res.Mount):
     def device(self):
         if self._device is not None:
             device = self._device
-            if self.fs_type == "bind" or "bind" in self.mount_option:
+            if self.fs_type == "bind" or "bind" in self.mount_options:
                 if not self._device.startswith(os.sep):
                     l = self._device.split("/")
                     vol = self.svc.get_volume(l[0])
