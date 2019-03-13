@@ -47,13 +47,14 @@ class Mount(Res.Mount):
     @lazy
     def device(self):
         if self._device is not None:
-            if self.fs_type == "bind" or "bind" in self.mount_options \
-               and not self._device.startswith(os.sep):
-                l = self._device.split("/")
-                vol = self.svc.get_volume(l[0])
-                if vol.mount_point is not None:
-                    l[0] = vol.mount_point
-                    return "/".join(l)
+            device = self._device
+            if self.fs_type == "bind" or "bind" in self.mount_option:
+                if not self._device.startswith(os.sep):
+                    l = self._device.split("/")
+                    vol = self.svc.get_volume(l[0])
+                    if vol.mount_point is not None:
+                        l[0] = vol.mount_point
+                        return "/".join(l)
             device = self._device
         else:
             # lazy reference support
@@ -212,6 +213,8 @@ class Mount(Res.Mount):
         return False
 
     def realdev(self):
+        if self.fs_type in ("none", "tmpfs", "bind"):
+            return
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
             try:
                 _dev = label_to_dev(self.device, self.svc.node.devtree)
