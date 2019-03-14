@@ -183,7 +183,6 @@ class Rsync(resSync.Sync):
         self.call(cmd)
 
     def sync(self, target):
-        self.add_resource_files_to_sync()
         if target not in self.target:
             return
 
@@ -191,6 +190,8 @@ class Rsync(resSync.Sync):
 
         if len(targets) == 0:
             raise ex.syncNoNodesToSync
+
+        self.add_resource_files_to_sync()
 
         if "delay_snap" in self.tags:
             if not hasattr(self.rset, 'snaps'):
@@ -200,16 +201,13 @@ class Rsync(resSync.Sync):
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
         if hasattr(self, "alt_src") and self.rid != "sync#i0":
-            """ The pre_action() has provided us with a better source
-                to sync from. Use that
-            """
+            # The pre_action() has provided us with a better source
+            # to sync from. Use that
             src = getattr(self, "alt_src")
         else:
             src = self.src
 
         if len(src) == 0:
-            if not self.svc.options.cron:
-                self.log.info("no files to sync")
             raise ex.syncNoFilesToSync
 
         for node in targets:
@@ -354,6 +352,10 @@ class Rsync(resSync.Sync):
     def sync_status(self, verbose=False):
         """ mono-node service should return n/a as a sync state
         """
+        if len(self.src) == 0:
+            self.status_log("no files to sync", "info")
+            return rcStatus.NA
+
         target = set()
         for i in self.target:
             target |= self.target_nodes(i)
