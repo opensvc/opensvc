@@ -1085,11 +1085,13 @@ def init_locale():
             continue
         os.environ["LANG"] = loc
         os.environ["LC_NUMERIC"] = "C"
+        os.environ["LC_TIME"] = "C"
         if locale.getlocale()[1] == "UTF-8":
             return
     #raise ex.excError("can not set a C lang with utf8 encoding")
     os.environ["LANG"] = "C"
     os.environ["LC_NUMERIC"] = "C"
+    os.environ["LC_TIME"] = "C"
 
 #############################################################################
 #
