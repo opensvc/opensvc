@@ -338,19 +338,25 @@ class Freenas(object):
     def delete(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.delete(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
+        if data:
+            data = json.dumps(data)
+        r = requests.delete(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
         return r
 
     def put(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.put(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
+        if data:
+            data = json.dumps(data)
+        r = requests.put(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
         return bdecode(r.content)
 
     def post(self, uri, data=None):
         api = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
-        r = requests.post(api, data=json.dumps(data), auth=self.auth, verify=VERIFY, headers=headers)
+        if data:
+            data = json.dumps(data)
+        r = requests.post(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
         return bdecode(r.content)
 
     def post2(self, uri, data=None):
@@ -359,6 +365,8 @@ class Freenas(object):
         r = s.get(api)
         csrf_token = r.cookies['csrftoken']
         data["csrfmiddlewaretoken"] = csrf_token
+        if data:
+            data = json.dumps(data)
         r = requests.post(api, data=data, auth=self.auth, verify=VERIFY)
         return bdecode(r.content)
 
@@ -1045,6 +1053,18 @@ def main(argv, node=None):
     options, action = parser.parse_args(argv)
     kwargs = vars(options)
     do_action(action, node=node, **kwargs)
+
+def debug_on():
+    import logging
+    from http.client import HTTPConnection
+    HTTPConnection.debuglevel = 1
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+    requests_log = logging.getLogger("requests.packages.urllib3")
+    requests_log.setLevel(logging.DEBUG)
+    requests_log.propagate = True
+
+#debug_on()
 
 if __name__ == "__main__":
     try:
