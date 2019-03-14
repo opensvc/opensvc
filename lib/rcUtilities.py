@@ -1154,6 +1154,8 @@ def split_svcpath(path):
         raise ValueError
     if not path:
         raise ValueError
+    if "," in path or "+" in path:
+        raise ValueError
     nsep = path.count("/")
     if nsep == 2:
         namespace, kind, name = path.split("/")
