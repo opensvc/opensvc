@@ -57,17 +57,30 @@ class Lxc(resContainer.Container):
         return False
 
     def files_to_sync(self):
+        # Don't synchronize container.lxc config in /var/lib/lxc if not shared
+        # Non shared container resource mandates a private container for each
+        # service instance, thus synchronizing the lxc config is counter productive
+        # and can even lead to provisioning failure on secondary nodes.
         if not self.shared:
             return []
 
-        # the config file might be in a umounted fs resource
+        # The config file might be in a umounted fs resource,
         # in which case, no need to ask for its sync as the sync won't happen
-        data = []
+        self.find_cf()
+        if not self.cf or not os.path.exists(self.cf):
+            return []
+
+        # The config file is hosted on a fs resource.
+        # Let the user replicate it via a sync resource if the fs is not
+        # shared. If the fs is shared, it must not be replicated to avoid
+        # copying on the remote underlying fs (which may block a zfs dataset
+        # mount).
+        res = self.svc.resource_handling_file(self.cf)
+        if res:
+            return []
 
         # replicate the config file in the system standard path
-        cfg = self.get_cf_path()
-        if cfg:
-            data.append(cfg)
+        data = [self.cf]
         return data
 
     def rcp_from(self, src, dst):
@@ -354,6 +367,7 @@ class Lxc(resContainer.Container):
         return True
 
     def install_cf(self):
+        self.find_cf()
         if self.cf is None:
             return
         cfg = self.get_cf_path()
@@ -414,12 +428,13 @@ class Lxc(resContainer.Container):
 
     def find_cf(self):
         if self.cf is not None:
+            self.cf, vol = self.replace_volname(self.cf, strict=False)
             return
 
         if self.lxcpath:
             d_lxc = self.lxcpath
-            cfg = os.path.join(d_lxc, self.name, 'config')
-            return cfg
+            self.cf = os.path.join(d_lxc, self.name, 'config')
+            return
 
         d_lxc = os.path.join('var', 'lib', 'lxc')
 
