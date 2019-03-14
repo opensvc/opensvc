@@ -676,11 +676,13 @@ class DockerLib(ContainerLib):
         try:
             for _ in range(self.max_wait_for_dockerd):
                 if self._docker_working():
+                    self.clear_daemon_caches()
                     return
                 time.sleep(1)
         finally:
             lock.unlock(lockfd)
 
+    def clear_daemon_caches(self):
         unset_lazy(self, "container_ps")
         unset_lazy(self, "container_by_name")
         unset_lazy(self, "container_by_label")
