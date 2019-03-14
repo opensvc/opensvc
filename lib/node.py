@@ -710,7 +710,8 @@ class Node(Crypt, ExtConfigMixin):
             return match
 
         def svc_matching(svc, param, op, value, cluster_data):
-            param = param.lstrip(".")
+            if param.startswith("."):
+                param = "$"+param
             if param.startswith("$."):
                 try:
                     jsonpath_expr = parse(param)
