@@ -1399,7 +1399,7 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_delete(svc.svcpath)
                 return
-            if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
+            if svc.svcpath not in shared.SERVICES or not instance:
                 if smon.status != "idle":
                     self.set_smon(svc.svcpath, status="idle")
                 return
