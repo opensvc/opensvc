@@ -497,7 +497,10 @@ class Lxc(resContainer.Container):
         if rcmd is not None:
             self.runmethod = rcmd
         elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
-            self.runmethod = ['lxc-attach', '-n', name, '--']
+            if self.lxcpath:
+                self.runmethod = ['lxc-attach', '-n', name, '-P', self.lxcpath, '--']
+            else:
+                self.runmethod = ['lxc-attach', '-n', name, '--']
         else:
             self.runmethod = rcEnv.rsh.split() + [name]
 
