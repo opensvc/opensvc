@@ -5343,8 +5343,8 @@ class Svc(BaseSvc):
             """
             import re
             for idx, arg in enumerate(argv):
-                if re.match(r'\{[#\.-_\w]+\}', arg):
-                    container_rid = arg.strip("{}")
+                if re.match(r'[%\{][#\.-_\w]+[%\}]', arg):
+                    container_rid = arg.strip("{}%")
                     if not container_rid.startswith("container#"):
                         container_rid = "container#" + container_rid
                     if container_rid not in self.resources_by_id:
