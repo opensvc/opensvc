@@ -1316,6 +1316,7 @@ class ExtConfigMixin(object):
         import codecs
         import tempfile
         import shutil
+        import stat
         if isinstance(buff, list):
             buff = "\n".join(buff) + "\n"
         if hasattr(self, "svcname"):
@@ -1324,7 +1325,8 @@ class ExtConfigMixin(object):
             prefix = "node"
         ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp, prefix=prefix)
         fpath = ofile.name
-        os.chmod(fpath, 0o0640)
+        os.chmod(fpath, 0o0600)
+
         ofile.close()
         with codecs.open(fpath, "w", "utf8") as ofile:
             ofile.write(buff)
@@ -1338,8 +1340,26 @@ class ExtConfigMixin(object):
             if report["errors"]:
                 os.unlink(fpath)
                 raise ex.excError("the change was not saved: %s" % report)
+
+        if os.path.exists(self.paths.cf):
+            # ensure minimum final file security, but do not reset relaxed IRGRP perms
+            statinfo = os.stat(self.paths.cf)
+            if statinfo.st_uid != 0:
+                os.chown(self.paths.cf, 0, -1)
+            forbidden = stat.S_IXUSR | stat.S_IWOTH | stat.S_IROTH | stat.S_IXOTH | stat.S_IWGRP | stat.S_IXGRP
+            if statinfo.st_mode & forbidden:
+                if statinfo.st_mode & stat.S_IRGRP:
+                    mode = 0o0640
+                else:
+                    mode = 0o0600
+                os.chmod(self.paths.cf, mode)
+
         makedirs(os.path.dirname(self.paths.cf))
-        shutil.move(fpath, self.paths.cf)
+        shutil.copyfile(fpath, self.paths.cf)
+        try:
+            os.unlink(fpath)
+        except Exception:
+            pass
 
     def skip_config_section(self, section):
         return False

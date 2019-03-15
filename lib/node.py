@@ -2784,6 +2784,7 @@ class Node(Crypt, ExtConfigMixin):
         kwargs = self.set_ssl_context(kwargs)
         ufile = urlopen(request, **kwargs)
         with open(fpath, 'wb') as ofile:
+            os.chmod(fpath, 0o0600)
             for chunk in iter(lambda: ufile.read(4096), b""):
                 ofile.write(chunk)
         ufile.close()
@@ -2843,6 +2844,7 @@ class Node(Crypt, ExtConfigMixin):
                 pass
             raise exc
         with open(fpath, 'wb') as ofile:
+            os.chmod(fpath, 0o0600)
             for chunk in iter(lambda: ufile.read(4096), b""):
                 ofile.write(chunk)
         ufile.close()
@@ -2865,6 +2867,7 @@ class Node(Crypt, ExtConfigMixin):
         if len(data["data"][0]["tpl_definition"]) == 0:
             raise ex.excError("service has an empty configuration")
         with open(info.cf, "w") as ofile:
+            os.chmod(info.cf, 0o0600)
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
         self.install_svc_conf_from_file(name, namespace, kind, info.cf, restore, info=info)
 
@@ -2877,6 +2880,7 @@ class Node(Crypt, ExtConfigMixin):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfpath = tmpf.name
         tmpf.close()
+        os.chmod(tmpfpath, 0o0600)
         print("get %s (%s)" % (fpath, tmpfpath))
         try:
             self.urlretrieve(fpath, tmpfpath)
@@ -2906,9 +2910,10 @@ class Node(Crypt, ExtConfigMixin):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfpath = tmpf.name
         tmpf.close()
+        os.chmod(tmpfpath, 0o0600)
 
         import shutil
-        shutil.copy2(src_cf, tmpfpath)
+        shutil.copyfile(src_cf, tmpfpath)
 
         import uuid
         svc = factory(kind)(name, cf=tmpfpath, node=self)
@@ -2947,9 +2952,11 @@ class Node(Crypt, ExtConfigMixin):
         try:
             if six.PY2:
                 with codecs.open(info.cf, "w", "utf-8") as ofile:
+                    os.chmod(info.cf, 0o0600)
                     config.write(ofile)
             else:
                 with open(info.cf, "w") as ofile:
+                    os.chmod(info.cf, 0o0600)
                     config.write(ofile)
         except Exception as exc:
             print("failed to write %s: %s" % (info.cf, exc), file=sys.stderr)
@@ -3128,6 +3135,7 @@ class Node(Crypt, ExtConfigMixin):
                 return
         try:
             f = open(info.cf, 'w')
+            os.chmod(info.cf, 0o0600)
         except:
             print("failed to open", info.cf, "for writing", file=sys.stderr)
             return {"ret": 1}
