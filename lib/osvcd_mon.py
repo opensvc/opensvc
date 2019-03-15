@@ -355,6 +355,21 @@ class Monitor(shared.OsvcThread):
 
     def node_stonith(self, node):
         proc = self.node_command(["stonith", "--node", node])
+
+        # make sure we won't redo the stonith for another service
+        with shared.SMON_DATA_LOCK:
+             for svcpath, smon in shared.SMON_DATA.items():
+                 if smon.stonith == node:
+                     del shared.SMON_DATA[svcpath]["stonith"]
+
+        # wait for 10sec before giving up
+        for step in range(10):
+            ret = proc.poll()
+            if ret is not None:
+                return ret
+            time.sleep(1)
+
+        # timeout, free the caller
         self.push_proc(proc=proc)
 
     def service_startstandby_resources(self, svcpath, rids, slave=None):
