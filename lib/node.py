@@ -3659,7 +3659,7 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("refuse to stonith node %s not member of our cluster" % node)
         try:
             cmd = self._get("stonith#%s.cmd" % node)
-        except ex.excError as exc:
+        except (ex.OptNotFound, ex.excError) as exc:
             raise ex.excError("the stonith#%s.cmd keyword must be set in "
                               "node.conf" % node)
         import shlex
