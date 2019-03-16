@@ -58,7 +58,8 @@ class check(checks.check):
 
         inst = intf + ".speed"
         val = ethtool.speed
-        if val is not None:
+        # discard unknown (kvm)
+        if val is not None and "Unknown" not in val:
             val.replace('Mb/s', '')
             r.append({
                   "instance": inst,
@@ -67,7 +68,8 @@ class check(checks.check):
                  })
 
         inst = intf + ".autoneg"
-        if val is not None:
+        # discard unknown (kvm)
+        if val is not None and "Unknown" not in val:
             val = ethtool.auto_negotiation
             if val == 'on':
                 val = '1'
@@ -81,7 +83,8 @@ class check(checks.check):
 
         inst = intf + ".duplex"
         val = ethtool.duplex
-        if val is not None:
+        # discard unknown (kvm)
+        if val is not None and "Unknown" not in val:
             if val == 'Full':
                 val = '1'
             else:
