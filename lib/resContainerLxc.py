@@ -45,6 +45,49 @@ class Lxc(resContainer.Container):
             ---------------------
     """
 
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="Linux",
+                 cf=None,
+                 rcmd=None,
+                 osvc_root_path=None,
+                 container_data_dir=None,
+                 **kwargs):
+        resContainer.Container.__init__(self,
+                                        rid=rid,
+                                        name=name,
+                                        type="container.lxc",
+                                        guestos=guestos,
+                                        osvc_root_path=osvc_root_path,
+                                        **kwargs)
+        self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
+        self.always_pg = True
+        self.label = "lxc " + self.label
+        self.container_data_dir = container_data_dir
+        self.rcmd = rcmd
+        self.links = None
+        self.cf = cf
+
+    def on_add(self):
+        if self.rcmd is not None:
+            self.runmethod = self.rcmd
+        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
+            if self.lxcpath:
+                self.runmethod = ['lxc-attach', '-n', self.name, '-P', self.lxcpath, '--']
+            else:
+                self.runmethod = ['lxc-attach', '-n', self.name, '--']
+        else:
+            self.runmethod = rcEnv.rsh.split() + [self.name]
+
+        if "lxc-attach" in ' '.join(self.runmethod):
+            # override getaddr from parent class with a noop
+            self.getaddr = self.dummy
+        else:
+            # enable ping test on start
+            self.ping = self._ping
+
     @lazy
     def lxc_version(self):
         cmd = ["lxc-info", "--version"]
@@ -470,48 +513,6 @@ class Lxc(resContainer.Container):
             if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
                 return prefix
         raise ex.excError("lxc install prefix not found")
-
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="Linux",
-                 cf=None,
-                 rcmd=None,
-                 osvc_root_path=None,
-                 container_data_dir=None,
-                 **kwargs):
-        resContainer.Container.__init__(self,
-                                        rid=rid,
-                                        name=name,
-                                        type="container.lxc",
-                                        guestos=guestos,
-                                        osvc_root_path=osvc_root_path,
-                                        **kwargs)
-        self.refresh_provisioned_on_provision = True
-        self.refresh_provisioned_on_unprovision = True
-        self.always_pg = True
-        self.label = "lxc " + self.label
-        self.container_data_dir = container_data_dir
-
-        self.links = None
-        if rcmd is not None:
-            self.runmethod = rcmd
-        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
-            if self.lxcpath:
-                self.runmethod = ['lxc-attach', '-n', name, '-P', self.lxcpath, '--']
-            else:
-                self.runmethod = ['lxc-attach', '-n', name, '--']
-        else:
-            self.runmethod = rcEnv.rsh.split() + [name]
-
-        if "lxc-attach" in ' '.join(self.runmethod):
-            # override getaddr from parent class with a noop
-            self.getaddr = self.dummy
-        else:
-            # enable ping test on start
-            self.ping = self._ping
-
-        self.cf = cf
 
     def dummy(self, cache_fallback=False):
         pass
