@@ -3941,7 +3941,7 @@ class Svc(BaseSvc):
             self.log.info(" ".join(cmd))
 
         cmd = ["env", "OSVC_DETACHED=1"] + cmd
-        if container is not None and hasattr(container, "rcmd"):
+        if container is not None and hasattr(container, "rcmd") and container.rcmd:
             try:
                 out, err, ret = container.rcmd(cmd)
             except Exception as exc:
