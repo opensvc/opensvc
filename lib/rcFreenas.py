@@ -1055,9 +1055,12 @@ def main(argv, node=None):
     do_action(action, node=node, **kwargs)
 
 def debug_on():
+    try:
+        import httplib
+    except ImportError:
+        import http.client as httplib
     import logging
-    from http.client import HTTPConnection
-    HTTPConnection.debuglevel = 1
+    httplib.HTTPConnection.debuglevel = 1
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
     requests_log = logging.getLogger("requests.packages.urllib3")
