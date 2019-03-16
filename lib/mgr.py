@@ -47,7 +47,7 @@ class Mgr(object):
         return argv, []
 
     @staticmethod
-    def get_build_kwargs(optparser, options, action):
+    def get_build_kwargs(options, action):
         """
         Return the service build function keyword arguments, deduced from
         parsed command line options.
@@ -65,8 +65,7 @@ class Mgr(object):
 
         return build_kwargs
 
-    @staticmethod
-    def do_svcs_action_detached(argv=None):
+    def do_svcs_action_detached(self, argv=None):
         """
         Executes the services action in detached process mode, so that
         a term/kill signal on the parent process does not abort the action.
@@ -86,7 +85,11 @@ class Mgr(object):
                 kwargs["preexec_fn"] = os.setsid
             except AttributeError:
                 pass
-            proc = subprocess.Popen([sys.executable, os.path.abspath(__file__)] + argv,
+            prog = os.path.dirname(os.path.abspath(__file__))
+            prog = os.path.join(prog, self.optparser.prog+".py")
+            executable = [sys.executable, prog]
+
+            proc = subprocess.Popen(executable + argv,
                                     stdout=None, stderr=None, stdin=None,
                                     close_fds=True, cwd=os.sep,
                                     env=env, **kwargs)
@@ -172,8 +175,8 @@ class Mgr(object):
         ret = 0
 
         argv, extra_argv = self.get_extra_argv(argv)
-        optparser = self.parser()
-        options, action = optparser.parse_args(argv)
+        self.optparser = self.parser()
+        options, action = self.optparser.parse_args(argv)
         if action == "deploy":
             action = "create"
             options.provision = True
@@ -198,7 +201,7 @@ class Mgr(object):
             options.svcs = expanded_svcs
 
         self.node.set_rlimit()
-        build_kwargs = self.get_build_kwargs(optparser, options, action)
+        build_kwargs = self.get_build_kwargs(options, action)
 
         if action != "create":
             try:
