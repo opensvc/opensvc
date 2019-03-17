@@ -145,20 +145,20 @@ def set_cpu_quota(o):
 
     if "@" in v:
         try:
-            quota, cores = v.split("@")
+            quota, threads = v.split("@")
         except Exception as e:
             raise ex.excError("malformed cpu quota: %s (%s)" % (v, str(e)))
     else:
-        cores = 1
+        threads = 1
         quota = v
 
-    if cores == "all":
+    if threads == "all":
         import rcAssetLinux
-        cores = int(rcAssetLinux.Asset(None)._get_cpu_cores())
+        threads = int(rcAssetLinux.Asset(None)._get_cpu_threads())
     else:
-        cores = int(cores)
+        threads = int(threads)
 
-    total_us = period * cores
+    total_us = period * threads
 
     if "%" in quota:
         quota = int(quota.strip("%"))
