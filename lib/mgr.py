@@ -184,11 +184,27 @@ class Mgr(object):
                 data[kind] = [path]
         return data
 
+    def get_action(self, argv):
+        action = []
+        _in = False
+        for word in argv:
+            if _in and word.startswith("-"):
+                break
+            if word.startswith("-"):
+                continue
+            action.append(word)
+            _in = True
+        return "_".join(action)
+
     def dispatch(self, argv):
         if self.selector is None:
             yield
         namespace = get_option("--namespace", argv)
-        expanded_svcs = self.node.svcs_selector(selector, namespace)
+        action = self.get_action(argv)
+        if action in ("create", "deploy"):
+            expanded_svcs = selector.split(",")
+        else:
+            expanded_svcs = self.node.svcs_selector(selector, namespace)
         svc_by_kind = self.dispatch_svcs(expanded_svcs)
         for kind, svcpaths in svc_by_kind.items():
             mod = __import__(kind+"mgr_parser")
