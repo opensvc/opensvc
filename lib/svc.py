@@ -1131,8 +1131,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if err is None:
                     err = 0
             else:
-                self.log.error("unsupported local action %s", action)
-                err = 1
+                self.log.info("action '%s' is not applicable to '%s' kind objects", action, self.kind)
+                err = 0
         except ex.excEndAction as exc:
             self.log.info(exc)
             err = 0
@@ -1162,7 +1162,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                not (action == "delete" and not self.command_is_scoped()):
                 data = self.print_status_data(refresh=True)
                 if action == "start" and not self.command_is_scoped() and \
-                   err == 0 and data.get("avail") not in ("up", "n/a") and \
+                   err == 0 and data.get("avail") not in ("up", "n/a", None) and \
                    not self.options.dry_run:
                     # catch drivers reporting no error, but instance not
                     # evaluating as "up", to avoid the daemon entering a
