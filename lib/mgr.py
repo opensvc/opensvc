@@ -186,19 +186,22 @@ class Mgr(object):
 
     def dispatch(self, argv):
         if selector is None:
-            return {}
+            yield
         namespace = get_option("--namespace", argv)
         expanded_svcs = self.node.svcs_selector(selector, namespace)
         svc_by_kind = self.dispatch_svcs(expanded_svcs)
         for kind, svcpaths in svc_by_kind.items():
             mod = __import__(kind+"mgr_parser")
-            yield getattr(mod, kind.capitalize()+"mgrOptParser")()
+            parser = getattr(mod, kind.capitalize()+"mgrOptParser")()
+            yield parser
 
     def parse_args(self, argv):
         if self.parser:
             self.optparser = self.parser()
             return self.optparser.parse_args(argv)
         for parser in self.dispatch(argv):
+            if not parser:
+                continue
             self.optparser = parser
             try:
                 options, action = self.optparser.parse_args(argv)
