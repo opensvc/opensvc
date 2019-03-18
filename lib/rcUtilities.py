@@ -1311,15 +1311,11 @@ def factory(kind):
     if kind == "ccfg":
         from cluster import ClusterSvc
         return ClusterSvc
-    elif kind == "vol":
-        from svc import Vol
-        return Vol
-    elif kind == "sec":
-        from sec import Sec
-        return Sec
-    else:
-        from svc import Svc
-        return Svc
+    try:
+        mod = __import__(kind)
+        return getattr(mod, kind.capitalize())
+    except Exception:
+        pass
     raise ValueError("unknown kind: %s" % kind)
 
 def parse_path_selector(selector, namespace=None):
