@@ -17,7 +17,6 @@ from rcUtilities import term_width, is_string
 import rcExceptions as ex
 import svc
 
-
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):
         if option in self.deprecated_options:
@@ -45,8 +44,10 @@ class OsvcHelpFormatter(optparse.TitledHelpFormatter):
         result.append("\n")
         return "".join(result).replace("``", "`")
 
+
 class OptionParserNoHelpOptions(optparse.OptionParser):
     deprecated_options = []
+
     def format_help(self, formatter=None):
         if formatter is None:
             formatter = self.formatter
@@ -57,6 +58,19 @@ class OptionParserNoHelpOptions(optparse.OptionParser):
             result.append(self.format_description(formatter) + "\n")
         result.append(self.format_epilog(formatter))
         return "".join(result)
+
+    def exit(self, status=0, msg=None):
+        """
+        Override optparse.exit so sys.exit doesn't get called.
+        """
+        raise ex.excError(msg)
+
+    def error(self, msg):
+        """
+        Override optparse.error so sys.exit doesn't get called.
+        """
+        raise ex.excError(msg)
+
 
 class OptParser(object):
     """
@@ -164,6 +178,7 @@ class OptParser(object):
         """
         Format and return a digest of supported actions matching <action>
         """
+        action = action.rstrip("?")
         desc = self.usage
         desc += "Set --help with an action to display its description and supported options.\n\n"
 
@@ -388,18 +403,17 @@ class OptParser(object):
         Then trigger a parser error, which displays the help message.
         """
         usage = self.format_digest()
-        self.parser.set_usage(usage)
-        self.parser.error("no action specified")
+        self.parser.error("no action specified\n"+usage)
 
     def print_full_help(self):
         """
         Reset the parser usage to the full actions list and their options.
         Then trigger a parser error, which displays the help message.
         """
+        if self.args is not None:
+            return
         usage = self.format_desc()
-        self.parser.set_usage(usage)
-        if self.args is None:
-            self.parser.error("no action specified")
+        self.parser.error("no action specified\n"+usage)
 
     def print_short_help(self):
         """
@@ -407,13 +421,13 @@ class OptParser(object):
         currently used actions. Then trigger a parser error, which displays the
         help message.
         """
+        if self.args is not None:
+            return
         highlight_actions = ["start", "stop", "print_status"]
         usage = self.format_desc(action=highlight_actions, options=False) + \
                 "\n\nOptions:\n" + \
                 "  -h, --help       Display more actions and options\n"
-        self.parser.set_usage(usage)
-        if self.args is None:
-            self.parser.error("no action specified")
+        self.parser.error("no action specified\n"+usage)
 
     def print_context_help(self, action, options):
         """
@@ -421,8 +435,8 @@ class OptParser(object):
         for the action prefix.
         """
         if options.parm_help:
-            self.parser.print_help()
-            raise ex.excError
+            raise ex.excError(self.parser.format_help())
         else:
             usage = self.format_digest(action)
-            raise ex.excError("invalid action: %s\n%s" % (str(action), usage))
+            raise ex.excError("%s\n%s" % (str(action), usage))
+

@@ -185,7 +185,7 @@ class Mgr(object):
         return data
 
     def dispatch(self, argv):
-        if selector is None:
+        if self.selector is None:
             yield
         namespace = get_option("--namespace", argv)
         expanded_svcs = self.node.svcs_selector(selector, namespace)
@@ -199,6 +199,7 @@ class Mgr(object):
         if self.parser:
             self.optparser = self.parser()
             return self.optparser.parse_args(argv)
+        err = []
         for parser in self.dispatch(argv):
             if not parser:
                 continue
@@ -207,8 +208,13 @@ class Mgr(object):
                 options, action = self.optparser.parse_args(argv)
                 return options, action
             except Exception as exc:
+                # if any parser accepts this argv, don't display errors
+                # raised by other parsers. keep them around in case no
+                # parser accepts.
+                err.append("%s: %s" % (self.optparser.prog, exc))
                 pass
-        raise ex.excError
+        # no parser matched. display a per-parser errorlog
+        raise ex.excError("\n".join(err))
 
     def _main(self, argv=None):
         """
