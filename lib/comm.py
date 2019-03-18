@@ -528,6 +528,7 @@ class Crypt(object):
         Send a request to the daemon running on nodename and return the result
         fetched if with_result is set.
         """
+        elapsed = 0
         sock = None
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
@@ -539,12 +540,26 @@ class Crypt(object):
                     sock.settimeout(SOCK_TMO)
                     sock.connect(sp.to)
                     break
+                except socket.timeout:
+                    if timeout > 0 and elapsed > timeout:
+                        if with_result:
+                            return {
+                                "status": 1,
+                                "err": "timeout sending request",
+                            }
+                        time.sleep(PAUSE)
+                        elapsed += SOCK_TMO + PAUSE
+                        continue
+                    raise
                 except socket.error as exc:
-                    if exc.errno in RETRYABLE:
+                    if exc.errno in RETRYABLE and \
+                       (timeout == 0 or elapsed < timeout):
                         # Resource temporarily unavailable (busy, overflow)
-                        # Retry, and make sure we don't short loop
+                        # Retry after a delay, if the daemon is still
+                        # running and timeout is not exhausted
                         sock.close()
                         time.sleep(PAUSE)
+                        elapsed += PAUSE
                         continue
                     raise
 

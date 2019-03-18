@@ -3758,6 +3758,7 @@ class Node(Crypt, ExtConfigMixin):
             },
             nodename=self.options.node,
             silent=True,
+            timeout=2,
         )
         if data["status"] != 0:
             # the daemon is not running or refused the connection,
@@ -3788,6 +3789,7 @@ class Node(Crypt, ExtConfigMixin):
                 "options": {"name": name, "timeout": timeout},
             },
             silent=silent,
+            timeout=10,
         )
         lock_id = data.get("data", {}).get("id")
         if not lock_id and on_error == "raise":
@@ -3801,6 +3803,7 @@ class Node(Crypt, ExtConfigMixin):
                 "options": {"name": name, "id": lock_id},
             },
             silent=silent,
+            timeout=10,
         )
 
     def _daemon_status(self, silent=False, refresh=False, node=None):
@@ -3879,6 +3882,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self.daemon_send(
             {"action": "daemon_blacklist_clear"},
             nodename=self.options.node,
+            timeout=5,
         )
         if data is None:
             return 1
@@ -3969,6 +3973,7 @@ class Node(Crypt, ExtConfigMixin):
             nodename=self.options.node,
             secret=secret,
             cluster_name=cluster_name,
+            timeout=5,
         )
         if self.options.format in ("json", "flat_json") or self.options.jsonpath_filter:
             self.print_data(data)
@@ -4014,6 +4019,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self.daemon_send(
             {"action": "daemon_blacklist_status"},
             nodename=self.options.node,
+            timeout=5,
         )
         print(json.dumps(data, indent=4, sort_keys=True))
 
@@ -4164,6 +4170,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self.daemon_send(
             {"action": "daemon_start", "options": options},
             nodename=self.options.node,
+            timeout=5,
         )
         if data.get("status") == 0:
             return
@@ -4181,15 +4188,8 @@ class Node(Crypt, ExtConfigMixin):
             if self.options.thr_id not in data:
                 return False
             return data[self.options.thr_id].get("state") == "running"
-        from lock import lock, unlock
-        lockfd = None
-        try:
-            lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
-        except:
-            return True
-        finally:
-            unlock(lockfd)
-        return False
+        from rcUtilities import daemon_test_lock
+        return daemon_test_lock()
 
     def daemon_start_systemd(self):
         """
@@ -4279,6 +4279,7 @@ class Node(Crypt, ExtConfigMixin):
         data = self.daemon_send(
             {"action": "daemon_stop", "options": options},
             nodename=rcEnv.nodename,
+            timeout=5,
         )
 
         errors = 0
@@ -4286,6 +4287,7 @@ class Node(Crypt, ExtConfigMixin):
             data = self.daemon_send(
                 {"action": "leave"},
                 nodename=nodename,
+                timeout=5,
             )
             if data is None:
                 self.log.error("leave node %s failed", nodename)
@@ -4345,6 +4347,7 @@ class Node(Crypt, ExtConfigMixin):
             nodename=joined,
             cluster_name="join",
             secret=secret,
+            timeout=5,
         )
         if data is None:
             raise ex.excError("join node %s failed" % joined)
@@ -4504,6 +4507,7 @@ class Node(Crypt, ExtConfigMixin):
                 nodename=nodename,
                 cluster_name="join",
                 secret=secret,
+                timeout=5,
             )
             if data is None:
                 self.log.error("join node %s failed", nodename)
@@ -4531,6 +4535,7 @@ class Node(Crypt, ExtConfigMixin):
                 {"action": "set_node_monitor", "options": options},
                 nodename=self.options.node,
                 silent=True,
+                timeout=5,
             )
             if data is None:
                 raise ex.excError("the daemon is not running")
@@ -4563,6 +4568,7 @@ class Node(Crypt, ExtConfigMixin):
                 {"action": "node_action", "options": options},
                 nodename=nodename,
                 silent=True,
+                timeout=5,
             )
         except Exception as exc:
             self.log.error("node action on node %s failed: %s",
@@ -4636,6 +4642,7 @@ class Node(Crypt, ExtConfigMixin):
                 {"action": "wake_monitor", "options": options},
                 nodename=self.options.node,
                 silent=True,
+                timeout=2,
             )
             if data and data["status"] != 0:
                 self.log.warning("wake monitor failed")

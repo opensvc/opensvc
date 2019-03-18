@@ -1093,6 +1093,16 @@ def init_locale():
     os.environ["LC_NUMERIC"] = "C"
     os.environ["LC_TIME"] = "C"
 
+def daemon_test_lock():
+    lockfd = None
+    try:
+        lockfd = lock.lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
+    except:
+        return True
+    finally:
+        lock.unlock(lockfd)
+    return False
+
 #############################################################################
 #
 # Namespaces functions
