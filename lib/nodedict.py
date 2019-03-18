@@ -605,7 +605,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "convert": "shlex",
         "required": True,
         "example": "/bin/true",
-        "text": "The command to use to STONITH a peer. Usually comes from a fencing utilities collection."
+        "text": "The command to use to STONITH a peer. Usually comes from a fencing utilities collection. The section rindex is the name of the node to stonith, so one section per node must be added."
     },
     {
         "section": "hb",

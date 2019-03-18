@@ -235,7 +235,7 @@ class Section(object):
         if section in self.top.base_sections:
             s += "[%s]\n" % self.section
         else:
-            s += "[%s#0]\n" % self.section
+            s += "[%s#rindex]\n" % self.section
         if rtype is not None:
             s += ";type = " + rtype + "\n\n"
             for keyword in sorted(self.getkeys(rtype)):
