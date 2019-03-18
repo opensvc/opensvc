@@ -5578,7 +5578,4 @@ class Svc(BaseSvc):
         except IndexError:
             return
 
-class Vol(Svc):
-    kind = "vol"
-
 
