@@ -425,5 +425,4 @@ class OptParser(object):
             raise ex.excError
         else:
             usage = self.format_digest(action)
-            self.parser.set_usage(usage)
-            self.parser.error("invalid action: %s" % str(action))
+            raise ex.excError("invalid action: %s\n%s" % (str(action), usage))
