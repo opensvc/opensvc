@@ -374,7 +374,10 @@ class OptParser(object):
                 continue
             action_options = section_data[action].get("options", [])
         for option in action_options + self.global_options:
-            parser.add_option(option)
+            try:
+                parser.add_option(option)
+            except TypeError as exc:
+                raise ex.excError("misclassified option: %s" % exc)
         options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
         return options, action
 
