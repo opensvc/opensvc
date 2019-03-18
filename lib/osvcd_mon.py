@@ -563,6 +563,7 @@ class Monitor(shared.OsvcThread):
             proc=proc,
             on_success="service_thaw",
             on_success_args=[svc.svcpath],
+            on_success_kwargs={"slaves": True},
             on_error="generic_callback",
             on_error_args=[svc.svcpath],
             on_error_kwargs={"status": "provision failed"},
@@ -652,9 +653,12 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": "idle"},
         )
 
-    def service_thaw(self, svcpath):
+    def service_thaw(self, svcpath, slaves=False):
         self.set_smon(svcpath, "thawing")
-        proc = self.service_command(svcpath, ["thaw"])
+        cmd = ["thaw"]
+        if slaves:
+            cmd += ["--master", "--slaves"]
+        proc = self.service_command(svcpath, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
