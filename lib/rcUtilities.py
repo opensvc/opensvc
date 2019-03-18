@@ -1314,6 +1314,9 @@ def factory(kind):
     elif kind == "vol":
         from svc import Vol
         return Vol
+    elif kind == "sec":
+        from sec import Sec
+        return Sec
     else:
         from svc import Svc
         return Svc

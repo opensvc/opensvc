@@ -96,15 +96,15 @@ main() {
 		;;
 	vol)
 		shift
-		$SUDO OSVC_KIND=vol $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		$SUDO OSVC_KIND=vol $INTER $OSVC_ROOT_PATH/lib/volmgr.py "$@"
 		;;
 	cfg)
 		shift
-		$SUDO OSVC_KIND=cfg $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		$SUDO OSVC_KIND=cfg $INTER $OSVC_ROOT_PATH/lib/cfgmgr.py "$@"
 		;;
 	sec)
 		shift
-		$SUDO OSVC_KIND=sec $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
+		$SUDO OSVC_KIND=sec $INTER $OSVC_ROOT_PATH/lib/secmgr.py "$@"
 		;;
 	node)
 		shift
@@ -133,7 +133,7 @@ main() {
 	*)
 		SELECTOR=$1
 		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/svcmgr.py -s "$SELECTOR" "$@"
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/mgr.py "$SELECTOR" "$@"
 		;;
 	esac
 }

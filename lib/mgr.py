@@ -15,13 +15,15 @@ import errno
 import rcStatus
 import rcColor
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs
+from rcUtilities import ximport, check_privs, split_svcpath, get_option
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
 class Mgr(object):
-    def __init__(self, parser):
+    def __init__(self, parser=None, node=None, selector=None):
         self.parser = parser
+        self.node = node
+        self.selector = selector
 
     @staticmethod
     def get_extra_argv(argv=None):
@@ -86,8 +88,12 @@ class Mgr(object):
             except AttributeError:
                 pass
             prog = os.path.dirname(os.path.abspath(__file__))
-            prog = os.path.join(prog, self.optparser.prog+".py")
-            executable = [sys.executable, prog]
+            if self.selector:
+                prog = os.path.join(prog, "mgr.py")
+                executable = [sys.executable, prog, self.selector]
+            else:
+                prog = os.path.join(prog, self.optparser.prog+".py")
+                executable = [sys.executable, prog]
 
             proc = subprocess.Popen(executable + argv,
                                     stdout=None, stderr=None, stdin=None,
@@ -129,8 +135,7 @@ class Mgr(object):
                 ret = 1
         return ret
 
-    @staticmethod
-    def prepare_options(options):
+    def prepare_options(self, options):
         """
         Prepare and return the options Storage() as expected by the Svc::action
         and Node::do_svcs_action methods.
@@ -148,6 +153,9 @@ class Mgr(object):
             opts.namespace = namespace
         elif "OSVC_NAMESPACE" in os.environ:
             opts.namespace = os.environ["OSVC_NAMESPACE"]
+        if self.selector:
+            opts.parm_svcs = self.selector
+            opts.svcs = self.selector
         return opts
 
     @staticmethod
@@ -165,18 +173,50 @@ class Mgr(object):
             option = option.upper()
             os.environ[option] = value
 
+    @staticmethod
+    def dispatch_svcs(paths):
+        data = {}
+        for path in paths:
+            _, _, kind = split_svcpath(path)
+            try:
+                data[kind].append(path)
+            except KeyError:
+                data[kind] = [path]
+        return data
+
+    def dispatch(self, argv):
+        if selector is None:
+            return {}
+        namespace = get_option("--namespace", argv)
+        expanded_svcs = self.node.svcs_selector(selector, namespace)
+        svc_by_kind = self.dispatch_svcs(expanded_svcs)
+        for kind, svcpaths in svc_by_kind.items():
+            mod = __import__(kind+"mgr_parser")
+            yield getattr(mod, kind.capitalize()+"mgrOptParser")()
+
+    def parse_args(self, argv):
+        if self.parser:
+            self.optparser = self.parser()
+            return self.optparser.parse_args(argv)
+        for parser in self.dispatch(argv):
+            self.optparser = parser
+            try:
+                options, action = self.optparser.parse_args(argv)
+                return options, action
+            except Exception as exc:
+                pass
+        raise ex.excError
+
     def _main(self, argv=None):
         """
         Build the service list.
         Execute action-specific codepaths.
         """
         build_err = False
-        svcpaths = []
         ret = 0
 
         argv, extra_argv = self.get_extra_argv(argv)
-        self.optparser = self.parser()
-        options, action = self.optparser.parse_args(argv)
+        options, action = self.parse_args(argv)
         if action == "deploy":
             action = "create"
             options.provision = True
@@ -191,6 +231,7 @@ class Mgr(object):
             pass
         if action not in ("ls", "monitor", "create") and options.svcs is None and options.status is None:
             raise ex.excError("no service selected.")
+
         if action == "create":
             if options.svcs:
                 options.svcs = options.svcs.split(",")
@@ -199,6 +240,7 @@ class Mgr(object):
             if options.svcs in (None, "*") and expanded_svcs == []:
                 return
             options.svcs = expanded_svcs
+
 
         self.node.set_rlimit()
         build_kwargs = self.get_build_kwargs(options, action)
@@ -215,6 +257,8 @@ class Mgr(object):
             svcpaths = [svc.svcpath for svc in self.node.svcs]
         elif action == "create" and "svcpaths" in build_kwargs:
             svcpaths = build_kwargs["svcpaths"]
+        else:
+            svcpaths = []
 
         if action != "create" and len(svcpaths) == 0:
             if action == "ls":
@@ -244,12 +288,14 @@ class Mgr(object):
         Call the real deal making sure the node is finally freed.
         """
         ret = 0
-        node_mod = ximport('node')
-        try:
-            self.node = node_mod.Node()
-        except Exception as exc:
-            print(exc, file=sys.stderr)
-            return 1
+
+        if self.node is None:
+            node_mod = ximport('node')
+            try:
+                self.node = node_mod.Node()
+            except Exception as exc:
+                print(exc, file=sys.stderr)
+                return 1
 
         check_privs()
 
@@ -267,4 +313,9 @@ class Mgr(object):
             ret = 0
 
         return ret
+
+if __name__ == "__main__":
+    selector = sys.argv[1]
+    del sys.argv[1]
+    sys.exit(Mgr(selector=selector)())
 
