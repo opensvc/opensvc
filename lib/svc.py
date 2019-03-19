@@ -5578,4 +5578,27 @@ class Svc(BaseSvc):
         except IndexError:
             return
 
+    def replace_volname(self, buff, mode="file", strict=False, errors=None):
+        l = buff.split("/")
+        volname = l[0]
+        if not volname:
+            if strict and errors != "ignore":
+                raise ex.excError("a volume path can't start with /")
+            else:
+                return buff, None
+        vol = self.get_volume(volname)
+        if vol.mount_point is None:
+            if errors == "ignore":
+                return buff, None
+            raise ex.excError("referenced volume %s has no "
+                              "mount point" % l[0])
+        volstatus = vol.status()
+        if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
+            if errors != "ignore":
+                raise ex.excError("volume %s is %s" % (volname, volstatus))
+        if mode == "blk":
+            l[0] = vol.device
+        else:
+            l[0] = vol.mount_point
+        return "/".join(l), vol
 

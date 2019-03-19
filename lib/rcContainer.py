@@ -13,7 +13,7 @@ import re
 import rcStatus
 import rcExceptions as ex
 
-from rcUtilities import which, justcall, lazy, unset_lazy
+from rcUtilities import which, justcall, lazy, unset_lazy, set_lazy
 from rcGlobalEnv import rcEnv
 
 class ContainerLib(object):
@@ -28,7 +28,13 @@ class ContainerLib(object):
     def __init__(self, svc=None):
         self.svc = svc
         self.docker_info_done = False
-        self.container_data_dir = self.svc.oget("DEFAULT", "container_data_dir")
+        self.raw_container_data_dir = self.svc.oget("DEFAULT", "container_data_dir")
+
+    @lazy
+    def container_data_dir(self):
+        if not self.raw_container_data_dir:
+            return
+        return self.svc.replace_volname(self.raw_container_data_dir, errors="ignore")[0]
 
     @lazy
     def docker_exe(self):
@@ -429,7 +435,7 @@ class DockerLib(ContainerLib):
             self.docker_daemon_private = \
                 self.svc.conf_get("DEFAULT", "docker_daemon_private")
         except ex.OptNotFound:
-            if self.container_data_dir:
+            if self.raw_container_data_dir:
                 self.docker_daemon_private = True
             else:
                 self.docker_daemon_private = False
@@ -454,7 +460,7 @@ class DockerLib(ContainerLib):
         except ex.OptNotFound as exc:
             self.docker_daemon_args = exc.default
 
-        if self.container_data_dir:
+        if self.raw_container_data_dir:
             if "--exec-opt" not in self.docker_daemon_args and self.docker_min_version("1.7"):
                 self.docker_daemon_args += ["--exec-opt", "native.cgroupdriver=cgroupfs"]
 
@@ -470,9 +476,9 @@ class DockerLib(ContainerLib):
         else:
             self.docker_pid_file = None
             try:
-                self.container_data_dir = self.docker_info["DockerRootDir"]
+                set_lazy(self, "container_data_dir", self.docker_info["DockerRootDir"])
             except (KeyError, TypeError):
-                self.container_data_dir = None
+                set_lazy(self, "container_data_dir", None)
 
         try:
             self.docker_cmd = [self.docker_exe]
