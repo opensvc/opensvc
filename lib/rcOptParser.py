@@ -71,6 +71,16 @@ class OptionParserNoHelpOptions(optparse.OptionParser):
         """
         raise ex.excError(msg)
 
+    def print_version(self, file=None):
+        """
+        Override optparse.error so sys.exit doesn't get called.
+        """
+        if self.version:
+            msg = self.get_version()
+        else:
+            msg = ""
+        raise ex.excError(msg)
+
 
 class OptParser(object):
     """
