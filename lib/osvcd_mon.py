@@ -37,7 +37,8 @@ STOPPED_STATES = [
     "down",
     "stdby up",
     "stdby down",
-    None, # base services
+    "unknown",     # slavers with deleted slaves
+    None,          # base-kind services
 ]
 ORCHESTRATE_STATES = (
     "ready",
