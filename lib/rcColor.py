@@ -6,6 +6,8 @@ import sys
 import six
 import rcExceptions as ex
 from rcUtilities import is_string
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
 
 if os.name == "nt":
     import colorama
@@ -340,8 +342,6 @@ def formatter(fn):
 
         path = args[0].options.jsonpath_filter
         if path:
-            from jsonpath_ng import jsonpath
-            from jsonpath_ng.ext import parse
             try:
                 jsonpath_expr = parse(path)
                 data = [match.value for match in jsonpath_expr.find(data)]
