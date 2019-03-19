@@ -3233,7 +3233,8 @@ class Monitor(shared.OsvcThread):
                     rinstance = self.get_service_instance(svcpath, nodename)
                     if rinstance is None:
                         continue
-                    if rinstance.get("stonith") is True:
+                    if rinstance.get("stonith") is True and \
+                       instance["monitor"].get("stonith") != nodename:
                         self.set_smon(svcpath, stonith=nodename)
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
