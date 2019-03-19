@@ -2880,6 +2880,8 @@ class Node(Crypt, ExtConfigMixin):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfpath = tmpf.name
         tmpf.close()
+        with open(tmpfpath, "w"):
+            pass
         os.chmod(tmpfpath, 0o0600)
         print("get %s (%s)" % (fpath, tmpfpath))
         try:
@@ -2910,7 +2912,6 @@ class Node(Crypt, ExtConfigMixin):
         tmpf = tempfile.NamedTemporaryFile()
         tmpfpath = tmpf.name
         tmpf.close()
-        os.chmod(tmpfpath, 0o0600)
 
         import shutil
         shutil.copyfile(src_cf, tmpfpath)
