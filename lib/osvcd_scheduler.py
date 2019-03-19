@@ -15,6 +15,8 @@ from converters import print_duration
 ACTIONS_SKIP_ON_UNPROV = [
     "sync_all",
     "compliance_auto",
+    "resource_monitor",
+    "run",
 ]
 
 class Scheduler(shared.OsvcThread):
