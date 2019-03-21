@@ -306,6 +306,8 @@ _comp_handler()
 {
     local a prev action opts
     COMPREPLY=()
+    exe="${COMP_WORDS[0]}"
+    COMP_WORDS[0]="${exe##*/}"
     a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
@@ -394,11 +396,13 @@ _comp_handler()
 
     action="${action[@]}"
     action="${action// /_}"
+    prev_action=""
     opts=""
 
-    while [ "$action" != "" -a "$opts" == "" ]
+    while [ "$action" != "" -a "$opts" == "" -a "$prev_action" != "$action" ]
     do
         opts="${!action}"
+        prev_action="$action"
         action=${action%_*}
     done
 
