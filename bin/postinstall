@@ -720,7 +720,6 @@ def install_rc():
     """
     params = None
     copyrc = True
-    reldata = os_release()
 
     if reldata["ID"] in ("gentoo"):
         rc = '/etc/init.d/opensvc'
@@ -949,7 +948,7 @@ def move_usr_to_opt():
                 shutil.copytree(f, dst, symlinks=True)
             elif os.path.islink(f):
                 linkto = os.readlink(f)
-                logit("create link %s -> %s"%(dst, linto))
+                logit("create link %s -> %s"%(dst, linkto))
                 os.symlink(linkto, dst)
             else:
                 logit("copying file %s to %s"%(f, dst))
@@ -964,7 +963,7 @@ def move_usr_to_opt():
                 continue
             if os.path.islink(f):
                 linkto = os.readlink(f)
-                logit("create link %s -> %s"%(dst, linto))
+                logit("create link %s -> %s"%(dst, linkto))
                 os.symlink(linkto, dst)
             elif os.path.isdir(f):
                 logit("copying dir %s to %s"%(f, dst))
@@ -1095,6 +1094,9 @@ def install_bash_completion():
     logit("begin")
     if pathsvc is None:
         return
+    if sysname == 'SunOS':
+        if os.path.exists("/etc/bash") and not os.path.exists("/etc/bash/bash_completion.d"):
+            os.makedirs("/etc/bash/bash_completion.d", p0755)
     src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
@@ -1108,6 +1110,10 @@ def install_bash_completion():
     if d is None:
         logit("no bash completion directory found")
         return
+    if reldata["ID"] in ("sles", "caasp") or os.path.exists('/etc/SuSE-release'):
+        if os.path.exists(dst):
+            os.unlink(dst)
+        dst += ".sh"
     try:
         logit("installing bash completion file src %s to tgt %s"%(src, dst))
         shutil.copyfile(src, dst)
@@ -1147,7 +1153,10 @@ def install_pythonlink_windows():
     sys.path = [pathlib] + sys.path
     logit("after appending pathlib to syspath")
     logit(os.environ["PATH"])
-    from rcUtilitiesWindows import get_registry_value
+    try:
+        from rcUtilitiesWindows import get_registry_value
+    except ImportError:
+        return
     logit("before reading installfolder in registry")
     try:
         installfolder = get_registry_value('HKEY_CURRENT_USER', 'Software\\OpenSVC', 'path')
@@ -1483,6 +1492,7 @@ def remove_svclinks():
         os.unlink(path)
 
 try:
+    reldata = os_release()
     move_var_files_in_subdirs()
     move_usr_to_opt()
     missing_dirs()
