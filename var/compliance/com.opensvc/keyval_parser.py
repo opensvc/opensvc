@@ -13,7 +13,8 @@ class ParserError(Exception):
     pass
 
 class Parser(object):
-    def __init__(self, path, section_markers=None, separator=" "):
+    def __init__(self, path, section_markers=None, separator=" ", obj=None):
+        self.obj = obj
         self.path = path
         self.data = {}
         self.changed = False
@@ -97,18 +98,13 @@ class Parser(object):
             buff = f.read()
         self.parse(buff)
 
-    def backup(self):
-        if self.nocf:
+    def backup(self, path):
+        if self.nocf or not self.obj:
             return
-        try:
-            shutil.copy(self.path, self.bkp)
-        except Exception as e:
-            perror(e)
-            raise ParserError("failed to backup %s"%self.path)
-        #pinfo("%s backup as %s" % (self.path, self.bkp))
+        return self.obj.backup(path)
 
     def restore(self):
-        if self.nocf:
+        if self.nocf or not self.obj:
             return
         try:
             shutil.copy(self.bkp, self.path)
@@ -116,9 +112,8 @@ class Parser(object):
             raise ParserError("failed to restore %s"%self.path)
         pinfo("%s restored from %s" % (self.path, self.bkp))
 
-
     def write(self):
-        self.backup()
+        self.bkp = self.backup(self.path)
         try:
             with open(self.path, 'w') as f:
                 f.write(str(self))
@@ -127,10 +122,6 @@ class Parser(object):
             perror(e)
             self.restore()
             raise ParserError()
-        try:
-            os.unlink(self.bkp)
-        except OSError:
-            pass
 
     def parse(self, buff):
         section = None
@@ -202,6 +193,5 @@ if __name__ == "__main__":
     o.get("Subsystem")
     o.set("Subsystem", "foo")
     o.unset("PermitRootLogin")
-    o.backup()
     pinfo(o)
 

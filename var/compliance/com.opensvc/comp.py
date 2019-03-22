@@ -439,6 +439,7 @@ class CompObject(object):
             perror("failed to backup %s: copy to %s" % (path, backup_f))
             raise ComplianceError()
         self.remove_old_backups()
+        return backup_f
 
     def restore(self, path):
         import shutil

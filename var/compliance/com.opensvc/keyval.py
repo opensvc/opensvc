@@ -128,7 +128,7 @@ class KeyVal(CompObject):
                     else:
                         data["target_n_key"][key['key']] += 1
             try:
-                data["conf"] = Parser(path, separator=data.get("separator", self.separator))
+                data["conf"] = Parser(path, separator=data.get("separator", self.separator), obj=self)
             except ParserError as e:
                 perror(e)
                 raise ComplianceError()
@@ -145,11 +145,11 @@ class KeyVal(CompObject):
                 target_n_key = data["target_n_key"][keyname] if keyname in data["target_n_key"] else 0
                 if current_n_key > target_n_key:
                     if verbose:
-                        perror("%s is set %d times, should be set %d times"%(keyname, current_n_key, target_n_key))
+                        perror("%s: %s is set %d times, should be set %d times"%(path, keyname, current_n_key, target_n_key))
                     return RET_ERR
                 else:
                     if verbose:
-                        pinfo("%s is set %d times, on target"%(keyname, current_n_key))
+                        pinfo("%s: %s is set %d times, on target"%(path, keyname, current_n_key))
                     return RET_OK
             else:
                 return RET_OK
@@ -157,7 +157,7 @@ class KeyVal(CompObject):
             if value is not None:
                 if is_string(target) and target.strip() == "":
                     if verbose:
-                        perror("%s is set, should not be"%keyname)
+                        perror("%s: %s is set, should not be"% (path, keyname))
                     return RET_ERR
                 target_found = False
                 for i, val in enumerate(value):
@@ -167,70 +167,70 @@ class KeyVal(CompObject):
 
                 if target_found:
                     if verbose:
-                        perror("%s[%d] is set to value %s, should not be"%(keyname, i, target))
+                        perror("%s: %s[%d] is set to value %s, should not be"%(path, keyname, i, target))
                     return RET_ERR
                 else:
                     if verbose:
-                        pinfo("%s is not set to value %s, on target"%(keyname, target))
+                        pinfo("%s: %s is not set to value %s, on target"%(path, keyname, target))
                     return RET_OK
             else:
                 if is_string(target) and target.strip() != "":
                     if verbose:
-                        pinfo("%s=%s is not set, on target"%(keyname, target))
+                        pinfo("%s: %s=%s is not set, on target"%(path, keyname, target))
                 else:
                     if verbose:
-                        pinfo("%s is not set, on target"%keyname)
+                        pinfo("%s: %s is not set, on target"%(path, keyname))
                 return RET_OK
 
         if value is None:
             if op == 'IN' and "unset" in map(str, target):
                 if verbose:
-                    pinfo("%s is not set, on target"%(keyname))
+                    pinfo("%s: %s is not set, on target"%(path, keyname))
                 return RET_OK
             else:
                 if verbose:
-                    perror("%s[%d] is not set, target: %s"%(keyname, instance, str(target)))
+                    perror("%s: %s[%d] is not set, target: %s"%(path, keyname, instance, str(target)))
                 return RET_ERR
 
         if type(value) == list:
             if str(target) in value:
                 if verbose:
-                    pinfo("%s[%d]=%s on target"%(keyname, instance, str(value)))
+                    pinfo("%s: %s[%d]=%s on target"%(path, keyname, instance, str(value)))
                 return RET_OK
             else:
                 if verbose:
-                    perror("%s[%d]=%s is not set"%(keyname, instance, str(target)))
+                    perror("%s: %s[%d]=%s is not set"%(path, keyname, instance, str(target)))
                 return RET_ERR
 
         if op == '=':
             if str(value) != str(target):
                 if verbose:
-                    perror("%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target)))
+                    perror("%s: %s[%d]=%s, target: %s"%(path, keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                pinfo("%s=%s on target"%(keyname, str(value)))
+                pinfo("%s: %s=%s on target"%(path, keyname, str(value)))
         elif op == 'IN':
             if str(value) not in map(str, target):
                 if verbose:
-                    perror("%s[%d]=%s, target: %s"%(keyname, instance, str(value), str(target)))
+                    perror("%s: %s[%d]=%s, target: %s"%(path, keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                pinfo("%s=%s on target"%(keyname, str(value)))
+                pinfo("%s: %s=%s on target"%(path, keyname, str(value)))
         else:
             if type(value) != int:
                 if verbose:
-                    perror("%s[%d]=%s value must be integer"%(keyname, instance, str(value)))
+                    perror("%s: %s[%d]=%s value must be integer"%(path, keyname, instance, str(value)))
                 r |= RET_ERR
             elif op == '<=' and value > target:
                 if verbose:
-                    perror("%s[%d]=%s target: <= %s"%(keyname, instance, str(value), str(target)))
+                    perror("%s: %s[%d]=%s target: <= %s"%(path, keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif op == '>=' and value < target:
                 if verbose:
-                    perror("%s[%d]=%s target: >= %s"%(keyname, instance, str(value), str(target)))
+                    perror("%s: %s[%d]=%s target: >= %s"%(path, keyname, instance, str(value), str(target)))
                 r |= RET_ERR
             elif verbose:
-                pinfo("%s[%d]=%s on target"%(keyname, instance, str(value)))
+                pinfo("%s: %s[%d]=%s on target"%(path, keyname, instance, str(value)))
         return r
 
     def check_key(self, path, data, key, instance=0, verbose=True):
@@ -263,7 +263,7 @@ class KeyVal(CompObject):
 
     def fix_key(self, path, data, key, instance=0):
         if key['op'] == "unset" or (key['op'] == "IN" and key['value'][0] == "unset"):
-            pinfo("%s unset"%key['key'])
+            pinfo("%s: %s unset"%(path, key['key']))
             if key['op'] == "IN":
                 target = None
             else:
@@ -271,14 +271,14 @@ class KeyVal(CompObject):
             data["conf"].unset(key['key'], target)
         elif key['op'] == "reset":
             target_n_key = data["target_n_key"][key['key']] if key['key'] in data["target_n_key"] else 0
-            pinfo("%s truncated to %d definitions"%(key['key'], target_n_key))
+            pinfo("%s: %s truncated to %d definitions"%(path, key['key'], target_n_key))
             data["conf"].truncate(key['key'], target_n_key)
         else:
             if key['op'] == "IN":
                 target = key['value'][0]
             else:
                 target = key['value']
-            pinfo("%s=%s set"%(key['key'], target))
+            pinfo("%s: %s=%s set"%(path, key['key'], target))
             data["conf"].set(key['key'], target, instance=instance)
 
     def check(self):
