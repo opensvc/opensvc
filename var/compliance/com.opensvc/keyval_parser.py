@@ -105,7 +105,7 @@ class Parser(object):
         except Exception as e:
             perror(e)
             raise ParserError("failed to backup %s"%self.path)
-        pinfo("%s backup up as %s" % (self.path, self.bkp))
+        #pinfo("%s backup as %s" % (self.path, self.bkp))
 
     def restore(self):
         if self.nocf:
