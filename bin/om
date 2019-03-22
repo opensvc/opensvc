@@ -42,7 +42,7 @@ help() {
 	echo "  $OM svc                      Manage Services" >&2
 	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
 #	echo "  $OM cfg                      Manage Config Maps" >&2
-#	echo "  $OM sec                      Manage Secrets" >&2
+	echo "  $OM sec                      Manage Secrets" >&2
 	echo "  $OM net                      Manage Networks" >&2
 	echo "  $OM pool                     Manage Storage Pools" >&2
 	echo "  $OM daemon                   Manage Agent Daemon" >&2
@@ -76,7 +76,13 @@ help() {
 
 main() {
 	test -z "$*" && help
-	test "`id -u`" -eq 0 || SUDO=`which sudo 2>/dev/null`
+	case "`id`" in
+	uid=0\(*)
+		;;
+	*)
+		SUDO=`which sudo 2>/dev/null`
+		;;
+	esac
 	test -z $SUDO && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	case $1 in
 	setns)
