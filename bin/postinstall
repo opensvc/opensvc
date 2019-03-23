@@ -1095,28 +1095,27 @@ om() {
 
 def install_bash_completion():
     logit("begin")
-    if pathsvc is None:
-        return
     if sysname == 'SunOS':
         if os.path.exists("/etc/bash") and not os.path.exists("/etc/bash/bash_completion.d"):
             os.makedirs("/etc/bash/bash_completion.d", p0755)
-    src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc')
+    src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc.sh')
+    dst = None
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
     for d in ds:
-        dst = os.path.join(d, 'opensvc')
-        if not os.path.exists(d):
-            d = None
-            continue
-        else:
+        if os.path.exists(d):
+            dst = os.path.join(d, 'opensvc.sh')
             break
-    if d is None:
+    if dst is None:
         logit("no bash completion directory found")
         return
-    if reldata["ID"] in ("sles", "caasp") or os.path.exists('/etc/SuSE-release'):
-        if os.path.exists(dst):
-            os.unlink(dst)
-        dst += ".sh"
+    deprecated_dst = os.path.join(d, 'opensvc')
+    if os.path.exists(deprecated_dst):
+        logit("remove deprecated bash completion file %s"%deprecated_dst)
+        os.unlink(deprecated_dst)
+    if pathsvc is None:
+        # the completion script is installed by the package
+        return
     try:
         logit("installing bash completion file src %s to tgt %s"%(src, dst))
         shutil.copyfile(src, dst)

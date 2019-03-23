@@ -109,7 +109,7 @@ function prepare_chroot {
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $DOCDIR/
 	mv $CHROOT/opt/opensvc/usr/share/man/man1/* $CHROOT/usr/share/man/man1/
-	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc $CHROOT/etc/bash_completion.d/
+	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc.sh $CHROOT/etc/bash_completion.d/
 	ln -sf ../share/opensvc/bin/om $CHROOT/usr/bin/om
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/nodemgr

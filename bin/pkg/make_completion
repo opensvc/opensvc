@@ -6,10 +6,11 @@ import datetime
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 pathlib = os.path.join(pathsvc, "lib")
-completion_fpath = os.path.join(pathsvc, "usr", "share", "bash_completion.d", "opensvc")
+completion_fpath = os.path.join(pathsvc, "usr", "share", "bash_completion.d", "opensvc.sh")
 
 sys.path = [pathlib] + sys.path
 
+import mgr_parser
 import svcmgr_parser
 import nodemgr_parser
 
@@ -35,6 +36,8 @@ _comp_handler()
 {
     local a prev action opts
     COMPREPLY=()
+    exe="${COMP_WORDS[0]}"
+    COMP_WORDS[0]="${exe##*/}"
     a="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
@@ -123,11 +126,13 @@ _comp_handler()
 
     action="${action[@]}"
     action="${action// /_}"
+    prev_action=""
     opts=""
 
-    while [ "$action" != "" -a "$opts" == "" ]
+    while [ "$action" != "" -a "$opts" == "" -a "$prev_action" != "$action" ]
     do
         opts="${!action}"
+        prev_action="$action"
         action=${action%%_*}
     done
 
@@ -189,7 +194,7 @@ def do_opts_with_arg():
     opts_with_arg = set()
     for section in svcmgr_parser.ACTIONS:
         for action in svcmgr_parser.ACTIONS[section]:
-            l = svcmgr_parser.ACTIONS[section][action].get("options", []) + svcmgr_parser.GLOBAL_OPTS
+            l = svcmgr_parser.ACTIONS[section][action].get("options", []) + mgr_parser.GLOBAL_OPTS
             for name in svcmgr_parser.DEPRECATED_OPTIONS:
                 opt = svcmgr_parser.OPT[name]
                 try:
@@ -222,7 +227,7 @@ def do_opts_with_arg():
 
 def do_lists():
     buff = ""
-    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, svcmgr_parser.GLOBAL_OPTS, svcmgr_parser.DEPRECATED_OPTIONS, svcmgr_parser.OPT)
+    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, mgr_parser.GLOBAL_OPTS, svcmgr_parser.DEPRECATED_OPTIONS, svcmgr_parser.OPT)
     buff += do_prog_lists("nodemgr", nodemgr_parser.ACTIONS, nodemgr_parser.GLOBAL_OPTS, nodemgr_parser.DEPRECATED_OPTIONS, nodemgr_parser.OPT)
     buff += do_opts_with_arg()
     return buff

@@ -41,7 +41,7 @@ echo | gzip -c -9 -n | $SUDO tee $CHROOT/usr/share/doc/opensvc/changelog.Debian.
 mkdir -p $CHROOT/DEBIAN || exit 1
 
 cat - <<-EOF >$CHROOT/DEBIAN/conffiles
-/etc/bash_completion.d/opensvc
+/etc/bash_completion.d/opensvc.sh
 EOF
 
 cp $PATH_SCRIPT/../preinstall $CHROOT/DEBIAN/preinst
