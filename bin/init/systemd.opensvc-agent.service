@@ -24,6 +24,7 @@ ExecStop=/usr/share/opensvc/bin/nodemgr daemon stop
 KillMode=process
 Restart=on-failure
 OOMScoreAdjust=-1000
+PIDFile=/var/lib/opensvc/osvcd.pid
 
 [Install]
 WantedBy=multi-user.target

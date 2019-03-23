@@ -402,6 +402,9 @@ def _activate_systemd(systemdsvc):
     # reset paths in ExecStart and ExecStop
     osrun("sed -i 's@/usr/share/opensvc/bin@"+pathbin+"@' "+dst)
 
+    # reset path in PIDFile
+    osrun("sed -i 's@/var/lib/opensvc@"+pathvar+"@' "+dst)
+
     # reload systemd configuration
     logit("reloading systemd configuration", stdout=True)
     cmd = ['systemctl', '-q', 'daemon-reload']
