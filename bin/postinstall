@@ -1098,7 +1098,8 @@ def install_bash_completion():
     if sysname == 'SunOS':
         if os.path.exists("/etc/bash") and not os.path.exists("/etc/bash/bash_completion.d"):
             os.makedirs("/etc/bash/bash_completion.d", p0755)
-    src = os.path.join(pathsvc, 'usr', 'share', 'bash_completion.d', 'opensvc.sh')
+    root = pathsvc if pathsvc else ""
+    src = os.path.join(root, 'usr', 'share', 'bash_completion.d', 'opensvc.sh')
     dst = None
     ds = [os.path.join(os.sep, 'etc', 'bash_completion.d'),
           os.path.join(os.sep, 'etc', 'bash', 'bash_completion.d')]
@@ -1113,7 +1114,7 @@ def install_bash_completion():
     if os.path.exists(deprecated_dst):
         logit("remove deprecated bash completion file %s"%deprecated_dst)
         os.unlink(deprecated_dst)
-    if pathsvc is None:
+    if not root:
         # the completion script is installed by the package
         return
     try:
