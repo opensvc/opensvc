@@ -1306,8 +1306,11 @@ def validate_name(name):
 
 def factory(kind):
     """
-    Instanciate a Svc object
+    Return a Svc or Node object
     """
+    if kind == "node":
+        mod = ximport('node')
+        return mod.Node
     if kind == "ccfg":
         from cluster import ClusterSvc
         return ClusterSvc
