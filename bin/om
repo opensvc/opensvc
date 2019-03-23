@@ -83,7 +83,7 @@ main() {
 		SUDO=`which sudo 2>/dev/null`
 		;;
 	esac
-	test -z $SUDO && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
+	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	case $1 in
 	setns)
 		echo "The 'om' alias must be sourced to handle setns" >&2
