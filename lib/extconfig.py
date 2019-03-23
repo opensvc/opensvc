@@ -81,7 +81,7 @@ class ExtConfigMixin(object):
         return ret
 
     def unset_one(self, kw):
-        elements = kw.split('.')
+        elements = kw.split(".", 1)
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
@@ -113,7 +113,7 @@ class ExtConfigMixin(object):
         lines = self._read_cf().splitlines()
         for kw in kws:
             try:
-                section, option = kw.split(".")
+                section, option = kw.split(".", 1)
             except Exception:
                 continue
             try:
@@ -234,7 +234,7 @@ class ExtConfigMixin(object):
         """
         if param is None:
             raise ex.excError("no parameter. set --param")
-        elements = param.split('.')
+        elements = param.split(".", 1)
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
@@ -303,7 +303,7 @@ class ExtConfigMixin(object):
                                       "not integer" % kw)
             if "." in keyword and "#" not in keyword:
                 # <group>.keyword[@<scope>] format => loop over all rids in group
-                group = keyword.split(".")[0]
+                group = keyword.split(".", 1)[0]
                 if group in self.default_status_groups:
                     for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
                         keyword = rid + keyword[keyword.index("."):]
@@ -340,7 +340,7 @@ class ExtConfigMixin(object):
         changes = []
         if "." in keyword and "#" not in keyword:
             # <group>.keyword[@<scope>] format => loop over all rids in group
-            group = keyword.split(".")[0]
+            group = keyword.split(".", 1)[0]
             if group in self.default_status_groups:
                 for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
                     keyword = rid + keyword[keyword.index("."):]
@@ -386,7 +386,7 @@ class ExtConfigMixin(object):
             self.set_multi_cache[keyword] = _value
         else:
             _value = value
-        elements = keyword.split('.')
+        elements = keyword.split(".", 1)
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
@@ -635,10 +635,8 @@ class ExtConfigMixin(object):
             elif n_dots == 0 and self.has_default_section:
                 _section = "DEFAULT"
                 _v = _ref
-            elif n_dots == 1:
-                _section, _v = _ref.split(".")
-            else:
-                raise ex.excError("%s: reference can have only one dot" % _ref)
+            elif n_dots >= 1:
+                _section, _v = _ref.split(".", 1)
 
             if len(_section) == 0:
                 raise ex.excError("%s: reference section can not be empty" % _ref)
