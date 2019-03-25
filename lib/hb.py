@@ -129,7 +129,9 @@ class Hb(shared.OsvcThread):
             else:
                 self.event("hb_stale", data={
                     "nodename": nodename,
-                    "hb": {"name": self.name, "id": self.id},
+                    "hb": {"name": self.name, "id": self.id,
+                           "timeout": self.timeout,
+                           "last": self.peers[nodename].last},
                 }, level="warning")
         self.peers[nodename].beating = beating
         if not beating and self.peers[nodename].last > 0:
