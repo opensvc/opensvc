@@ -3384,7 +3384,11 @@ class Node(Crypt, ExtConfigMixin):
                 return True
             return False
 
-        cluster_data = self._daemon_status()["monitor"]["nodes"]
+        try:
+            cluster_data = self._daemon_status()["monitor"]["nodes"]
+        except KeyError:
+            raise ex.excError("could fetch cluster data")
+
         if neg ^ eval_cond(val, cluster_data):
             return
 
