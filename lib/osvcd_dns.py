@@ -83,7 +83,7 @@ class Dns(shared.OsvcThread):
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
-                self.log.info("stop event received (%d handler threads to join)", len(self.threads))
+                self.log.debug("stop event received (%d handler threads to join)", len(self.threads))
                 self.join_threads()
                 self.sock.close()
                 sys.exit(0)
