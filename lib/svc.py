@@ -3743,7 +3743,6 @@ class Svc(BaseSvc):
         try:
             mod = __import__('rcPg'+rcEnv.sysname)
         except ImportError:
-            self.log.info("process group are not supported on this platform")
             return
         except Exception as exc:
             print(exc)
