@@ -1,4 +1,4 @@
-class excEncapUnjoignable(Exception):
+class excEncapUnjoinable(Exception):
     pass
 
 class excError(Exception):

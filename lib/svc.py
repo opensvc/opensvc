@@ -3865,7 +3865,7 @@ class Svc(BaseSvc):
         for container in self.get_resources('container'):
             try:
                 self._encap_cmd(cmd, container, verbose=verbose)
-            except ex.excEncapUnjoignable:
+            except ex.excEncapUnjoinable:
                 if unjoinable != "continue":
                     self.log.error("container %s is not joinable to execute "
                                    "action '%s'", container.name, ' '.join(cmd))
@@ -3966,7 +3966,7 @@ class Svc(BaseSvc):
             cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd, stdin=self.node.devnull)
         else:
-            raise ex.excEncapUnjoignable("undefined rcmd/runmethod in "
+            raise ex.excEncapUnjoinable("undefined rcmd/runmethod in "
                                          "resource %s"%container.rid)
 
         if verbose:
@@ -3976,9 +3976,9 @@ class Svc(BaseSvc):
                 print(err)
         if ret == 127:
             # opensvc is not installed
-            raise ex.excEncapUnjoignable
+            raise ex.excEncapUnjoinable
         if ret == 255:
-            raise ex.excEncapUnjoignable
+            raise ex.excEncapUnjoinable
         if "resource_monitor" in cmd:
             self.encap_json_status(container, refresh=True, push_config=False, cache=False)
         elif "print" not in cmd and "create" not in cmd:
@@ -4793,7 +4793,7 @@ class Svc(BaseSvc):
             cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
             out = cmd_results[0]
             ret = cmd_results[2]
-        except (ex.excEncapUnjoignable, ex.excError) as exc:
+        except (ex.excEncapUnjoinable, ex.excError) as exc:
             out = None
             ret = 1
 
