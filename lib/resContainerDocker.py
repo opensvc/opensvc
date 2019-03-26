@@ -259,7 +259,6 @@ class Container(resContainer.Container):
         cmd = self.lib.docker_cmd + ['rm', self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            print("xx", err)
             if "No such container" in err:
                 pass
             elif "no such file" in err:
