@@ -25,7 +25,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv, get_osvc_paths
 from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
-                        try_decode, action_triggers, read_cf, \
+                        try_decode, action_triggers, read_cf, set_lazy, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_svcpath, fmt_svcpath, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
@@ -224,6 +224,7 @@ ACTIONS_NO_LOG = [
     "eval",
     "get",
     "group_status",
+    "install_secrets",
     "logs",
     "push_resinfo",
     "push_status",
@@ -246,6 +247,7 @@ ACTIONS_NO_TRIGGER = [
     "edit_config",
     "enable",
     "group_status",
+    "install_secrets",
     "logs",
     "pg_freeze",
     "pg_thaw",
@@ -321,6 +323,7 @@ STOP_GROUPS = [
 ACTIONS_DO_MASTER = [
     "clear",
     "freeze",
+    "install_secrets",
     "set_provisioned",
     "set_unprovisioned",
     "run",
@@ -417,7 +420,7 @@ def _master_action(func):
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
-    def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False):
+    def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False, log=None):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.svcname = svcname
         self.namespace = namespace.strip("/") if namespace else None
@@ -427,6 +430,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.svcpath = fmt_svcpath(self.svcname, self.namespace, self.kind)
         nsetc = svc_pathetc(self.svcpath)
         nstmp = svc_pathtmp(self.svcpath)
+
+        if log:
+            self.set_lazy("log", log)
 
         self.paths = Storage(
             initd=os.path.join(nsetc, self.svcname+'.d'),
@@ -2166,10 +2172,17 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         return os.path.exists(self.paths.cf)
 
+    def set_lazy(self, prop, val):
+        """
+        Expose the set_lazy(self, ...) utility function as a method,
+        so Svc() users don't have to import it from rcUtilities.
+        """
+        set_lazy(self, prop, val)
+
     def unset_lazy(self, prop):
         """
         Expose the unset_lazy(self, ...) utility function as a method,
-        so Node() users don't have to import it from rcUtilities.
+        so Svc() users don't have to import it from rcUtilities.
         """
         unset_lazy(self, prop)
 
@@ -5600,4 +5613,11 @@ class Svc(BaseSvc):
         else:
             l[0] = vol.mount_point
         return "/".join(l), vol
+
+    def install_secrets(self):
+        rtypes = [
+            "container.docker",
+            "container.podman",
+        ]
+        self.sub_set_action(rtypes, "install_secrets")
 

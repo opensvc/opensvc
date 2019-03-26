@@ -328,6 +328,16 @@ KEYWORDS = [
     },
     {
         "sections": ["task", "container"],
+        "keyword": "secrets",
+        "at": True,
+        "rtype": ["docker", "podman"],
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <secret name>/<key>:<containerized path>.",
+        "example": "cert/pem:/etc/ssh/server.pem cert/key:/etc/ssl/server.key"
+    },
+    {
+        "sections": ["task", "container"],
         "keyword": "devices",
         "at": True,
         "rtype": ["docker", "podman"],

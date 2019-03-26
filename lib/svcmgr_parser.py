@@ -209,6 +209,15 @@ ACTIONS["Service actions"].update({
             OPT.subsets,
         ],
     },
+    "install_secrets": {
+        "msg": "Install secrets in resources supporting that feature and with "
+               "secrets mapping configured.",
+        "options": [
+            OPT.rid,
+            OPT.tags,
+            OPT.subsets,
+        ],
+    },
     "status": {
         "msg": "Return the local service instance overall status code.",
         "options": [

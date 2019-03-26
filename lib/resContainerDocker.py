@@ -13,7 +13,7 @@ import rcContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
+from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options, fmt_svcpath, split_svcpath, factory
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
@@ -89,6 +89,7 @@ class Container(resContainer.Container):
                  tty=None,
                  volume_mounts=None,
                  devices=None,
+                 secrets=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -117,6 +118,7 @@ class Container(resContainer.Container):
         self.volume_mounts = volume_mounts
         self.devices = devices
         self.volumes = {}
+        self.secrets = secrets
         if not self.detach:
             self.rm = True
             self.tags.add("nostatus")
@@ -257,6 +259,8 @@ class Container(resContainer.Container):
         if ret != 0:
             if "No such container" in err:
                 pass
+            elif "No such file" in err:
+                pass
             elif "removal" in err and "already in progress" in err:
                 self.wait_for_removed()
             else:
@@ -373,6 +377,57 @@ class Container(resContainer.Container):
                 volumes.append(volarg)
         return volumes
 
+    def secrets_data(self):
+        """
+        Transform the secrets mappings list into a data structure.
+        """
+        if self.secrets:
+            seclist = self.secrets
+        else:
+            # so we always have a com.opensvc.secrets annotation to
+            # override a malicious annotation using the same key
+            seclist = []
+        secrets = []
+        for sdef in seclist:
+            try:
+                sec, path = sdef.split(":", 1)
+            except Exception:
+                continue
+            try:
+                secpath, key = sec.split("/", 1)
+            except Exception:
+                continue
+            secrets.append({
+                "secpath": fmt_svcpath(secpath, namespace=self.svc.namespace, kind="sec"),
+                "key": key,
+                "path": path,
+            })
+        return secrets
+
+    def secrets_options(self):
+        options = []
+        secrets = self.secrets_data()
+        for secret in secrets:
+            mode = "ro"
+            name, _, _ = split_svcpath(secret["secpath"])
+            sec = factory("sec")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            sec._install(secret["key"])
+            for key in sec.resolve_key(secret["key"]):
+                src = sec.key_path(key)
+                if secret["path"].endswith("/"):
+                    dst = os.path.join(secret["path"].rstrip(os.sep), key.strip(os.sep))
+                else:
+                    dst = secret["path"]
+                options += ["-v", "%s:%s:%s" % (src, dst, mode)]
+        return options
+
+    def install_secrets(self):
+        secrets = self.secrets_data()
+        for secret in secrets:
+            name, _, _ = split_svcpath(secret["secpath"])
+            sec = factory("sec")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            sec._install(secret["key"])
+
     def cgroup_options(self):
         if not self.lib.docker_min_version("1.7"):
             return []
@@ -484,6 +539,7 @@ class Container(resContainer.Container):
         drop_option("--volume", args, drop_value=True)
         for vol in self.volume_options(errors=errors):
              args.append("--volume=%s" % vol)
+        args += self.secrets_options()
 
         drop_option("--device", args, drop_value=True)
         for dev in self.device_options(errors=errors):
