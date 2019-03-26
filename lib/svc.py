@@ -3855,7 +3855,7 @@ class Svc(BaseSvc):
             time.sleep(2)
         getattr(self, self.monitor_action)()
 
-    def encap_cmd(self, cmd, verbose=False, error="raise"):
+    def encap_cmd(self, cmd, verbose=False, unjoinable="raise", error="raise"):
         """
         Execute a command in all service containers.
         If error is set to "raise", stop iterating at first error.
@@ -3866,13 +3866,16 @@ class Svc(BaseSvc):
             try:
                 self._encap_cmd(cmd, container, verbose=verbose)
             except ex.excEncapUnjoignable:
-                if error != "continue":
+                if unjoinable != "continue":
                     self.log.error("container %s is not joinable to execute "
                                    "action '%s'", container.name, ' '.join(cmd))
                     raise
                 elif verbose:
                     self.log.warning("container %s is not joinable to execute "
                                      "action '%s'", container.name, ' '.join(cmd))
+            except ex.excError as exc:
+                if error != "continue":
+                    raise
 
     def _encap_cmd(self, cmd, container, verbose=False, push_config=True, fwd_options=True):
         """
@@ -4338,7 +4341,7 @@ class Svc(BaseSvc):
 
     @_slave_action
     def slave_stop(self):
-        self.encap_cmd(['stop'], verbose=True, error="continue")
+        self.encap_cmd(['stop'], verbose=True, unjoinable="continue")
 
     def boot(self):
         self.options.force = True
@@ -4361,7 +4364,7 @@ class Svc(BaseSvc):
 
     @_slave_action
     def slave_shutdown(self):
-        self.encap_cmd(['shutdown'], verbose=True, error="continue")
+        self.encap_cmd(['shutdown'], verbose=True, unjoinable="continue", error="continue")
 
     def unprovision(self):
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker", "podman"]))
@@ -4790,7 +4793,7 @@ class Svc(BaseSvc):
             cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
             out = cmd_results[0]
             ret = cmd_results[2]
-        except ex.excError:
+        except (ex.excEncapUnjoignable, ex.excError) as exc:
             out = None
             ret = 1
 
