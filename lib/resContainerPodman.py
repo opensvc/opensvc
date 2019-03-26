@@ -50,6 +50,10 @@ class Container(resContainerDocker.Container):
         if ret != 0:
             if "unable to find" in err:
                 pass
+            elif "no such file" in err:
+                pass
+            elif "container has already been removed" in err:
+                pass
             elif "removal" in err and "already in progress" in err:
                 self.wait_for_removed()
             else:
