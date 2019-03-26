@@ -115,8 +115,8 @@ class Container(Res.Resource):
         Also verify the container has not died since judged started.
         """
         def fn():
-            if hasattr(self, "is_up_clear_caches"):
-                getattr(self, "is_up_clear_caches")()
+            if hasattr(self, "is_up_clear_cache"):
+                getattr(self, "is_up_clear_cache")()
             if not self.is_up():
                 raise ex.excError("the container went down")
             return getattr(self, "ping")()
@@ -131,8 +131,8 @@ class Container(Res.Resource):
         Also verify the container has not died since judged started.
         """
         def fn():
-            if hasattr(self, "is_up_clear_caches"):
-                getattr(self, "is_up_clear_caches")()
+            if hasattr(self, "is_up_clear_cache"):
+                getattr(self, "is_up_clear_cache")()
             if not self.is_up():
                 raise ex.excError("the container went down")
             return self.operational()
@@ -141,8 +141,8 @@ class Container(Res.Resource):
 
     def wait_for_shutdown(self):
         def fn():
-            if hasattr(self, "is_up_clear_caches"):
-                getattr(self, "is_up_clear_caches")()
+            if hasattr(self, "is_up_clear_cache"):
+                getattr(self, "is_up_clear_cache")()
             return not self.is_up()
         self.log.info("wait for down status")
         self.wait_for_fn(fn, self.stop_timeout, 2, errmsg="waited too long for shutdown")

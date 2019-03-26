@@ -68,7 +68,7 @@ class Kvm(resContainer.Container):
     def ping(self):
         return check_ping(self.addr, timeout=1, count=1)
 
-    def is_up_clear_caches(self):
+    def is_up_clear_cache(self):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def virsh_define(self):
