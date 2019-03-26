@@ -74,6 +74,7 @@ class Container(resContainer.Container):
                  name="",
                  type="container.docker",
                  image=None,
+                 image_pull_policy="once",
                  run_command=None,
                  run_args=None,
                  detach=True,
@@ -102,6 +103,7 @@ class Container(resContainer.Container):
                                         **kwargs)
         self.user_defined_name = name
         self.image = image
+        self.image_pull_policy = image_pull_policy
         self.run_command = run_command
         self.run_args = run_args
         self.detach = detach
@@ -257,9 +259,10 @@ class Container(resContainer.Container):
         cmd = self.lib.docker_cmd + ['rm', self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
+            print("xx", err)
             if "No such container" in err:
                 pass
-            elif "No such file" in err:
+            elif "no such file" in err:
                 pass
             elif "removal" in err and "already in progress" in err:
                 self.wait_for_removed()
@@ -569,6 +572,9 @@ class Container(resContainer.Container):
     def cgroup_dir(self):
         return os.sep+self.svc.pg.get_cgroup_relpath(self)
 
+    def image_pull(self):
+        self.lib.image_pull(self.image)
+
     def container_start(self):
         self.docker('start')
 
@@ -586,6 +592,8 @@ class Container(resContainer.Container):
         self.container_rm()
 
     def start(self):
+        if self.image_pull_policy == "always":
+            self.image_pull()
         try:
             self._start()
         except KeyboardInterrupt:

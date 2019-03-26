@@ -247,9 +247,9 @@ class ContainerLib(object):
             return
         justcall(cmd)
 
-    def docker_pull(self, ref):
+    def image_pull(self, ref):
         self.docker_login(ref)
-        self.svc.log.info("pulling docker image %s" % ref)
+        self.svc.log.info("pulling image %s" % ref)
         cmd = self.docker_cmd + ["pull", ref]
         results = justcall(cmd)
         if results[2] != 0:

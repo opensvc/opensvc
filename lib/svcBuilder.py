@@ -997,6 +997,7 @@ def add_container_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s, default_name=None))
     kwargs["image"] = svc.oget(s, "image")
+    kwargs["image_pull_policy"] = svc.oget(s, "image_pull_policy")
     kwargs["run_command"] = svc.oget(s, "command")
     kwargs["run_args"] = svc.oget(s, "run_args")
     kwargs["rm"] = svc.oget(s, "rm")
@@ -1021,6 +1022,7 @@ def add_container_podman(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s, default_name=None))
     kwargs["image"] = svc.oget(s, "image")
+    kwargs["image_pull_policy"] = svc.oget(s, "image_pull_policy")
     kwargs["run_command"] = svc.oget(s, "command")
     kwargs["run_args"] = svc.oget(s, "run_args")
     kwargs["rm"] = svc.oget(s, "rm")
@@ -1534,6 +1536,7 @@ def add_task(svc, s):
 def add_task_podman(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["image"] = svc.oget(s, "image")
+    kwargs["image_pull_policy"] = svc.oget(s, "image_pull_policy")
     kwargs["run_command"] = svc.oget(s, "command")
     kwargs["run_args"] = svc.oget(s, "run_args")
     kwargs["rm"] = svc.oget(s, "rm")
@@ -1563,6 +1566,7 @@ def add_task_podman(svc, s):
 def add_task_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["image"] = svc.oget(s, "image")
+    kwargs["image_pull_policy"] = svc.oget(s, "image_pull_policy")
     kwargs["run_command"] = svc.oget(s, "command")
     kwargs["run_args"] = svc.oget(s, "run_args")
     kwargs["rm"] = svc.oget(s, "rm")

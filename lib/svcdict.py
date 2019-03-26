@@ -434,6 +434,17 @@ KEYWORDS = [
     },
     {
         "sections": ["task", "container"],
+        "keyword": "image_pull_policy",
+        "at": True,
+        "required": False,
+        "default": "once",
+        "rtype": ["docker", "podman"],
+        "candidates": ["once", "always"],
+        "text": "The docker image pull policy. always: pull upon each container start, once: pull if not already pulled (default).",
+        "example": "once"
+    },
+    {
+        "sections": ["task", "container"],
         "keyword": "command",
         "at": True,
         "rtype": ["docker", "podman"],
