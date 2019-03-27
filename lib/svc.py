@@ -2699,6 +2699,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def get_drp_flex_primary(self):
         return ""
 
+    def postinstall(self):
+        pass
+
 
 class Svc(BaseSvc):
     """
@@ -5629,6 +5632,3 @@ class Svc(BaseSvc):
             "container.podman",
         ]
         self.sub_set_action(rtypes, "install_secrets")
-
-    def postinstall(self):
-        pass
