@@ -282,7 +282,7 @@ class Container(resContainer.Container):
         """
         if self.lib.docker_cmd is None:
             raise ex.excError("docker executable not found")
-        sec_run_args = []
+        sec_env = {}
         cmd = self.lib.docker_cmd + []
         if action == "start":
             if not self.detach:
@@ -299,10 +299,11 @@ class Container(resContainer.Container):
                     raise ex.excError(str(exc))
                 if image_id is None:
                     self.lib.docker_login(self.image)
-                run_args, sec_run_args = self._add_run_args()
+                sec_env = self.secrets_environment_env()
                 cmd += ["run"]
-                cmd += run_args
-                cmd += sec_run_args
+                cmd += self._add_run_args()
+                for var in sec_env:
+                    cmd += ["-e", var]
                 cmd += [self.image]
                 if self.run_command:
                     cmd += self.run_command
@@ -316,13 +317,10 @@ class Container(resContainer.Container):
             self.log.error("unsupported docker action: %s", action)
             return 1
 
-        if sec_run_args:
-            substr = " ".join(sec_run_args)
-            repstr = " ".join([w if w == "-e" else w.split("=", 1)[0]+"=xxx" for w in sec_run_args])
-            self.log.info("%s", " ".join(cmd).replace(substr, repstr))
-        else:
-            self.log.info("%s", " ".join(cmd))
-        ret = self.call(cmd, warn_to_info=True)[0]
+        env = {}
+        env.update(os.environ)
+        env.update(sec_env)
+        ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
         if not self.detach:
             signal.alarm(0)
         if ret != 0:
@@ -436,8 +434,8 @@ class Container(resContainer.Container):
                 options += ["--volume", "%s:%s:%s" % (src, dst, mode)]
         return options
 
-    def secrets_environment_options(self):
-        options = []
+    def secrets_environment_env(self):
+        env = {}
         for mapping in self.secrets_environment:
             try:
                 var, val = mapping.split("=", 1)
@@ -458,8 +456,8 @@ class Container(resContainer.Container):
                 self.log.info("ignored secrets_environment mapping %s: key %s does not exist", mapping, key)
                 continue
             val = sec.decode_secret(key)
-            options += ["-e", "%s=%s" % (var, val)]
-        return options
+            env[var] = val
+        return env
 
     def environment_options(self):
         options = []
@@ -616,8 +614,7 @@ class Container(resContainer.Container):
 
         args += dns_opts(args)
         args += self.environment_options()
-        secret_args = self.secrets_environment_options()
-        return args, secret_args
+        return args
 
     @lazy
     def cgroup_dir(self):
@@ -678,7 +675,7 @@ class Container(resContainer.Container):
         Return keys to contribute to resinfo.
         """
         data = self.lib._info()
-        data.append([self.rid, "run_args", " ".join(self._add_run_args(errors="ignore")[0])])
+        data.append([self.rid, "run_args", " ".join(self._add_run_args(errors="ignore"))])
         data.append([self.rid, "rm", str(self.rm)])
         data.append([self.rid, "container_name", str(self.container_name)])
         if self.netns:
