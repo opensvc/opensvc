@@ -3982,13 +3982,13 @@ class Svc(BaseSvc):
         if "resource_monitor" in cmd:
             try:
                 self.encap_json_status(container, refresh=True, push_config=False, cache=False)
-            except (ex.excNotAvailable, ex.excEncapUnjoignable, ex.excError):
+            except (ex.excNotAvailable, ex.excEncapUnjoinable, ex.excError):
                 pass
         elif "print" not in cmd and "create" not in cmd:
             self.log.info("refresh encap json status after action")
             try:
                 self.encap_json_status(container, refresh=True, push_config=push_config)
-            except (ex.excNotAvailable, ex.excEncapUnjoignable, ex.excError):
+            except (ex.excNotAvailable, ex.excEncapUnjoinable, ex.excError):
                 pass
         if ret != 0:
             raise ex.excError("error from encap service command '%s': "
