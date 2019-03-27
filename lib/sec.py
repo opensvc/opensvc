@@ -23,16 +23,19 @@ class Sec(BaseSvc):
         return __import__("secdict")
 
     def add(self):
-        if self.options.key and sys.stdin and self.options.value_from in ("-", "/dev/stdin"):
-            self.add_stdin(self.options.key)
-        elif self.options.key and self.options.value:
-            self.add_secret(self.options.key, self.options.value)
-        elif self.options.value_from and os.path.isdir(self.options.value_from):
-            self.add_directory(self.options.key, self.options.value_from)
-        elif self.options.value_from and os.path.isfile(self.options.value_from):
-            self.add_file(self.options.key, self.options.value_from)
-        elif self.options.value_from:
-            self.add_glob(self.options.key, self.options.value_from)
+        self._add(self.options.key, self.options.value_from)
+
+    def _add(self, key=None, value_from=None):
+        if key and sys.stdin and value_from in ("-", "/dev/stdin"):
+            self.add_stdin(key)
+        elif key and self.options.value:
+            self.add_secret(key, self.options.value)
+        elif value_from and os.path.isdir(value_from):
+            self.add_directory(key, value_from)
+        elif value_from and os.path.isfile(value_from):
+            self.add_file(key, value_from)
+        elif value_from:
+            self.add_glob(key, value_from)
         else:
             raise ex.excError("missing arguments")
 
@@ -81,6 +84,9 @@ class Sec(BaseSvc):
         data = "crypt:"+base64.urlsafe_b64encode(self.encrypt(data, cluster_name="join", encode=True)).decode()
         self.set_multi(["data.%s=%s" % (key, data)])
         self.log.info("secret key '%s' added (%s)", key, print_size(len(data), compact=True, unit="b"))
+        # refresh if in use
+        if os.path.exists(self.key_path(key)):
+            self.install_key(key)
 
     def decode(self):
         print(self.decode_secret(self.options.key))
@@ -159,9 +165,9 @@ class Sec(BaseSvc):
         The secret private directory in host's volatile storage.
         """
         if self.namespace:
-            return os.path.join(rcEnv.paths.secrets, "namespaces", self.namespace, self.svcname)
+            return os.path.join(rcEnv.paths.secrets, "namespaces", self.namespace, "sec", self.svcname)
         else:
-            return os.path.join(rcEnv.paths.secrets, self.svcname)
+            return os.path.join(rcEnv.paths.secrets, "sec", self.svcname)
 
     def key_path(self, key):
         """
@@ -184,4 +190,14 @@ class Sec(BaseSvc):
         The "install" action entrypoint.
         """
         self._install(self.options.key)
+
+    def installed_keys(self):
+        return [key for key in self.data_keys() if os.path.exists(self.key_path(key))]
+
+    def postinstall(self):
+        """
+        Refresh installed keys
+        """
+        for key in self.installed_keys():
+            self.install_key(key)
 

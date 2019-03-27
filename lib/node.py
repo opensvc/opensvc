@@ -2917,7 +2917,7 @@ class Node(Crypt, ExtConfigMixin):
         shutil.copyfile(src_cf, tmpfpath)
 
         import uuid
-        svc = factory(kind)(name, cf=tmpfpath, node=self)
+        svc = factory(kind)(name, namespace=namespace, cf=tmpfpath, node=self)
         if not restore:
             try:
                 svc.set_multi(["DEFAULT.id=%s" % info.id])
@@ -2930,6 +2930,7 @@ class Node(Crypt, ExtConfigMixin):
 
         if src_cf.startswith(rcEnv.paths.pathtmp):
             os.unlink(src_cf)
+        svc.postinstall()
 
     def install_svc_conf_from_data(self, name, namespace, kind, data, restore=False, info=None):
         """
@@ -2962,6 +2963,8 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             print("failed to write %s: %s" % (info.cf, exc), file=sys.stderr)
             raise Exception()
+        svc = factory(kind)(name, namespace=namespace, cf=info.cf, node=self)
+        svc.postinstall()
 
     def install_service_info(self, name, namespace, kind):
         validate_name(name)

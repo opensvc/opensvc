@@ -5624,3 +5624,5 @@ class Svc(BaseSvc):
         ]
         self.sub_set_action(rtypes, "install_secrets")
 
+    def postinstall(self):
+        pass

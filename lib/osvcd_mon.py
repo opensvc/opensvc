@@ -324,6 +324,10 @@ class Monitor(shared.OsvcThread):
                     self.log.error("service %s fetched config validation "
                                    "error: %s", svcpath, exc)
                     return
+                try:
+                    svc.postinstall()
+                except Exception as exc:
+                    self.log("service %s postinstall failed: %s", svcpath, exc)
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
