@@ -328,6 +328,26 @@ KEYWORDS = [
     },
     {
         "sections": ["task", "container"],
+        "keyword": "environment",
+        "at": True,
+        "rtype": ["docker", "podman"],
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <var>=<value>. A shell expression spliter is applied, so double quotes can be around values only or whole <var>=<value>. Variables are uppercased.",
+        "example": """AA="a a" "BB=c c" CC=d """
+    },
+    {
+        "sections": ["task", "container"],
+        "keyword": "secrets_environment",
+        "at": True,
+        "rtype": ["docker", "podman"],
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <var>=<secret name>/<key path>. A shell expression spliter is applied, so double quotes can be around <secret name>/<key path> only or whole <var>=<secret name>/<key path>. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "sections": ["task", "container"],
         "keyword": "secrets",
         "at": True,
         "rtype": ["docker", "podman"],
