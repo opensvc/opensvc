@@ -30,6 +30,9 @@ OPT = Storage({
     "dev": Option(
         "--dev", action="store", dest="dev",
         help="The device id (ex: 00A04)"),
+    "data": Option(
+        "--data", action="store", dest="data",
+        help="The workplan provided in json format."),
     "force": Option(
         "--force", action="store_true", dest="force",
         help="bypass the downsize sanity check."),
@@ -86,6 +89,12 @@ ACTIONS = {
                 OPT.srp,
                 OPT.srdf,
                 OPT.rdfg,
+            ],
+        },
+        "add_masking": {
+            "msg": "Create masking objects from a workplan (IG, SG, MV).",
+            "options": [
+                OPT.data,
             ],
         },
         "add_map": {
@@ -313,6 +322,19 @@ class SymMixin(object):
         self.username = username
         self.password = password
         self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.sid)
+
+        if 'SYMCLI_DB_FILE' in os.environ:
+            dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
+            # flat format
+            self.maskdb = os.path.join(dir, self.sid+'.bin')
+            if not os.path.exists(self.maskdb):
+                # emc grab format
+                self.maskdb = os.path.join(dir, self.sid, 'symmaskdb_backup.bin')
+            if not os.path.exists(self.maskdb):
+                print("missing file %s"%self.maskdb, file=sys.stderr)
+        else:
+            self.maskdb = None
+
 
     def set_environ(self):
         if self.symcli_connect:
@@ -646,6 +668,168 @@ class SymMixin(object):
                 else:
                     sgs &= _sgs
         return sgs
+
+    def add_ig(self, name, hba_ids=None, igs=None, consistent=True):
+        if hba_ids is None:
+            hba_ids = []
+        if igs is None:
+            igs = []
+        cmd = ["-name", name, "-type", "initiator"]
+        if consistent:
+            cmd += ["-consistent_lun"]
+        cmd += ["create"]
+        result = 0
+        out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
+        result += ret
+        for ig in igs:
+            out, err, ret = self.symaccesscmd(["-name", name, "-type", "initiator", "-ig", ig, "add"], xml=False, log=True)
+            result += ret
+        for hba_id in hba_ids:
+            out, err, ret = self.symaccesscmd(["-name", name, "-type", "initiator", "-wwn", hba_id, "add"], xml=False, log=True)
+            result += ret
+        return result
+
+    def add_igs(self, data):
+        for i, ig in enumerate(data.get("ig", [])):
+            name = ig.get("name")
+            hba_ids = ig.get("hba_ids", [])
+            igs = ig.get("ig", [])
+            consistent = ig.get("consistent", True)
+            result = self.add_ig(name, hba_ids, igs, consistent=consistent)
+            data["ig"][i]["result"] = result
+        return data
+
+    def add_sg(self, name, srp, slo, sgs=None):
+        if sgs is None:
+            sgs = []
+        cmd = ["create", name]
+        if srp:
+            cmd += ["-srp", srp]
+        if slo:
+            cmd += ["-slo", slo]
+        result = 0
+        out, err, ret = self.symsg(cmd, xml=False, log=True)
+        result += ret
+        if sgs:
+            out, err, ret = self.symsg(["-sg", name, "add", "sg", ",".join(sgs)], xml=False, log=True)
+            result += ret
+        return result
+
+    def add_sgs(self, data):
+        for i, sg in enumerate(data.get("sg", [])):
+            name = sg.get("name")
+            srp = sg.get("srp")
+            slo = sg.get("slo")
+            sgs = sg.get("sg", [])
+            result = self.add_sg(name, srp, slo, sgs)
+            data["sg"][i]["result"] = result
+        return data
+
+    def get_gks(self, sg):
+        """
+        <SymCLI_ML>
+          <SG>
+            <SG_Info>
+              <name>SG_DL360S-20_GK</name>
+              <symid>000297600015</symid>
+              <update_time>Fri Mar 29 11:23:33 2019</update_time>
+              ...
+              <Num_of_GKS>0</Num_of_GKS>
+        """
+        cmd = ["show", sg]
+        out, err, ret = self.symsg(cmd, xml=True)
+        data = self.parse_xml(out, key="SG_Info")
+        #print(json.dumps(data, indent=4))
+        return int(data[0]["Num_of_GKS"])
+
+    def add_gks(self, data):
+        gk_data = data.get("gk", {})
+        sg = gk_data.get("sg")
+        tgt_gks = int(gk_data.get("count", 6))
+        cur_gks = self.get_gks(sg)
+        missing = tgt_gks - cur_gks
+        if missing <= 0:
+            return data
+        _cmd = "create gatekeeper count=%d,sg=%s,emulation=FBA;" % (missing, sg)
+        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
+        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        data["gk"]["result"] = ret
+        return data
+
+    def add_dev(self, data):
+        size = data.get("size")
+        size = convert_size(size, _to="MB")
+        name = data.get("name", "NONAME")
+        sg = data.get("sg")
+        cmd = ["show", sg]
+        out, err, ret = self.symsg(cmd, xml=True, log=False)
+        devs = self.parse_xml(out, key="Device", as_list=["Device"])
+        if len(devs):
+            return
+        _cmd = "create dev count=1, sg=%s, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV, config=TDEV, device_name=%s;" % (sg, size, name)
+        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
+        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        return ret
+
+    def add_devs(self, data):
+        for i, dev in enumerate(data.get("dev", [])):
+            ret = self.add_dev(dev)
+            data["dev"][i]["result"] = ret
+        return data
+
+    def list_pgs(self):
+        out, err, ret = self.symaccesscmd(["list", "-type", "port"], xml=True)
+        data = self.parse_xml(out, key="Port_Group", as_list=["Port_Group"])
+        return [d["Group_Info"]["group_name"] for d in data]
+
+    def pg_tgt_ids(self, name):
+        out, err, ret = self.symaccesscmd(["show", name, "-type", "port"], xml=True)
+        data = self.parse_xml(out, key="Director_Identification", as_list=["Director_Identification"])
+        return [d["port_wwn"] for d in data if "port_wwn" in d]
+
+    def find_pg(self, tgt_ids):
+        for name in self.list_pgs():
+            pg_tgt_ids = self.pg_tgt_ids(name)
+            if set(pg_tgt_ids) == set(tgt_ids):
+                return name
+
+    def add_mvs(self, data):
+        for i, mv in enumerate(data.get("mv", [])):
+            pg = self.find_pg(mv["pg"])
+            if pg is None:
+                return
+            cmd = ["create", "view", "-name", mv["name"], "-pg", pg]
+            sgs = mv.get("sg", [])
+            if sgs:
+                cmd += ["-sg", ",".join(sgs)]
+            igs = mv.get("ig", [])
+            if igs:
+                cmd += ["-ig", ",".join(igs)]
+            out, err, ret = self.symaccesscmd(cmd, log=True, xml=False)
+            data["mv"][i]["result"] = ret
+        return data
+
+    def add_masking(self, data="null", **kwargs):
+        data = json.loads(data)
+        data = self.add_igs(data)
+        data = self.add_sgs(data)
+        data = self.add_gks(data)
+        data = self.add_devs(data)
+        data = self.add_mvs(data)
+        return data
+
+    def symaccesscmd(self, cmd, xml=True, log=False):
+        self.set_environ()
+        cmd = ['/usr/symcli/bin/symaccess'] + cmd
+        if self.maskdb is None:
+            cmd += ['-sid', self.sid]
+        else:
+            cmd += ['-f', self.maskdb]
+        if xml:
+            cmd += ['-output', 'xml_element']
+        if log and self.node:
+            self.log.info(" ".join(cmd))
+        return justcall(cmd)
 
 class Vmax(SymMixin):
     def __init__(self, sid, symcli_path, symcli_connect, username, password):
@@ -1177,31 +1361,6 @@ class Dmx(SymMixin):
     def __init__(self, *args, **kwargs):
         SymMixin.__init__(self, *args, **kwargs)
         self.keys += ['sym_maskdb']
-
-        if 'SYMCLI_DB_FILE' in os.environ:
-            dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])
-            # flat format
-            self.maskdb = os.path.join(dir, self.sid+'.bin')
-            if not os.path.exists(self.maskdb):
-                # emc grab format
-                self.maskdb = os.path.join(dir, self.sid, 'symmaskdb_backup.bin')
-            if not os.path.exists(self.maskdb):
-                print("missing file %s"%self.maskdb, file=sys.stderr)
-        else:
-            self.maskdb = None
-
-    def symaccesscmd(self, cmd, xml=True, log=False):
-        self.set_environ()
-        cmd = ['/usr/symcli/bin/symaccess'] + cmd
-        if self.maskdb is None:
-            cmd += ['-sid', self.sid]
-        else:
-            cmd += ['-f', self.maskdb]
-        if xml:
-            cmd += ['-output', 'xml_element']
-        if log and self.node:
-            self.log.info(" ".join(cmd))
-        return justcall(cmd)
 
     def get_sym_maskdb(self):
         cmd = ['list', 'database']
