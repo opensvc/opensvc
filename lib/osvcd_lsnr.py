@@ -235,6 +235,7 @@ class Listener(shared.OsvcThread):
         try:
             sid = str(uuid.uuid4())
             self.stats.sessions.alive[sid] = Storage({
+                "created": time.time(),
                 "addr": addr[0],
                 "encrypted": encrypted,
                 "progress": "init",
