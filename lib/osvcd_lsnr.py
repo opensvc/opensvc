@@ -104,8 +104,8 @@ class Listener(shared.OsvcThread):
                 "auth_validated": 0,
                 "tx": 0,
                 "rx": 0,
-                "clients": Storage({
-                })
+                "alive": Storage({}),
+                "clients": Storage({})
             }),
         })
 
@@ -233,11 +233,18 @@ class Listener(shared.OsvcThread):
 
     def handle_client(self, conn, addr, encrypted):
         try:
-            self._handle_client(conn, addr, encrypted)
+            sid = str(uuid.uuid4())
+            self.stats.sessions.alive[sid] = Storage({
+                "addr": addr[0],
+                "encrypted": encrypted,
+                "progress": "init",
+            })
+            self._handle_client(conn, addr, encrypted, sid)
         finally:
+            del self.stats.sessions.alive[sid]
             conn.close()
 
-    def _handle_client(self, conn, addr, encrypted):
+    def _handle_client(self, conn, addr, encrypted, sid):
         chunks = []
         buff_size = 4096
         conn.setblocking(0)
@@ -266,6 +273,7 @@ class Listener(shared.OsvcThread):
         del chunks
 
         if dequ:
+            self.stats.sessions.alive[sid].progress = "dequeue_actions"
             p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
@@ -284,8 +292,9 @@ class Listener(shared.OsvcThread):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             return
-        result = self.router(nodename, data, conn, addr, encrypted)
+        result = self.router(nodename, data, conn, addr, encrypted, sid)
         if result:
+            self.stats.sessions.alive[sid].progress = "sending %s result" % self.stats.sessions.alive[sid].progress
             conn.setblocking(1)
             if encrypted:
                 message = self.encrypt(result)
@@ -310,7 +319,7 @@ class Listener(shared.OsvcThread):
     # Actions
     #
     #########################################################################
-    def router(self, nodename, data, conn, addr, encrypted):
+    def router(self, nodename, data, conn, addr, encrypted, sid):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -327,6 +336,7 @@ class Listener(shared.OsvcThread):
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
+        self.stats.sessions.alive[sid].progress = fname
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
                                     addr=addr, **options)
 

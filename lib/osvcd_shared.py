@@ -325,9 +325,21 @@ class OsvcThread(threading.Thread, Crypt):
             del self.procs[idx]
         return len(done)
 
-    def join_threads(self):
-        for thr in self.threads:
-            thr.join()
+    def join_threads(self, timeout=10):
+        while timeout > 0:
+            self.janitor_threads()
+            if len(self.threads) == 0:
+                return
+            timeout -= 1
+            time.sleep(1)
+        self.log.warning("timeout waiting for threads to terminate. %s left alive.", len(self.threads))
+        self.log_status()
+
+    def log_status(self):
+        from rcColor import format_str_flat_json
+        data = self.status()
+        for line in format_str_flat_json(data).splitlines():
+            self.log.info(line)
 
     def janitor_threads(self):
         done = []
