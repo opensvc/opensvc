@@ -28,6 +28,8 @@ class check(checks.check):
                 continue
             svcpath = ids.svcpath if ids.svcpath else ids.svcname if ids.svcname else ""
             jstat = get_executable(Storage(), pid)
+            if not jstat:
+                continue
             for stat in STATS:
                 for key, val in get_stat_metrics(jstat, pid, stat).items():
                     data.append({
