@@ -137,7 +137,7 @@ class Mount(Res.Resource):
     def need_check_writable(self):
         if 'ro' in self.mount_options.split(','):
             return False
-        if self.fs_type in self.netfs:
+        if self.fs_type in self.netfs + ["tmpfs"]:
             return False
         return True
 
