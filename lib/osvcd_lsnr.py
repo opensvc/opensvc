@@ -120,8 +120,9 @@ class Listener(shared.OsvcThread):
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
+                for sock in self.sockmap.values():
+                    sock.close()
                 self.join_threads()
-                self.sock.close()
                 sys.exit(0)
 
     def status(self, **kwargs):
@@ -481,6 +482,14 @@ class Listener(shared.OsvcThread):
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
             mon = shared.THREADS["monitor"]
+        if self.stopped() or shared.NMON_DATA.status == "shutting":
+            self.log.info("already shutting")
+            # wait for service shutdown to finish before releasing the dup client
+            while True:
+                if mon._shutdown:
+                    break
+                time.sleep(0.3)
+            return {"status": 0}
         try:
             self.set_nmon("shutting")
             mon.kill_procs()
