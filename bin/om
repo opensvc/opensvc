@@ -41,7 +41,7 @@ help() {
 	echo "  $OM cluster                  Manage Cluster Configuration" >&2
 	echo "  $OM svc                      Manage Services" >&2
 	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
-#	echo "  $OM cfg                      Manage Config Maps" >&2
+	echo "  $OM cfg                      Manage Configurations" >&2
 	echo "  $OM sec                      Manage Secrets" >&2
 	echo "  $OM net                      Manage Networks" >&2
 	echo "  $OM pool                     Manage Storage Pools" >&2

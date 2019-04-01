@@ -156,6 +156,7 @@ CONFIG_DEFAULTS = {
 ACTIONS_NO_STATUS_CHANGE = [
     "abort",
     "clear",
+    "decode",
     "docker",
     "eval",
     "frozen",
@@ -839,7 +840,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
-        if action == "status" or \
+        if action in ("status", "decode") or \
            action.startswith("print_") or \
            action.startswith("collector") or \
            action.startswith("json_"):
@@ -2699,7 +2700,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def get_drp_flex_primary(self):
         return ""
 
-    def postinstall(self):
+    def postinstall(self, *args, **kwargs):
         pass
 
 

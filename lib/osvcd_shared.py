@@ -232,7 +232,7 @@ class OsvcThread(threading.Thread, Crypt):
                 state = "terminated"
         data = Storage({
             "state": state,
-            "created": time.time(),
+            "created": self.created,
         })
         if self.tid:
             data["tid"] = self.tid

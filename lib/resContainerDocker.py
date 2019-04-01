@@ -13,7 +13,7 @@ import rcContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options, fmt_svcpath, split_svcpath, factory
+from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options, factory
 from rcGlobalEnv import rcEnv
 
 ATTR_MAP = {
@@ -92,7 +92,7 @@ class Container(resContainer.Container):
                  devices=None,
                  environment=None,
                  secrets_environment=None,
-                 secrets=None,
+                 configs_environment=None,
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
@@ -124,7 +124,7 @@ class Container(resContainer.Container):
         self.volumes = {}
         self.environment = environment
         self.secrets_environment = secrets_environment
-        self.secrets = secrets
+        self.configs_environment = configs_environment
         if not self.detach:
             self.rm = True
             self.tags.add("nostatus")
@@ -300,6 +300,7 @@ class Container(resContainer.Container):
                 if image_id is None:
                     self.lib.docker_login(self.image)
                 sec_env = self.secrets_environment_env()
+                cfg_env = self.configs_environment_env()
                 cmd += ["run"]
                 cmd += self._add_run_args()
                 for var in sec_env:
@@ -390,49 +391,30 @@ class Container(resContainer.Container):
                 volumes.append(volarg)
         return volumes
 
-    def secrets_data(self):
-        """
-        Transform the secrets mappings list into a data structure.
-        """
-        if self.secrets:
-            seclist = self.secrets
-        else:
-            # so we always have a com.opensvc.secrets annotation to
-            # override a malicious annotation using the same key
-            seclist = []
-        secrets = []
-        for sdef in seclist:
+    def configs_environment_env(self):
+        env = {}
+        for mapping in self.configs_environment:
             try:
-                sec, path = sdef.split(":", 1)
-            except Exception:
+                var, val = mapping.split("=", 1)
+            except Exception as exc:
+                self.log.info("ignored configs_environment mapping %s: %s", mapping, exc)
                 continue
             try:
-                secpath, key = sec.split("/", 1)
-            except Exception:
+                name, key = val.split("/", 1)
+            except Exception as exc:
+                self.log.info("ignored configs_environment mapping %s: %s", mapping, exc)
                 continue
-            secrets.append({
-                "secpath": fmt_svcpath(secpath, namespace=self.svc.namespace, kind="sec"),
-                "key": key,
-                "path": path,
-            })
-        return secrets
-
-    def secrets_options(self):
-        options = []
-        secrets = self.secrets_data()
-        for secret in secrets:
-            mode = "ro"
-            name, _, _ = split_svcpath(secret["secpath"])
-            sec = factory("sec")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
-            sec._install(secret["key"])
-            for key in sec.resolve_key(secret["key"]):
-                src = sec.key_path(key)
-                if secret["path"].endswith("/"):
-                    dst = os.path.join(secret["path"].rstrip(os.sep), key.strip(os.sep))
-                else:
-                    dst = secret["path"]
-                options += ["--volume", "%s:%s:%s" % (src, dst, mode)]
-        return options
+            var = var.upper()
+            cfg = factory("cfg")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            if not cfg.exists():
+                self.log.info("ignored configs_environment mapping %s: config %s does not exist", mapping, name)
+                continue
+            if key not in cfg.data_keys():
+                self.log.info("ignored configs_environment mapping %s: key %s does not exist", mapping, key)
+                continue
+            val = cfg.decode_key(key)
+            env[var] = val
+        return env
 
     def secrets_environment_env(self):
         env = {}
@@ -455,7 +437,7 @@ class Container(resContainer.Container):
             if key not in sec.data_keys():
                 self.log.info("ignored secrets_environment mapping %s: key %s does not exist", mapping, key)
                 continue
-            val = sec.decode_secret(key)
+            val = sec.decode_key(key)
             env[var] = val
         return env
 
@@ -470,13 +452,6 @@ class Container(resContainer.Container):
             var = var.upper()
             options += ["-e", "%s=%s" % (var, val)]
         return options
-
-    def install_secrets(self):
-        secrets = self.secrets_data()
-        for secret in secrets:
-            name, _, _ = split_svcpath(secret["secpath"])
-            sec = factory("sec")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
-            sec._install(secret["key"])
 
     def cgroup_options(self):
         if not self.lib.docker_min_version("1.7"):
@@ -589,7 +564,6 @@ class Container(resContainer.Container):
         drop_option("--volume", args, drop_value=True)
         for vol in self.volume_options(errors=errors):
              args.append("--volume=%s" % vol)
-        args += self.secrets_options()
 
         drop_option("--device", args, drop_value=True)
         for dev in self.device_options(errors=errors):

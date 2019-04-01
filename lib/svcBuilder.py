@@ -332,6 +332,12 @@ def add_volume(svc, s):
     kwargs["format"] = svc.oget(s, "format")
     kwargs["size"] = svc.oget(s, "size")
     kwargs["access"] = svc.oget(s, "access")
+    kwargs["configs"] = svc.oget(s, "configs")
+    try:
+        kwargs["secrets"] = svc.oget(s, "secrets")
+    except ValueError:
+        # only supported on type=shm volumes
+        pass
     m = __import__("resVolume")
     r = m.Volume(**kwargs)
     svc += r
@@ -1015,7 +1021,7 @@ def add_container_docker(svc, s):
     kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
     kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["secrets"] = svc.oget(s, "secrets")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     kwargs["devices"] = svc.oget(s, "devices")
     m = __import__("resContainerDocker")
     r = m.Container(**kwargs)
@@ -1042,7 +1048,7 @@ def add_container_podman(svc, s):
     kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
     kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["secrets"] = svc.oget(s, "secrets")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     kwargs["devices"] = svc.oget(s, "devices")
     m = __import__("resContainerPodman")
     r = m.Container(**kwargs)
@@ -1557,7 +1563,7 @@ def add_task_podman(svc, s):
     kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
     kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["secrets"] = svc.oget(s, "secrets")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     kwargs["devices"] = svc.oget(s, "devices")
     kwargs["command"] = svc.oget(s, "command")
     kwargs["on_error"] = svc.oget(s, "on_error")
@@ -1589,7 +1595,7 @@ def add_task_docker(svc, s):
     kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
     kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["secrets"] = svc.oget(s, "secrets")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     kwargs["devices"] = svc.oget(s, "devices")
     kwargs["command"] = svc.oget(s, "command")
     kwargs["on_error"] = svc.oget(s, "on_error")

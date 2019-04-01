@@ -348,13 +348,13 @@ KEYWORDS = [
     },
     {
         "sections": ["task", "container"],
-        "keyword": "secrets",
+        "keyword": "configs_environment",
         "at": True,
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <secret name>/<key>:<containerized path>:<options>.",
-        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,user=0,group=0,mode=0600 conf/sysctl:/etc/sysctl.d/01-db.conf"
+        "text": "The whitespace separated list of <var>=<config name>/<key path>. A shell expression spliter is applied, so double quotes can be around <config name>/<key path> only or whole <var>=<config name>/<key path>. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
         "sections": ["task", "container"],
@@ -3079,6 +3079,25 @@ KEYWORDS = [
         "default": True,
         "convert": "boolean",
         "text": "If true the volume translator will also produce a fs resource layered over the disk allocated in the pool."
+    },
+    {
+        "section": "volume",
+        "keyword": "configs",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <config name>/<key>:<volume relative path>:<options>.",
+        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,mode=0640 conf/sysctl:/etc/sysctl.d/01-db.conf"
+    },
+    {
+        "section": "volume",
+        "keyword": "secrets",
+        "at": True,
+        "rtype": ["shm"],
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of <secret name>/<key>:<volume relative path>:<options>.",
+        "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
     },
     {
         "section": "expose",

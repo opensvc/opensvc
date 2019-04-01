@@ -3768,7 +3768,7 @@ class Node(Crypt, ExtConfigMixin):
             silent=True,
             timeout=2,
         )
-        if data["status"] != 0:
+        if data is None or data["status"] != 0:
             # the daemon is not running or refused the connection,
             # tell the collector ourselves
             self.collector.call(*args, **kwargs)

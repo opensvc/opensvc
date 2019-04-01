@@ -63,7 +63,6 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
         o.nodemgr = os.path.join(o.pathbin, "nodemgr")
         o.svcmon = os.path.join(o.pathbin, "svcmon")
         o.cron = os.path.join(o.pathcron, "cron")
-        o.secrets = '/dev/shm/opensvc/secrets'
 
     o.nodeconf = os.path.join(o.pathetc, "node.conf")
     o.clusterconf = os.path.join(o.pathetc, "cluster.conf")
