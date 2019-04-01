@@ -204,6 +204,7 @@ def add_ip(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["expose"] = svc.oget(s, "expose")
     kwargs["check_carrier"] = svc.oget(s, "check_carrier")
+    kwargs["alias"] = svc.oget(s, "alias")
     kwargs["ipdev"] = svc.oget(s, "ipdev")
     zone = svc.oget(s, "zone")
 

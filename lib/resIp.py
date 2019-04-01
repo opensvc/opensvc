@@ -33,6 +33,7 @@ class Ip(Res.Resource):
                  type="ip",
                  expose=None,
                  check_carrier=True,
+                 alias=True,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.ipdev = ipdev
@@ -44,6 +45,7 @@ class Ip(Res.Resource):
         self.addr = None
         self.expose = expose
         self.check_carrier = check_carrier
+        self.alias = alias
 
     def on_add(self):
         self.set_label()

@@ -353,8 +353,8 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <secret name>/<key>:<containerized path>.",
-        "example": "cert/pem:/etc/ssh/server.pem cert/key:/etc/ssl/server.key"
+        "text": "The whitespace separated list of <secret name>/<key>:<containerized path>:<options>.",
+        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,user=0,group=0,mode=0600 conf/sysctl:/etc/sysctl.d/01-db.conf"
     },
     {
         "sections": ["task", "container"],
@@ -1662,7 +1662,16 @@ KEYWORDS = [
         "default": True,
         "convert": "boolean",
         "text": "Activate the link carrier check. Set to false if ipdev is a backend "
-                       "bridge or switch",
+                "bridge or switch",
+    },
+    {
+        "section": "ip",
+        "keyword": "alias",
+        "at": True,
+        "required": False,
+        "default": True,
+        "convert": "boolean",
+        "text": "Use ip aliasing. Modern ip stack support multiple ip/mask per interface, so 'alias' should be set to false when possible.",
     },
     {
         "section": "ip",

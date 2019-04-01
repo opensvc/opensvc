@@ -19,7 +19,7 @@ class Ip(Res.Ip):
             return ret, out, err
 
     def startip_cmd(self):
-        if which("ifconfig"):
+        if which("ifconfig") and self.alias:
             if ':' in self.addr:
                 cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
             else:
@@ -40,7 +40,7 @@ class Ip(Res.Ip):
         raise ex.excError
 
     def stopip_cmd(self):
-        if which("ifconfig"):
+        if which("ifconfig") and self.alias:
             if ':' in self.addr:
                 cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
             else:
