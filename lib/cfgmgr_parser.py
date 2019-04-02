@@ -49,7 +49,7 @@ ACTIONS.update({
             ],
         },
         "install": {
-            "msg": "Install configuration key or configuration keys tree in the host's shared memory. Example /dev/shm/opensvc/namespaces/<ns>/cfg/<cfgname>. Beware, in case of conflict this action will replace current data installed at the pointed location.",
+            "msg": "Install or update configuration key or configuration tree in consuming volumes.",
             "options": mp.ACTION_OPTS + [
                 OPT.key,
             ],

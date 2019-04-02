@@ -150,10 +150,7 @@ class DataMixin(object):
             self.install_key(_key, path)
 
     def install(self):
-        """
-        The "install" action entrypoint.
-        """
-        self._install(self.options.key)
+        self.postinstall(self.options.key)
 
     def postinstall(self, key=None):
         """

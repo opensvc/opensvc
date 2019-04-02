@@ -49,7 +49,7 @@ ACTIONS.update({
             ],
         },
         "install": {
-            "msg": "Install secret or secret tree in the host's shared memory. Example /dev/shm/opensvc/namespaces/<ns>/sec/<secname>. Beware, in case of conflict this action will replace current data installed at the pointed location.",
+            "msg": "Install or update secret key or secret tree in consuming volumes.",
             "options": mp.ACTION_OPTS + [
                 OPT.key,
             ],
