@@ -164,5 +164,5 @@ class DataMixin(object):
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
                 if vol.has_data(self.kind, self.svcpath, key) and vol._status() == rcStatus.UP:
-                    vol.install_data(self.kind)
+                    vol._install_data(self.kind)
 

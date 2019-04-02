@@ -122,7 +122,7 @@ class Volume(Res.Resource):
             })
         return data
 
-    def install_data(self, kind):
+    def _install_data(self, kind):
         for data in self.data_data(kind):
             name, _, _ = split_svcpath(data["obj"])
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
@@ -138,11 +138,15 @@ class Volume(Res.Resource):
             return True
         return False
 
+    def install_data(self):
+        self.install_secrets()
+        self.install_configs()
+
     def install_configs(self):
-        self.install_data("cfg")
+        self._install_data("cfg")
 
     def install_secrets(self):
-        self.install_data("sec")
+        self._install_data("sec")
 
     def has_config(self, name, key=None):
         return self.has_data("cfg", name, key)

@@ -5627,9 +5627,8 @@ class Svc(BaseSvc):
             l[0] = vol.mount_point
         return "/".join(l), vol
 
-    def install_secrets(self):
+    def install_data(self):
         rtypes = [
-            "container.docker",
-            "container.podman",
+            "volume",
         ]
-        self.sub_set_action(rtypes, "install_secrets")
+        self.sub_set_action(rtypes, "install_data")

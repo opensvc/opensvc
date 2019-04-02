@@ -209,9 +209,9 @@ ACTIONS["Service actions"].update({
             OPT.subsets,
         ],
     },
-    "install_secrets": {
-        "msg": "Install secrets in resources supporting that feature and with "
-               "secrets mapping configured.",
+    "install_data": {
+        "msg": "Install secrets and configurations in volume resources with "
+               "secrets or configurations mapping configured.",
         "options": [
             OPT.rid,
             OPT.tags,
