@@ -19,6 +19,7 @@ import json
 import socket
 import time
 import re
+import shlex
 
 import six
 try:
@@ -1789,7 +1790,6 @@ class Node(Crypt, ExtConfigMixin):
         """
         The trigger execution wrapper.
         """
-        import shlex
         _cmd = shlex.split(cmd)
         ret, out, err = self.vcall(_cmd, err_to_warn=err_to_warn)
         if ret != 0:
@@ -2303,7 +2303,6 @@ class Node(Crypt, ExtConfigMixin):
             cmd = [rcEnv.paths.nodemgr]
         else:
             cmd = [rcEnv.paths.svcmgr, "-s", action.get("svcname")]
-        import shlex
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
         out, err, ret = justcall(cmd)
@@ -3534,6 +3533,15 @@ class Node(Crypt, ExtConfigMixin):
             print(node)
 
     def nodes_selector(self, selector, data=None):
+        nodes = []
+        for selector in shlex.split(selector):
+            _nodes = self._nodes_selector(selector)
+            for node in _nodes:
+                if node not in nodes:
+                    nodes.append(node)
+        return nodes
+            
+    def _nodes_selector(self, selector, data=None):
         if selector in ("*", None):
             if data:
                 # if data is provided (by svcmon usually), it is surely
@@ -3561,17 +3569,17 @@ class Node(Crypt, ExtConfigMixin):
         nodes = set([node for node in data])
         anded_selectors = selector.split("+")
         for _selector in anded_selectors:
-            nodes = nodes & self._nodes_selector(_selector, data)
+            nodes = nodes & self.__nodes_selector(_selector, data)
         return sorted(list(nodes))
 
-    def _nodes_selector(self, selector, data):
+    def __nodes_selector(self, selector, data):
         nodes = set()
         ored_selectors = selector.split(",")
         for _selector in ored_selectors:
-            nodes = nodes | self.__nodes_selector(_selector, data)
+            nodes = nodes | self.___nodes_selector(_selector, data)
         return nodes
 
-    def __nodes_selector(self, selector, data):
+    def ___nodes_selector(self, selector, data):
         try:
             negate = selector[0] == "!"
             selector = selector.lstrip("!")
@@ -3670,7 +3678,6 @@ class Node(Crypt, ExtConfigMixin):
         except (ex.OptNotFound, ex.excError) as exc:
             raise ex.excError("the stonith#%s.cmd keyword must be set in "
                               "node.conf" % node)
-        import shlex
         cmd = shlex.split(cmd)
         self.log.info("stonith node %s", node)
         ret, out, err = self.vcall(cmd)
