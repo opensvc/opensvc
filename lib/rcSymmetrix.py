@@ -678,15 +678,32 @@ class SymMixin(object):
         if consistent:
             cmd += ["-consistent_lun"]
         cmd += ["create"]
-        result = 0
+        result = []
         out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
-        result += ret
+        result.append({
+            "cmd": ["symaccess"] + cmd,
+            "ret": ret,
+            "out": out,
+            "err": err,
+        })
         for ig in igs:
-            out, err, ret = self.symaccesscmd(["-name", name, "-type", "initiator", "-ig", ig, "add"], xml=False, log=True)
-            result += ret
+            cmd = ["-name", name, "-type", "initiator", "-ig", ig, "add"]
+            out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
+            result.append({
+                "cmd": ["symaccess"] + cmd,
+                "ret": ret,
+                "out": out,
+                "err": err,
+            })
         for hba_id in hba_ids:
-            out, err, ret = self.symaccesscmd(["-name", name, "-type", "initiator", "-wwn", hba_id, "add"], xml=False, log=True)
-            result += ret
+            cmd = ["-name", name, "-type", "initiator", "-wwn", hba_id, "add"]
+            out, err, ret = self.symaccesscmd(cmd, xml=False, log=True)
+            result.append({
+                "cmd": ["symaccess"] + cmd,
+                "ret": ret,
+                "out": out,
+                "err": err,
+            })
         return result
 
     def add_igs(self, data):
@@ -707,12 +724,23 @@ class SymMixin(object):
             cmd += ["-srp", srp]
         if slo:
             cmd += ["-slo", slo]
-        result = 0
+        result = []
         out, err, ret = self.symsg(cmd, xml=False, log=True)
-        result += ret
+        result.append({
+            "cmd": ["symsg"] + cmd,
+            "ret": ret,
+            "out": out,
+            "err": err,
+        })
         if sgs:
-            out, err, ret = self.symsg(["-sg", name, "add", "sg", ",".join(sgs)], xml=False, log=True)
-            result += ret
+            cmd = ["-sg", name, "add", "sg", ",".join(sgs)]
+            out, err, ret = self.symsg(cmd, xml=False, log=True)
+            result.append({
+                "cmd": ["symsg"] + cmd,
+                "ret": ret,
+                "out": out,
+                "err": err,
+            })
         return result
 
     def add_sgs(self, data):
@@ -739,22 +767,34 @@ class SymMixin(object):
         cmd = ["show", sg]
         out, err, ret = self.symsg(cmd, xml=True)
         data = self.parse_xml(out, key="SG_Info")
-        #print(json.dumps(data, indent=4))
         return int(data[0]["Num_of_GKS"])
 
     def add_gks(self, data):
-        gk_data = data.get("gk", {})
-        sg = gk_data.get("sg")
-        tgt_gks = int(gk_data.get("count", 6))
-        cur_gks = self.get_gks(sg)
+        for i, gk_data in enumerate(data.get("gk", [])):
+            result = self.add_gk(gk_data)
+            data["gk"][i]["result"] = result
+        return data
+
+    def add_gk(self, data):
+        sg = data.get("sg")
+        tgt_gks = int(data.get("count", 6))
+        try:
+            cur_gks = self.get_gks(sg)
+        except (IndexError, KeyError):
+            return
         missing = tgt_gks - cur_gks
         if missing <= 0:
-            return data
+            return []
         _cmd = "create gatekeeper count=%d,sg=%s,emulation=FBA;" % (missing, sg)
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False, log=True)
-        data["gk"]["result"] = ret
-        return data
+        result = [{
+            "cmd": ["symconfigure"] + cmd,
+            "ret": ret,
+            "out": out,
+            "err": err,
+        }]
+        return result
 
     def add_dev(self, data):
         size = data.get("size")
@@ -765,16 +805,22 @@ class SymMixin(object):
         out, err, ret = self.symsg(cmd, xml=True, log=False)
         devs = self.parse_xml(out, key="Device", as_list=["Device"])
         if len(devs):
-            return
+            return []
         _cmd = "create dev count=1, sg=%s, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV, config=TDEV, device_name=%s;" % (sg, size, name)
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False, log=True)
-        return ret
+        result = [{
+            "cmd": ["symconfigure"] + cmd,
+            "ret": ret,
+            "out": out,
+            "err": err,
+        }]
+        return result
 
     def add_devs(self, data):
         for i, dev in enumerate(data.get("dev", [])):
-            ret = self.add_dev(dev)
-            data["dev"][i]["result"] = ret
+            result = self.add_dev(dev)
+            data["dev"][i]["result"] = result
         return data
 
     def list_pgs(self):
@@ -806,7 +852,12 @@ class SymMixin(object):
             if igs:
                 cmd += ["-ig", ",".join(igs)]
             out, err, ret = self.symaccesscmd(cmd, log=True, xml=False)
-            data["mv"][i]["result"] = ret
+            data["mv"][i]["result"] = [{
+               "cmd": ["symaccess"] + cmd,
+               "ret": ret,
+               "out": out,
+               "err": err,
+            }]
         return data
 
     def add_masking(self, data="null", **kwargs):
