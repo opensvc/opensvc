@@ -126,6 +126,7 @@ import os
 import sys
 import json
 import re
+import six
 
 from subprocess import *
 
@@ -156,7 +157,7 @@ class SmfCfgS(CompObject):
 
         self.osver = float(self.osn)
         if self.osver < 5.11:
-            pinfo('Only used on Solaris 11 and behond')
+            pinfo('Only used on Solaris 11 and beyond')
             return
 
         for rule in self.get_rules():
@@ -167,7 +168,7 @@ class SmfCfgS(CompObject):
             except ValueError:
                 perror('smfcfgs: failed to parse variable', rule)
 
-        if len(self.files) == 0:
+        if len(self.data) == 0:
             raise NotApplicable()
 
         for f in self.data:
@@ -199,29 +200,8 @@ class SmfCfgS(CompObject):
                                         'slp': f['sleep']
                                       }
 
-    def subst(self, v):
-        if type(v) == list:
-            l = []
-            for _v in v:
-                l.append(self.subst(_v))
-            return l
-        if type(v) != str and type(v) != unicode:
-            return v
-	p = re.compile('%%ENV:\w+%%')
-        for m in p.findall(v):
-            s = m.strip("%").replace('ENV:', '')
-            if s in os.environ:
-                _v = os.environ[s]
-            elif 'OSVC_COMP_'+s in os.environ:
-                _v = os.environ['OSVC_COMP_'+s]
-            else:
-                perror(s, 'is not an env variable')
-                raise NotApplicable()
-            v = v.replace(m, _v)
-        return v
-
     def add_fmri(self, v):
-        if type(v) == str or type(v) == unicode:
+        if isinstance(v, six.text_type):
             d = json.loads(v)
         else:
             d = v
@@ -255,9 +235,6 @@ class SmfCfgS(CompObject):
                     perror('create True[1] needs a type:', d)
                     RET = RET_ERR
                     return l
-        for k in ('fmri', 'prop', 'value', 'inorder', 'type', 'create', 'sleep'):
-            if k in d:
-                d[k] = self.subst(d[k])
         return [d]
             
     def fixable(self):
