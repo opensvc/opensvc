@@ -3533,15 +3533,6 @@ class Node(Crypt, ExtConfigMixin):
             print(node)
 
     def nodes_selector(self, selector, data=None):
-        nodes = []
-        for selector in shlex.split(selector):
-            _nodes = self._nodes_selector(selector)
-            for node in _nodes:
-                if node not in nodes:
-                    nodes.append(node)
-        return nodes
-            
-    def _nodes_selector(self, selector, data=None):
         if selector in ("*", None):
             if data:
                 # if data is provided (by svcmon usually), it is surely
@@ -3554,18 +3545,25 @@ class Node(Crypt, ExtConfigMixin):
             return []
         if isinstance(selector, (list, tuple, set)):
             return selector
-        if not re.search("\*?=,\+", selector) and re.search("\s", selector):
+        selector = selector.strip()
+        if not re.search("[\*?=,\+]", selector) and re.search("\s", selector):
             # simple node list
             return selector.split()
-
-        # compat with pre-selector nodes list
-        selector = ",".join([node.lower() for node in selector.split()])
-
         if data is None:
             data = self.nodes_info
         if data is None:
             # daemon down, at least decide if the local node matches
             data = {rcEnv.nodename: {"labels": self.labels}}
+
+        nodes = []
+        for selector in shlex.split(selector):
+            _nodes = self._nodes_selector(selector, data)
+            for node in _nodes:
+                if node not in nodes:
+                    nodes.append(node)
+        return nodes
+            
+    def _nodes_selector(self, selector, data=None):
         nodes = set([node for node in data])
         anded_selectors = selector.split("+")
         for _selector in anded_selectors:
