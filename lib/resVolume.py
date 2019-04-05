@@ -95,6 +95,9 @@ class Volume(Res.Resource):
         """
         Transform the secrets/configs mappings list into a list of data structures.
         """
+        if not self.mount_point:
+            # volume not yet provisioned
+            return []
         if kind == "sec" and self.secrets:
             refs = self.secrets
         elif kind == "cfg" and self.configs:
