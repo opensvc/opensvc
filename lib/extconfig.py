@@ -573,6 +573,9 @@ class ExtConfigMixin(object):
                 val = self.node.cluster_name
             else:
                 val = self.cluster_name
+        elif _ref == "domain":
+            if has_node:
+                val = "%s.%s.%s" % (self.namespace, self.kind, self.node.cluster_name)
         elif _ref == "clusternodes":
             if has_node:
                 val = " ".join(self.node.cluster_nodes)
