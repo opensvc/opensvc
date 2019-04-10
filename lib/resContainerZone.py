@@ -278,7 +278,10 @@ class Zone(resContainer.Container):
 
     @lazy
     def state(self):
-        return self.zone_data.get("state")
+        if self.zone_data is None:
+            raise ex.excError("zone %s does not exist" % self.name)
+        else:
+            return self.zone_data.get("state")
 
     @lazy
     def zonepath(self):
