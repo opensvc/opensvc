@@ -94,6 +94,35 @@ class Zone(resContainer.Container):
         self.zone_refresh()
         return ret
 
+    def is_zone_locked(self):
+        zonelock = '/system/volatile/zones/' + self.name + '.zoneadm.lock'
+        if not os.path.exists(zonelock):
+            self.log.debug("zone %s lockfile does not exist" % self.name)
+            return False
+        import fcntl
+        locked = None
+        try:
+            fd = open(zonelock, 'a', 1)
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.log.debug("zone %s is not locked" % self.name)
+            locked = False
+        except IOError:
+            self.log.debug("zone %s is locked" % self.name)
+            locked = True
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except:
+                pass
+            try:
+                fd.close()
+            except:
+                pass
+        return locked
+
+    def is_zone_unlocked(self):
+        return not self.is_zone_locked()
+
     def zoneadm(self, action, option=None):
         if action in ['ready' , 'boot' ,'shutdown' , 'halt' ,'attach', 'detach', 'install', 'clone']:
             cmd = [ZONEADM, "-z", self.name, action]
@@ -184,6 +213,7 @@ class Zone(resContainer.Container):
         if self.state == "configured" :
             self.log.info("zone container %s already detached/configured" % self.name)
             return 0
+        self.wait_for_fn(self.is_zone_unlocked, self.stop_timeout, 2)
         return self.zoneadm('detach')
 
     def ready(self):
