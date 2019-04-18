@@ -263,15 +263,13 @@ class CompFileInc(CompObject):
             ok = 0
             lines = self.files[rp['path']].split('\n')
             for line in lines:
-                groups = re.finditer(rp['replace'], line)
-                try:
-                    while True:
-                        current = groups.next()
-                        pinfo("%s : string '%s' should be replaced by '%s' in line '%s'" % (rp['path'], current.group(0), rp['add'], line))
-                        m += 1
-                        pr |= RET_ERR
-                except StopIteration:
-                    pass
+                for current in re.finditer(rp['replace'], line):
+                    if current.group(0) == rp['add']:
+                        pinfo("%s : string '%s' found on target in line '%s'" % (rp['path'], current.group(0), line))
+                        continue
+                    perror("%s : string '%s' should be replaced by '%s' in line '%s'" % (rp['path'], current.group(0), rp['add'], line))
+                    m += 1
+                    pr |= RET_ERR
             r |= pr
 
         return r
@@ -339,17 +337,14 @@ class CompFileInc(CompObject):
             need_rewrite = False
             lines = self.files[rp['path']].rstrip('\n').split('\n')
             for i, line in enumerate(lines):
-                groups = re.finditer(rp['replace'], line)
-                try:
-                    while True:
-                        current = groups.next()
-                        newline = re.sub(rp['replace'], rp['add'], line, count=1)
-                        lines[i] = newline
-                        pinfo("rewrite %s:%d:'%s', new content: '%s'" %(rp['path'], i, line, lines[i]))
-                        line = newline
-                        need_rewrite = True
-                except StopIteration:
-                    pass
+                for current in re.finditer(rp['replace'], line):
+                    if current.group(0) == rp['add']:
+                        continue
+                    newline = re.sub(rp['replace'], rp['add'], line, count=1)
+                    lines[i] = newline
+                    pinfo("rewrite %s:%d:'%s', new content: '%s'" %(rp['path'], i, line, lines[i]))
+                    line = newline
+                    need_rewrite = True
 
             if need_rewrite:
                 self.files[rp['path']] = '\n'.join(lines).rstrip("\n")+"\n"
