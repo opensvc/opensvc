@@ -271,7 +271,7 @@ class SmfCfgS(CompObject):
             if self.smfs[s][p]['typ'] == '' or self.smfs[s][p]['typ'] == None:
                 if verbose:
                     perror('NOK: %s type must be specified to create %s' %(s,p))
-        return r,self.smfs[s][p]['cre']
+        return r, self.smfs[s][p]['cre']
 
     def check_smf_prop_typ(self, s, p, verbose=True):
         r = RET_OK
@@ -343,11 +343,11 @@ class SmfCfgS(CompObject):
         for s in self.smfs:
             for p in self.smfs[s]:
                 added = False
-                rx,c = self.check_smf_prop_cre(s, p, verbose=verbose)
+                rx, c = self.check_smf_prop_cre(s, p, verbose=verbose)
                 vx = self.smfs[s][p]['val'].split()
                 if c:
                    if rx == 0 :
-                       pinfo('%s try to add %s %s: = %s' %(s,p,self.smfs[s][p]['typ'],self.smfs[s][p]['val']))
+                       pinfo('FMRI:%s try to add %s %s: = %s' %(s,p,self.smfs[s][p]['typ'],self.smfs[s][p]['val']))
                        if len(vx) > 1:
                            sxok = True
                            for v in vx:
@@ -357,13 +357,13 @@ class SmfCfgS(CompObject):
                                     break
                                     """
                            if sxok:
-                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', '(%s)'%self.smfs[s][p]['val']])
+                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '%s:(' % self.smfs[s][p]['typ']] + self.smfs[s][p]['val'].split() + [')'])
                                 added = True
                            else:
-                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val']))
+                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s, p, self.smfs[s][p]['val']))
                                 r |= RET_ERR
                        else:
-                           cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['typ']+':', self.smfs[s][p]['val']])
+                           cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '%s:%s' % (self.smfs[s][p]['typ'], self.smfs[s][p]['val'])])
                            added = True
                    else:
                        perror('NOK: %s cannot add prop %s without a valid type' %(s,p))
@@ -371,7 +371,7 @@ class SmfCfgS(CompObject):
                 else:
                    ry = self.check_smf_prop_val(s, p, verbose=verbose)
                    if ry != 0:
-                       pinfo('%s try to fix %s = %s' %(s,p,self.smfs[s][p]['val']))
+                       pinfo('FMRI:%s try to fix %s = %s' %(s,p,self.smfs[s][p]['val']))
                        if len(vx) > 1:
                            sxok = True
                            for v in vx:
@@ -381,10 +381,10 @@ class SmfCfgS(CompObject):
                                     break
                                     """
                            if sxok:
-                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '(%s)'%self.smfs[s][p]['val']])
+                                cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', '('] + self.smfs[s][p]['val'].split() + [')'])
                                 added = True
                            else:
-                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s,p,self.smfs[s][p]['val']))
+                                perror('NOK: %s prop %s values must be within double quotes [%s]' %(s, p, self.smfs[s][p]['val']))
                                 r |= RET_ERR
                        else:
                            cmds.append(['/usr/sbin/svccfg', '-s', s, 'setprop', p, '=', self.smfs[s][p]['val']])
