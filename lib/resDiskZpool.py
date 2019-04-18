@@ -1,12 +1,14 @@
 import os
 import glob
 import json
-
+import lock
 import resDisk
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, qcall, which, lazy, cache
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
+from converters import convert_duration
+
 
 class Disk(resDisk.Disk):
     """
@@ -100,13 +102,17 @@ class Disk(resDisk.Disk):
             return self.call(cmd, errlog=verbose)
 
     def import_pool(self, verbose=True):
-        ret, _, _ = self.import_pool_cachefile(verbose=verbose)
-        if ret == 0:
-            return ret
-        if verbose:
-            self.log.info("import fallback without dev cache")
-        ret, _, _ = self.import_pool_no_cachefile(verbose=verbose)
-        self.can_rollback = True
+        self.lock()
+        try:
+            ret, _, _ = self.import_pool_cachefile(verbose=verbose)
+            if ret == 0:
+                return ret
+            if verbose:
+                self.log.info("import fallback without dev cache")
+            ret, _, _ = self.import_pool_no_cachefile(verbose=verbose)
+            self.can_rollback = True
+        finally:
+            self.unlock()
         return ret
 
     def do_start(self):
@@ -233,4 +239,43 @@ class Disk(resDisk.Disk):
         if ret != 0:
             raise ex.excError
 
+    def lock(self):
+        """
+        Acquire the zpool disk lock
+        """
+        timeout = convert_duration(self.svc.options.waitlock)
+        if timeout < 0:
+            timeout = 120
+        delay = 1
+        lockfd = None
+        action = "startdiskzpool"
+        lockfile = os.path.join(rcEnv.paths.pathlock, action)
+        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
+                  (timeout, delay, action, lockfile)
+        self.log.debug("acquire startdiskzpool lock %s", details)
 
+        try:
+            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startdiskzpool")
+        except lock.LockTimeout as exc:
+            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+        except lock.LockNoLockFile:
+            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+        except lock.LockCreateError:
+            raise ex.excError("can not create lock file %s" % details)
+        except lock.LockAcquire as exc:
+            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+        except ex.excSignal:
+            raise ex.excError("interrupted by signal %s" % details)
+        except Exception as exc:
+            self.save_exc()
+            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+
+        if lockfd is not None:
+            self.lockfd = lockfd
+
+    def unlock(self):
+        """
+        Release the zpool disk lock.
+        """
+        lock.unlock(self.lockfd)
+        self.log.debug("release startdiskzpool lock")
