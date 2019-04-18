@@ -1221,13 +1221,14 @@ class ExtConfigMixin(object):
                     # benefit of a resource section
                     for section in config.sections():
                         family = section.split("#")[0]
+                        rtype = self.get_rtype(section, family, config)
                         if family not in list(self.kwdict.KEYS.sections.keys()) + \
                            list(self.kwdict.DEPRECATED_SECTIONS.keys()):
                             continue
                         if family in self.kwdict.DEPRECATED_SECTIONS:
                             results = self.kwdict.DEPRECATED_SECTIONS[family]
                             family = results[0]
-                        if self.kwdict.KEYS.sections[family].getkey(option) is not None:
+                        if self.kwdict.KEYS.sections[family].getkey(option, rtype) is not None:
                             found = True
                             break
                     if not found:

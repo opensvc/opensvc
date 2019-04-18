@@ -324,8 +324,6 @@ class Section(object):
                     return k
                 if k.rtype is None:
                     return k
-                if keyword == "type":
-                    print("x", k.keyword, k.rtype)
         return
 
 class KeywordStore(dict):
