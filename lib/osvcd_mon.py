@@ -479,9 +479,12 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": err_status},
         )
 
-    def service_stop(self, svcpath):
+    def service_stop(self, svcpath, force=False):
         self.set_smon(svcpath, "stopping")
-        proc = self.service_command(svcpath, ["stop"])
+        cmd = ["stop"]
+        if force:
+            cmd.append("--force")
+        proc = self.service_command(svcpath, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -828,6 +831,8 @@ class Monitor(shared.OsvcThread):
 
         smon = self.get_service_monitor(svc.svcpath)
         if smon.status != "idle":
+            return
+        if smon.global_expect in ("unprovisioned", "purged", "deleted", "frozen"):
             return
 
         try:
@@ -1324,7 +1329,7 @@ class Monitor(shared.OsvcThread):
                     "reason": "target",
                     "svcpath": svc.svcpath,
                 })
-                self.service_stop(svc.svcpath)
+                self.service_stop(svc.svcpath, force=True)
                 return
             if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
                 return
@@ -1398,7 +1403,7 @@ class Monitor(shared.OsvcThread):
                     "reason": "target",
                     "svcpath": svc.svcpath,
                 })
-                self.service_stop(svc.svcpath)
+                self.service_stop(svc.svcpath, force=True)
                 return
             if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
                 return
