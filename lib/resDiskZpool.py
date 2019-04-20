@@ -1,7 +1,6 @@
 import os
 import glob
 import json
-import lock
 import resDisk
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
@@ -54,7 +53,7 @@ class Disk(resDisk.Disk):
         """
         if not which("zpool"):
             raise ex.excError("zpool command not found")
-        ret = qcall(['zpool', 'list', self.name])
+        _, _, ret = justcall(['zpool', 'list', self.name])
         if ret == 0 :
             return True
         return False
@@ -82,38 +81,59 @@ class Disk(resDisk.Disk):
     def zpool_cache(self):
         return os.path.join(rcEnv.paths.pathvar, 'zpool.cache')
 
-    def import_pool_no_cachefile(self, verbose=True):
+    def import_pool_no_cachefile(self):
         cmd = ['zpool', 'import', '-f', '-o', 'cachefile='+self.zpool_cache,
                self.name]
-        if verbose:
-            return self.vcall(cmd, errlog=verbose)
-        else:
-            return self.call(cmd, errlog=verbose)
+        out, err, ret = justcall(cmd)
+        return cmd, ret, out, err
 
-    def import_pool_cachefile(self, verbose=True):
+    def import_pool_cachefile(self):
         devzp = os.path.join(self.var_d, 'dev', 'dsk')
         if not os.path.isdir(devzp):
-            return 1, "", ""
+            return [], 1, "", ""
         cmd = ['zpool', 'import', '-f', '-o', 'cachefile='+self.zpool_cache,
                '-d', devzp, self.name]
-        if verbose:
-            return self.vcall(cmd, errlog=verbose)
-        else:
-            return self.call(cmd, errlog=verbose)
+        out, err, ret = justcall(cmd)
+        return cmd, ret, out, err
 
     def import_pool(self, verbose=True):
-        self.lock()
-        try:
-            ret, _, _ = self.import_pool_cachefile(verbose=verbose)
-            if ret == 0:
-                return ret
-            if verbose:
-                self.log.info("import fallback without dev cache")
-            ret, _, _ = self.import_pool_no_cachefile(verbose=verbose)
+        """
+        Import the pool.
+        1/ try using a dev list cache, which is fastest
+        2/ fallback without dev list cache
+
+        Parallel import can fail on Solaris 11.4, with a "no such
+        pool available" error. Retry in this case, if we confirm the
+        pool exists.
+        """
+        retries = 5
+        for i in range(retries):
+            cmd, ret, out, err = self._import_pool()
+            if "no such pool available" in err:
+                self.log.info("retry import %d/%d, pool '%s' reported unavailable", i+1, retries, self.name)
+                continue
+            break
+        if verbose:
+            self.log.info("%s", " ".join(cmd))
+            if out:
+                self.log.info("%s", out)
+            if err:
+                if ret:
+                    self.log.error("%s [retcode %d]", err, ret)
+                else:
+                    self.log.warning("%s [retcode %d]", err, ret)
+        if ret == 0:
             self.can_rollback = True
-        finally:
-            self.unlock()
         return ret
+
+    def _import_pool(self, verbose=True):
+        cmd, ret, out, err = self.import_pool_cachefile()
+        if ret == 0:
+            return cmd, ret, out, err
+        if verbose:
+            self.log.info("import fallback without dev cache")
+        cmd, ret, out, err = self.import_pool_no_cachefile()
+        return cmd, ret, out, err
 
     def do_start(self):
         if self.is_up():
@@ -239,43 +259,3 @@ class Disk(resDisk.Disk):
         if ret != 0:
             raise ex.excError
 
-    def lock(self):
-        """
-        Acquire the zpool disk lock
-        """
-        timeout = convert_duration(self.svc.options.waitlock)
-        if timeout < 0:
-            timeout = 120
-        delay = 1
-        lockfd = None
-        action = "startdiskzpool"
-        lockfile = os.path.join(rcEnv.paths.pathlock, action)
-        details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
-                  (timeout, delay, action, lockfile)
-        self.log.debug("acquire startdiskzpool lock %s", details)
-
-        try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startdiskzpool")
-        except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
-        except ex.excSignal:
-            raise ex.excError("interrupted by signal %s" % details)
-        except Exception as exc:
-            self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
-
-        if lockfd is not None:
-            self.lockfd = lockfd
-
-    def unlock(self):
-        """
-        Release the zpool disk lock.
-        """
-        lock.unlock(self.lockfd)
-        self.log.debug("release startdiskzpool lock")
