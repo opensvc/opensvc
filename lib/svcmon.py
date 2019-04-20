@@ -185,7 +185,11 @@ def svcmon(node, options=None):
             if not status_changed and not stats_changed:
                 continue
             if status_changed:
-                status_data = node._daemon_status(node=endpoint)
+                try:
+                    status_data = node._daemon_status(node=endpoint)
+                except ValueError:
+                    # seen on solaris under high load: decode_msg() raising on invalid json
+                    continue
                 if status_data is None:
                     # can happen when the secret is being reset on daemon join
                     continue
