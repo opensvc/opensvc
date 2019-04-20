@@ -594,7 +594,7 @@ class Node(Crypt, ExtConfigMixin):
             except Exception as exc:
                 data = None
         else:
-            data = data["monitor"]
+            data = data.get("monitor")
 
         # full listing and namespace full listing
         if selector is None:
@@ -3792,6 +3792,7 @@ class Node(Crypt, ExtConfigMixin):
             },
             nodename=node,
             silent=silent,
+            timeout=5,
         )
         return data
 
@@ -3829,6 +3830,7 @@ class Node(Crypt, ExtConfigMixin):
             },
             nodename=node,
             silent=silent,
+            timeout=5,
         )
         return data
 
