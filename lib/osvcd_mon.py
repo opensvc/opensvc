@@ -2932,7 +2932,7 @@ class Monitor(shared.OsvcThread):
                           "status is %s", svcpath, smon.global_expect, status)
             self.set_smon(svcpath, global_expect="unset")
         elif smon.global_expect == "started":
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 self.set_smon(svcpath, global_expect="unset")
             if status in STARTED_STATES and not local_frozen:
                 self.log.info("service %s global expect is %s and its global "
@@ -2952,7 +2952,7 @@ class Monitor(shared.OsvcThread):
                            svcpath, smon.global_expect)
             self.set_smon(svcpath, global_expect="unset")
         elif smon.global_expect == "provisioned" and provisioned in (True, "n/a"):
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 self.set_smon(svcpath, global_expect="unset")
             if shared.AGG[svcpath].avail in ("up", "n/a"):
                 # provision success, thaw
@@ -3287,7 +3287,7 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "shutdown":
             return not self.get_agg_shutdown(svcpath)
         elif global_expect == "started":
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 return False
             local_frozen = instance.get("frozen", 0)
             if agg.avail is None:
@@ -3307,7 +3307,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "provisioned":
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 return False
             if agg.provisioned not in (True, None):
                 return True
@@ -3325,7 +3325,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "purged":
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 return False
             deleted = self.get_agg_deleted(svcpath)
             purged = self.get_agg_purged(agg.provisioned, deleted)
@@ -3340,7 +3340,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "placed":
-            if shared.SERVICES[svcpath].placement == "none":
+            if smon.placement == "none":
                 return False
             if agg.placement == "non-optimal" or agg.avail != "up" or agg.frozen == "frozen":
                 svc = shared.SERVICES.get(svcpath)
