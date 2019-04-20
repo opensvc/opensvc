@@ -678,7 +678,7 @@ class Monitor(shared.OsvcThread):
         )
 
     def services_init_status(self):
-        proc = self.service_command("*", ["status", "--parallel", "--refresh"], local=False)
+        proc = self.service_command("**", ["status", "--parallel", "--refresh"], local=False)
         self.push_proc(
             proc=proc,
             on_success="services_init_status_callback",
@@ -686,7 +686,7 @@ class Monitor(shared.OsvcThread):
         )
 
     def services_init_boot(self):
-        proc = self.service_command("*", ["boot", "--parallel"])
+        proc = self.service_command("**", ["boot", "--parallel"])
         self.push_proc(
             proc=proc,
             on_success="services_init_status_callback",
