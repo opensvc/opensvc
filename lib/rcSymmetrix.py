@@ -199,6 +199,16 @@ ACTIONS = {
     },
 }
 
+def set_sym_env():
+    env = {
+        "SYMCLI_WAIT_ON_DB": "1",
+        "SYMCLI_WAIT_ON_GK": "1",
+        "SYMCLI_CTL_ACCESS": "PARALLEL",
+    }
+    for key, val in env.items():
+        if key in os.environ:
+            continue
+        os.environ[key] = val
 
 class Arrays(object):
     arrays = []
@@ -1436,6 +1446,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     return ret
 
 def main(argv, node=None):
+    set_sym_env()
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
                        deprecated_actions=DEPRECATED_ACTIONS,
                        global_options=GLOBAL_OPTS)

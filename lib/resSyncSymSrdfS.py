@@ -4,6 +4,7 @@ import json
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, lazy
+from rcSymmetrix import set_sym_env
 from xml.etree.ElementTree import ElementTree, XML
 
 import rcExceptions as ex
@@ -13,8 +14,7 @@ import datetime
 import resSync
 
 os.environ['PATH'] += ":/usr/symcli/bin"
-os.environ['SYMCLI_WAIT_ON_DB'] = "1"
-os.environ['SYMCLI_WAIT_ON_GK'] = "1"
+set_sym_env()
 
 class syncSymSrdfS(resSync.Sync):
 
