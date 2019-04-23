@@ -162,7 +162,7 @@ class Task(Res.Resource):
             if self.on_error:
                 kwargs["blocking"] = False
                 self.action_triggers("", "on_error", **kwargs)
-            raise ex.excError
+            raise
 
     def _status(self, verbose=False):
         return rcStatus.NA

@@ -722,7 +722,10 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         self.log.error("%s error: %s", cmd, str(exc))
 
     if blocking and ret != 0:
-        raise ex.excError("%s trigger %s blocking error" % (trigger, cmd))
+        if action == "command":
+            raise ex.excError("command return code [%d]" % ret)
+        else:
+            raise ex.excError("%s trigger %s blocking error [%d]" % (trigger, cmd, ret))
 
 
 def try_decode(string, codecs=['utf8', 'latin1']):
