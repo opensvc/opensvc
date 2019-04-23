@@ -2936,6 +2936,8 @@ class Node(Crypt, ExtConfigMixin):
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
+        if "metadata" in data:
+            del data["metadata"]
         if info is None:
             info = self.install_service_info(name, namespace, kind)
         config = rcConfigParser.RawConfigParser()
