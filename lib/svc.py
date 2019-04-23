@@ -4945,7 +4945,7 @@ class Svc(BaseSvc):
         if subsets is None or self.options.subsets is None:
             return
         retained_rids = set()
-        for resource in self.resources_by_id.values() + self.encap_resources.values():
+        for resource in itertools.chain(self.resources_by_id.values(), self.encap_resources.values()):
             if resource.subset in subsets:
                 retained_rids.add(resource.rid)
         if len(retained_rids) > 0:
