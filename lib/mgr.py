@@ -244,10 +244,10 @@ class Mgr(object):
         try:
             options, action = self.parse_args(argv)
         except ex.excError as exc:
-            err = "no match"
             if str(exc):
-                err += str(exc)
-            raise ex.excError(err)
+                raise
+            else:
+                raise ex.excError("no match")
         if action == "deploy":
             action = "create"
             options.provision = True
