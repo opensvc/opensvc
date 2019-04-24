@@ -241,7 +241,13 @@ class Mgr(object):
         ret = 0
 
         argv, extra_argv = self.get_extra_argv(argv)
-        options, action = self.parse_args(argv)
+        try:
+            options, action = self.parse_args(argv)
+        except ex.excError as exc:
+            err = "no match"
+            if str(exc):
+                err += str(exc)
+            raise ex.excError(err)
         if action == "deploy":
             action = "create"
             options.provision = True
