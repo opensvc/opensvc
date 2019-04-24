@@ -114,10 +114,14 @@ class Volume(Res.Resource):
                 datapath, key = datapath.split("/", 1)
             except Exception:
                 continue
-            if path in ("", os.sep):
-                path = self.mount_point.rstrip(os.sep) + os.sep
-            else:
-                path = os.path.join(self.mount_point.rstrip(os.sep), path.lstrip(os.sep))
+            try:
+                if path in ("", os.sep):
+                    path = self.mount_point.rstrip(os.sep) + os.sep
+                else:
+                    path = os.path.join(self.mount_point.rstrip(os.sep), path.lstrip(os.sep))
+            except AttributeError:
+                # self.mount_point changed to None since tested, so has no rstrip()
+                continue
             data.append({
                 "obj": fmt_svcpath(datapath, namespace=self.svc.namespace, kind=kind),
                 "key": key,
