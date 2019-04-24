@@ -327,7 +327,7 @@ class Monitor(shared.OsvcThread):
                 try:
                     svc.postinstall()
                 except Exception as exc:
-                    self.log("service %s postinstall failed: %s", svcpath, exc)
+                    self.log.error("service %s postinstall failed: %s", svcpath, exc)
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
