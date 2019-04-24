@@ -2254,8 +2254,9 @@ def path_match_handler_or_parents(p, d):
     if re.match(pattern, p) is not None:
         return True
     for i in range(pattern.count("/")):
-        pattern = pattern[:pattern.rindex("/")]+"[/]*$"
-        if re.match(pattern, p) is not None:
+        pattern = pattern[:pattern.rindex("/")]
+        pattern2 = pattern + "[/]*$"
+        if re.match(pattern2, p) is not None:
             return True
     return False
 
