@@ -22,7 +22,7 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
-                        split_svcpath, fmt_svcpath
+                        split_svcpath, fmt_svcpath, is_service
 from converters import convert_size, print_duration
 
 RELAY_DATA = {}
@@ -778,15 +778,21 @@ class Listener(shared.OsvcThread):
     def validate_global_expect(self, svcpath, global_expect):
         if global_expect is None:
             return
-        if global_expect in ("frozen", "aborted"):
+        if global_expect in ("frozen", "aborted", "provisioned"):
+            # allow provision target state on just-created service
             return
-        instances = self.get_service_instances(svcpath)
+
+        # wait for service to appear
+        for i in range(5):
+            instances = self.get_service_instances(svcpath)
+            if instances:
+                break
+            if not is_service(svcpath):
+                break
+            time.sleep(1)
         if not instances:
-            if global_expect == "provisioned":
-                # allow provision target state on just-created service
-                return
-            else:
-                raise ex.excError("service does not exist")
+            raise ex.excError("service does not exist")
+
         for nodename, _data in instances.items():
             status = _data.get("monitor", {}).get("status", "unknown")
             if status != "idle" and "failed" not in status and "wait" not in status:
