@@ -329,21 +329,6 @@ class SyncZfs(resSync.Sync):
     def can_sync(self, target=None):
         if not Dataset(self.src).exists():
             return False
-        try:
-            ls = self.get_local_state()
-            ts = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-        except IOError:
-            self.log.debug("zfs state file not found")
-            return True
-        except:
-            import sys
-            import traceback
-            e = sys.exc_info()
-            print(e[0], e[1], traceback.print_tb(e[2]))
-            return False
-        if self.skip_sync(ts):
-            self.status_log("Last sync on %s older than %s" % (ts, print_duration(self.sync_max_delay)))
-            return False
         return True
 
     def sync_status(self, verbose=False):
