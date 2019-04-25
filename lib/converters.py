@@ -382,6 +382,8 @@ def print_duration(secs, _round=2):
             return buff[:2] + "s" + buff[3:]
         else:
             return buff[:-3]
+    if buff:
+        return buff
     return "-"
 
 if __name__ == "__main__":
