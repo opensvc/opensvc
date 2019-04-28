@@ -3421,6 +3421,20 @@ KEYWORDS = [
     },
     {
         "section": "certificate",
+        "keyword": "certificate_secret",
+        "rtype": ["tls"],
+        "at": True,
+        "text": "The name of the secret object name hosting the certificate files. The secret must have the certificate_chain and server_key keys set. This setting makes the certificate served to envoy via the secret discovery service, which allows its live rotation."
+    },
+    {
+        "section": "certificate",
+        "keyword": "validation_secret",
+        "rtype": ["tls"],
+        "at": True,
+        "text": "The name of the secret object name hosting the certificate autority files for certificate_secret validation. The secret must have the trusted_ca and verify_certificate_hash keys set. This setting makes the validation data served to envoy via the secret discovery service, which allows certificates live rotation."
+    },
+    {
+        "section": "certificate",
         "keyword": "certificate_chain_filename",
         "rtype": ["tls"],
         "at": True,

@@ -72,6 +72,99 @@ KEYWORDS = [
         "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
         "example": "node1 node2"
     },
+    {
+        "section": "DEFAULT",
+        "keyword": "cn",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Common Name.",
+        "example": "foo"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "c",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Country.",
+        "example": "france"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "st",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request State.",
+        "example": "oise"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "l",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Location.",
+        "example": "gouvieux"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "o",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Organization.",
+        "example": "opensvc"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "ou",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Organizational Unit.",
+        "example": "lab"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "email",
+        "inheritance": "head",
+        "at": True,
+        "text": "Certificate Signing Request Email.",
+        "example": "test@opensvc.com"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "alt_names",
+        "inheritance": "head",
+        "convert": "list",
+        "at": True,
+        "text": "Certificate Signing Request Alternative Domain Names.",
+        "example": "www.opensvc.com opensvc.com"
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "bits",
+        "inheritance": "head",
+        "convert": "size",
+        "at": True,
+        "text": "Certificate Private Key Length.",
+        "example": "4k",
+        "default": 4096,
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "validity",
+        "inheritance": "head",
+        "convert": "duration_to_day",
+        "at": True,
+        "text": "Certificate Validity duration.",
+        "example": "365d",
+        "default": "365d",
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "ca",
+        "inheritance": "head",
+        "at": True,
+        "text": "The name of secret containing a certificate to use as a Certificate Authority. This secret must be in the same namespace.",
+        "example": "ca",
+    },
 ]
 
 

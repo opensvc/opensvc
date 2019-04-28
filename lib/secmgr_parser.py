@@ -42,6 +42,9 @@ ACTIONS.update({
         "keys": {
             "msg": "Show all keys available in this secret.",
         },
+        "gen_cert": {
+            "msg": "Create a x509 certificate using information in the secret configuration.",
+        },
         "decode": {
             "msg": "Decode a secret key from the secret object.",
             "options": mp.ACTION_OPTS + [
