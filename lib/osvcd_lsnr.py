@@ -598,6 +598,14 @@ class Listener(shared.OsvcThread):
         else:
             return self._action_get_service_config_file(nodename, **kwargs)
 
+    def action_get_secret_key(self, nodename, **kwargs):
+        svcpath = kwargs.get("svcpath")
+        key = kwargs.get("key")
+        try:
+            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
+        except:
+            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+
     def _action_get_service_config_json(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
         if not svcpath:
