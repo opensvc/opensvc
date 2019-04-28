@@ -176,6 +176,9 @@ def convert_tristate(s):
 def convert_duration_minute(s):
     return convert_duration(s, _from="m")
 
+def convert_duration_to_day(s):
+    return convert_duration(s, _to="d")
+
 def convert_duration(s, _to="s", _from="s"):
     """
     Convert a string representation of a duration to seconds.
