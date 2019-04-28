@@ -56,6 +56,8 @@ class Container(resContainerDocker.Container):
                 pass
             elif "has dependent containers which must be removed" in err:
                 pass
+            elif "no container with name" in err:
+                pass
             elif "removal" in err and "already in progress" in err:
                 self.wait_for_removed()
             else:
