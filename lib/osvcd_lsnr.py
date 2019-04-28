@@ -603,7 +603,7 @@ class Listener(shared.OsvcThread):
         key = kwargs.get("key")
         try:
             return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
-        except:
+        except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
 
     def _action_get_service_config_json(self, nodename, **kwargs):
