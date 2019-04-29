@@ -200,6 +200,7 @@ class Array(object):
         self.domain_portname = {}
         self.port_portname = {}
         self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.name)
+        self.journal = []
 
     def cmd(self, cmd, scoped=True, xml=True, log=False):
         if which(self.bin) is None:
@@ -224,7 +225,10 @@ class Array(object):
             _l = [] + l
             _l[6] = "xxxx"
             self.log.info(" ".join(_l))
+            self.log_cmd(_l)
         out, err, ret = justcall(l)
+        if log:
+            self.log_result(out, err)
         if ret != 0:
             self.log.error(err)
             raise ex.excError(err)
@@ -603,6 +607,15 @@ class Array(object):
         data = self.parse(out)
         return data[0]["Path"][0]
 
+    def log_cmd(self, cmd):
+        self.journal.append([0, " ".join(cmd), {}])
+
+    def log_result(self, out="", err=""):
+        for line in out.strip().splitlines():
+            self.journal.append([0, line, {}])
+        for line in err.strip().splitlines():
+            self.journal.append([1, line, {}])
+
     def add_disk(self, name=None, pool=None, size=None, lun=None, mappings=None, **kwargs):
         if pool is None:
             raise ex.excError("--pool is mandatory")
@@ -747,8 +760,16 @@ def do_action(action, array_name=None, node=None, **kwargs):
     node.log.handlers[1].setLevel(logging.CRITICAL)
     if not hasattr(array, action):
         raise ex.excError("not implemented")
-    ret = getattr(array, action)(**kwargs)
+    try:
+        ret = getattr(array, action)(**kwargs)
+    except ex.excError as exc:
+        ret = {
+            "log": array.journal,
+        }
+        print(json.dumps(ret, indent=4))
+        raise
     if ret is not None:
+        ret["log"] = array.journal
         print(json.dumps(ret, indent=4))
     return ret
 
@@ -758,7 +779,11 @@ def main(argv, node=None):
                        global_options=GLOBAL_OPTS)
     options, action = parser.parse_args(argv)
     kwargs = vars(options)
-    do_action(action, node=node, **kwargs)
+    try:
+        do_action(action, node=node, **kwargs)
+        return 0
+    except Exception:
+        return 1
 
 if __name__ == "__main__":
     try:
