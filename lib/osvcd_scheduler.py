@@ -261,7 +261,7 @@ class Scheduler(shared.OsvcThread):
             except KeyError:
                 continue
             for action in svc.sched.scheduler_actions:
-                if provisioned is not True and action in ACTIONS_SKIP_ON_UNPROV:
+                if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+svcname)
                     continue
                 try:
