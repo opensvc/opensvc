@@ -304,6 +304,8 @@ class App(Resource):
                 if val is False:
                     raise ex.excAbortAction()
                 cmd = [self.script, script_arg if script_arg else action]
+            except ex.excAbortAction:
+                raise
             except:
                 if six.PY2:
                     cmd = map(lambda s: s.decode('utf8'), shlex.split(val.encode('utf8')))
