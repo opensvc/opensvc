@@ -70,7 +70,10 @@ class DataMixin(object):
 
 
     def decode(self):
-        sys.stdout.write(self.decode_key(self.options.key))
+        buff = self.decode_key(self.options.key)
+        if buff is None:
+            raise ex.excError("could not decode the secret key '%s'" % self.options.key)
+        sys.stdout.write(buff)
 
     def keys(self):
         data = sorted(self.data_keys())
@@ -103,6 +106,9 @@ class DataMixin(object):
         # paranoid checks before rmtree()/unlink()
         if ".." in vpath:
             return
+        data = self.decode_key(key)
+        if data is None:
+            raise ex.excError
         if os.path.isdir(vpath):
             self.log.info("remove %s key %s directory at location %s", self.desc, key, vpath)
             shutil.rmtree(vpath)
@@ -111,7 +117,6 @@ class DataMixin(object):
             self.log.info("remove %s key %s file at parent location %s", self.desc, key, vdir)
             os.unlink(vdir)
         makedirs(vdir)
-        data = self.decode_key(key)
         self.write_key(vpath, data)
 
     def write_key(self, vpath, data):
