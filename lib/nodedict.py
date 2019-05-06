@@ -906,6 +906,14 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "network",
+        "rtype": "routed_bridge",
+        "keyword": "addr",
+        "at": True,
+        "default_text": "Detect using a name resolution of <nodename>. Beware, if the nodename resolves to 127.0.1.1 or 127.0.0.1 the ipip tunnel can not work.",
+        "text": "The ip address used as local endpoint for the ipip tunnel configured by network setup to access the backend subnet of peer nodes not on the same subnet."
+    },
+    {
+        "section": "network",
         "rtype": ["bridge", "routed_bridge"],
         "keyword": "network",
         "default": "10.22.0.0/16",

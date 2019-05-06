@@ -4878,7 +4878,8 @@ class Node(Crypt, ExtConfigMixin):
                 config[key] = self.oget(section, key, rtype=config["type"])
             if not config:
                 continue
-            nets[name] = {}
+            if name not in nets:
+                nets[name] = {}
             nets[name]["config"] = config
             nets[name]["routes"] = self.routes(name, config)
         nets["lo"] = {
@@ -4935,11 +4936,22 @@ class Node(Crypt, ExtConfigMixin):
         ntype = config["type"]
         if ntype != "routed_bridge":
             return routes
+        try:
+            local_ip = self.oget("network#"+name, "addr")
+        except ValueError:
+            local_ip = None
+        if local_ip is None:
+            try:
+                local_ip = socket.getaddrinfo(rcEnv.nodename, None)[0][4][0]
+            except socket.gaierror:
+                self.log.warning("node %s is not resolvable", nodename)
+                return routes
         for nodename in self.cluster_nodes:
             if nodename == rcEnv.nodename:
                 routes.append({
                     "dst": str(self.node_subnet(name, nodename, config=config)),
                     "dev": "obr_"+name,
+                    "brdev": "obr_"+name,
                 })
                 continue
             try:
@@ -4948,8 +4960,11 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.warning("node %s is not resolvable", nodename)
                 continue
             routes.append({
+                "local_ip": local_ip,
                 "dst": str(self.node_subnet(name, nodename, config=config)),
                 "gw": gw,
+                "brdev": "obr_"+name,
+                "brip": self.network_bridge_ip(name, config=config),
             })
         return routes
 
@@ -4996,14 +5011,25 @@ class Node(Crypt, ExtConfigMixin):
             self.network_create_config(name)
             self.network_create_bridge(name)
             self.network_create_routes(name)
+            self.network_create_fwrules(name)
+
+    def network_create_fwrules(self, name):
+        """
+        OS specific
+        """
+        pass
+
+    def network_bridge_ip(self, name, config=None):
+        net = self.node_subnet(name, config=config)
+        ip = str(net[1])+"/"+str(net.prefixlen)
+        return ip
 
     def network_create_bridge(self, name):
         data = self.network_data(name)
         ntype = data["config"]["type"]
         if ntype != "routed_bridge":
             return
-        net = self.node_subnet(name, config=data["config"])
-        ip = str(net[1])+"/"+str(net.prefixlen)
+        ip = self.network_bridge_ip(name, config=data["config"])
         self.network_bridge_add("obr_"+name, ip)
 
     def network_bridge_add(self, *args, **kwargs):
@@ -5060,7 +5086,7 @@ class Node(Crypt, ExtConfigMixin):
             "type": "bridge",
             "bridge": "obr_"+name,
             "isGateway": True,
-            "ipMasq": True,
+            "ipMasq": False,
             "ipam": {
                 "type": "host-local",
                 "routes": [

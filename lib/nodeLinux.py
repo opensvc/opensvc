@@ -107,14 +107,22 @@ class Node(node.Node):
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
 
-    def network_route_add(self, dst=None, gw=None, dev=None):
+    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None):
         if dst is None:
             return
         if gw is not None:
             cmd = ["ip", "route", "replace", dst, "via", gw]
         elif dev is not None:
             cmd = ["ip", "route", "replace", dst, "dev", dev]
-        self.vcall(cmd)
+        out, err, ret = justcall(cmd)
+        if "invalid gateway" in err or "is unreachable" in err:
+            tun = self.network_tunnel_ipip_add(local_ip, gw)
+            cmd = ["ip", "route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0]]
+            self.vcall(cmd)
+        else:
+            self.log.info(" ".join(cmd))
+            for line in out.splitlines():
+                self.log.info(line)
 
     def network_bridge_add(self, name, ip):
         cmd = ["ip", "link", "show", name]
@@ -132,4 +140,95 @@ class Node(node.Node):
         if "DOWN" in out:
             cmd = ["ip", "link", "set", "dev", name, "up"]
             self.vcall(cmd)
+
+    def network_ip_intf(self, addr):
+        cmd = ["ip", "addr"]
+        out, _, _ = justcall(cmd)
+        marker = "inet %s/" % addr
+        for line in out.splitlines():
+            if marker in line:
+                return line.split()[-1]
+
+    def network_tunnel_ipip_add(self, src, dst):
+        src_dev = self.network_ip_intf(src)
+        name = "tun" + dst.split("/", 1)[0].replace(".", "")
+        cmd = ["ip", "tunnel", "show", name]
+        out, err, ret = justcall(cmd)
+        if out:
+            action = "change"
+        else:
+            action = "add"
+        cmd = ["ip", "tunnel", action, name, "mode", "ipip",
+               "local", src, "remote", dst]
+        if src_dev:
+            cmd += ["dev", src_dev]
+        self.vcall(cmd)
+        if action == "add":
+            cmd = ["ip", "link", "set", "dev", name, "up"]
+            self.vcall(cmd)
+        return {
+            "dev": name,
+            "local": src,
+            "remote": dst,
+        }
+
+    def network_create_fwrules(self, name):
+        nets = self.networks_data()
+        data = nets[name]
+        ntype = data["config"]["type"]
+        if ntype not in ("bridge", "routed_bridge"):
+            return
+        chain = "osvc-" + name
+        comment = "name: %s" % name
+        self.network_ipt_add_chain(chain, nat=True)
+        for net in nets.values():
+            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="ACCEPT", comment=comment)
+        self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment)
+        src = data.get("cni", {}).get("data", {}).get("ipam", {}).get("subnet")
+        if not src:
+            src = data.get("cni", {}).get("data", {}).get("network")
+        self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment)
+
+    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="ACCEPT", comment=None):
+        if nat:
+            nat = ["-t", "nat"]
+        else:
+            nat = []
+        cmd1 = ["iptables"] + nat
+        cmd2 = [chain]
+        if src:
+            if src[0] == "!":
+                cmd2 += ["!"]
+                src = src[1:]
+            cmd2 += ["-s", src]
+        if dst:
+            if dst[0] == "!":
+                cmd2 += ["!"]
+                dst = dst[1:]
+            cmd2 += ["-d", dst]
+        cmd2 += ["-j", act]
+        if comment:
+            cmd2 += ["-m", "comment", "--comment", comment]
+        cmd = cmd1 + ["-C"] + cmd2
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            return
+        cmd = cmd1 + ["-A"] + cmd2
+        self.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd)
+        if ret != 0 and err:
+            self.log.error(err)
+
+    def network_ipt_add_chain(self, chain, nat=False):
+        if nat:
+            nat = ["-t", "nat"]
+        else:
+            nat = []
+        cmd = ["iptables"] + nat + ["-N", chain]
+        out, err, ret = justcall(cmd)
+        if "already exist" in err:
+            return
+        self.log.info(" ".join(cmd))
+        if ret != 0:
+            self.log.error(err)
 
