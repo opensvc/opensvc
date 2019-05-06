@@ -182,6 +182,8 @@ class Node(node.Node):
         comment = "name: %s" % name
         self.network_ipt_add_chain(chain, nat=True)
         for net in nets.values():
+            if net["config"]["network"] == "undef":
+                continue
             self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="ACCEPT", comment=comment)
         self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment)
         src = data.get("cni", {}).get("data", {}).get("ipam", {}).get("subnet")
