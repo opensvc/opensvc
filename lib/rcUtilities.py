@@ -29,6 +29,7 @@ GLOB_ROOT_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
 GLOB_ROOT_VOL_CONF = os.path.join(rcEnv.paths.pathetc, "vol", "*.conf")
 GLOB_ROOT_CFG_CONF = os.path.join(rcEnv.paths.pathetc, "cfg", "*.conf")
 GLOB_ROOT_SEC_CONF = os.path.join(rcEnv.paths.pathetc, "sec", "*.conf")
+GLOB_ROOT_USR_CONF = os.path.join(rcEnv.paths.pathetc, "usr", "*.conf")
 GLOB_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*", "*.conf")
 GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
 
@@ -1152,6 +1153,7 @@ def glob_root_config():
         glob.iglob(GLOB_ROOT_VOL_CONF),
         glob.iglob(GLOB_ROOT_CFG_CONF),
         glob.iglob(GLOB_ROOT_SEC_CONF),
+        glob.iglob(GLOB_ROOT_USR_CONF),
     )
 
 def glob_ns_config(namespace=None):
@@ -1362,6 +1364,10 @@ def parse_path_selector(selector, namespace=None):
             _namespace = namespace if namespace else elts[0]
             _kind = "svc"
             _name = "*"
+        else:
+            _namespace = "root"
+            _kind = elts[0]
+            _name = elts[1]
     elif elts_count == 3:
         _namespace = namespace if namespace else elts[0]
         _kind = elts[1]
@@ -1380,9 +1386,5 @@ def format_path_selector(selector, namespace=None):
 def normalize_jsonpath(path):
     if path and path[0] == ".":
         path = path[1:]
-    elements = path.split(".")
-    for i, e in enumerate(elements):
-        if re.match(".*[#\/]+.*", e):
-            elements[i] = "'%s'" % e.strip("'").strip('"')
-    return ".".join(elements)
+    return path
 
