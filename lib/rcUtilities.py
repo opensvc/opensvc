@@ -1377,3 +1377,12 @@ def format_path_selector(selector, namespace=None):
         return selector
     return "%s/%s/%s" % (_namespace, _kind, _name)
 
+def normalize_jsonpath(path):
+    if path and path[0] == ".":
+        path = path[1:]
+    elements = path.split(".")
+    for i, e in enumerate(elements):
+        if re.match(".*[#\/]+.*", e):
+            elements[i] = "'%s'" % e.strip("'").strip('"')
+    return ".".join(elements)
+

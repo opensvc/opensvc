@@ -48,7 +48,8 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         makedirs, fmt_svcpath, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, \
-                        factory, resolve_svcpath, strip_path, normalize_paths
+                        factory, resolve_svcpath, strip_path, normalize_paths, \
+                        normalize_jsonpath
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -713,6 +714,7 @@ class Node(Crypt, ExtConfigMixin):
         def svc_matching(svc, param, op, value, cluster_data):
             if param.startswith("."):
                 param = "$"+param
+            param = normalize_jsonpath(param)
             if param.startswith("$."):
                 try:
                     jsonpath_expr = parse(param)
@@ -3335,6 +3337,7 @@ class Node(Crypt, ExtConfigMixin):
                     val = val + ".*"
             break
 
+        path = normalize_jsonpath(path)
         try:
             jsonpath_expr = parse(path)
         except Exception as exc:
