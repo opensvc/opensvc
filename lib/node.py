@@ -4945,7 +4945,7 @@ class Node(Crypt, ExtConfigMixin):
             try:
                 local_ip = socket.getaddrinfo(rcEnv.nodename, None)[0][4][0]
             except socket.gaierror:
-                self.log.warning("node %s is not resolvable", nodename)
+                self.log.warning("node %s is not resolvable", rcEnv.nodename)
                 return routes
         for nodename in self.cluster_nodes:
             if nodename == rcEnv.nodename:
