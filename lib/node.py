@@ -3280,6 +3280,8 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             if options.provision:
                 svc.action("provision", options)
+            if hasattr(svc, "on_create"):
+                getattr(svc, "on_create")()
 
         return ret
 
@@ -3381,7 +3383,7 @@ class Node(Crypt, ExtConfigMixin):
                         return True
             return False
 
-        def match_patch(msg):
+        def match_patch():
             if neg ^ eval_cond(val, cluster_data):
                 return True
             return False
@@ -3411,9 +3413,12 @@ class Node(Crypt, ExtConfigMixin):
         for msg in self.daemon_events(nodename):
             kind = msg.get("kind")
             if kind == "patch":
-                _nodename = msg.get("nodename")
-                json_delta.patch(cluster_data[_nodename], msg["data"])
-                if match_patch(msg):
+                try:
+                    cluster_data = self._daemon_status()
+                    cluster_data["monitor"]
+                except KeyError:
+                    continue
+                if match_patch():
                     break
             elif kind == "event":
                 if match_event(msg):
