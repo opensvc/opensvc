@@ -257,8 +257,7 @@ class HbUcastRx(HbUcast):
             # ignore hb data we sent ourself
             return
         elif nodename not in self.hb_nodes:
-            # decrypt passed, trust it is a new node
-            self.add_cluster_node(nodename)
+            return
         if data is None:
             self.push_stats()
             self.set_beating(nodename)
