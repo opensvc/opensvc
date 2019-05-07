@@ -4321,19 +4321,28 @@ class Node(Crypt, ExtConfigMixin):
             else:
                 self.log.info("leave node %s", nodename)
 
-        # remove obsolete hb configurations
-        todo = ["cluster"]
+        # remove obsolete node configurations
+        todo = []
         config = self.get_config(cluster=False)
         for section in config.sections():
-            if section.startswith("hb#") or \
+            if section == "cluster" or \
+               section.startswith("hb#") or \
                section.startswith("arbitrator#"):
                 self.log.info("remove configuration %s", section)
                 todo.append(section)
         self.delete_sections(todo)
 
-        # remove cluster config
+        # remove obsolete cluster configurations
         svc = factory("ccfg")(node=self)
-        svc.delete()
+        todo = []
+        for section in svc.config.sections():
+            if section == "cluster" or \
+               section.startswith("hb#") or \
+               section.startswith("arbitrator#"):
+                svc.log.info("remove configuration %s", section)
+                todo.append(section)
+        svc.delete_sections(todo)
+        svc.unset_multi(["DEFAULT.id"])
 
         self.unset_lazy("cluster_nodes")
 
