@@ -2428,15 +2428,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def delete(self):
         """
         The 'delete' action entrypoint.
-        If --unprovision is set, call the unprovision method.
-        Then if no resource specifier is set, remove all service files in
+        If no resource specifier is set, remove all service files in
         <pathetc>.
         If a resource specifier is set, only delete the corresponding
         sections in the configuration file.
         """
-        self.delete_service_conf()
-        self.delete_service_logs()
-        self.set_purge_collector_tag()
+        rids = self.action_rid
+        if rids:
+            self.delete_sections(rids)
+        else:
+            self.delete_service_conf()
+            self.delete_service_logs()
+            self.set_purge_collector_tag()
 
     def delete_service_logs(self):
         """
@@ -2602,7 +2605,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return self.node
 
     def options_to_rids(self, options, action):
-        return set()
+        rid = options.get("rid", [])
+        if rid is None:
+            rid = []
+        elif is_string(rid):
+            if rid:
+                rid = rid.split(',')
+            else:
+                rid = []
+        return set(rid)
 
     def set_skip_resources(self, *args, **kwargs):
         pass
@@ -2623,7 +2634,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         pass
 
     def action_rid_dependencies(self, action, rid):
-        return []
+        return set()
 
     def get_running(self, *args, **kwargs):
         return []
