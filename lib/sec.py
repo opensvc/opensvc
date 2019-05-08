@@ -46,7 +46,7 @@ class Sec(DataMixin, BaseSvc):
             raise ex.excError("secret key %s does not exist or has no value" % key)
         if data.startswith("crypt:"):
             data = data[6:]
-            return self.decrypt(base64.urlsafe_b64decode(data))[1]
+            return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")))[1]
 
     @staticmethod
     def tempfilename():
