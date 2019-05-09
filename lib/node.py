@@ -5240,6 +5240,7 @@ class Node(Crypt, ExtConfigMixin):
                     "ips": [],
                 }
             except Exception:
+                network = None
                 _data = {
                     "type": ndata["config"]["type"],
                     "network": ndata["config"]["network"],
@@ -5248,7 +5249,7 @@ class Node(Crypt, ExtConfigMixin):
                 }
             for idata in ipdata:
                 ip = ip_address(idata["ip"])
-                if ip not in network:
+                if not network or ip not in network:
                     continue
                 _data["ips"].append(idata)
             _data["used"] = len(_data["ips"])
