@@ -5068,7 +5068,10 @@ class Node(Crypt, ExtConfigMixin):
         pass
  
     def network_create_config(self, name="default"):
-        data = self.network_data(name)
+        try:
+            data = self.network_data(name)
+        except KeyError:
+            raise ex.excError("network %s does not exist" % name)
         ntype = data["config"]["type"]
         fn = "network_create_%s_config" % ntype
         if hasattr(self, fn):
