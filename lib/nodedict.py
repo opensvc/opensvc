@@ -914,6 +914,14 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "network",
+        "rtype": "routed_bridge",
+        "keyword": "tunnel",
+        "default": "auto",
+        "candidates": ["auto", "always"],
+        "text": "Create and route trafic through tunnels to peer nodes policy. `auto`: tunnel if the peer is not in the same subnet, `always`: tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes."
+    },
+    {
+        "section": "network",
         "rtype": ["bridge", "routed_bridge"],
         "keyword": "network",
         "default": "10.22.0.0/16",

@@ -4983,6 +4983,7 @@ class Node(Crypt, ExtConfigMixin):
                 "gw": gw,
                 "brdev": "obr_"+name,
                 "brip": self.network_bridge_ip(name, config=config),
+                "tunnel": config["tunnel"],
             })
         return routes
 
