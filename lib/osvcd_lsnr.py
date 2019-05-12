@@ -458,6 +458,7 @@ class Listener(shared.OsvcThread):
             "cluster": {
                 "name": self.cluster_name,
                 "id": self.cluster_id,
+                "nodes": self.cluster_nodes,
             }
         }
         with shared.THREADS_LOCK:
