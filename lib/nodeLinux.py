@@ -187,18 +187,22 @@ class Node(node.Node):
         for net in nets.values():
             if net["config"]["network"] == "undef":
                 continue
-            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="ACCEPT", comment=comment)
-        self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment)
+            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="RETURN", comment=comment, where="head")
+        self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment, where="tail")
         src = data.get("cni", {}).get("data", {}).get("ipam", {}).get("subnet")
         if not src:
             src = data.get("cni", {}).get("data", {}).get("network")
         self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment)
 
-    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="ACCEPT", comment=None):
+    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail"):
         if nat:
             nat = ["-t", "nat"]
         else:
             nat = []
+        if where == "head":
+            where = "-I"
+        else:
+            where = "-A"
         cmd1 = ["iptables"] + nat
         cmd2 = [chain]
         if src:
@@ -218,7 +222,7 @@ class Node(node.Node):
         out, err, ret = justcall(cmd)
         if ret == 0:
             return
-        cmd = cmd1 + ["-A"] + cmd2
+        cmd = cmd1 + [where] + cmd2
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
         if ret != 0 and err:
