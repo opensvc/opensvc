@@ -67,13 +67,13 @@ class Volume(Res.Resource):
             return
         if self.volsvc.topology == "flex":
             return
-        if self.volsvc.action("stop", options={"local": True}) != 0:
+        if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.excError
 
     def start(self):
         if not self.volsvc.exists():
             raise ex.excError("volume %s does not exist" % self.volname)
-        if self.volsvc.action("start", options={"local": True}) != 0:
+        if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.excError
         self.install_secrets()
         self.install_configs()

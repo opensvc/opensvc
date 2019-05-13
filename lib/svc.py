@@ -1120,7 +1120,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         psinfo = self.do_cluster_action(action, options=options)
 
         def call_action(action):
-            self.setup_environ(action=action)
+            self.setup_environ(action=action, options=options)
             self.action_triggers("pre", action)
             self.action_triggers("blocking_pre", action, blocking=True)
             err = getattr(self, action)()
@@ -1695,7 +1695,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                           "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
                           (action, rcEnv.nodename))
 
-    def setup_environ(self, action=None):
+    def setup_environ(self, action=None, options=None):
         """
         Setup envionment variables.
         Startup scripts and triggers can use them, so their code can be
@@ -1714,6 +1714,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             os.environ['OPENSVC_NAMESPACE'] = self.namespace
         if action:
             os.environ['OPENSVC_ACTION'] = action
+        if options and options.leader:
+            os.environ['OPENSVC_LEADER'] = "1"
+        else:
+            os.environ['OPENSVC_LEADER'] = "0"
         for resource in self.get_resources():
             resource.setup_environ()
 
