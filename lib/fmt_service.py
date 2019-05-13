@@ -293,7 +293,7 @@ def get_ers(idata, discard_disabled=False):
         try:
             ejs = idata["encap"][rid]
             ers[rid] = dispatch_resources(ejs, discard_disabled=discard_disabled)
-        except KeyError:
+        except (KeyError, TypeError):
             continue
         except Exception as exc:
             print(exc)

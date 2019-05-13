@@ -3605,13 +3605,13 @@ class Svc(BaseSvc):
             }
 
         containers = self.get_resources('container')
-        if len(containers) > 0:
-            data['encap'] = {}
+        if self.encap:
+            data["encap"] = True
+        elif len(containers) > 0 and self.has_encap_resources:
+            data["encap"] = {}
             for container in containers:
-                if not self.has_encap_resources:
-                    continue
                 try:
-                    data['encap'][container.rid] = self.encap_json_status(container, refresh=refresh)
+                    data["encap"][container.rid] = self.encap_json_status(container, refresh=refresh)
                     # merge container overall status, so we propagate encap alerts
                     # up to instance and service level.
                     group_status["overall"] += rcStatus.Status(data["encap"][container.rid]["overall"] if "overall" in data["encap"][container.rid] else "n/a")
@@ -3620,8 +3620,6 @@ class Svc(BaseSvc):
                     data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
                     data["encap"][container.rid]["hostname"] = container.vm_hostname
-        elif self.encap:
-            data['encap'] = True
 
         for rset in self.get_resourcesets(strict=True):
             for resource in rset.resources:
