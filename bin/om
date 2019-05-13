@@ -132,6 +132,10 @@ main() {
 		shift
 		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py array "$@"
 		;;
+	dns)
+		shift
+		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py dns "$@"
+		;;
 	mon)
 		shift
 		$SUDO $INTER $OSVC_ROOT_PATH/lib/svcmon.py "$@"
