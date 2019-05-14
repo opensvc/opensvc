@@ -77,6 +77,7 @@ import os
 import sys
 import json
 import pwd
+import codecs
 from subprocess import *
 
 sys.path.append(os.path.dirname(__file__))
@@ -120,8 +121,12 @@ class Sysctl(CompObject):
         return val
 
     def get_keys(self):
-        with open(self.cf, 'r') as f:
-            buff = f.read()
+        try:
+            with codecs.open(self.cf, "r", "utf8") as f:
+                buff = f.read()
+        except:
+            with codecs.open(self.cf, "r", "latin1") as f:
+                buff = f.read()
 
         if self.cache is None:
             self.cache = {}
