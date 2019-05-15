@@ -685,6 +685,8 @@ class CmdDelete(Cmd):
             return
         data, files, headers = self.get_data_from_options(options)
         params = {}
+        if 'filters' in options.__dict__ and options.filters:
+            params["filters"] = options.filters
         if 'query' in options.__dict__ and options.query is not None:
             params["query"] = options.query
         _path = self.args_to_path(args)
@@ -713,6 +715,8 @@ class CmdPost(Cmd):
             return
         data, files, headers = self.get_data_from_options(options)
         params = {}
+        if 'filters' in options.__dict__ and options.filters:
+            params["filters"] = options.filters
         if 'query' in options.__dict__ and options.query is not None:
             params["query"] = options.query
         _path = self.args_to_path(args)
