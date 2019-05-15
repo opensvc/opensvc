@@ -4855,11 +4855,13 @@ class Node(Crypt, ExtConfigMixin):
         except ex.OptNotFound as exc:
             return exc.default
 
-    def network_data(self, id):
+    def network_data(self, id, nets=None):
+        if nets is None:
+            nets = self.networks_data()
         if id:
-            return self.networks_data()[id]
+            return nets[id]
         else:
-            return self.networks_data()
+            return nets
 
     def networks_data(self):
         import glob
@@ -5043,8 +5045,8 @@ class Node(Crypt, ExtConfigMixin):
         ip = str(net[1])+"/"+str(net.prefixlen)
         return ip
 
-    def network_create_bridge(self, name):
-        data = self.network_data(name)
+    def network_create_bridge(self, name, nets=None):
+        data = self.network_data(name, nets=nets)
         ntype = data["config"]["type"]
         if ntype != "routed_bridge":
             return
@@ -5068,22 +5070,22 @@ class Node(Crypt, ExtConfigMixin):
         """
         pass
  
-    def network_create_config(self, name="default"):
+    def network_create_config(self, name="default", nets=None):
         try:
-            data = self.network_data(name)
+            data = self.network_data(name, nets=nets)
         except KeyError:
             raise ex.excError("network %s does not exist" % name)
         ntype = data["config"]["type"]
         fn = "network_create_%s_config" % ntype
         if hasattr(self, fn):
-            getattr(self, fn)(name)
+            getattr(self, fn)(name, nets=nets)
 
-    def network_create_weave_config(self, name="default"):
+    def network_create_weave_config(self, name="default", nets=None):
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
             return
         self.log.info("create %s", cf)
-        data = self.network_data(name)
+        data = self.network_data(name, nets=nets)
         network = data["config"]["network"]
         conf = {
             "cniVersion": "0.3.0",
@@ -5097,7 +5099,10 @@ class Node(Crypt, ExtConfigMixin):
         with open(cf, "w") as ofile:
             json.dump(conf, ofile, indent=4)
 
-    def network_create_routed_bridge_config(self, name="default"):
+    def network_create_routed_bridge_config(self, name="default", nets=None):
+        config = self.network_data(name, nets=nets)["config"]
+        subnet = str(self.node_subnet(name, config=config))
+        brip = self.network_bridge_ip(name, config=config).split("/")[0]
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
             return
@@ -5111,17 +5116,18 @@ class Node(Crypt, ExtConfigMixin):
             "ipMasq": False,
             "ipam": {
                 "type": "host-local",
+                "subnet": subnet,
                 "routes": [
-                    { "dst": "0.0.0.0/0" }
+                    { "dst": "0.0.0.0/0" },
+                    { "dst": subnet, "gw": brip },
                 ]
             }
         }
         makedirs(self.cni_config)
-        conf["ipam"]["subnet"] = str(self.node_subnet(name))
         with open(cf, "w") as ofile:
             json.dump(conf, ofile, indent=4)
 
-    def network_create_bridge_config(self, name="default"):
+    def network_create_bridge_config(self, name="default", nets=None):
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
             return
@@ -5141,13 +5147,13 @@ class Node(Crypt, ExtConfigMixin):
             }
         }
         makedirs(self.cni_config)
-        data = self.network_data(name)
+        data = self.network_data(name, nets=nets)
         network = data["config"]["network"]
         conf["ipam"]["subnet"] = network
         with open(cf, "w") as ofile:
             json.dump(conf, ofile, indent=4)
 
-    def network_create_loopback_config(self, name="lo"):
+    def network_create_loopback_config(self, name="lo", nets=None):
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
             return
@@ -5158,7 +5164,7 @@ class Node(Crypt, ExtConfigMixin):
             "type": "loopback",
         }
         makedirs(self.cni_config)
-        data = self.network_data(name)
+        data = self.network_data(name, nets=nets)
         try:
             network = data["config"]["network"]
             conf["ipam"]["subnet"] = network
