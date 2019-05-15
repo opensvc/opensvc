@@ -1309,11 +1309,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.log.addHandler(actionlogfilehandler)
         try:
             if sys.argv[0].endswith("/svcmgr.py"):
-                runlog = "do "+" ".join(sys.argv[1:])
-                runlog = runlog.replace("-s %s "%self.svcname, "")
-                runlog = runlog.replace("--service %s "%self.svcname, "")
-                runlog = runlog.replace("-s %s "%self.svcpath, "")
-                runlog = runlog.replace("--service %s "%self.svcpath, "")
+                if len(sys.argv) > 2 and sys.argv[1] in ("-s", "--service"):
+                    begin = 3
+                else:
+                    begin = 1
+                runlog = "do "+" ".join(sys.argv[begin:])
                 if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
                     runlog += " (daemon origin)"
                 else:
