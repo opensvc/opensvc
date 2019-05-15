@@ -689,6 +689,8 @@ class CmdDelete(Cmd):
             params["filters"] = options.filters
         if 'query' in options.__dict__ and options.query is not None:
             params["query"] = options.query
+        if 'limit' in options.__dict__ and options.limit:
+            params["limit"] = int(options.limit[0])
         _path = self.args_to_path(args)
         r = requests.delete(self.cli.api+_path, params=params, data=data, headers=headers, auth=self.cli.auth, verify=not self.cli.insecure)
         validate_response(r)
@@ -719,6 +721,8 @@ class CmdPost(Cmd):
             params["filters"] = options.filters
         if 'query' in options.__dict__ and options.query is not None:
             params["query"] = options.query
+        if 'limit' in options.__dict__ and options.limit:
+            params["limit"] = int(options.limit[0])
         _path = self.args_to_path(args)
         r = requests.post(self.cli.api+_path, data=data, files=files, params=params, headers=headers, auth=self.cli.auth, verify=not self.cli.insecure)
         validate_response(r)
