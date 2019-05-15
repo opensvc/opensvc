@@ -543,11 +543,20 @@ class Resource(object):
         except:
             pass
 
-    def purge_var_d(self):
+    def purge_var_d(self, keep_provisioned=True):
         import glob
         import shutil
         paths = glob.glob(os.path.join(self.var_d, "*"))
         for path in paths:
+            if keep_provisioned and path == os.path.join(self.var_d, "provisioned"):
+                # Keep the provisioned flag to remember that the
+                # resource was unprovisioned, even if the driver
+                # says it is always provisioned.
+                # This is necessary because the orchestrated
+                # unprovision would retry the CRM action if a
+                # resource reports it is still provisioned after
+                # the first unprovision.
+                continue
             try:
                 if os.path.isdir(path):
                     shutil.rmtree(path)
