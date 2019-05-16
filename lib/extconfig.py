@@ -549,15 +549,15 @@ class ExtConfigMixin(object):
             val = self.kind
         elif _ref == "id" and is_svc:
             val = self.id
-        elif _ref == "svcpath" and is_svc:
+        elif _ref in ("path", "svcpath") and is_svc:
             val = self.svcpath
-        elif _ref == "svcname" and is_svc:
+        elif _ref in ("name", "svcname") and is_svc:
             val = self.svcname
-        elif _ref == "short_svcname" and is_svc:
+        elif _ref in ("short_name", "short_svcname") and is_svc:
             val = self.svcname.split(".")[0]
-        elif _ref == "scaler_svcname" and is_svc:
+        elif _ref in ("scaler_name", "scaler_svcname") and is_svc:
             val = re.sub("[0-9]+\.", "", self.svcname)
-        elif _ref == "scaler_short_svcname" and is_svc:
+        elif _ref in ("scaler_short_name", "scaler_short_svcname") and is_svc:
             val = re.sub("[0-9]+\.", "", self.svcname.split(".")[0])
         elif _ref == "rid" and is_svc:
             val = section
@@ -573,6 +573,9 @@ class ExtConfigMixin(object):
                 val = self.node.cluster_name
             else:
                 val = self.cluster_name
+        elif _ref == "fqdn":
+            if has_node:
+                val = "%s.%s.%s.%s" % (self.svcname, self.namespace, self.kind, self.node.cluster_name)
         elif _ref == "domain":
             if has_node:
                 val = "%s.%s.%s" % (self.namespace, self.kind, self.node.cluster_name)
