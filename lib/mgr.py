@@ -177,7 +177,10 @@ class Mgr(object):
     def dispatch_svcs(paths):
         data = {}
         for path in paths:
-            _, _, kind = split_svcpath(path)
+            try:
+                _, _, kind = split_svcpath(path)
+            except ValueError:
+                continue
             try:
                 data[kind].append(path)
             except KeyError:
@@ -295,9 +298,7 @@ class Mgr(object):
             if action == "ls":
                 return
             if not build_err:
-                sys.stderr.write("No service specified.\n"
-                                 "Syntax:\n"
-                                 " svcmgr -s <svc selector> [--namespace <ns>]\n")
+                sys.stderr.write("no match\n")
             return 1
 
         if action == "create":
