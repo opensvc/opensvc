@@ -323,7 +323,14 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
     add_subsets(subsets, node_nodename, idata, discard_disabled=discard_disabled)
 
 
-def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volatile=False, nodename=None):
+def service_nodes(svcpath, mon_data):
+    nodes = set()
+    for nodename, data in mon_data.get("nodes", {}).items():
+        _nodes = set(data.get("services", {}).get("config", {}).get(svcpath, {}).get("scope", []))
+        nodes |= _nodes
+    return nodes
+
+def format_service(svcpath, idata, mon_data=None, discard_disabled=False, nodename=None):
     svcname, namespace, kind = split_svcpath(svcpath)
     svc_notice = get_svc_notice(idata)
 
@@ -347,7 +354,7 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, volati
     node_instances = node_svcname.add_node()
     node_instances.add_column("instances")
     add_instances(node_instances, svcpath, nodename, mon_data)
-    if not volatile:
+    if nodename in service_nodes(svcpath, mon_data):
         add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=discard_disabled)
     add_parents(node_svcname, idata, mon_data, namespace)
     add_children(node_svcname, idata, mon_data, namespace)

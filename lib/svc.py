@@ -29,7 +29,7 @@ from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_svcpath, fmt_svcpath, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf
+                        svc_pathcf, want_context
 from converters import *
 import rcExceptions as ex
 import rcLogger
@@ -509,6 +509,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Called from __init__, and on node labels change by entities
         holding long-lived BaseSvc objects.
         """
+        if want_context():
+            return
         try:
             self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
         except (AttributeError, ValueError):
@@ -2406,8 +2408,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Display in human-readable format the hierarchical service status.
         """
-        data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
-        if self.options.node:
+        if want_context():
+            mon_data = self.get_mon_data()
+            if self.options.node:
+                nodename = self.options.node
+            else:
+                nodename = [n for n in mon_data.get("nodes", {})][0]
+            data = mon_data.get("nodes", {}).get(nodename, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
+            data["cluster"] = mon_data.get("services", {}).get(self.svcpath, {})
+            data["cluster"]["compat"] = mon_data.get("compat")
+        elif self.options.node:
             nodename = self.options.node
             mon_data = self.get_mon_data()
             data = mon_data.get("nodes", {}).get(self.options.node, {}).get("services", {}).get("status", {}).get(self.svcpath, {})
@@ -2415,6 +2425,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             data["cluster"]["compat"] = mon_data.get("compat")
         else:
             nodename = rcEnv.nodename
+            data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
 
         if self.options.format is not None or self.options.jsonpath_filter:
             return data
@@ -2427,7 +2438,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         from fmt_service import format_service
         mon_data = self.get_mon_data()
-        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, volatile=self.volatile, nodename=nodename)
+        format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, nodename=nodename)
 
     def delete(self):
         """
