@@ -125,18 +125,14 @@ def write(prog, mod):
     with open(fpath, "w") as f:
         f.write(buff)
 
-def do_nodemgr():
-    prog = "nodemgr"
-    mod = __import__("nodemgr_parser")
+def do(kind):
+    prog = kind+"mgr"
+    mod = __import__(kind+"mgr_parser")
     write(prog, mod)
-
-def do_svcmgr():
-    prog = "svcmgr"
-    mod = __import__("svcmgr_parser")
-    write(prog, mod)
-
 
 if __name__ == "__main__":
-    do_nodemgr()
-    do_svcmgr()
+    do("node")
+    do("svc")
+    do("sec")
+    do("cfg")
 

@@ -5,6 +5,12 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 echo "* update service templates"
 sudo python $PATH_SCRIPT/../../lib/svcdict.py
 
+echo "* update secret templates"
+sudo python $PATH_SCRIPT/../../lib/secdict.py
+
+echo "* update configmap templates"
+sudo python $PATH_SCRIPT/../../lib/cfgdict.py
+
 echo "* update cluster templates"
 sudo python $PATH_SCRIPT/../../lib/clusterdict.py
 
