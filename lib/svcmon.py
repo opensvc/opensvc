@@ -117,7 +117,7 @@ def get_stats(options, node, svcpaths):
 
 def nodes_info_from_cluster_data(node, data):
     info = {}
-    for node in node.cluster_nodes:
+    for node in data.get("cluster", {}).get("nodes", []):
         info[node] = {}
     for node, _data in data.items():
         info[node] = {
@@ -147,7 +147,9 @@ def svcmon(node, options=None):
         options.watch = True
     endpoint = socket.gethostname().lower()
     nodes = []
-    if options.node is not None:
+    if "OSVC_CONTEXT" in os.environ:
+        endpoint = None
+    elif options.node is not None:
         nodes = node.nodes_selector(options.node)
         if nodes and endpoint not in nodes:
             endpoint = nodes[0]
@@ -158,6 +160,8 @@ def svcmon(node, options=None):
 
     status_data = node._daemon_status(node=endpoint)
     expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
+    if not nodes:
+        nodes = node.nodes_selector(options.node, data=status_data.get("monitor", {}).get("nodes"))
 
     if options.watch:
         start_events_thread(node, endpoint)
