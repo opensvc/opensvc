@@ -664,7 +664,10 @@ class Container(resContainer.Container):
         except ValueError as exc:
             self.status_log(str(exc))
             return
-        running_image_id = re.sub("^sha256:", "", inspect_data["Image"])
+        try:
+            running_image_id = re.sub("^sha256:", "", inspect_data["Image"])
+        except KeyError:
+            return
         if image_id is None:
             self.status_log("image '%s' is not pulled yet." % self.image)
         elif image_id != running_image_id:
