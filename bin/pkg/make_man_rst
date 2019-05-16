@@ -133,6 +133,7 @@ def do(kind):
 if __name__ == "__main__":
     do("node")
     do("svc")
+    do("vol")
     do("sec")
     do("cfg")
 
