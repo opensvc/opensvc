@@ -145,6 +145,7 @@ class rcEnv:
     nodename = socket.gethostname().lower()
     fqdn = socket.getfqdn().lower()
     listener_port = 1214
+    listener_tls_port = 1215
 
     # programs to execute remote command on other nodes or virtual hosts
     if _platform == "sunos5" :
