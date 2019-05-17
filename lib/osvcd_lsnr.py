@@ -15,6 +15,12 @@ import traceback
 import uuid
 from subprocess import Popen, PIPE
 
+try:
+    import ssl
+    has_ssl = True
+except Exception:
+    has_ssl = False
+
 import six
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -22,7 +28,8 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
-                        split_svcpath, fmt_svcpath, is_service
+                        split_svcpath, fmt_svcpath, is_service, factory, \
+                        makedirs, mimport, set_lazy, lazy
 from converters import convert_size, print_duration
 
 RELAY_DATA = {}
@@ -30,10 +37,98 @@ RELAY_LOCK = threading.RLock()
 RELAY_SLOT_MAX_AGE = 24 * 60 * 60
 RELAY_JANITOR_INTERVAL = 10 * 60
 
+class DontClose(Exception):
+    pass
+
 class Listener(shared.OsvcThread):
     sock_tmo = 1.0
     events_grace_period = True
     sockmap = {}
+
+    @lazy
+    def certfs(self):
+        mod = mimport("res", "fs")
+        res = mod.Mount(rid="fs#certs", mount_point=rcEnv.paths.certs, device="shmfs", fs_type="tmpfs", mount_options="size=1m")
+        set_lazy(res, "log",  self.log)
+        return res
+
+    def prepare_certs(self):
+        makedirs(rcEnv.paths.certs)
+        if rcEnv.sysname == "Linux":
+            self.certfs.start()
+        secpath = shared.NODE.oget("cluster", "ca")
+        if secpath is None:
+            secpath = "system/sec/ca-" + self.cluster_name
+        secname, namespace, kind = split_svcpath(secpath)
+        sec = factory("sec")(secname, namespace=namespace, volatile=True)
+        if not sec.exists():
+            raise ex.excInitError("secret %s does not exist" % secname)
+        data = factory("sec")("ca", volatile=True).decode_key("certificate_chain")
+        if data is None:
+            raise ex.excInitError("secret key %s.%s is not set" % (secname, "certificate_chain"))
+        ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
+        self.log.info("write %s", ca_cert_chain)
+        with open(ca_cert_chain, "w") as fo:
+            fo.write(data)
+        secpath = shared.NODE.oget("cluster", "cert")
+        if secpath is None:
+            secpath = "system/sec/cert-" + self.cluster_name
+        secname, namespace, kind = split_svcpath(secpath)
+        sec = factory("sec")(secname, namespace=namespace, volatile=True)
+        data = sec.decode_key("certificate_chain")
+        if data is None:
+            raise ex.excInitError("secret key %s.%s is not set" % (secname, "certificate_chain"))
+        cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
+        self.log.info("write %s", cert_chain)
+        with open(cert_chain, "w") as fo:
+            fo.write(data)
+        data = sec.decode_key("private_key")
+        if data is None:
+            raise ex.excInitError("secret key %s.%s is not set" % (secname, "private_key"))
+        private_key = os.path.join(rcEnv.paths.certs, "private_key")
+        self.log.info("write %s", private_key)
+        with open(private_key, "w") as fo:
+            fo.write(data)
+        return ca_cert_chain, cert_chain, private_key
+
+    def setup_socktls(self):
+        if not has_ssl:
+            self.log.info("skip tls listener init: ssl module import error")
+            return
+        try:
+            self.tls_port = self.config.getint("listener", "tls_port")
+        except Exception:
+            self.tls_port = rcEnv.listener_tls_port
+        try:
+            self.tls_addr = self.config.get("listener", "tls_addr")
+        except Exception:
+            self.tls_addr = "0.0.0.0"
+
+        try:
+            ca_cert_chain, cert_chain, private_key = self.prepare_certs()
+            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_cert_chain(cert_chain, keyfile=private_key)
+            context.load_verify_locations(ca_cert_chain)
+            addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
+            self.tls_addr = addrinfo[4][0]
+            self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.tls_sock.bind((self.tls_addr, self.tls_port))
+            self.tls_sock.listen(128)
+            self.tls_sock.settimeout(self.sock_tmo)
+            self.tls_wrapped_sock = context.wrap_socket(self.tls_sock)
+        except socket.error as exc:
+            self.log.error("bind %s:%d error: %s", self.tls_addr, self.tls_port, exc)
+            return
+        except ex.excInitError as exc:
+            self.log.info("skip tls listener init: %s", exc)
+            return
+        except Exception as exc:
+            self.log.info("failed tls listener init: %s", exc)
+            return
+        self.log.info("listening on %s:%s using tls and client auth", self.tls_addr, self.tls_port)
+        self.sockmap[self.tls_wrapped_sock.fileno()] = self.tls_wrapped_sock
 
     def setup_sock(self):
         try:
@@ -56,7 +151,7 @@ class Listener(shared.OsvcThread):
         except socket.error as exc:
             self.log.error("bind %s:%d error: %s", self.addr, self.port, exc)
             return
-        self.log.info("listening on %s:%s", self.addr, self.port)
+        self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
         self.sockmap[self.sock.fileno()] = self.sock
 
     def setup_sockux(self):
@@ -89,6 +184,7 @@ class Listener(shared.OsvcThread):
             except socket.error:
                 pass
         self.sockmap = {}
+        self.setup_socktls()
         self.setup_sock()
         self.setup_sockux()
 
@@ -123,6 +219,8 @@ class Listener(shared.OsvcThread):
                 for sock in self.sockmap.values():
                     sock.close()
                 self.join_threads()
+                if rcEnv.sysname == "Linux":
+                    self.certfs.stop()
                 sys.exit(0)
 
     def status(self, **kwargs):
@@ -154,6 +252,8 @@ class Listener(shared.OsvcThread):
                 self.stats.sessions.accepted += 1
                 if len(addr) == 0:
                     addr = ["local"]
+                    encrypted = False
+                elif isinstance(sock, ssl.SSLSocket):
                     encrypted = False
                 else:
                     encrypted = True
@@ -213,7 +313,7 @@ class Listener(shared.OsvcThread):
             emsg = self.encrypt(event)
             msg = self.msg_encode(event)
             to_remove = []
-            for idx, (conn, encrypted) in enumerate(self.events_clients):
+            for idx, (conn, encrypted, sid) in enumerate(self.events_clients):
                 if encrypted:
                     _msg = emsg
                 else:
@@ -229,11 +329,16 @@ class Listener(shared.OsvcThread):
                     pass
                 try:
                     del self.events_clients[idx]
-                except IndexError:
+                except KeyError:
+                    pass
+                try:
+                    del self.stats.sessions.alive[sid]
+                except KeyError:
                     pass
 
     def handle_client(self, conn, addr, encrypted):
         try:
+            close = True
             sid = str(uuid.uuid4())
             self.stats.sessions.alive[sid] = Storage({
                 "created": time.time(),
@@ -242,9 +347,12 @@ class Listener(shared.OsvcThread):
                 "progress": "init",
             })
             self._handle_client(conn, addr, encrypted, sid)
+        except DontClose:
+            close = False
         finally:
-            del self.stats.sessions.alive[sid]
-            conn.close()
+            if close:
+                del self.stats.sessions.alive[sid]
+                conn.close()
 
     def _handle_client(self, conn, addr, encrypted, sid):
         chunks = []
@@ -340,7 +448,7 @@ class Listener(shared.OsvcThread):
             options[str(key)] = val
         self.stats.sessions.alive[sid].progress = fname
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                    addr=addr, **options)
+                                    addr=addr, sid=sid, **options)
 
     def action_run_done(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
@@ -1118,7 +1226,10 @@ class Listener(shared.OsvcThread):
 
     def action_events(self, nodename, **kwargs):
         encrypted = kwargs.get("encrypted")
-        self.events_clients.append((kwargs.get("conn").dup(), encrypted))
+        conn = kwargs.get("conn")
+        sid = kwargs.get("sid")
+        self.events_clients.append((conn, encrypted, sid))
+        raise DontClose
 
     def action_service_logs(self, nodename, **kwargs):
         """

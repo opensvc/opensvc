@@ -75,6 +75,7 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
     o.pathcomp = os.path.join(o.pathvar, "compliance")
     o.pathcomposvc = os.path.join(o.pathcomp, "com.opensvc")
     o.safe = os.path.join(o.pathvar, "safe")
+    o.certs = os.path.join(o.pathvar, "certs")
     o.drp_path = os.path.join(o.pathvar, "cache")
     o.last_shutdown = os.path.join(o.pathvar, "last_shutdown")
 
