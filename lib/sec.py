@@ -27,6 +27,10 @@ class Sec(DataMixin, BaseSvc):
     def kwdict(self):
         return __import__("secdict")
 
+    def on_create(self):
+        if self.oget("DEFAULT", "cn") and "certificate" not in self.data_keys():
+            self.gen_cert()
+
     def add_key(self, key, data):
         if not key:
             raise ex.excError("secret key name can not be empty")
