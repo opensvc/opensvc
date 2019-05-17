@@ -11,11 +11,23 @@ import zlib
 import time
 import select
 
+class DummyException(Exception):
+    pass
+
+try:
+    import ssl
+    SSLWantReadError = ssl.SSLWantReadError
+    has_ssl = True
+except Exception:
+    SSLWantReadError = DummyException
+    has_ssl = False
+
 import six
 import pyaes
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import lazy, bdecode
+from rcUtilities import lazy, bdecode, get_context, want_context
+import rcExceptions as ex
 
 if six.PY3:
     def to_bytes(x):
@@ -462,6 +474,16 @@ class Crypt(object):
             return
         return data[0]
 
+    @staticmethod
+    def sock_recv(sock, bufsize):
+        while True:
+            try:
+                buff = sock.recv(bufsize)
+            except SSLWantReadError:
+                continue
+            break
+        return buff
+
     def recv_messages(self, sock, cluster_name=None, secret=None,
                       use_select=True, encrypted=True, bufsize=65536,
                       stream=False):
@@ -476,13 +498,18 @@ class Crypt(object):
             if use_select:
                 ready = select.select([sock], [], [sock], 1)
                 if ready[0]:
-                    chunk = sock.recv(bufsize)
+                    while True:
+                        try:
+                            chunk = self.sock_recv(sock, bufsize)
+                        except SSLWantReadError:
+                            continue
+                        break
                 else:
                     raise socket.timeout
                 if ready[2]:
                     break
             else:
-                chunk = sock.recv(bufsize)
+                chunk = self.sock_recv(sock, bufsize)
             if not chunk:
                 if stream:
                     raise SockReset
@@ -509,7 +536,20 @@ class Crypt(object):
     def socket_parms(self, nodename):
         data = Storage()
         data.nodename = nodename
-        if nodename == rcEnv.nodename and os.name != "nt":
+        if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and \
+           want_context():
+            if not has_ssl:
+                raise ex.excError("ssl required but not available")
+            context = get_context()
+            addr = context["cluster"]["addr"]
+            port = context["cluster"]["port"]
+            data.context = context
+            data.af = socket.AF_INET
+            data.to = (addr, port)
+            data.to_s = "%s:%d" % (addr, port)
+            data.encrypted = False
+            data.tls = True
+        elif nodename == rcEnv.nodename and os.name != "nt":
             data.af = socket.AF_UNIX
             data.to = rcEnv.paths.lsnruxsock
             data.to_s = rcEnv.paths.lsnruxsock
@@ -563,7 +603,13 @@ class Crypt(object):
                         continue
                     raise
 
-            if sp.encrypted:
+            if sp.tls:
+                context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
+                context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
+                context.check_hostname = False
+                sock = context.wrap_socket(sock)
+                message = self.msg_encode(data)
+            elif sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
             else:
@@ -620,7 +666,13 @@ class Crypt(object):
             sock = socket.socket(sp.af, socket.SOCK_STREAM)
             sock.settimeout(6.2)
             sock.connect(sp.to)
-            if sp.encrypted:
+            if sp.tls:
+                context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
+                context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
+                context.check_hostname = False
+                sock = context.wrap_socket(sock)
+                message = self.msg_encode(data)
+            elif sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
             else:
@@ -663,7 +715,13 @@ class Crypt(object):
                 sock = socket.socket(sp.af, socket.SOCK_STREAM)
                 sock.settimeout(6.2)
                 sock.connect(sp.to)
-                if sp.encrypted:
+                if sp.tls:
+                    context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
+                    context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
+                    context.check_hostname = False
+                    sock = context.wrap_socket(sock)
+                    message = self.msg_encode(data)
+                elif sp.encrypted:
                     message = self.encrypt(data, cluster_name=cluster_name,
                                            secret=secret)
                 else:
