@@ -36,12 +36,7 @@ else:
 
 def get_nodes(data):
     try:
-        nodes = set([rcEnv.nodename])
-        for thr_id in data.keys():
-            if not thr_id.startswith("hb#"):
-                continue
-            nodes |= set(data.get(thr_id, {}).get("peers", []))
-        return sorted(list(nodes))
+        return sorted(data["cluster"]["nodes"])
     except:
         return [rcEnv.nodename]
 
