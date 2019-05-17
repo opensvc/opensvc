@@ -621,6 +621,8 @@ class Mount(Res.Mount):
             holder_dev.remove(self)
 
     def remove_holders(self):
+        if not self.svc:
+            return
         import glob
         tree = self.svc.node.devtree
         dev_realpath = os.path.realpath(self.device)
