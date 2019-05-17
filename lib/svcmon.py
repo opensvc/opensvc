@@ -115,11 +115,11 @@ def get_stats(options, node, svcpaths):
     except Exception:
         return None
 
-def nodes_info_from_cluster_data(node, data):
+def nodes_info_from_cluster_data(data):
     info = {}
     for node in data.get("cluster", {}).get("nodes", []):
         info[node] = {}
-    for node, _data in data.items():
+    for node, _data in data.get("monitor", {}).get("nodes", {}).items():
         info[node] = {
             "labels": _data.get("labels", {}),
             "targets": _data.get("targets", {}),
@@ -159,9 +159,10 @@ def svcmon(node, options=None):
     })
 
     status_data = node._daemon_status(node=endpoint)
+    nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
     if not nodes:
-        nodes = node.nodes_selector(options.node, data=status_data.get("monitor", {}).get("nodes"))
+        nodes = node.nodes_selector(options.node, data=nodes_info)
 
     if options.watch:
         start_events_thread(node, endpoint)
@@ -198,7 +199,7 @@ def svcmon(node, options=None):
                     # can happen when the secret is being reset on daemon join
                     continue
                 expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
-                nodes_info = nodes_info_from_cluster_data(node, status_data.get("monitor", {}).get("nodes", {}))
+                nodes_info = nodes_info_from_cluster_data(status_data)
                 nodes = node.nodes_selector(options.node, data=nodes_info)
             if stats_changed:
                 prev_stats_data = stats_data
