@@ -956,9 +956,13 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
     def load_services(selector, namespace=None):
         if "services" not in sections:
             return
-        selector = format_path_selector(selector, namespace)
+        selectors = []
+        context = os.environ.get("OSVC_CONTEXT", "")
+        if context:
+            selectors.append(context)
+        selectors.append(format_path_selector(selector, namespace))
         load_header([
-            selector,
+            "/".join(selectors),
             "",
             "",
             "since" if stats_data else "",
