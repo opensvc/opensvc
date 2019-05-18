@@ -105,7 +105,7 @@ def want_context():
 def write_context(data):
     fpath = contexts_config_path()
     with open(fpath, "w") as ofile:
-        data = json.dump(data, ofile, indent=4)
+        json.dump(data, ofile, indent=4)
 
 def load_context():
     fpath = contexts_config_path()
@@ -129,7 +129,7 @@ def user_create(name=None, client_certificate=None, client_key=None, **kwargs):
         data = {}
     if client_certificate:
         data["client_certificate"] = client_certificate
-    if user:
+    if client_key:
         data["client_key"] = client_key
     cdata["users"][name] = data
     write_context(cdata)
@@ -191,10 +191,6 @@ def cluster_show(name=None, **kwargs):
         print(json.dumps(cdata.get("clusters", {}), indent=4))
     else:
         print(json.dumps(cdata.get("clusters", {}).get(name, {}), indent=4))
-
-def show(**kwargs):
-    cdata = load_context()
-    print(json.dumps(cdata, indent=4))
 
 def get(**kwargs):
     raise ex.excError("The 'om' alias must be sourced to handle cxt get")
