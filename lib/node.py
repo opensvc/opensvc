@@ -49,7 +49,8 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_svcpath, strip_path, normalize_paths, \
-                        normalize_jsonpath, want_context
+                        normalize_jsonpath
+from contexts import want_context
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin

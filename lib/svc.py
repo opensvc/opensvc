@@ -29,7 +29,8 @@ from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_svcpath, fmt_svcpath, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, want_context
+                        svc_pathcf
+from contexts import want_context
 from converters import *
 import rcExceptions as ex
 import rcLogger
