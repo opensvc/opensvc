@@ -49,7 +49,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_svcpath, strip_path, normalize_paths, \
-                        normalize_jsonpath
+                        normalize_jsonpath, want_context
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -626,8 +626,11 @@ class Node(Crypt, ExtConfigMixin):
         return paths
 
     def _svcs_selector(self, selector, data=None, namespace=None):
-        self.build_services()
         cluster_data = self._daemon_status()
+        if cluster_data:
+            self.build_services(svcpaths=[s for s in cluster_data.get("monitor", {}).get("services", {})])
+        elif not want_context():
+            self.build_services()
         if data and "services" in data:
             paths = [path for path in data["services"]]
         else:
@@ -861,6 +864,14 @@ class Node(Crypt, ExtConfigMixin):
                 return
 
         self.services = {}
+
+        if want_context():
+            # build volatile objects
+            for svcpath in kwargs['svcpaths']:
+                name, namespace, kind = split_svcpath(svcpath)
+                self += factory(kind)(name, namespace=namespace, volatile=True,
+                                      cf=os.devnull, node=self)
+            return
 
         kwargs["node"] = self
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
