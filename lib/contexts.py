@@ -2,14 +2,20 @@ from __future__ import print_function
 
 import os
 import json
+import sys
+from optparse import Option
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from storage import Storage
 
 def split_context(buff):
     user, buff = buff.rsplit("@", 1)
     cluster, namespace = buff.split("/", 1)
     return user, cluster, namespace
+
+def contexts_config_path():
+    return os.path.join(os.path.expanduser("~"), ".opensvc", "config")
 
 def get_context(context=None):
     """
@@ -22,7 +28,7 @@ def get_context(context=None):
             return
 
     info = {}
-    fpath = os.path.join(os.path.expanduser("~"), ".opensvc", "config")
+    fpath = contexts_config_path()
     try:
         with open(fpath, "r") as ofile:
             data = json.load(ofile)
@@ -95,4 +101,293 @@ def get_context(context=None):
 
 def want_context():
     return "OSVC_CONTEXT" in os.environ
+
+def write_context(data):
+    fpath = contexts_config_path()
+    with open(fpath, "w") as ofile:
+        data = json.dump(data, ofile, indent=4)
+
+def load_context():
+    fpath = contexts_config_path()
+    try:
+        with open(fpath, "r") as ofile:
+            data = json.load(ofile)
+    except ValueError as exc:
+        raise ex.excError("invalid context: %s: %s" % (fpath, str(exc)))
+    except (IOError, OSError):
+        data = {}
+    return data
+
+def user_create(name=None, client_certificate=None, client_key=None, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if name in cdata.get("users", {}):
+        # preload current values for incremental changes
+        data = cdata["users"][name]
+    else:
+        data = {}
+    if client_certificate:
+        data["client_certificate"] = client_certificate
+    if user:
+        data["client_key"] = client_key
+    cdata["users"][name] = data
+    write_context(cdata)
+
+def user_delete(name, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if name not in cdata.get("users", {}):
+        return
+    del cdata["users"][name]
+    write_context(cdata)
+
+def user_list(**kwargs):
+    cdata = load_context()
+    for name in cdata.get("users", {}):
+        print(name)
+
+def user_show(name=None, **kwargs):
+    cdata = load_context()
+    if name is None:
+        print(json.dumps(cdata.get("users", {}), indent=4))
+    else:
+        print(json.dumps(cdata.get("users", {}).get(name, {}), indent=4))
+
+def cluster_create(name=None, server=None, certificate_authority=None, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if name in cdata.get("clusters", {}):
+        # preload current values for incremental changes
+        data = cdata["clusters"][name]
+    else:
+        data = {}
+    if server:
+        data["server"] = server
+    if certificate_authority:
+        data["certificate_authority"] = certificate_authority
+    cdata["clusters"][name] = data
+    write_context(cdata)
+
+def cluster_delete(name=None, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if name not in cdata.get("clusters", {}):
+        return
+    del cdata["clusters"][name]
+    write_context(cdata)
+
+def cluster_list(**kwargs):
+    cdata = load_context()
+    for name in cdata.get("clusters", {}):
+        print(name)
+
+def cluster_show(name=None, **kwargs):
+    cdata = load_context()
+    if name is None:
+        print(json.dumps(cdata.get("clusters", {}), indent=4))
+    else:
+        print(json.dumps(cdata.get("clusters", {}).get(name, {}), indent=4))
+
+def show(**kwargs):
+    cdata = load_context()
+    print(json.dumps(cdata, indent=4))
+
+def get(**kwargs):
+    raise ex.excError("The 'om' alias must be sourced to handle cxt get")
+
+def set(**kwargs):
+    raise ex.excError("The 'om' alias must be sourced to handle cxt set")
+
+def unset(**kwargs):
+    raise ex.excError("The 'om' alias must be sourced to handle cxt unset")
+
+def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if cluster not in cdata.get("clusters", {}):
+        raise ex.excError("unknown cluster %s" % cluster)
+    if user not in cdata.get("users", {}):
+        raise ex.excError("unknown user %s" % user)
+    if name in cdata.get("contexts", {}):
+        # preload current values for incremental changes
+        data = cdata["contexts"][name]
+    else:
+        data = {}
+    if cluster:
+        data["cluster"] = cluster
+    if user:
+        data["user"] = user
+    if namespace:
+        data["namespace"] = namespace
+    cdata["contexts"][name] = data
+    write_context(cdata)
+
+def delete(name=None, **kwargs):
+    if name is None:
+        raise ex.excError("name is mandatory")
+    cdata = load_context()
+    if name not in cdata.get("contexts", {}):
+        return
+    del cdata["contexts"][name]
+    write_context(cdata)
+
+def list(**kwargs):
+    cdata = load_context()
+    for name in cdata.get("contexts", {}):
+        print(name)
+
+def show(name=None, **kwargs):
+    cdata = load_context()
+    if name is None:
+        print(json.dumps(cdata.get("contexts", {}), indent=4))
+    else:
+        print(json.dumps(cdata.get("contexts", {}).get(name, {}), indent=4))
+
+PROG = "om cxt"
+OPT = Storage({
+    "help": Option(
+        "-h", "--help", action="store_true", dest="parm_help",
+        help="show this help message and exit"),
+    "user": Option(
+        "--user", action="store", dest="user",
+        help="User name."),
+    "cluster": Option(
+        "--cluster", action="store", dest="cluster",
+        help="Cluster name."),
+    "namespace": Option(
+        "--namespace", action="store", dest="namespace",
+        help="Namespace name or glob pattern."),
+    "name": Option(
+        "--name", action="store", dest="name",
+        help="The name of the object to create or delete."),
+    "certificate_authority": Option(
+        "--certificate-authority", action="store", dest="certificate_authority",
+        help="The certificate authority pem file path."),
+    "server": Option(
+        "--server", action="store", dest="server",
+        help="The uri where to contact the cluster. ex: tls://1.2.3.4:1215."),
+    "client_certificate": Option(
+        "--client-certificate", action="store", dest="client_certificate",
+        help="The client certificate pem file path."),
+    "client_key": Option(
+        "--client-key", action="store", dest="client_key",
+        help="The client key pem file path."),
+})
+
+ACTIONS = {
+    "Users": {
+        "user_create": {
+            "msg": "Create or update a user.",
+            "options": [
+                OPT.name,
+                OPT.client_certificate,
+                OPT.client_key,
+            ],
+        },
+        "user_show": {
+            "msg": "Show a user configuration.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "user_delete": {
+            "msg": "Delete a user.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "user_list": {
+            "msg": "List defined users.",
+        },
+    },
+    "Clusters": {
+        "cluster_create": {
+            "msg": "Create or update a cluster.",
+            "options": [
+                OPT.name,
+                OPT.server,
+                OPT.certificate_authority,
+            ],
+        },
+        "cluster_delete": {
+            "msg": "Delete a cluster.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "cluster_show": {
+            "msg": "Show a cluster configuration.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "cluster_list": {
+            "msg": "List defined clusters.",
+        },
+    },
+    "Contexts": {
+        "get": {
+            "msg": "Show the current context. The context is valid for this shell session only.",
+        },
+        "set": {
+            "msg": "Switch the current context. The context is valid for this shell session only.",
+        },
+        "unset": {
+            "msg": "Unset the current context.",
+        },
+        "create": {
+            "msg": "Create or update a context.",
+            "options": [
+                OPT.name,
+                OPT.namespace,
+                OPT.cluster,
+                OPT.user,
+            ],
+        },
+        "delete": {
+            "msg": "Delete a context.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "show": {
+            "msg": "Show a context configuration.",
+            "options": [
+                OPT.name,
+            ],
+        },
+        "list": {
+            "msg": "List defined contexts.",
+        },
+    },
+}
+
+DEPRECATED_ACTIONS = {}
+GLOBAL_OPTS = {}
+
+def main(argv):
+    from rcOptParser import OptParser
+    parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
+                       deprecated_actions=DEPRECATED_ACTIONS,
+                       global_options=GLOBAL_OPTS)
+    try:
+        options, action = parser.parse_args(argv[1:])
+    except ex.excError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    kwargs = vars(options)
+    globals()[action](**kwargs)
+
+if __name__ == "__main__":
+    try:
+        ret = main(sys.argv)
+    except ex.excError as exc:
+        print(exc, file=sys.stderr)
+        ret = 1
+    sys.exit(ret)
 

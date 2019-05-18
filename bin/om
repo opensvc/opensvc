@@ -32,21 +32,25 @@ INTER="$OSVC_PYTHON $OSVC_PYTHON_ARGS"
 help() {
 	OM=`basename $0`
 	echo "Usage:" >&2
-	echo "  $OM setns <namespace>        Set the current namespace" >&2
-	echo "  $OM unsetns                  Unset the current namespace" >&2
-	echo "  $OM getns                    Get the current namespace" >&2
+	echo "" >&2
+	echo "  $OM ns set <namespace>       Set the current namespace" >&2
+	echo "  $OM ns unset                 Unset the current namespace" >&2
+	echo "  $OM ns get                   Get the current namespace" >&2
 	echo "" >&2
 	echo "  $OM mon                      Monitor the cluster" >&2
+	echo "  $OM cxt                      Manage Remote Connections contexts" >&2
 	echo "  $OM node                     Manage Cluster Nodes" >&2
 	echo "  $OM cluster                  Manage Cluster Configuration" >&2
 	echo "  $OM svc                      Manage Services" >&2
 	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
 	echo "  $OM cfg                      Manage Configurations" >&2
 	echo "  $OM sec                      Manage Secrets" >&2
+	echo "  $OM usr                      Manage Users" >&2
 	echo "  $OM net                      Manage Networks" >&2
 	echo "  $OM pool                     Manage Storage Pools" >&2
 	echo "  $OM daemon                   Manage Agent Daemon" >&2
 	echo "  $OM array                    Manage Storage Arrays" >&2
+	echo "  $OM dns                      Manage Cluster DNS" >&2
 	echo "" >&2
 	echo "  $OM <selector> <options>     Manage the selected objects" >&2
 	echo "" >&2
@@ -76,25 +80,25 @@ help() {
 
 main() {
 	test -z "$*" && help
-	case "`id`" in
-	uid=0\(*)
-		;;
-	*)
-		SUDO=`which sudo 2>/dev/null`
-		;;
-	esac
+	if test -z "$OSVC_CONTEXT"
+	then
+		case "`id`" in
+		uid=0\(*)
+			;;
+		*)
+			SUDO=`which sudo 2>/dev/null`
+			;;
+		esac
+	fi
 	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	case $1 in
-	setns)
-		echo "The 'om' alias must be sourced to handle setns" >&2
+	ns)
+		echo "The 'om' alias must be sourced to handle ns actions" >&2
 		exit 1
 		;;
-	unsetns)
-		echo "The 'om' alias must be sourced to handle unsetns" >&2
-		exit 1
-		;;
-	getns)
-		[ -z "$OSVC_NAMESPACE" ] && echo "(none)" || echo $OSVC_NAMESPACE
+	cxt)
+		shift
+		$INTER $OSVC_ROOT_PATH/lib/contexts.py "$@"
 		;;
 	svc)
 		shift
@@ -111,6 +115,10 @@ main() {
 	sec)
 		shift
 		$SUDO OSVC_KIND=sec $INTER $OSVC_ROOT_PATH/lib/secmgr.py "$@"
+		;;
+	usr)
+		shift
+		$SUDO OSVC_KIND=usr $INTER $OSVC_ROOT_PATH/lib/usrmgr.py "$@"
 		;;
 	node)
 		shift

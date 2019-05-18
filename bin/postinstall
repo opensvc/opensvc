@@ -1056,8 +1056,40 @@ if ! echo ${PATH} | grep -qw %(pathbin)s; then
 fi
 
 om() {
-        case $1 in
-        setns)
+        case "$1 $2" in
+        "cxt get")
+		[ -z "$OSVC_CONTEXT" ] && echo "(local)" || echo $OSVC_CONTEXT
+		;;
+        "cxt set")
+                test -z "$3" && {
+                        echo "om cxt set <context>" >&2
+                        return 1
+                }
+                echo "context switch: $OSVC_CONTEXT => $3"
+                export OSVC_CONTEXT=$3
+                ;;
+        "cxt unset")
+                unset OSVC_CONTEXT
+                ;;
+        "ns get"|"getns "*)
+		[ -z "$OSVC_NAMESPACE" ] && echo "(none)" || echo $OSVC_NAMESPACE
+		;;
+        "ns set")
+                test -z "$3" && {
+                        echo "om ns set <ns>" >&2
+                        return 1
+                }
+                test "$3"=="root" -o -d %(pathetc)s/namespaces/$3 || {
+                        echo "namespace $2 does not exist" >&2
+                        return 1
+                }
+                echo "namespace switch: $OSVC_NAMESPACE => $3"
+                export OSVC_NAMESPACE=$3
+                ;;
+        "ns unset")
+                unset OSVC_NAMESPACE
+                ;;
+        "setns "*)
                 test -z "$2" && {
                         echo "om setns <ns>" >&2
                         return 1
@@ -1069,7 +1101,7 @@ om() {
                 echo "namespace switch: $OSVC_NAMESPACE => $2"
                 export OSVC_NAMESPACE=$2
                 ;;
-        unsetns)
+        "unsetns "*)
                 unset OSVC_NAMESPACE
                 ;;
         *)
