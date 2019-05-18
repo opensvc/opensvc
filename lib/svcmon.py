@@ -159,6 +159,8 @@ def svcmon(node, options=None):
     })
 
     status_data = node._daemon_status(node=endpoint)
+    if status_data is None or status_data.get("status", 0) != 0:
+        raise ex.excError
     nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
     if not nodes:
@@ -250,7 +252,8 @@ def main(argv=None):
         _main(node, argv)
         return 0
     except ex.excError as e:
-        print(e, file=sys.stderr)
+        if str(e):
+            print(e, file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         sys.stderr.write("Keybord Interrupt\n")
