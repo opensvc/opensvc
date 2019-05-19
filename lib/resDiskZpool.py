@@ -108,12 +108,12 @@ class Disk(resDisk.Disk):
         pool available" error. Retry in this case, if we confirm the
         pool exists.
         """
-        retries = 8
+        retries = 10
         for i in range(retries):
             cmd, ret, out, err = self._import_pool()
             if "no such pool available" in err:
                 self.log.info("retry import %d/%d, pool '%s' reported unavailable", i+1, retries, self.name)
-                time.sleep(1)
+                time.sleep(2)
                 continue
             break
         if verbose:
