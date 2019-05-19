@@ -280,6 +280,7 @@ class Freenass(object):
     def __init__(self, objects=[]):
         self.objects = objects
         self.filtering = len(objects) > 0
+        self.timeout = 10
         cf = rcEnv.paths.authconf
         if not os.path.exists(cf):
             return
@@ -293,22 +294,26 @@ class Freenass(object):
                 continue
             if stype != "freenas":
                 continue
+            if conf.has_option(s, 'timeout'):
+                timeout = float(conf.get(s, 'timeout'))
+            else:
+                timeout = self.timeout
             try:
                 name = s
                 api = conf.get(s, 'api')
                 username = conf.get(s, 'username')
                 password = conf.get(s, 'password')
-                m += [(name, api, username, password)]
+                m += [(name, api, username, password, timeout)]
             except:
                 print("error parsing section", s, file=sys.stderr)
         del conf
         done = []
-        for name, api, username, password in m:
+        for name, api, username, password, timeout in m:
             if self.filtering and name not in self.objects:
                 continue
             if name in done:
                 continue
-            self.arrays.append(Freenas(name, api, username, password))
+            self.arrays.append(Freenas(name, api, username, password, timeout))
             done.append(name)
 
     def __iter__(self):
@@ -322,13 +327,14 @@ class Freenass(object):
         return None
 
 class Freenas(object):
-    def __init__(self, name, api, username, password):
+    def __init__(self, name, api, username, password, timeout):
         self.node = None
         self.name = name
         self.api = api
         self.username = username
         self.password = password
         self.auth = (username, password)
+        self.timeout = timeout
         self.keys = ['version',
                      'volumes',
                      'iscsi_targets',
@@ -340,7 +346,7 @@ class Freenas(object):
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.delete(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
+        r = requests.delete(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
         return r
 
     def put(self, uri, data=None):
@@ -348,7 +354,7 @@ class Freenas(object):
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.put(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
+        r = requests.put(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
         return bdecode(r.content)
 
     def post(self, uri, data=None):
@@ -356,7 +362,7 @@ class Freenas(object):
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.post(api, data=data, auth=self.auth, verify=VERIFY, headers=headers)
+        r = requests.post(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
         return bdecode(r.content)
 
     def post2(self, uri, data=None):
@@ -367,11 +373,11 @@ class Freenas(object):
         data["csrfmiddlewaretoken"] = csrf_token
         if data:
             data = json.dumps(data)
-        r = requests.post(api, data=data, auth=self.auth, verify=VERIFY)
+        r = requests.post(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY)
         return bdecode(r.content)
 
     def get(self, uri, params=None):
-        r = requests.get(self.api+uri+"/?format=json", params=params, auth=self.auth, verify=VERIFY)
+        r = requests.get(self.api+uri+"/?format=json", params=params, auth=self.auth, timeout=self.timeout, verify=VERIFY)
         return bdecode(r.content)
 
     def get_version(self):
