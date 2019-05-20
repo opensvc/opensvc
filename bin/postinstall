@@ -591,21 +591,29 @@ def is_lang_utf8(file):
     return False
 
 def is_system_locale_utf8():
-    logit("begin")
-    """ check if system locale is utf8
     """
+    Check if system locale is utf8
+    """
+    logit("begin")
     localetmp = pathtmp + '/locale.postinstall'
     cmd = ['locale', '>', localetmp]
     ret = osrun(' '.join(cmd))
     if ret > 0:
         logit("error while trying to query locale with command <%s>"%(cmd), stderr=True)
         return False
-    return is_lang_utf8(localetmp)
+    try:
+        return is_lang_utf8(localetmp)
+    finally:
+        try:
+            os.unlink(localetmp)
+        except Exception:
+            pass
 
 def is_osvc_locale_utf8(file):
-    logit("begin")
-    """ check if osvc locale is utf8
     """
+    Check if osvc locale is utf8
+    """
+    logit("begin")
     return is_lang_utf8(file)
 
 def appends2f(str, fname):
