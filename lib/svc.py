@@ -420,18 +420,20 @@ def _master_action(func):
 
 class SvcPaths(object):
     def __init__(self, path, name, cf):
-        self.nsetc = svc_pathetc(path)
-        self.nstmp = svc_pathtmp(path)
+        self.name = name
+        self.path = path
+        nsetc = svc_pathetc(path)
         if cf:
             self.cf = cf
         else:
             self.cf = svc_pathcf(path)
-        self.initd = os.path.join(self.nsetc, name+'.d')
-        self.alt_initd = os.path.join(self.nsetc, name+'.dir'),
+        self.initd = os.path.join(nsetc, name+'.d')
+        self.alt_initd = os.path.join(nsetc, name+'.dir')
 
     @property
     def tmp_cf(self):
-        return os.path.join(self.nstmp, name+".conf.tmp")
+        nstmp = svc_pathtmp(self.path)
+        return os.path.join(nstmp, self.name+".conf.tmp")
 
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
@@ -448,7 +450,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if log:
             self.set_lazy("log", log)
 
-        self.paths = SvcPaths(self.svcpath, self.svcname, cf)
+        self.paths = SvcPaths(self.svcpath, svcname, cf)
         self.init_resources_errors = 0
         self.resources_initialized = False
         self.scheduler_configured = False
