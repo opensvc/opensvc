@@ -296,7 +296,6 @@ ACTIONS_NO_LOCK = [
 START_GROUPS = [
     "ip",
     "sync.netapp",
-    "sync.dcsckpt",
     "sync.nexenta",
     "sync.symclone",
     "sync.symsnap",
@@ -4542,7 +4541,6 @@ class Svc(BaseSvc):
             "sync.netapp",
             "sync.symsrdfs",
             "sync.hp3par",
-            "sync.dcsckpt",
             "sync.nexenta",
         ]
         self.sub_set_action(rtypes, "sync_resume")
@@ -4571,7 +4569,6 @@ class Svc(BaseSvc):
             "sync.ibmdssnap",
             "sync.evasnap",
             "sync.necismsnap",
-            "sync.dcssnap",
             "disk.md",
         ]
         self.sub_set_action(rtypes, "sync_resync")
@@ -4581,7 +4578,6 @@ class Svc(BaseSvc):
             "sync.netapp",
             "sync.nexenta",
             "sync.hp3par",
-            "sync.dcsckpt",
             "sync.symclone",
             "sync.symsnap",
         ]
@@ -4593,7 +4589,6 @@ class Svc(BaseSvc):
             "sync.nexenta",
             "sync.hp3par",
             "sync.hp3parsnap",
-            "sync.dcsckpt",
             "sync.dds",
             "sync.btrfssnap",
             "sync.zfs",

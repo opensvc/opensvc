@@ -15,6 +15,7 @@ from rcUtilities import cache, clear_cache, justcall, which
 from six.moves.urllib.request import Request, urlopen, build_opener # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError # pylint: disable=import-error
 from six.moves.urllib.parse import urlencode # pylint: disable=import-error
+from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
@@ -35,83 +36,59 @@ def reformat(s):
     return s.strip()
 
 class Hp3pars(object):
-    allowed_methods = ("ssh", "proxy", "cli")
-
-    def __init__(self, objects=[], log=None):
+    def __init__(self, objects=[], log=None, node=None):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
-        else:
-            self.filtering = False
+        self.filtering = len(objects) > 0
         self.arrays = []
-        if not os.path.exists(rcEnv.paths.authconf):
-            raise ex.excError("%s not found" % rcEnv.paths.authconf)
-        conf = ConfigParser.RawConfigParser()
-        conf.read(rcEnv.paths.authconf)
-        m = {}
 
-        for s in conf.sections():
-            if not conf.has_option(s, "type") or \
-               conf.get(s, "type") != "hp3par":
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
                 continue
-
-            if self.filtering and not s in self.objects:
+            if self.filtering and name not in self.objects:
                 continue
-
-            username = None
-            manager = None
-            key = None
-            pwf = None
-
             try:
-                method = conf.get(s, 'method')
+                stype = self.node.oget(s, "type")
             except:
-                method = "ssh"
-
-            if method not in self.allowed_methods:
-                print("invalid method. allowed methods: %s" % ', '.join(self.allowed_methods))
+                continue
+            if stype != "hp3par":
                 continue
 
-            kwargs = {"log": log}
+            method = self.node.oget(s, 'method')
+
+            kwargs = {"log": log, "node": self.node}
             try:
-                manager = conf.get(s, 'manager')
+                manager = self.node.oget(s, 'manager')
                 kwargs['manager'] = manager
             except Exception as e:
-                kwargs['manager'] = s
+                kwargs['manager'] = name
 
-            try:
-                username = conf.get(s, 'username')
-                key = conf.get(s, 'key')
-                kwargs['username'] = username
-                kwargs['key'] = key
-            except Exception as e:
-                if method in ("ssh"):
-                    raise
-
-            try:
-                pwf = conf.get(s, 'pwf')
-                kwargs['pwf'] = pwf
-            except Exception as e:
-                if method in ("cli"):
-                    raise
-
-            try:
-                cli = conf.get(s, 'cli')
-                kwargs['cli'] = cli
-            except Exception as e:
-                pass
-
-            self.arrays.append(Hp3par(s, method, **kwargs))
-
-        del(conf)
+            if method in ("ssh"):
+                kwargs["username"] = self.node.oget(s, 'username')
+                kwargs["key"] = self.node.oget(s, 'key')
+                if kwargs["username"] is None or kwargs["key"] is None:
+                    raise ex.excError("username and key are required for the ssh method")
+            elif method in ("cli"):
+                kwargs['cli'] = self.node.oget(s, "cli")
+                kwargs['pwf'] = self.node.oget(s, "pwf")
+                if kwargs["pwf"] is None:
+                    raise ex.excError("pwf is required for the cli method")
+            self.arrays.append(Hp3par(name, method, **kwargs))
+            done.append(name)
 
     def __iter__(self):
         for array in self.arrays:
             yield(array)
 
 class Hp3par(object):
-    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname="", log=None):
+    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname="", log=None, node=None):
         self.name = name
+        self.node = node
         self.manager = manager
         self.method = method
         self.username = username
@@ -245,7 +222,7 @@ class Hp3par(object):
             self.get_uuid()
             return self.proxy_cmd(cmd, log=log)
         else:
-            raise ex.excError("unsupported method %s set in auth.conf for array %s" % (self.method, self.name))
+            raise ex.excError("unsupported method %s for array %s" % (self.method, self.name))
 
     def serialize(self, s, cols):
         return json.dumps(self.csv_to_list_of_dict(s, cols))

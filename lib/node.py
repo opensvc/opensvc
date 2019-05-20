@@ -49,7 +49,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_svcpath, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_svcpath, strip_path, normalize_paths, \
-                        normalize_jsonpath
+                        normalize_jsonpath, daemon_test_lock
 from contexts import want_context
 from converters import *
 from comm import Crypt
@@ -128,7 +128,6 @@ class Node(Crypt, ExtConfigMixin):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.listener = None
         self.config = None
-        self.auth_config = None
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
@@ -249,10 +248,6 @@ class Node(Crypt, ExtConfigMixin):
                 ),
                 "pushibmds": SchedOpts(
                     "ibmds",
-                    schedule_option="no_schedule"
-                ),
-                "pushdcs": SchedOpts(
-                    "dcs",
                     schedule_option="no_schedule"
                 ),
                 "pushfreenas": SchedOpts(
@@ -1019,13 +1014,6 @@ class Node(Crypt, ExtConfigMixin):
                   "--discard to restart from the live config")
         return results["errors"] + results["warnings"]
 
-    def edit_authconfig(self):
-        """
-        edit_authconfig node action entrypoint
-        """
-        fpath = os.path.join(rcEnv.paths.pathetc, "auth.conf")
-        return self.edit_cf(fpath)
-
     @staticmethod
     def edit_cf(fpath):
         """
@@ -1076,23 +1064,6 @@ class Node(Crypt, ExtConfigMixin):
         if config:
             # some action don't need self.config
             self.config = config
-
-    def load_auth_config(self):
-        """
-        Parse the auth.conf configuration file and store the RawConfigParser
-        object as self.auth_config.
-        The actual parsing is done only on first call. This method is a noop
-        on subsequent calls.
-        """
-        if self.auth_config is not None:
-            return
-        try:
-            self.auth_config = read_cf(rcEnv.paths.authconf)
-        except rcConfigParser.Error as exc:
-            print(str(exc), file=sys.stderr)
-        except IOError:
-            # some action don't need self.auth_config
-            pass
 
     def __iadd__(self, svc):
         """
@@ -1431,13 +1402,6 @@ class Node(Crypt, ExtConfigMixin):
         Inventories XtremIO storage arrays.
         """
         self.collector.call('push_xtremio', self.options.objects)
-
-    def pushdcs(self):
-        """
-        The pushdcs action entrypoint.
-        Inventories DataCore SAN Symphony storage arrays.
-        """
-        self.collector.call('push_dcs', self.options.objects)
 
     def pushhds(self):
         """
@@ -2226,26 +2190,15 @@ class Node(Crypt, ExtConfigMixin):
         if array_name is None:
             raise ex.excError("can not determine array driver (no --array)")
 
-        self.load_auth_config()
+        section = "array#" + array_name
+        if section not in self.conf_sections(cat="array"):
+            raise ex.excError("array '%s' not found in configuration" % array_name)
 
-        section = None
+        try:
+            driver = self.oget(section, "type")
+        except Exception:
+            raise ex.excError("'%s.type' keyword must be set" % section)
 
-        for _section in self.auth_config.sections():
-            if _section == array_name:
-                section = _section
-                break
-            if self.auth_config.has_option(_section, "array") and \
-               array_name in self.auth_config.get(_section, "array").split():
-                section = _section
-                break
-
-        if section is None:
-            raise ex.excError("array '%s' not found in %s" % (array_name, rcEnv.paths.authconf))
-
-        if not self.auth_config.has_option(section, "type"):
-            raise ex.excError("%s must have a '%s.type' option" % (rcEnv.paths.authconf, section))
-
-        driver = self.auth_config.get(section, "type")
         rtype = driver[0].upper() + driver[1:].lower()
         modname = "rc" + rtype
         try:
@@ -2399,22 +2352,13 @@ class Node(Crypt, ExtConfigMixin):
         if self.clouds and section in self.clouds:
             return self.clouds[section]
 
-        if not self.config.has_option(section, "type"):
+        try:
+            cloud_type = self.oget(section, 'type')
+        except Exception:
             raise ex.excInitError("type option is mandatory in cloud section "
                                   "in %s" % rcEnv.paths.nodeconf)
-        cloud_type = self.config.get(section, 'type')
 
-        if len(cloud_type) == 0:
-            raise ex.excInitError("invalid cloud type in %s"%rcEnv.paths.nodeconf)
-
-        self.load_auth_config()
-        if not self.auth_config.has_section(section):
-            raise ex.excInitError("%s must have a '%s' section" % (rcEnv.paths.authconf, section))
-
-        auth_dict = {}
-        for key, val in self.auth_config.items(section):
-            auth_dict[key] = val
-
+        auth_dict = self.section_kwargs(section, cloud_type)
         mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
 
         try:
@@ -3535,19 +3479,6 @@ class Node(Crypt, ExtConfigMixin):
         print_color_config(rcEnv.paths.nodeconf)
 
     @formatter
-    def print_authconfig(self):
-        """
-        print_authconfig node action entrypoint
-        """
-        if self.options.format is not None:
-            self.load_auth_config()
-            return self.print_config_data(self.auth_config)
-        if not os.path.exists(rcEnv.paths.authconf):
-            return
-        from rcColor import print_color_config
-        print_color_config(rcEnv.paths.authconf)
-
-    @formatter
     def ls(self):
         data = self.nodes_selector(self.options.node)
         if self.options.format is not None:
@@ -4226,7 +4157,6 @@ class Node(Crypt, ExtConfigMixin):
             if self.options.thr_id not in data:
                 return False
             return data[self.options.thr_id].get("state") == "running"
-        from rcUtilities import daemon_test_lock
         return daemon_test_lock()
 
     def daemon_start_systemd(self):
@@ -4683,6 +4613,9 @@ class Node(Crypt, ExtConfigMixin):
                 yield line
 
     def wake_monitor(self):
+        if not daemon_test_lock():
+            # no need to wake to monitor when the daemon is not running
+            return
         options = {}
         try:
             data = self.daemon_send(

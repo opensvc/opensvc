@@ -1258,7 +1258,7 @@ KEYWORDS = [
         "section": "sync",
         "keyword": "type",
         "inheritance": "leaf",
-        "candidates": ["rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "dcssnap", "dcsckpt", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"],
+        "candidates": ["rsync", "docker", "dds", "netapp", "symsrdfs", "zfs", "btrfs", "symclone", "symsnap", "hp3par", "hp3parsnap", "evasnap", "ibmdssnap", "necismsnap", "zfssnap", "btrfssnap", "rados", "s3"],
         "default": "rsync",
         "text": "Point a sync driver to use."
     },
@@ -2763,51 +2763,6 @@ KEYWORDS = [
         "required": True,
         "at": True,
         "text": "Name of the HP 3par remote copy group. The scoping syntax must be used to fully describe the replication topology."
-    },
-    {
-        "section": "sync",
-        "keyword": "dcs",
-        "convert": "set",
-        "rtype": "dcsckpt",
-        "required": True,
-        "text": "Whitespace-separated list of DataCore heads, as seen by the manager."
-    },
-    {
-        "section": "sync",
-        "keyword": "manager",
-        "convert": "set",
-        "rtype": "dcsckpt",
-        "required": True,
-        "text": "The DataCore manager name running a ssh daemon, as set in the auth.conf section title."
-    },
-    {
-        "section": "sync",
-        "keyword": "pairs",
-        "rtype": "dcsckpt",
-        "required": True,
-        "text": "A json-formatted list of dictionaries representing the source and destination device pairs. Each dictionary must have the 'src', 'dst_ckpt' keys."
-    },
-    {
-        "section": "sync",
-        "keyword": "dcs",
-        "rtype": "dcssnap",
-        "required": True,
-        "text": "Whitespace-separated list of DataCore heads, as seen by the manager."
-    },
-    {
-        "section": "sync",
-        "keyword": "manager",
-        "rtype": "dcssnap",
-        "required": True,
-        "text": "The DataCore manager name running a ssh daemon, as set in the auth.conf section title."
-    },
-    {
-        "section": "sync",
-        "keyword": "snapname",
-        "convert": "set",
-        "rtype": "dcssnap",
-        "required": True,
-        "text": "Whitespace-separated list of snapshot device names, as seen by the DataCore manager."
     },
     {
         "section": "sync",

@@ -323,7 +323,7 @@ ACTIONS["Service actions"].update({
         "options": mp.ACTION_OPTS,
     },
     "sync_break": {
-        "msg": "Break the disk replication of sync.dcsckpt, sync.hp3par, sync.ibmdssnap, sync.netapp, sync.symclone, sync.symsrdf resources.",
+        "msg": "Break the disk replication of sync.hp3par, sync.ibmdssnap, sync.netapp, sync.symclone, sync.symsrdf resources.",
         "options": mp.ACTION_OPTS,
     },
     "sync_split": {

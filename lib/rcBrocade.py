@@ -6,6 +6,8 @@ import telnetlib
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from rcUtilities import factory
+from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
@@ -44,62 +46,54 @@ def brocadecmd(cmd, switch, username, key):
 class Brocades(object):
     switchs = []
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
         else:
             self.filtering = False
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = []
-        for s in conf.sections():
-            if self.filtering and s not in self.objects:
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="switch"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
                 continue
             try:
-                stype = conf.get(s, 'type')
+                stype = self.node.oget(s, "type")
             except:
                 continue
             if stype != "brocade":
                 continue
-            name = s
-            key = None
-            password = None
+            key = self.node.oget(s, "key")
+            password = self.node.oget(s, "password")
             try:
-                username = conf.get(s, 'username')
+                username = self.node.oget(s, "username")
             except:
-                print("no 'username' parameter in %s section %s"%(cf, s))
+                print("no 'username' parameter in section %s" % s)
                 continue
-            try:
-                key = conf.get(s, 'key')
-            except:
-                pass
-            try:
-                password = conf.get(s, 'password')
-            except:
-                pass
             if key is None and password is None:
-                print("no 'key' nor 'password' parameter in %s section %s"%(cf, s))
+                print("no 'key' nor 'password' parameter in section %s" % s)
                 continue
-            m.append([name, username, key, password])
-        del(conf)
-        for name, username, key, password in m:
-            self.switchs.append(Brocade(name, username, key, password))
+            self.switchs.append(Brocade(name, username, key, password, node=self.node))
+            done.append(name)
 
     def __iter__(self):
         for switch in self.switchs:
             yield(switch)
 
 class Brocade(object):
-    def __init__(self, name, username, key, password):
+    def __init__(self, name, username, key, password, node=None):
         self.name = name
         self.username = username
         self.password = password
         self.key = key
         self.keys = ['brocadeswitchshow', 'brocadensshow', 'brocadezoneshow']
+        self.node = node
 
     def brocadecmd(self, cmd):
         if self.key is not None:

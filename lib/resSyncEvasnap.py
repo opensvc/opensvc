@@ -228,37 +228,28 @@ class syncEvasnap(resSync.Sync):
         return s.strip('-')
 
     def prereq(self):
-        if not os.path.exists(self.conf):
-            raise ex.excError("missing %s"%self.conf)
-        self.config = ConfigParser.RawConfigParser()
-        self.config.read(self.conf)
-        if not self.config.has_section(self.eva_name):
-            raise ex.excError("no credentials for array %s in %s"%(self.eva_name, self.conf))
-        if not self.config.has_option(self.eva_name, "manager"):
-            raise ex.excError("no manager set for array %s in %s"%(self.eva_name, self.conf))
-        if not self.config.has_option(self.eva_name, "username"):
-            raise ex.excError("no username set for array %s in %s"%(self.eva_name, self.conf))
-        if not self.config.has_option(self.eva_name, "password"):
-            raise ex.excError("no password set for array %s in %s"%(self.eva_name, self.conf))
-        self.manager = self.config.get(self.eva_name, "manager")
-        self.username = self.config.get(self.eva_name, "username")
-        self.password = self.config.get(self.eva_name, "password")
+        s = "array#" + self.eva_name
         try:
-            self.sssubin = self.config.get(self.eva_name, "bin")
-        except:
-            self.sssubin = None
-
-        if self.sssubin:
-            sssubin = which(self.sssubin)
-        else:
-            sssubin = None
-
-        if not sssubin:
-            raise ex.excError("missing %s"%self.sssubin)
-
+            self.svc.node.oget(s, "type")
+        except ex.RequiredOptNotFound:
+            raise ex.excError("no credentials for array %s in node or cluster configuration" % self.eva_name)
+        try:
+            self.manager = self.svc.node.oget(s, "manager")
+        except ex.RequiredOptNotFound:
+            raise ex.excError("no manager set for array %s in node or cluster configuration" % self.eva_name)
+        try:
+            self.username = self.svc.node.oget(s, "username")
+        except ex.RequiredOptNotFound:
+            raise ex.excError("no username set for array %s in node or cluster configuration" % self.eva_name)
+        try:
+            self.password = self.svc.node.oget(s, "password")
+        except ex.RequiredOptNotFound:
+            raise ex.excError("no password set for array %s in node or cluster configuration" % self.eva_name)
+        self.sssubin = self.svc.node.oget(s, "bin")
         if not self.sssubin:
-            # sssu in PATH and not specified in auth.conf
-            self.sssubin = sssubin
+            self.sssubin = which(self.sssubin)
+        if not self.sssubin:
+            raise ex.excError("missing sssu binary")
 
         for pair in self.pairs:
             if 'src' not in pair or 'dst' not in pair or 'mask' not in pair:
@@ -283,7 +274,6 @@ class syncEvasnap(resSync.Sync):
         self.eva_name = eva_name
         self.snap_name = snap_name
         self.pairs = pairs
-        self.conf = os.path.join(rcEnv.paths.pathetc, 'auth.conf')
         self._lun_info = {}
         self.default_schedule = "@0"
 

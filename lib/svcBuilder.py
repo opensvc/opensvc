@@ -1195,48 +1195,6 @@ def add_sync_dds(svc, s):
     r = dds.syncDds(**kwargs)
     svc += r
 
-def add_sync_dcsckpt(svc, s):
-    kwargs = {}
-
-    kwargs["dcs"] = svc.oget(s, "dcs")
-    kwargs["manager"] = svc.oget(s, "manager")
-    raw_pairs = svc.oget(s, "pairs")
-
-    import json
-    try:
-        pairs = json.loads(raw_pairs)
-        if len(pairs) == 0:
-            svc.log.error("config file section %s must have 'pairs' set" % s)
-            return
-    except:
-        svc.log.error("json error parsing 'pairs' in section %s" % s)
-    kwargs["pairs"] = pairs
-
-    kwargs["rid"] = s
-    kwargs["subset"] = get_subset(svc, s)
-    kwargs["tags"] = get_tags(svc, s)
-    kwargs["disabled"] = get_disabled(svc, s)
-    kwargs["optional"] = get_optional(svc, s)
-    kwargs.update(get_sync_args(svc, s))
-    mod = mimport("res", "sync", "dcs", "ckpt")
-    r = mod.syncDcsCkpt(**kwargs)
-    svc += r
-
-def add_sync_dcssnap(svc, s):
-    kwargs = {}
-    kwargs["dcs"] = svc.oget(s, "dcs")
-    kwargs["manager"] = svc.oget(s, "manager")
-    kwargs["snapname"] = svc.oget(s, "snapname")
-    kwargs["rid"] = s
-    kwargs["subset"] = get_subset(svc, s)
-    kwargs["tags"] = get_tags(svc, s)
-    kwargs["disabled"] = get_disabled(svc, s)
-    kwargs["optional"] = get_optional(svc, s)
-    kwargs.update(get_sync_args(svc, s))
-    mod = mimport("res", "sync", "dcs", "snap")
-    r = mod.syncDcsSnap(**kwargs)
-    svc += r
-
 def add_sync_s3(svc, s):
     kwargs = {}
     kwargs["full_schedule"] = svc.oget(s, "full_schedule")

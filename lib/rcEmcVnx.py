@@ -8,7 +8,8 @@ from subprocess import *
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, factory, split_svcpath
+from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
@@ -28,80 +29,64 @@ def naviseccli(cmd, scope=None, spa=None, spb=None, username=None, password=None
     return out, err
 
 class EmcVnxs(object):
-    allowed_methods = ("secfile", "credentials")
-
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = {}
-
-        for s in conf.sections():
-            if not conf.has_option(s, "type") or \
-               conf.get(s, "type") != "emcvnx":
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
                 continue
-
-            if self.filtering and not s in self.objects:
+            if self.filtering and name not in self.objects:
                 continue
-
-            spa = None
-            spb = None
-            username = None
-            password = None
-            scope = None
-
-            kwargs = {}
-
             try:
-                method = conf.get(s, 'method')
+                stype = self.node.oget(s, "type")
             except:
-                method = "secfile"
-
-            if method not in self.allowed_methods:
-                print("invalid method. allowed methods: %s" % ', '.join(self.allowed_methods))
+                continue
+            if stype != "emcvnx":
                 continue
 
             try:
-                spa = conf.get(s, 'spa')
-                spb = conf.get(s, 'spb')
-            except:
-                print("error parsing section", s)
+                method = self.node.oget(s, "method")
+                scope = self.node.oget(s, "scope")
+                spa = self.node.oget(s, "spa")
+                spb = self.node.oget(s, "spb")
+                username = self.node.oget(s, "username")
+                password = self.node.oget(s, "password")
+            except Exception as exc:
+                print("error parsing section %s: %s" % (s, exc), file=sys.stderr)
                 continue
 
-            try:
-                username = conf.get(s, 'username')
-                password = conf.get(s, 'password')
-                kwargs['username'] = username
-                kwargs['password'] = password
-            except:
-                if method in ("credentials"):
-                    print("error parsing section", s)
+            if method == "credentials":
+                if username is None or password is None:
+                    print("error parsing section %s: username and password are mandatory" % s, file=sys.stderr)
+                    continue
+                try:
+                    secname, namespace, _ = split_svcpath(password)
+                    password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+                except Exception as exc:
+                    print("error decoding password: %s", exc, file=sys.stderr)
                     continue
 
-            try:
-                scope = conf.get(s, 'scope')
-            except:
-                scope = "0"
-
-            self.arrays.append(EmcVnx(s, method, scope, spa, spb, **kwargs))
-
-        del(conf)
+            self.arrays.append(EmcVnx(name, method, scope, spa, spb, username=username, password=password, node=self.node))
+            done.append(name)
 
     def __iter__(self):
         for array in self.arrays:
             yield(array)
 
 class EmcVnx(object):
-    def __init__(self, name, method, scope, spa, spb, username=None, password=None):
+    def __init__(self, name, method, scope, spa, spb, username=None, password=None, node=None):
         self.name = name
+        self.node = node
         self.spa = spa
         self.spb = spb
         self.method = method

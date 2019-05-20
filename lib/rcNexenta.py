@@ -8,6 +8,8 @@ from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv
+from rcUtilities import factory, split_svcpath
+from node import Node
 
 class logger(object):
     def __init__(self):
@@ -23,34 +25,46 @@ class logger(object):
         print(msg)
 
 class Nexenta(object):
-    def __init__(self, head, log=None):
+    def __init__(self, head, log=None, node=None):
         self.object_type_cache = {}
         self.head = head
         self.auto_prefix = "svc:/system/filesystem/zfs/auto-sync:"
         self.username = None
         self.password = None
         self.port = 2000
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
         if log is not None:
             self.log = log
         else:
-            self.log = logger()
+            self.log = self.node.log
 
     def init(self):
         if self.username is not None and self.password is not None:
             return
-        cf = rcEnv.paths.authconf
-        self.conf = ConfigParser.RawConfigParser()
-        self.conf.read(cf)
-        if not self.conf.has_section(self.head):
-            raise ex.excError("no auth information for head %s"%self.head)
-        if not self.conf.has_option(self.head, "username"):
+        s = "array#" + self.head
+        try:
+            stype = self.node.oget(s, "type")
+        except Exception:
+            raise ex.excError("no array configuration for head %s"%self.head)
+        if stype != "nexenta":
+            raise ex.excError("array %s type is not nexanta" % self.head)
+        try:
+            self.username = self.node.oget(s, "username")
+        except Exception:
             raise ex.excError("no username information for head %s"%self.head)
-        if not self.conf.has_option(self.head, "password"):
+        try:
+            self.password = self.node.oget(s, "password")
+        except Exception:
             raise ex.excError("no password information for head %s"%self.head)
-        self.username = self.conf.get(self.head, "username")
-        self.password = self.conf.get(self.head, "password")
-        if self.conf.has_option(self.head, "port"):
-            self.port = self.conf.get(self.head, "port")
+        self.port = self.node.oget(s, "port")
+        try:
+            secname, namespace, _ = split_svcpath(self.password)
+            self.password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+        except Exception as exc:
+            raise ex.excError("error decoding password: %s" % exc)
         self.url = 'https://%(head)s:%(port)d/rest/nms/ <https://%(head)s:%(port)d/rest/nms/>'%dict(head=self.head, port=self.port)
 
     def rest(self, obj, method, params):

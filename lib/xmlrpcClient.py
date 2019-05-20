@@ -1002,26 +1002,6 @@ class Collector(object):
                 print(exc, file=sys.stderr)
                 raise ex.excError
 
-    def push_dcs(self, objects=[], sync=True):
-        if 'update_dcs' not in self.proxy_methods:
-           print("'update_dcs' method is not exported by the collector")
-           return
-        m = __import__('rcDcs')
-        try:
-            dcss = m.Dcss(objects)
-        except:
-            return
-        for dcs in dcss:
-            vals = []
-            for key in dcs.keys:
-                vals.append(getattr(dcs, 'get_'+key)())
-            args = [dcs.name, dcs.keys, vals]
-            args += [(rcEnv.uuid, rcEnv.nodename)]
-            try:
-                self.proxy.update_dcs(*args)
-            except:
-                print("error pushing", dcs.name)
-
     def push_eva(self, objects=[], sync=True):
         if 'update_eva_xml' not in self.proxy_methods:
             print("'update_eva_xml' method is not exported by the collector")

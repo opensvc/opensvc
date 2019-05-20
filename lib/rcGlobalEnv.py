@@ -66,7 +66,6 @@ def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
 
     o.nodeconf = os.path.join(o.pathetc, "node.conf")
     o.clusterconf = os.path.join(o.pathetc, "cluster.conf")
-    o.authconf = os.path.join(o.pathetc, "auth.conf")
 
     o.lsnruxsockd = os.path.join(o.pathvar, "lsnr")
     o.lsnruxsock = os.path.join(o.lsnruxsockd, "lsnr.sock")

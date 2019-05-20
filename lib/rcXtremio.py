@@ -10,9 +10,10 @@ from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall
+from rcUtilities import justcall, factory, split_svcpath
 from converters import convert_size
 from rcOptParser import OptParser
+from node import Node
 
 try:
     import requests
@@ -25,14 +26,14 @@ except AttributeError:
     pass
 verify = False
 
-PROG = "nodemgr array"
+PROG = "om array"
 OPT = Storage({
     "help": Option(
         "-h", "--help", action="store_true", dest="parm_help",
         help="show this help message and exit"),
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
-        help="The name of the array, as defined in auth.conf"),
+        help="The name of the array, as defined in the node or cluster configuration."),
     "name": Option(
         "--name", action="store", dest="name",
         help="The object name"),
@@ -206,42 +207,40 @@ ACTIONS = {
 class Arrays(object):
     arrays = []
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
+        self.filtering = len(objects) > 0
+        if node:
+            self.node = node
         else:
-            self.filtering = False
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = []
-        for s in conf.sections():
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
+                continue
             try:
-                stype = conf.get(s, 'type')
+                stype = self.node.oget(s, "type")
             except:
                 continue
             if stype != "xtremio":
                 continue
             try:
-                name = s
-                api = conf.get(s, 'api')
-                username = conf.get(s, 'username')
-                password = conf.get(s, 'password')
-                m += [(name, api, username, password)]
+                api = self.node.oget(s, 'api')
+                username = self.node.oget(s, 'username')
+                password = self.node.oget(s, 'password')
             except:
                 print("error parsing section", s, file=sys.stderr)
-                pass
-        del(conf)
-        done = []
-        for name, api, username, password in m:
-            if self.filtering and name not in self.objects:
                 continue
-            if name in done:
+            try:
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
                 continue
-            self.arrays.append(Array(name, api, username, password))
+            self.arrays.append(Array(name, api, username, password, node=self.node))
             done.append(name)
 
     def __iter__(self):
@@ -255,8 +254,8 @@ class Arrays(object):
         return None
 
 class Array(object):
-    def __init__(self, name, api, username, password):
-        self.node = None
+    def __init__(self, name, api, username, password, node=None):
+        self.node = node
         self.name = name
         self.api = api
         self.username = username

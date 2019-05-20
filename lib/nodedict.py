@@ -28,7 +28,6 @@ BASE_SECTIONS = [
     "patches",
     "asset",
     "nsr",
-    "dcs",
     "hds",
     "necism",
     "eva",
@@ -103,11 +102,6 @@ PRIVATE_KEYWORDS = [
         "section": "nsr",
         "keyword": "schedule",
         "text": "Schedule parameter for the 'pushnsr' node action. See usr/share/doc/schedule for the schedule syntax."
-    },
-    {
-        "section": "dcs",
-        "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushdcs' node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "hds",
@@ -753,7 +747,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "array",
         "at": True,
         "required": True,
-        "text": "The name of the array, as known to the auth.conf."
+        "text": "The name of the array, known as array#<name> in the node or cluster configuration."
     },
     {
         "section": "pool",
@@ -955,6 +949,276 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "network",
         "default": "10.32.0.0/12",
         "text": "The cluster backend network."
+    },
+    {
+        "section": "switch",
+        "keyword": "type",
+        "candidates": ["brocade"],
+        "required": True,
+        "text": "The network switch driver name."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
+        "keyword": "username",
+        "required": True,
+        "example": "admin",
+        "text": "The username to use to log in the switch."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
+        "keyword": "password",
+        "example": "mysec/password",
+        "text": "The password to use to log in, expressed as a <secname> reference to a secret. The secret must be in the ``system`` namespace and must have the ``password`` key. Either username or key must be specified."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
+        "keyword": "key",
+        "example": "/path/to/key",
+        "text": "The path to the private key to use to log in the switch."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
+        "keyword": "password",
+        "example": "admin",
+        "text": "The password to use to log in the switch. Either username or key must be specified."
+    },
+    {
+        "section": "array",
+        "keyword": "type",
+        "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio"],
+        "required": True,
+        "text": "The storage array driver name."
+    },
+    {
+        "section": "array",
+        "rtype": ["freenas", "xtremio"],
+        "keyword": "api",
+        "required": True,
+        "example": "https://array.opensvc.com/api/v1.0",
+        "text": "The array rest api url."
+    },
+    {
+        "section": "array",
+        "rtype": ["centera", "eva", "hds", "ibmds", "ibmsvc", "freenas", "netapp", "nexenta", "vioserver", "xtremio"],
+        "keyword": "username",
+        "required": True,
+        "example": "root",
+        "text": "The username to use to log in."
+    },
+    {
+        "section": "array",
+        "rtype": ["centera", "eva", "hds", "freenas", "nexenta", "xtremio"],
+        "keyword": "password",
+        "example": "system/sec/array1",
+        "required": True,
+        "text": "The password to use to log in, expressed as a <path> reference to a secret. The secret must be in the ``system`` namespace and must have the ``password`` key."
+    },
+    {
+        "section": "array",
+        "rtype": "freenas",
+        "keyword": "timeout",
+        "convert": "duration",
+        "example": "10s",
+        "default": 10,
+        "text": "The api request timeout."
+    },
+    {
+        "section": "array",
+        "rtype": "symmetrix",
+        "keyword": "symcli_path",
+        "example": "/opt/symcli",
+        "text": "Force use of a symcli programs installation, pointing the path of its head directory. For the case multiple symcli versions are installed and the default selector does not select the version preferred for the array."
+    },
+    {
+        "section": "array",
+        "rtype": "symmetrix",
+        "keyword": "symcli_connect",
+        "example": "MY_SYMAPI_SERVER",
+        "text": "Set the SYMCLI_CONNECT environment variable to this value, if set. If not set, the scsi communication channels are used. The value set must be declared in the /var/symapi/config/netcnfg file."
+    },
+    {
+        "section": "array",
+        "rtype": ["emcvnx", "hp3par", "symmetrix"],
+        "keyword": "username",
+        "example": "root",
+        "text": "The username to use to log in, if configured."
+    },
+    {
+        "section": "array",
+        "rtype": ["emcvnx", "symmetrix"],
+        "keyword": "password",
+        "example": "system/sec/array1",
+        "text": "The password to use to log in, if configured, expressed as a <path> reference to a secret. The secret must be in the ``system`` namespace and must have the ``password`` key."
+    },
+    {
+        "section": "array",
+        "rtype": ["centera", "netapp"],
+        "keyword": "server",
+        "required": True,
+        "example": "centera1",
+        "text": "The storage server to connect."
+    },
+    {
+        "section": "array",
+        "rtype": "centera",
+        "keyword": "java_bin",
+        "required": True,
+        "example": "/opt/java/bin/java",
+        "text": "The path to the java executable to use to run the Centera management program."
+    },
+    {
+        "section": "array",
+        "rtype": "centera",
+        "keyword": "jcass_dir",
+        "required": True,
+        "example": "/opt/centera/LIB",
+        "text": "The path of the directory hosting the JCASScript.jar."
+    },
+    {
+        "section": "array",
+        "rtype": "emcvnx",
+        "keyword": "method",
+        "default": "secfile",
+        "candidates": ["secfile", "credentials"],
+        "example": "secfile",
+        "text": "The authentication method to use."
+    },
+    {
+        "section": "array",
+        "rtype": "emcvnx",
+        "keyword": "spa",
+        "required": True,
+        "example": "array1-a",
+        "text": "The name of the Service Processor A."
+    },
+    {
+        "section": "array",
+        "rtype": "emcvnx",
+        "keyword": "spb",
+        "required": True,
+        "example": "array1-b",
+        "text": "The name of the Service Processor B."
+    },
+    {
+        "section": "array",
+        "rtype": "emcvnx",
+        "keyword": "scope",
+        "default": "0",
+        "example": "1",
+        "text": "The VNC scope to work in."
+    },
+    {
+        "section": "array",
+        "rtype": "eva",
+        "keyword": "manager",
+        "required": True,
+        "example": "evamanager.mycorp",
+        "text": "The EVA manager to connect."
+    },
+    {
+        "section": "array",
+        "rtype": "eva",
+        "keyword": "bin",
+        "example": "/opt/sssu/bin/sssu",
+        "text": "The EVA manager executable to use."
+    },
+    {
+        "section": "array",
+        "rtype": "hds",
+        "keyword": "bin",
+        "example": "/opt/hds/bin/HiCommandCLI",
+        "text": "The HDS manager executable to use."
+    },
+    {
+        "section": "array",
+        "rtype": "hds",
+        "keyword": "jre_path",
+        "example": "/opt/java",
+        "text": "The path hosting the java installation to use to execute the HiCommandCLI."
+    },
+    {
+        "section": "array",
+        "rtype": "hds",
+        "keyword": "url",
+        "required": True,
+        "example": "https://hdsmanager/",
+        "text": "The url passed to HiCommandCli, pointing the manager in charge of the array."
+    },
+    {
+        "section": "array",
+        "rtype": "hp3par",
+        "keyword": "method",
+        "default": "ssh",
+        "candidates": ["proxy", "cli", "ssh"],
+        "example": "ssh",
+        "text": "The connection method to use."
+    },
+    {
+        "section": "array",
+        "rtype": "hp3par",
+        "keyword": "manager",
+        "default_text": "wthe name of the array>",
+        "example": "mymanager.mycorp",
+        "text": "The array manager host name."
+    },
+    {
+        "section": "array",
+        "rtype": "hp3par",
+        "keyword": "key",
+        "example": "/path/to/key",
+        "text": "The path to the private key to use to log in."
+    },
+    {
+        "section": "array",
+        "rtype": "hp3par",
+        "keyword": "pwf",
+        "example": "/path/to/pwf",
+        "text": "The path to the 3par password file to use to log in."
+    },
+    {
+        "section": "array",
+        "rtype": "hp3par",
+        "keyword": "cli",
+        "default": "3parcli",
+        "example": "/path/to/pwf",
+        "text": "The path to the 3par password file to use to log in."
+    },
+    {
+        "section": "array",
+        "rtype": "ibmds",
+        "keyword": "hmc1",
+        "required": True,
+        "example": "hmc1.mycorp",
+        "text": "The host name of the primary HMC."
+    },
+    {
+        "section": "array",
+        "rtype": "ibmds",
+        "keyword": "hmc2",
+        "required": True,
+        "example": "hmc2.mycorp",
+        "text": "The host name of the secondary HMC."
+    },
+    {
+        "section": "array",
+        "rtype": ["netapp", "ibmsvc", "vioserver"],
+        "keyword": "key",
+        "required": True,
+        "example": "/path/to/key",
+        "text": "The path to the private key to use to log in."
+    },
+    {
+        "section": "array",
+        "rtype": "nexenta",
+        "keyword": "port",
+        "default": 2000,
+        "convert": "integer",
+        "example": "2000",
+        "text": "The nexenta administration listener port."
     },
 ]
 

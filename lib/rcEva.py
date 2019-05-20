@@ -1,12 +1,14 @@
 from __future__ import print_function
 
 import os
+import sys
 
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, factory, split_svcpath
+from node import Node
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
@@ -15,7 +17,7 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
         elif os.path.exists(os.path.join(rcEnv.paths.pathbin, "sssu")):
             sssubin = os.path.join(rcEnv.paths.pathbin, "sssu")
         else:
-            raise ex.excError("sssu command not found. set 'bin' in auth.conf section.")
+            raise ex.excError("sssu command not found. set 'array#%s.bin' in the node or cluster configuration." % array)
     os.chdir(rcEnv.paths.pathtmp)
     _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
@@ -33,41 +35,38 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
 class Evas(object):
     arrays = []
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
+        self.filtering = len(objects) > 0
+        if node:
+            self.node = node
         else:
-            self.filtering = False
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = {}
-        for s in conf.sections():
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
             try:
-                t = conf.get(s, 'type')
+                stype = self.node.oget(s, "type")
             except:
                 continue
-            if t != "eva":
+            if stype != "eva":
                 continue
             try:
-                manager = conf.get(s, 'manager')
-                username = conf.get(s, 'username')
-                password = conf.get(s, 'password')
-            except Exception as e:
-                print("error parsing section", s, ":", e)
+                manager = self.node.oget(s, 'manager')
+                username = self.node.oget(s, 'username')
+                password = self.node.oget(s, 'password')
+                sssubin = self.node.oget(s, 'bin')
+            except Exception as exc:
+                print("error parsing section %s: %s" % (s, exc), file=sys.stderr)
                 pass
             try:
-                sssubin = conf.get(s, 'bin')
-            except:
-                sssubin = None
-            m[manager] = [username, password, sssubin]
-        del(conf)
-        done = []
-        for manager, creds in m.items():
-            username, password, sssbin = creds
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
+                continue
             out, err = sssu('ls system', manager, username, password, sssubin=sssubin)
             _in = False
             for line in out.split('\n'):
@@ -87,8 +86,9 @@ class Evas(object):
             yield(array)
 
 class Eva(object):
-    def __init__(self, name, manager, username, password, sssubin=None):
+    def __init__(self, name, manager, username, password, sssubin=None, node=None):
         self.name = name
+        self.node = node
         self.manager = manager
         self.username = username
         self.password = password

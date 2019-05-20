@@ -436,7 +436,8 @@ ACTIONS = {
         },
         "array": {
             "msg": "Pass a command to a supported array whose access method "
-                   "and credentials are defined in auth.conf.",
+                   "and credentials are defined in the node or cluster "
+                   "configuration.",
         },
         "updatepkg": {
             "msg": "Upgrade the opensvc agent version. the packages must be "
@@ -594,18 +595,12 @@ ACTIONS = {
         "print_config": {
             "msg": "Display the node current configuration.",
         },
-        "print_authconfig": {
-            "msg": "Display the node current authentication configuration.",
-        },
         "edit_config": {
             "msg": "Edit the node configuration.",
             "options": [
                 OPT.discard,
                 OPT.recover,
             ],
-        },
-        "edit_authconfig": {
-            "msg": "Edit the node authentication configuration.",
         },
         "register": {
             "msg": "Obtain a registration id from the collector. This is is "
@@ -822,13 +817,6 @@ ACTIONS = {
         },
         "pushhds": {
             "msg": "Push HDS configurations to the collector.",
-            "options": [
-                OPT.cron,
-                OPT.opt_object,
-            ],
-        },
-        "pushdcs": {
-            "msg": "Push Datacore configurations to the collector.",
             "options": [
                 OPT.cron,
                 OPT.opt_object,

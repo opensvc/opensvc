@@ -6,57 +6,58 @@ from subprocess import *
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
+from rcUtilities import justcall, factory, split_svcpath
+from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 class Netapps(object):
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
-        else:
-            self.filtering = False
+        self.filtering = len(objects) > 0
         self.arrays = []
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = {}
-
-        for s in conf.sections():
-            if not conf.has_option(s, "type") or \
-               conf.get(s, "type") != "netapp":
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
+                continue
+            try:
+                stype = self.node.oget(s, "type")
+            except:
+                continue
+            if stype != "netapp":
                 continue
 
-            if self.filtering and not s in self.objects:
-                continue
-
-            server = None
-            username = None
-            password = None
-
-            kwargs = {}
+            kwargs = {"node": self.node}
 
             for key in ("server", "username", "key"):
                 try:
-                    kwargs[key] = conf.get(s, key)
+                    kwargs[key] = self.node.oget(s, key)
                 except:
                     print("missing parameter: %s", s)
-                    continue
-
+            if "server" not in kwargs or "username" not in kwargs or "key" not in kwargs:
+                continue
+            try:
+                secname, namespace, _ = split_svcpath(kwargs["password"])
+                kwargs["password"] = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
+                continue
             self.arrays.append(Netapp(s, **kwargs))
-
-        del(conf)
 
     def __iter__(self):
         for array in self.arrays:
             yield(array)
 
 class Netapp(object):
-    def __init__(self, name, server=None, username=None, key=None):
+    def __init__(self, name, server=None, username=None, key=None, node=None):
         self.name = name
         self.server = server
         self.username = username

@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-05\-06
+.TH NODEMGR 1 2019\-05\-20
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -1157,7 +1157,7 @@ Show this help message and exit
 \fBnodemgr array\fP
 .RS
 
-Pass a command to a supported array whose access method and credentials are defined in auth.conf.
+Pass a command to a supported array whose access method and credentials are defined in the node or cluster configuration.
 
 .TP
 .B --color=COLOR
@@ -2069,32 +2069,6 @@ A JSONPath expression to filter a JSON output.
 Show this help message and exit
 
 .RE
-\fBnodemgr edit authconfig\fP
-.RS
-
-Edit the node authentication configuration.
-
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
 \fBnodemgr edit config\fP
 .RS
 
@@ -2228,32 +2202,6 @@ Examples:
   Append node3 to nodes
 * nodes[0]+=node3
   Preprend node3 to nodes
-
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr print authconfig\fP
-.RS
-
-Display the node current authentication configuration.
 
 .TP
 .B --color=COLOR
@@ -3143,38 +3091,6 @@ Show this help message and exit
 .RS
 
 Push EMC Centera configurations to the collector.
-
-.TP
-.B --cron
-If set, the action is actually executed impersonating the scheduler thread.
-.TP
-.B --object=OBJECTS
-An object to limit a push* action to. Multiple --object <object id> parameters can be set on a single command line.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream log verbosity up to the debug level.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B -h, --help
-Show this help message and exit
-
-.RE
-\fBnodemgr pushdcs\fP
-.RS
-
-Push Datacore configurations to the collector.
 
 .TP
 .B --cron

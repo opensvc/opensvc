@@ -10,19 +10,20 @@ from xml.etree.ElementTree import XML, fromstring
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import which, justcall, lazy
+from rcUtilities import which, justcall, lazy, factory, split_svcpath
 from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
+from node import Node
 
-PROG = "nodemgr array"
+PROG = "om array"
 OPT = Storage({
     "help": Option(
         "-h", "--help", action="store_true", dest="parm_help",
         help="show this help message and exit"),
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
-        help="The name of the array, as defined in auth.conf"),
+        help="The name of the array, as defined in the node or cluster configuration."),
     "pool": Option(
         "--pool", action="store", dest="pool",
         help="The name of the DP pool"),
@@ -123,55 +124,45 @@ ACTIONS = {
 
 class Arrays(object):
     arrays = []
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
-        if len(objects) > 0:
-            self.filtering = True
+        self.filtering = len(objects) > 0
+        if node:
+            self.node = node
         else:
-            self.filtering = False
-
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = rcConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = []
-        for s in conf.sections():
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
+                continue
             try:
-                stype = conf.get(s, 'type')
+                stype = self.node.oget(s, "type")
             except:
                 continue
             if stype != "hds":
                 continue
             try:
-                bin = conf.get(s, 'bin')
-            except:
-                bin = None
-            try:
-                jre_path = conf.get(s, 'jre_path')
-                os.environ["HDVM_CLI_JRE_PATH"] = jre_path
-            except:
-                pass
-            try:
-                url = conf.get(s, 'url')
-                arrays = conf.get(s, 'array').split()
-                username = conf.get(s, 'username')
-                password = conf.get(s, 'password')
-                m += [(url, arrays, username, password, bin)]
-            except:
-                print("error parsing section", s)
-                pass
+                bin = self.node.oget(s, 'bin')
+                jre_path = self.node.oget(s, 'jre_path')
+                url = self.node.oget(s, 'url')
+                username = self.node.oget(s, 'username')
+                password = self.node.oget(s, 'password')
+            except Exception as exc:
+                print("error parsing section %s: %s" % (s, exc), file=sys.stderr)
+                continue
 
-        del(conf)
-        done = []
-        for url, arrays, username, password, bin in m:
-            for name in arrays:
-                if self.filtering and name not in self.objects:
-                    continue
-                if name in done:
-                    continue
-                self.arrays.append(Array(name, url, username, password, bin))
-                done.append(name)
+            try:
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
+                continue
+
+            self.arrays.append(Array(name, url, username, password, bin=bin, jre_path=jre_path, node=self.node))
+            done.append(name)
 
     def __iter__(self):
         for array in self.arrays:
@@ -184,10 +175,11 @@ class Arrays(object):
         return None
 
 class Array(object):
-    def __init__(self, name, url, username, password, bin=None):
-        self.node = None
+    def __init__(self, name, url, username, password, bin=None, jre_path=None, node=None):
         self.keys = ['array', 'lu', 'arraygroup', 'port', 'pool']
         self.name = name
+        self.node = node
+        self.jre_path = jre_path
         self.model = name.split(".")[0]
         self.serial = name.split(".")[-1]
         self.url = url
@@ -203,6 +195,9 @@ class Array(object):
         self.journal = []
 
     def cmd(self, cmd, scoped=True, xml=True, log=False):
+        if self.jre_path:
+            os.environ["HDVM_CLI_JRE_PATH"] = self.jre_path
+
         if which(self.bin) is None:
             raise ex.excError("Can not find %s"%self.bin)
         l = [

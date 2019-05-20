@@ -6,58 +6,64 @@ from subprocess import *
 
 from six.moves import configparser as ConfigParser
 import rcExceptions as ex
-from rcUtilities import which
+from rcUtilities import which, factory, split_svcpath
 from rcGlobalEnv import rcEnv
+from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin
 
 class Centeras(object):
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
         else:
             self.filtering = False
         self.arrays = []
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-        m = {}
-
-        for s in conf.sections():
-            if not conf.has_option(s, "type") or \
-               conf.get(s, "type") != "centera":
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
+                continue
+            try:
+                stype = self.node.oget(s, "type")
+            except:
+                continue
+            if stype != "centera":
                 continue
 
-            if self.filtering and not s in self.objects:
+            try:
+                server = self.node.oget(s, "server")
+                username = self.node.oget(s, "username")
+                password = self.node.oget(s, "password")
+                jcass_dir = self.node.oget(s, "jcass_dir")
+                java_bin = self.node.oget(s, "java_bin")
+            except:
+                print("error parsing section", s, file=sys.stderr)
+
+            try:
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
                 continue
 
-            server = None
-            username = None
-            password = None
-
-            kwargs = {}
-
-            for key in ("server", "username", "password", "java_bin", "jcass_dir"):
-                try:
-                    kwargs[key] = conf.get(s, key)
-                except:
-                    print("missing parameter: %s", s)
-                    continue
-
-            self.arrays.append(Centera(s, **kwargs))
-
-        del(conf)
+            self.arrays.append(Centera(name, server=server, username=username, password=password, java_bin=java_bin, jcass_dir=jcass_dir, node=self.node))
+            done.append(name)
 
     def __iter__(self):
         for array in self.arrays:
             yield(array)
 
 class Centera(object):
-    def __init__(self, name, server=None, username=None, password=None, java_bin=None, jcass_dir=None):
+    def __init__(self, name, server=None, username=None, password=None, java_bin=None, jcass_dir=None, node=None):
         self.name = name
         self.server = server
         self.username = username

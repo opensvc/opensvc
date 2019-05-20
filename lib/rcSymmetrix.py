@@ -11,19 +11,20 @@ from six.moves import configparser as ConfigParser
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall, which
+from rcUtilities import justcall, which, factory, split_svcpath
 from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
+from node import Node
 
-PROG = "nodemgr array"
+PROG = "om array"
 OPT = Storage({
     "help": Option(
         "-h", "--help", action="store_true", dest="parm_help",
         help="show this help message and exit"),
     "array": Option(
         "-a", "--array", action="store", dest="array_name",
-        help="The name of the array, as defined in auth.conf"),
+        help="The name of the array (sid)."),
     "name": Option(
         "--name", action="store", dest="name",
         help="The device identifier name (ex: mysvc_1)"),
@@ -224,59 +225,51 @@ class Arrays(object):
         if os.path.exists(symcli_bin):
             return os.path.dirname(symcli_bin)
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
         else:
             self.filtering = False
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = ConfigParser.RawConfigParser()
-        conf.read(cf)
-
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
         self.symms = []
-        for s in conf.sections():
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
             if self.filtering and s not in self.objects:
                 continue
 
             try:
-                stype = conf.get(s, 'type')
+                stype = self.node.oget(s, 'type')
             except:
                 continue
             if stype != "symmetrix":
                 continue
-            try:
-                name = s
-            except:
-                print("error parsing section", s, file=sys.stderr)
-                continue
 
-            if conf.has_option(s, 'symcli_path'):
-                symcli_path = conf.get(s, 'symcli_path')
-            else:
+            symcli_path = self.node.oget(s, 'symcli_path')
+            if symcli_path is None:
                 symcli_path = self.find_symcli_path()
-
             if symcli_path is None:
                 print("symcli path not found for array", s, file=sys.stderr)
                 continue
 
-            if conf.has_option(s, 'symcli_connect'):
-                symcli_connect = conf.get(s, 'symcli_connect')
+            symcli_connect = self.node.oget(s, 'symcli_connect')
+            if symcli_connect is not None:
                 os.environ["SYMCLI_CONNECT"] = symcli_connect
-            else:
-                symcli_connect = None
 
-            if conf.has_option(s, 'username'):
-                username = conf.get(s, 'username')
-            else:
-                username = None
+            username = self.node.oget(s, 'username')
+            password = self.node.oget(s, 'password')
 
-            if conf.has_option(s, 'password'):
-                password = conf.get(s, 'password')
-            else:
-                password = None
+            try:
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
 
             symcfg = os.path.join(symcli_path, "symcfg")
             if which(symcfg) is None:
@@ -290,15 +283,17 @@ class Arrays(object):
             for symm in tree.getiterator('Symm_Info'):
                 model = symm.find('model').text
                 if model.startswith('VMAX'):
-                    self.arrays.append(Vmax(name, symcli_path, symcli_connect, username, password))
+                    self.arrays.append(Vmax(name, symcli_path, symcli_connect, username, password, node=self.node))
+                    done.append(name)
                 elif model.startswith("PowerMax"):
-                    self.arrays.append(PowerMax(name, symcli_path, symcli_connect, username, password))
+                    self.arrays.append(PowerMax(name, symcli_path, symcli_connect, username, password, node=self.node))
+                    done.append(name)
                 elif 'DMX' in model or '3000-M' in model:
-                    self.arrays.append(Dmx(name, symcli_path, symcli_connect, username, password))
+                    self.arrays.append(Dmx(name, symcli_path, symcli_connect, username, password, node=self.node))
+                    done.append(name)
                 else:
                     print("unsupported sym model: %s" % model, file=sys.stderr)
 
-        del(conf)
 
     def get_array(self, name):
         for array in self.arrays:
@@ -311,7 +306,7 @@ class Arrays(object):
 
 
 class SymMixin(object):
-    def __init__(self, sid, symcli_path, symcli_connect, username, password):
+    def __init__(self, sid, symcli_path, symcli_connect, username, password, node=None):
         self.keys = [
             'sym_info',
             'sym_dir_info',
@@ -325,7 +320,7 @@ class SymMixin(object):
             'sym_disk_info',
             'sym_diskgroup_info',
         ]
-        self.node = None
+        self.node = node
         self.sid = sid
         self.symcli_path = symcli_path
         self.symcli_connect = symcli_connect
@@ -893,8 +888,8 @@ class SymMixin(object):
         return justcall(cmd)
 
 class Vmax(SymMixin):
-    def __init__(self, sid, symcli_path, symcli_connect, username, password):
-        SymMixin.__init__(self, sid, symcli_path, symcli_connect, username, password)
+    def __init__(self, sid, symcli_path, symcli_connect, username, password, node=None):
+        SymMixin.__init__(self, sid, symcli_path, symcli_connect, username, password, node=node)
         self.keys += [
             'sym_ig_aclx',
             'sym_pg_aclx',

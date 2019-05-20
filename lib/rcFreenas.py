@@ -9,9 +9,10 @@ import rcExceptions as ex
 from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import bdecode
+from rcUtilities import bdecode, factory, split_svcpath
 from converters import convert_size
 from rcOptParser import OptParser
+from node import Node
 
 try:
     import requests
@@ -25,14 +26,14 @@ except AttributeError:
 
 VERIFY = False
 
-PROG = "nodemgr array"
+PROG = "om array"
 OPT = Storage({
     "help": Option(
         "-h", "--help", default=None, action="store_true", dest="parm_help",
         help="show this help message and exit"),
     "array": Option(
         "-a", "--array", default=None, action="store", dest="array_name",
-        help="The name of the array, as defined in auth.conf"),
+        help="The name of the array, as defined in node or cluster configuration."),
     "name": Option(
         "--name", default=None, action="store", dest="name",
         help="The object name"),
@@ -277,43 +278,42 @@ ACTIONS = {
 class Freenass(object):
     arrays = []
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=[], node=None):
         self.objects = objects
         self.filtering = len(objects) > 0
         self.timeout = 10
-        cf = rcEnv.paths.authconf
-        if not os.path.exists(cf):
-            return
-        conf = RawConfigParser()
-        conf.read(cf)
-        m = []
-        for s in conf.sections():
+        if node:
+            self.node = node
+        else:
+            self.node = Node()
+        done = []
+        for s in self.node.conf_sections(cat="array"):
+            name = s.split("#", 1)[-1]
+            if name in done:
+                continue
+            if self.filtering and name not in self.objects:
+                continue
             try:
-                stype = conf.get(s, 'type')
+                stype = self.node.oget(s, "type")
             except:
                 continue
             if stype != "freenas":
                 continue
-            if conf.has_option(s, 'timeout'):
-                timeout = float(conf.get(s, 'timeout'))
-            else:
-                timeout = self.timeout
+            timeout = self.node.oget(s, "timeout")
             try:
-                name = s
-                api = conf.get(s, 'api')
-                username = conf.get(s, 'username')
-                password = conf.get(s, 'password')
-                m += [(name, api, username, password, timeout)]
+                username = self.node.oget(s, "username")
+                password = self.node.oget(s, "password")
+                api = self.node.oget(s, "api")
             except:
                 print("error parsing section", s, file=sys.stderr)
-        del conf
-        done = []
-        for name, api, username, password, timeout in m:
-            if self.filtering and name not in self.objects:
                 continue
-            if name in done:
+            try:
+                secname, namespace, _ = split_svcpath(password)
+                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+            except Exception as exc:
+                print("error decoding password: %s", exc, file=sys.stderr)
                 continue
-            self.arrays.append(Freenas(name, api, username, password, timeout))
+            self.arrays.append(Freenas(name, api, username, password, timeout, node=self.node))
             done.append(name)
 
     def __iter__(self):
@@ -327,8 +327,8 @@ class Freenass(object):
         return None
 
 class Freenas(object):
-    def __init__(self, name, api, username, password, timeout):
-        self.node = None
+    def __init__(self, name, api, username, password, timeout, node=None):
+        self.node = node
         self.name = name
         self.api = api
         self.username = username
