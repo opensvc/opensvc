@@ -16,73 +16,6 @@ import time
 from uuid import uuid4
 from storage import Storage
 
-def get_osvc_paths(osvc_root_path=None, sysname=None, detect=False):
-    o = Storage()
-
-    if osvc_root_path:
-        o.pathsvc = osvc_root_path
-    elif detect:
-        o.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-    else:
-        o.pathsvc = '/usr/share/opensvc'
-
-    if o.pathsvc == '/usr/share/opensvc':
-        o.pathlib = '/usr/share/opensvc/lib'
-        o.pathbin = '/usr/bin'
-        o.pathetc = '/etc/opensvc'
-        o.pathetcns = '/etc/opensvc/namespaces'
-        o.pathlog = '/var/log/opensvc'
-        o.pathtmp = '/var/tmp/opensvc'
-        o.pathvar = '/var/lib/opensvc'
-        o.pathdoc = '/usr/share/doc/opensvc'
-        o.pathlock = '/var/lib/opensvc/lock'
-        o.pathcron = '/usr/share/opensvc'
-        o.postinstall = '/usr/share/opensvc/bin/postinstall'
-        o.preinstall = '/usr/share/opensvc/bin/preinstall'
-    else:
-        o.pathlib = os.path.join(o.pathsvc, 'lib')
-        o.pathbin = os.path.join(o.pathsvc, 'bin')
-        o.pathetc = os.path.join(o.pathsvc, 'etc')
-        o.pathetcns = os.path.join(o.pathsvc, 'etc', 'namespaces')
-        o.pathlog = os.path.join(o.pathsvc, 'log')
-        o.pathtmp = os.path.join(o.pathsvc, 'tmp')
-        o.pathvar = os.path.join(o.pathsvc, 'var')
-        o.pathdoc = os.path.join(o.pathsvc, 'usr', 'share', 'doc')
-        o.pathlock = os.path.join(o.pathvar, 'lock')
-        o.pathcron = o.pathbin
-        o.postinstall = os.path.join(o.pathbin, 'postinstall')
-        o.preinstall = os.path.join(o.pathbin, 'preinstall')
-
-    if os.name == "nt":
-        o.svcmgr = os.path.join(o.pathsvc, "svcmgr.cmd")
-        o.nodemgr = os.path.join(o.pathsvc, "nodemgr.cmd")
-        o.svcmon = os.path.join(o.pathsvc, "svcmon.cmd")
-        o.cron = os.path.join(o.pathsvc, "cron.cmd")
-    else:
-        o.svcmgr = os.path.join(o.pathbin, "svcmgr")
-        o.nodemgr = os.path.join(o.pathbin, "nodemgr")
-        o.svcmon = os.path.join(o.pathbin, "svcmon")
-        o.cron = os.path.join(o.pathcron, "cron")
-
-    o.nodeconf = os.path.join(o.pathetc, "node.conf")
-    o.clusterconf = os.path.join(o.pathetc, "cluster.conf")
-
-    o.lsnruxsockd = os.path.join(o.pathvar, "lsnr")
-    o.lsnruxsock = os.path.join(o.lsnruxsockd, "lsnr.sock")
-    o.dnsuxsockd = os.path.join(o.pathvar, "dns")
-    o.dnsuxsock = os.path.join(o.dnsuxsockd, "pdns.sock")
-    o.pathcomp = os.path.join(o.pathvar, "compliance")
-    o.pathcomposvc = os.path.join(o.pathcomp, "com.opensvc")
-    o.safe = os.path.join(o.pathvar, "safe")
-    o.certs = os.path.join(o.pathvar, "certs")
-    o.drp_path = os.path.join(o.pathvar, "cache")
-    o.last_shutdown = os.path.join(o.pathvar, "last_shutdown")
-
-    o.daemon_pid = os.path.join(o.pathvar, "osvcd.pid")
-    o.daemon_lock = os.path.join(o.pathlock, "osvcd.lock")
-
-    return o
-
 def create_or_update_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
@@ -94,6 +27,83 @@ def create_or_update_dir(d):
         except:
             # unprivileged
             pass
+
+class Paths(object):
+    def __init__(self, osvc_root_path=None, sysname=None, detect=False):
+        if osvc_root_path:
+            self.pathsvc = osvc_root_path
+        elif detect:
+            self.pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+        else:
+            self.pathsvc = '/usr/share/opensvc'
+
+        if self.pathsvc == '/usr/share/opensvc':
+            self.pathlib = '/usr/share/opensvc/lib'
+            self.pathbin = '/usr/bin'
+            self.pathetc = '/etc/opensvc'
+            self.pathetcns = '/etc/opensvc/namespaces'
+            self.pathlog = '/var/log/opensvc'
+            self.pathtmpv = '/var/tmp/opensvc'
+            self.pathvar = '/var/lib/opensvc'
+            self.pathdoc = '/usr/share/doc/opensvc'
+            self.pathlock = '/var/lib/opensvc/lock'
+            self.pathcron = '/usr/share/opensvc'
+            self.postinstall = '/usr/share/opensvc/bin/postinstall'
+            self.preinstall = '/usr/share/opensvc/bin/preinstall'
+        else:
+            self.pathlib = os.path.join(self.pathsvc, 'lib')
+            self.pathbin = os.path.join(self.pathsvc, 'bin')
+            self.pathetc = os.path.join(self.pathsvc, 'etc')
+            self.pathetcns = os.path.join(self.pathsvc, 'etc', 'namespaces')
+            self.pathlog = os.path.join(self.pathsvc, 'log')
+            self.pathtmpv = os.path.join(self.pathsvc, 'tmp')
+            self.pathvar = os.path.join(self.pathsvc, 'var')
+            self.pathdoc = os.path.join(self.pathsvc, 'usr', 'share', 'doc')
+            self.pathlock = os.path.join(self.pathvar, 'lock')
+            self.pathcron = self.pathbin
+            self.postinstall = os.path.join(self.pathbin, 'postinstall')
+            self.preinstall = os.path.join(self.pathbin, 'preinstall')
+
+        if os.name == "nt":
+            self.svcmgr = os.path.join(self.pathsvc, "svcmgr.cmd")
+            self.nodemgr = os.path.join(self.pathsvc, "nodemgr.cmd")
+            self.svcmon = os.path.join(self.pathsvc, "svcmon.cmd")
+            self.cron = os.path.join(self.pathsvc, "cron.cmd")
+        else:
+            self.svcmgr = os.path.join(self.pathbin, "svcmgr")
+            self.nodemgr = os.path.join(self.pathbin, "nodemgr")
+            self.svcmon = os.path.join(self.pathbin, "svcmon")
+            self.cron = os.path.join(self.pathcron, "cron")
+
+        self.nodeconf = os.path.join(self.pathetc, "node.conf")
+        self.clusterconf = os.path.join(self.pathetc, "cluster.conf")
+
+        self.lsnruxsockd = os.path.join(self.pathvar, "lsnr")
+        self.lsnruxsock = os.path.join(self.lsnruxsockd, "lsnr.sock")
+        self.dnsuxsockd = os.path.join(self.pathvar, "dns")
+        self.dnsuxsock = os.path.join(self.dnsuxsockd, "pdns.sock")
+        self.pathcomp = os.path.join(self.pathvar, "compliance")
+        self.pathcomposvc = os.path.join(self.pathcomp, "com.opensvc")
+        self.safe = os.path.join(self.pathvar, "safe")
+        self.certs = os.path.join(self.pathvar, "certs")
+        self.drp_path = os.path.join(self.pathvar, "cache")
+        self.last_shutdown = os.path.join(self.pathvar, "last_shutdown")
+
+        self.daemon_pid = os.path.join(self.pathvar, "osvcd.pid")
+        self.daemon_lock = os.path.join(self.pathlock, "osvcd.lock")
+
+        self.tmp_prepared = False
+
+    @property
+    def pathtmp(self):
+        self.prepare_tmp()
+        return self.pathtmpv
+
+    def prepare_tmp(self):
+        if self.tmp_prepared:
+            return
+        create_or_update_dir(self.pathtmpv)
+        self.tmp_prepared = True
 
 class rcEnv:
     """Class to store globals
@@ -175,7 +185,7 @@ class rcEnv:
     dbopensvc_host = None
     dbcompliance = None
     dbcompliance_host = None
-    paths = get_osvc_paths(sysname=sysname, detect=True)
+    paths = Paths(sysname=sysname, detect=True)
 
     syspaths = Storage(
         df="/bin/df",
@@ -213,8 +223,6 @@ class rcEnv:
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"
 
-    create_or_update_dir(paths.pathtmp)
-
     if "LD_PRELOAD" in os.environ:
         ld_preload = os.environ["LD_PRELOAD"]
         del os.environ["LD_PRELOAD"]
@@ -236,3 +244,5 @@ class rcEnv:
         python_cmd.append(sys.executable)
     if pyargs:
         python_cmd += pyargs
+
+

@@ -22,7 +22,7 @@ from resources import Resource
 from resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
-from rcGlobalEnv import rcEnv, get_osvc_paths
+from rcGlobalEnv import rcEnv, Paths
 from storage import Storage
 from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         try_decode, action_triggers, read_cf, set_lazy, \
@@ -418,6 +418,21 @@ def _master_action(func):
             func(self)
     return _func
 
+class SvcPaths(object):
+    def __init__(self, path, name, cf):
+        self.nsetc = svc_pathetc(path)
+        self.nstmp = svc_pathtmp(path)
+        if cf:
+            self.cf = cf
+        else:
+            self.cf = svc_pathcf(path)
+        self.initd = os.path.join(self.nsetc, name+'.d')
+        self.alt_initd = os.path.join(self.nsetc, name+'.dir'),
+
+    @property
+    def tmp_cf(self):
+        return os.path.join(self.nstmp, name+".conf.tmp")
+
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
@@ -429,21 +444,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.hostid = rcEnv.nodename
         self.volatile = volatile
         self.svcpath = fmt_svcpath(self.svcname, self.namespace, self.kind)
-        nsetc = svc_pathetc(self.svcpath)
-        nstmp = svc_pathtmp(self.svcpath)
 
         if log:
             self.set_lazy("log", log)
 
-        self.paths = Storage(
-            initd=os.path.join(nsetc, self.svcname+'.d'),
-            alt_initd=os.path.join(nsetc, self.svcname+'.dir'),
-            tmp_cf=os.path.join(nstmp, self.svcname+".conf.tmp")
-        )
-        if cf:
-            self.paths.cf = cf
-        else:
-            self.paths.cf = svc_pathcf(self.svcpath)
+        self.paths = SvcPaths(self.svcpath, self.svcname, cf)
         self.init_resources_errors = 0
         self.resources_initialized = False
         self.scheduler_configured = False
@@ -3980,8 +3985,8 @@ class Svc(BaseSvc):
         if self.options.namespace:
             options += ["--namespace", self.options.namespace]
 
-        paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
-                               sysname=container.guestos)
+        paths = Paths(osvc_root_path=container.osvc_root_path,
+                      sysname=container.guestos)
         cmd = [paths.svcmgr, '-s', self.svcpath] + options + cmd
         if verbose:
             self.log.info(" ".join(cmd))
@@ -4838,8 +4843,8 @@ class Svc(BaseSvc):
             encap_mtime = int(float(out.strip()))
             local_mtime = os.path.getmtime(self.paths.cf)
             if encap_mtime > local_mtime:
-                paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
-                                       sysname=container.guestos)
+                paths = Paths(osvc_root_path=container.osvc_root_path,
+                              sysname=container.guestos)
                 encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(rcEnv.paths.pathetc)+1:])
 
                 if hasattr(container, 'rcp_from'):
@@ -4856,8 +4861,8 @@ class Svc(BaseSvc):
                 return
 
         # use a tempory conf staging to not have to care about ns dir create
-        paths = get_osvc_paths(osvc_root_path=container.osvc_root_path,
-                               sysname=container.guestos)
+        paths = Paths(osvc_root_path=container.osvc_root_path,
+                      sysname=container.guestos)
         encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
         if hasattr(container, 'rcp'):
             cmd_results = container.rcp(self.paths.cf, encap_cf)
