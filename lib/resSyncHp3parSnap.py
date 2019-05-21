@@ -30,7 +30,7 @@ class syncHp3parSnap(resSync.Sync):
 
     def on_add(self):
         try:
-            arrays = rc.Hp3pars(objects=[self.array], log=self.log)
+            arrays = rc.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
             raise ex.excInitError(str(e))
         if len(arrays.arrays) == 1:

@@ -14,7 +14,7 @@ import rcIbmDs
 class syncIbmdsSnap(resSync.Sync):
     def resyncflash(self):
         if self.array is None:
-            self.array = rcIbmDs.IbmDss().get(self.arrayname)
+            self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
         data = self.lsflash()
         ese_pairs = []
         other_pairs = []
@@ -199,7 +199,7 @@ class syncIbmdsSnap(resSync.Sync):
 
     def lsflash(self):
         if self.array is None:
-            self.array = rcIbmDs.IbmDss().get(self.arrayname)
+            self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
         out, err = self.array.dscli(self.params+'lsflash -l -dev %s ' % self.arrayname + ' '.join(self.pairs))
         if 'No Flash Copy found' in out:
             return []

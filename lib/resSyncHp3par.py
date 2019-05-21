@@ -40,7 +40,7 @@ class syncHp3par(resSync.Sync):
 
     def on_add(self):
         try:
-            arrays = rc.Hp3pars(objects=[self.array], log=self.log)
+            arrays = rc.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
             raise ex.excError(str(e))
         if len(arrays.arrays) == 1:
@@ -57,7 +57,7 @@ class syncHp3par(resSync.Sync):
             array_name = target
             if self.remote_array_obj is None:
                 try:
-                    self.remote_array_obj = rc.Hp3pars(objects=[target], log=self.log).arrays[0]
+                    self.remote_array_obj = rc.Hp3pars(objects=[target], log=self.log, node=self.svc.node).arrays[0]
                     if self.remote_array_obj is None:
                         raise ex.excError("array %s is not accessible" % array_name)
                     self.remote_array_obj.svcname = self.svc.svcname
