@@ -255,6 +255,15 @@ class Listener(shared.OsvcThread):
                     encrypted = False
                 elif isinstance(sock, ssl.SSLSocket):
                     encrypted = False
+                    cert = conn.getpeercert()
+                    subject = dict(x[0] for x in cert['subject'])
+                    cn = subject["commonName"]
+                    usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
+                    if not usr.exists():
+                        self.log.warning("refused user connection: %s (valid cert, unknown user)", cn)
+                        conn.close()
+                        continue
+                    self.log.info("authenticated user connection: %s", cn)
                 else:
                     encrypted = True
                 if addr[0] not in self.stats.sessions.clients:
@@ -268,6 +277,8 @@ class Listener(shared.OsvcThread):
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
                 continue
+            except Exception:
+                conn.close()
             try:
                 thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
                 thr.start()

@@ -122,6 +122,7 @@ class rcEnv:
         "vol",
         "cfg",
         "sec",
+        "usr",
         "ccfg",
     ]
     allowed_svc_envs = [
