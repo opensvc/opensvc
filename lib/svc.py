@@ -1319,10 +1319,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             if sys.argv[0].endswith("/svcmgr.py"):
                 if len(sys.argv) > 2 and sys.argv[1] in ("-s", "--service"):
-                    begin = 3
+                    _begin = 3
                 else:
-                    begin = 1
-                runlog = "do "+" ".join(sys.argv[begin:])
+                    _begin = 1
+                runlog = "do "+" ".join(sys.argv[_begin:])
                 if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
                     runlog += " (daemon origin)"
                 else:
