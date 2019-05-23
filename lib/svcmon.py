@@ -194,7 +194,7 @@ def svcmon(node, options=None):
             if status_changed:
                 try:
                     status_data = node._daemon_status(node=endpoint)
-                except ValueError:
+                except Exception:
                     # seen on solaris under high load: decode_msg() raising on invalid json
                     continue
                 if status_data is None:
