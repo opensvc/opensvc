@@ -22,6 +22,7 @@ import six
 import lock
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from contexts import want_context
 
 VALID_NAME_RFC952_NO_DOT = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9]))*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
 VALID_NAME_RFC952 = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
@@ -1115,7 +1116,7 @@ def daemon_test_lock():
 #
 #############################################################################
 
-def is_service(f, namespace=None):
+def is_service(f, namespace=None, data=None):
     if f is None:
         return
     f = re.sub(".conf$", "", f)
@@ -1125,6 +1126,12 @@ def is_service(f, namespace=None):
     except ValueError:
         return
     path = fmt_svcpath(name, namespace, kind)
+    try:
+        data["services"][path]
+        return path
+    except Exception:
+        if want_context():
+            return
     cf = svc_pathcf(path)
     if not os.path.exists(cf):
         return
