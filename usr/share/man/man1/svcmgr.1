@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-05\-20
+.TH SVCMGR 1 2019\-05\-23
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -79,6 +79,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -189,6 +195,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -285,6 +297,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -383,6 +401,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -480,6 +504,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -573,6 +603,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -670,6 +706,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -774,6 +816,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -877,6 +925,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -976,6 +1030,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -1080,6 +1140,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -1173,6 +1239,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -1270,6 +1342,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -1377,6 +1455,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -1474,6 +1558,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -1568,6 +1658,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -1661,6 +1757,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -1760,6 +1862,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -1870,6 +1978,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -1976,6 +2090,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2073,6 +2193,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2169,6 +2295,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -2276,6 +2408,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2382,6 +2520,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2475,6 +2619,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -2570,6 +2720,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2660,6 +2816,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -2752,6 +2914,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2842,6 +3010,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -2951,6 +3125,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -2991,14 +3171,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -3086,6 +3260,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -3119,12 +3299,6 @@ Show this help message and exit.
 
 Clear the monitor status of the service on the node pointed by --node. If --node is not specified, all nodes are cleared. This command can be used to reactivate service orchestration blocked by a failed status like `start failed`.
 
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B --slave=SLAVE
 Limit the action to the service resources in the specified, comma-separated, slaves.
@@ -3189,6 +3363,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -3229,14 +3409,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -3341,6 +3515,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -3453,6 +3633,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -3493,14 +3679,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -3587,6 +3767,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -3678,6 +3864,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -3790,6 +3982,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -3840,12 +4038,6 @@ refresh the information every --interval.
 .TP
 .B --interval=INTERVAL
 with --watch, set the refresh interval. defaults to 0, to refresh on event only.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B --master
 Limit the action scope to the master service resources.
@@ -3912,6 +4104,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4003,6 +4201,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4112,6 +4316,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4224,6 +4434,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -4263,12 +4479,6 @@ A size expression limiting the volume of data fetched from the log file tail. De
 .TP
 .B --follow
 Follow the logs as they come. Use crtl-c to interrupt.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --no-pager
 Do not display the command result in a pager.
@@ -4329,6 +4539,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4426,6 +4642,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4539,6 +4761,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -4572,9 +4800,6 @@ Show this help message and exit.
 
 Display or watch the synthetic service status, and perf metrics.
 
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --stats
 refresh the information every --interval.
@@ -4641,6 +4866,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4754,6 +4985,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -4794,14 +5031,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -4888,6 +5119,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -4929,14 +5166,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -5023,6 +5254,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -5064,14 +5301,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -5158,6 +5389,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -5250,6 +5487,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -5290,14 +5533,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -5384,6 +5621,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -5425,14 +5668,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -5519,6 +5756,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -5637,6 +5880,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -5727,6 +5976,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -5845,6 +6100,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -5962,6 +6223,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6058,6 +6325,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -6173,6 +6446,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6273,6 +6552,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6331,9 +6616,6 @@ A JSONPath expression to filter a JSON output.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --hide-disabled
 Do not include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
@@ -6400,6 +6682,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -6518,6 +6806,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6575,14 +6869,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -6676,6 +6964,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6766,6 +7060,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -6864,6 +7164,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -6921,14 +7227,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -7021,6 +7321,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -7116,6 +7422,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -7209,6 +7521,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -7307,6 +7625,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -7398,6 +7722,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -7438,14 +7768,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -7535,6 +7859,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -7576,14 +7906,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -7673,6 +7997,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -7714,14 +8044,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -7812,6 +8136,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -7852,14 +8182,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -7950,6 +8274,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -7983,12 +8313,6 @@ Show this help message and exit.
 
 Create-provision or delete-unprovision instances to meet service scale target.
 
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B --to=PARM_DESTINATION_NODE
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
@@ -8050,6 +8374,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -8090,14 +8420,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -8184,6 +8508,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -8225,14 +8555,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -8319,6 +8643,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -8362,14 +8692,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -8472,6 +8796,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -8566,6 +8896,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -8608,14 +8944,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -8724,6 +9054,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -8764,14 +9100,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -8861,6 +9191,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -8959,6 +9295,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -9001,14 +9343,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9114,6 +9450,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -9204,6 +9546,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -9317,6 +9665,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -9357,14 +9711,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9455,6 +9803,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -9495,14 +9849,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9589,6 +9937,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -9630,14 +9984,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9724,6 +10072,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -9765,14 +10119,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9859,6 +10207,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -9900,14 +10254,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -9994,6 +10342,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10035,14 +10389,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10129,6 +10477,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10170,14 +10524,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10264,6 +10612,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10305,14 +10659,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10399,6 +10747,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10440,14 +10794,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10534,6 +10882,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10575,14 +10929,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10669,6 +11017,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10710,14 +11064,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10804,6 +11152,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10845,14 +11199,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -10939,6 +11287,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -10980,14 +11334,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -11074,6 +11422,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -11115,14 +11469,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -11209,6 +11557,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -11319,6 +11673,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -11369,12 +11729,6 @@ refresh the information every --interval.
 .TP
 .B --interval=INTERVAL
 with --watch, set the refresh interval. defaults to 0, to refresh on event only.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B --master
 Limit the action scope to the master service resources.
@@ -11442,6 +11796,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -11484,14 +11844,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -11579,6 +11933,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -11636,14 +11996,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -11733,6 +12087,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -11825,6 +12185,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -11867,14 +12233,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -11986,6 +12346,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12043,14 +12409,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -12143,6 +12503,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
@@ -12241,6 +12607,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12281,14 +12653,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -12409,6 +12775,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12449,14 +12821,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -12588,6 +12954,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12691,6 +13063,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12731,14 +13109,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -12876,6 +13248,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -12916,14 +13294,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -13046,6 +13418,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -13086,14 +13464,8 @@ Show the action execution plan.
 .B -f, --force
 Force action, ignore sanity checks.
 .TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
 .B --master
 Limit the action scope to the master service resources.
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
 .TP
 .B --nolock
 Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
@@ -13190,6 +13562,12 @@ Note:
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
 .TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
 .TP
@@ -13280,6 +13658,12 @@ Note:
 .TP
 .B --status=PARM_STATUS
 Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
 .TP
 .B -c, --cluster
 Execute the action on all cluster nodes. Aggregate the json outputs.
