@@ -3015,7 +3015,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def install_service(self, svcpath, fpath=None, template=None,
                         restore=False, resources=[], namespace=None,
-                        env=None, interactive=False):
+                        env=None, interactive=False, provision=False):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
@@ -3108,6 +3108,7 @@ class Node(Crypt, ExtConfigMixin):
                 "action": "create",
                 "options": {
                     "namespace": namespace,
+                    "provision": provision,
                     "data": data,
                 }
             }
@@ -3271,7 +3272,8 @@ class Node(Crypt, ExtConfigMixin):
                                             resources=options.resource,
                                             namespace=options.namespace,
                                             env=options.env,
-                                            interactive=options.interactive)
+                                            interactive=options.interactive,
+                                            provision=options.provision)
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1

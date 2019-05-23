@@ -1200,6 +1200,7 @@ class Listener(shared.OsvcThread):
             return {"status": 0, "info": "no data"}
         sync = kwargs.get("sync", True)
         namespace = kwargs.get("namespace")
+        provision = kwargs.get("provision")
         cmd = ["create", "--config=-"]
         if namespace:
             cmd.append("--namespace="+namespace)
@@ -1219,6 +1220,9 @@ class Listener(shared.OsvcThread):
             result = {
                 "status": 0,
             }
+        if provision:
+            for path in data:
+                self.set_smon(path, global_expect="provisioned")
         return result
 
     def action_service_action(self, nodename, **kwargs):
