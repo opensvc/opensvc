@@ -54,6 +54,12 @@ ACTION_NO_ASYNC = [
     "print_status",
 ]
 
+ACTION_ANY_NODE = {
+    "print_config",
+    "set",
+    "get",
+}
+
 ACTION_ASYNC = {
     "abort": {
         "target": "aborted",
@@ -781,7 +787,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.systemd_join_agent_service()
         try:
             options = self.prepare_options(action, options)
-            self.async_action(action)
+            ret = self.async_action(action)
+            if ret is not None:
+                return ret
         except ex.excError as exc:
             msg = str(exc)
             if msg:
@@ -1378,6 +1386,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def prepare_async_cmd(self):
         cmd = sys.argv[1:]
+        cmd = drop_option("--local", cmd, drop_value=False)
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("-s", cmd, drop_value=True)
         cmd = drop_option("--service", cmd, drop_value=True)
@@ -1386,9 +1395,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def async_action(self, action, wait=None, timeout=None):
         if action in ACTION_NO_ASYNC:
             return
-        if self.options.node is not None and self.options.node != "":
+        if (want_context() and action not in ACTION_ASYNC) or (self.options.node is not None and self.options.node != ""):
             cmd = self.prepare_async_cmd()
-            ret = self.daemon_service_action(cmd)
+            ret = self.daemon_service_action(cmd, action=action, target=self.options.node, action_mode=False)
+            if isinstance(ret, (dict, list)):
+                return ret
             if ret == 0:
                 raise ex.excAbortAction()
             else:
@@ -1735,7 +1746,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         The 'print config' action entry point.
         Print the service configuration in the format specified by --format.
         """
-        if not os.path.exists(self.paths.cf):
+        if want_context() or not os.path.exists(self.paths.cf):
             buff = self.remote_service_config()
             if buff is None:
                 raise ex.excError("could not fetch remote config")
@@ -1748,12 +1759,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     tmpfile.write(buff)
                 svc = Svc(self.svcname, self.namespace, node=self.node, cf=fname, volatile=True)
                 svc.options = self.options
-                return svc.print_config()
+                return svc._print_config()
             finally:
                 try:
                     os.unlink(fname)
                 except Exception:
                     pass
+        return self._print_config()
+
+    def _print_config(self):
         if self.options.format is not None or self.options.jsonpath_filter:
             return self.print_config_data(evaluate=self.options.eval,
                                           impersonate=self.options.impersonate)
@@ -2024,7 +2038,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if buff:
                 return buff
 
-    def daemon_service_action(self, cmd, nodename=None, sync=True, timeout=0, collect=False, action_mode=True):
+    def daemon_service_action(self, cmd, action=None, nodename=None, target=None, sync=True, timeout=0, collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
@@ -2033,7 +2047,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
             timeout = convert_duration(timeout)
         if nodename is None:
             nodename = self.options.node
-        if nodename not in self.node.cluster_nodes:
+        if want_context():
+            secret = None
+            cluster_name = None
+            if not self.options.node:
+                if action in ACTION_ANY_NODE:
+                    target = "ANY"
+                else:
+                    raise ex.excError("the --node <selector> option is required")
+        elif nodename not in self.node.cluster_nodes:
             try:
                 secret = self.node.conf_get("cluster", "secret", impersonate=nodename)
             except:
@@ -2047,17 +2069,20 @@ class BaseSvc(Crypt, ExtConfigMixin):
             cluster_name = None
 
 
-        options = {
-            "svcpath": self.svcpath,
-            "cmd": cmd,
-            "sync": sync,
-            "action_mode": action_mode,
+        req = {
+            "action": "service_action",
+            "node": target,
+            "options": {
+                "svcpath": self.svcpath,
+                "cmd": cmd,
+                "sync": sync,
+            }
         }
         if action_mode:
             self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
         try:
             data = self.daemon_send(
-                {"action": "service_action", "options": options},
+                req,
                 nodename=nodename,
                 silent=True,
                 timeout=timeout,
@@ -2072,19 +2097,40 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.log.error("post service action '%s' on node %s failed",
                            " ".join(cmd), nodename)
             return 1
-        if "data" not in data:
-            return 0
-        data = data["data"]
-        if collect:
-            return data["ret"], data.get("out", ""), data.get("err", "")
-        else:
+
+        def print_node_data(nodename, data):
             if data.get("out") and len(data["out"]) > 0:
                 for line in data["out"].splitlines():
                    print(line)
             if data.get("err") and len(data["err"]) > 0:
                 for line in data["err"].splitlines():
-                   print(line, file=sys.stderr)
-            return data["ret"]
+                   print("%s: %s" % (nodename, line), file=sys.stderr)
+
+        if collect:
+            if "data" not in data:
+                return 0
+            data = data["data"]
+            return data["ret"], data.get("out", ""), data.get("err", "")
+        else:
+            if "nodes" in data:
+                if self.options.format in ("json", "flat_json"):
+                    if len(data["nodes"]) == 1:
+                        for _data in data["nodes"].values():
+                            return _data
+                    return data
+                else:
+                    ret = 0
+                    for n, _data in data["nodes"].items():
+                        _data = _data["data"]
+                        print_node_data(n, _data)
+                        ret += _data.get("ret", 0)
+                    return ret
+            else:
+                if "data" not in data:
+                    return 0
+                data = data["data"]
+                print_node_data(nodename, data)
+                return data.get("ret", 0)
 
     def logs(self, nodename=None):
         try:
@@ -2551,62 +2597,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             raise ex.excError(str(exc))
         if "error" in data:
             raise ex.excError(data["error"])
-
-    def setenv(self, args, interactive=False):
-        """
-        For each option in the 'env' section of the configuration file,
-        * rewrite the value using the value specified in a corresponding
-          --env <option>=<value> commandline arg
-        * or prompt for the value if --interactive is set, and rewrite
-        * or leave the value as is, considering the default is accepted
-        """
-        explicit_options = []
-        changed = False
-
-        for arg in args:
-            idx = arg.index("=")
-            option = arg[:idx]
-            value = arg[idx+1:]
-            self._set("env", option, value)
-            explicit_options.append(option)
-            changed = True
-
-        if not interactive:
-            return changed
-
-        if not os.isatty(0):
-            raise ex.excError("--interactive is set but input fd is not a tty")
-
-        def get_href(ref):
-            ref = ref.strip("[]")
-            try:
-                response = node.urlopen(ref)
-                return response.read()
-            except:
-                return ""
-
-        def print_comment(comment):
-            """
-            Print a env keyword comment. For use in the interactive service
-            create codepath.
-            """
-            import re
-            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
-            print(comment)
-
-        from six.moves import input
-        for key, default_val in self.env_section_keys().items():
-            if key.endswith(".comment"):
-                continue
-            if key in explicit_options:
-                continue
-            if self.config.has_option("env", key+".comment"):
-                print_comment(self.config.get("env", key+".comment"))
-            newval = input("%s [%s] > " % (key, str(default_val)))
-            if newval != "":
-                self._set("env", key, newval)
-                changed = True
-        return changed
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["svcname"] = self.svcpath
