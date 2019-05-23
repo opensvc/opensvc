@@ -72,6 +72,12 @@ KEYWORDS = [
         "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
         "example": "node1 node2"
     },
+    {
+        "sections": ["DEFAULT"],
+        "keyword": "comment",
+        "default": "",
+        "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
+    },
 ]
 
 

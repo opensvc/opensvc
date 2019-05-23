@@ -165,6 +165,12 @@ KEYWORDS = [
         "text": "The name of secret containing a certificate to use as a Certificate Authority. This secret must be in the same namespace.",
         "example": "ca",
     },
+    {
+        "sections": ["DEFAULT"],
+        "keyword": "comment",
+        "default": "",
+        "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
+    },
 ]
 
 

@@ -980,12 +980,6 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "comment",
-        "default": "",
-        "text": "Helps users understand the role of the service, which is nice to on-call support people having to operate on a service they are not usually responsible for."
-    },
-    {
-        "section": "DEFAULT",
         "keyword": "scsireserv",
         "at": True,
         "default": False,
@@ -3941,6 +3935,12 @@ KEYWORDS = [
         "depends": [('create_pg', [True])],
         "text": "Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
         "example": "50"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "comment",
+        "default": "",
+        "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
     },
 ]
 
