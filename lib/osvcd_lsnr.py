@@ -247,7 +247,9 @@ class Listener(shared.OsvcThread):
             return
         for fd in fds[0]:
             sock = self.sockmap[fd]
+            cn = None
             try:
+                conn = None
                 conn, addr = sock.accept()
                 self.stats.sessions.accepted += 1
                 if len(addr) == 0:
@@ -263,7 +265,6 @@ class Listener(shared.OsvcThread):
                         self.log.warning("refused user connection: %s (valid cert, unknown user)", cn)
                         conn.close()
                         continue
-                    self.log.info("authenticated user connection: %s", cn)
                 else:
                     encrypted = True
                 if addr[0] not in self.stats.sessions.clients:
@@ -278,9 +279,11 @@ class Listener(shared.OsvcThread):
             except socket.timeout:
                 continue
             except Exception:
-                conn.close()
+                if conn:
+                    conn.close()
+                continue
             try:
-                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted))
+                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted, cn))
                 thr.start()
                 self.threads.append(thr)
             except RuntimeError as exc:
@@ -347,7 +350,7 @@ class Listener(shared.OsvcThread):
                 except KeyError:
                     pass
 
-    def handle_client(self, conn, addr, encrypted):
+    def handle_client(self, conn, addr, encrypted, cn):
         try:
             close = True
             sid = str(uuid.uuid4())
@@ -357,7 +360,7 @@ class Listener(shared.OsvcThread):
                 "encrypted": encrypted,
                 "progress": "init",
             })
-            self._handle_client(conn, addr, encrypted, sid)
+            self._handle_client(conn, addr, encrypted, cn, sid)
         except DontClose:
             close = False
         finally:
@@ -365,7 +368,7 @@ class Listener(shared.OsvcThread):
                 del self.stats.sessions.alive[sid]
                 conn.close()
 
-    def _handle_client(self, conn, addr, encrypted, sid):
+    def _handle_client(self, conn, addr, encrypted, cn, sid):
         chunks = []
         buff_size = 4096
         conn.setblocking(0)
@@ -413,7 +416,7 @@ class Listener(shared.OsvcThread):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             return
-        result = self.router(nodename, data, conn, addr, encrypted, sid)
+        result = self.router(nodename, data, conn, addr, encrypted, cn, sid)
         if result:
             self.stats.sessions.alive[sid].progress = "sending %s result" % self.stats.sessions.alive[sid].progress
             conn.setblocking(1)
@@ -435,12 +438,29 @@ class Listener(shared.OsvcThread):
             self.stats.sessions.tx += message_len
             self.stats.sessions.clients[addr[0]].tx += message_len
 
+    def log_request(self, msg, nodename, lvl="info", cn=None, addr=None, **kwargs):
+        """
+        Append the request origin to the message logged by the router action"
+        """
+        if not msg:
+            return
+        if addr[0] == "local" or not cn or not addr:
+            origin = "requested by %s" % nodename
+        origin = "requested by %s@%s" % (cn, addr[0])
+        if lvl == "error":
+            fn = self.log.error
+        if lvl == "warning":
+            fn = self.log.warning
+        else:
+            fn = self.log.info
+        fn("%s %s", msg, origin)
+
     #########################################################################
     #
     # Actions
     #
     #########################################################################
-    def router(self, nodename, data, conn, addr, encrypted, sid):
+    def router(self, nodename, data, conn, addr, encrypted, cn, sid):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -458,8 +478,34 @@ class Listener(shared.OsvcThread):
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
         self.stats.sessions.alive[sid].progress = fname
+        # TODO: rbac
+        node = data.get("node")
+        if node:
+            del data["node"]
+            result = {"nodes": {}, "status": 0}
+            svcpath = options.get("svcpath")
+            if node == "ANY" and svcpath:
+                try:
+                    for n in shared.SERVICES[svcpath].nodes:
+                        break
+                    nodenames = [n]
+                except KeyError:
+                    return {"error": "unknown service", "status": 1}
+            else:
+                nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+            for nodename in nodenames:
+                if nodename == rcEnv.nodename:
+                    _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
+                                                   addr=addr, sid=sid, cn=cn, **options)
+                    result["nodes"][nodename] = _result
+                    result["status"] += _result.get("status", 0)
+                else:
+                    _result = self.daemon_send(data, nodename=nodename, silent=True)
+                    result["nodes"][nodename] = _result
+                    result["status"] += _result.get("status", 0)
+            return result
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                    addr=addr, sid=sid, **options)
+                                    addr=addr, sid=sid, cn=cn, **options)
 
     def action_run_done(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
@@ -598,7 +644,7 @@ class Listener(shared.OsvcThread):
         """
         Care with locks
         """
-        self.log.info("shutdown daemon requested")
+        self.log_request("shutdown daemon", nodename, **kwargs)
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
             mon = shared.THREADS["monitor"]
@@ -640,7 +686,7 @@ class Listener(shared.OsvcThread):
     def action_daemon_stop(self, nodename, **kwargs):
         thr_id = kwargs.get("thr_id")
         if not thr_id:
-            self.log.info("stop daemon requested")
+            self.log_request("stop daemon", nodename, **kwargs)
             if kwargs.get("upgrade"):
                 self.set_nmon(status="upgrade")
                 self.log.info("announce upgrade state")
@@ -658,9 +704,9 @@ class Listener(shared.OsvcThread):
             with shared.THREADS_LOCK:
                 has_thr = thr_id in shared.THREADS
             if not has_thr:
-                self.log.info("stop thread requested on non-existing thread")
+                self.log_request("stop thread requested on non-existing thread", nodename, **kwargs)
                 return {"error": "thread does not exist"*50, "status": 1}
-            self.log.info("stop thread %s requested", thr_id)
+            self.log_request("stop thread %s" % thr_id, nodename, **kwargs)
             with shared.THREADS_LOCK:
                 shared.THREADS[thr_id].stop()
             if thr_id == "scheduler":
@@ -681,9 +727,9 @@ class Listener(shared.OsvcThread):
         with shared.THREADS_LOCK:
             has_thr = thr_id in shared.THREADS
         if not has_thr:
-            self.log.info("start thread requested on non-existing thread")
+            self.log_request("start thread requested on non-existing thread", nodename, **kwargs)
             return {"error": "thread does not exist"*50, "status": 1}
-        self.log.info("start thread requested")
+        self.log_request("start thread %s" % thr_id, nodename, **kwargs)
         with shared.THREADS_LOCK:
             shared.THREADS[thr_id].unstop()
         return {"status": 0}
@@ -771,7 +817,7 @@ class Listener(shared.OsvcThread):
         smon = self.get_service_monitor(svcpath)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
-        self.log.info("service %s clear requested", svcpath)
+        self.log_request("service %s clear" % svcpath, nodename, **kwargs)
         self.set_smon(svcpath, status="idle", reset_retries=True)
         return {"status": 0}
 
@@ -1114,8 +1160,7 @@ class Listener(shared.OsvcThread):
         action_mode = kwargs.get("action_mode", True)
         cmd = kwargs.get("cmd")
         if cmd is None or len(cmd) == 0:
-            self.log.error("node %s requested a peer node action without "
-                           "specifying the command", nodename)
+            self.log_request("node action ('cmd' not set)", nodename, lvl="error", **kwargs)
             return {
                 "status": 1,
             }
@@ -1125,8 +1170,7 @@ class Listener(shared.OsvcThread):
         cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
         if action_mode and "--local" not in cmd:
             cmd += ["--local"]
-        self.log.info("run '%s' requested by node %s",
-                      " ".join(cmd), nodename)
+        self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
@@ -1152,6 +1196,8 @@ class Listener(shared.OsvcThread):
         passed in <data>.
         """
         data = kwargs.get("data")
+        if not data:
+            return {"status": 0, "info": "no data"}
         sync = kwargs.get("sync", True)
         namespace = kwargs.get("namespace")
         cmd = ["create", "--config=-"]
@@ -1184,49 +1230,46 @@ class Listener(shared.OsvcThread):
         * sync: boolean
         """
         sync = kwargs.get("sync", True)
-        action_mode = kwargs.get("action_mode", True)
         svcpath = kwargs.get("svcpath")
         if not svcpath:
             svcpath = kwargs.get("svcname")
         if svcpath is None:
-            self.log.error("node %s requested a service action without "
-                           "specifying the service name", nodename)
+            self.log_request("service action (no 'svcpath' set)", nodename, lvl="error", **kwargs)
             return {
                 "status": 1,
             }
         cmd = kwargs.get("cmd")
         if self.get_service(svcpath) is None and "create" not in cmd:
-            self.log.warning("discard service action '%s' on a service "
-                             "not installed: %s", " ".join(cmd), svcpath)
+            self.log_request("service action (%s not installed)" % svcpath, nodename, lvl="warning", **kwargs)
             return {
                 "err": "service not found",
                 "status": 1,
             }
         if cmd is None or len(cmd) == 0:
-            self.log.error("node %s requested a service action without "
-                           "specifying the command", nodename)
+            self.log_request("service action (no 'cmd' set)", nodename, lvl="error", **kwargs)
             return {
                 "status": 1,
             }
 
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("--daemon", cmd)
-        if action_mode and "--local" not in cmd:
-            cmd.append("--local")
+        cmd.append("--local")
         cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", svcpath] + cmd
-        self.log.info("run '%s' requested by node %s",
-                      " ".join(cmd), nodename)
+        self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
-            result = {
-                "status": 0,
-                "data": {
-                    "out": bdecode(out),
-                    "err": bdecode(err),
-                    "ret": proc.returncode,
-                },
-            }
+            try:
+                result = json.loads(out)
+            except Exception:
+                result = {
+                    "status": 0,
+                    "data": {
+                        "out": bdecode(out),
+                        "err": bdecode(err),
+                        "ret": proc.returncode,
+                    },
+                }
         else:
             proc = Popen(cmd, stdin=None, close_fds=True)
             self.push_proc(proc)
