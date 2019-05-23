@@ -55,9 +55,10 @@ ACTION_NO_ASYNC = [
 ]
 
 ACTION_ANY_NODE = {
+    "get",
     "print_config",
     "set",
-    "get",
+    "unset",
 }
 
 ACTION_ASYNC = {
