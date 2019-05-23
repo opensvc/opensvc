@@ -318,6 +318,8 @@ SVC_SELECT_OPTS = [
     OPT.namespace,
     OPT.service,
     OPT.status,
+    OPT.node,
+    OPT.local,
 ]
 
 GLOBAL_OPTS = SVC_SELECT_OPTS + [
@@ -331,17 +333,10 @@ GLOBAL_OPTS = SVC_SELECT_OPTS + [
     OPT.help,
 ]
 
-DAEMON_OPTS = [
-    OPT.node,
-    OPT.local,
-]
-
 ACTION_OPTS = [
     OPT.dry_run,
     OPT.force,
-    OPT.local,
     OPT.master,
-    OPT.node,
     OPT.nolock,
     OPT.rid,
     OPT.slave,
@@ -383,7 +378,6 @@ ACTIONS = {
         "monitor": {
             "msg": "Display or watch the synthetic service status, and perf metrics.",
             "options": [
-                OPT.node,
                 OPT.stats,
                 OPT.watch,
                 OPT.interval,
@@ -405,7 +399,6 @@ ACTIONS = {
             "options": [
                 OPT.filter,
                 OPT.format,
-                OPT.node,
                 OPT.hide_disabled,
                 OPT.refresh,
                 OPT.show_disabled,

@@ -135,7 +135,7 @@ ACTIONS["Service actions"].update({
                "by --node. If --node is not specified, all nodes are "
                "cleared. This command can be used to reactivate service "
                "orchestration blocked by a failed status like ``start failed``.",
-        "options": mp.DAEMON_OPTS + [
+        "options": [
 		    OPT.slave,
 		    OPT.slaves,
         ],
@@ -246,8 +246,6 @@ ACTIONS["Service actions"].update({
     "freeze": {
         "msg": "Block orchestration on the service.",
         "options": mp.ASYNC_ACTION_OPTS + [
-            OPT.node,
-            OPT.local,
             OPT.master,
             OPT.slave,
             OPT.slaves,
@@ -256,8 +254,6 @@ ACTIONS["Service actions"].update({
     "thaw": {
         "msg": "Unblock orchestration on the service.",
         "options": mp.ASYNC_ACTION_OPTS + [
-            OPT.node,
-            OPT.local,
             OPT.master,
             OPT.slave,
             OPT.slaves,
@@ -449,7 +445,7 @@ ACTIONS["Service actions"].update({
     "scale": {
         "msg": "Create-provision or delete-unprovision instances to meet "
                "service scale target.",
-        "options": mp.DAEMON_OPTS + [
+        "options": [
             OPT.to
         ],
     },
@@ -564,8 +560,6 @@ ACTIONS["Service actions"].update({
         "options": [
             OPT.backlog,
             OPT.follow,
-            OPT.local,
-            OPT.node,
             OPT.nopager,
         ]
     },
