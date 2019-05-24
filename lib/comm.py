@@ -45,6 +45,7 @@ RETRYABLE = (
 )
 SOCK_TMO = 0.2
 PAUSE = 0.2
+PING = ".".encode()
 
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
@@ -786,6 +787,13 @@ class Crypt(object):
                     del socks[sock]
                 if len(socks) == 0:
                     break
+                for sock in _socks:
+                    if sock in rsock:
+                        continue
+                    try:
+                        sock.send(PING)
+                    except Exception as exc:
+                        pass
         finally:
             for sock in socks:
                 sock.close()

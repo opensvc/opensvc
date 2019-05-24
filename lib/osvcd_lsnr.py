@@ -320,6 +320,15 @@ class Listener(shared.OsvcThread):
                 return
         done = []
         while True:
+            # recv pings to avoid filling the client send buffer
+            for idx, (conn, encrypted, sid) in enumerate(self.events_clients):
+                while True:
+                    try:
+                        buff = conn.recv(4096)
+                    except Exception as exc:
+                        break
+                    if not buff:
+                        break
             try:
                 event = shared.EVENT_Q.get(False, 0)
             except queue.Empty:
