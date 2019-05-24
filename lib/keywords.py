@@ -157,7 +157,12 @@ class Keyword(object):
 
         s = ""
         if section:
-            s += ".. _%s.%s:\n\n" % (section, self.keyword)
+            fill=""
+            if "template.node" in self.top.template_prefix:
+                fill="node."
+            if "template.cluster" in self.top.template_prefix:
+                fill="cluster."
+            s += ".. _%s%s.%s:\n\n" % (fill, section, self.keyword)
 
         s += ':kw:`%s`\n' % self.keyword
         s += "=" * (len(self.keyword) + 6) + "\n"
