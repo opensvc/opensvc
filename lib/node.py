@@ -2828,7 +2828,7 @@ class Node(Crypt, ExtConfigMixin):
         if len(data["data"][0]["tpl_definition"]) == 0:
             raise ex.excError("service has an empty configuration")
         with open(tmpfpath, "w") as ofile:
-            os.chmod(info.cf, 0o0600)
+            os.chmod(tmpfpath, 0o0600)
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
         try:
             return self.svc_conf_from_file(name, namespace, kind, tmpfpath)
@@ -2984,7 +2984,7 @@ class Node(Crypt, ExtConfigMixin):
         def get_href(ref):
             ref = ref.strip("[]")
             try:
-                response = self.urlopen(ref)
+                response = urlopen(ref)
                 return response.read()
             except:
                 return ""
@@ -3234,7 +3234,7 @@ class Node(Crypt, ExtConfigMixin):
         try:
             defaults.update(odict.KEYS.update("DEFAULT", defaults))
             for section, d in sections.items():
-                sections[section].update(KEYS.update(section, d))
+                sections[section].update(odict.KEYS.update(section, d))
         except (MissKeyNoDefault, KeyInvalidValue):
             raise ex.excError
 
