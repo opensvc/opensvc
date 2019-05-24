@@ -2918,6 +2918,13 @@ class Node(Crypt, ExtConfigMixin):
             info = self.install_service_info(name, namespace, kind)
         config = rcConfigParser.RawConfigParser()
 
+        if not os.path.exists(info.cf):
+            # freeze before the installing the config so the daemon never
+            # has a chance to consider the new service unfrozen and take undue
+            # action before we have the change to modify the service config
+            svcpath = fmt_svcpath(name, namespace, kind)
+            Freezer(svcpath).freeze()
+
         config.set("DEFAULT", "id", info.id)
         for section_name, section in data.items():
             if section_name != "DEFAULT":
@@ -3135,13 +3142,6 @@ class Node(Crypt, ExtConfigMixin):
                 installed.append(info.path)
             self.wake_monitor()
             return installed
-
-
-        if not want_context() and not os.path.exists(info.cf):
-            # freeze before the installing the config so the daemon never
-            # has a chance to consider the new service unfrozen and take undue
-            # action before we have the change to modify the service config
-            Freezer(svcpath).freeze()
 
         if data is not None:
             self.install_svc_conf_from_data(name, namespace, kind, data, restore, info)
