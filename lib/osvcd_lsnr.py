@@ -460,6 +460,31 @@ class Listener(shared.OsvcThread):
     # Actions
     #
     #########################################################################
+    def multiplex(self, node, fname, options, data, conn, addr, encrypted, cn, sid):
+        del data["node"]
+        result = {"nodes": {}, "status": 0}
+        svcpath = options.get("svcpath")
+        if node == "ANY" and svcpath:
+            try:
+                for n in shared.SERVICES[svcpath].nodes:
+                    break
+                nodenames = [n]
+            except KeyError:
+                return {"error": "unknown service", "status": 1}
+        else:
+            nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+        for nodename in nodenames:
+            if nodename == rcEnv.nodename:
+                _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
+                                               addr=addr, sid=sid, cn=cn, **options)
+                result["nodes"][nodename] = _result
+                result["status"] += _result.get("status", 0)
+            else:
+                _result = self.daemon_send(data, nodename=nodename, silent=True)
+                result["nodes"][nodename] = _result
+                result["status"] += _result.get("status", 0)
+        return result
+
     def router(self, nodename, data, conn, addr, encrypted, cn, sid):
         """
         For a request data, extract the requested action and options,
@@ -481,29 +506,7 @@ class Listener(shared.OsvcThread):
         # TODO: rbac
         node = data.get("node")
         if node:
-            del data["node"]
-            result = {"nodes": {}, "status": 0}
-            svcpath = options.get("svcpath")
-            if node == "ANY" and svcpath:
-                try:
-                    for n in shared.SERVICES[svcpath].nodes:
-                        break
-                    nodenames = [n]
-                except KeyError:
-                    return {"error": "unknown service", "status": 1}
-            else:
-                nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
-            for nodename in nodenames:
-                if nodename == rcEnv.nodename:
-                    _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                                   addr=addr, sid=sid, cn=cn, **options)
-                    result["nodes"][nodename] = _result
-                    result["status"] += _result.get("status", 0)
-                else:
-                    _result = self.daemon_send(data, nodename=nodename, silent=True)
-                    result["nodes"][nodename] = _result
-                    result["status"] += _result.get("status", 0)
-            return result
+            return self.multiplex(node, fname, options, data, conn, addr, encrypted, cn, sid)
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
                                     addr=addr, sid=sid, cn=cn, **options)
 
