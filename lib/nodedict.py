@@ -475,6 +475,19 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
     },
     {
         "section": "listener",
+        "keyword": "tls_addr",
+        "default": "0.0.0.0",
+        "example": "1.2.3.4",
+        "text": "The ip addr the daemon tls listener must listen on. Usually set to the cluster vip if 0.0.0.0 is not adequate."
+    },
+    {
+        "section": "listener",
+        "keyword": "tls_port",
+        "default": 1215,
+        "text": """The port the daemon tls listener must listen on."""
+    },
+    {
+        "section": "listener",
         "keyword": "addr",
         "default": "0.0.0.0",
         "example": "1.2.3.4",
