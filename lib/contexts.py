@@ -131,6 +131,8 @@ def user_create(name=None, client_certificate=None, client_key=None, **kwargs):
         data["client_certificate"] = client_certificate
     if client_key:
         data["client_key"] = client_key
+    if "users" not in cdata:
+        cdata["users"] = {}
     cdata["users"][name] = data
     write_context(cdata)
 
@@ -168,6 +170,8 @@ def cluster_create(name=None, server=None, certificate_authority=None, **kwargs)
         data["server"] = server
     if certificate_authority:
         data["certificate_authority"] = certificate_authority
+    if "clusters" not in cdata:
+        cdata["clusters"] = {}
     cdata["clusters"][name] = data
     write_context(cdata)
 
@@ -205,8 +209,12 @@ def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
     if name is None:
         raise ex.excError("name is mandatory")
     cdata = load_context()
+    if not cluster:
+        raise ex.excError("cluster is mandatory")
     if cluster not in cdata.get("clusters", {}):
         raise ex.excError("unknown cluster %s" % cluster)
+    if not user:
+        raise ex.excError("user is mandatory")
     if user not in cdata.get("users", {}):
         raise ex.excError("unknown user %s" % user)
     if name in cdata.get("contexts", {}):
@@ -220,6 +228,8 @@ def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
         data["user"] = user
     if namespace:
         data["namespace"] = namespace
+    if "clusters" not in cdata:
+        cdata["clusters"] = {}
     cdata["contexts"][name] = data
     write_context(cdata)
 
