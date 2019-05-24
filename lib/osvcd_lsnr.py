@@ -63,7 +63,7 @@ class Listener(shared.OsvcThread):
         sec = factory("sec")(secname, namespace=namespace, volatile=True)
         if not sec.exists():
             raise ex.excInitError("secret %s does not exist" % secname)
-        data = factory("sec")("ca", volatile=True).decode_key("certificate_chain")
+        data = sec.decode_key("certificate_chain")
         if data is None:
             raise ex.excInitError("secret key %s.%s is not set" % (secname, "certificate_chain"))
         ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
