@@ -104,6 +104,14 @@ def want_context():
 
 def write_context(data):
     fpath = contexts_config_path()
+    dpath = os.path.dirname(fpath)
+    try:
+        os.makedirs(dpath, 0o0700)
+    except OSError as exc:
+        if exc.errno == 17:
+            pass
+        else:
+            raise
     with open(fpath, "w") as ofile:
         json.dump(data, ofile, indent=4)
 
@@ -228,8 +236,8 @@ def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
         data["user"] = user
     if namespace:
         data["namespace"] = namespace
-    if "clusters" not in cdata:
-        cdata["clusters"] = {}
+    if "contexts" not in cdata:
+        cdata["contexts"] = {}
     cdata["contexts"][name] = data
     write_context(cdata)
 
