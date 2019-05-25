@@ -3118,6 +3118,7 @@ class Node(Crypt, ExtConfigMixin):
                 "options": {
                     "namespace": namespace,
                     "provision": provision,
+                    "restore": restore,
                     "data": data,
                 }
             }

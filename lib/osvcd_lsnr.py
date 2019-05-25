@@ -1216,9 +1216,12 @@ class Listener(shared.OsvcThread):
         sync = kwargs.get("sync", True)
         namespace = kwargs.get("namespace")
         provision = kwargs.get("provision")
+        restore = kwargs.get("restore")
         cmd = ["create", "--config=-"]
         if namespace:
             cmd.append("--namespace="+namespace)
+        if restore:
+            cmd.append("--restore")
         proc = self.service_command(None, cmd, stdin=json.dumps(data))
         if sync:
             out, err = proc.communicate()
