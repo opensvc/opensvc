@@ -474,10 +474,13 @@ class Listener(shared.OsvcThread):
         result = {"nodes": {}, "status": 0}
         svcpath = options.get("svcpath")
         if node == "ANY" and svcpath:
+            svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(svcpath)]
             try:
-                for n in shared.SERVICES[svcpath].nodes:
-                    break
-                nodenames = [n]
+                if rcEnv.nodename in svcnodes:
+                    # prefer to not relay, if possible
+                    nodenames = [rcEnv.nodename]
+                else:
+                    nodenames = [svcnodes[0]]
             except KeyError:
                 return {"error": "unknown service", "status": 1}
         else:
