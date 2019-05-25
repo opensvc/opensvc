@@ -2962,7 +2962,7 @@ class Node(Crypt, ExtConfigMixin):
         makedirs(data.pathetc)
         return data
 
-    def svc_conf_setenv(self, args, interactive=False, env=None):
+    def svc_conf_setenv(self, args=None, interactive=False, env=None):
         """
         For each option in the 'env' section of the configuration file,
         * rewrite the value using the value specified in a corresponding
@@ -2970,6 +2970,8 @@ class Node(Crypt, ExtConfigMixin):
         * or prompt for the value if --interactive is set, and rewrite
         * or leave the value as is, considering the default is accepted
         """
+        if args is None:
+            args = {}
         if env is None:
             env = {}
 

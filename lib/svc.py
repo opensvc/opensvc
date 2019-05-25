@@ -51,6 +51,7 @@ def signal_handler(*args):
 
 # Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
+    "edit_config",
     "logs",
     "print_config",
     "print_status",
@@ -1835,9 +1836,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         user the --recover or --discard choices for its next edit
         config action.
         """
-        if not os.path.exists(self.paths.cf):
-            raise ex.excError("service %s is not installed on this node" % \
-                              self.svcpath)
         if "EDITOR" in os.environ:
             editor = os.environ["EDITOR"]
         elif os.name == "nt":
@@ -1845,25 +1843,43 @@ class BaseSvc(Crypt, ExtConfigMixin):
         else:
             editor = "vi"
         from rcUtilities import which, fsum
+        import shutil
         if not which(editor):
             print("%s not found" % editor, file=sys.stderr)
             return 1
-        path = self.make_temp_config()
+        if want_context() or not os.path.exists(self.paths.cf):
+            refpath = self.remote_service_config_fetch()
+            need_send = True
+            path = refpath + ".tmp"
+            shutil.copy2(refpath, path)
+        else:
+            refpath = self.paths.cf
+            need_send = False
+            path = self.make_temp_config()
         os.system(' '.join((editor, path)))
-        if fsum(path) == fsum(self.paths.cf):
+        if fsum(path) == fsum(refpath):
             os.unlink(path)
+            if refpath != self.paths.cf:
+                os.unlink(refpath)
             return 0
         results = self._validate_config(path=path)
-        if results["errors"] == 0:
-            import shutil
-            shutil.copy(path, self.paths.cf)
-            os.unlink(path)
+        if need_send:
+            try:
+                return self.node.install_service(self.svcpath, fpath=path,
+                                                 restore=True)
+            finally:
+                os.unlink(refpath)
+                os.unlink(path)
         else:
-            print("your changes were not applied because of the errors "
-                  "reported above. you can use the edit config command "
-                  "with --recover to try to fix your changes or with "
-                  "--discard to restart from the live config")
-        return results["errors"] + results["warnings"]
+            if results["errors"] == 0:
+                shutil.copy(path, self.paths.cf)
+                os.unlink(path)
+            else:
+                print("your changes were not applied because of the errors "
+                      "reported above. you can use the edit config command "
+                      "with --recover to try to fix your changes or with "
+                      "--discard to restart from the live config")
+            return results["errors"] + results["warnings"]
 
     #########################################################################
     #
@@ -2013,6 +2029,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return data
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
+
+    def remote_service_config_fetch(self, nodename=None):
+        buff = self.remote_service_config(nodename=nodename)
+        if not buff:
+            raise ex.excError
+        import tempfile
+        tmpfile = tempfile.NamedTemporaryFile()
+        fname = tmpfile.name
+        tmpfile.close()
+        with open(fname, "w") as tmpfile:
+            tmpfile.write(buff)
+        return fname
 
     def remote_service_config(self, nodename=None):
         req = {
