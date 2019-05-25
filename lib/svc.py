@@ -49,8 +49,10 @@ def signal_handler(*args):
     """
     raise ex.excSignal
 
+# Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
     "logs",
+    "print_config",
     "print_status",
 ]
 
@@ -1748,7 +1750,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Print the service configuration in the format specified by --format.
         """
         if want_context() or not os.path.exists(self.paths.cf):
-            buff = self.remote_service_config()
+            buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.excError("could not fetch remote config")
             import tempfile
@@ -2012,32 +2014,32 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("set monitor status failed: %s", str(exc))
 
-    def peer_service_config(self, nodename):
-        options = {
-            "svcpath": self.svcpath,
+    def remote_service_config(self, nodename=None):
+        req = {
+            "action": "get_service_config",
+            "node": nodename if nodename else "ANY",
+            "options": {
+                "svcpath": self.svcpath,
+            }
         }
-        data = self.daemon_send(
-            {"action": "get_service_config", "options": options},
-            nodename=nodename,
-            silent=True,
-        )
-        if data["status"] != 0:
-            raise ex.excError(data.get("error"))
-        return data["data"]
-
-    def remote_service_config(self):
-        try:
-            data = self.node._daemon_status(silent=True)["monitor"]["nodes"]
-        except (AttributeError, KeyError):
-            return
-        for ndata in data.values():
-            scope = ndata.get("services", {}).get("config", {}).get(self.svcpath, {}).get("scope", [])
-            if scope:
+        data = self.daemon_send(req, nodename=nodename, silent=True)
+        if not data or data.get("status", 1) != 0:
+            try:
+                err = data.get("error", "")
+            except Exception:
+                err = ""
+            raise ex.excError(err)
+        if "nodes" in data:
+            for node in data["nodes"]:
                 break
-        for peer in scope:
-            buff = self.peer_service_config(peer)
-            if buff:
-                return buff
+            try:
+                return data["nodes"][node]["data"]
+            except Exception:
+                return
+        try:
+            return data["data"]
+        except Exception:
+            return
 
     def daemon_service_action(self, cmd, action=None, nodename=None, target=None, sync=True, timeout=0, collect=False, action_mode=True):
         """
