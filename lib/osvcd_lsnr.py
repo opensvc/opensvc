@@ -469,8 +469,11 @@ class Listener(shared.OsvcThread):
     # Actions
     #
     #########################################################################
-    def multiplex(self, node, fname, options, data, conn, addr, encrypted, cn, sid):
-        del data["node"]
+    def multiplex(self, node, fname, options, data, original_nodename, conn, addr, encrypted, cn, sid):
+        try:
+            del data["node"]
+        except Exception:
+            pass
         result = {"nodes": {}, "status": 0}
         svcpath = options.get("svcpath")
         if node == "ANY" and svcpath:
@@ -497,6 +500,45 @@ class Listener(shared.OsvcThread):
                 result["status"] += _result.get("status", 0)
         return result
 
+    def create_multiplex(self, fname, options, data, original_nodename, conn, addr, encrypted, cn, sid):
+        h = {}
+        for svcpath, svcdata in options.get("data", {}).items():
+            nodes = svcdata.get("DEFAULT", {}).get("nodes")
+            placement = svcdata.get("DEFAULT", {}).get("placement", "nodes order")
+            if nodes:
+                nodes = shared.NODE.nodes_selector(nodes, data=shared.CLUSTER_DATA)
+            else:
+                nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(svcpath)]
+            if nodes:
+                if rcEnv.nodename in nodes:
+                    node = rcEnv.nodename
+                else:
+                    node = nodes[0]
+            else:
+                node = rcEnv.nodename
+            if node not in h:
+                h[node] = {}
+            h[node][svcpath] = svcdata
+        result = {"nodes": {}, "status": 0}
+        for nodename, optdata in h.items():
+            _options = {}
+            _options.update(options)
+            _options["data"] = optdata
+            if nodename == rcEnv.nodename:
+                _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
+                                               addr=addr, sid=sid, cn=cn, **_options)
+                result["nodes"][nodename] = _result
+                result["status"] += _result.get("status", 0)
+            else:
+                _data = {}
+                _data.update(data)
+                _data["options"] = _options
+                self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename, cn=cn, addr=addr)
+                _result = self.daemon_send(_data, nodename=nodename, silent=True)
+                result["nodes"][nodename] = _result
+                result["status"] += _result.get("status", 0)
+        return result
+
     def router(self, nodename, data, conn, addr, encrypted, cn, sid):
         """
         For a request data, extract the requested action and options,
@@ -516,9 +558,11 @@ class Listener(shared.OsvcThread):
             options[str(key)] = val
         self.stats.sessions.alive[sid].progress = fname
         # TODO: rbac
+        if fname == "action_create":
+            return self.create_multiplex(fname, options, data, nodename, conn, addr, encrypted, cn, sid)
         node = data.get("node")
         if node:
-            return self.multiplex(node, fname, options, data, conn, addr, encrypted, cn, sid)
+            return self.multiplex(node, fname, options, data, nodename, conn, addr, encrypted, cn, sid)
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
                                     addr=addr, sid=sid, cn=cn, **options)
 
@@ -1217,6 +1261,7 @@ class Listener(shared.OsvcThread):
         namespace = kwargs.get("namespace")
         provision = kwargs.get("provision")
         restore = kwargs.get("restore")
+        self.log_request("create/update %s" % ",".join([p for p in data]), nodename, **kwargs)
         cmd = ["create", "--config=-"]
         if namespace:
             cmd.append("--namespace="+namespace)
