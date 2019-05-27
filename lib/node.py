@@ -4977,7 +4977,13 @@ class Node(Crypt, ExtConfigMixin):
             local_ip = None
         if local_ip is None:
             try:
-                local_ip = socket.getaddrinfo(rcEnv.nodename, None)[0][4][0]
+                for result in socket.getaddrinfo(rcEnv.nodename, None):
+                    addr = result[4][0]
+                    if ":" in addr or addr == "127.0.0.1":
+                        # discard ipv6 and loopback address
+                        continue
+                    local_ip = addr
+                    break
             except socket.gaierror:
                 self.log.warning("node %s is not resolvable", rcEnv.nodename)
                 return routes
