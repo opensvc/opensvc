@@ -70,6 +70,7 @@ class Listener(shared.OsvcThread):
         self.log.info("write %s", ca_cert_chain)
         with open(ca_cert_chain, "w") as fo:
             fo.write(data)
+        crl_path = self.fetch_crl(sec)
         secpath = shared.NODE.oget("cluster", "cert")
         if secpath is None:
             secpath = "system/sec/cert-" + self.cluster_name
@@ -89,13 +90,25 @@ class Listener(shared.OsvcThread):
         self.log.info("write %s", private_key)
         with open(private_key, "w") as fo:
             fo.write(data)
-        crl_path = self.fetch_crl()
         return ca_cert_chain, cert_chain, private_key, crl_path
 
-    def fetch_crl(self):
+    def fetch_crl(self, sec):
         crl = shared.NODE.oget("listener", "crl")
         if not crl:
             return
+        if crl == rcEnv.paths.crl:
+            try:
+                buff = sec.decode_key("crl")
+            except Exception as exc:
+                buff = None
+            if buff is None:
+                self.log.info("cluster ca crl configured but empty")
+                return
+            else:
+                self.log.info("write %s", crl)
+                with open(crl, "w") as fo:
+                    fo.write(buff)
+                return crl
         if os.path.exists(crl):
             return crl
         crl_path = os.path.join(rcEnv.paths.certs, "certificate_revocation_list")

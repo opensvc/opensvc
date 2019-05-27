@@ -86,6 +86,7 @@ class Paths(object):
         self.pathcomposvc = os.path.join(self.pathcomp, "com.opensvc")
         self.safe = os.path.join(self.pathvar, "safe")
         self.certs = os.path.join(self.pathvar, "certs")
+        self.crl = os.path.join(self.pathvar, "certs", "ca_crl")
         self.drp_path = os.path.join(self.pathvar, "cache")
         self.last_shutdown = os.path.join(self.pathvar, "last_shutdown")
 
