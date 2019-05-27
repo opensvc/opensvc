@@ -89,7 +89,22 @@ class Listener(shared.OsvcThread):
         self.log.info("write %s", private_key)
         with open(private_key, "w") as fo:
             fo.write(data)
-        return ca_cert_chain, cert_chain, private_key
+        crl_path = self.fetch_crl()
+        return ca_cert_chain, cert_chain, private_key, crl_path
+
+    def fetch_crl(self):
+        crl = shared.NODE.oget("listener", "crl")
+        if not crl:
+            return
+        if os.path.exists(crl):
+            return crl
+        crl_path = os.path.join(rcEnv.paths.certs, "certificate_revocation_list")
+        try:
+            shared.NODE.urlretrieve(crl, self.crl_path)
+            return crl_path
+        except Exception as exc:
+            self.log.warning("crl fetch failed: %s", exc)
+            return
 
     def setup_socktls(self):
         if not has_ssl:
@@ -105,11 +120,16 @@ class Listener(shared.OsvcThread):
             self.tls_addr = "0.0.0.0"
 
         try:
-            ca_cert_chain, cert_chain, private_key = self.prepare_certs()
+            ca_cert_chain, cert_chain, private_key, crl = self.prepare_certs()
             context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_cert_chain(cert_chain, keyfile=private_key)
             context.load_verify_locations(ca_cert_chain)
+            if crl:
+                self.log.info("tls crl %s", crl)
+                context.verify_flags = ssl.VERIFY_CRL_CHECK_CHAIN
+                context.load_verify_locations(crl)
+            self.log.info("tls stats: %s", context.cert_store_stats())
             addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
             self.tls_addr = addrinfo[4][0]
             self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)

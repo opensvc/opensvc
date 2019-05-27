@@ -475,6 +475,12 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
     },
     {
         "section": "listener",
+        "keyword": "crl",
+        "example": "https://crl.opensvc.com",
+        "text": "The url serving the certificate revocation list. If not set, no CRL is loaded, which is not recommended when the tls socket is configured."
+    },
+    {
+        "section": "listener",
         "keyword": "tls_addr",
         "default": "0.0.0.0",
         "example": "1.2.3.4",
