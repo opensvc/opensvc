@@ -42,12 +42,13 @@ class DontClose(Exception):
     pass
 
 class Listener(shared.OsvcThread):
-    sock_tmo = 1.0
     events_grace_period = True
+    sock_tmo = 1.0
     sockmap = {}
+    last_janitors = 0
     crl_expire = 0
     crl_mode = None
-    last_janitors = 0
+    tls_sock = None
 
     @lazy
     def certfs(self):
