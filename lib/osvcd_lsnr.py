@@ -100,7 +100,7 @@ class Listener(shared.OsvcThread):
             return crl
         crl_path = os.path.join(rcEnv.paths.certs, "certificate_revocation_list")
         try:
-            shared.NODE.urlretrieve(crl, self.crl_path)
+            shared.NODE.urlretrieve(crl, crl_path)
             return crl_path
         except Exception as exc:
             self.log.warning("crl fetch failed: %s", exc)
