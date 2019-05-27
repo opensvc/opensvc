@@ -36,6 +36,7 @@ RELAY_DATA = {}
 RELAY_LOCK = threading.RLock()
 RELAY_SLOT_MAX_AGE = 24 * 60 * 60
 RELAY_JANITOR_INTERVAL = 10 * 60
+JANITORS_INTERVAL = 0.5
 
 class DontClose(Exception):
     pass
@@ -44,6 +45,9 @@ class Listener(shared.OsvcThread):
     sock_tmo = 1.0
     events_grace_period = True
     sockmap = {}
+    crl_expire = 0
+    crl_mode = None
+    last_janitors = 0
 
     @lazy
     def certfs(self):
@@ -52,53 +56,60 @@ class Listener(shared.OsvcThread):
         set_lazy(res, "log",  self.log)
         return res
 
-    def prepare_certs(self):
-        makedirs(rcEnv.paths.certs)
-        if rcEnv.sysname == "Linux":
-            self.certfs.start()
+    @lazy
+    def ca(self):
         secpath = shared.NODE.oget("cluster", "ca")
         if secpath is None:
             secpath = "system/sec/ca-" + self.cluster_name
         secname, namespace, kind = split_svcpath(secpath)
-        sec = factory("sec")(secname, namespace=namespace, volatile=True)
-        if not sec.exists():
-            raise ex.excInitError("secret %s does not exist" % secname)
-        data = sec.decode_key("certificate_chain")
-        if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (secname, "certificate_chain"))
-        ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
-        self.log.info("write %s", ca_cert_chain)
-        with open(ca_cert_chain, "w") as fo:
-            fo.write(data)
-        crl_path = self.fetch_crl(sec)
+        return factory("sec")(secname, namespace=namespace, volatile=True)
+
+    @lazy
+    def cert(self):
         secpath = shared.NODE.oget("cluster", "cert")
         if secpath is None:
             secpath = "system/sec/cert-" + self.cluster_name
         secname, namespace, kind = split_svcpath(secpath)
-        sec = factory("sec")(secname, namespace=namespace, volatile=True)
-        data = sec.decode_key("certificate_chain")
+        return factory("sec")(secname, namespace=namespace, volatile=True)
+
+    def prepare_certs(self):
+        makedirs(rcEnv.paths.certs)
+        if rcEnv.sysname == "Linux":
+            self.certfs.start()
+        if not self.ca.exists():
+            raise ex.excInitError("secret %s does not exist" % self.ca.svcpath)
+        data = self.ca.decode_key("certificate_chain")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (secname, "certificate_chain"))
+            raise ex.excInitError("secret key %s.%s is not set" % (self.ca.svcpath, "certificate_chain"))
+        ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
+        self.log.info("write %s", ca_cert_chain)
+        with open(ca_cert_chain, "w") as fo:
+            fo.write(data)
+        crl_path = self.fetch_crl()
+        data = self.cert.decode_key("certificate_chain")
+        if data is None:
+            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.svcpath, "certificate_chain"))
         cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
         with open(cert_chain, "w") as fo:
             fo.write(data)
-        data = sec.decode_key("private_key")
+        data = self.cert.decode_key("private_key")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (secname, "private_key"))
+            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.svcpath, "private_key"))
         private_key = os.path.join(rcEnv.paths.certs, "private_key")
         self.log.info("write %s", private_key)
         with open(private_key, "w") as fo:
             fo.write(data)
         return ca_cert_chain, cert_chain, private_key, crl_path
 
-    def fetch_crl(self, sec):
+    def fetch_crl(self):
         crl = shared.NODE.oget("listener", "crl")
         if not crl:
             return
         if crl == rcEnv.paths.crl:
+            self.crl_mode = "internal"
             try:
-                buff = sec.decode_key("crl")
+                buff = self.ca.decode_key("crl")
             except Exception as exc:
                 buff = None
             if buff is None:
@@ -109,11 +120,14 @@ class Listener(shared.OsvcThread):
                 with open(crl, "w") as fo:
                     fo.write(buff)
                 return crl
+        self.crl_mode = "external"
         if os.path.exists(crl):
             return crl
         crl_path = os.path.join(rcEnv.paths.certs, "certificate_revocation_list")
         try:
             shared.NODE.urlretrieve(crl, crl_path)
+            # TODO: extract expire from crl
+            self.crl_expire = time.time() + 60*60*24
             return crl_path
         except Exception as exc:
             self.log.warning("crl fetch failed: %s", exc)
@@ -131,7 +145,10 @@ class Listener(shared.OsvcThread):
             self.tls_addr = self.config.get("listener", "tls_addr")
         except Exception:
             self.tls_addr = "0.0.0.0"
-
+        try:
+            self.tls_sock.close()
+        except Exception:
+            pass
         try:
             ca_cert_chain, cert_chain, private_key, crl = self.prepare_certs()
             context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
@@ -267,13 +284,18 @@ class Listener(shared.OsvcThread):
 
     def reconfigure(self):
         shared.NODE.listener = self
+        self.setup_socks()
 
     def do(self):
         self.reload_config()
-        self.janitor_procs()
-        self.janitor_threads()
-        self.janitor_events()
-        self.janitor_relay()
+        ts = time.time()
+        if ts > self.last_janitors + JANITORS_INTERVAL:
+            self.janitor_crl()
+            self.janitor_procs()
+            self.janitor_threads()
+            self.janitor_events()
+            self.janitor_relay()
+        self.last_janitors = ts
 
         fds = select.select([fno for fno in self.sockmap], [], [], self.sock_tmo)
         if self.sock_tmo and fds == ([], [], []):
@@ -322,6 +344,48 @@ class Listener(shared.OsvcThread):
             except RuntimeError as exc:
                 self.log.warning(exc)
                 conn.close()
+
+    def janitor_crl(self):
+        if not self.tls_sock:
+            return
+        if not self.crl_mode:
+            return
+        try:
+            mtime = os.path.getmtime(rcEnv.paths.crl)
+        except Exception:
+            mtime = 0
+
+        if self.crl_mode == "internal":
+            if not "crl" in self.ca.data_keys():
+                if os.path.exists(rcEnv.paths.crl):
+                    try:
+                        self.log.info("remove %s", rcEnv.paths.crl)
+                        os.unlink(rcEnv.paths.crl)
+                    except Exception as exc:
+                        self.log.warning("remove %s: %s", rcEnv.paths.crl, exc)
+                        return
+                else:
+                    return
+            else:
+                try:
+                    refmtime = os.path.getmtime(self.ca.paths.cf)
+                except Exception:
+                    return
+                if not mtime or mtime > refmtime:
+                    return
+                self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), self.ca.svcpath)
+        elif self.crl_mode == "external":
+            if not mtime or mtime > self.crl_expire:
+                return
+            self.log.info("refresh crl: installed version is expired since %s", print_duration(self.crl_expire-mtime))
+        try:
+            fno = self.tls_wrapped_sock.fileno()
+            self.tls_wrapped_sock.close()
+            del self.sockmap[fno]
+        except Exception as exc:
+            print(exc)
+            pass
+        self.setup_socktls()
 
     def janitor_relay(self):
         """
