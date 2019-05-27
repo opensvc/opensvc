@@ -3232,14 +3232,15 @@ class Node(Crypt, ExtConfigMixin):
                     del d["rtype"]
                 defaults.update(d)
 
-        odict = __import__(kind+"dict")
+        obj = factory(kind)("dummy", namespace="dummy", volatile=True, node=self)
         from keywords import MissKeyNoDefault, KeyInvalidValue
         try:
-            defaults.update(odict.KEYS.update("DEFAULT", defaults))
+            defaults.update(obj.kwdict.KEYS.update("DEFAULT", defaults))
             for section, d in sections.items():
-                sections[section].update(odict.KEYS.update(section, d))
+                sections[section].update(obj.kwdict.KEYS.update(section, d))
         except (MissKeyNoDefault, KeyInvalidValue):
             raise ex.excError
+        del obj
 
         sections["DEFAULT"] = defaults
         return defaults
