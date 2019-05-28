@@ -812,6 +812,20 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except lock.LOCK_EXCEPTIONS as exc:
             raise ex.excError(str(exc))
 
+    def barrier_sanity_check(self, barrier):
+        """
+        Raise if the barrier (--upto <barrier> or --downto <barrier>) does not
+        match any resource, to avoid a full start when the user makes a typo
+        in the barrier selector.
+        """
+        if barrier is None:
+            return
+        if self.get_resource(barrier):
+            return
+        if self.get_resources(barrier):
+            return
+        raise ex.excError("barrier '%s' does not match any resource" % barrier)
+
     @sched_action
     def _action(self, action, options=None):
         """
@@ -821,6 +835,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Set up the environment variables.
         Finally do the service action either in logged or unlogged mode.
         """
+        self.barrier_sanity_check(self.options.upto)
+        self.barrier_sanity_check(self.options.downto)
 
         try:
             self.action_rid_before_depends = self.options_to_rids(options, action)
