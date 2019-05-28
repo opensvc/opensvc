@@ -5123,6 +5123,7 @@ class Node(Crypt, ExtConfigMixin):
     def network_create_routed_bridge_config(self, name="default", nets=None):
         config = self.network_data(name, nets=nets)["config"]
         subnet = str(self.node_subnet(name, config=config))
+        network = config["network"]
         brip = self.network_bridge_ip(name, config=config).split("/")[0]
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
@@ -5140,7 +5141,7 @@ class Node(Crypt, ExtConfigMixin):
                 "subnet": subnet,
                 "routes": [
                     { "dst": "0.0.0.0/0" },
-                    { "dst": subnet, "gw": brip },
+                    { "dst": network, "gw": brip },
                 ]
             }
         }
