@@ -362,6 +362,7 @@ ACTIONS = {
                 OPT.config,
                 OPT.disable_rollback,
                 OPT.interactive,
+                OPT.kw,
                 OPT.leader,
                 OPT.restore,
                 OPT.template,
@@ -440,6 +441,7 @@ ACTIONS = {
             "options": ACTION_OPTS + [
                 OPT.config,
                 OPT.disable_rollback,
+                OPT.kw,
                 OPT.interactive,
                 OPT.leader,
                 OPT.provision,

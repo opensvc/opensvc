@@ -2962,6 +2962,27 @@ class Node(Crypt, ExtConfigMixin):
         makedirs(data.pathetc)
         return data
 
+    def svc_conf_set(self, data=None, kw=None, env=None, interactive=False):
+        if data is None:
+            data = {}
+        if kw is None:
+            kw = {}
+        for _kw in kw:
+            if "=" not in _kw:
+                continue
+            _kw, val =  _kw.split("=", 1)
+            if "." in _kw:
+                section, option = _kw.split(".", 1)
+            else:
+                section = "DEFAULT"
+                option = _kw
+            if section not in data:
+                data[section] = {}
+            data[section][option] = val
+        current_env = data.get("env", {})
+        data["env"] = self.svc_conf_setenv(env, interactive, current_env)
+        return data
+
     def svc_conf_setenv(self, args=None, interactive=False, env=None):
         """
         For each option in the 'env' section of the configuration file,
@@ -3023,7 +3044,7 @@ class Node(Crypt, ExtConfigMixin):
         return env
 
     def install_service(self, svcpath, fpath=None, template=None,
-                        restore=False, resources=[], namespace=None,
+                        restore=False, resources=[], kw=[], namespace=None,
                         env=None, interactive=False, provision=False):
         """
         Pick a collector's template, arbitrary uri, or local file service
@@ -3102,13 +3123,10 @@ class Node(Crypt, ExtConfigMixin):
 
         if data:
             for path in data:
-                current_env = data[path].get("env", {})
-                data[path]["env"] = self.svc_conf_setenv(env, interactive, current_env)
+                data[path] = self.svc_conf_set(data[path], kw, env, interactive)
         elif svcpath:
             data = {
-                svcpath: {
-                    "env": self.svc_conf_setenv(env, interactive),
-                }
+                svcpath: self.svc_conf_set({}, kw, env, interactive)
             }
 
         #print(json.dumps(data, indent=4))
@@ -3274,6 +3292,7 @@ class Node(Crypt, ExtConfigMixin):
                                             template=options.template,
                                             restore=options.restore,
                                             resources=options.resource,
+                                            kw=options.kw,
                                             namespace=options.namespace,
                                             env=options.env,
                                             interactive=options.interactive,

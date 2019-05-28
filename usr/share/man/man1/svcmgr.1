@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-05\-27
+.TH SVCMGR 1 2019\-05\-28
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -3449,6 +3449,33 @@ If set, don't try to rollback resources activated before a start action interrup
 .TP
 .B -i, --interactive
 Prompt the user for a choice instead of using defaults, or failing if no default is defined.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
 .TP
 .B --leader
 Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
@@ -12270,6 +12297,33 @@ The configuration to use as template when creating or installing a service. The 
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
 .TP
 .B -i, --interactive
 Prompt the user for a choice instead of using defaults, or failing if no default is defined.
