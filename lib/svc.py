@@ -2139,6 +2139,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "svcpath": self.svcpath,
                 "cmd": cmd,
                 "sync": sync,
+                "action": action,
             }
         }
         if action_mode:
