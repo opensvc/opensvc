@@ -797,3 +797,65 @@ class Crypt(object):
         finally:
             for sock in socks:
                 sock.close()
+
+    @staticmethod
+    def parse_result(data):
+        """
+        Extract status and formatted errors from a daemon_send() result.
+        Return a (<status>, <error string>) tuple.
+
+        * data format 1:
+
+        {
+            "status": 1,
+            "error": "foo"
+        }
+
+        * data format 2:
+
+        {
+            "status": 1,
+            "error": ["foo", "bar"]
+        }
+
+        * data format 3: multiplexed request
+
+        {
+            "status": 1,
+            "nodes": {
+                "node1": {
+                    "error": ["foo", "bar"]
+                }
+            }
+        }
+        """
+        def _fmt(_data, key, node=None):
+            _buff = ""
+            if not isinstance(data, dict):
+                return _buff
+            entries = _data.get(key, [])
+            if not isinstance(entries, (list, tuple, set)):
+                entries = [entries]
+            for entry in entries:
+                if node:
+                    _buff += "%s: %s\n" % (node, entry)
+                else:
+                    _buff += "%s\n" % entry
+            return _buff
+
+        if data is None:
+            return status, "no data", ""
+        if not isinstance(data, dict):
+            return 1, "unstructured data", ""
+        status = data.get("status", 0)
+        if "nodes" in data:
+            error = ""
+            info = ""
+            for node, ndata in data["nodes"].items():
+                error += _fmt(ndata, "error", node)
+                info += _fmt(ndata, "info", node)
+            return status, error.rstrip(), info.rstrip()
+        error = _fmt(data, "error")
+        info = _fmt(data, "info")
+        return status, error.rstrip(), info.rstrip()
+
