@@ -13,6 +13,7 @@ import select
 import shutil
 import traceback
 import uuid
+import fnmatch
 from subprocess import Popen, PIPE
 
 try:
@@ -306,6 +307,7 @@ class Listener(shared.OsvcThread):
             cn = None
             try:
                 conn = None
+                usr = None
                 conn, addr = sock.accept()
                 self.stats.sessions.accepted += 1
                 if len(addr) == 0:
@@ -339,7 +341,7 @@ class Listener(shared.OsvcThread):
                     conn.close()
                 continue
             try:
-                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted, cn))
+                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted, usr))
                 thr.start()
                 self.threads.append(thr)
             except RuntimeError as exc:
@@ -383,8 +385,7 @@ class Listener(shared.OsvcThread):
             fno = self.tls_wrapped_sock.fileno()
             self.tls_wrapped_sock.close()
             del self.sockmap[fno]
-        except Exception as exc:
-            print(exc)
+        except Exception:
             pass
         self.setup_socktls()
 
@@ -457,7 +458,7 @@ class Listener(shared.OsvcThread):
                 except KeyError:
                     pass
 
-    def handle_client(self, conn, addr, encrypted, cn):
+    def handle_client(self, conn, addr, encrypted, usr):
         try:
             close = True
             sid = str(uuid.uuid4())
@@ -467,7 +468,7 @@ class Listener(shared.OsvcThread):
                 "encrypted": encrypted,
                 "progress": "init",
             })
-            self._handle_client(conn, addr, encrypted, cn, sid)
+            self._handle_client(conn, addr, encrypted, sid, usr)
         except DontClose:
             close = False
         finally:
@@ -475,7 +476,7 @@ class Listener(shared.OsvcThread):
                 del self.stats.sessions.alive[sid]
                 conn.close()
 
-    def _handle_client(self, conn, addr, encrypted, cn, sid):
+    def _handle_client(self, conn, addr, encrypted, sid, usr):
         chunks = []
         buff_size = 4096
         conn.setblocking(0)
@@ -523,7 +524,14 @@ class Listener(shared.OsvcThread):
         self.stats.sessions.clients[addr[0]].auth_validated += 1
         if data is None:
             return
-        result = self.router(nodename, data, conn, addr, encrypted, cn, sid)
+        try:
+            result = self.router(nodename, data, conn, addr, encrypted, sid, usr)
+        except DontClose:
+            raise
+        except ex.excError as exc:
+            result = {"status": 1, "error": str(exc)}
+        except Exception as exc:
+            result = {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
         if result:
             self.stats.sessions.alive[sid].progress = "sending %s result" % self.stats.sessions.alive[sid].progress
             conn.setblocking(1)
@@ -545,15 +553,15 @@ class Listener(shared.OsvcThread):
             self.stats.sessions.tx += message_len
             self.stats.sessions.clients[addr[0]].tx += message_len
 
-    def log_request(self, msg, nodename, lvl="info", cn=None, addr=None, **kwargs):
+    def log_request(self, msg, nodename, lvl="info", usr=None, addr=None, **kwargs):
         """
         Append the request origin to the message logged by the router action"
         """
         if not msg:
             return
-        if addr[0] == "local" or not cn or not addr:
+        if addr[0] == "local" or not usr or not addr:
             origin = "requested by %s" % nodename
-        origin = "requested by %s@%s" % (cn, addr[0])
+        origin = "requested by %s@%s" % (usr.svcname, addr[0])
         if lvl == "error":
             fn = self.log.error
         if lvl == "warning":
@@ -564,10 +572,152 @@ class Listener(shared.OsvcThread):
 
     #########################################################################
     #
+    # RBAC
+    #
+    #########################################################################
+    def get_all_ns(self):
+        data = set()
+        for path in shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}):
+            _, ns, _ = split_svcpath(path)
+            if ns is None:
+                ns = "root"
+            data.add(ns)
+        return data
+
+    def user_grants(self, usr):
+        grants = usr.oget("DEFAULT", "grant")
+        data = {}
+        if not grants:
+            return data
+        all_ns = self.get_all_ns()
+        for _grant in grants.split():
+            if ":" in _grant:
+                role_sel, ns_sel = _grant.split(":", 1)
+                for role in role_sel.split(","):
+                    if role in rcEnv.cluster_roles:
+                        continue
+                    if role not in rcEnv.roles:
+                        continue
+                    if role not in data:
+                        data[role] = set()
+                    for ns in ns_sel.split(","):
+                        for _ns in all_ns:
+                            if fnmatch.fnmatch(_ns, ns):
+                                data[role].add(_ns)
+                                for equiv in rcEnv.roles_equiv.get(role, ()):
+                                    if equiv not in data:
+                                        data[equiv] = set([_ns])
+                                    else:
+                                        data[equiv].add(_ns)
+            else:
+                role = _grant
+                if role not in rcEnv.roles:
+                    continue
+                if role not in rcEnv.cluster_roles:
+                    continue
+                if role not in data:
+                    data[role] = None
+        return data
+
+    def rbac_requires(self, namespaces=None, roles=None, usr=None, grants=None, action=None, **kwargs):
+        if usr is None:
+            # ux and aes socket are not constrainted by rbac
+            return
+        if roles is None:
+            roles = ["clusteradmin"]
+        if grants is None:
+            grants = self.user_grants(usr)
+        if "clusteradmin" in grants:
+            return grants
+        if isinstance(namespaces, (list, tuple)):
+            namespaces = set(namespaces)
+        for role in roles:
+            if role not in grants:
+                continue
+            if role in rcEnv.cluster_roles:
+                return grants
+
+            # namespaced role
+            role_namespaces = grants[role]
+            if not role_namespaces:
+                # empty set
+                continue
+            if namespaces == "ANY":
+                # role granted on at least one namespace
+                return grants
+            if not len(namespaces - role_namespaces):
+                # role granted on all namespaces
+                return grants
+        raise ex.excError("unauthorized: action %s requested by user %s with grants %s" % (action, usr.svcname, self.format_grants(grants)))
+
+    @staticmethod
+    def format_grants(grants):
+        elements = []
+        for role, namespaces in grants.items():
+            if namespaces is None:
+                elements.append(role)
+            elif not namespaces:
+                pass
+            else:
+                elements.append("%s:%s" % (role, ",".join(namespaces)))
+        return " ".join(elements)
+
+    def rbac_create_data(self, payload=None , usr=None, **kwargs):
+        if usr is None:
+            return
+        if not payload:
+            return
+        grants = self.user_grants(usr)
+        errors = []
+        for path, _data in payload.items():
+            name, namespace, kind = split_svcpath(path)
+            self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
+            for section, sdata in _data.items():
+                if "clusteradmin" not in grants:
+                    for prefix in ["disk#", "fs#", "app#", "share#", "sync#"]:
+                        if section.startswith(prefix):
+                            errors.append("%s: section %s requires the clusteradmin role" % (path, section))
+                            continue
+                    rtype = _data[section].get("type")
+                    if section.startswith("task#") and rtype is None:
+                        errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+                        continue
+                    if section.startswith("container#"):
+                        if rtype not in ("podman", "docker"):
+                            errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+                            continue
+                    if section.startswith("ip#"):
+                        if rtype != "cni":
+                            errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+                            continue
+                    for key, val in _data.items():
+                        if "trigger" in key:
+                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                            continue
+                        _key = key.split("@")[0]
+                        if _key in ("container_data_dir", "devices", "volume_mounts") and val.lstrip().startswith("/"):
+                            errors.append("%s: keyword %s.%s=%s host paths require the clusteradmin role" % (path, section, key, val))
+                            continue
+                        if section == "DEFAULT" and _key == "monitor_action" and val not in ("freezestop", None):
+                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                            continue
+                        if section.startswith("container#") and _key == "netns" and val == "host":
+                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                            continue
+                        if section.startswith("container#") and _key == "privileged" and val not in ("false", False, None):
+                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                            continue
+                        if section.startswith("ip#") and _key == "netns" and val in (None, "host"):
+                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                            continue
+        return errors
+
+    #########################################################################
+    #
     # Actions
     #
     #########################################################################
-    def multiplex(self, node, fname, options, data, original_nodename, conn, addr, encrypted, cn, sid):
+    def multiplex(self, node, fname, options, data, original_nodename, conn, addr, encrypted, sid, usr, action):
         try:
             del data["node"]
         except Exception:
@@ -589,7 +739,7 @@ class Listener(shared.OsvcThread):
         for nodename in nodenames:
             if nodename == rcEnv.nodename:
                 _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                               addr=addr, sid=sid, cn=cn, **options)
+                                               addr=addr, sid=sid, usr=usr, action=action, **options)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
             else:
@@ -598,7 +748,7 @@ class Listener(shared.OsvcThread):
                 result["status"] += _result.get("status", 0)
         return result
 
-    def create_multiplex(self, fname, options, data, original_nodename, conn, addr, encrypted, cn, sid):
+    def create_multiplex(self, fname, options, data, original_nodename, conn, addr, encrypted, sid, usr, action):
         h = {}
         for svcpath, svcdata in options.get("data", {}).items():
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
@@ -624,20 +774,20 @@ class Listener(shared.OsvcThread):
             _options["data"] = optdata
             if nodename == rcEnv.nodename:
                 _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                               addr=addr, sid=sid, cn=cn, **_options)
+                                               addr=addr, sid=sid, usr=usr, action=action, **_options)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
             else:
                 _data = {}
                 _data.update(data)
                 _data["options"] = _options
-                self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename, cn=cn, addr=addr)
+                self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename, usr=usr, addr=addr)
                 _result = self.daemon_send(_data, nodename=nodename, silent=True)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
         return result
 
-    def router(self, nodename, data, conn, addr, encrypted, cn, sid):
+    def router(self, nodename, data, conn, addr, encrypted, sid, usr):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -647,7 +797,8 @@ class Listener(shared.OsvcThread):
             return {"error": "invalid data format", "status": 1}
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
-        fname = "action_"+data["action"]
+        action = data["action"]
+        fname = "action_" + action
         if not hasattr(self, fname):
             return {"error": "action not supported", "status": 1}
         # prepare options, sanitized for use as keywords
@@ -655,16 +806,16 @@ class Listener(shared.OsvcThread):
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
         self.stats.sessions.alive[sid].progress = fname
-        # TODO: rbac
-        if fname == "action_create":
-            return self.create_multiplex(fname, options, data, nodename, conn, addr, encrypted, cn, sid)
+        if action == "create":
+            return self.create_multiplex(fname, options, data, nodename, conn, addr, encrypted, sid, usr, action)
         node = data.get("node")
         if node:
-            return self.multiplex(node, fname, options, data, nodename, conn, addr, encrypted, cn, sid)
+            return self.multiplex(node, fname, options, data, nodename, conn, addr, encrypted, sid, usr, action)
         return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                    addr=addr, sid=sid, cn=cn, **options)
+                                    addr=addr, sid=sid, usr=usr, action=action, **options)
 
     def action_run_done(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         svcpath = kwargs.get("svcpath")
         if not svcpath:
             svcpath = kwargs.get("svcname")
@@ -683,6 +834,7 @@ class Listener(shared.OsvcThread):
         """
         Store a relay heartbeat payload emitted by <nodename>.
         """
+        self.rbac_requires(**kwargs)
         cluster_id = kwargs.get("cluster_id", "")
         cluster_name = kwargs.get("cluster_name", "")
         key = "/".join([cluster_id, nodename])
@@ -701,6 +853,7 @@ class Listener(shared.OsvcThread):
         Serve to <nodename> the relay heartbeat payload emitted by the node in
         <slot>.
         """
+        self.rbac_requires(**kwargs)
         cluster_id = kwargs.get("cluster_id", "")
         _nodename = kwargs.get("slot")
         key = "/".join([cluster_id, _nodename])
@@ -714,6 +867,7 @@ class Listener(shared.OsvcThread):
             }
 
     def action_daemon_relay_status(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         data = {}
         with RELAY_LOCK:
             for _nodename, _data in RELAY_DATA.items():
@@ -729,6 +883,7 @@ class Listener(shared.OsvcThread):
         """
         Clear the senders blacklist.
         """
+        self.rbac_requires(roles=["blacklistadmin"], **kwargs)
         self.blacklist_clear()
         return {"status": 0}
 
@@ -736,6 +891,7 @@ class Listener(shared.OsvcThread):
         """
         Return the senders blacklist.
         """
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         return {"status": 0, "data": self.get_blacklist()}
 
     def action_daemon_stats(self, nodename, **kwargs):
@@ -743,6 +899,7 @@ class Listener(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         data = {
             "timestamp": time.time(),
             "daemon": shared.DAEMON.stats(),
@@ -768,6 +925,7 @@ class Listener(shared.OsvcThread):
         Return a hash indexed by nodename, containing the info
         required by the node selector algorithm.
         """
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         return {"status": 0, "data": self.nodes_info()}
 
     def action_daemon_status(self, nodename, **kwargs):
@@ -775,6 +933,7 @@ class Listener(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
+        grants = self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         data = {
             "pid": shared.DAEMON.pid,
             "cluster": {
@@ -783,9 +942,13 @@ class Listener(shared.OsvcThread):
                 "nodes": self.cluster_nodes,
             }
         }
+        if grants is None or "clusteradmin" in grants:
+            allowed_namespaces = None
+        else:
+            allowed_namespaces = grants.get("guest", [])
         with shared.THREADS_LOCK:
             for thr_id, thread in shared.THREADS.items():
-                data[thr_id] = thread.status(**kwargs)
+                data[thr_id] = thread.status(namespaces=allowed_namespaces, **kwargs)
         return data
 
     def wait_shutdown(self):
@@ -801,6 +964,7 @@ class Listener(shared.OsvcThread):
         """
         Care with locks
         """
+        self.rbac_requires(**kwargs)
         self.log_request("shutdown daemon", nodename, **kwargs)
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
@@ -841,6 +1005,7 @@ class Listener(shared.OsvcThread):
         return {"status": 0}
 
     def action_daemon_stop(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             self.log_request("stop daemon", nodename, **kwargs)
@@ -878,6 +1043,7 @@ class Listener(shared.OsvcThread):
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         thr_id = kwargs.get("thr_id")
         if not thr_id:
             return {"error": "no thread specified", "status": 1}
@@ -892,6 +1058,7 @@ class Listener(shared.OsvcThread):
         return {"status": 0}
 
     def action_get_node_config(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         fmt = kwargs.get("format")
         if fmt == "json":
             return self._action_get_node_config_json(nodename, **kwargs)
@@ -923,6 +1090,8 @@ class Listener(shared.OsvcThread):
 
     def action_get_secret_key(self, nodename, **kwargs):
         svcpath = kwargs.get("svcpath")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         key = kwargs.get("key")
         try:
             return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
@@ -933,6 +1102,10 @@ class Listener(shared.OsvcThread):
         svcpath = kwargs.get("svcpath")
         if not svcpath:
             svcpath = kwargs.get("svcname")
+        if not svcpath:
+            return {"error": "no svcpath specified", "status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         evaluate = kwargs.get("evaluate")
         impersonate = kwargs.get("impersonate")
         try:
@@ -946,6 +1119,8 @@ class Listener(shared.OsvcThread):
             svcpath = kwargs.get("svcname")
         if not svcpath:
             return {"error": "no svcpath specified", "status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         if shared.SMON_DATA.get(svcpath, {}).get("status") in ("purging", "deleting") or \
            shared.SMON_DATA.get(svcpath, {}).get("global_expect") in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
@@ -962,6 +1137,10 @@ class Listener(shared.OsvcThread):
         svcpath = kwargs.get("svcpath", "<unspecified>")
         if not svcpath:
             svcpath = kwargs.get("svcname")
+        if svcpath is None:
+            return {"error": "no svcpath specified", "status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
         shared.wake_monitor(reason="service %s notification" % svcpath)
         return {"status": 0}
 
@@ -971,6 +1150,8 @@ class Listener(shared.OsvcThread):
             svcpath = kwargs.get("svcname")
         if svcpath is None:
             return {"error": "no svcpath specified", "status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         smon = self.get_service_monitor(svcpath)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
@@ -1012,11 +1193,27 @@ class Listener(shared.OsvcThread):
             svcpath = kwargs.get("svcname")
         if svcpath is None:
             return {"error": ["no svcpath specified"], "status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
         status = kwargs.get("status")
         local_expect = kwargs.get("local_expect")
         global_expect = kwargs.get("global_expect")
         reset_retries = kwargs.get("reset_retries", False)
         stonith = kwargs.get("stonith")
+        role = "admin"
+        operator = (
+            # (local_expect, global_expect, reset_retries)
+            (None, None, True),
+            (None, "thawed", False),
+            (None, "frozen", False),
+            (None, "started", False),
+            (None, "stopped", False),
+            (None, "aborted", False),
+            (None, "placed", False),
+            (None, "shutdown", False),
+        )
+        if (local_expect, global_expect.split("@")[0], reset_retries) in operator:
+            role = "operator"
+        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
         svcpaths = set([svcpath])
         if global_expect != "scaled":
             svcpaths |= self.get_service_slaves(svcpath)
@@ -1141,6 +1338,7 @@ class Listener(shared.OsvcThread):
             raise ex.excAbortAction()
 
     def action_set_node_monitor(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         status = kwargs.get("status")
         local_expect = kwargs.get("local_expect")
         global_expect = kwargs.get("global_expect")
@@ -1211,6 +1409,7 @@ class Listener(shared.OsvcThread):
         return lock_id
 
     def action_lock(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         name = kwargs.get("name")
         timeout = kwargs.get("timeout")
         lock_id = self.lock_acquire(nodename, name, timeout)
@@ -1226,6 +1425,7 @@ class Listener(shared.OsvcThread):
         return result
 
     def action_unlock(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         name = kwargs.get("name")
         lock_id = kwargs.get("id")
         self.lock_release(name, lock_id)
@@ -1233,6 +1433,7 @@ class Listener(shared.OsvcThread):
         return result
 
     def action_leave(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         self.log.info("node %s is leaving", nodename)
         if nodename not in self.cluster_nodes:
             self.log.info("node %s already left", nodename)
@@ -1247,6 +1448,7 @@ class Listener(shared.OsvcThread):
             }
 
     def action_collector_xmlrpc(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         args = kwargs.get("args", [])
         kwargs = kwargs.get("kwargs", {})
         shared.COLLECTOR_XMLRPC_QUEUE.insert(0, (args, kwargs))
@@ -1256,6 +1458,7 @@ class Listener(shared.OsvcThread):
         return result
 
     def action_join(self, nodename, **kwargs):
+        self.rbac_requires(**kwargs)
         if nodename in self.cluster_nodes:
             new_nodes = self.cluster_nodes
             self.log.info("node %s rejoins", nodename)
@@ -1313,6 +1516,7 @@ class Listener(shared.OsvcThread):
         * cmd: list
         * sync: boolean
         """
+        self.rbac_requires(**kwargs)
         sync = kwargs.get("sync", True)
         action_mode = kwargs.get("action_mode", True)
         cmd = kwargs.get("cmd")
@@ -1353,8 +1557,11 @@ class Listener(shared.OsvcThread):
         passed in <data>.
         """
         data = kwargs.get("data")
+        errors = self.rbac_create_data(data, **kwargs)
         if not data:
             return {"status": 0, "info": "no data"}
+        if errors:
+            return {"status": 1, "error": errors}
         sync = kwargs.get("sync", True)
         namespace = kwargs.get("namespace")
         provision = kwargs.get("provision")
@@ -1394,6 +1601,7 @@ class Listener(shared.OsvcThread):
         * cmd: list
         * sync: boolean
         """
+        self.rbac_requires(**kwargs)
         sync = kwargs.get("sync", True)
         svcpath = kwargs.get("svcpath")
         if not svcpath:
@@ -1444,6 +1652,7 @@ class Listener(shared.OsvcThread):
         return result
 
     def action_events(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         encrypted = kwargs.get("encrypted")
         conn = kwargs.get("conn")
         sid = kwargs.get("sid")
@@ -1463,11 +1672,13 @@ class Listener(shared.OsvcThread):
         svcpath = kwargs.get("svcpath")
         if not svcpath:
             svcpath = kwargs.get("svcname")
+        if svcpath is None:
+            return {"status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
         svc = self.get_service(svcpath)
-        if svcpath is None or svc is None:
-            return {
-                "status": 1,
-            }
+        if svc is None:
+            return {"status": 1}
         logfile = os.path.join(svc.log_d, svc.svcname+".log")
         self._action_logs(nodename, logfile, "service %s" % svcpath, **kwargs)
 
@@ -1480,6 +1691,7 @@ class Listener(shared.OsvcThread):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
+        self.rbac_requires(**kwargs)
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
         self._action_logs(nodename, logfile, "node", **kwargs)
 
@@ -1577,6 +1789,7 @@ class Listener(shared.OsvcThread):
         Reset the gen number of the dataset of a peer node to force him
         to resend a full.
         """
+        self.rbac_requires(**kwargs)
         peer = kwargs.get("peer")
         if peer is None:
             raise ex.excError("The 'peer' option must be set")

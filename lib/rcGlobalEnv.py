@@ -118,6 +118,21 @@ class rcEnv:
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
 
+    cluster_roles = [
+        "clusteradmin",
+        "blacklistadmin",
+        "nsadmin",
+    ]
+    ns_roles = [
+        "admin",
+        "operator",
+        "guest",
+    ]
+    roles = cluster_roles + ns_roles
+    roles_equiv = {
+        "admin": ["operator", "guest"],
+        "operator": ["guest"],
+    }
     kinds = [
         "svc",
         "vol",
