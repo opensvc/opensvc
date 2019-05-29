@@ -205,13 +205,13 @@ def cluster_show(name=None, **kwargs):
         print(json.dumps(cdata.get("clusters", {}).get(name, {}), indent=4))
 
 def get(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle cxt get")
+    raise ex.excError("The 'om' alias must be sourced to handle ctx get")
 
 def set(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle cxt set")
+    raise ex.excError("The 'om' alias must be sourced to handle ctx set")
 
 def unset(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle cxt unset")
+    raise ex.excError("The 'om' alias must be sourced to handle ctx unset")
 
 def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
     if name is None:
@@ -262,7 +262,7 @@ def show(name=None, **kwargs):
     else:
         print(json.dumps(cdata.get("contexts", {}).get(name, {}), indent=4))
 
-PROG = "om cxt"
+PROG = "om ctx"
 OPT = Storage({
     "help": Option(
         "-h", "--help", action="store_true", dest="parm_help",

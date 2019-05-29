@@ -38,7 +38,7 @@ help() {
 	echo "  $OM ns get                   Get the current namespace" >&2
 	echo "" >&2
 	echo "  $OM mon                      Monitor the cluster" >&2
-	echo "  $OM cxt                      Manage Remote Connections contexts" >&2
+	echo "  $OM ctx                      Manage Remote Connections contexts" >&2
 	echo "  $OM node                     Manage Cluster Nodes" >&2
 	echo "  $OM cluster                  Manage Cluster Configuration" >&2
 	echo "  $OM svc                      Manage Services" >&2
@@ -96,7 +96,7 @@ main() {
 		echo "The 'om' alias must be sourced to handle ns actions" >&2
 		exit 1
 		;;
-	cxt)
+	ctx)
 		shift
 		$INTER $OSVC_ROOT_PATH/lib/contexts.py "$@"
 		;;

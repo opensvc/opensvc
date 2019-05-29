@@ -1065,18 +1065,18 @@ fi
 
 om() {
         case "$1 $2" in
-        "cxt get")
+        "ctx get")
 		[ -z "$OSVC_CONTEXT" ] && echo "(local)" || echo $OSVC_CONTEXT
 		;;
-        "cxt set")
+        "ctx set")
                 test -z "$3" && {
-                        echo "om cxt set <context>" >&2
+                        echo "om ctx set <context>" >&2
                         return 1
                 }
                 echo "context switch: $OSVC_CONTEXT => $3"
                 export OSVC_CONTEXT=$3
                 ;;
-        "cxt unset")
+        "ctx unset")
                 unset OSVC_CONTEXT
                 ;;
         "ns get"|"getns "*)
