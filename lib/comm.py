@@ -844,7 +844,7 @@ class Crypt(object):
             return _buff
 
         if data is None:
-            return status, "no data", ""
+            return 1, "no data", ""
         if not isinstance(data, dict):
             return 1, "unstructured data", ""
         status = data.get("status", 0)
