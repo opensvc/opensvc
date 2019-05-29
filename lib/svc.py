@@ -1254,10 +1254,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if self.orchestrate in ("ha", "start"):
                 self.freezer.freeze()
         try:
-            self.set_service_monitor(local_expect=local_expect, status=progress)
+            self.set_service_monitor(local_expect=local_expect, status=progress, best_effort=True)
             self.log.debug("daemon notified of action '%s' begin" % action)
         except Exception as exc:
-            self.log.warning("failed to notify action begin to the daemon: %s", str(exc))
+            pass
 
     def clear_action(self, action, err, force=False):
         if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
@@ -1276,7 +1276,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.set_service_monitor(local_expect=local_expect, status=status)
             self.log.debug("daemon notified of action '%s' end" % action)
         except Exception as exc:
-            self.log.warning("failed to notify action end to the daemon: %s", str(exc))
+            pass
 
     def rollback_handler(self, action):
         """
@@ -1471,8 +1471,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if global_expect is None:
             # not applicable action on this service
             return
-        ret = self.set_service_monitor(global_expect=global_expect)
-        self.daemon_log_result(ret)
+        self.set_service_monitor(global_expect=global_expect)
         self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
 
     def prepare_global_expect(self, action):
@@ -2013,18 +2012,23 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 nodename=self.options.node,
                 silent=True,
             )
-            if data and data["status"] != 0 and data.get("errno") != 111:
+            status, error, info = self.parse_result(data)
+            if status and data.get("errno") != 111:
                 # 111: EREFUSED (ie daemon down)
-                if "error" in data:
-                    self.log.warning("wake monitor failed: %s", data["error"])
+                if error:
+                    self.log.warning(error)
                 else:
                     self.log.warning("wake monitor failed")
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcpath=None):
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, svcpath=None, best_effort=False):
         if svcpath is None:
             svcpath = self.svcpath
+        if best_effort:
+            log = self.log.warning
+        else:
+            log = self.log.error
         options = {
             "svcpath": svcpath,
             "status": status,
@@ -2039,12 +2043,24 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 silent=True,
                 with_result=True,
             )
-            if data and data["status"] != 0 and data.get("errno") != 111:
+            status, error, info = self.parse_result(data)
+            if info:
+                for line in error.splitlines():
+                    self.log.info(line)
+            if status:
                 # 111: EREFUSED (ie daemon down)
-                self.log.warning("set monitor status failed")
+                if error and data.get("errno") != 111:
+                    for line in error.splitlines():
+                        log(line)
+                if not best_effort:
+                    raise ex.excError
             return data
+        except ex.excError:
+            raise
         except Exception as exc:
-            self.log.warning("set monitor status failed: %s", str(exc))
+            log("set monitor status failed: %s", str(exc))
+            if not best_effort:
+                raise
 
     def remote_service_config_fetch(self, nodename=None):
         buff = self.remote_service_config(nodename=nodename)
@@ -2140,9 +2156,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.log.error("post service action '%s' on node %s failed: %s",
                            " ".join(cmd), nodename, exc)
             return 1
-        if data is None or data["status"] != 0:
-            self.log.error("post service action '%s' on node %s failed",
-                           " ".join(cmd), nodename)
+        status, error, info = self.parse_result(data)
+        if error:
+            self.log.error(error)
+        if status:
             return 1
 
         def print_node_data(nodename, data):
