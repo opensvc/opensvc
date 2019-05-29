@@ -3141,8 +3141,9 @@ class Node(Crypt, ExtConfigMixin):
                 }
             }
             result = self.daemon_send(req)
-            if result is None or result["status"] != 0:
-                raise ex.excError(result.get("error", ""))
+            status, error, info = self.parse_result(result)
+            if status:
+                raise ex.excError(error)
             return
 
         if svcpath and not data:
@@ -3933,11 +3934,10 @@ class Node(Crypt, ExtConfigMixin):
             nodename=self.options.node,
             timeout=5,
         )
-        if data is None:
-            return 1
-        for error in data.get("errors", []):
-             print(error, file=sys.stderr)
-        return data.get("status")
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        return status
 
     def dns_dump(self):
         """
@@ -4070,6 +4070,9 @@ class Node(Crypt, ExtConfigMixin):
             nodename=self.options.node,
             timeout=5,
         )
+        status, error, info = self.parse_result(data)
+        if status:
+            raise ex.excError(error)
         print(json.dumps(data, indent=4, sort_keys=True))
 
     def _ping(self, node, timeout=5):
@@ -4154,9 +4157,10 @@ class Node(Crypt, ExtConfigMixin):
         )
         if data is None:
             return 1
-        for error in data.get("errors", []):
-             print(error, file=sys.stderr)
-        return data.get("status")
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        return status
 
     def _daemon_stop(self):
         """
