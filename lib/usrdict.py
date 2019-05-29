@@ -171,6 +171,12 @@ KEYWORDS = [
         "default": "",
         "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
     },
+    {
+        "sections": ["DEFAULT"],
+        "keyword": "grant",
+        "example": "admin:test* guest:*",
+        "text": "Grant roles on namespaces to the user. A whitespace-separated list of clusteradmin|nsadmin|<role selector>:<namespace selector>, where role selector is a comma-separated list of role in admin,operator,guest and the namespace selector is a glob pattern applied to existing namespaces. The clusteradmin role is required to add resource triggers and non-containerized resources other than (container.docker, container.podman task.docker, task.podman and volume). The admin role is required to create, deploy and delete objects. The guest role is required to list and read objects configurations and status."
+    },
 ]
 
 
@@ -178,7 +184,7 @@ KEYS = KeywordStore(
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
-    template_prefix="template.secret.",
+    template_prefix="template.usr.",
     base_sections=BASE_SECTIONS,
     has_default_section=False,
  )
