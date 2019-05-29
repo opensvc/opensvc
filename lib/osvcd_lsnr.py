@@ -559,9 +559,10 @@ class Listener(shared.OsvcThread):
         """
         if not msg:
             return
-        if addr[0] == "local" or not usr or not addr:
+        if not usr or not addr or addr[0] == "local":
             origin = "requested by %s" % nodename
-        origin = "requested by %s@%s" % (usr.svcname, addr[0])
+        else:
+            origin = "requested by %s@%s" % (usr.svcname, addr[0])
         if lvl == "error":
             fn = self.log.error
         if lvl == "warning":

@@ -4177,6 +4177,11 @@ class Node(Crypt, ExtConfigMixin):
             {"action": "daemon_stop", "options": options},
             nodename=self.options.node,
         )
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        if status:
+            return data
         while True:
             if not self._daemon_running():
                 break
