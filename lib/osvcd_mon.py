@@ -1,6 +1,7 @@
 """
 Monitor Thread
 """
+import copy
 import os
 import sys
 import time
@@ -3389,7 +3390,7 @@ class Monitor(shared.OsvcThread):
         data.provisioned = self.get_agg_provisioned(svcpath)
         return data
 
-    def get_agg_services(self):
+    def get_agg_services(self, paths=None):
         svcpaths = set()
         with shared.CLUSTER_DATA_LOCK:
             for nodename, data in shared.CLUSTER_DATA.items():
@@ -3410,6 +3411,8 @@ class Monitor(shared.OsvcThread):
             data[svcpath] = self.get_agg(svcpath)
         with shared.AGG_LOCK:
             shared.AGG = data
+        if paths is not None:
+            return {path: data[path] for path in svcpaths if path in paths}
         return data
 
     def update_completions(self):
@@ -3428,16 +3431,33 @@ class Monitor(shared.OsvcThread):
             print(exc)
             pass
 
+    def filter_cluster_data(self, paths=None):
+        with shared.CLUSTER_DATA_LOCK:
+            data = copy.deepcopy(shared.CLUSTER_DATA)
+        if paths is None:
+            return data
+        nodes = list([n for n in data])
+        for node in data:
+            cpaths = [p for p in data[node]["services"]["config"] if p in paths]
+            data[node]["services"]["config"] = {path: data[node]["services"]["config"][path] for path in cpaths}
+            spaths = [p for p in data[node]["services"]["status"] if p in paths]
+            data[node]["services"]["status"] = {path: data[node]["services"]["status"][path] for path in spaths}
+        return data
+
     def status(self, **kwargs):
         if kwargs.get("refresh"):
             self.update_hb_data()
+        namespaces = kwargs.get("namespaces")
+        if namespaces is None:
+            paths = None
+        else:
+            paths = [p for p in shared.SMON_DATA if split_svcpath(p)[1] in namespaces]
         data = shared.OsvcThread.status(self, **kwargs)
-        with shared.CLUSTER_DATA_LOCK:
-            data.nodes = dict(shared.CLUSTER_DATA)
+        data["nodes"] = self.filter_cluster_data(paths)
         data["compat"] = self.compat
         data["transitions"] = self.transition_count()
         data["frozen"] = self.get_clu_agg_frozen()
-        data["services"] = self.get_agg_services()
+        data["services"] = self.get_agg_services(paths)
         return data
 
     def get_last_shutdown(self):
