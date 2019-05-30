@@ -43,7 +43,7 @@ RETRYABLE = (
     146,	# EREFUSED
     149,	# EALREADY
 )
-SOCK_TMO = 0.2
+SOCK_TMO = 1.0
 PAUSE = 0.2
 PING = ".".encode()
 
@@ -574,6 +574,7 @@ class Crypt(object):
         sock = None
         if nodename is None or nodename == "":
             nodename = rcEnv.nodename
+        progress = "connecting"
         try:
             while True:
                 try:
@@ -606,6 +607,7 @@ class Crypt(object):
                     raise
 
             if sp.tls:
+                progress = "wrapping in tls"
                 context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
                 context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
                 context.check_hostname = False
@@ -622,9 +624,11 @@ class Crypt(object):
                     "err": "failed to encrypt message",
                 }
 
+            progress = "sending"
             sock.sendall(message)
 
             if with_result:
+                progress = "receiving"
                 elapsed = 0
                 while True:
                     try:
@@ -642,8 +646,8 @@ class Crypt(object):
                         elapsed += SOCK_TMO + PAUSE
         except socket.error as exc:
             if not silent:
-                self.log.error("daemon send to %s error: %s",
-                               sp.to_s, str(exc))
+                self.log.error("%s comm error while %s: %s",
+                               sp.to_s, progress, str(exc))
             return {
                 "status": 1,
                 "error": str(exc),
