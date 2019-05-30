@@ -649,7 +649,7 @@ class Listener(shared.OsvcThread):
             if not len(namespaces - role_namespaces):
                 # role granted on all namespaces
                 return grants
-        raise ex.excError("unauthorized: action %s requested by user %s with grants %s" % (action, usr.svcname, self.format_grants(grants)))
+        raise ex.excError("unauthorized: action '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, usr.svcname, self.format_grants(grants), ",".join(roles)))
 
     @staticmethod
     def format_grants(grants):
@@ -1628,6 +1628,10 @@ class Listener(shared.OsvcThread):
         action = options.get("action")
         if action in ("get", "eval"):
             role = "guest"
+        elif action in ("start", "stop", "restart", "run", "scale", "resource_monitor", "status", "prstatus", "presync", "push_status", "push_resinfo", "push_config", "push_encap_config", "resync", "snooze", "startstandby", "stopstandby", "presync", "freeze", "thaw", "unsnooze", "enable", "disable"):
+            role = "operator"
+        elif action in ("boot", "shutdown", "pg_kill", "pg_freeze", "pg_thaw", "run", "set_provisioned", "set_unprovisioned", "provision", "unprovision"):
+            role = "admin"
         sync = options.get("sync", True)
         svcpath = options.get("svcpath")
         if not svcpath:
