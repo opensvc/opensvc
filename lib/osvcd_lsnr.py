@@ -1171,7 +1171,7 @@ class Listener(shared.OsvcThread):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
         self.log_request("service %s clear" % svcpath, nodename, **kwargs)
         self.set_smon(svcpath, status="idle", reset_retries=True)
-        return {"status": 0}
+        return {"status": 0, "info": "%s instance cleared" % svcpath}
 
     def get_service_slaves(self, svcpath, slaves=None):
         """
