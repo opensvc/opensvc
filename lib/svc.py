@@ -282,6 +282,7 @@ ACTIONS_LOCK_COMPAT = {
 
 ACTIONS_NO_LOCK = [
     "abort",
+    "clear",
     "docker",
     "edit_config",
     "freeze",
@@ -1943,35 +1944,21 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @_master_action
     def master_clear(self):
-        if self.options.local:
-           self._clear()
-        elif self.options.node:
-           self._clear(self.options.node)
-        else:
-           cleared = 0
-           for nodename in self.peers:
-               try:
-                   self._clear(nodename)
-               except ex.excError as exc:
-                   self.log.warning(exc)
-                   continue
-               cleared += 1
-           if cleared < len(self.peers):
-               raise ex.excError("cleared on %d/%d nodes" % (cleared, len(self.peers)))
+        self._clear()
 
-    def _clear(self, nodename=None):
-        options = {
-            "svcpath": self.svcpath,
+    def _clear(self):
+        req = {
+            "action": "clear",
+            "options": {
+                "svcpath": self.svcpath,
+            }
         }
-        data = self.daemon_send(
-            {"action": "clear", "options": options},
-            nodename=nodename,
-            timeout=5,
-        )
-        if data is None:
-            raise ex.excError("clear on node %s failed: no return data" % nodename)
-        elif data.get("status") != 0:
-            raise ex.excError("clear on node %s failed: %s" % (nodename, data.get("error", "")))
+        data = self.daemon_send(req, timeout=5)
+        status, error, info = self.parse_result(data)
+        if info:
+            print(info)
+        if status:
+            raise ex.excError(error)
 
     def notify_done(self, action, rids=None):
         if not self.options.cron:
