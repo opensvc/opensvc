@@ -1226,7 +1226,8 @@ class Listener(shared.OsvcThread):
             (None, "placed", False),
             (None, "shutdown", False),
         )
-        if (local_expect, global_expect.split("@")[0], reset_retries) in operator:
+        _global_expect = global_expect.split("@")[0] if global_expect else global_expect
+        if (local_expect, _global_expect, reset_retries) in operator:
             role = "operator"
         self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
         svcpaths = set([svcpath])
