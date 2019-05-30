@@ -1946,14 +1946,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def master_clear(self):
         self._clear()
 
-    def _clear(self):
+    def _clear(self, nodename=None):
         req = {
             "action": "clear",
             "options": {
                 "svcpath": self.svcpath,
             }
         }
-        data = self.daemon_send(req, timeout=5)
+        data = self.daemon_send(req, timeout=5, nodename=nodename)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
