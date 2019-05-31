@@ -4722,8 +4722,11 @@ class Node(Crypt, ExtConfigMixin):
                 silent=True,
                 timeout=2,
             )
-            if data and data["status"] != 0:
+            status, error, info = self.parse_result(data)
+            if error:
                 self.log.warning("wake monitor failed")
+                for line in error.splitlines():
+                    self.log.warning(line)
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 

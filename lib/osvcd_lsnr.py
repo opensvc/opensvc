@@ -1150,10 +1150,11 @@ class Listener(shared.OsvcThread):
         svcpath = options.get("svcpath")
         if not svcpath:
             svcpath = options.get("svcname")
-        if svcpath is None:
-            return {"error": "no svcpath specified", "status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
+        if svcpath:
+            name, namespace, kind = split_svcpath(svcpath)
+            self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
+        else:
+            self.rbac_requires(roles=["operator"], namespaces="ANY", **kwargs)
         shared.wake_monitor(reason="service %s notification" % svcpath)
         return {"status": 0}
 
