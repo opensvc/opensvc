@@ -2,6 +2,7 @@
 The daemon encrypted communications primitives.
 """
 
+from __future__ import print_function
 import base64
 import json
 import os

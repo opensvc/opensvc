@@ -9,11 +9,6 @@ OPT = Storage({
         help="A list member to add to the value pointed by :opt:``--param``. "
              "If :opt:``--index`` is set, insert the new element at the "
              "specified position in the list."),
-    "cluster": Option(
-        "-c", "--cluster", default=False,
-        action="store_true", dest="cluster",
-        help="Execute the action on all cluster nodes. Aggregate the json "
-             "outputs."),
     "color": Option(
         "--color", default="auto",
         action="store", dest="color",
@@ -323,7 +318,6 @@ SVC_SELECT_OPTS = [
 ]
 
 GLOBAL_OPTS = SVC_SELECT_OPTS + [
-    OPT.cluster,
     OPT.color,
     OPT.daemon,
     OPT.debug,

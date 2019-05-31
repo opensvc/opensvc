@@ -949,9 +949,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.options.format = "json"
             options.format = "json"
 
-        if options.cluster and options.format not in ("json", "flat_json"):
-            raise ex.excError("only the json and flat_json output formats are allowed with --cluster")
-
         try:
             if action.startswith("collector_"):
                 from collector import Collector
@@ -965,158 +962,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if not hasattr(func, "__call__"):
             raise ex.excError("%s is not callable" % action)
 
-        psinfo = self.do_cluster_action(_action, collect=True, action_mode=False)
-
         try:
             data = func()
         except Exception as exc:
             data = {"error": str(exc)}
 
-        if psinfo:
-            # --cluster is set and we have remote responses
-            results = self.join_cluster_action(**psinfo)
-            for nodename in results:
-                results[nodename] = results[nodename][0]
-                if options.format in ("json", "flat_json"):
-                    try:
-                        results[nodename] = json.loads(results[nodename])
-                    except (TypeError, ValueError) as exc:
-                        results[nodename] = {"error": str(exc)}
-            results[rcEnv.nodename] = data
-            return results
-        elif options.cluster:
-            # no remote though --cluster is set
-            results = {}
-            results[rcEnv.nodename] = data
-            return results
-
         return data
-
-    def remote_action(self, nodename, action, waitlock=None,
-                      sync=False, verbose=True, action_mode=True, collect=True):
-        rcmd = []
-        if self.options.debug:
-            rcmd += ['--debug']
-        if self.options.dry_run:
-            rcmd += ['--dry-run']
-        if self.options.local and action_mode:
-            rcmd += ['--local']
-        if self.options.cron:
-            rcmd += ['--cron']
-        if waitlock is not None and waitlock != self.lock_timeout:
-            rcmd += ['--waitlock', str(waitlock)]
-        rcmd += action.split()
-        if verbose:
-            self.log.info("exec '%s' on node %s", ' '.join(rcmd), nodename)
-        return self.daemon_service_action(rcmd, nodename=nodename, sync=sync,
-                                          collect=collect, action_mode=action_mode)
-
-    def do_cluster_action(self, action, options=None, waitlock=60, collect=False, action_mode=True):
-        """
-        Execute an action on remote nodes if --cluster is set and the
-        service is a flex, and this node is flex primary.
-
-        edit config, validate config, and sync* are never executed through
-        this method.
-
-        If possible execute in parallel running subprocess. Aggregate and
-        return results.
-        """
-        if options is None:
-            options = self.options
-        if not options.cluster:
-            return
-
-        if action in ("edit_config", "validate_config") or "sync" in action:
-            return
-
-        if self.topology == "flex":
-            if rcEnv.nodename == self.drp_flex_primary:
-                peers = set(self.drpnodes) - set([rcEnv.nodename])
-            elif rcEnv.nodename == self.flex_primary:
-                peers = set(self.nodes) - set([rcEnv.nodename])
-            else:
-                return
-        elif not action_mode:
-            if rcEnv.nodename in self.nodes:
-                peers = set(self.nodes) | set(self.drpnodes)
-            else:
-                peers = set(self.drpnodes)
-            peers -= set([rcEnv.nodename])
-        else:
-            return
-
-        args = [arg for arg in sys.argv[1:] if arg not in ("-c", "--cluster")]
-        if options.extra_argv and len(options.extra_argv) > 0:
-            args += options.extra_argv
-
-        def wrapper(queue, **kwargs):
-            """
-            Execute the remote action and enqueue or print results.
-            """
-            collect = kwargs["collect"]
-            ret, out, err = self.remote_action(**kwargs)
-            if collect:
-                queue.put([out, err, ret])
-            else:
-                if len(out):
-                    print(out)
-                if len(err):
-                    print(err)
-            return out, err, ret
-
-        if rcEnv.sysname == "Windows":
-            parallel = False
-        else:
-            try:
-                from multiprocessing import Process, Queue
-                parallel = True
-                results = None
-                procs = {}
-                queues = {}
-            except ImportError:
-                parallel = False
-                results = {}
-                procs = None
-                queues = None
-
-        for nodename in peers:
-            kwargs = {
-                "nodename": nodename,
-                "action": " ".join(args),
-                "waitlock": waitlock,
-                "verbose": False,
-                "sync": True,
-                "action_mode": action_mode,
-                "collect": True,
-            }
-            if parallel:
-                queues[nodename] = Queue()
-                proc = Process(target=wrapper, args=(queues[nodename],), kwargs=kwargs)
-                proc.start()
-                procs[nodename] = proc
-            else:
-                results[nodename] = wrapper(**kwargs)
-        return {"procs": procs, "queues": queues, "results": results}
-
-    @staticmethod
-    def join_cluster_action(procs=None, queues=None, results=None):
-        """
-        Wait for subprocess to finish, aggregate and return results.
-        """
-        if procs is None or queues is None:
-            return results
-        results = {}
-        joined = []
-        while len(joined) < len(procs):
-            for nodename, proc in procs.items():
-                proc.join(0.1)
-                if not proc.is_alive():
-                    joined.append(nodename)
-                queue = queues[nodename]
-                if not queue.empty():
-                    results[nodename] = queue.get()
-        return results
 
     def do_action(self, action, options):
         """
@@ -1154,8 +1005,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             except ex.excError as exc:
                 self.log.error(str(exc))
                 return 1
-
-        psinfo = self.do_cluster_action(action, options=options)
 
         def call_action(action):
             self.setup_environ(action=action, options=options)
@@ -1229,9 +1078,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     if not resource.type.startswith("sync"):
                         continue
                     resource.resunlock()
-
-        if psinfo:
-            self.join_cluster_action(**psinfo)
 
         return err
 
@@ -1406,19 +1252,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
         print(mtime)
 
     def prepare_async_cmd(self):
-        cmd = sys.argv[1:]
-        cmd = drop_option("--local", cmd, drop_value=False)
-        cmd = drop_option("--node", cmd, drop_value=True)
-        cmd = drop_option("-s", cmd, drop_value=True)
-        cmd = drop_option("--service", cmd, drop_value=True)
-        return cmd
+        options = {}
+        options.update(self.options)
+        for opt in ("svcs", "node", "local"):
+            if opt in options:
+                del options[opt]
+        return options
 
     def async_action(self, action, wait=None, timeout=None):
         if action in ACTION_NO_ASYNC:
             return
-        if (want_context() and action not in ACTION_ASYNC) or (self.options.node is not None and self.options.node != ""):
-            cmd = self.prepare_async_cmd()
-            ret = self.daemon_service_action(cmd, action=action, target=self.options.node, action_mode=False)
+        if (want_context() and (self.options.node or self.command_is_scoped() or action not in ACTION_ASYNC)) or (self.options.node is not None and self.options.node != ""):
+            options = self.prepare_async_cmd()
+            ret = self.daemon_service_action(action=action, options=options, target=self.options.node, action_mode=False)
             if isinstance(ret, (dict, list)):
                 return ret
             if ret == 0:
@@ -2088,7 +1934,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception:
             return
 
-    def daemon_service_action(self, cmd, action=None, nodename=None, target=None, sync=True, timeout=0, collect=False, action_mode=True):
+    def daemon_service_action(self, action=None, options=None, nodename=None, target=None, sync=True, timeout=0, collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
@@ -2124,9 +1970,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "node": target,
             "options": {
                 "svcpath": self.svcpath,
-                "cmd": cmd,
                 "sync": sync,
                 "action": action,
+                "options": options,
             }
         }
         if action_mode:
@@ -5200,9 +5046,9 @@ class Svc(BaseSvc):
         self._clear(nodename=dst)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
-        self.daemon_service_action(["prstop"], nodename=src_node)
+        self.daemon_service_action(action="prstop", nodename=src_node)
         try:
-            self.daemon_service_action(["startfs", "--master"], nodename=dst)
+            self.daemon_service_action(action="startfs", options={"master": True}, nodename=dst)
             self._migrate()
         except:
             if len(self.get_resources('disk.scsireserv')) > 0:
@@ -5211,8 +5057,8 @@ class Svc(BaseSvc):
                                "either on source node or destination node, "
                                "depending on your problem analysis.")
             raise
-        self.daemon_service_action(["stop"], nodename=src_node)
-        self.daemon_service_action(["prstart", "--master"], nodename=dst)
+        self.daemon_service_action(action="stop", nodename=src_node)
+        self.daemon_service_action(action="prstart", options={"master": True}, nodename=dst)
 
     def takeover(self):
         """
@@ -5402,12 +5248,18 @@ class Svc(BaseSvc):
                 for peer in self.peers:
                     if peer == rcEnv.nodename:
                         continue
-                    self.daemon_service_action([
-                        "set",
-                        "--kw", "nodes-=" + rcEnv.nodename,
-                        "--kw", "drpnodes-=" + rcEnv.nodename,
-                        "--eval",
-                    ], nodename=peer, sync=True)
+                    self.daemon_service_action(
+                        action="set",
+                        options={
+                            "kw": [
+                                "nodes-=" + rcEnv.nodename,
+                                "drpnodes-=" + rcEnv.nodename,
+                            ],
+                            "eval": True
+                        },
+                        nodename=peer,
+                        sync=True
+                    )
             self.delete_service_conf()
             self.delete_service_logs()
             self.set_purge_collector_tag()

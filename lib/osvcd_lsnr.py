@@ -483,7 +483,7 @@ class Listener(shared.OsvcThread):
         while True:
             ready = select.select([conn], [], [conn], 6)
             if ready[0]:
-                chunk = conn.recv(buff_size)
+                chunk = self.sock_recv(conn, buff_size)
             else:
                 self.log.warning("timeout waiting for data from client %s", addr[0])
                 return
@@ -691,8 +691,8 @@ class Listener(shared.OsvcThread):
                         if rtype != "cni":
                             errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
                             continue
-                    for key, val in _data.items():
-                        if "trigger" in key:
+                    for key, val in sdata.items():
+                        if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
                             errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
                             continue
                         _key = key.split("@")[0]
@@ -1579,9 +1579,9 @@ class Listener(shared.OsvcThread):
         """
         options = kwargs.get("options", {})
         data = options.get("data")
-        errors = self.rbac_create_data(data, **kwargs)
         if not data:
             return {"status": 0, "info": "no data"}
+        errors = self.rbac_create_data(data, **kwargs)
         if errors:
             return {"status": 1, "error": errors}
         sync = options.get("sync", True)
@@ -1617,23 +1617,29 @@ class Listener(shared.OsvcThread):
 
     def action_service_action(self, nodename, **kwargs):
         """
-        Execute a CRM command on behalf of a peer node.
-        kwargs:
+        Execute a CRM command.
+        kwargs.options:
         * svcpath: str
-        * cmd: list
+        * action: str
+        * options: dict
         * sync: boolean
+        * cmd: str (deprecated)
         """
-        role = "clusteradmin"
         options = kwargs.get("options", {})
         action = options.get("action")
+        cmd = options.get("cmd")
+        sync = options.get("sync", True)
+        svcpath = options.get("svcpath")
+        action_options = options.get("options", {})
+
+        role = "clusteradmin"
         if action in ("get", "eval"):
             role = "guest"
         elif action in ("start", "stop", "restart", "run", "scale", "resource_monitor", "status", "prstatus", "presync", "push_status", "push_resinfo", "push_config", "push_encap_config", "resync", "snooze", "startstandby", "stopstandby", "presync", "freeze", "thaw", "unsnooze", "enable", "disable", "clear"):
             role = "operator"
-        elif action in ("boot", "shutdown", "pg_kill", "pg_freeze", "pg_thaw", "run", "set_provisioned", "set_unprovisioned", "provision", "unprovision"):
+        elif action in ("boot", "shutdown", "pg_kill", "pg_freeze", "pg_thaw", "run", "set_provisioned", "set_unprovisioned", "provision", "unprovision", "unset"):
             role = "admin"
-        sync = options.get("sync", True)
-        svcpath = options.get("svcpath")
+
         if not svcpath:
             svcpath = options.get("svcname")
         if svcpath is None:
@@ -1641,25 +1647,101 @@ class Listener(shared.OsvcThread):
             return {
                 "status": 1,
             }
-        namespace = split_svcpath(svcpath)[1]
-        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
-        cmd = options.get("cmd")
-        if self.get_service(svcpath) is None and "create" not in cmd:
+        name, namespace, kind = split_svcpath(svcpath)
+        if action == "set":
+            # load current config
+            try:
+                cf = shared.SERVICES[svcpath].print_config_data()
+            except Exception as exc:
+                cf = {}
+            # purge unwanted sections
+            for section in ("DEFAULT", "metadata"):
+                try:
+                    del cf["metadata"]
+                except Exception:
+                   pass
+            # keep only the type kw of each section (required for rbac)
+            for section in cf:
+                for k in list([k for k in cf[section]]):
+                    if k != "type":
+                        del cf[section][k]
+            payload = {svcpath: cf}
+            for buff in action_options.get("kw", []):
+                k, v = buff.split("=", 1)
+                try:
+                    s, k = k.split(".", 1)
+                except Exception:
+                    s = "DEFAULT"
+                if s not in payload[svcpath]:
+                    payload[svcpath][s] = {}
+                payload[svcpath][s][k] = v
+            errors = self.rbac_create_data(payload, **kwargs)
+            if errors:
+                return {"status": 1, "error": errors}
+        else:
+            self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
+
+        if self.get_service(svcpath) is None and action not in ("create", "deploy"):
             self.log_request("service action (%s not installed)" % svcpath, nodename, lvl="warning", **kwargs)
             return {
-                "err": "service not found",
+                "error": "service not found",
                 "status": 1,
             }
-        if cmd is None or len(cmd) == 0:
-            self.log_request("service action (no 'cmd' set)", nodename, lvl="error", **kwargs)
+        if not action and not cmd:
+            self.log_request("service action (no action set)", nodename, lvl="error", **kwargs)
             return {
+                "error": "action not set",
                 "status": 1,
             }
 
-        cmd = drop_option("--node", cmd, drop_value=True)
-        cmd = drop_option("--daemon", cmd)
-        cmd.append("--local")
-        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", svcpath] + cmd
+        # TODO: rbac on options
+
+        for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
+            if opt in action_options:
+                del action_options[opt]
+        for opt, ropt in (("jsonpath_filter", "filter"),):
+            if opt in action_options:
+                action_options[ropt] = action_options[opt]
+                del action_options[opt]
+        action_options["local"] = True
+        pmod = __import__(kind + "mgr_parser")
+        popt = pmod.OPT
+
+        def find_opt(opt):
+            for k, o in popt.items():
+                if o.dest == opt:
+                    return o
+                if o.dest == "parm_" + opt:
+                    return o
+
+        if cmd:
+            # compat, requires clusteradmin
+            self.rbac_requires(**kwargs)
+        else:
+            cmd = [action]
+            for opt, val in action_options.items():
+                po = find_opt(opt)
+                if po is None:
+                    continue
+                if val == po.default:
+                    continue
+                if val is None:
+                    continue
+                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
+                if po.action == "append":
+                    cmd += [opt + "=" + str(v) for v in val]
+                elif po.action == "store_true" and val:
+                    cmd.append(opt)
+                elif po.action == "store_false" and not val:
+                    cmd.append(opt)
+                elif po.type == "string":
+                    opt += "=" + val
+                    cmd.append(opt)
+                elif po.type == "integer":
+                    opt += "=" + str(val)
+                    cmd.append(opt)
+
+        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", svcpath] + cmd
         self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
