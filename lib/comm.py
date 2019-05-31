@@ -10,6 +10,7 @@ import threading
 import zlib
 import time
 import select
+import sys
 
 class DummyException(Exception):
     pass
@@ -17,9 +18,11 @@ class DummyException(Exception):
 try:
     import ssl
     SSLWantReadError = ssl.SSLWantReadError
+    SSLError = ssl.SSLError
     has_ssl = True
 except Exception:
     SSLWantReadError = DummyException
+    SSLError = DummyException
     has_ssl = False
 
 import six
@@ -481,8 +484,10 @@ class Crypt(object):
         while True:
             try:
                 buff = sock.recv(bufsize)
-            except SSLWantReadError:
-                continue
+            except SSLError as exc:
+                if exc.errno == ssl.SSL_ERROR_WANT_READ:
+                    continue
+                raise
             break
         return buff
 
@@ -500,12 +505,7 @@ class Crypt(object):
             if use_select:
                 ready = select.select([sock], [], [sock], 1)
                 if ready[0]:
-                    while True:
-                        try:
-                            chunk = self.sock_recv(sock, bufsize)
-                        except SSLWantReadError:
-                            continue
-                        break
+                    chunk = self.sock_recv(sock, bufsize)
                 else:
                     raise socket.timeout
                 if ready[2]:
@@ -861,5 +861,8 @@ class Crypt(object):
             return status, error.rstrip(), info.rstrip()
         error = _fmt(data, "error")
         info = _fmt(data, "info")
+        traceback = data.get("traceback")
+        if traceback:
+            print("Server "+traceback, file=sys.stderr)
         return status, error.rstrip(), info.rstrip()
 
