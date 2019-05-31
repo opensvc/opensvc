@@ -1993,8 +1993,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         status, error, info = self.parse_result(data)
         if error:
             self.log.error(error)
-        if status:
-            return 1
 
         def print_node_data(nodename, data):
             if data.get("out") and len(data["out"]) > 0:
@@ -2002,7 +2000,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                    print(line)
             if data.get("err") and len(data["err"]) > 0:
                 for line in data["err"].splitlines():
-                   print("%s: %s" % (nodename, line), file=sys.stderr)
+                   print(line, file=sys.stderr)
 
         if collect:
             if "data" not in data:
@@ -2019,9 +2017,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 else:
                     ret = 0
                     for n, _data in data["nodes"].items():
-                        _data = _data["data"]
+                        status = _data.get("status", 0)
+                        _data = _data.get("data", {})
                         print_node_data(n, _data)
-                        ret += _data.get("ret", 0)
+                        ret += _data.get("ret", 0) + status
                     return ret
             else:
                 if "data" not in data:
