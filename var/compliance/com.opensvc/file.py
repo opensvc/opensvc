@@ -136,7 +136,7 @@ class CompFiles(CompObject):
             d['fmt'] = str(d['fmt'])
         d['fmt'] = d['fmt'].replace('%%HOSTNAME%%', self.nodename)
         d['fmt'] = d['fmt'].replace('%%SHORT_HOSTNAME%%', self.nodename.split('.')[0])
-        d['fmt'] = self.subst(d['fmt'])
+        d['fmt'] = self.subst(d['fmt'], in_json=True)
         if add_linefeed and not d['fmt'].endswith('\n'):
             d['fmt'] += '\n'
         return [d]

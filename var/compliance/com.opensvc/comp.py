@@ -197,7 +197,7 @@ class CompObject(object):
         rules = []
         for k in [key for key in os.environ if key.startswith(self.prefix)]:
             try:
-                s = self.subst(self.get_env(k))
+                s = self.subst(self.get_env(k), in_json=True)
             except Exception as e:
                 perror(k, e)
                 continue
@@ -215,7 +215,7 @@ class CompObject(object):
             raise NotApplicable("no rules (%s)" % self.prefix)
         return rules
 
-    def subst(self, v):
+    def subst(self, v, in_json=False):
         """
           A rule value can contain references to other rules as %%ENV:OTHER%%.
           This function substitutes these markers with the referenced rules values,
@@ -226,7 +226,7 @@ class CompObject(object):
         if type(v) == list:
             l = []
             for _v in v:
-                l.append(self.subst(_v))
+                l.append(self.subst(_v, in_json=in_json))
             return l
         if type(v) != str and type(v) != unicode:
             return v
@@ -241,8 +241,12 @@ class CompObject(object):
                 s = m.strip("%").upper().replace('ENV:', '')
                 if s in os.environ:
                     _v = self.get_env(s)
+                    if in_json:
+                        _v = json.dumps(_v)[1:-1]
                 elif 'OSVC_COMP_'+s in os.environ:
                     _v = self.get_env('OSVC_COMP_'+s)
+                    if in_json:
+                        _v = json.dumps(_v)[1:-1]
                 else:
                     _v = ""
                     raise NotApplicable("undefined substitution variable: %s" % s)
