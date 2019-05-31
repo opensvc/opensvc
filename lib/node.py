@@ -3869,15 +3869,6 @@ class Node(Crypt, ExtConfigMixin):
         )
         return data
 
-    def cluster_stats(self, svcpaths=None):
-        data = {}
-        for node in self.cluster_nodes:
-            try:
-                data[node] = self._daemon_stats(svcpaths=svcpaths, node=node)["data"]
-            except Exception:
-                pass
-        return data
-
     def daemon_lock_release(self):
         self._daemon_unlock(self.options.name, self.options.id)
 
@@ -3897,11 +3888,11 @@ class Node(Crypt, ExtConfigMixin):
         data = self.daemon_send(
             {
                 "action": "daemon_stats",
+                "node": node,
                 "options": {
                     "svcpaths": svcpaths,
                 }
             },
-            nodename=node,
             silent=silent,
         )
         return data
