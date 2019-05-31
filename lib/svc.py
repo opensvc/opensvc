@@ -1976,7 +1976,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             }
         }
         if action_mode:
-            self.log.info("request action '%s' on node %s", " ".join(cmd), nodename)
+            self.log.info("request action '%s' on node %s", action, nodename)
         try:
             data = self.daemon_send(
                 req,
@@ -1987,8 +1987,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 cluster_name=cluster_name,
             )
         except Exception as exc:
-            self.log.error("post service action '%s' on node %s failed: %s",
-                           " ".join(cmd), nodename, exc)
+            self.log.error("request service action '%s' on node %s failed: %s",
+                           action, nodename, exc)
             return 1
         status, error, info = self.parse_result(data)
         if error:
