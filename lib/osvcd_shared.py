@@ -1283,8 +1283,8 @@ class OsvcThread(threading.Thread, Crypt):
         default_cidr = NODE.oget("cluster", "vip")
         for node in self.cluster_nodes:
             priv_cidr = NODE.oget("cluster", "vip", impersonate=node)
-            if priv_cidr is None and cidr is None:
-                if cidr is None:
+            if priv_cidr is None and default_cidr is None:
+                if default_cidr is None:
                     self.log.info("cluster vip not set")
                 else:
                     self.log.info("cluster vip not set for node %s", node)
