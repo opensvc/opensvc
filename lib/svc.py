@@ -51,6 +51,7 @@ def signal_handler(*args):
 
 # Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
+    "clear",
     "edit_config",
     "logs",
     "print_config",
@@ -1790,16 +1791,17 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @_master_action
     def master_clear(self):
-        self._clear()
+        self._clear(node=self.options.node)
 
-    def _clear(self, nodename=None):
+    def _clear(self, endpoint=None, node=None):
         req = {
             "action": "clear",
+            "node": node,
             "options": {
                 "svcpath": self.svcpath,
             }
         }
-        data = self.daemon_send(req, timeout=5, nodename=nodename)
+        data = self.daemon_send(req, timeout=5, nodename=endpoint)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
@@ -5041,8 +5043,8 @@ class Svc(BaseSvc):
         """
         dst = self.destination_node_sanity_checks()
         self.svcunlock()
-        self._clear(nodename=rcEnv.nodename)
-        self._clear(nodename=dst)
+        self._clear(endpoint=rcEnv.nodename)
+        self._clear(endpoint=dst)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
         self.daemon_service_action(action="prstop", nodename=src_node)
