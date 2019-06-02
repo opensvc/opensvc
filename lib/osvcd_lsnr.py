@@ -136,6 +136,7 @@ class Listener(shared.OsvcThread):
             return
 
     def setup_socktls(self):
+        self.vip
         if not has_ssl:
             self.log.info("skip tls listener init: ssl module import error")
             return

@@ -14,7 +14,7 @@ import six
 from six.moves import queue
 
 import rcExceptions as ex
-from rcUtilities import lazy, unset_lazy, is_string
+from rcUtilities import lazy, unset_lazy, is_string, factory
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from freezer import Freezer
@@ -375,6 +375,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.event("node_config_change")
         unset_lazy(self, "config")
         unset_lazy(self, "quorum")
+        unset_lazy(self, "vip")
         unset_lazy(NODE, "arbitrators")
         unset_lazy(self, "cluster_name")
         unset_lazy(self, "cluster_key")
@@ -1271,3 +1272,35 @@ class OsvcThread(threading.Thread, Crypt):
         else:
             # log to node.log with no prefix
             getattr(self.log, level)(fmt.format(**fmt_data))
+
+    @lazy
+    def vip(self):
+        try:
+            cidr = NODE.oget("cluster", "vip")
+            addr, netmask = cidr.split("/", 1)
+            netmask, ipdev = netmask.split("@", 1)
+            self.log.info("cluster vip %s" % cidr)
+        except Exception as exc:
+            self.log.info("cluster vip not set or malformed: %s", exc)
+            return
+        svc = factory("svc")("vip", namespace="system", node=NODE)
+        template = (
+            ("ip#0", "ipdev", ipdev),
+            ("ip#0", "ipname", addr),
+            ("ip#0", "netmask", netmask),
+            ("sync#i0", "disable", "true"),
+            ("DEFAULT", "orchestrate", "ha"),
+            ("DEFAULT", "nodes", "*"),
+        )
+        changes = []
+        for section, keyword, value in template:
+            try:
+                val = svc._get("%s.%s" %(section, keyword))
+            except (ex.OptNotFound, ex.RequiredOptNotFound):
+                val = None
+            if val != value:
+                changes.append("%s.%s=%s" % (section, keyword, value))
+        if changes:
+            svc.set_multi(changes, validation=False)
+        return svc
+

@@ -533,6 +533,13 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
     },
     {
         "section": "cluster",
+        "keyword": "vip",
+        "example": "192.168.99.12/24@eth0",
+        "at": True,
+        "text": "The cluster virtual ip. If configured, the daemon creates a system/svc/vip failover service to manage this ip."
+    },
+    {
+        "section": "cluster",
         "keyword": "dns",
         "convert": "list",
         "default": [],
