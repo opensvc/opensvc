@@ -1275,32 +1275,68 @@ class OsvcThread(threading.Thread, Crypt):
 
     @lazy
     def vip(self):
-        try:
-            cidr = NODE.oget("cluster", "vip")
-            addr, netmask = cidr.split("/", 1)
-            netmask, ipdev = netmask.split("@", 1)
-            self.log.info("cluster vip %s" % cidr)
-        except Exception as exc:
-            self.log.info("cluster vip not set or malformed: %s", exc)
-            return
-        svc = factory("svc")("vip", namespace="system", node=NODE)
-        template = (
-            ("ip#0", "ipdev", ipdev),
-            ("ip#0", "ipname", addr),
-            ("ip#0", "netmask", netmask),
+        template = [
             ("sync#i0", "disable", "true"),
             ("DEFAULT", "orchestrate", "ha"),
             ("DEFAULT", "nodes", "*"),
-        )
+        ]
+        default_cidr = NODE.oget("cluster", "vip")
+        for node in self.cluster_nodes:
+            priv_cidr = NODE.oget("cluster", "vip", impersonate=node)
+            if priv_cidr is None and cidr is None:
+                if cidr is None:
+                    self.log.info("cluster vip not set")
+                else:
+                    self.log.info("cluster vip not set for node %s", node)
+            if priv_cidr != default_cidr:
+                cidr = default_cidr
+            else:
+                cidr = priv_cidr
+            try:
+                addr, netmask = cidr.split("/", 1)
+                netmask, ipdev = netmask.split("@", 1)
+            except Exception as exc:
+                self.log.info("cluster vip not set or malformed: %s", exc)
+                return
+            t = ("ip#0", "ipname", addr)
+            if t not in template:
+                template.append(t)
+            t = ("ip#0", "netmask", netmask)
+            if t not in template:
+                template.append(t)
+            if priv_cidr == default_cidr:
+                t = ("ip#0", "ipdev", ipdev)
+                if t not in template:
+                    template.append(t)
+            else:
+                template += [
+                    ("ip#0", "ipdev@"+node, ipdev),
+                ]
+        self.log.info("cluster vip %s" % default_cidr)
+        svc = factory("svc")("vip", namespace="system", node=NODE)
+        kws = []
         changes = []
+        current = svc.print_config_data()
         for section, keyword, value in template:
+            kws.append("%s.%s" % (section, keyword))
             try:
                 val = svc._get("%s.%s" %(section, keyword))
             except (ex.OptNotFound, ex.RequiredOptNotFound):
                 val = None
             if val != value:
                 changes.append("%s.%s=%s" % (section, keyword, value))
+        extraneous = []
+        for kw in svc.print_config_data().get("ip#0", {}):
+            _kw = "ip#0."+kw
+            if _kw not in kws:
+                extraneous.append(_kw)
         if changes:
+            for k in changes:
+                self.log.info("set %s: %s", svc.svcpath, k)
             svc.set_multi(changes, validation=False)
+        if extraneous:
+            for k in extraneous:
+                self.log.info("unset %s: %s (undue)", svc.svcpath, k)
+            svc.unset_multi(extraneous)
         return svc
 
