@@ -768,6 +768,9 @@ class Listener(shared.OsvcThread):
             if section == "DEFAULT" and _key == "monitor_action" and val not in ("freezestop", None):
                 errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
                 continue
+            if section == "DEFAULT" and _key == "cn":
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
             if section == "DEFAULT" and _key == "grant":
                 req_grants = self.parse_grants(val)
                 if "clusteradmin" in req_grants:
