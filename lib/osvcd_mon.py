@@ -3057,6 +3057,7 @@ class Monitor(shared.OsvcThread):
         data["speaker"] = self.speaker()
         data["min_avail_mem"] = shared.NODE.min_avail_mem
         data["min_avail_swap"] = shared.NODE.min_avail_swap
+        data["monitor"] = dict(shared.NMON_DATA)
         data["services"]["config"] = self.get_services_config()
         data["services"]["status"] = self.get_services_status(data["services"]["config"].keys())
 
