@@ -921,7 +921,7 @@ class OsvcThread(threading.Thread, Crypt):
                 if instance is None:
                     continue
                 if discard_start_failed and \
-                   instance["monitor"]["status"] in (
+                   instance["monitor"].get("status") in (
                        "start failed",
                        "place failed"
                    ):
