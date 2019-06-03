@@ -33,6 +33,8 @@ preserve = no
 authorityKeyIdentifier = keyid:always,issuer:always
 """
 
+DEFAULT_SACC_CERT_VALIDITY = "2h"
+
 class Usr(Sec, BaseSvc):
     kind = "usr"
     desc = "user"
@@ -42,13 +44,24 @@ class Usr(Sec, BaseSvc):
         return __import__("usrdict")
 
     def on_create(self):
+        changes = []
         if not self.oget("DEFAULT", "cn"):
-            self.set_multi(["cn=%s" % self.svcname])
+            if self.namespace == "system":
+                changes.append("cn=%s" % self.svcname)
+            else:
+                changes.append("cn=%s" % self.fullname)
         if not self.oget("DEFAULT", "ca"):
             ca = self.node.oget("cluster", "ca")
             if ca is None:
                 ca = "system/sec/ca-" + self.node.cluster_name
-            self.set_multi(["ca=%s" % ca])
+            changes.append("ca=%s" % ca)
+        if self.namespace != "system":
+            if not self.oget("DEFAULT", "validity"):
+                changes.append("validity=%s" % DEFAULT_SACC_CERT_VALIDITY)
+            grant = "guest:" + self.namespace
+            changes.append("grant=%s" % grant)
+        if changes:
+            self.set_multi(changes)
         if "certificate" not in self.data_keys():
             self.gen_cert()
 

@@ -70,11 +70,10 @@ class Sec(DataMixin, BaseSvc):
         ca = data.get("ca")
         casec = None
         if ca is not None:
-            casecname, _, _ = split_svcpath(ca)
-            casecpath = fmt_svcpath(casecname, self.namespace, "sec")
-            casec = factory("sec")(casecname, namespace=self.namespace, log=self.log, volatile=True)
+            casecname, canamespace, _ = split_svcpath(ca)
+            casec = factory("sec")(casecname, namespace=canamespace, log=self.log, volatile=True)
             if not casec.exists():
-                raise ex.excError("ca secret %s does not exist" % casecpath)
+                raise ex.excError("ca secret %s does not exist" % ca)
 
         for key in ("crt", "key", "csr"):
             data[key] = self.tempfilename()
