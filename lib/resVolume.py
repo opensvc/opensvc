@@ -110,6 +110,13 @@ class Volume(Res.Resource):
                 datapath, path = ref.split(":", 1)
             except Exception:
                 continue
+            if datapath.startswith("usr/"):
+                kind = "usr"
+                datapath = datapath[4:]
+            if datapath.startswith("sec/"):
+                datapath = datapath[4:]
+            if datapath.startswith("cfg/"):
+                datapath = datapath[4:]
             try:
                 datapath, key = datapath.split("/", 1)
             except Exception:
@@ -131,7 +138,7 @@ class Volume(Res.Resource):
 
     def _install_data(self, kind):
         for data in self.data_data(kind):
-            name, _, _ = split_svcpath(data["obj"])
+            name, _, kind = split_svcpath(data["obj"])
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
             for key in obj.resolve_key(data["key"]):
                 obj._install(key, data["path"])
