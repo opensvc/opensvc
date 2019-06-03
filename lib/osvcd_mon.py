@@ -102,7 +102,7 @@ class Monitor(shared.OsvcThread):
             shared.CLUSTER_DATA[rcEnv.nodename] = {
                 "compat": shared.COMPAT_VERSION,
                 "agent": shared.NODE.agent_version,
-                "monitor": shared.NMON_DATA,
+                "monitor": dict(shared.NMON_DATA),
                 "labels": shared.NODE.labels,
                 "targets": shared.NODE.targets,
                 "services": {},
@@ -1906,7 +1906,7 @@ class Monitor(shared.OsvcThread):
             instance = self.get_service_instance(svcpath, nodename)
             if instance is None:
                 continue
-            if instance.get("avail") in STOPPED_STATES and instance["monitor"]["status"] != "start failed":
+            if instance.get("avail") in STOPPED_STATES and instance["monitor"].get("status") != "start failed":
                 return False
         self.log.info("service '%s' instances on nodes '%s' are stopped",
             svcpath, ", ".join(nodes))
@@ -2109,7 +2109,7 @@ class Monitor(shared.OsvcThread):
         for nodename, instance in self.get_service_instances(svcpath).items():
             if instance["avail"] == "up":
                 nodenames.append(nodename)
-            elif instance["monitor"]["status"] in ("restarting", "starting", "wait children", "provisioning", "placing"):
+            elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning", "placing"):
                 nodenames.append(nodename)
         return nodenames
 
@@ -2182,7 +2182,7 @@ class Monitor(shared.OsvcThread):
         for nodename, instance in self.get_service_instances(svcpath).items():
             if discard_local and nodename == rcEnv.nodename:
                 continue
-            if instance["monitor"]["status"].endswith("ing"):
+            if instance["monitor"].get("status", "").endswith("ing"):
                 return nodename
 
     def peer_start_failed(self, svcpath):
@@ -2193,7 +2193,7 @@ class Monitor(shared.OsvcThread):
         for nodename, instance in self.get_service_instances(svcpath).items():
             if nodename == rcEnv.nodename:
                 continue
-            if instance["monitor"]["status"] == "start failed":
+            if instance["monitor"].get("status") == "start failed":
                 return nodename
 
     def better_peers_ready(self, svc):
@@ -2501,13 +2501,13 @@ class Monitor(shared.OsvcThread):
     def get_agg_aborted(self, svcpath):
         for inst in self.get_service_instances(svcpath).values():
             try:
-                global_expect = inst["monitor"]["global_expect"]
+                global_expect = inst["monitor"].get("global_expect")
             except KeyError:
                 global_expect = None
             if global_expect not in (None, "aborted"):
                 return False
             try:
-                local_expect = inst["monitor"]["local_expect"]
+                local_expect = inst["monitor"].get("local_expect")
             except KeyError:
                 local_expect = None
             if local_expect not in (None, "started"):
@@ -2821,7 +2821,7 @@ class Monitor(shared.OsvcThread):
 
             # embed the updated smon data
             self.set_smon_l_expect_from_status(data, svcpath)
-            data[svcpath]["monitor"] = self.get_service_monitor(svcpath)
+            data[svcpath]["monitor"] = dict(self.get_service_monitor(svcpath))
 
             # forget the stonith target node if we run the service
             if data[svcpath].get("avail", "n/a") == "up":
@@ -2834,7 +2834,7 @@ class Monitor(shared.OsvcThread):
         # emulate a status
         for svcpath in set(shared.SMON_DATA.keys()) - set(svcpaths):
             data[svcpath] = {
-                "monitor": self.get_service_monitor(svcpath),
+                "monitor": dict(self.get_service_monitor(svcpath)),
                 "resources": {},
             }
 
@@ -2875,7 +2875,7 @@ class Monitor(shared.OsvcThread):
             if svcpath not in shared.SMON_DATA:
                 return
             if "restart" not in shared.SMON_DATA[svcpath]:
-                shared.SMON_DATA[svcpath].restart = Storage()
+                shared.SMON_DATA[svcpath].restart = {}
             if rid not in shared.SMON_DATA[svcpath].restart:
                 shared.SMON_DATA[svcpath].restart[rid] = 1
             else:
