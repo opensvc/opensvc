@@ -1275,12 +1275,15 @@ class OsvcThread(threading.Thread, Crypt):
 
     @lazy
     def vip(self):
+        default_cidr = NODE.oget("cluster", "vip")
+        if not default_cidr:
+            return
         template = [
             ("sync#i0", "disable", "true"),
             ("DEFAULT", "orchestrate", "ha"),
             ("DEFAULT", "nodes", "*"),
         ]
-        default_cidr = NODE.oget("cluster", "vip")
+        self.log.info("cluster vip %s" % default_cidr)
         for node in self.cluster_nodes:
             priv_cidr = NODE.oget("cluster", "vip", impersonate=node)
             if priv_cidr is None and default_cidr is None:
@@ -1288,6 +1291,7 @@ class OsvcThread(threading.Thread, Crypt):
                     self.log.info("cluster vip not set")
                 else:
                     self.log.info("cluster vip not set for node %s", node)
+                continue
             if priv_cidr != default_cidr:
                 cidr = default_cidr
             else:
@@ -1312,7 +1316,6 @@ class OsvcThread(threading.Thread, Crypt):
                 template += [
                     ("ip#0", "ipdev@"+node, ipdev),
                 ]
-        self.log.info("cluster vip %s" % default_cidr)
         svc = factory("svc")("vip", namespace="system", node=NODE)
         kws = []
         changes = []
