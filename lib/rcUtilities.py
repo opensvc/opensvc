@@ -1250,6 +1250,10 @@ def fmt_svcpath(name, namespace, kind):
     else:
         return name
 
+def split_fullname(fullname, clustername):
+    fullname = fullname[:-(len(clustername)+1)]
+    return fullname.rsplit(".", 2)
+
 def svc_fullname(name, namespace, kind, clustername):
     return "%s.%s.%s.%s" % (
         name,

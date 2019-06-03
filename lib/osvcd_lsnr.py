@@ -30,7 +30,7 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         split_svcpath, fmt_svcpath, is_service, factory, \
-                        makedirs, mimport, set_lazy, lazy
+                        makedirs, mimport, set_lazy, lazy, split_fullname
 from converters import convert_size, print_duration
 
 RELAY_DATA = {}
@@ -38,6 +38,56 @@ RELAY_LOCK = threading.RLock()
 RELAY_SLOT_MAX_AGE = 24 * 60 * 60
 RELAY_JANITOR_INTERVAL = 10 * 60
 JANITORS_INTERVAL = 0.5
+
+GUEST_ACTIONS = (
+    "eval",
+    "get",
+    "keys",
+    "print_config_mtime",
+)
+OPERATOR_ACTIONS = (
+    "clear",
+    "disable",
+    "enable",
+    "freeze",
+    "push_status",
+    "push_resinfo",
+    "push_config",
+    "push_encap_config",
+    "presync",
+    "prstatus",
+    "resource_monitor",
+    "restart",
+    "resync",
+    "run",
+    "scale",
+    "snooze",
+    "start",
+    "startstandby",
+    "status",
+    "stop",
+    "stopstandby",
+    "thaw",
+    "unsnooze",
+)
+ADMIN_ACTIONS = (
+    "add",
+    "boot",
+    "decode",
+    "gen_cert",
+    "install",
+    "pg_kill",
+    "pg_freeze",
+    "pg_thaw",
+    "provision",
+    "run",
+    "set_provisioned",
+    "set_unprovisioned",
+    "shutdown",
+    "unprovision",
+    "unset",
+)
+
 
 class DontClose(Exception):
     pass
@@ -319,7 +369,12 @@ class Listener(shared.OsvcThread):
                     cert = conn.getpeercert()
                     subject = dict(x[0] for x in cert['subject'])
                     cn = subject["commonName"]
-                    usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
+                    if "." in cn:
+                        # service account
+                        name, namespace, kind = split_fullname(cn, self.cluster_name)
+                        usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
+                    else:
+                        usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
                     if not usr.exists():
                         self.log.warning("refused user connection: %s (valid cert, unknown user)", cn)
                         conn.close()
@@ -337,7 +392,8 @@ class Listener(shared.OsvcThread):
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
                 continue
-            except Exception:
+            except Exception as exc:
+                self.log.exception(exc)
                 if conn:
                     conn.close()
                 continue
@@ -588,6 +644,9 @@ class Listener(shared.OsvcThread):
 
     def user_grants(self, usr):
         grants = usr.oget("DEFAULT", "grant")
+        return self.parse_grants(grants)
+
+    def parse_grants(self, grants):
         data = {}
         if not grants:
             return data
@@ -670,48 +729,64 @@ class Listener(shared.OsvcThread):
         if not payload:
             return
         grants = self.user_grants(usr)
+        if "clusteradmin" in grants:
+            return []
         errors = []
         for path, _data in payload.items():
             name, namespace, kind = split_svcpath(path)
             self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
             for section, sdata in _data.items():
-                if "clusteradmin" not in grants:
-                    for prefix in ["disk#", "fs#", "app#", "share#", "sync#"]:
-                        if section.startswith(prefix):
-                            errors.append("%s: section %s requires the clusteradmin role" % (path, section))
-                            continue
-                    rtype = _data[section].get("type")
-                    if section.startswith("task#") and rtype is None:
-                        errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
-                        continue
-                    if section.startswith("container#"):
-                        if rtype not in ("podman", "docker"):
-                            errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
-                            continue
-                    if section.startswith("ip#"):
-                        if rtype != "cni":
-                            errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
-                            continue
-                    for key, val in sdata.items():
-                        if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
-                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
-                            continue
-                        _key = key.split("@")[0]
-                        if _key in ("container_data_dir", "devices", "volume_mounts") and val.lstrip().startswith("/"):
-                            errors.append("%s: keyword %s.%s=%s host paths require the clusteradmin role" % (path, section, key, val))
-                            continue
-                        if section == "DEFAULT" and _key == "monitor_action" and val not in ("freezestop", None):
-                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
-                            continue
-                        if section.startswith("container#") and _key == "netns" and val == "host":
-                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
-                            continue
-                        if section.startswith("container#") and _key == "privileged" and val not in ("false", False, None):
-                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
-                            continue
-                        if section.startswith("ip#") and _key == "netns" and val in (None, "host"):
-                            errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
-                            continue
+                rtype = _data[section].get("type")
+                errors += self.rbac_create_data_section(path, section, rtype, sdata, grants)
+        return errors
+
+    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants):
+        errors = []
+        for prefix in ["disk#", "fs#", "app#", "share#", "sync#"]:
+            if section.startswith(prefix):
+                errors.append("%s: section %s requires the clusteradmin role" % (path, section))
+                continue
+        if section.startswith("task#") and rtype is None:
+            errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+            return errors
+        if section.startswith("container#"):
+            if rtype not in ("podman", "docker"):
+                errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+                return errors
+        if section.startswith("ip#"):
+            if rtype != "cni":
+                errors.append("%s: section %s.%s requires the clusteradmin role" % (path, section, rtype))
+                return errors
+        for key, val in sdata.items():
+            if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
+            _key = key.split("@")[0]
+            if _key in ("container_data_dir", "devices", "volume_mounts") and val.lstrip().startswith("/"):
+                errors.append("%s: keyword %s.%s=%s host paths require the clusteradmin role" % (path, section, key, val))
+                continue
+            if section == "DEFAULT" and _key == "monitor_action" and val not in ("freezestop", None):
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
+            if section == "DEFAULT" and _key == "grant":
+                req_grants = self.parse_grants(val)
+                if "clusteradmin" in req_grants:
+                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                    continue
+                for role, namespaces in req_grants.items():
+                    delta = set(namespaces) - set(user_grants.get(role, []))
+                    if delta:
+                        delta = sorted(list(delta))
+                        errors.append("%s: keyword %s.%s=%s: missing privilege %s:%s" % (path, section, key, val, role, ",".join(delta)))
+            if section.startswith("container#") and _key == "netns" and val == "host":
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
+            if section.startswith("container#") and _key == "privileged" and val not in ("false", False, None):
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
+            if section.startswith("ip#") and _key == "netns" and val in (None, "host"):
+                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                continue
         return errors
 
     #########################################################################
@@ -1635,11 +1710,11 @@ class Listener(shared.OsvcThread):
         action_options = options.get("options", {})
 
         role = "clusteradmin"
-        if action in ("get", "eval"):
+        if action in GUEST_ACTIONS:
             role = "guest"
-        elif action in ("start", "stop", "restart", "run", "scale", "resource_monitor", "status", "prstatus", "presync", "push_status", "push_resinfo", "push_config", "push_encap_config", "resync", "snooze", "startstandby", "stopstandby", "presync", "freeze", "thaw", "unsnooze", "enable", "disable", "clear"):
+        elif action in OPERATOR_ACTIONS:
             role = "operator"
-        elif action in ("boot", "shutdown", "pg_kill", "pg_freeze", "pg_thaw", "run", "set_provisioned", "set_unprovisioned", "provision", "unprovision", "unset"):
+        elif action in ADMIN_ACTIONS:
             role = "admin"
 
         if not svcpath:
@@ -1659,7 +1734,7 @@ class Listener(shared.OsvcThread):
             # purge unwanted sections
             for section in ("DEFAULT", "metadata"):
                 try:
-                    del cf["metadata"]
+                    del cf[section]
                 except Exception:
                    pass
             # keep only the type kw of each section (required for rbac)
@@ -1670,6 +1745,9 @@ class Listener(shared.OsvcThread):
             payload = {svcpath: cf}
             for buff in action_options.get("kw", []):
                 k, v = buff.split("=", 1)
+                if k[-1] in ("+", "-"):
+                    k = k[:-1]
+                k = k.strip()
                 try:
                     s, k = k.split(".", 1)
                 except Exception:
