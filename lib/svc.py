@@ -59,8 +59,10 @@ ACTION_NO_ASYNC = [
 ]
 
 ACTION_ANY_NODE = {
+    "decode",
     "gen_cert",
     "get",
+    "keys",
     "print_config",
     "set",
     "unset",
