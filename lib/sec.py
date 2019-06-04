@@ -12,7 +12,7 @@ from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
-from rcSsl import gen_cert
+from rcSsl import gen_cert, get_expire
 import rcExceptions as ex
 
 DEFAULT_STATUS_GROUPS = [
@@ -117,3 +117,6 @@ class Sec(DataMixin, BaseSvc):
                 except Exception:
                     pass
 
+    def get_cert_expire(self):
+        buff = self.decode_key("certificate")
+        return get_expire(buff)
