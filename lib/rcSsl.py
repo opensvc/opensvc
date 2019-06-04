@@ -1,4 +1,6 @@
 import os
+import datetime
+import time
 from subprocess import Popen, PIPE
 
 import rcExceptions as ex
@@ -44,11 +46,14 @@ def format_subject(**data):
     return subject
 
 def gen_self_signed_cert(log=None, **data):
+    days = data["validity"]
+    if days < 1:
+        days = 1
     cmd = ["openssl", "req", "-x509", "-nodes",
            "-newkey", "rsa:%d" % data.get("bits", 4096),
            "-keyout", data["key"],
            "-out", data["crt"],
-           "-days", str(data["validity"]),
+           "-days", str(days),
            "-subj", "%s" % data["subject"]]
     if log:
         log.info(" ".join(cmd))
@@ -73,13 +78,16 @@ def gen_csr(log=None, **data):
         raise ex.excError(out+err)
 
 def sign_csr(log=None, **data):
+    days = data["validity"]
+    if days < 1:
+        days = 1
     cmd = ["openssl", "x509", "-req",
            "-in", data["csr"],
            "-CA", data["cacrt"],
            "-CAkey", data["cakey"],
            "-CAcreateserial",
            "-out", data["crt"],
-           "-days", str(data["validity"]),
+           "-days", str(days)),
            "-sha256"]
     if log:
         log.info(" ".join(cmd))
@@ -87,4 +95,14 @@ def sign_csr(log=None, **data):
     if ret != 0:
         raise ex.excError(out+err)
 
+def get_expire(data):
+    cmd = ["openssl", "x509", "-noout", "-enddate"]
+    out, err, ret = justcall(cmd, input=data)
+    out = out.split("=", 1)[-1].strip()
+    if ret != 0:
+        return
+    try:
+        return time.mktime(datetime.datetime.strptime(out, "%b %d %H:%M:%S %Y %Z").timetuple())
+    except ValueError:
+        return None
 
