@@ -12,6 +12,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from converters import print_duration
 
+JANITOR_CERTS_INTERVAL = 3600
 ACTIONS_SKIP_ON_UNPROV = [
     "sync_all",
     "compliance_auto",
@@ -24,6 +25,8 @@ class Scheduler(shared.OsvcThread):
     delayed = {}
     running = set()
     dropped_via_notify = set()
+    certificates = {}
+    last_janitor_certs = 0
 
     def max_tasks(self):
         if self.node_overloaded():
@@ -47,6 +50,7 @@ class Scheduler(shared.OsvcThread):
         self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
         self.log.info("scheduler started")
+        self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
             devnull = os.devnull
         else:
@@ -67,8 +71,9 @@ class Scheduler(shared.OsvcThread):
         last = time.time()
         done = 0
         while True:
-            now = time.time()
+            self.now = time.time()
             self.janitor_run_done()
+            self.janitor_certificates()
             if done == 0:
                 with shared.SCHED_TICKER:
                     shared.SCHED_TICKER.wait(1)
@@ -76,10 +81,45 @@ class Scheduler(shared.OsvcThread):
                 break
             if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
                 self.dequeue_actions()
-                if last + self.interval < now:
+                if last + self.interval < self.now:
                     last = time.time()
                     self.run_scheduler()
             done = self.janitor_procs()
+
+    def janitor_certificates(self):
+        if self.now < self.last_janitor_certs + JANITOR_CERTS_INTERVAL:
+            return
+        if self.first_available_node() != rcEnv.nodename:
+            return
+        self.last_janitor_certs = time.time()
+        for obj in shared.SERVICES.values():
+            if obj.kind not in ("sec", "usr"):
+                continue
+            try:
+                ca = obj.oget("DEFAULT", "ca")
+            except Exception as exc:
+                continue
+            if ca != self.cluster_ca:
+                continue
+            cf_mtime = shared.CLUSTER_DATA.get(rcEnv.nodename, {}).get("services", {}).get("config", {}).get(obj.svcpath, {}).get("updated")
+            if obj.svcpath not in self.certificates or self.certificates[obj.svcpath]["mtime"] < cf_mtime:
+                try:
+                    expire = obj.get_cert_expire()
+                except ex.excError:
+                    # usr in creation
+                    expire = None
+                self.certificates[obj.svcpath] = {
+                    "mtime": cf_mtime,
+                    "expire": expire,
+                }
+            expire = self.certificates[obj.svcpath]["expire"]
+            if not expire:
+                continue
+            expire_delay = expire - self.now
+            #print(obj.svcpath, "expire in:", print_duration(expire_delay))
+            if expire_delay < 3600:
+                self.log.info("renew %s certificate, expiring in %s", obj.svcpath, print_duration(expire_delay))
+                obj.gen_cert()
 
     def janitor_run_done(self):
         with shared.RUN_DONE_LOCK:
