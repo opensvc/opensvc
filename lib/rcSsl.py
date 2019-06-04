@@ -87,7 +87,7 @@ def sign_csr(log=None, **data):
            "-CAkey", data["cakey"],
            "-CAcreateserial",
            "-out", data["crt"],
-           "-days", str(days)),
+           "-days", str(days),
            "-sha256"]
     if log:
         log.info(" ".join(cmd))
