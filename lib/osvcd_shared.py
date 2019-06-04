@@ -88,6 +88,14 @@ NMON_DATA = Storage({
 })
 NMON_DATA_LOCK = threading.RLock()
 
+# the node monitor states evicting a node from ranking algorithms
+NMON_STATES_PRESERVED = (
+   "maintenance",
+   "upgrade",
+   "init",
+   "shutting",
+)
+
 # a boolean flag used to signal the monitor it has to do the long loop asap
 MON_CHANGED = []
 
@@ -907,12 +915,7 @@ class OsvcThread(threading.Thread, Crypt):
                 if data == "unknown":
                     continue
                 if discard_preserved and \
-                   data.get("monitor", {}).get("status") in (
-                       "maintenance",
-                       "upgrade",
-                       "init",
-                       "shutting",
-                   ):
+                   data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
                     continue
                 if discard_frozen and data.get("frozen"):
                     # node frozen
@@ -1096,6 +1099,14 @@ class OsvcThread(threading.Thread, Crypt):
         else:
             idx = svc.slave_num % n_candidates
         return ranks[idx:idx+n_candidates]
+
+    def first_available_node(self):
+        for n in self.cluster_nodes:
+            try:
+                status = CLUSTER_DATA[n]["monitor"]["status"]
+                return n
+            except KeyError:
+                continue
 
     def get_oldest_gen(self, nodename=None):
         """
