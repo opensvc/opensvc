@@ -33,7 +33,7 @@ preserve = no
 authorityKeyIdentifier = keyid:always,issuer:always
 """
 
-DEFAULT_SACC_CERT_VALIDITY = "2h"
+DEFAULT_SACC_CERT_VALIDITY = "1d"
 
 class Usr(Sec, BaseSvc):
     kind = "usr"
@@ -56,7 +56,9 @@ class Usr(Sec, BaseSvc):
                 ca = "system/sec/ca-" + self.node.cluster_name
             changes.append("ca=%s" % ca)
         if self.namespace != "system":
-            if not self.oget("DEFAULT", "validity"):
+            try:
+                self.conf_get("DEFAULT", "validity")
+            except ex.OptNotFound:
                 changes.append("validity=%s" % DEFAULT_SACC_CERT_VALIDITY)
             grant = "guest:" + self.namespace
             changes.append("grant=%s" % grant)
