@@ -1700,6 +1700,8 @@ KEYWORDS = [
         "section": "ip",
         "rtype": "amazon",
         "keyword": "cascade_allocation",
+        "convert": "list",
+        "default": [],
         "provisioning": True,
         "at": True,
         "text": "Set new allocated ip as value to other ip resources ipname parameter. The syntax is a whitespace separated list of <rid>.ipname[@<scope>].",
