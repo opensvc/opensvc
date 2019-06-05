@@ -19,9 +19,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'mem_bytes')
+            s = self.node.conf_get('node', 'mem_bytes')
+            s = str(s/1024/1024)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_mem_bytes()
                 source = self.s_probe
@@ -38,9 +39,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'mem_banks')
+            s = self.node.conf_get('node', 'mem_banks')
+            s = str(s)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_mem_banks()
                 source = self.s_probe
@@ -56,9 +58,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'mem_slots')
+            s = self.node.conf_get('node', 'mem_slots')
+            s = str(s)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_mem_slots()
                 source = self.s_probe
@@ -74,9 +77,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'os_vendor')
+            s = self.node.conf_get('node', 'os_vendor')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_os_vendor()
                 source = self.s_probe
@@ -92,9 +95,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'os_release')
+            s = self.node.conf_get('node', 'os_release')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_os_release()
                 source = self.s_probe
@@ -110,9 +113,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'os_kernel')
+            s = self.node.conf_get('node', 'os_kernel')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_os_kernel()
                 source = self.s_probe
@@ -128,9 +131,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'os_arch')
+            s = self.node.conf_get('node', 'os_arch')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_os_arch()
                 source = self.s_probe
@@ -146,9 +149,9 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'cpu_freq')
+            s = self.node.conf_get('node', 'cpu_freq')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_cpu_freq()
                 source = self.s_probe
@@ -164,9 +167,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'cpu_threads')
+            s = self.node.conf_get('node', 'cpu_threads')
+            s = str(s)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_cpu_threads()
                 source = self.s_probe
@@ -182,9 +186,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'cpu_cores')
+            s = self.node.conf_get('node', 'cpu_cores')
+            s = str(s)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_cpu_cores()
                 source = self.s_probe
@@ -200,9 +205,10 @@ class Asset(object):
         s = '0'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'cpu_dies')
+            s = self.node.conf_get('node', 'cpu_dies')
+            s = str(s)
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_cpu_dies()
                 source = self.s_probe
@@ -218,9 +224,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'cpu_model')
+            s = self.node.conf_get('node', 'cpu_model')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_cpu_model()
                 source = self.s_probe
@@ -236,9 +242,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'serial')
+            s = self.node.conf_get('node', 'serial')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_serial()
                 source = self.s_probe
@@ -254,9 +260,9 @@ class Asset(object):
         s = ''
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'bios_version')
+            s = self.node.conf_get('node', 'bios_version')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_bios_version()
                 source = self.s_probe
@@ -272,9 +278,9 @@ class Asset(object):
         s = ''
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'sp_version')
+            s = self.node.conf_get('node', 'sp_version')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_sp_version()
                 source = self.s_probe
@@ -290,9 +296,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'enclosure')
+            s = self.node.conf_get('node', 'enclosure')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_enclosure()
                 source = self.s_probe
@@ -308,9 +314,9 @@ class Asset(object):
         s = None
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'tz')
+            s = self.node.conf_get('node', 'tz')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_tz()
                 source = self.s_probe
@@ -334,9 +340,9 @@ class Asset(object):
         s = None
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'connect_to')
+            s = self.node.conf_get('node', 'connect_to')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_connect_to()
                 source = self.s_probe
@@ -390,9 +396,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'manufacturer')
+            s = self.node.conf_get('node', 'manufacturer')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_manufacturer()
                 source = self.s_probe
@@ -408,9 +414,9 @@ class Asset(object):
         s = 'Unknown'
         source = self.s_default
         try:
-            s = self.node.config.get('node', 'model')
+            s = self.node.conf_get('node', 'model')
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
                 s = self._get_model()
                 source = self.s_probe
@@ -442,9 +448,9 @@ class Asset(object):
         s = str(rcEnv.listener_port)
         source = self.s_default
         try:
-            s = str(self.node.config.getint('listener', 'port'))
+            s = str(self.node.conf_get('listener', 'port'))
             source = self.s_config
-        except:
+        except (ex.OptNotFound, ex.RequiredOptNotFound):
             pass
         return {
             "title": "listener port",
