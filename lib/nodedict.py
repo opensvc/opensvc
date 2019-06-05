@@ -64,6 +64,132 @@ PRIVATE_KEYWORDS = [
         "text": "An asset information to push to the collector on pushasset, overriding the currently stored value."
     },
     {
+        "section": "node",
+        "keyword": "mem_bytes",
+        "example": "256mb",
+        "convert": "size",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "mem_banks",
+        "example": "4",
+        "convert": "integer",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "mem_slots",
+        "example": "4",
+        "convert": "integer",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "os_vendor",
+        "example": "Digital",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "os_release",
+        "example": "5",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "os_kernel",
+        "example": "5.1234",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "os_arch",
+        "example": "5.1234",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "cpu_freq",
+        "example": "3.2 Ghz",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "cpu_threads",
+        "example": "4",
+        "convert": "integer",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "cpu_cores",
+        "example": "2",
+        "convert": "integer",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "cpu_dies",
+        "example": "1",
+        "convert": "integer",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "cpu_model",
+        "example": "Alpha EV5",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "serial",
+        "example": "abcdef0123456",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "bios_version",
+        "example": "1.025",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "sp_version",
+        "example": "1.026",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "enclosure",
+        "example": "1",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "tz",
+        "example": "+0200",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "connect_to",
+        "example": "1.2.3.4",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "manufacturer",
+        "example": "Digital",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
+        "section": "node",
+        "keyword": "model",
+        "example": "ds20e",
+        "text": "Override for the corresponding pushasset discovery probe."
+    },
+    {
         "section": "centera",
         "keyword": "schedule",
         "text": "Schedule parameter for the 'centera' node action. See usr/share/doc/schedule for the schedule syntax."
@@ -79,7 +205,7 @@ PRIVATE_KEYWORDS = [
         "text": "Schedule parameter for the 'pushhp3par' node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
-        "section": "vnx",
+        "section": "emcvnx",
         "keyword": "schedule",
         "text": "Schedule parameter for the 'pushvnx' node action. See usr/share/doc/schedule for the schedule syntax."
     },
@@ -132,6 +258,11 @@ PRIVATE_KEYWORDS = [
         "section": "vioserver",
         "keyword": "schedule",
         "text": "Schedule parameter for the 'pushvioserver' node action. See usr/share/doc/schedule for the schedule syntax."
+    },
+    {
+        "section": "netapp",
+        "keyword": "schedule",
+        "text": "Schedule parameter for the 'pushnetapp' node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "brocade",
@@ -335,6 +466,7 @@ Expected repository structure::
     {
         "section": "node",
         "keyword": "ruser",
+        "default": "root",
         "example": "root opensvc@node1",
         "text": """Set the remote user to use to login to a remote node with ssh and rsync. The remote user must have the privileges to run as root the following commands on the remote node:
 * nodemgr
@@ -595,6 +727,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "section": "cluster",
         "keyword": "quorum",
         "convert": "boolean",
+        "default": False,
         "text": "Should a split segment of the cluster commit suicide. Default is False. If set to true, please set at least 2 arbitrators so you can rolling upgrade the opensvc daemons."
     },
     {
