@@ -370,7 +370,7 @@ class Asset(rcAsset.Asset):
         n_threads = len(lines)
         if n_threads == 0:
             return self._get_cpu_dies()
-        return str(len(lines))
+        return str(n_threads)
 
     def _get_cpu_dies(self):
         n = self._get_cpu_dies_cpuinfo()
