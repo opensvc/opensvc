@@ -63,18 +63,9 @@ class HbMcast(Hb):
             "intf": self.intf,
             "timeout": self.timeout
         }
-        try:
-            self.port = shared.NODE.conf_get(self.name, "port")
-        except ex.OptNotFound as exc:
-            self.port = exc.default
-        try:
-            self.addr = shared.NODE.conf_get(self.name, "addr")
-        except ex.OptNotFound as exc:
-            self.addr = exc.default
-        try:
-            self.timeout = shared.NODE.conf_get(self.name, "timeout")
-        except ex.OptNotFound as exc:
-            self.timeout = exc.default
+        self.port = shared.NODE.oget(self.name, "port")
+        self.addr = shared.NODE.oget(self.name, "addr")
+        self.timeout = shared.NODE.oget(self.name, "timeout")
         group = socket.inet_aton(self.addr)
         try:
             self.intf = shared.NODE.conf_get(self.name, "intf")

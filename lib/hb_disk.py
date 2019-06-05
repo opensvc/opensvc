@@ -29,7 +29,6 @@ class HbDisk(Hb):
     SLOTSIZE = 1024 * 1024
 
     MAX_SLOTS = METASIZE // mmap.PAGESIZE
-    DEFAULT_DISK_TIMEOUT = 15
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -53,30 +52,16 @@ class HbDisk(Hb):
     def _configure(self):
         self.get_hb_nodes()
         self.peer_config = {}
-        if hasattr(self, "node"):
-            config = getattr(self, "node").config
-        else:
-            config = self.config
 
         if not hasattr(self, "meta_slot_buff"):
             self.meta_slot_buff = mmap.mmap(-1, 2*mmap.PAGESIZE)
         if not hasattr(self, "slot_buff"):
             self.slot_buff = mmap.mmap(-1, self.SLOTSIZE)
 
-        # timeout
-        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            self.timeout = self.config.getint(self.name, "timeout@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "timeout"):
-            self.timeout = self.config.getint(self.name, "timeout")
-        else:
-            self.timeout = self.DEFAULT_DISK_TIMEOUT
-
-        # dev
-        if self.config.has_option(self.name, "dev@"+rcEnv.nodename):
-            new_dev = self.config.get(self.name, "dev@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "dev"):
-            new_dev = self.config.get(self.name, "dev")
-        else:
+        self.timeout = shared.NODE.oget(self.name, "timeout")
+        try:
+            new_dev = shared.NODE.oget(self.name, "timeout")
+        except ex.RequiredOptNotFound:
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
         if not os.path.exists(new_dev):

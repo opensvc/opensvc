@@ -365,15 +365,6 @@ class OsvcThread(threading.Thread, Crypt):
     def freezer(self):
         return Freezer("node")
 
-    @lazy
-    def config(self):
-        try:
-            config = NODE.config
-        except Exception as exc:
-            self.log.info("error loading config: %s", exc)
-            raise ex.excAbortAction()
-        return config
-
     def reload_config(self):
         if not self._node_conf_event.is_set():
             return
@@ -692,35 +683,19 @@ class OsvcThread(threading.Thread, Crypt):
 
     @lazy
     def quorum(self):
-        if self.config.has_option("cluster", "quorum"):
-            return convert_boolean(self.config.get("cluster", "quorum"))
-        else:
-            return False
+        return NODE.oget("cluster", "quorum")
 
     @lazy
     def maintenance_grace_period(self):
-        if self.config.has_option("node", "maintenance_grace_period"):
-            return convert_duration(
-                self.config.get("node", "maintenance_grace_period")
-            )
-        else:
-            return 60
+        return NODE.oget("node", "maintenance_grace_period")
 
     @lazy
     def rejoin_grace_period(self):
-        if self.config.has_option("node", "rejoin_grace_period"):
-            return convert_duration(
-                self.config.get("node", "rejoin_grace_period")
-            )
-        else:
-            return 90
+        return NODE.oget("node", "rejoin_grace_period")
 
     @lazy
     def ready_period(self):
-        if self.config.has_option("node", "ready_period"):
-            return convert_duration(self.config.get("node", "ready_period"))
-        else:
-            return 5
+        return NODE.oget("node", "ready_period")
 
     def in_maintenance_grace_period(self, nmon):
         if nmon.status in ("upgrade", "init"):
@@ -1353,4 +1328,11 @@ class OsvcThread(threading.Thread, Crypt):
                 self.log.info("unset %s: %s (undue)", svc.svcpath, k)
             svc.unset_multi(extraneous)
         return svc
+
+    def get_node(self):
+        """
+        helper for the comm module to find the Node(), for accessing
+        its configuration.
+        """
+        return NODE
 

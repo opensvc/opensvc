@@ -153,31 +153,6 @@ class Daemon(object):
         self.pid = os.getpid()
         self._run()
 
-    def init_nodeconf(self):
-        if not os.path.exists(rcEnv.paths.pathetc):
-            self.log.info("create dir %s", rcEnv.paths.pathetc)
-            os.makedirs(rcEnv.paths.pathetc)
-        if not os.path.exists(rcEnv.paths.nodeconf):
-            self.log.info("create %s", rcEnv.paths.nodeconf)
-            with open(rcEnv.paths.nodeconf, "a") as ofile:
-                ofile.write("")
-            os.chmod(rcEnv.paths.nodeconf, 0o0600)
-
-    @lazy
-    def config(self):
-        """
-        Allocate a config parser object and load the node configuration.
-        Abstracting python2/3 differences in the parser modules and utf8
-        handling.
-        """
-        self.init_nodeconf()
-        try:
-            shared.NODE.load_config()
-        except Exception as exc:
-            self.log.info("error loading config: %s", exc)
-            raise ex.excAbortAction()
-        return shared.NODE.config
-
     def lock(self):
         try:
             self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0,
@@ -374,13 +349,7 @@ class Daemon(object):
         try:
             mtime = os.path.getmtime(rcEnv.paths.nodeconf)
         except Exception as exc:
-            if first:
-                self.init_nodeconf()
-                return self.get_config_mtime(first=False)
-            else:
-                self.log.warning("failed to get node config mtime: %s",
-                                 str(exc))
-                return
+            return 0
         try:
             cmtime = os.path.getmtime(rcEnv.paths.clusterconf)
         except Exception as exc:
@@ -414,7 +383,6 @@ class Daemon(object):
                 shared.NODE = node_mod.Node()
                 shared.NODE.set_rlimit()
                 shared.NODE.network_setup()
-            unset_lazy(self, "config")
             unset_lazy(self, "config_hbs")
             if self.last_config_mtime:
                 self.log.info("node config reloaded (changed)")
@@ -449,11 +417,9 @@ class Daemon(object):
         section names indexed by heartbeat type.
         """
         hbs = {}
-        for section in self.config.sections():
-            if not section.startswith("hb#"):
-                continue
+        for section in shared.NODE.conf_sections("hb", cd=shared.NODE.cd):
             try:
-                section_type = self.config.get(section, "type")
+                section_type = shared.NODE.oget(section, "type")
             except Exception:
                 continue
             try:

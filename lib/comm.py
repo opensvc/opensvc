@@ -121,6 +121,12 @@ class Crypt(object):
     def __init__(self):
         self.log = None
 
+    def get_node(self):
+        """
+        To be redefined by Crypt child classes
+        """
+        return
+
     @staticmethod
     def _encrypt(message, key, _iv):
         """
@@ -163,17 +169,10 @@ class Crypt(object):
         configuration. If not set, return a list with the local node as the
         only element.
         """
-        nodes = None
-        if hasattr(self, "get_node"):
-            config = getattr(self, "get_node")().config
-        else:
-            config = getattr(self, "config")
-        try:
-            nodes = config.get("cluster", "nodes").split()
-        except Exception as exc:
-            pass
+        node = self.get_node()
+        nodes = node.oget("cluster", "nodes")
 
-        if nodes is not None:
+        if nodes:
             if rcEnv.nodename in nodes:
                 return nodes
             else:
@@ -184,6 +183,7 @@ class Crypt(object):
         from cluster import ClusterSvc
         svc = ClusterSvc()
         svc.set_multi(["cluster.nodes=" + " ".join(nodes)], validation=False)
+        node.unset_multi(["cluster.nodes"])
         return nodes
 
     @lazy
@@ -192,15 +192,8 @@ class Crypt(object):
         Return the cluster drp nodes, read from cluster.drpnodes in the node
         configuration. If not set, return an empty list.
         """
-        nodes = []
-        if hasattr(self, "get_node"):
-            config = getattr(self, "get_node")().config
-        else:
-            config = getattr(self, "config")
-        try:
-            nodes = config.get("cluster", "drpnodes").split()
-        except Exception as exc:
-            pass
+        node = self.get_node()
+        nodes = node.oget("cluster", "drpnodes")
         return nodes
 
     @lazy
@@ -209,12 +202,9 @@ class Crypt(object):
         Return the cluster name, read from cluster.name in the node
         configuration. If not set, return "default".
         """
-        if hasattr(self, "get_node"):
-            config = getattr(self, "get_node")().config
-        else:
-            config = getattr(self, "config")
+        node = self.get_node()
         try:
-            return config.get("cluster", "name").lower()
+            return node.oget("cluster", "name").lower()
         except Exception as exc:
             pass
         name = "default"
@@ -229,21 +219,12 @@ class Crypt(object):
         Return the key read from cluster.secret in the node configuration.
         If not already set generate and store a random one.
         """
-        if hasattr(self, "get_node"):
-            config = getattr(self, "get_node")().config
-        else:
-            config = getattr(self, "config")
+        node = self.get_node()
         try:
-            key = config.get("cluster", "secret")
+            key = node.oget("cluster", "secret")
             return self.prepare_key(key)
         except Exception as exc:
             pass
-        if hasattr(self, "node"):
-            node = getattr(self, "node")
-        elif hasattr(self, "nodename"):
-            node = self
-        else:
-            return
         import uuid
         key = uuid.uuid1().hex
         from cluster import ClusterSvc
@@ -257,17 +238,9 @@ class Crypt(object):
         Return the cluster id read from cluster.id in the node configuration.
         If not already set generate and store a random one.
         """
-        if hasattr(self, "get_node"):
-            # svc
-            node = getattr(self, "get_node")()
-        elif hasattr(self, "nodename"):
-            # node
-            node = self
-        else:
-            from osvcd_shared import NODE
-            node = NODE
+        node = self.get_node()
         try:
-            return node.config.get("cluster", "id")
+            return node.conf_get("cluster", "id")
         except Exception as exc:
             pass
         import uuid
@@ -440,38 +413,11 @@ class Crypt(object):
         """
         Get the listener address and port from node.conf.
         """
-        if hasattr(self, "get_node"):
-            config = getattr(self, "get_node")().config
-        else:
-            config = getattr(self, "config")
-        if nodename == rcEnv.nodename:
-            if not config.has_section("listener"):
-                return "127.0.0.1", rcEnv.listener_port
-            if config.has_option("listener", "addr@"+nodename):
-                addr = config.get("listener", "addr@"+nodename)
-            elif config.has_option("listener", "addr"):
-                addr = config.get("listener", "addr")
-            else:
-                addr = "127.0.0.1"
-            if config.has_option("listener", "port@"+nodename):
-                port = config.getint("listener", "port@"+nodename)
-            elif config.has_option("listener", "port"):
-                port = config.getint("listener", "port")
-            else:
-                port = rcEnv.listener_port
-        else:
-            if not config.has_section("listener"):
-                return nodename, rcEnv.listener_port
-            if config.has_option("listener", "addr@"+nodename):
-                addr = config.get("listener", "addr@"+nodename)
-            else:
-                addr = nodename
-            if config.has_option("listener", "port@"+nodename):
-                port = config.getint("listener", "port@"+nodename)
-            elif config.has_option("listener", "port"):
-                port = config.getint("listener", "port")
-            else:
-                port = rcEnv.listener_port
+        node = self.get_node()
+        addr = node.oget("listener", "addr", impersonate=nodename)
+        port = node.oget("listener", "port", impersonate=nodename)
+        if nodename != rcEnv.nodename and addr == "0.0.0.0":
+            addr = nodename
         return addr, port
 
     def recv_message(self, *args, **kwargs):

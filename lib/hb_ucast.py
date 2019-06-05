@@ -13,9 +13,6 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from hb import Hb
 
-DEFAULT_UCAST_PORT = 10000
-DEFAULT_UCAST_TIMEOUT = 15
-
 class HbUcast(Hb):
     """
     A class factorizing common methods and properties for the unicast
@@ -45,45 +42,28 @@ class HbUcast(Hb):
     def _configure(self):
         self.get_hb_nodes()
         peer_config = {}
-        if hasattr(self, "node"):
-            config = getattr(self, "node").config
-        else:
-            config = self.config
-        try:
-            default_port = config.getint(self.name, "port")
-        except Exception:
-            default_port = DEFAULT_UCAST_PORT + 0
 
         # peers
         for nodename in self.hb_nodes:
             if nodename not in peer_config:
-                if nodename == rcEnv.nodename:
-                    default_addr = "0.0.0.0"
+                addr = shared.NODE.oget(self.name, "addr", impersonate=nodename)
+                port = shared.NODE.oget(self.name, "port", impersonate=nodename)
+                if addr is not None:
+                    pass
+                elif nodename == rcEnv.nodename:
+                    addr = "0.0.0.0"
                 else:
-                    default_addr = nodename
+                    addr = nodename
                 peer_config[nodename] = Storage({
-                    "addr": default_addr,
-                    "port": default_port,
+                    "addr": addr,
+                    "port": port,
                 })
-            if config.has_option(self.name, "addr@"+nodename):
-                peer_config[nodename].addr = \
-                    config.get(self.name, "addr@"+nodename)
-            if config.has_option(self.name, "port@"+nodename):
-                peer_config[nodename].port = \
-                    config.getint(self.name, "port@"+nodename)
 
         if peer_config != self.peer_config:
             self.config_change = True
             self.peer_config = peer_config
 
-        # timeout
-        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            timeout = \
-                self.config.getint(self.name, "timeout@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "timeout"):
-            timeout = self.config.getint(self.name, "timeout")
-        else:
-            timeout = DEFAULT_UCAST_TIMEOUT
+        timeout = shared.NODE.oget(self.name, "timeout")
 
         if timeout != self.timeout:
             self.config_change = True

@@ -17,8 +17,6 @@ class HbRelay(Hb):
     A class factorizing common methods and properties for the relay
     heartbeat tx and rx child classes.
     """
-    DEFAULT_TIMEOUT = 15
-
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
         data.stats = Storage(self.stats)
@@ -39,25 +37,13 @@ class HbRelay(Hb):
     def _configure(self):
         self.get_hb_nodes()
         self.peer_config = {}
-        if hasattr(self, "node"):
-            config = getattr(self, "node").config
-        else:
-            config = self.config
-
-        # timeout
-        if self.config.has_option(self.name, "timeout@"+rcEnv.nodename):
-            self.timeout = self.config.getint(self.name, "timeout@"+rcEnv.nodename)
-        elif self.config.has_option(self.name, "timeout"):
-            self.timeout = self.config.getint(self.name, "timeout")
-        else:
-            self.timeout = self.DEFAULT_TIMEOUT
-
+        self.timeout = shared.NODE.oget(self.name, "timeout")
         try:
-            self.relay = self.config.get(self.name, "relay")
+            self.relay = shared.NODE.oget(self.name, "relay")
         except Exception:
             raise ex.excAbortAction("no %s.relay is not set in node.conf" % self.name)
         try:
-            self.secret = self.config.get(self.name, "secret")
+            self.secret = shared.NODE.oget(self.name, "secret")
         except Exception:
             raise ex.excAbortAction("no %s.secret is not set in node.conf" % self.name)
 

@@ -226,8 +226,11 @@ class ContainerLib(object):
                 return data
 
     def login_as_service_args(self):
+        uuid = self.svc.node.oget("node", "uuid")
+        if not uuid:
+            return []
         args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
-        args += ["-p", self.svc.node.config.get("node", "uuid")]
+        args += ["-p", uuid]
         if self.docker_min_version("1.12"):
             pass
         elif self.docker_min_version("1.10"):
@@ -811,8 +814,11 @@ class PodmanLib(ContainerLib):
         pass
 
     def login_as_service_args(self):
+        uuid = self.svc.node.oget("node", "uuid")
+        if not uuid:
+            return []
         args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
-        args += ["-p", self.svc.node.config.get("node", "uuid")]
+        args += ["-p", uuid]
         return args
 
 

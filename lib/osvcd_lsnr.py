@@ -190,14 +190,8 @@ class Listener(shared.OsvcThread):
         if not has_ssl:
             self.log.info("skip tls listener init: ssl module import error")
             return
-        try:
-            self.tls_port = self.config.getint("listener", "tls_port")
-        except Exception:
-            self.tls_port = rcEnv.listener_tls_port
-        try:
-            self.tls_addr = self.config.get("listener", "tls_addr")
-        except Exception:
-            self.tls_addr = "0.0.0.0"
+        self.tls_port = shared.NODE.oget("listener", "tls_port")
+        self.tls_addr = shared.NODE.oget("listener", "tls_addr")
         try:
             self.tls_sock.close()
         except Exception:
@@ -234,14 +228,8 @@ class Listener(shared.OsvcThread):
         self.sockmap[self.tls_wrapped_sock.fileno()] = self.tls_wrapped_sock
 
     def setup_sock(self):
-        try:
-            self.port = self.config.getint("listener", "port")
-        except Exception:
-            self.port = rcEnv.listener_port
-        try:
-            self.addr = self.config.get("listener", "addr")
-        except Exception:
-            self.addr = "0.0.0.0"
+        self.port = shared.NODE.oget("listener", "port")
+        self.addr = shared.NODE.oget("listener", "addr")
 
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]

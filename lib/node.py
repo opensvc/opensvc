@@ -36,7 +36,6 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 import rcLogger
 import rcExceptions as ex
-import rcConfigParser
 from freezer import Freezer
 from rcScheduler import Scheduler, SchedOpts, sched_action
 from rcColor import formatter
@@ -127,7 +126,6 @@ class Node(Crypt, ExtConfigMixin):
     def __init__(self):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.listener = None
-        self.config = None
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
@@ -136,7 +134,6 @@ class Node(Crypt, ExtConfigMixin):
             cf=rcEnv.paths.nodeconf,
         )
         self.services = None
-        self.load_config()
         self.options = Storage(
             cron=False,
             syncrpc=False,
@@ -164,6 +161,26 @@ class Node(Crypt, ExtConfigMixin):
         self.log = rcLogger.initLogger(rcEnv.nodename)
         self.stats_data = {}
         self.stats_updated = 0
+
+    def get_node(self):
+        """
+        helper for the comm module to find the Node(), for accessing
+        its configuration.
+        """
+        return self
+
+    @lazy
+    def cd(self):
+        configs = []
+        if os.path.exists(rcEnv.paths.clusterconf):
+            configs.append(rcEnv.paths.clusterconf)
+        if os.path.exists(rcEnv.paths.nodeconf):
+            configs.append(rcEnv.paths.nodeconf)
+        return self.parse_config_file(configs)
+
+    @lazy
+    def private_cd(self):
+        return self.parse_config_file(self.paths.cf)
 
     @lazy
     def kwdict(self):
@@ -200,8 +217,7 @@ class Node(Crypt, ExtConfigMixin):
         return Scheduler(
             config_defaults=CONFIG_DEFAULTS,
             options=self.options,
-            config=self.config,
-            log=self.log,
+            node=self,
             scheduler_actions={
                 "checks": SchedOpts(
                     "checks"
@@ -422,9 +438,7 @@ class Node(Crypt, ExtConfigMixin):
     @lazy
     def arbitrators(self):
         arbitrators = []
-        for section in self.config.sections():
-            if not section.startswith("arbitrator#"):
-                continue
+        for section in self.conf_sections("arbitrators", cd=self.cd):
             data = {
                 "id": section,
             }
@@ -494,12 +508,8 @@ class Node(Crypt, ExtConfigMixin):
         node.uuid, node.dbopensvc and node.dbcompliance as properties of the
         rcEnv class.
         """
-        if self.config is None:
-            self.load_config()
-        if self.config is None:
-            return
-        if self.config.has_option('node', 'dbopensvc'):
-            url = self.config.get('node', 'dbopensvc')
+        url = self.oget("node", "dbopensvc")
+        if url:
             try:
                 (
                     rcEnv.dbopensvc_transport,
@@ -523,8 +533,8 @@ class Node(Crypt, ExtConfigMixin):
             rcEnv.dbopensvc_app = None
             rcEnv.dbopensvc = None
 
-        if self.config.has_option('node', 'dbcompliance'):
-            url = self.config.get('node', 'dbcompliance')
+        url = self.oget("node", "dbcompliance")
+        if url:
             try:
                 (
                     rcEnv.dbcompliance_transport,
@@ -553,8 +563,9 @@ class Node(Crypt, ExtConfigMixin):
                 rcEnv.dbcompliance_app
             )
 
-        if self.config.has_option('node', 'uuid'):
-            rcEnv.uuid = self.config.get('node', 'uuid')
+        node_uuid = self.oget("node", "uuid")
+        if node_uuid:
+            rcEnv.uuid = node_uuid
         else:
             rcEnv.uuid = ""
 
@@ -1038,33 +1049,6 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             svc.purge_status_last()
 
-    def get_config(self, node=True, cluster=True):
-        configs = []
-        if cluster and os.path.exists(rcEnv.paths.clusterconf):
-            configs.append(rcEnv.paths.clusterconf)
-        if node:
-            configs.append(rcEnv.paths.nodeconf)
-        try:
-            return read_cf(configs)
-        except rcConfigParser.Error as exc:
-            print(str(exc), file=sys.stderr)
-        except IOError:
-            # some action don't need self.config
-            pass
-
-    def load_config(self):
-        """
-        Parse the node.conf configuration file and store the RawConfigParser
-        object as self.config.
-        IOError is catched and self.config is left to its current value, which
-        initially is None. So users of self.config should check for this None
-        value before use.
-        """
-        config = self.get_config()
-        if config:
-            # some action don't need self.config
-            self.config = config
-
     def __iadd__(self, svc):
         """
         Implement the Node() += Svc() operation, setting the node backpointer
@@ -1104,8 +1088,7 @@ class Node(Crypt, ExtConfigMixin):
 
         if action.startswith("compliance_"):
             if self.options.cron and action == "compliance_auto" and \
-               self.config.has_option('compliance', 'auto_update') and \
-               self.config.getboolean('compliance', 'auto_update'):
+               self.oget('compliance', 'auto_update'):
                 self.compliance.updatecomp = True
                 self.compliance.node = self
             ret = getattr(self.compliance, action)()
@@ -1148,19 +1131,6 @@ class Node(Crypt, ExtConfigMixin):
         """
         return self.sched.print_schedule()
 
-    def get_push_objects(self, section):
-        """
-        Returns the object names to do inventory on.
-        Object names passed as nodemgr argument take precedence.
-        If not specified by argument, objet names found in the
-        configuration file section are returned.
-        """
-        if len(self.options.objects) > 0:
-            return self.options.objects
-        if self.config and self.config.has_option(section, "objects"):
-            return self.config.get(section, "objects").split(",")
-        return []
-
     def collect_stats(self):
         """
         Choose the os specific stats collection module and call its collect
@@ -1202,16 +1172,10 @@ class Node(Crypt, ExtConfigMixin):
             Returns the list of stats metrics collection disabled through the
             configuration file stats.disable option.
             """
-            if not self.config.has_option("stats", "disable"):
+            disable = self.oget("stats", "disable")
+            if not disable:
                 return []
-            disable = self.config.get("stats", "disable")
-            try:
-                return json.loads(disable)
-            except ValueError:
-                pass
-            if ',' in disable:
-                return disable.replace(' ', '').split(',')
-            return disable.split()
+            return disable
 
         disable = get_disable_stats()
         return self.collector.call('push_stats',
@@ -1443,8 +1407,7 @@ class Node(Crypt, ExtConfigMixin):
         The pushsym action entrypoint.
         Inventories EMC Symmetrix server storage arrays.
         """
-        objects = self.get_push_objects("sym")
-        self.collector.call('push_sym', objects)
+        self.collector.call('push_sym', self.options.objects)
 
     def pushbrocade(self):
         """
@@ -1532,11 +1495,7 @@ class Node(Crypt, ExtConfigMixin):
         if statinfo.st_mode & stat.S_IWOTH:
             print("%s is world writable. abort scheduled reboot" % self.paths.reboot_flag)
             return
-        try:
-            once = self.config.get("reboot", "once")
-            once = convert_boolean(once)
-        except:
-            once = True
+        once = self.oget("reboot", "once")
         if once:
             print("remove %s and reboot" % self.paths.reboot_flag)
             os.unlink(self.paths.reboot_flag)
@@ -1739,16 +1698,8 @@ class Node(Crypt, ExtConfigMixin):
         Determine which triggers need to be executed for the action and
         executes them when appropriate.
         """
-        trigger = None
-        blocking_trigger = None
-        try:
-            trigger = self.config.get(action, when)
-        except:
-            pass
-        try:
-            blocking_trigger = self.config.get(action, "blocking_"+when)
-        except:
-            pass
+        trigger = self.oget(action, when)
+        blocking_trigger = self.oget(action, "blocking_"+when)
         if trigger:
             self.log.info("execute trigger %s", trigger)
             try:
@@ -1811,8 +1762,8 @@ class Node(Crypt, ExtConfigMixin):
         Once generated from the algorithm, the prkey is written to the config
         file to ensure its stability.
         """
-        if self.config.has_option("node", "prkey"):
-            hostid = self.config.get("node", "prkey")
+        hostid = self.oget("node", "prkey")
+        if hostid:
             if len(hostid) > 18 or not hostid.startswith("0x") or \
                len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
                 raise ex.excError("prkey in node.conf must have 16 significant"
@@ -2043,10 +1994,12 @@ class Node(Crypt, ExtConfigMixin):
         Downloads and installs the compliance module archive from the url
         specified as node.repocomp or node.repo in node.conf.
         """
-        if self.config.has_option('node', 'repocomp'):
-            pkg_name = self.config.get('node', 'repocomp').strip('/') + "/current"
-        elif self.config.has_option('node', 'repo'):
-            pkg_name = self.config.get('node', 'repo').strip('/') + "/compliance/current"
+        repocomp = self.oget("node", "repocomp")
+        repo = self.oget("node", "repo")
+        if repocomp:
+            pkg_name = repocomp.strip('/') + "/current"
+        elif repo:
+            pkg_name = repo.strip('/') + "/compliance/current"
         else:
             if self.options.cron:
                 return 0
@@ -2119,13 +2072,11 @@ class Node(Crypt, ExtConfigMixin):
         Downloads and upgrades the OpenSVC agent, using the system-specific
         packaging tools.
         """
-        try:
-            branch = self.config.get("node", "branch")
-            if branch != "":
-                branch = "/" + branch
-        except Exception:
+        branch = self.oget("node", "branch")
+        if branch:
+            branch = "/" + branch
+        else:
             branch = ""
-
         try:
             pkg_format = self.conf_get("node", "pkg_format")
         except ex.OptNotFound as exc:
@@ -2140,12 +2091,12 @@ class Node(Crypt, ExtConfigMixin):
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
         mod = __import__(modname)
-        if self.config.has_option('node', 'repopkg'):
-            pkg_name = self.config.get('node', 'repopkg').strip('/') + \
-                       "/" + mod.repo_subdir + branch + '/current'
-        elif self.config.has_option('node', 'repo'):
-            pkg_name = self.config.get('node', 'repo').strip('/') + \
-                       "/packages/" + mod.repo_subdir + branch + '/current'
+        repopkg = self.oget("node", "repopkg")
+        repo = self.oget("node", "repo")
+        if repopkg:
+            pkg_name = repopkg.strip('/') + "/" + mod.repo_subdir + branch + '/current'
+        elif repo:
+            pkg_name = repo.strip('/') + "/packages/" + mod.repo_subdir + branch + '/current'
         else:
             print("node.repo or node.repopkg must be set in node.conf",
                   file=sys.stderr)
@@ -2191,7 +2142,7 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("can not determine array driver (no --array)")
 
         section = "array#" + array_name
-        if section not in self.conf_sections(cat="array"):
+        if section not in self.conf_sections(cat="array", cd=self.cd):
             raise ex.excError("array '%s' not found in configuration" % array_name)
 
         try:
@@ -2215,10 +2166,11 @@ class Node(Crypt, ExtConfigMixin):
         the root user is returned.
         """
         default = "root"
-        if not self.config.has_option('node', "ruser"):
-            return default
+        ruser = self.oget("node", "ruser")
+        if ruser == default:
+            return ruser
         node_ruser = {}
-        elements = self.config.get('node', 'ruser').split()
+        elements = ruser.split()
         for element in elements:
             subelements = element.split("@")
             if len(subelements) == 1:
@@ -2652,10 +2604,10 @@ class Node(Crypt, ExtConfigMixin):
         Returns the authentcation info for login as node
         """
         username = rcEnv.nodename
-        if not self.config.has_option("node", "uuid"):
+        node_uuid = self.oget("node", "uuid")
+        if not node_uuid:
             raise ex.excError("the node is not registered yet. use 'nodemgr register [--user <user>]'")
-        password = self.config.get("node", "uuid")
-        return username, password
+        return username, node_uuid
 
     def collector_auth_user(self):
         """
@@ -2911,12 +2863,8 @@ class Node(Crypt, ExtConfigMixin):
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
-        if "metadata" in data:
-            del data["metadata"]
-
         if info is None:
             info = self.install_service_info(name, namespace, kind)
-        config = rcConfigParser.RawConfigParser()
 
         if not os.path.exists(info.cf):
             # freeze before the installing the config so the daemon never
@@ -2925,29 +2873,14 @@ class Node(Crypt, ExtConfigMixin):
             svcpath = fmt_svcpath(name, namespace, kind)
             Freezer(svcpath).freeze()
 
-        config.set("DEFAULT", "id", info.id)
-        for section_name, section in data.items():
-            if section_name != "DEFAULT":
-                config.add_section(section_name)
-            for key, value in section.items():
-                if not restore:
-                    if section_name == "DEFAULT" and key == "id":
-                        continue
-                config.set(section_name, key, value)
-        import codecs
-        try:
-            if six.PY2:
-                with codecs.open(info.cf, "w", "utf-8") as ofile:
-                    os.chmod(info.cf, 0o0600)
-                    config.write(ofile)
-            else:
-                with open(info.cf, "w") as ofile:
-                    os.chmod(info.cf, 0o0600)
-                    config.write(ofile)
-        except Exception as exc:
-            print("failed to write %s: %s" % (info.cf, exc), file=sys.stderr)
-            raise Exception()
-        svc = factory(kind)(name, namespace=namespace, cf=info.cf, node=self)
+        if not restore:
+            try:
+                del data["DEFAULT"]["id"]
+            except KeyError:
+                pass
+
+        svc = factory(kind)(name, namespace=namespace, cf=info.cf, cd=data, node=self)
+        svc.dump_config_data()
         svc.postinstall()
 
     def install_service_info(self, name, namespace, kind):
@@ -3530,13 +3463,6 @@ class Node(Crypt, ExtConfigMixin):
                 print(line)
                 sys.stdout.flush()
 
-    def print_config_data(self, src_config=None, evaluate=False, impersonate=None):
-        if src_config is None:
-            src_config = self.config
-        return ExtConfigMixin.print_config_data(self, src_config=src_config,
-                                           evaluate=evaluate,
-                                           impersonate=impersonate)
-
     def print_devs(self):
         if self.options.reverse:
             self.devtree.print_tree_bottom_up(devices=self.options.devices,
@@ -3551,7 +3477,7 @@ class Node(Crypt, ExtConfigMixin):
         print_config node action entrypoint
         """
         if self.options.format is not None:
-            return self.print_config_data(self.config)
+            return self.print_config_data()
         if not os.path.exists(rcEnv.paths.nodeconf):
             return
         from rcColor import print_color_config
@@ -3993,9 +3919,7 @@ class Node(Crypt, ExtConfigMixin):
         cluster_name = None
         if self.options.node and self.options.node != rcEnv.nodename:
             cluster_name = "join"
-            for section in self.config.sections():
-                if not section.startswith("hb#"):
-                    continue
+            for section in self.conf_sections("hb", cd=self.cd):
                 try:
                     relay = self.conf_get(section, "relay")
                 except (ValueError, ex.OptNotFound):
@@ -4085,17 +4009,15 @@ class Node(Crypt, ExtConfigMixin):
                 raise ex.excError("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
         else:
             secret = None
-            for section in self.config.sections():
-                if not section.startswith("arbitrator#"):
-                    continue
+            for section in self.conf_sections("arbitrator", cd=self.cd):
                 try:
-                    arbitrator = self.config.get(section, "name")
+                    arbitrator = self.oget(section, "name")
                 except Exception:
                     continue
                 if arbitrator != node:
                     continue
                 try:
-                    secret = self.config.get(section, "secret")
+                    secret = self.oget(section, "secret")
                     cluster_name = "join"
                     break
                 except Exception:
@@ -4345,8 +4267,7 @@ class Node(Crypt, ExtConfigMixin):
 
         # remove obsolete node configurations
         todo = []
-        config = self.get_config(cluster=False)
-        for section in config.sections():
+        for section in self.private_cd:
             if section == "cluster" or \
                section.startswith("hb#") or \
                section.startswith("arbitrator#"):
@@ -4460,10 +4381,10 @@ class Node(Crypt, ExtConfigMixin):
         else:
             toremove.append("cluster.secret")
 
-        config = self.get_config(cluster=False)
+        config = self.private_cd
         for section, _data in ndata.items():
             if section.startswith("hb#"):
-                if config.has_section(section):
+                if section in config:
                     self.log.info("update heartbeat %s", section)
                     sectoremove.append(section)
                 else:
@@ -4471,7 +4392,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("stonith#"):
-                if config.has_section(section):
+                if section in config:
                     self.log.info("update stonith %s", section)
                     sectoremove.append(section)
                 else:
@@ -4479,7 +4400,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("arbitrator#"):
-                if config.has_section(section):
+                if section in config:
                     self.log.info("update arbitrator %s", section)
                     sectoremove.append(section)
                 else:
@@ -4487,7 +4408,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("pool#"):
-                if config.has_section(section):
+                if section in config:
                     self.log.info("update pool %s", section)
                     sectoremove.append(section)
                 else:
@@ -4495,7 +4416,7 @@ class Node(Crypt, ExtConfigMixin):
                 for option, value in _data.items():
                     toadd.append("%s.%s=%s" % (section, option, value))
             elif section.startswith("network#"):
-                if config.has_section(section):
+                if section in config:
                     self.log.info("update network %s", section)
                     sectoremove.append(section)
                 else:
@@ -4504,31 +4425,31 @@ class Node(Crypt, ExtConfigMixin):
                     toadd.append("%s.%s=%s" % (section, option, value))
 
         # remove obsolete hb configurations
-        for section in config.sections():
+        for section in config:
             if section.startswith("hb#") and section not in ndata:
                 self.log.info("remove heartbeat %s", section)
                 sectoremove.append(section)
 
         # remove obsolete stonith configurations
-        for section in config.sections():
+        for section in config:
             if section.startswith("stonith#") and section not in ndata:
                 self.log.info("remove stonith %s", section)
                 sectoremove.append(section)
 
         # remove obsolete arbitrator configurations
-        for section in config.sections():
+        for section in config:
             if section.startswith("arbitrator#") and section not in ndata:
                 self.log.info("remove arbitrator %s", section)
                 sectoremove.append(section)
 
         # remove obsolete pool configurations
-        for section in config.sections():
+        for section in config:
             if section.startswith("pool#") and section not in ndata:
                 self.log.info("remove pool %s", section)
                 sectoremove.append(section)
 
         # remove obsolete network configurations
-        for section in config.sections():
+        for section in config:
             if section.startswith("network#") and section not in ndata:
                 self.log.info("remove network %s", section)
                 sectoremove.append(section)
@@ -4736,9 +4657,8 @@ class Node(Crypt, ExtConfigMixin):
 
     def pool_ls_data(self):
         data = set(["default", "shm"])
-        for section in self.config.sections():
-            if section.startswith("pool#"):
-                data.add(section.split("#")[-1])
+        for section in self.conf_sections("pool", cd=self.cd):
+            data.add(section.split("#")[-1])
         return sorted(list(data))
 
     @formatter
@@ -4849,7 +4769,7 @@ class Node(Crypt, ExtConfigMixin):
             section = "pool#"+poolname
         except TypeError:
             raise ex.excError("invalid pool name: %s" % poolname)
-        if poolname not in ("shm", "default") and not self.config.has_section(section):
+        if poolname not in ("shm", "default") and not section in self.cd:
             raise ex.excError("pool not found: %s" % poolname)
         if poolname == "shm":
             ptype = "shm"
@@ -4924,7 +4844,7 @@ class Node(Crypt, ExtConfigMixin):
                     "network": "undef",
                 },
             }
-        sections = list(self.conf_sections("network"))
+        sections = list(self.conf_sections("network", cd=self.cd))
         if "network#default" not in sections:
             sections.append("network#default")
         for section in sections:
@@ -5392,7 +5312,7 @@ class Node(Crypt, ExtConfigMixin):
         A hash of hook command sets, indexed by event.
         """
         data = {}
-        for section in self.conf_sections("hook"):
+        for section in self.conf_sections("hook", cd=self.cd):
             try:
                 command = tuple(self.conf_get(section, "command"))
             except Exception:

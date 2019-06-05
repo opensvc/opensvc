@@ -104,22 +104,9 @@ def standby_from_always_on(svc, section):
 
 def get_sync_args(svc, s):
     kwargs = {}
-    defaults = svc.config.defaults()
+    defaults = svc.cd.get("DEFAULT", {})
     kwargs["sync_max_delay"] = svc.oget(s, "sync_max_delay")
-
-    if svc.config.has_option(s, "schedule"):
-        kwargs["schedule"] = svc.conf_get(s, "schedule")
-    elif svc.config.has_option(s, "period") or svc.config.has_option(s, "sync_period"):
-        # old schedule syntax compatibility
-        from rcScheduler import Scheduler
-        kwargs["schedule"] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix="sync_")
-    elif "sync_schedule" in defaults:
-        kwargs["schedule"] = svc.conf_get("DEFAULT", "sync_schedule")
-    elif "sync_period" in defaults:
-        # old schedule syntax compatibility for internal sync
-        from rcScheduler import Scheduler
-        kwargs["schedule"] = Scheduler().sched_convert_to_schedule(svc.config, s, prefix="sync_")
-
+    kwargs["schedule"] = svc.oget(s, "schedule")
     return kwargs
 
 def add_resource(svc, restype, s):
@@ -295,7 +282,7 @@ def add_vdisk(svc, s):
     kwargs = init_kwargs(svc, s)
     devpath = {}
 
-    for attr, val in svc.config.items(s):
+    for attr, val in svc.cd[s].items():
         if "path@" in attr:
             devpath[attr.replace("path@", "")] = val
 
@@ -544,7 +531,10 @@ def add_sync(svc, s):
 
 def add_container(svc, s):
     rtype = svc.oget(s, "type")
-    globals()["add_container_"+rtype](svc, s)
+    try:
+        globals()["add_container_"+rtype](svc, s)
+    except KeyError:
+        raise ex.excError("no container.%s driver" % rtype)
 
 def add_disk(svc, s):
     """Parse the configuration file and add a disk object for each [disk#n]
@@ -617,7 +607,7 @@ def add_vmdg(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["container_id"] = svc.oget(s, "container_id")
 
-    if not svc.config.has_section(kwargs["container_id"]):
+    if not kwargs["container_id"] in svc.cd:
         svc.log.error("%s.container_id points to an invalid section"%kwargs["container_id"])
         return
 
@@ -1262,10 +1252,11 @@ def add_sync_evasnap(svc, s):
     kwargs["eva_name"] = svc.oget(s, "eva_name")
     kwargs["snap_name"] = svc.oget(s, "snap_name")
     import json
-    pairs = []
-    if "pairs" in svc.config.options(s):
-        pairs = json.loads(svc.config.get(s, "pairs"))
-    if len(pairs) == 0:
+    try:
+        pairs = json.loads(svc.oget(s, "pairs"))
+    except:
+        pairs = None
+    if not pairs:
         svc.log.error("config file section %s must have pairs set" % s)
         return
     else:
@@ -1640,7 +1631,7 @@ def add_resources(svc):
     """
     ret = 0
     sections = {}
-    for section in svc.config.sections():
+    for section in svc.cd:
         restype = section.split("#")[0]
         if restype in ("subset", "env"):
             continue

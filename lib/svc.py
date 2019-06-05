@@ -453,7 +453,9 @@ class SvcPaths(object):
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
-    def __init__(self, svcname=None, namespace=None, node=None, cf=None, volatile=False, log=None):
+    def __init__(self, svcname=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None):
+        if cd:
+            self.set_lazy("cd", cd)
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.svcname = svcname
         self.namespace = namespace.strip("/") if namespace else None
@@ -525,6 +527,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
             waitlock=None,
             wait=False,
         )
+
+    def get_node(self):
+        """
+        helper for the comm module to find the Node(), for accessing
+        its configuration.
+        """
+        if self.node is None:
+            self.node = node.Node()
+        return self.node
 
     def init_nodes(self):
         """
@@ -605,7 +616,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return Scheduler(
             config_defaults=CONFIG_DEFAULTS,
             options=self.options,
-            config=self.config,
             svc=self,
             scheduler_actions={},
         )
@@ -638,11 +648,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             return self.conf_get("DEFAULT", "id")
         except ex.OptNotFound as exc:
-            import uuid
-            newid = str(uuid.uuid4())
+            new_id = self.new_id()
             if not self.volatile:
-                self._set("DEFAULT", "id", newid, validation=False)
-            return newid
+                self._set("DEFAULT", "id", new_id, validation=False)
+            return new_id
+
+    @staticmethod
+    def new_id():
+        import uuid
+        return str(uuid.uuid4())
 
     @lazy
     def peers(self):
@@ -682,16 +696,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return self.oget("DEFAULT", "lock_timeout")
 
     @lazy
-    def config(self):
-        """
-        Initialize the service configuration parser object. Using an
-        OrderDict type to preserve the options and sections ordering,
-        if possible.
-
-        The parser object is a opensvc-specified class derived from
-        optparse.RawConfigParser.
-        """
-        return read_cf(self.paths.cf)
+    def cd(self):
+        return self.parse_config_file(self.paths.cf)
 
     @lazy
     def disabled(self):
@@ -1465,11 +1471,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         from keywords import MissKeyNoDefault, KeyInvalidValue
 
-        sections = {}
         rtypes = {}
-        defaults = self.config.defaults()
-        for section in self.config.sections():
-            sections[section] = {}
+        for section in self.cd:
             elements = section.split('#')
             if len(elements) == 2:
                 rtype = elements[0]
@@ -1477,10 +1480,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if rtype not in rtypes:
                     rtypes[rtype] = set()
                 rtypes[rtype].add(ridx)
-            for option, value in self.config.items(section):
-                if option in list(defaults.keys()) + ['rtype']:
-                    continue
-                sections[section][option] = value
 
         import svcBuilder
 
@@ -1496,38 +1495,34 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if len(elements) != 2:
                     raise ex.excError("%s must be formatted as 'rtype#n'" % section)
                 del data['rid']
-                if section in sections:
-                    sections[section].update(data)
+                if section in self.cd:
+                    self.cd[section].update(data)
                 else:
-                    sections[section] = data
+                    self.cd[section] = data
                 is_resource = True
             elif 'rtype' in data and data["rtype"] == "env":
                 del data["rtype"]
-                if "env" in sections:
-                    sections["env"].update(data)
+                if "env" in self.cd:
+                    self.cd["env"].update(data)
                 else:
-                    sections["env"] = data
+                    self.cd["env"] = data
             elif 'rtype' in data and data["rtype"] != "DEFAULT":
-                section = self.allocate_rid(data['rtype'], sections)
+                section = self.allocate_rid(data['rtype'], self.cd)
                 self.log.info("allocated rid %s" % section)
                 del data['rtype']
-                sections[section] = data
+                self.cd[section] = data
                 is_resource = True
             else:
                 if "rtype" in data:
                     del data["rtype"]
-                defaults.update(data)
+                if "DEFAULT" not in data:
+                    data["DEFAULT"] = {}
+                data["DEFAULT"].update(data)
 
             if is_resource:
                 rid.append(section)
 
-        for section, data in sections.items():
-            if not self.config.has_section(section):
-                self.config.add_section(section)
-            for key, val in data.items():
-                self.config.set(section, key, val)
-
-        self.write_config()
+        self.dump_config_data()
 
         for section in rid:
             group = section.split("#")[0]
@@ -1537,34 +1532,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             options = Storage(self.options)
             options.rid = rid
             self.action("provision", options)
-
-    def write_config(self):
-        """
-        Rewrite the service configuration file, using the current parser
-        object in self.config write method.
-        Also reset the file mode to 644.
-        """
-        if self.volatile:
-            return
-        import tempfile
-        import shutil
-        try:
-            tmpfile = tempfile.NamedTemporaryFile()
-            fname = tmpfile.name
-            tmpfile.close()
-            with open(fname, "w") as tmpfile:
-                self.config.write(tmpfile)
-                tmpfile.flush()
-            makedirs(os.path.dirname(self.paths.cf))
-            shutil.move(fname, self.paths.cf)
-        except (OSError, IOError) as exc:
-            print("failed to write new %s (%s)" % (self.paths.cf, str(exc)),
-                  file=sys.stderr)
-            raise ex.excError()
-        try:
-            os.chmod(self.paths.cf, 0o0644)
-        except (OSError, IOError) as exc:
-            self.log.debug("failed to set %s mode: %s", self.paths.cf, str(exc))
 
     def allow_on_this_node(self, action):
         """
@@ -2516,11 +2483,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         kwargs["svcname"] = self.svcpath
         return self.node.collector_rest_delete(*args, **kwargs)
 
-    def get_node(self):
-        if self.node is None:
-            self.node = node.Node()
-        return self.node
-
     def options_to_rids(self, options, action):
         rid = options.get("rid", [])
         if rid is None:
@@ -3029,8 +2991,6 @@ class Svc(BaseSvc):
         """
         rtype = rtype.split(".")[0]
         subset_section = 'subset#' + rtype
-        if not self.config.has_section(subset_section):
-            return False
         return self.oget(subset_section, "parallel")
 
     def get_scsireserv(self, rid):
@@ -4603,9 +4563,9 @@ class Svc(BaseSvc):
                 if rid not in data:
                     data[rid] = []
                 data[rid].append(__data)
-        if not self.config.has_section("env"):
+        if not "env" in self.cd:
             return data
-        for key in self.config.options("env"):
+        for key in self.cd["env"]:
             try:
                 val = self.conf_get("env", key)
             except ex.OptNotFound as exc:
@@ -5109,8 +5069,6 @@ class Svc(BaseSvc):
         * at DEFAULT level if no resources were specified
         * in each resource section if resources were specified
         """
-        lines = self._read_cf().splitlines()
-
         if rids is None:
             rids = []
 
@@ -5118,32 +5076,31 @@ class Svc(BaseSvc):
            (len(rids) == 0 or len(rids) == len(self.resources_by_id)):
             rids = ['DEFAULT']
 
+        changes = []
+        unsets = []
         for rid in rids:
             if disable:
                 self.log.info("set %s.disable = true", rid)
-                lines = self.set_line(lines, rid, "disable", "true")
-            elif self.config.has_option(rid, "disable"):
+                changes.append("%s.disable=true")
+            elif "disable" in self.cd[rid]:
                 self.log.info("remove %s.disable", rid)
-                lines = self.unset_line(lines, rid, "disable")
+                unsets.append("%s.disable")
 
             #
             # if we set <section>.disable = <bool>,
             # remove <section>.disable@<scope> = <not bool>
             #
-            if rid == "DEFAULT":
-                items = self.config.defaults().items()
-            elif not self.config.has_section(rid):
+            if not rid in self.cd:
                 items = {}
             else:
-                items = self.config.items(rid)
+                items = self.cd[rid]
             for option, value in items:
                 if not option.startswith("disable@"):
                     continue
                 if value == True:
                     continue
                 self.log.info("remove %s.%s = false", rid, option)
-                lines = self.unset_line(lines, rid, option)
-
+                unsets.append("DEFAULT.%s" % option)
 
         self.unset_lazy("disabled")
 
@@ -5159,11 +5116,10 @@ class Svc(BaseSvc):
             else:
                 resource.enable()
 
-        try:
-            self._write_cf(lines)
-        except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
-        self.unset_lazy("config")
+        if changes:
+            self.set_multi(changes)
+        if unsets:
+            self.unset_multi(unsets)
 
     def enable(self):
         """
@@ -5560,3 +5516,5 @@ class Svc(BaseSvc):
             "volume",
         ]
         self.sub_set_action(rtypes, "install_data")
+
+

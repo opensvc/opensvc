@@ -125,10 +125,9 @@ class Scheduler(object):
     The node and each service inherit an independent scheduler through
     this class.
     """
-    def __init__(self, config_defaults=None, config=None, options=None,
+    def __init__(self, config_defaults=None, node=None, options=None,
                  scheduler_actions=None, log=None, svc=None):
         self.config_defaults = config_defaults
-        self.config = config
 
         if scheduler_actions is None:
             self.scheduler_actions = {}
@@ -140,10 +139,14 @@ class Scheduler(object):
         else:
             self.options = options
 
-        self.log = log
         self.svc = svc
-        if svc and not log:
+        self.node = node
+        if svc:
+            self.obj = svc
             self.log = svc.log
+        else:
+            self.obj = node
+            self.log = node.log
 
     def get_next_schedule(self, action, _max=14400):
         """
@@ -389,57 +392,6 @@ class Scheduler(object):
                 errors.append(str(exc))
         raise SchedNotAllowed(", ".join(errors))
 
-    def sched_convert_to_schedule(self, config, section, prefix=""):
-        """
-        Read and convert a deprecated schedule definition from a configuration
-        file section, handle json-formatted lists, and finally return a
-        current-style schedule string.
-        """
-        def get_val(param):
-            if not config.has_section(section) or \
-               (not config.has_option(section, param) and \
-                not config.has_option(section, prefix+param)):
-                # internal syncs
-                config_defaults = config.defaults()
-                val = config_defaults.get(prefix+param)
-            elif config.has_option(section, prefix+param):
-                val = config.get(section, prefix+param)
-            else:
-                val = config.get(section, param)
-            return str(val)
-
-        days_s = get_val("days")
-        interval_s = get_val("interval")
-        period_s = get_val("period")
-
-        if days_s == "None" or interval_s == "None" or period_s == "None":
-            return ""
-
-        try:
-            days = json.loads(days_s)
-        except:
-            self.log.error("invalid days schedule definition in section",
-                           section, days_s, file=sys.stderr)
-            return ""
-
-        try:
-            periods = json.loads(period_s)
-            elements = []
-            if is_string(periods[0]):
-                periods = [periods]
-            for period in periods:
-                elements.append("%s-%s@%s" % (period[0], period[1], interval_s))
-            period_s = ",".join(elements)
-        except:
-            self.log.error("invalid periods schedule definition in section",
-                           section, file=sys.stderr)
-            return ""
-        buff = "%(period)s %(days)s" % dict(
-            period=period_s,
-            days=",".join(days),
-        )
-        return buff.strip()
-
     def sched_get_schedule_raw(self, section, option):
         """
         Read the old/new style schedule options of a configuration file
@@ -449,47 +401,20 @@ class Scheduler(object):
         if option is None:
             raise SchedNoDefault
 
-        config = self.config
-
-        def has_old_schedule_options(config, section):
-            """
-            Return True if a configuration file section has a deprecated
-            schedule definition keyword
-            """
-            if config.has_option(section, 'sync_days') or \
-               config.has_option(section, 'sync_interval') or \
-               config.has_option(section, 'sync_period'):
-                return True
-            if config.has_option(section, 'days') or \
-               config.has_option(section, 'interval') or \
-               config.has_option(section, 'period'):
-                return True
-            return False
-
-        if config.has_section(section) and \
-           config.has_option(section, 'schedule'):
-            schedule_s = config.get(section, 'schedule')
-        elif section.startswith("sync") and config.has_section(section) and \
-             has_old_schedule_options(config, section):
-            if section.startswith("sync"):
-                prefix = "sync_"
-            elif section.startswith("app"):
-                prefix = "app_"
-            else:
-                prefix = ""
-            schedule_s = self.sched_convert_to_schedule(config, section, prefix=prefix)
-        elif section.startswith("sync") and not config.has_section(section) and (\
-              'sync_days' in config.defaults() or \
-              'sync_interval' in config.defaults() or \
-              'sync_period' in config.defaults() \
-             ):
-            schedule_s = self.sched_convert_to_schedule(config, section, prefix="sync_")
-        elif config.has_option('DEFAULT', option):
-            schedule_s = config.get('DEFAULT', option)
+        try:
+            schedule_s = self.obj.oget(section, "schedule")
+        except ValueError:
+            # keyword not found
+            schedule_s = None
+        if schedule_s is not None:
+            # explicit schedule in config data
+            pass
         elif self.svc and section in self.svc.resources_by_id and \
              hasattr(self.svc.resources_by_id[section], "default_schedule"):
+            # driver default
             schedule_s = self.svc.resources_by_id[section].default_schedule
         elif option in self.config_defaults:
+            # scheduler action default
             if section == "sync#i0":
                 schedule_s = self.config_defaults["sync#i0_schedule"]
             else:
@@ -991,7 +916,7 @@ class Scheduler(object):
         """
         The 'print schedule' node and service action entrypoint.
         """
-        if not hasattr(self, "config") or self.config is None:
+        if self.obj.cd is None:
             print("you are not allowed to print schedules", file=sys.stderr)
             raise ex.excError()
         if self.options.format is None:

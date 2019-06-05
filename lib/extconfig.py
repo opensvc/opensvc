@@ -4,6 +4,7 @@ import sys
 import re
 import os
 import copy
+import codecs
 
 import six
 import rcExceptions as ex
@@ -26,39 +27,25 @@ class ExtConfigMixin(object):
         else:
             return False
 
-    def delete_sections(self, sections):
+    def delete_sections(self, sections=None):
         """
         Delete config file sections.
         """
-        lines = self._read_cf().splitlines()
-        need_write = False
-
-        for section in sections:
-            section = "[%s]" % section
-            in_section = False
-            for i, line in enumerate(lines):
-                sline = line.strip()
-                if sline == section:
-                    in_section = True
-                    need_write = True
-                    del lines[i]
-                    while i < len(lines) and not lines[i].strip().startswith("["):
-                        del lines[i]
-
-            if not in_section:
-                self.log.info("skip delete %s: not found", section)
-
-        if not need_write:
-            return
-
-        buff = "\n".join(lines)
-
+        if sections is None:
+            sections = []
         try:
-            self._write_cf(buff)
-        except (IOError, OSError):
-            raise ex.excError("failed to rewrite %s" % self.paths.cf)
-
-        self.unset_lazy("config")
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
+        deleted = 0
+        for section in sections:
+            try:
+                del cd[section]
+                deleted += 1
+            except KeyError:
+                self.log.info("skip delete %s: not found", section)
+        if deleted:
+            self.dump_config_data()
 
     def unset(self):
         """
@@ -80,99 +67,73 @@ class ExtConfigMixin(object):
             ret += self.unset_one(_kw)
         return ret
 
-    def unset_one(self, kw):
+    def _unset(self, kw):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
         elements = kw.split(".", 1)
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
             print("malformed parameter. format as 'section.key'",
                   file=sys.stderr)
-            return 1
+            return 0
+        deleted = 0
         section, option = elements
         if section in self.default_status_groups:
-            err = 0
-            for rid in [rid for rid in self.config.sections() if rid.startswith(section+"#")]:
-                try:
-                    self._unset(rid, option)
-                except ex.excError as exc:
-                    print(exc, file=sys.stderr)
-                    err += 1
-            return err
+            for rid in self.conf_sections(section):
+                if option in cd[rid]:
+                    del cd[rid][option]
+                    deleted += 1
+            return deleted
         else:
             try:
-                self._unset(section, option)
-                return 0
-            except ex.excError as exc:
-                print(exc, file=sys.stderr)
+                del cd[section][option]
                 return 1
+            except KeyError:
+                return 0
+
+    def unset_one(self, kw, cd=None):
+        return self.unset_multi([kw])
 
     def unset_multi(self, kws):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
         if not kws:
             return
-        changed = False
-        lines = self._read_cf().splitlines()
+        deleted = 0
         for kw in kws:
             try:
                 section, option = kw.split(".", 1)
             except Exception:
                 continue
             try:
-                lines = self.unset_line(lines, section, option)
-            except ex.excError:
+                del cd[section][option]
+                deleted += 1
+            except KeyError:
                 continue
-            changed = True
-        if not changed:
-            return
+        if not deleted:
+            return 0
         try:
-            self._write_cf(lines)
+            self.dump_config_data(cd=cd)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        self.unset_all_lazy()
-        self.ref_cache = {}
+        return deleted
 
-    def _unset(self, section, option):
+    def _unset(self, section, option, cd=None):
         """
         Delete an option in the service configuration file specified section.
         """
-        lines = self._read_cf().splitlines()
-        lines = self.unset_line(lines, section, option)
         try:
-            self._write_cf(lines)
+            del cd[section][option]
+            self.dump_config_data(cd=cd)
+        except KeyError:
+            pass
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        self.unset_all_lazy()
-        self.ref_cache = {}
-
-    def unset_line(self, lines, section, option):
-        section = "[%s]" % section
-        need_write = False
-        in_section = False
-        for i, line in enumerate(lines):
-            sline = line.strip()
-            if sline == section:
-                in_section = True
-            elif in_section:
-                if sline.startswith("["):
-                    break
-                elif "=" in sline:
-                    elements = sline.split("=")
-                    _option = elements[0].strip()
-                    if option != _option:
-                        continue
-                    del lines[i]
-                    need_write = True
-                    while i < len(lines) and "=" not in lines[i] and \
-                          not lines[i].strip().startswith("[") and \
-                          lines[i].strip() != "":
-                        del lines[i]
-
-        if not in_section:
-            raise ex.excError("section %s not found" % section)
-
-        if not need_write:
-            raise ex.excError("option '%s' not found in section %s" % (option, section))
-
-        return lines
 
     def eval(self):
         """
@@ -242,7 +203,7 @@ class ExtConfigMixin(object):
         section, option = elements
         if section == "DEFAULT" and not self.has_default_section:
             raise ex.excError("the DEFAULT section is not allowed in %s" % self.paths.cf)
-        if not self.config.has_section(section):
+        if section not in self.cd:
             if section != 'DEFAULT' and self.has_default_section:
                 raise ex.OptNotFound("section [%s] not found" % section)
             if not self.has_default_section:
@@ -255,7 +216,7 @@ class ExtConfigMixin(object):
             return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
         else:
             try:
-                return self.config.get(section, option)
+                return self.cd[section][option]
             except Exception:
                 raise ex.OptNotFound()
 
@@ -276,6 +237,10 @@ class ExtConfigMixin(object):
             return self.set_mono(eval=eval)
 
     def set_multi(self, kws, eval=False, validation=True):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
         changes = []
         self.set_multi_cache = {}
         for kw in kws:
@@ -305,7 +270,7 @@ class ExtConfigMixin(object):
                 # <group>.keyword[@<scope>] format => loop over all rids in group
                 group = keyword.split(".", 1)[0]
                 if group in self.default_status_groups:
-                    for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
+                    for rid in [rid for rid in cd if rid.startswith(group+"#")]:
                         keyword = rid + keyword[keyword.index("."):]
                         changes.append(self.set_mangle(keyword, op, value, index, eval))
                 else:
@@ -317,6 +282,10 @@ class ExtConfigMixin(object):
         self._set_multi(changes, validation=validation)
 
     def set_mono(self, eval=False):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
         self.set_multi_cache = {}
         if self.options.param is None:
             print("no parameter. set --param", file=sys.stderr)
@@ -342,7 +311,7 @@ class ExtConfigMixin(object):
             # <group>.keyword[@<scope>] format => loop over all rids in group
             group = keyword.split(".", 1)[0]
             if group in self.default_status_groups:
-                for rid in [rid for rid in self.config.sections() if rid.startswith(group+"#")]:
+                for rid in [rid for rid in cd if rid.startswith(group+"#")]:
                     keyword = rid + keyword[keyword.index("."):]
                     changes.append(self.set_mangle(keyword, op, value, index, eval))
             else:
@@ -394,112 +363,49 @@ class ExtConfigMixin(object):
         return elements[0], elements[1], _value, eval
 
     def _set(self, section, option, value, validation=True):
-        self._set_multi([[section, option, value, False]],
-                        validation=validation)
+        changes = [(section, option, value, False)]
+        self._set_multi(changes, validation=validation)
+
+    def _set_one(self, section, option, value):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
+        changed = False
+        if section not in cd:
+            cd[section] = {}
+            changed = True
+        try:
+            current = cd[section][option]
+            if current != value:
+                cd[section][option] = value
+                changed = True
+        except KeyError:
+            cd[section][option] = value
+            changed = True
+        return changed
 
     def _set_multi(self, changes, validation=True):
         changed = False
-        lines = self._read_cf().splitlines()
         for change in changes:
             if change is None:
                 continue
             section, option, value, eval = change
-            lines = self.set_line(lines, section, option, value)
+            changed |= self._set_one(section, option, value)
             changed = True
         if not changed:
-            # all changes were None
             return
         try:
-            self._write_cf(lines, validation=validation)
+            self.dump_config_data(validation=validation)
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
-        self.unset_all_lazy()
-        self.ref_cache = {}
-
-    def set_line(self, lines, section, option, value):
-        """
-        Set <option> to <value> in <section> of the configuration file.
-        """
-        section = "[%s]" % section
-        done = False
-        in_section = False
-        value = try_decode(value)
-
-        for idx, line in enumerate(lines):
-            sline = line.strip()
-            if sline == section:
-                in_section = True
-            elif in_section:
-                if sline.startswith("["):
-                    if done:
-                        # matching section done and new section begins
-                        break
-                    else:
-                        # section found and parsed and no option => add option
-                        section_idx = idx
-                        while section_idx > 0 and lines[section_idx-1].strip() == "":
-                            section_idx -= 1
-                        lines.insert(section_idx, "%s = %s" % (option, value))
-                        done = True
-                        break
-                elif "=" in sline:
-                    elements = sline.split("=")
-                    _option = elements[0].strip()
-
-                    if option != _option:
-                        continue
-
-                    if done:
-                        # option already set : remove dup
-                        del lines[idx]
-                        while idx < len(lines) and "=" not in lines[idx] and \
-                              not lines[idx].strip().startswith("[") and \
-                              lines[idx].strip() != "":
-                            del lines[idx]
-                        continue
-
-                    _value = elements[1].strip()
-                    section_idx = idx
-
-                    while section_idx < len(lines)-1 and  \
-                          "=" not in lines[section_idx+1] and \
-                          not lines[section_idx+1].strip().startswith("["):
-                        section_idx += 1
-                        if lines[section_idx].strip() == "":
-                            continue
-                        _value += " %s" % lines[section_idx].strip()
-
-                    if value.replace("\n", " ") == _value:
-                        return lines
-
-                    lines[idx] = "%s = %s" % (option, value)
-                    section_idx = idx
-
-                    while section_idx < len(lines)-1 and \
-                          "=" not in lines[section_idx+1] and \
-                          not lines[section_idx+1].strip().startswith("[") and \
-                          lines[section_idx+1].strip() != "":
-                        del lines[section_idx+1]
-
-                    done = True
-
-        if not done:
-            while len(lines) > 0 and lines[-1].strip() == "":
-                lines.pop()
-            if not in_section:
-                # section in last position and no option => add section
-                lines.append("")
-                lines.append(section)
-            lines.append("%s = %s" % (option, value))
-
-        return lines
 
     #########################################################################
     #
     # config helpers
     #
     #########################################################################
-    def handle_reference(self, ref, scope=False, impersonate=None, config=None,
+    def handle_reference(self, ref, scope=False, impersonate=None, cd=None,
                          section=None):
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
@@ -652,14 +558,13 @@ class ExtConfigMixin(object):
             try:
                 val = self._handle_reference(_ref, _section, _v, scope=scope,
                                              impersonate=impersonate,
-                                             config=config)
+                                             cd=cd)
             except Exception:
                 val = None
 
             if val is None and _section != "DEFAULT" and n_dots == 0 and self.has_default_section:
                 val = self._handle_reference(ref, "DEFAULT", _v, scope=scope,
-                                             impersonate=impersonate,
-                                             config=config)
+                                             impersonate=impersonate, cd=cd)
 
             if val is None:
                 # deferred
@@ -686,9 +591,12 @@ class ExtConfigMixin(object):
         return val
 
     def _handle_reference(self, ref, _section, _v, scope=False,
-                          impersonate=None, config=None):
-        if config is None:
-            config = self.config
+                          impersonate=None, cd=None):
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
         # give os env precedence over the env cf section
         if _section == "env" and _v.upper() in os.environ:
             return os.environ[_v.upper()]
@@ -699,12 +607,12 @@ class ExtConfigMixin(object):
                 from node import Node
                 self.node = Node()
             try:
-                return self.node.config.get("node", _v)
+                return self.node.conf_get("node", _v)
             except Exception as exc:
                 raise ex.excError("%s: unresolved reference (%s)"
                                   "" % (ref, str(exc)))
 
-        if _section != "DEFAULT" and not config.has_section(_section):
+        if _section != "DEFAULT" and not _section in cd:
             raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
         # deferrable refs
@@ -722,7 +630,7 @@ class ExtConfigMixin(object):
 
         try:
             return self.conf_get(_section, _v, "string", scope=scope,
-                                 impersonate=impersonate, config=config)
+                                 impersonate=impersonate, cd=cd)
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)
         except ex.RequiredOptNotFound as exc:
@@ -731,7 +639,7 @@ class ExtConfigMixin(object):
 
         raise ex.excError("%s: unknown reference" % ref)
 
-    def _handle_references(self, s, scope=False, impersonate=None, config=None,
+    def _handle_references(self, s, scope=False, impersonate=None, cd=None,
                            section=None, first_step=None):
         if not is_string(s):
             return s
@@ -748,7 +656,7 @@ class ExtConfigMixin(object):
                 continue
             val = self.handle_reference(ref, scope=scope,
                                         impersonate=impersonate,
-                                        config=config, section=section)
+                                        cd=cd, section=section)
             if val is None:
                 # deferred
                 return
@@ -779,7 +687,7 @@ class ExtConfigMixin(object):
             s = s[:m.start()] + str(val) + s[m.end():]
             return s
 
-    def handle_references(self, s, scope=False, impersonate=None, config=None,
+    def handle_references(self, s, scope=False, impersonate=None, cd=None,
                           section=None):
         cacheable = self.cacheable(s)
         if cacheable:
@@ -789,12 +697,12 @@ class ExtConfigMixin(object):
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section,
+                                          cd=cd, section=section,
                                           first_step=True)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
-                                          config=config, section=section)
+                                          cd=cd, section=section)
         except Exception as e:
             raise
             raise ex.excError("%s: reference evaluation failed: %s"
@@ -827,11 +735,11 @@ class ExtConfigMixin(object):
         except ex.RequiredOptNotFound as exc:
             raise ex.excError(str(exc))
 
-    def get_rtype(self, s, section, config):
+    def get_rtype(self, s, section, cd):
         if section == "DEFAULT":
             return
         try:
-            return config.get(s, "type")
+            return cd[s]["type"]
         except Exception as exc:
             pass
         try:
@@ -840,19 +748,19 @@ class ExtConfigMixin(object):
             pass
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, config=None, verbose=True, rtype=None):
+                 use_default=True, cd=None, verbose=True, rtype=None):
         """
         Handle keyword and section deprecation.
         """
-        if config is None:
-            config = self.config
+        if cd is None:
+            cd = self.cd
         section = s.split("#")[0]
         if rtype:
             pass
         elif section in self.kwdict.DEPRECATED_SECTIONS:
             section, rtype = self.kwdict.DEPRECATED_SECTIONS[section]
         else:
-            rtype = self.get_rtype(s, section, config)
+            rtype = self.get_rtype(s, section, cd)
 
         if rtype:
             fkey = ".".join((section, rtype, o))
@@ -867,7 +775,7 @@ class ExtConfigMixin(object):
         try:
             return self._conf_get(s, o, t=t, scope=scope,
                                   impersonate=impersonate,
-                                  use_default=use_default, config=config,
+                                  use_default=use_default, cd=cd,
                                   section=section, rtype=rtype)
         except ex.RequiredOptNotFound:
             if deprecated_keywords is None:
@@ -884,7 +792,7 @@ class ExtConfigMixin(object):
             try:
                 return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
                                       impersonate=impersonate,
-                                      use_default=use_default, config=config,
+                                      use_default=use_default, cd=cd,
                                       section=section, rtype=rtype)
             except ex.RequiredOptNotFound:
                 exc = True
@@ -893,7 +801,7 @@ class ExtConfigMixin(object):
             raise ex.RequiredOptNotFound
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, config=None, section=None, rtype=None):
+                 use_default=True, cd=None, section=None, rtype=None):
         """
         Get keyword properties and handle inheritance.
         """
@@ -904,7 +812,7 @@ class ExtConfigMixin(object):
             "deprecated": False,
             "impersonate": impersonate,
             "use_default": use_default,
-            "config": config,
+            "cd": cd,
         }
         if s not in ("labels", "env", "data"):
             key = self.kwdict.KEYS[section].getkey(o, rtype)
@@ -968,15 +876,15 @@ class ExtConfigMixin(object):
         return globals()["convert_"+converter](val)
 
     def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                   use_default=None, config=None, default=None, required=None,
+                   use_default=None, cd=None, default=None, required=None,
                    deprecated=None):
         try:
             if not scope:
                 val = self.conf_get_val_unscoped(s, o, use_default=use_default,
-                                                 config=config)
+                                                 cd=cd)
             else:
                 val = self.conf_get_val_scoped(s, o, use_default=use_default,
-                                               config=config,
+                                               cd=cd,
                                                impersonate=impersonate)
         except ex.OptNotFound as exc:
             if required:
@@ -984,14 +892,14 @@ class ExtConfigMixin(object):
             else:
                 exc.default = copy.copy(self.handle_references(default, scope=scope,
                                                                impersonate=impersonate,
-                                                               config=config, section=s))
+                                                               cd=cd, section=s))
                 if t not in (None, "string"):
                     exc.default = self.convert(t, exc.default)
                 raise exc
         try:
             val = self.handle_references(val, scope=scope,
                                          impersonate=impersonate,
-                                         config=config, section=s)
+                                         cd=cd, section=s)
         except ex.excError as exc:
             if o.startswith("pre_") or o.startswith("post_") or \
                o.startswith("blocking_"):
@@ -1003,34 +911,37 @@ class ExtConfigMixin(object):
             return val
         return self.convert(t, val)
 
-    def conf_get_val_unscoped(self, s, o, use_default=True, config=None):
-        if config is None:
-            config = self.config
-        if config.has_option(s, o):
-            if six.PY2:
-                return config.get(s, o).encode("utf-8")
-            else:
-                return config.get(s, o)
+    def conf_get_val_unscoped(self, s, o, use_default=True, cd=None):
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
+        if s in cd and o in cd[s]:
+            return cd[s][o]
         raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
 
-    def conf_has_option_scoped(self, s, o, impersonate=None, config=None, scope_order=None):
+    def conf_has_option_scoped(self, s, o, impersonate=None, cd=None, scope_order=None):
         """
         Handles the keyword scope_order property, at and impersonate
         """
-        if config is None:
-            config = self.config
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
         if impersonate is None:
             nodename = rcEnv.nodename
         else:
             nodename = impersonate
 
-        if s != "DEFAULT" and not config.has_section(s):
+        if s != "DEFAULT" and not s in cd:
             return
 
         if s == "DEFAULT":
-            options = config.defaults().keys()
+            options = cd.get("DEFAULT", {}).keys()
         else:
-            options = config._sections[s].keys()
+            options = cd[s].keys()
 
         candidates = [
             (o+"@"+nodename, True),
@@ -1064,16 +975,19 @@ class ExtConfigMixin(object):
             if option in options and condition:
                 return option
 
-    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, config=None, scope_order=None):
-        if config is None:
-            config = self.config
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, cd=None, scope_order=None):
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
         if impersonate is None:
             nodename = rcEnv.nodename
         else:
             nodename = impersonate
 
         option = self.conf_has_option_scoped(s, o, impersonate=impersonate,
-                                             config=config,
+                                             cd=cd,
                                              scope_order=scope_order)
         if option is None and (not self.has_default_section or not use_default):
             raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
@@ -1083,46 +997,42 @@ class ExtConfigMixin(object):
                 # fallback to default
                 return self.conf_get_val_scoped("DEFAULT", o,
                                                 impersonate=impersonate,
-                                                config=config,
+                                                cd=cd,
                                                 scope_order=scope_order)
             else:
                 raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
 
         try:
-            val = config.get(s, option)
-        except Exception as e:
-            raise ex.excError("param %s.%s: %s"%(s, o, str(e)))
+            val = cd[s][option]
+        except KeyError:
+            raise ex.excError("param %s.%s is not set"%(s, o))
 
         return val
 
-    def validate_config(self, path=None):
+    def validate_config(self, cd=None, path=None):
         """
         The validate config action entrypoint.
         """
-        ret = self._validate_config(path=path)
+        ret = self._validate_config(cd=cd, path=path)
         return ret["warnings"] + ret["errors"]
 
-    def _validate_config(self, path=None):
+    def _validate_config(self, cd=None, path=None):
         """
         The validate config core method.
         Returns a dict with the list of syntax warnings and errors.
         """
-        from six.moves import configparser as ConfigParser
+        if path:
+            cd = self.parse_config_file(path)
+        elif not cd:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
 
         ret = {
             "errors": 0,
             "warnings": 0,
         }
-
-        if path is None:
-            config = self.config
-        else:
-            try:
-                config = read_cf(path)
-            except ConfigParser.Error:
-                self.log.error("error parsing %s" % path)
-                ret["errors"] += 1
-                return ret
 
         def check_scoping(key, section, option):
             """
@@ -1137,9 +1047,9 @@ class ExtConfigMixin(object):
             """
             Verify the specified option references.
             """
-            value = config.get(section, option)
+            value = cd.get(section, option)
             try:
-                value = self.handle_references(value, scope=True, config=config,
+                value = self.handle_references(value, scope=True, cd=cd,
                                                section=section)
             except ex.excError as exc:
                 if not option.startswith("pre_") and \
@@ -1157,7 +1067,7 @@ class ExtConfigMixin(object):
             Fetch the value and convert it to the expected type.
             """
             _option = option.split("@")[0]
-            value = self.conf_get(section, _option, config=config, verbose=verbose)
+            value = self.conf_get(section, _option, cd=cd, verbose=verbose)
             return value
 
         def check_candidates(key, section, option, value):
@@ -1210,21 +1120,21 @@ class ExtConfigMixin(object):
             err += check_candidates(key, section, option, value)
             return err
 
-        def validate_default_options(config, ret):
+        def validate_default_options(ret):
             """
             Validate DEFAULT section options.
             """
             if not self.has_default_section:
                 return ret
-            for option in config.defaults():
+            for option in cd.get("DEFAULT", {}):
                 key = self.kwdict.KEYS.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
                     # the option can be set in the DEFAULT section for the
                     # benefit of a resource section
-                    for section in config.sections():
+                    for section in cd:
                         family = section.split("#")[0]
-                        rtype = self.get_rtype(section, family, config)
+                        rtype = self.get_rtype(section, family, cd)
                         if family not in list(self.kwdict.KEYS.sections.keys()) + \
                            list(self.kwdict.DEPRECATED_SECTIONS.keys()):
                             continue
@@ -1242,17 +1152,17 @@ class ExtConfigMixin(object):
                     ret["errors"] += check_known_option(key, "DEFAULT", option)
             return ret
 
-        def validate_resources_options(config, ret):
+        def validate_resources_options(ret):
             """
             Validate resource sections options.
             """
-            for section in config.sections():
+            for section in cd:
                 if section in ("labels", "env", "data"):
                     # the "env" section is not handled by a resource driver, and is
                     # unknown to the self.kwdict. Just ignore it.
                     continue
                 family = section.split("#")[0]
-                rtype = self.get_rtype(section, family, config)
+                rtype = self.get_rtype(section, family, cd)
                 if family not in list(self.kwdict.KEYS.sections.keys()) + list(self.kwdict.DEPRECATED_SECTIONS.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
@@ -1261,8 +1171,8 @@ class ExtConfigMixin(object):
                     self.log.warning("deprecated section prefix %s", family)
                     ret["warnings"] += 1
                     family, rtype = self.kwdict.DEPRECATED_SECTIONS[family]
-                for option in config.options(section):
-                    if option in config.defaults():
+                for option in cd.get(section, {}):
+                    if option in cd.get("DEFAULT", {}):
                         continue
                     key = self.kwdict.KEYS.sections[family].getkey(option, rtype=rtype)
                     if key is None:
@@ -1275,7 +1185,7 @@ class ExtConfigMixin(object):
                         ret["errors"] += check_known_option(key, section, option)
             return ret
 
-        def validate_build(path, ret):
+        def validate_build(ret):
             """
             Try a service build to catch errors missed in other tests.
             """
@@ -1284,7 +1194,7 @@ class ExtConfigMixin(object):
             svc = None
             try:
                 svc = factory(self.kind)(self.svcname, namespace=self.namespace,
-                                         cf=path, node=self.node, volatile=True)
+                                         cd=cd, node=self.node, volatile=True)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
                                "build error: %s", str(exc))
@@ -1297,9 +1207,9 @@ class ExtConfigMixin(object):
                     ret["errors"] += 1
             return ret
 
-        ret = validate_build(path, ret)
-        ret = validate_default_options(config, ret)
-        ret = validate_resources_options(config, ret)
+        ret = validate_build(ret)
+        ret = validate_default_options(ret)
+        ret = validate_resources_options(ret)
 
         return ret
 
@@ -1309,62 +1219,9 @@ class ExtConfigMixin(object):
         """
         if not os.path.exists(self.paths.cf):
             return ""
-        import codecs
         with codecs.open(self.paths.cf, "r", "utf8") as ofile:
             buff = ofile.read()
         return buff
-
-    def _write_cf(self, buff, validation=True):
-        """
-        Truncate the service config file and write buff.
-        """
-        import codecs
-        import tempfile
-        import shutil
-        import stat
-        if isinstance(buff, list):
-            buff = "\n".join(buff) + "\n"
-        if hasattr(self, "svcname"):
-            prefix = self.svcname
-        else:
-            prefix = "node"
-        ofile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp, prefix=prefix)
-        fpath = ofile.name
-        os.chmod(fpath, 0o0600)
-
-        ofile.close()
-        with codecs.open(fpath, "w", "utf8") as ofile:
-            ofile.write(buff)
-            ofile.flush()
-        if validation:
-            try:
-                report = self._validate_config(fpath)
-            except Exception as exc:
-                self.log.warning("%s", exc)
-                report = {"errors": [str(exc)]}
-            if report["errors"]:
-                os.unlink(fpath)
-                raise ex.excError("the change was not saved: %s" % report)
-
-        if os.path.exists(self.paths.cf):
-            # ensure minimum final file security, but do not reset relaxed IRGRP perms
-            statinfo = os.stat(self.paths.cf)
-            if statinfo.st_uid != 0:
-                os.chown(self.paths.cf, 0, -1)
-            forbidden = stat.S_IXUSR | stat.S_IWOTH | stat.S_IROTH | stat.S_IXOTH | stat.S_IWGRP | stat.S_IXGRP
-            if statinfo.st_mode & forbidden:
-                if statinfo.st_mode & stat.S_IRGRP:
-                    mode = 0o0640
-                else:
-                    mode = 0o0600
-                os.chmod(self.paths.cf, mode)
-
-        makedirs(os.path.dirname(self.paths.cf))
-        shutil.copyfile(fpath, self.paths.cf)
-        try:
-            os.unlink(fpath)
-        except Exception:
-            pass
 
     def skip_config_section(self, section):
         return False
@@ -1374,17 +1231,15 @@ class ExtConfigMixin(object):
         Return a simple dict (OrderedDict if possible), fed with the
         service configuration sections and keys
         """
-        try:
-            from collections import OrderedDict
-            best_dict = OrderedDict
-        except ImportError:
-            best_dict = dict
-        data = best_dict()
-        tmp = best_dict()
-        if src_config is None:
-            config = self.config
+        if src_config:
+            data = self.parse_config_file(src_config)
         else:
-            config = src_config
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
+            data = {}
+            data.update(cd)
         meta = {}
         if hasattr(self, "namespace"):
             meta.update({
@@ -1397,23 +1252,6 @@ class ExtConfigMixin(object):
                 "kind": "node",
             })
 
-        defaults = config.defaults()
-        for key in defaults.keys():
-            tmp[key] = defaults[key]
-
-        data['DEFAULT'] = tmp
-        config._defaults = {}
-
-        sections = config.sections()
-        for section in sections:
-            options = config.options(section)
-            tmpsection = best_dict()
-            for option in options:
-                if config.has_option(section, option):
-                    tmpsection[option] = config.get(section, option)
-            data[section] = tmpsection
-        if src_config is None:
-            unset_lazy(self, "config")
         if not evaluate:
             data["metadata"] = meta
             return data
@@ -1442,12 +1280,19 @@ class ExtConfigMixin(object):
 
     @lazy
     def labels(self):
+        try:
+            cd = self.private_cd
+        except AttributeError:
+            cd = self.cd
         data = {}
         try:
-            for label in self.config.options("labels"):
-                if label in self.config.defaults():
+            for label, value in cd.get("labels", {}).items():
+                try:
+                    cd["DEFAULT"][label]
                     continue
-                data[label] = self.config.get("labels", label)
+                except KeyError:
+                    pass
+                data[label] = value
         except Exception:
             pass
         return data
@@ -1467,12 +1312,98 @@ class ExtConfigMixin(object):
                 kwargs[keyword.keyword] = exc.default
         return kwargs
 
-    def conf_sections(self, cat=None, src_config=None):
-        if src_config is None:
-            config = self.config
-        else:
-            config = src_config
-        for section in config.sections():
+    def conf_sections(self, cat=None, cd=None):
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
+        for section in cd:
             if cat is None or section.startswith(cat+"#"):
                 yield section
+
+    def parse_config_file(self, cf=None):
+        if cf is None:
+            cf = self.paths.cf
+        try:
+            config = read_cf(cf)
+        except Exception as exc:
+            raise ex.excError("error parsing %s: %s" % (cf, exc))
+        try:
+            from collections import OrderedDict
+            best_dict = OrderedDict
+        except ImportError:
+            best_dict = dict
+        data = best_dict()
+        tmp = best_dict()
+        defaults = config.defaults()
+        for key in defaults.keys():
+            tmp[key] = defaults[key]
+
+        if tmp:
+            data['DEFAULT'] = tmp
+        config._defaults = {}
+
+        sections = config.sections()
+        for section in sections:
+            options = config.options(section)
+            tmpsection = best_dict()
+            for option in options:
+                if config.has_option(section, option):
+                    tmpsection[option] = config.get(section, option)
+            data[section] = tmpsection
+        return data
+
+    def dump_config_data(self, cd=None, cf=None, validation=True):
+        """
+        Installs a service configuration file from section, keys and values
+        fed from a data structure.
+        """
+        if cd is None:
+            try:
+                cd = self.private_cd
+            except AttributeError:
+                cd = self.cd
+        if cf is None:
+            cf = self.paths.cf
+        if not isinstance(cd, dict):
+            return
+        if "metadata" in cd:
+            del cd["metadata"]
+        if hasattr(self, "new_id") and "id" not in cd.get("DEFAULT", {}):
+            if "DEFAULT" not in cd:
+                cd["DEFAULT"] = {}
+            current_id = self.parse_config_file(cf).get("DEFAULT", {}).get("id")
+            if current_id:
+                cd["DEFAULT"]["id"] = current_id
+            else:
+                cd["DEFAULT"]["id"] = self.new_id()
+        if validation:
+            ret = self._validate_config()
+            if ret["errors"]:
+                raise ex.excError
+
+        makedirs(os.path.dirname(cf))
+        import rcConfigParser
+        config = rcConfigParser.RawConfigParser()
+
+        for section_name, section in cd.items():
+            if section_name != "DEFAULT":
+                config.add_section(section_name)
+            for key, value in section.items():
+                config.set(section_name, key, value)
+
+        try:
+            if six.PY2:
+                with codecs.open(cf, "w", "utf-8") as ofile:
+                    os.chmod(cf, 0o0600)
+                    config.write(ofile)
+            else:
+                with open(cf, "w") as ofile:
+                    os.chmod(cf, 0o0600)
+                    config.write(ofile)
+        except Exception as exc:
+            raise ex.excError("failed to write %s: %s" % (cf, exc))
+        self.unset_all_lazy()
+        self.ref_cache = {}
 
