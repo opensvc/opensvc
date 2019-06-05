@@ -1,6 +1,5 @@
 import os
 import logging
-from six.moves import configparser as ConfigParser
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
