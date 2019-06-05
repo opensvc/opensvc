@@ -2832,7 +2832,7 @@ class Node(Crypt, ExtConfigMixin):
         except Exception:
             pass
         svc = factory(kind)(name, namespace=namespace, cf=fpath, node=self, volatile=True)
-        svc.validate_config(fpath)
+        svc.validate_config(path=fpath)
         svc.options.format = "json"
         data = {
             svc.svcpath: svc._print_config()
