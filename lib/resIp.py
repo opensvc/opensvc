@@ -563,7 +563,7 @@ class Ip(Res.Resource):
         """
         Request an ip in the ipdev network from the collector.
         """
-        if self.node.collector_env.dbopensvc is None:
+        if self.svc.node.collector_env.dbopensvc is None:
             return
 
         try:
@@ -645,7 +645,7 @@ class Ip(Res.Resource):
         """
         Release an allocated ip a collector managed network.
         """
-        if self.node.collector_env.dbopensvc is None:
+        if self.svc.node.collector_env.dbopensvc is None:
             return
 
         if self.ipname is None:
