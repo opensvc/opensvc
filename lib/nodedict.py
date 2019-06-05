@@ -622,6 +622,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
     {
         "section": "listener",
         "keyword": "tls_port",
+        "convert": "integer",
         "default": 1215,
         "text": """The port the daemon tls listener must listen on."""
     },
@@ -635,6 +636,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
     {
         "section": "listener",
         "keyword": "port",
+        "convert": "integer",
         "default": 1214,
         "text": """The port the daemon listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the 'dequeue actions' node action upon receive. The listener.port parameter is sent to the collector upon pushasset. The collector uses this port to notify the node."""
     },
