@@ -1590,30 +1590,30 @@ class Listener(shared.OsvcThread):
                 },
             },
         }
-        config = shared.NODE.get_config(cluster=False)
-        if config.has_option("node", "env"):
+        config = shared.NODE.private_cd
+        node_section = config.get("node", {})
+        cluster_section = config.get("cluster", {})
+        if "env" in node_section:
             result["data"]["node"]["data"]["node"]["env"] = shared.NODE.env
-        if config.has_option("cluster", "nodes"):
+        if "nodes" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["nodes"] = " ".join(new_nodes)
-        if config.has_option("cluster", "name"):
+        if "name" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["name"] = self.cluster_name
-        if config.has_option("cluster", "drpnodes"):
+        if "drpnodes" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["drpnodes"] = " ".join(self.cluster_drpnodes)
-        if config.has_option("cluster", "id"):
+        if "id" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["id"] = self.cluster_id
-        if config.has_option("cluster", "quorum"):
+        if "quorum" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["quorum"] = self.quorum
-        if config.has_option("cluster", "dns"):
+        if "dns" in cluster_section:
             result["data"]["node"]["data"]["cluster"]["dns"] = " ".join(shared.NODE.dns)
-        for section in config.sections():
+        for section in config:
             if section.startswith("hb#") or \
                section.startswith("stonith#") or \
                section.startswith("pool#") or \
                section.startswith("network#") or \
                section.startswith("arbitrator#"):
-                result["data"]["node"]["data"][section] = {}
-                for key, val in config.items(section):
-                    result["data"]["node"]["data"][section][key] = val
+                result["data"]["node"]["data"][section] = config[section]
         from cluster import ClusterSvc
         svc = ClusterSvc(volatile=True, node=shared.NODE)
         if svc.exists():

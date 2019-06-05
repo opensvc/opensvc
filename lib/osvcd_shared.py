@@ -659,8 +659,7 @@ class OsvcThread(threading.Thread, Crypt):
         if nodename in self.cluster_nodes:
             return
         nodes = self.cluster_nodes + [nodename]
-        config = NODE.get_config(cluster=False)
-        if config.has_option("cluster", "nodes"):
+        if "nodes" in NODE.private_cd.get("cluster", {}):
             NODE.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
         else:
             from cluster import ClusterSvc
