@@ -2914,7 +2914,9 @@ class Node(Crypt, ExtConfigMixin):
                 data[section] = {}
             data[section][option] = val
         current_env = data.get("env", {})
-        data["env"] = self.svc_conf_setenv(env, interactive, current_env)
+        new_env = self.svc_conf_setenv(env, interactive, current_env)
+        if new_env:
+            data["env"] = new_env
         return data
 
     def svc_conf_setenv(self, args=None, interactive=False, env=None):
