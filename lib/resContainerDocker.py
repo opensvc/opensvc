@@ -119,8 +119,8 @@ class Container(resContainer.Container):
         self.privileged = privileged
         self.interactive = interactive
         self.tty = tty
-        self.volume_mounts = volume_mounts
-        self.devices = devices
+        self.volume_mounts = volume_mounts if volume_mounts else []
+        self.devices = devices if devices else []
         self.volumes = {}
         self.environment = environment
         self.secrets_environment = secrets_environment
