@@ -465,7 +465,7 @@ class Ip(Res.Resource):
         """
         Post a dns update request to the collector.
         """
-        if self.node.collector_env.dbopensvc is None:
+        if self.svc.node.collector_env.dbopensvc is None:
             return
 
         if self.ipname is None:
