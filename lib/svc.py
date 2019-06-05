@@ -1696,7 +1696,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if refpath != self.paths.cf:
                 os.unlink(refpath)
             return 0
-        results = self._validate_config(path=path)
         if need_send:
             try:
                 return self.node.install_service(self.svcpath, fpath=path,
@@ -1705,6 +1704,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 os.unlink(refpath)
                 os.unlink(path)
         else:
+            results = self._validate_config(path=path)
             if results["errors"] == 0:
                 shutil.copy(path, self.paths.cf)
                 os.unlink(path)
