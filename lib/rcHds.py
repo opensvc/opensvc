@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import logging
 import os
-import rcConfigParser
 import sys
 import json
 from xml.etree.ElementTree import XML, fromstring

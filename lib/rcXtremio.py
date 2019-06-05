@@ -5,7 +5,6 @@ import os
 import json
 import logging
 from optparse import Option
-from six.moves import configparser as ConfigParser
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv

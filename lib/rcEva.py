@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import sys
 
-from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv

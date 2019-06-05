@@ -6,7 +6,6 @@ import json
 from optparse import Option
 
 import rcExceptions as ex
-from rcConfigParser import RawConfigParser
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, factory, split_svcpath

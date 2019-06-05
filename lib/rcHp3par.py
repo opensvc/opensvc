@@ -8,7 +8,6 @@ import re
 import datetime
 from subprocess import *
 
-from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache, justcall, which
@@ -205,11 +204,9 @@ class Hp3par(object):
     def get_uuid(self):
         if self.uuid is not None:
             return self.uuid
-        config = ConfigParser.RawConfigParser()
-        config.read(rcEnv.paths.nodeconf)
         try:
-            self.uuid = config.get("node", "uuid")
-        except:
+            self.uuid = self.node.conf_get("node", "uuid")
+        except ex.OptNotFound:
             pass
         return self.uuid
 

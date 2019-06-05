@@ -4,7 +4,6 @@ import os
 import tempfile
 from subprocess import *
 
-from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcUtilities import which, factory, split_svcpath
 from rcGlobalEnv import rcEnv

@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import sys
 
-from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which

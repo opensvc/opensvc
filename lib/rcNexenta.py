@@ -4,7 +4,6 @@ import base64
 import os
 
 import rcExceptions as ex
-from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv

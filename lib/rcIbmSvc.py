@@ -4,7 +4,6 @@ import os
 import sys
 
 import rcExceptions as ex
-from six.moves import configparser as ConfigParser
 
 from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv

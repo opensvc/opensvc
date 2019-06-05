@@ -7,7 +7,6 @@ import json
 import time
 
 import rcExceptions as ex
-from six.moves import configparser as ConfigParser
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from storage import Storage
