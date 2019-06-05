@@ -3391,7 +3391,7 @@ class Monitor(shared.OsvcThread):
         data.provisioned = self.get_agg_provisioned(svcpath)
         return data
 
-    def get_agg_services(self, paths=None):
+    def get_all_svcpaths(self):
         svcpaths = set()
         with shared.CLUSTER_DATA_LOCK:
             for nodename, data in shared.CLUSTER_DATA.items():
@@ -3400,7 +3400,11 @@ class Monitor(shared.OsvcThread):
                         svcpaths.add(svcpath)
                 except KeyError:
                     continue
+        return svcpaths
+
+    def get_agg_services(self, paths=None):
         data = {}
+        svcpaths = self.get_all_svcpaths()
         for svcpath in svcpaths:
             try:
                 if self.get_service(svcpath).topology == "span":
@@ -3452,7 +3456,7 @@ class Monitor(shared.OsvcThread):
         if namespaces is None:
             paths = None
         else:
-            paths = [p for p in shared.SMON_DATA if split_svcpath(p)[1] in namespaces]
+            paths = [p for p in self.get_all_svcpaths() if split_svcpath(p)[1] in namespaces]
         data = shared.OsvcThread.status(self, **kwargs)
         data["nodes"] = self.filter_cluster_data(paths)
         data["compat"] = self.compat
