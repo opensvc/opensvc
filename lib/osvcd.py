@@ -309,7 +309,7 @@ class Daemon(object):
             changed |= self.start_thread("dns", Dns)
         if self.need_start("listener"):
             changed |= self.start_thread("listener", Listener)
-        if shared.NODE and rcEnv.dbopensvc and self.need_start("collector"):
+        if shared.NODE and shared.NODE.collector_env.dbopensvc and self.need_start("collector"):
             changed |= self.start_thread("collector", Collector)
         if self.need_start("monitor"):
             changed |= self.start_thread("monitor", Monitor)

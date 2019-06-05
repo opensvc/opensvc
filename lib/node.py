@@ -157,7 +157,6 @@ class Node(Crypt, ExtConfigMixin):
             value=None,
             extra_argv=[],
         )
-        self.set_collector_env()
         self.log = rcLogger.initLogger(rcEnv.nodename)
         self.stats_data = {}
         self.stats_updated = 0
@@ -502,72 +501,74 @@ class Node(Crypt, ExtConfigMixin):
 
         return transport, host, port, app
 
-    def set_collector_env(self):
+    @lazy
+    def collector_env(self):
         """
-        Store the collector connection elements parsed from the node.conf
-        node.uuid, node.dbopensvc and node.dbcompliance as properties of the
-        rcEnv class.
+        Return the collector connection elements parsed from the node config
+        node.uuid, node.dbopensvc and node.dbcompliance as a Storage().
         """
+        data = Storage()
         url = self.oget("node", "dbopensvc")
         if url:
             try:
                 (
-                    rcEnv.dbopensvc_transport,
-                    rcEnv.dbopensvc_host,
-                    rcEnv.dbopensvc_port,
-                    rcEnv.dbopensvc_app
+                    data.dbopensvc_transport,
+                    data.dbopensvc_host,
+                    data.dbopensvc_port,
+                    data.dbopensvc_app
                 ) = self.split_url(url, default_app="feed")
-                rcEnv.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (
-                    rcEnv.dbopensvc_transport,
-                    rcEnv.dbopensvc_host,
-                    rcEnv.dbopensvc_port,
-                    rcEnv.dbopensvc_app
+                data.dbopensvc = "%s://%s:%s/%s/default/call/xmlrpc" % (
+                    data.dbopensvc_transport,
+                    data.dbopensvc_host,
+                    data.dbopensvc_port,
+                    data.dbopensvc_app
                 )
             except ex.excError as exc:
                 self.log.error("malformed dbopensvc url: %s (%s)",
-                               rcEnv.dbopensvc, str(exc))
+                               url, str(exc))
         else:
-            rcEnv.dbopensvc_transport = None
-            rcEnv.dbopensvc_host = None
-            rcEnv.dbopensvc_port = None
-            rcEnv.dbopensvc_app = None
-            rcEnv.dbopensvc = None
+            data.dbopensvc_transport = None
+            data.dbopensvc_host = None
+            data.dbopensvc_port = None
+            data.dbopensvc_app = None
+            data.dbopensvc = None
 
         url = self.oget("node", "dbcompliance")
         if url:
             try:
                 (
-                    rcEnv.dbcompliance_transport,
-                    rcEnv.dbcompliance_host,
-                    rcEnv.dbcompliance_port,
-                    rcEnv.dbcompliance_app
+                    data.dbcompliance_transport,
+                    data.dbcompliance_host,
+                    data.dbcompliance_port,
+                    data.dbcompliance_app
                 ) = self.split_url(url, default_app="init")
-                rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
-                    rcEnv.dbcompliance_transport,
-                    rcEnv.dbcompliance_host,
-                    rcEnv.dbcompliance_port,
-                    rcEnv.dbcompliance_app
+                data.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
+                    data.dbcompliance_transport,
+                    data.dbcompliance_host,
+                    data.dbcompliance_port,
+                    data.dbcompliance_app
                 )
             except ex.excError as exc:
                 self.log.error("malformed dbcompliance url: %s (%s)",
-                               rcEnv.dbcompliance, str(exc))
+                               url, str(exc))
         else:
-            rcEnv.dbcompliance_transport = rcEnv.dbopensvc_transport
-            rcEnv.dbcompliance_host = rcEnv.dbopensvc_host
-            rcEnv.dbcompliance_port = rcEnv.dbopensvc_port
-            rcEnv.dbcompliance_app = "init"
-            rcEnv.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
-                rcEnv.dbcompliance_transport,
-                rcEnv.dbcompliance_host,
-                rcEnv.dbcompliance_port,
-                rcEnv.dbcompliance_app
+            data.dbcompliance_transport = data.dbopensvc_transport
+            data.dbcompliance_host = data.dbopensvc_host
+            data.dbcompliance_port = data.dbopensvc_port
+            data.dbcompliance_app = "init"
+            data.dbcompliance = "%s://%s:%s/%s/compliance/call/xmlrpc" % (
+                data.dbcompliance_transport,
+                data.dbcompliance_host,
+                data.dbcompliance_port,
+                data.dbcompliance_app
             )
 
         node_uuid = self.oget("node", "uuid")
         if node_uuid:
-            rcEnv.uuid = node_uuid
+            data.uuid = node_uuid
         else:
-            rcEnv.uuid = ""
+            data.uuid = ""
+        return data
 
     def call(self, *args, **kwargs):
         """
@@ -1930,15 +1931,16 @@ class Node(Crypt, ExtConfigMixin):
         else:
             register_fn = "register_as_node"
         try:
-            rcEnv.uuid = getattr(self, register_fn)()
+            uuid = getattr(self, register_fn)()
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return 1
 
         try:
-            self.set_multi(["node.uuid="+rcEnv.uuid])
+            self.set_multi(["node.uuid="+uuid])
+            self.unset_lazy("collector_env")
         except ex.excError:
-            print("failed to write registration number: %s" % rcEnv.uuid,
+            print("failed to write registration number: %s" % uuid,
                   file=sys.stderr)
             return 1
 
@@ -2493,9 +2495,9 @@ class Node(Crypt, ExtConfigMixin):
                 data["password"] = password
                 data["save"] = False
             if self.options.api is None:
-                if rcEnv.dbopensvc is None:
+                if self.collector_env.dbopensvc is None:
                     raise ex.excError("node.dbopensvc is not set in node.conf")
-                data["api"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
+                data["api"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         else:
             data["user"] = self.options.user
             data["password"] = self.options.password
@@ -2581,9 +2583,9 @@ class Node(Crypt, ExtConfigMixin):
         Prepare the authentication info, either as node or as user.
         Fetch and cache the collector's exposed rest api metadata.
         """
-        if rcEnv.dbopensvc is None:
+        if self.collector_env.dbopensvc is None:
             raise ex.excError("node.dbopensvc is not set in node.conf")
-        elif rcEnv.dbopensvc_host == "none":
+        elif self.collector_env.dbopensvc_host == "none":
             raise ex.excError("node.dbopensvc is set to 'none' in node.conf")
         data = {}
         if self.options.user is None:
@@ -2594,7 +2596,7 @@ class Node(Crypt, ExtConfigMixin):
             username, password = self.collector_auth_user()
         data["username"] = username
         data["password"] = password
-        data["url"] = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        data["url"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         if not data["url"].startswith("http"):
             data["url"] = "https://%s" % data["url"]
         return data

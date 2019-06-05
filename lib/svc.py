@@ -931,7 +931,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return False
         if not os.path.exists(self.paths.cf):
             return False
-        if rcEnv.dbopensvc is None or action in ACTIONS_NO_LOG or \
+        if self.node.collector_env.dbopensvc is None or action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
            action.startswith("docker") or \
            action.startswith("podman") or \

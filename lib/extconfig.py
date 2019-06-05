@@ -516,8 +516,12 @@ class ExtConfigMixin(object):
         elif _ref == "private_var":
             val = self.var_d
         elif _ref == "collector_api":
-            if rcEnv.dbopensvc:
-                val = rcEnv.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api") if rcEnv.dbopensvc else ""
+            if has_node:
+                url = self.node.collector_env.dbopensvc
+            else:
+                url = self.collector_env.dbopensvc
+            if url:
+                val = url.replace("/feed/default/call/xmlrpc", "/init/rest/api") if url else ""
             else:
                 val = ""
         elif _ref == "dnsuxsockd":
