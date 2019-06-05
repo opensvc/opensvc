@@ -78,7 +78,8 @@ class Mount(Res.Mount):
         return self.mount_generic()
 
     def mount_zfs(self):
-        if not self.encap and not self.svc.config.has_option(self.rid, 'zone') and zfs_getprop(self.device, 'zoned') != 'off':
+        zone = self.svc.oget(self.rid, "zone")
+        if not self.encap and not zone and zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
                 raise ex.excError
         if zfs_getprop(self.device, 'mountpoint') == "legacy":

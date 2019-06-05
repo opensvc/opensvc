@@ -45,7 +45,7 @@ class Disk(resDisk.Disk):
             self.log.debug("shared param defaults to 'false' due to single "
                            "node configuration")
             return False
-        l = [option for option in self.svc.config.options(self.rid) if \
+        l = [option for option in self.svc.cd[self.rid] if \
              option.startswith("uuid@")]
         if len(l) > 0:
             self.log.debug("shared param defaults to 'false' due to scoped "

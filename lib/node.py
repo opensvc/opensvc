@@ -747,7 +747,7 @@ class Node(Crypt, ExtConfigMixin):
                     else:
                         group = param
                         _param = None
-                    rids = [section for section in svc.config.sections() if group == "" or section.split('#')[0] == group]
+                    rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
                     if op == ":" and len(rids) > 0 and _param is None:
                         return True
                     elif _param:
@@ -4278,7 +4278,7 @@ class Node(Crypt, ExtConfigMixin):
         # remove obsolete cluster configurations
         svc = factory("ccfg")(node=self)
         todo = []
-        for section in svc.config.sections():
+        for section in svc.conf_sections():
             if section == "cluster" or \
                section.startswith("hb#") or \
                section.startswith("arbitrator#"):

@@ -152,7 +152,7 @@ class CloudVm(resContainer.Container):
         return self.get_image(self.save_name)
 
     def get_template(self):
-        template = self.svc.config.defaults()['template']
+        template = self.svc.oget(self.rid, "template")
         return self.get_image(template)
 
     def get_image(self, name):

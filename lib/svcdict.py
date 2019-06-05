@@ -486,6 +486,7 @@ KEYWORDS = [
         "keyword": "virtinst",
         "rtype": ["kvm", "xen", "ovm"],
         "text": "The virt-install command to use to create the container.",
+        "convert": "shlex",
         "required": True,
         "provisioning": True
     },

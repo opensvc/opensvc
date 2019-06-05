@@ -63,8 +63,7 @@ class Prov(provFs.Prov):
         else:
             label = self.label
             raw_label = self.raw_label
-        self.r.svc.config.set(self.r.rid, "dev", "LABEL="+raw_label)
-        self.r.svc.write_config()
+        self.r.svc.set_multi(["%s.dev=%s" % (self.r.rid, "LABEL="+raw_label)])
         self.r.unset_lazy("device")
         self.wait_label(label)
 

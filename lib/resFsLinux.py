@@ -502,8 +502,8 @@ class Mount(Res.Mount):
         return ret, out, err
 
     def mount_zfs(self):
-        if not self.encap and \
-           not self.svc.config.has_option(self.rid, 'zone') and \
+        zone = self.svc.oget(self.rid, "zone")
+        if not self.encap and not zone and \
            zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
                 raise ex.excError

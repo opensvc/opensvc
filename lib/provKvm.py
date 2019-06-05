@@ -1,29 +1,25 @@
 import provisioning
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from rcUtilities import which, lazy
 import os
 import rcExceptions as ex
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
+        self.virtinst_cfdisk = []
 
-        self.section = r.svc.config.defaults()
+    @lazy
+    def snapof(self):
+        return self.r.svc.oget(self.r.rid, "snapof")
 
-        if 'snapof' in self.section:
-            self.snapof = self.section['snapof']
-        else:
-            self.snapof = None
+    @lazy
+    def snap(self):
+        return self.r.svc.oget(self.r.rid, "snap")
 
-        if 'snap' in self.section:
-            self.snap = self.section['snap']
-        else:
-            self.snap = None
-
-        if 'virtinst' in self.section:
-            self.virtinst = self.section['virtinst']
-        else:
-            self.virtinst = None
+    @lazy
+    def virtinst(self):
+        return self.r.svc.oget(self.r.rid, "virtinst")
 
     def check_kvm(self):
         if os.path.exists(self.r.cf):
@@ -34,7 +30,8 @@ class Prov(provisioning.Prov):
         if self.virtinst is None:
             self.r.log.error("the 'virtinst' parameter must be set")
             raise ex.excError
-        ret, out, err = self.r.vcall(self.virtinst.split())
+        cmd = [] + self.virtinst + self.virtinst_cfdisk
+        ret, out, err = self.r.vcall(cmd)
         if ret != 0:
             raise ex.excError
 
@@ -132,7 +129,7 @@ class Prov(provisioning.Prov):
         except:
             self.r.log.error("failed to create config disk")
             raise ex.excError
-        self.virtinst += " --disk path=%s,device=floppy"%cfdisk
+        self.virtinst_cfdisk = ["--disk", "path=%s,device=floppy"%cfdisk]
         self.r.log.info("created config disk with content;\n%s", config)
 
     def provisioner(self):

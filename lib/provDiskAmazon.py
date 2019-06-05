@@ -10,8 +10,7 @@ class Prov(provisioning.Prov):
         for volume in self.r.volumes:
             self._provisioner(volume)
         volumes = ' '.join(self.volumes_done)
-        self.r.svc.config.set(self.r.rid, "volumes", volumes)
-        self.r.svc.write_config()
+        self.r.svc.set_multi(["%s.volumes=%s" % (self.r.rid, volumes)])
         self.r.volumes = self.volumes_done
         self.r.log.info("provisioned")
         self.r.start()
