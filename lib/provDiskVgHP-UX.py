@@ -3,22 +3,28 @@ import os
 import json
 import rcExceptions as ex
 from stat import *
-from rcUtilities import justcall
+from rcUtilities import justcall, lazy
 import glob
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
         provisioning.Prov.__init__(self, r)
-        self.pvs = r.svc.config.get(self.r.rid, 'pvs')
-        self.pvs = self.pvs.split()
+
+    @lazy
+    def options(self):
+        return self.r.svc.oget(self.r.rid, 'options').split()
+
+    @lazy
+    def pvs(self):
         try:
-            self.options = r.svc.config.get(self.r.rid, 'options').split()
+            pvs = self.r.svc.oget(self.r.rid, 'pvs')
         except:
-            self.options = []
+            raise ex.excError("pvs provisioning keyword is not set")
+        pvs = pvs.split()
         l = []
-        for pv in self.pvs:
+        for pv in pvs:
             l += glob.glob(pv)
-        self.pvs = l
+        return l
 
     def provisioner(self):
         if self.r.has_it():

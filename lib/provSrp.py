@@ -3,7 +3,7 @@ from rcGlobalEnv import rcEnv
 import os
 import socket
 import rcExceptions as ex
-from rcUtilities import which
+from rcUtilities import which, lazy
 
 class Prov(provisioning.Prov):
     def __init__(self, r):
@@ -11,15 +11,21 @@ class Prov(provisioning.Prov):
 
         self.name = r.name
         self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
-        try:
-            self.prm_cores = r.svc.config.get(r.rid, 'prm_cores')
-        except:
-            self.prm_cores = "1"
-        self.ip = r.svc.config.get(r.rid, 'ip')
-        self.ip = self.lookup(self.ip)
         self.need_start = []
 
+    @lazy
+    def ip(self):
+        ip = self.r.svc.oget(self.r.rid, "ip")
+        return self.lookup(ip)
+
+    @lazy
+    def prm_cores(self):
+        return self.r.svc.oget(self.r.rid, "prm_cores")
+
     def lookup(self, ip):
+        if ip is None:
+            raise ex.excError("the ip provisioning keyword is not set")
+
         try:
             int(ip[0])
             # already in cidr form
@@ -34,7 +40,7 @@ class Prov(provisioning.Prov):
             ip = a[0][-1][0]
             return ip
         except:
-            raise ex.excError("could not resolve %s to an ip address"%self.ip)
+            raise ex.excError("could not resolve %s to an ip address"%ip)
 
     def validate(self):
         # False triggers provisioner, True skip provisioner

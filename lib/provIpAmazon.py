@@ -15,9 +15,9 @@ class Prov(provisioning.Prov):
         return True
 
     def cascade_allocation(self):
-        if not self.r.svc.config.has_option(self.r.rid, "cascade_allocation"):
+        cascade = self.r.svc.oget(self.r.rid, "cascade_allocation")
+        if not cascade:
             return
-        cascade = self.r.svc.config.get(self.r.rid, "cascade_allocation").split()
         need_write = False
         for e in cascade:
             try:
@@ -37,9 +37,7 @@ class Prov(provisioning.Prov):
             self.r.svc.write_config()
 
     def provisioner_docker_ip(self):
-        if not self.r.svc.config.has_option(self.r.rid, "docker_daemon_ip"):
-            return
-        if not self.r.svc.config.get(self.r.rid, "docker_daemon_ip"):
+        if not self.r.svc.oget(self.r.rid, "docker_daemon_ip"):
             return
         args = self.r.svc.oget('DEFAULT', 'docker_daemon_args')
         args += ["--ip", self.r.ipname]

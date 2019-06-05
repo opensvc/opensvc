@@ -52,17 +52,17 @@ class Prov(provisioning.Prov):
             r.tags.remove("preboot")
             r.tags.remove("postboot")
 
-            # Add nonrouted tag if no gateway provisioning keyword is passed
-            if not self.r.svc.config.has_option(r.rid, "gateway"):
+            try:
+                default_route = self.r.svc.conf_get(r.rid, "gateway")
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
+                # Add nonrouted tag if no gateway provisioning keyword is passed
                 self.r.tags.add("nonrouted")
-
-            if not self.r.svc.config.has_option(r.rid, "gateway"):
                 continue
-            default_route = self.r.svc.config.get(r.rid, "gateway")
 
-            if not self.r.svc.config.has_option(r.rid, "netmask"):
+            try:
+                netmask = self.r.svc.oget(r.rid, "netmask")
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
                 continue
-            netmask = self.r.svc.config.get(r.rid, "netmask")
 
             if s == "":
                 s += "network_interface=%s {primary\n"%r.ipdev
@@ -73,8 +73,7 @@ class Prov(provisioning.Prov):
                 s += " default_route=%s}\n"%default_route
 
             # save new service env file
-            self.r.svc._set_multi(r.rid, "tags", ' '.join(r.tags))
-
+        self.r.svc.set_multi(["%s.tags=%s" % (r.rid, ' '.join(r.tags))])
         return s
 
     def get_tz(self):
