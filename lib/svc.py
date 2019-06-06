@@ -2443,6 +2443,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     pass
 
     def set_purge_collector_tag(self):
+        if not self.node.collector_env.dbopensvc:
+            return
         if not self.options.purge_collector:
             return
         try:
