@@ -496,7 +496,7 @@ class Listener(shared.OsvcThread):
                     pass
                 try:
                     del self.events_clients[idx]
-                except KeyError:
+                except IndexError:
                     pass
                 try:
                     del self.stats.sessions.alive[sid]
