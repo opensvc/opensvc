@@ -35,6 +35,9 @@ class HbRelay(Hb):
         self._configure()
 
     def _configure(self):
+        if self.name not in shared.NODE.cd:
+            # this thread will be stopped. don't reconfigure to avoid logging errors
+            return
         self.get_hb_nodes()
         self.peer_config = {}
         self.timeout = shared.NODE.oget(self.name, "timeout")

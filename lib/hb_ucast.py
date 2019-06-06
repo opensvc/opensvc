@@ -43,6 +43,10 @@ class HbUcast(Hb):
         self.get_hb_nodes()
         peer_config = {}
 
+        if self.name not in shared.NODE.cd:
+            # this thread will be stopped. don't reconfigure to avoid logging errors
+            return
+
         # peers
         for nodename in self.hb_nodes:
             if nodename not in peer_config:

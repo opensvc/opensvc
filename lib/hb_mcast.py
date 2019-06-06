@@ -56,6 +56,9 @@ class HbMcast(Hb):
 
     def apply_changes(self):
         changed = False
+        if self.name not in shared.NODE.cd:
+            # this thread will be stopped. don't reconfigure to avoid logging errors
+            return changed
         self.get_hb_nodes()
         prev = {
             "port": self.port,
