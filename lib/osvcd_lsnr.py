@@ -630,15 +630,16 @@ class Listener(shared.OsvcThread):
             data.add(ns)
         return data
 
-    def user_grants(self, usr):
+    def user_grants(self, usr, all_ns=None):
         grants = usr.oget("DEFAULT", "grant")
-        return self.parse_grants(grants)
+        return self.parse_grants(grants, all_ns=all_ns)
 
-    def parse_grants(self, grants):
+    def parse_grants(self, grants, all_ns=None):
         data = {}
         if not grants:
             return data
-        all_ns = self.get_all_ns()
+        if all_ns is None:
+            all_ns = self.get_all_ns()
         for _grant in grants.split():
             if ":" in _grant:
                 role_sel, ns_sel = _grant.split(":", 1)
@@ -662,6 +663,10 @@ class Listener(shared.OsvcThread):
                     continue
                 if role not in data:
                     data[role] = None
+        # make sure all ns roles have a key, to avoid checking the key existance
+        for role in rcEnv.ns_roles:
+            if role not in data:
+                data[role] = set()
         return data
 
     def rbac_requires(self, namespaces=None, roles=None, usr=None, grants=None, action=None, **kwargs):
@@ -712,47 +717,60 @@ class Listener(shared.OsvcThread):
             return
         if not payload:
             return
-        grants = self.user_grants(usr)
+        all_ns = self.get_all_ns()
+        grants = self.user_grants(usr, all_ns)
         if "root" in grants:
             return []
         errors = []
-        for path, _data in payload.items():
-            name, namespace, kind = split_svcpath(path)
-            self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
-            try:
-                orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)
-            except:
-                orig_obj = None
-            try:
-                obj = factory(kind)(name, namespace=namespace, volatile=True, cd=_data, node=shared.NODE)
-            except Exception as exc:
-                errors.append("%s: unbuildable config: %s" % (path, exc))
-                continue
-            if kind == "vol":
-                errors.append("%s: volume create requires the root privilege" % path)
-            elif kind == "ccfg":
-                errors.append("%s: cluster config create requires the root privilege" % path)
-            elif kind == "svc":
-                groups = ["disk", "fs", "app", "share", "sync"]
-                for r in obj.get_resources(groups):
-                    if r.rid == "sync#i0":
-                        continue
-                    errors.append("%s: resource %s requires the root privilege" % (path, r.rid))
-                for r in obj.get_resources("task"):
-                    if r.type not in ("task.podman", "task.docker"):
-                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-                for r in obj.get_resources("container"):
-                    if r.type not in ("container.podman", "container.docker"):
-                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-                for r in obj.get_resources("ip"):
-                    if r.type not in ("ip.cni"):
-                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-            for section, sdata in _data.items():
-                rtype = _data[section].get("type")
-                errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj)
+        for path, cd in payload.items():
+            errors += self.rbac_create_obj(path, cd, usr, grants, all_ns, **kwargs)
         return errors
 
-    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj, orig_obj):
+    def rbac_create_obj(self, path, cd, usr, grants, all_ns, **kwargs):
+        errors = []
+        name, namespace, kind = split_svcpath(path)
+        if namespace not in all_ns:
+            if "squatter" not in grants:
+                errors.append("%s: create the new namespace %s requires the squatter cluster role" % (path, namespace))
+                return errors
+            elif namespace not in grants["admin"]:
+                usr.set_multi(["grant+=admin:%s" % namespace])
+                grants["admin"].add(namespace)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
+        try:
+            orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)
+        except:
+            orig_obj = None
+        try:
+            obj = factory(kind)(name, namespace=namespace, volatile=True, cd=cd, node=shared.NODE)
+        except Exception as exc:
+            errors.append("%s: unbuildable config: %s" % (path, exc))
+            return errors
+        if kind == "vol":
+            errors.append("%s: volume create requires the root privilege" % path)
+        elif kind == "ccfg":
+            errors.append("%s: cluster config create requires the root privilege" % path)
+        elif kind == "svc":
+            groups = ["disk", "fs", "app", "share", "sync"]
+            for r in obj.get_resources(groups):
+                if r.rid == "sync#i0":
+                    continue
+                errors.append("%s: resource %s requires the root privilege" % (path, r.rid))
+            for r in obj.get_resources("task"):
+                if r.type not in ("task.podman", "task.docker"):
+                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
+            for r in obj.get_resources("container"):
+                if r.type not in ("container.podman", "container.docker"):
+                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
+            for r in obj.get_resources("ip"):
+                if r.type not in ("ip.cni"):
+                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
+        for section, sdata in cd.items():
+            rtype = cd[section].get("type")
+            errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj, all_ns)
+        return errors
+
+    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj, orig_obj, all_ns):
         errors = []
         for key, val in sdata.items():
             if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
@@ -796,12 +814,12 @@ class Listener(shared.OsvcThread):
             if section == "DEFAULT" and _key == "cn":
                 errors += self.rbac_kw_cn(path, _val, orig_obj)
             elif section == "DEFAULT" and _key == "grant":
-                errors += self.rbac_kw_grant(path, _val, user_grants)
+                errors += self.rbac_kw_grant(path, _val, user_grants, all_ns)
         return errors
 
-    def rbac_kw_grant(self, path, val, user_grants):
+    def rbac_kw_grant(self, path, val, user_grants, all_ns):
         errors = []
-        req_grants = self.parse_grants(val)
+        req_grants = self.parse_grants(val, all_ns)
         for role, namespaces in req_grants.items():
             if namespaces is None:
                 # cluster roles
