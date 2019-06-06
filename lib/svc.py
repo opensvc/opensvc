@@ -5085,10 +5085,10 @@ class Svc(BaseSvc):
         for rid in rids:
             if disable:
                 self.log.info("set %s.disable = true", rid)
-                changes.append("%s.disable=true")
+                changes.append("%s.disable=true" % rid)
             elif "disable" in self.cd[rid]:
                 self.log.info("remove %s.disable", rid)
-                unsets.append("%s.disable")
+                unsets.append("%s.disable" % rid)
 
             #
             # if we set <section>.disable = <bool>,
@@ -5098,7 +5098,7 @@ class Svc(BaseSvc):
                 items = {}
             else:
                 items = self.cd[rid]
-            for option, value in items:
+            for option, value in items.items():
                 if not option.startswith("disable@"):
                     continue
                 if value == True:
