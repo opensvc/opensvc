@@ -6,7 +6,7 @@ import os
 import resources as Res
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, factory, fmt_svcpath, split_svcpath
+from rcUtilities import lazy, factory, fmt_svcpath, split_svcpath, makedirs
 
 class Volume(Res.Resource):
     """
@@ -62,6 +62,7 @@ class Volume(Res.Resource):
         return self.volsvc.device()
 
     def stop(self):
+        self.uninstall_flag()
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.volname)
             return
@@ -75,17 +76,39 @@ class Volume(Res.Resource):
             raise ex.excError("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.excError
+        self.install_flag()
         self.install_secrets()
         self.install_configs()
         self.can_rollback = True
         self.unset_lazy("device")
         self.unset_lazy("mount_point")
 
+    @lazy
+    def flag_path(self):
+        return os.path.join(self.var_d, "flag")
+
+    def flag_installed(self):
+        return os.path.exists(self.flag_path)
+
+    def uninstall_flag(self):
+        try:
+            os.unlink(self.flag_path)
+        except Exception as exc:
+            pass
+
+    def install_flag(self):
+        makedirs(os.path.dirname(self.flag_path))
+        with open(self.flag_path, "w"):
+            pass
+
     def _status(self, verbose=False):
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
             return rcStatus.DOWN
         status = rcStatus.Status(self.volsvc.print_status_data()["avail"])
+        if not self.flag_installed():
+            self.status_log("%s is %s" % (self.volsvc.svcpath, status), "info")
+            return rcStatus.DOWN
         return status
 
     def exposed_devs(self):
