@@ -437,7 +437,7 @@ class Node(Crypt, ExtConfigMixin):
     @lazy
     def arbitrators(self):
         arbitrators = []
-        for section in self.conf_sections("arbitrators", cd=self.cd):
+        for section in self.conf_sections("arbitrator", cd=self.cd):
             data = {
                 "id": section,
             }
