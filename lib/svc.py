@@ -60,6 +60,7 @@ ACTION_NO_ASYNC = [
 
 ACTION_ANY_NODE = {
     "decode",
+    "delete",
     "eval",
     "gen_cert",
     "get",
