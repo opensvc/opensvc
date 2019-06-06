@@ -125,7 +125,7 @@ class Crypt(object):
         """
         To be redefined by Crypt child classes
         """
-        return object()
+        return Storage()
 
     @staticmethod
     def _encrypt(message, key, _iv):
