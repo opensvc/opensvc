@@ -643,9 +643,7 @@ class Listener(shared.OsvcThread):
             if ":" in _grant:
                 role_sel, ns_sel = _grant.split(":", 1)
                 for role in role_sel.split(","):
-                    if role in rcEnv.cluster_roles:
-                        continue
-                    if role not in rcEnv.roles:
+                    if role not in rcEnv.ns_roles:
                         continue
                     if role not in data:
                         data[role] = set()
@@ -660,8 +658,6 @@ class Listener(shared.OsvcThread):
                                         data[equiv].add(_ns)
             else:
                 role = _grant
-                if role not in rcEnv.roles:
-                    continue
                 if role not in rcEnv.cluster_roles:
                     continue
                 if role not in data:
@@ -724,6 +720,10 @@ class Listener(shared.OsvcThread):
             name, namespace, kind = split_svcpath(path)
             self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
             try:
+                orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)
+            except:
+                orig_obj = None
+            try:
                 obj = factory(kind)(name, namespace=namespace, volatile=True, cd=_data, node=shared.NODE)
             except Exception as exc:
                 errors.append("%s: unbuildable config: %s" % (path, exc))
@@ -749,10 +749,10 @@ class Listener(shared.OsvcThread):
                         errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
             for section, sdata in _data.items():
                 rtype = _data[section].get("type")
-                errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj)
+                errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj)
         return errors
 
-    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj):
+    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj, orig_obj):
         errors = []
         for key, val in sdata.items():
             if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
@@ -764,6 +764,7 @@ class Listener(shared.OsvcThread):
             except Exception as exc:
                 errors.append("%s: %s" % (path, exc))
                 continue
+            # scopable
             for n in obj.nodes | obj.drpnodes:
                 _val = obj.oget(section, _key, impersonate=n)
                 if _key in ("container_data_dir") and _val:
@@ -791,19 +792,38 @@ class Listener(shared.OsvcThread):
                 if section.startswith("ip#") and _key == "netns" and _val in (None, "host"):
                     errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
+            # unscopable
             if section == "DEFAULT" and _key == "cn":
-                errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                continue
-            if section == "DEFAULT" and _key == "grant":
-                req_grants = self.parse_grants(_val)
-                if "root" in req_grants:
-                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                    continue
-                for role, namespaces in req_grants.items():
-                    delta = set(namespaces) - set(user_grants.get(role, []))
-                    if delta:
-                        delta = sorted(list(delta))
-                        errors.append("%s: keyword %s.%s=%s: missing privilege %s:%s" % (path, section, key, _val, role, ",".join(delta)))
+                errors += self.rbac_kw_cn(path, _val, orig_obj)
+            elif section == "DEFAULT" and _key == "grant":
+                errors += self.rbac_kw_grant(path, _val, user_grants)
+        return errors
+
+    def rbac_kw_grant(self, path, val, user_grants):
+        errors = []
+        req_grants = self.parse_grants(val)
+        for role, namespaces in req_grants.items():
+            if namespaces is None:
+                # cluster roles
+                if role not in user_grants:
+                    errors.append("%s: keyword grant=%s requires the %s cluster role" % (path, val, role))
+            else:
+                # namespaces roles
+                delta = set(namespaces) - set(user_grants.get(role, []))
+                if delta:
+                    delta = sorted(list(delta))
+                    errors.append("%s: keyword grant=%s requires the %s:%s privilege" % (path, val, role, ",".join(delta)))
+        return errors
+
+    def rbac_kw_cn(self, path, val, orig_obj):
+        errors = []
+        try:
+            orig_cn = orig_obj.oget("DEFAULT", "cn")
+        except Exception:
+            orig_cn = None
+        if orig_cn == val:
+            return []
+        errors.append("%s: keyword cn=%s requires the root role" % (path, val))
         return errors
 
     #########################################################################
