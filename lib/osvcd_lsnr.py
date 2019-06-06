@@ -673,10 +673,10 @@ class Listener(shared.OsvcThread):
             # ux and aes socket are not constrainted by rbac
             return
         if roles is None:
-            roles = ["clusteradmin"]
+            roles = ["root"]
         if grants is None:
             grants = self.user_grants(usr)
-        if "clusteradmin" in grants:
+        if "root" in grants:
             return grants
         if isinstance(namespaces, (list, tuple)):
             namespaces = set(namespaces)
@@ -717,7 +717,7 @@ class Listener(shared.OsvcThread):
         if not payload:
             return
         grants = self.user_grants(usr)
-        if "clusteradmin" in grants:
+        if "root" in grants:
             return []
         errors = []
         for path, _data in payload.items():
@@ -729,24 +729,24 @@ class Listener(shared.OsvcThread):
                 errors.append("%s: unbuildable config: %s" % (path, exc))
                 continue
             if kind == "vol":
-                errors.append("%s: volume create requires the clusteradmin privilege" % path)
+                errors.append("%s: volume create requires the root privilege" % path)
             elif kind == "ccfg":
-                errors.append("%s: cluster config create requires the clusteradmin privilege" % path)
+                errors.append("%s: cluster config create requires the root privilege" % path)
             elif kind == "svc":
                 groups = ["disk", "fs", "app", "share", "sync"]
                 for r in obj.get_resources(groups):
                     if r.rid == "sync#i0":
                         continue
-                    errors.append("%s: resource %s requires the clusteradmin privilege" % (path, r.rid))
+                    errors.append("%s: resource %s requires the root privilege" % (path, r.rid))
                 for r in obj.get_resources("task"):
                     if r.type not in ("task.podman", "task.docker"):
-                        errors.append("%s: resource %s type %s requires the clusteradmin privilege" % (path, r.rid, r.type))
+                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
                 for r in obj.get_resources("container"):
                     if r.type not in ("container.podman", "container.docker"):
-                        errors.append("%s: resource %s type %s requires the clusteradmin privilege" % (path, r.rid, r.type))
+                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
                 for r in obj.get_resources("ip"):
                     if r.type not in ("ip.cni"):
-                        errors.append("%s: resource %s type %s requires the clusteradmin privilege" % (path, r.rid, r.type))
+                        errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
             for section, sdata in _data.items():
                 rtype = _data[section].get("type")
                 errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj)
@@ -756,7 +756,7 @@ class Listener(shared.OsvcThread):
         errors = []
         for key, val in sdata.items():
             if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
-                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, val))
+                errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, val))
                 continue
             _key = key.split("@")[0]
             try:
@@ -768,36 +768,36 @@ class Listener(shared.OsvcThread):
                 _val = obj.oget(section, _key, impersonate=n)
                 if _key in ("container_data_dir") and _val:
                     if _val.startswith("/"):
-                        errors.append("%s: keyword %s.%s=%s host paths require the clusteradmin role" % (path, section, key, _val))
+                        errors.append("%s: keyword %s.%s=%s host paths require the root role" % (path, section, key, _val))
                         continue
                 if _key in ("devices", "volume_mounts") and _val:
                     _errors = []
                     for __val in _val:
                         if __val.startswith("/"):
-                            _errors.append("%s: keyword %s.%s=%s host paths require the clusteradmin role" % (path, section, key, __val))
+                            _errors.append("%s: keyword %s.%s=%s host paths require the root role" % (path, section, key, __val))
                             continue
                     if _errors:
                         errors += _errors
                         break
                 if section == "DEFAULT" and _key == "monitor_action" and _val not in ("freezestop", None):
-                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
                 if section.startswith("container#") and _key == "netns" and _val == "host":
-                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
                 if section.startswith("container#") and _key == "privileged" and _val not in ("false", False, None):
-                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
                 if section.startswith("ip#") and _key == "netns" and _val in (None, "host"):
-                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
             if section == "DEFAULT" and _key == "cn":
-                errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                 continue
             if section == "DEFAULT" and _key == "grant":
                 req_grants = self.parse_grants(_val)
-                if "clusteradmin" in req_grants:
-                    errors.append("%s: keyword %s.%s=%s requires the clusteradmin role" % (path, section, key, _val))
+                if "root" in req_grants:
+                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     continue
                 for role, namespaces in req_grants.items():
                     delta = set(namespaces) - set(user_grants.get(role, []))
@@ -1040,7 +1040,7 @@ class Listener(shared.OsvcThread):
                 "nodes": self.cluster_nodes,
             }
         }
-        if grants is None or "clusteradmin" in grants:
+        if grants is None or "root" in grants:
             allowed_namespaces = None
         else:
             allowed_namespaces = grants.get("guest", [])
@@ -1726,7 +1726,7 @@ class Listener(shared.OsvcThread):
         svcpath = options.get("svcpath")
         action_options = options.get("options", {})
 
-        role = "clusteradmin"
+        role = "root"
         if action in GUEST_ACTIONS:
             role = "guest"
         elif action in OPERATOR_ACTIONS:
@@ -1806,7 +1806,7 @@ class Listener(shared.OsvcThread):
                     return o
 
         if cmd:
-            # compat, requires clusteradmin
+            # compat, requires root
             self.rbac_requires(**kwargs)
         else:
             cmd = [action]

@@ -119,9 +119,9 @@ class rcEnv:
     os.environ["OSVC_SESSION_UUID"] = session_uuid
 
     cluster_roles = [
-        "clusteradmin",
+        "root",
         "blacklistadmin",
-        "nsadmin",
+        "squatter",
     ]
     ns_roles = [
         "admin",
