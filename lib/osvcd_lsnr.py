@@ -730,7 +730,10 @@ class Listener(shared.OsvcThread):
         errors = []
         name, namespace, kind = split_svcpath(path)
         if namespace not in all_ns:
-            if "squatter" not in grants:
+            if namespace == "system":
+                errors.append("%s: create the new namespace system requires the root cluster role")
+                return errors
+            elif "squatter" not in grants:
                 errors.append("%s: create the new namespace %s requires the squatter cluster role" % (path, namespace))
                 return errors
             elif namespace not in grants["admin"]:
