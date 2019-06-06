@@ -345,11 +345,25 @@ class Daemon(object):
             with shared.THREADS_LOCK:
                 shared.THREADS = self.threads
 
-    def get_config_mtime(self, first=True):
+    def init_nodeconf(self):
+        if not os.path.exists(rcEnv.paths.pathetc):
+            self.log.info("create dir %s", rcEnv.paths.pathetc)
+            os.makedirs(rcEnv.paths.pathetc)
+        if not os.path.exists(rcEnv.paths.nodeconf):
+            self.log.info("create %s", rcEnv.paths.nodeconf)
+            with open(rcEnv.paths.nodeconf, "a") as ofile:
+                ofile.write("")
+            os.chmod(rcEnv.paths.nodeconf, 0o0600)
+
+    def get_config_mtime(self):
         try:
             mtime = os.path.getmtime(rcEnv.paths.nodeconf)
+        except (OSError, IOError):
+            self.init_nodeconf()
+            mtime = os.path.getmtime(rcEnv.paths.nodeconf)
         except Exception as exc:
-            return 0
+            self.log.warning("failed to get node config mtime: %s", exc)
+            mtime = 0
         try:
             cmtime = os.path.getmtime(rcEnv.paths.clusterconf)
         except Exception as exc:
