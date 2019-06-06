@@ -717,6 +717,7 @@ class Monitor(shared.OsvcThread):
         svcpaths = [svcpath for svcpath in shared.SMON_DATA]
         self.get_agg_services()
         for svcpath in svcpaths:
+            self.clear_start_failed(svcpath)
             transitions = self.transition_count()
             if transitions > shared.NODE.max_parallel:
                 self.duplog("info", "delay services orchestration: "
@@ -1794,6 +1795,21 @@ class Monitor(shared.OsvcThread):
             return False
         self.duplog("info", "in rejoin grace period", nodename="")
         return True
+
+    def clear_start_failed(self, svcpath):
+        try:
+            avail = shared.AGG[svcpath].avail
+        except KeyError:
+            avail = "unknown"
+        if avail != "up":
+            return
+        smon = self.get_service_monitor(svcpath)
+        if not smon:
+            return
+        if smon.status != "start failed":
+            return
+        self.log.info("clear %s start failed: the service is up", svcpath)
+        self.set_smon(svcpath, status="idle")
 
     def local_children_down(self, svc):
         missing = []
