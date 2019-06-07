@@ -424,7 +424,6 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "tristate",
         "text": "Keep stdin open even if not attached. To use if the container entrypoint is a shell.",
-        "example": "container#0"
     },
     {
         "sections": ["task", "container"],
@@ -433,7 +432,6 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "tristate",
         "text": "Allocate a pseudo-tty.",
-        "example": "container#0"
     },
     {
         "sections": ["task", "container"],
