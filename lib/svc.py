@@ -1917,6 +1917,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             timeout = convert_duration(timeout)
         if nodename is None:
             nodename = self.options.node
+        if options is None:
+            options = {}
         if want_context():
             secret = None
             cluster_name = None

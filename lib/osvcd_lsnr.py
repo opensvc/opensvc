@@ -1767,6 +1767,9 @@ class Listener(shared.OsvcThread):
         svcpath = options.get("svcpath")
         action_options = options.get("options", {})
 
+        if action_options is None:
+            action_options = {}
+
         role = "root"
         if action in GUEST_ACTIONS:
             role = "guest"

@@ -319,7 +319,7 @@ class Rsync(resSync.Sync):
         Typically make use of files received in var/.
         Use a long waitlock timeout to give a chance to remote syncs to finish.
         """
-        self.svc.daemon_service_action(['postsync', '--waitlock=3600'],
+        self.svc.daemon_service_action(action="postsync", options={"waitlock": "1h"},
                                        nodename=nodename, sync=False,
                                        collect=False)
 
