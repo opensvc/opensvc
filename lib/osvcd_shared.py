@@ -1267,6 +1267,10 @@ class OsvcThread(threading.Thread, Crypt):
             ("sync#i0", "disable", "true"),
             ("DEFAULT", "orchestrate", "ha"),
             ("DEFAULT", "nodes", "*"),
+            ("DEFAULT", "monitor_action", "switch"),
+            ("DEFAULT", "monitor_schedule", "@1m"),
+            ("ip#0", "monitor", "true"),
+            ("ip#0", "restart", "1"),
         ]
         self.log.info("cluster vip %s" % default_cidr)
         for node in self.cluster_nodes:
