@@ -680,7 +680,7 @@ class Ip(Res.Resource):
         if "info" in data:
             self.log.info(data["info"])
 
-        self.svc.unset_one("%s.ipname" % self.rid)
+        self.svc.unset_multi(["%s.ipname" % self.rid])
         self.log.info("ip %s released", self.ipname)
 
     def expose_data(self):

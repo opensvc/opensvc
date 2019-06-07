@@ -63,39 +63,7 @@ class ExtConfigMixin(object):
             print("no keyword specified. set --kw <keyword>", file=sys.stderr)
             return 1
         ret = 0
-        for _kw in kw:
-            ret += self.unset_one(_kw)
-        return ret
-
-    def _unset(self, kw):
-        try:
-            cd = self.private_cd
-        except AttributeError:
-            cd = self.cd
-        elements = kw.split(".", 1)
-        if self.has_default_section and len(elements) == 1:
-            elements.insert(0, "DEFAULT")
-        elif len(elements) != 2:
-            print("malformed parameter. format as 'section.key'",
-                  file=sys.stderr)
-            return 0
-        deleted = 0
-        section, option = elements
-        if section in self.default_status_groups:
-            for rid in self.conf_sections(section):
-                if option in cd[rid]:
-                    del cd[rid][option]
-                    deleted += 1
-            return deleted
-        else:
-            try:
-                del cd[section][option]
-                return 1
-            except KeyError:
-                return 0
-
-    def unset_one(self, kw, cd=None):
-        return self.unset_multi([kw])
+        return self.unset_multi(kw)
 
     def unset_multi(self, kws):
         try:
@@ -109,7 +77,8 @@ class ExtConfigMixin(object):
             try:
                 section, option = kw.split(".", 1)
             except Exception:
-                continue
+                section = "DEFAULT"
+                option = kw
             try:
                 del cd[section][option]
                 deleted += 1
@@ -122,18 +91,6 @@ class ExtConfigMixin(object):
         except (IOError, OSError) as exc:
             raise ex.excError(str(exc))
         return deleted
-
-    def _unset(self, section, option, cd=None):
-        """
-        Delete an option in the service configuration file specified section.
-        """
-        try:
-            del cd[section][option]
-            self.dump_config_data(cd=cd)
-        except KeyError:
-            pass
-        except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
 
     def eval(self):
         """
