@@ -223,10 +223,12 @@ def flatten_list(data):
     for idx, entry in enumerate(data):
         if not isinstance(entry, dict):
             continue
-        for key, val in entry.items():
+        for key in [k for k in entry]:
+            val = entry[key]
             if not isinstance(val, dict):
                 continue
-            for _key, _val in val.items():
+            for _key in [k for k in val]:
+                _val = val[_key]
                 agg_key = key + "." + _key
                 data[idx][agg_key] = _val
             del data[idx][key]
