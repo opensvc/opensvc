@@ -1428,7 +1428,8 @@ class Listener(shared.OsvcThread):
                 raise ex.excError("no destination node specified")
             else:
                 nodes = [node for node, inst in instances.items() \
-                              if inst.get("avail") not in ("up", "warn", "n/a")]
+                              if inst.get("avail") not in ("up", "warn", "n/a") and \
+                              inst.get("monitor", {}).get("status") != "started"]
                 count = len(nodes)
                 if count == 0:
                     raise ex.excError("no candidate destination node")

@@ -1025,7 +1025,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "monitor_action",
         "at": True,
-        "candidates": ("reboot", "crash", "freezestop"),
+        "candidates": ("reboot", "crash", "freezestop", "switch"),
         "text": "The action to take when a monitored resource is not up nor standby up, and if the resource restart procedure has failed.",
         "example": "reboot"
     },

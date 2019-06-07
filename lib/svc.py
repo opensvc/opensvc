@@ -1079,7 +1079,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     err = 1
             elif action in ACTIONS_CF_CHANGE:
                 self.wake_monitor()
-            self.clear_action(action, err, force=options.notify)
+            if action != "toc":
+                self.clear_action(action, err, force=options.notify)
             if action not in ("sync_all", "run"):
                 # sync_all and run handle notfications at the resource level
                 self.notify_done(action)
@@ -5064,10 +5065,10 @@ class Svc(BaseSvc):
 
     def switch(self):
         """
-        Orchestrated move a failover running instance to another node.
-        Implicitely the other node in a 2-nodes cluster.
+        The "switch" Monitor Action implementation.
         """
-        pass
+        self.stop()
+        self.set_service_monitor(status="start failed", global_expect="placed")
 
     def set_disable(self, rids=None, disable=True):
         """
