@@ -31,7 +31,7 @@ class Sec(DataMixin, BaseSvc):
         if self.oget("DEFAULT", "cn") and "certificate" not in self.data_keys():
             self.gen_cert()
 
-    def add_key(self, key, data):
+    def _add_key(self, key, data):
         if not key:
             raise ex.excError("secret key name can not be empty")
         if not data:

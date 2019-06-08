@@ -51,6 +51,7 @@ def signal_handler(*args):
 
 # Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
+    "add",
     "clear",
     "edit_config",
     "logs",
@@ -709,6 +710,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Acquire the service action lock.
         """
+        if want_context():
+            return
         suffix = None
         if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
            action in ACTIONS_NO_LOCK or \
@@ -1064,7 +1067,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.save_exc()
         finally:
             self.running_action = None
-            if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
+            if not want_context() and \
+               action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
                not (action == "delete" and not self.command_is_scoped()):
                 data = self.print_status_data(refresh=True)
                 if action == "start" and not self.command_is_scoped() and \
@@ -1542,6 +1546,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         In other words, the nodename is not a service node or drpnode, nor the
         service mode is cloud proxy.
         """
+        if want_context():
+            return
         if action in ACTIONS_ALLOW_ON_INVALID_NODE:
             return
         if self.svc_env != 'PRD' and self.node.env == 'PRD':

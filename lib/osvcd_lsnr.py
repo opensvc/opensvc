@@ -1232,13 +1232,34 @@ class Listener(shared.OsvcThread):
             return self._action_get_service_config_file(nodename, **kwargs)
 
     def action_get_secret_key(self, nodename, **kwargs):
+        return self.action_get_key(nodename, **kwargs)
+
+    def action_get_key(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if kind  "cfg":
+            role = "guest"
+        else:
+            # sec, usr
+            role = "admin"
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
+        key = options.get("key")
+        try:
+            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
+        except Exception as exc:
+            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+
+    def action_set_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
         name, namespace, kind = split_svcpath(svcpath)
         self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         key = options.get("key")
+        data = options.get("data")
+        shared.SERVICES[svcpath].add_key(key, data)
         try:
-            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
+            return {"status": 0}
         except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
 

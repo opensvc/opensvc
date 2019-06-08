@@ -7,7 +7,7 @@ import shutil
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory
+from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory, want_context
 from svc import BaseSvc
 from converters import print_size
 import rcExceptions as ex
@@ -16,6 +16,32 @@ import rcStatus
 class DataMixin(object):
     def add(self):
         self._add(self.options.key, self.options.value_from)
+
+    def _add_key(self, key, data):
+        pass
+
+    def add_key(self, key, data):
+        if want_context():
+            self.remote_add_key(key, data)
+        else:
+            self._add_key(key, data)
+
+    def remote_add_key(self, key, data):
+        req = {
+            "action": "set_key",
+            "node": "ANY",
+            "options": {
+                "svcpath": self.svcpath,
+                "key": key,
+                "data": data,
+            }
+        }
+        result = self.daemon_send(req, timeout=5)
+        status, error, info = self.parse_result(result)
+        if info:
+            print(info)
+        if status:
+            raise ex.excError(error)
 
     def _add(self, key=None, value_from=None):
         if key and sys.stdin and value_from in ("-", "/dev/stdin"):

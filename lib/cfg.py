@@ -25,7 +25,7 @@ class Cfg(DataMixin, BaseSvc):
     def kwdict(self):
         return __import__("cfgdict")
 
-    def add_key(self, key, data):
+    def _add_key(self, key, data):
         if not key:
             raise ex.excError("configuration key name can not be empty")
         if not data:

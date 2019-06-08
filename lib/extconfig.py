@@ -1289,6 +1289,8 @@ class ExtConfigMixin(object):
         try:
             config = read_cf(cf)
         except Exception as exc:
+            import traceback
+            traceback.print_stack()
             raise ex.excError("error parsing %s: %s" % (cf, exc))
         try:
             from collections import OrderedDict
