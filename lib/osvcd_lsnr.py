@@ -1237,12 +1237,12 @@ class Listener(shared.OsvcThread):
     def action_get_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
+        name, namespace, kind = split_svcpath(svcpath)
         if kind == "cfg":
             role = "guest"
         else:
             # sec, usr
             role = "admin"
-        name, namespace, kind = split_svcpath(svcpath)
         self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
         key = options.get("key")
         try:
