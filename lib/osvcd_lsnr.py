@@ -1237,7 +1237,7 @@ class Listener(shared.OsvcThread):
     def action_get_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if kind  "cfg":
+        if kind == "cfg":
             role = "guest"
         else:
             # sec, usr
