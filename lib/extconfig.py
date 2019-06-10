@@ -1275,10 +1275,7 @@ class ExtConfigMixin(object):
 
     def conf_sections(self, cat=None, cd=None):
         if cd is None:
-            try:
-                cd = self.private_cd
-            except AttributeError:
-                cd = self.cd
+            cd = self.cd
         for section in cd:
             if cat is None or section.startswith(cat+"#"):
                 yield section
