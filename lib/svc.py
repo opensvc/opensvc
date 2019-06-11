@@ -1273,7 +1273,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         For encap commands
         """
         cmd = sys.argv[1:]
-        cmd = drop_option("--local", cmd, drop_value=False)
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("-s", cmd, drop_value=True)
         cmd = drop_option("--service", cmd, drop_value=True)
