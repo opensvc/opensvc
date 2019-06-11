@@ -801,7 +801,7 @@ class Listener(shared.OsvcThread):
                     if _errors:
                         errors += _errors
                         break
-                if section == "DEFAULT" and _key == "monitor_action" and _val not in ("freezestop", None):
+                if section == "DEFAULT" and _key == "monitor_action" and _val not in ("freezestop", "switch", None):
                     errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
                     break
                 if section.startswith("container#") and _key == "netns" and _val == "host":
