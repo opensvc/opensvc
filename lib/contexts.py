@@ -85,17 +85,18 @@ def get_context(context=None):
     info["user"] = udata
     info["namespace"] = namespace
     
-    key = info.get("user", {}).get("client_key")
-    if key is None:
-        raise ex.excError("invalid context '%s'. user.%s.client_key not found in %s" % (context, user, fpath))
-    if not os.path.exists(key):
-        raise ex.excError("invalid context '%s'. user.%s.client_key %s not found" % (context, user, key))
     cert = info.get("user", {}).get("client_certificate")
     if cert is None:
         raise ex.excError("invalid context '%s'. user.%s.client_certificate not found in %s" % (context, user, fpath))
     if not os.path.exists(cert):
         raise ex.excError("invalid context '%s'. user.%s.client_certificate %s not found" % (context, user, cert))
 
+    key = info.get("user", {}).get("client_key")
+    if key is None:
+        # consider 'client_certificate' points to a full pem
+        info["user"]["client_key"] = cert
+    elif not os.path.exists(key):
+        raise ex.excError("invalid context '%s'. user.%s.client_key %s not found" % (context, user, key))
     #print(json.dumps(info, indent=4))
     return info
 
