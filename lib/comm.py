@@ -170,6 +170,8 @@ class Crypt(object):
         only element.
         """
         node = self.get_node()
+        if want_context():
+            return node._daemon_status()["cluster"]["nodes"]
         nodes = node.oget("cluster", "nodes")
 
         if nodes:
@@ -193,6 +195,8 @@ class Crypt(object):
         configuration. If not set, return an empty list.
         """
         node = self.get_node()
+        if want_context():
+            return node._daemon_status()["cluster"].get("drpnodes", [])
         nodes = node.oget("cluster", "drpnodes")
         return nodes
 
