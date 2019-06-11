@@ -23,6 +23,8 @@ DEPRECATED_KEYWORDS = {
   "DEFAULT.affinity": "hard_affinity",
   "DEFAULT.anti_affinity": "hard_anti_affinity",
   "DEFAULT.docker_data_dir": "container_data_dir",
+  "DEFAULT.flex_min_nodes": "flex_min",
+  "DEFAULT.flex_max_nodes": "flex_max",
   "disk.lvm.vgname": "name",
   "disk.pool.poolname": "name",
   "disk.vg.vgname": "name",
@@ -49,6 +51,8 @@ REVERSE_DEPRECATED_KEYWORDS = {
   "DEFAULT.hard_affinity": "affinity",
   "DEFAULT.hard_anti_affinity": "anti_affinity",
   "DEFAULT.container_data_dir": "docker_data_dir",
+  "DEFAULT.flex_min": "flex_min_nodes",
+  "DEFAULT.flex_max": "flex_max_nodes",
   "container.docker.image": "run_image",
   "container.docker.command": "run_command",
   "container.docker.netns": "net",
@@ -795,7 +799,7 @@ KEYWORDS = [
         "at": True,
         "default": "failover",
         "candidates": ["failover", "flex"],
-        "text": "failover: the service is allowed to be up on one node at a time. flex: the service can be up on n out of m nodes (n <= m), n/m must be in the [flex_min_nodes, flex_max_nodes] range."
+        "text": "failover: the service is allowed to be up on one node at a time. flex: the service can be up on 'flex_target' nodes, where flex_target must be in the [flex_min, flex_max] range."
     },
     {
         "section": "DEFAULT",
@@ -822,7 +826,7 @@ KEYWORDS = [
         "default": "no",
         "convert": "string",
         "candidates": ("ha", "start", "no"),
-        "text": "If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't start missing instances to meet the flex_min_nodes target, though the <flex_min_nodes>th instances on best placement leaders are started if the instances minimum quota is not already reached. Resource restart is still active whatever the orchestrate value.",
+        "text": "If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't restart the flex_target number of up instances. Resource restart is still active whatever the orchestrate value.",
     },
     {
         "section": "DEFAULT",
@@ -859,21 +863,30 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
-        "keyword": "flex_min_nodes",
+        "keyword": "flex_min",
         "inheritance": "head",
         "default": 1,
         "convert": "integer",
         "depends": [("topology", ["flex"])],
-        "text": "Minimum number of active nodes in the cluster. Below this number alerts are raised by the collector, and the collector won't stop any more service instances."
+        "text": "Minimum number of up instances in the cluster. Below this number the aggregated service status is degraded to warn.."
     },
     {
         "section": "DEFAULT",
-        "keyword": "flex_max_nodes",
+        "keyword": "flex_max",
         "inheritance": "head",
-        "default_text": "<number of peer nodes>",
+        "default_text": "<number of svc nodes>",
         "convert": "integer",
         "depends": [("topology", ["flex"])],
-        "text": "Maximum number of active nodes in the cluster. Above this number alerts are raised by the collector, and the collector won't start any more service instances. 0 means unlimited."
+        "text": "Maximum number of up instances in the cluster. Above this number the aggregated service status is degraded to warn. 0 means unlimited."
+    },
+    {
+        "section": "DEFAULT",
+        "keyword": "flex_target",
+        "inheritance": "head",
+        "default_text": "<the value of flex_min>",
+        "convert": "integer",
+        "depends": [("topology", ["flex"])],
+        "text": "Optimal number of up instances in the cluster. The value must be between flex_min and flex_max. If orchestrate=ha, The monitor ensures the flex_target is met."
     },
     {
         "section": "DEFAULT",

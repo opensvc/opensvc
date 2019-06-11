@@ -317,7 +317,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 "status": "",
             }
         elif topology == "flex":
-            info["status"] = "%d/%d-%d" % (data["n_up"], data["flex_min_nodes"], data["flex_max_nodes"])
+            info["status"] = "%d/%d" % (data["n_up"], data["flex_target"])
         if data["avail"] == "n/a":
             info["status"] = ""
         info = "%(orchestrate)-5s %(status)-5s" % info
@@ -876,8 +876,7 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                         "drp": _data.get("drp", False),
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate", "-"),
-                        "flex_min_nodes": _data.get("flex_min_nodes"),
-                        "flex_max_nodes": _data.get("flex_max_nodes"),
+                        "flex_target": _data.get("flex_target"),
                         "scale": _data.get("scale"),
                         "avail": "undef",
                         "overall": "",

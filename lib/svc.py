@@ -2135,8 +2135,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.unset_lazy("ordered_nodes")
         self.unset_lazy("peers")
         self.unset_lazy("ordered_peers")
-        self.unset_lazy("flex_min_nodes")
-        self.unset_lazy("flex_max_nodes")
+        self.unset_lazy("flex")
+        self.unset_lazy("flex_max")
 
     def unset_all_lazy(self):
         self.init_nodes()
@@ -2570,11 +2570,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return {}
 
     @lazy
-    def flex_min_nodes(self):
+    def flex_min(self):
         return 0
 
     @lazy
-    def flex_max_nodes(self):
+    def flex_max(self):
         return 0
 
     @lazy
@@ -2821,8 +2821,8 @@ class Svc(BaseSvc):
         return self.oget("DEFAULT", "soft_anti_affinity")
 
     @lazy
-    def flex_min_nodes(self):
-        val = self.oget('DEFAULT', 'flex_min_nodes')
+    def flex_min(self):
+        val = self.oget("DEFAULT", "flex_min")
         if val < 0:
            val = 0
         nb_nodes = len(self.nodes|self.drpnodes)
@@ -2831,21 +2831,28 @@ class Svc(BaseSvc):
         return val
 
     @lazy
-    def flex_max_nodes(self):
+    def flex_max(self):
         nb_nodes = len(self.peers)
         try:
-           val = self.conf_get('DEFAULT', 'flex_max_nodes')
+           val = self.conf_get("DEFAULT", "flex_max")
         except ex.OptNotFound:
            return nb_nodes
         if val > nb_nodes:
            val = nb_nodes
-        if val < self.flex_min_nodes:
-           val = self.flex_min_nodes
+        if val < self.flex_min:
+           val = self.flex_min
         return val
 
     @lazy
+    def flex_target(self):
+        try:
+            return self.conf_get("DEFAULT", "flex_target")
+        except ex.OptNotFound:
+            return self.flex_min
+
+    @lazy
     def flex_cpu_low_threshold(self):
-        val = self.oget('DEFAULT', 'flex_cpu_low_threshold')
+        val = self.oget("DEFAULT", "flex_cpu_low_threshold")
         if val < 0:
             return 0
         if val > 100:
@@ -2854,7 +2861,7 @@ class Svc(BaseSvc):
 
     @lazy
     def flex_cpu_high_threshold(self):
-        val = self.oget('DEFAULT', 'flex_cpu_high_threshold')
+        val = self.oget("DEFAULT", "flex_cpu_high_threshold")
         if val < self.flex_cpu_low_threshold:
             return self.flex_cpu_low_threshold
         if val > 100:
@@ -3460,8 +3467,9 @@ class Svc(BaseSvc):
             data["running"] = running
         if self.topology == "flex":
             data.update({
-                "flex_min_nodes": self.flex_min_nodes,
-                "flex_max_nodes": self.flex_max_nodes,
+                "flex_target": self.flex_target,
+                "flex_min": self.flex_min,
+                "flex_max": self.flex_max,
             })
         frozen = self.frozen()
         if frozen:

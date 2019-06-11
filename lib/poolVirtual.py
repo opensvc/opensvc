@@ -47,7 +47,7 @@ class Pool(pool.Pool):
         config["DEFAULT"]["access"] = access
         if access in ("rox", "rwx"):
             config["DEFAULT"]["topology"] = "flex"
-            config["DEFAULT"]["flex_min_nodes"] = 0
+            config["DEFAULT"]["flex_min"] = 0
         if nodes:
             config["DEFAULT"]["nodes"] = nodes
         config["env"]["size"] = size

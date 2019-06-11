@@ -27,7 +27,7 @@ DAEMON = None
 
 # disable orchestration if a peer announces a different compat version than
 # ours
-COMPAT_VERSION = 8
+COMPAT_VERSION = 9
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
@@ -950,7 +950,7 @@ class OsvcThread(threading.Thread, Crypt):
         elif svc.topology == "failover":
             return ranks[0:1]
         elif svc.topology == "flex":
-            return ranks[0:svc.flex_min_nodes]
+            return ranks[0:svc.flex_target]
         else:
             return []
 
@@ -1004,11 +1004,11 @@ class OsvcThread(threading.Thread, Crypt):
             index = ranks.index(rcEnv.nodename) + 1
             if not silent:
                 self.duplog("info",
-                            "we have the %(idx)d/%(mini)d '%(placement)s' "
+                            "we have the %(idx)d/%(tgt)d '%(placement)s' "
                             "placement priority for flex service %(svcpath)s",
-                            idx=index, mini=svc.flex_min_nodes,
+                            idx=index, tgt=svc.flex_target,
                             placement=svc.placement, svcpath=svc.svcpath)
-            if index <= svc.flex_min_nodes:
+            if index <= svc.flex_target:
                 return True
             else:
                 return False

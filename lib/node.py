@@ -89,8 +89,8 @@ ACTIONS_CUSTOM_REMOTE = (
     "ls",
     "ping",
     "events",
-    "daemon_status",
     "daemon_stats",
+    "daemon_status",
     "daemon_join",
     "daemon_rejoin",
 )

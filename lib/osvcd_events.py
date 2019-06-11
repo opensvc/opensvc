@@ -40,7 +40,7 @@ EVENTS = {
     ("instance_start", "from_ready"): "start {instance.topology} {instance.avail} instance ready for {since} seconds",
     ("instance_start", "target"): "start {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_stop", "target"): "stop {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
-    ("instance_stop", "flex_threshold"): "stop {instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_min_nodes}-{instance.flex_max_nodes}",
+    ("instance_stop", "flex_threshold"): "stop {instance.topology} {instance.avail} instance to meet threshold constraints: {up}/{instance.flex_target}",
     ("instance_thaw", "target"): "thaw instance to satisfy the {instance.monitor.global_expect} target",
     ("instance_unprovision", "target"): "unprovision {instance.topology} {instance.avail} instance to satisfy the {instance.monitor.global_expect} target",
     ("scale_up", None): "misses {delta} instance to reach scale target {instance.scale}",

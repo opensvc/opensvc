@@ -162,7 +162,8 @@ ACTIONS["Service actions"].update({
                "service placement policy, so the local instance may not "
                "start. A failover service is considered started when one "
                "instance is started. A flex service is considered started "
-               "when ``<flex_min_nodes>`` instances are started.",
+               "when the number of started instances is between "
+               "``<flex_min>`` and ``<flex_max>``.",
         "options": mp.ACTION_OPTS + START_ACTION_OPTS + mp.ASYNC_ACTION_OPTS + [
             OPT.upto,
         ],

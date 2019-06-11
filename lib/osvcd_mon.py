@@ -613,8 +613,9 @@ class Monitor(shared.OsvcThread):
     def service_set_flex_instances(self, svcpath, instances):
         cmd = [
             "set",
-            "--kw", "flex_min_nodes=%d" % instances,
-            "--kw", "flex_max_nodes=%d" % instances,
+            "--kw", "flex_min=%d" % instances,
+            "--kw", "flex_max=%d" % instances,
+            "--kw", "flex_target=%d" % instances,
         ]
         proc = self.service_command(svcpath, cmd)
         out, err = proc.communicate()
@@ -623,8 +624,8 @@ class Monitor(shared.OsvcThread):
     def service_create_scaler_slave(self, svcpath, svc, data, instances=None):
         data["DEFAULT"]["scaler_slave"] = "true"
         if svc.topology == "flex" and instances is not None:
-            data["DEFAULT"]["flex_min_nodes"] = instances
-            data["DEFAULT"]["flex_max_nodes"] = instances
+            data["DEFAULT"]["flex_min"] = instances
+            data["DEFAULT"]["flex_max"] = instances
         for kw in ("scale", "id"):
             try:
                 del data["DEFAULT"][kw]
@@ -1125,7 +1126,7 @@ class Monitor(shared.OsvcThread):
                 idx = ranks.index(rcEnv.nodename)
             except ValueError:
                 return
-            if rcEnv.nodename not in ranks[:svc.flex_min_nodes]:
+            if rcEnv.nodename not in ranks[:svc.flex_target]:
                 # after loosing the placement leader status, the smon state
                 # may need a reset
                 if smon.status in ("ready", "wait parents"):
@@ -1136,10 +1137,10 @@ class Monitor(shared.OsvcThread):
         instance = self.get_service_instance(svc.svcpath, rcEnv.nodename)
         up_nodes = self.up_service_instances(svc.svcpath)
         n_up = len(up_nodes)
-        n_missing = svc.flex_min_nodes - n_up
+        n_missing = svc.flex_target - n_up
 
         if smon.status in ("ready", "wait parents"):
-            if n_up > svc.flex_min_nodes:
+            if n_up > svc.flex_target:
                 self.log.info("flex service %s instance count reached "
                               "required minimum while we were ready",
                               svc.svcpath)
@@ -1173,7 +1174,7 @@ class Monitor(shared.OsvcThread):
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
                 return
-            if n_up < svc.flex_min_nodes:
+            if n_up < svc.flex_target:
                 if smon.global_expect in ("started", "placed"):
                     allowed_avail = STOPPED_STATES + ["warn"]
                 else:
@@ -1186,24 +1187,24 @@ class Monitor(shared.OsvcThread):
                     self.set_smon(svc.svcpath, status="wait parents")
                     return
                 self.log.info("flex service %s started, starting or ready to "
-                              "start instances: %d/%d-%d. local status %s",
-                              svc.svcpath, n_up, svc.flex_min_nodes,
-                              svc.flex_max_nodes, instance.avail)
+                              "start instances: %d/%d. local status %s",
+                              svc.svcpath, n_up, svc.flex_target,
+                              instance.avail)
                 self.set_smon(svc.svcpath, "ready")
-            elif n_up > svc.flex_max_nodes:
+            elif n_up > svc.flex_target:
                 if instance is None:
                     return
                 if instance.avail not in STARTED_STATES:
                     return
-                n_to_stop = n_up - svc.flex_max_nodes
+                n_to_stop = n_up - svc.flex_target
                 overloaded_up_nodes = self.overloaded_up_service_instances(svc.svcpath)
                 to_stop = self.placement_ranks(svc, candidates=overloaded_up_nodes)[-n_to_stop:]
                 n_to_stop -= len(to_stop)
                 if n_to_stop > 0:
                     to_stop += self.placement_ranks(svc, candidates=set(up_nodes)-set(overloaded_up_nodes))[-n_to_stop:]
                 self.log.info("%d nodes to stop to honor service %s "
-                              "flex_max_nodes=%d. choose %s",
-                              n_to_stop, svc.svcpath, svc.flex_max_nodes,
+                              "flex_target=%d. choose %s",
+                              n_to_stop, svc.svcpath, svc.flex_target,
                               ", ".join(to_stop))
                 if rcEnv.nodename not in to_stop:
                     return
@@ -1575,12 +1576,12 @@ class Monitor(shared.OsvcThread):
         current_slaves = self.sort_scaler_slaves(current_slaves, reverse=True)
         for slavename in current_slaves:
             slave = shared.SERVICES[slavename]
-            if slave.flex_max_nodes >= width:
+            if slave.flex_max >= width:
                 continue
-            remain = width - slave.flex_max_nodes
+            remain = width - slave.flex_max
             if remain > missing:
                 pad = remain - missing
-                new_width = slave.flex_max_nodes + pad
+                new_width = slave.flex_max + pad
             else:
                 pad = remain
                 new_width = width
@@ -1630,7 +1631,7 @@ class Monitor(shared.OsvcThread):
         excess = -missing
         for slavename in self.sort_scaler_slaves(current_slaves, reverse=True):
             slave = shared.SERVICES[slavename]
-            n_slots = slave.flex_min_nodes
+            n_slots = slave.flex_target
             if n_slots > excess:
                 width = n_slots - excess
                 ret = self.service_set_flex_instances(slavename, width)
@@ -2083,7 +2084,7 @@ class Monitor(shared.OsvcThread):
             svc = shared.SERVICES[svcpath]
             if svc.topology == "flex":
                 width = len([1 for nodename in svc.peers if nodename in shared.CLUSTER_DATA])
-                count += min(width, svc.flex_min_nodes)
+                count += min(width, svc.flex_target)
             else:
                 count += 1
         return count
@@ -2458,9 +2459,9 @@ class Monitor(shared.OsvcThread):
                 return "warn"
             else:
                 return 'down'
-        elif n_up > instance.get("flex_max_nodes", n_instances):
+        elif n_up > instance.get("flex_max", n_instances):
             return 'warn'
-        elif n_up < instance.get("flex_min_nodes", 1) and not instance.get("scaler_slave"):
+        elif n_up < instance.get("flex_min", 1) and not instance.get("scaler_slave"):
             # scaler slaves are allowed to go under-target: the scaler will pop more slices
             # to reach the target. This is what happens when a node goes does.
             return 'warn'
@@ -2471,7 +2472,7 @@ class Monitor(shared.OsvcThread):
         try:
             if shared.SERVICES[svcpath].placement == "none":
                 return "n/a"
-            if shared.SERVICES[svcpath].topology == "flex" and shared.SERVICES[svcpath].flex_min_nodes == 0:
+            if shared.SERVICES[svcpath].topology == "flex" and shared.SERVICES[svcpath].flex_min == 0:
                 return "n/a"
         except KeyError:
             pass

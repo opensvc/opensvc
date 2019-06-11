@@ -72,7 +72,7 @@ class Pool(object):
         }
         if access in ("rox", "rwx"):
             defaults["topology"] = "flex"
-            defaults["flex_min_nodes"] = 0
+            defaults["flex_min"] = 0
         if nodes:
             defaults["nodes"] = nodes
         data.append(defaults)
