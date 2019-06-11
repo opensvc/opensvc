@@ -1269,6 +1269,20 @@ class BaseSvc(Crypt, ExtConfigMixin):
         print(mtime)
 
     def prepare_async_cmd(self):
+        """
+        For encap commands
+        """
+        cmd = sys.argv[1:]
+        cmd = drop_option("--local", cmd, drop_value=False)
+        cmd = drop_option("--node", cmd, drop_value=True)
+        cmd = drop_option("-s", cmd, drop_value=True)
+        cmd = drop_option("--service", cmd, drop_value=True)
+        return cmd
+
+    def prepare_async_options(self):
+        """
+        For jsonrpc commands
+        """
         options = {}
         options.update(self.options)
         for opt in ("svcs", "node", "local"):
@@ -1280,7 +1294,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if action in ACTION_NO_ASYNC:
             return
         if (want_context() and (self.options.node or self.command_is_scoped() or action not in ACTION_ASYNC)) or (self.options.node is not None and self.options.node != ""):
-            options = self.prepare_async_cmd()
+            options = self.prepare_async_options()
             ret = self.daemon_service_action(action=action, options=options, target=self.options.node, action_mode=False)
             if isinstance(ret, (dict, list)):
                 return ret
