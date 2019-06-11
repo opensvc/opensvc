@@ -353,17 +353,13 @@ GLOBAL_OPTS = [
     OPT.format,
     OPT.filter,
     OPT.help,
+    OPT.local,
+    OPT.node,
 ]
 
 ASYNC_OPTS = [
     OPT.time,
     OPT.wait,
-]
-
-DAEMON_OPTS = [
-    OPT.local,
-    OPT.node,
-    OPT.cluster,
 ]
 
 ACTIONS = {
@@ -376,10 +372,6 @@ ACTIONS = {
         },
         "events": {
             "msg": "Follow the daemon events",
-            "options": [
-                OPT.local,
-                OPT.node,
-            ]
         },
         "frozen": {
             "msg": "Return 0 if the services are frozen node-wide, "
@@ -390,38 +382,30 @@ ACTIONS = {
             "msg": "Freeze services node-wide, preventing the daemon to "
                    "orchestrate them. This freeze method preserves the "
                    "frozen state at service-level (with svcmgr).",
-            "options": ASYNC_OPTS + DAEMON_OPTS,
+            "options": ASYNC_OPTS,
         },
         "thaw": {
             "msg": "Thaw services node-wide, allowing the daemon to "
                    "orchestrate them. This thaw method does not actually "
                    "thaw services frozen at service-level (with svcmgr).",
-            "options": ASYNC_OPTS + DAEMON_OPTS,
+            "options": ASYNC_OPTS,
         },
         "logs": {
             "msg": "Display of the nodemgr and daemon logs.",
             "options": [
                 OPT.backlog,
                 OPT.follow,
-                OPT.local,
-                OPT.node,
             ]
         },
         "ping": {
             "msg": "Ping a cluster node or arbitrator node. The ping "
                    "validates the remote is functional.",
-            "options": [
-                OPT.cluster,
-                OPT.node,
-            ]
         },
         "shutdown": {
             "msg": "Shutdown the node to powered off state.",
-            "options": DAEMON_OPTS,
         },
         "reboot": {
             "msg": "Reboot the node.",
-            "options": DAEMON_OPTS,
         },
         "schedule_reboot_status": {
             "msg": "Tell if the node is scheduled for reboot.",
@@ -442,13 +426,11 @@ ACTIONS = {
         "updatepkg": {
             "msg": "Upgrade the opensvc agent version. the packages must be "
                    "available behind the node.repo/packages url.",
-            "options": DAEMON_OPTS,
         },
         "updatecomp": {
             "msg": "Upgrade the opensvc compliance modules. The modules must "
                    "be available as a tarball behind the :kw:`node.repocomp` "
                    "url.",
-            "options": DAEMON_OPTS,
         },
         "scanscsi": {
             "msg": "Scan the scsi hosts in search of new disks.",
@@ -468,9 +450,6 @@ ACTIONS = {
         "ls": {
             "msg": "List the cluster nodes matching the --node selector. "
                    "Useful to validate selector expressions.",
-            "options": [
-                OPT.node,
-            ],
         },
         "rotate_root_pw": {
             "msg": "Set a new root password and store it in the collector.",
@@ -496,9 +475,6 @@ ACTIONS = {
             "msg": "Command executed by the daemon monitor to fence peer "
                    "node upon failover when the node previously running "
                    "the service is stale.",
-            "options": [
-                OPT.node,
-            ],
         },
         "snooze": {
             "msg": "Snooze alerts on the node for :opt:`--duration`",
@@ -525,8 +501,6 @@ ACTIONS = {
                    "lists, non-emptry strings).",
             "options": [
                 OPT.duration,
-                OPT.local,
-                OPT.node,
             ]
         },
         "wol": {
@@ -563,7 +537,6 @@ ACTIONS = {
                 OPT.access,
                 OPT.name,
                 OPT.namespace,
-                OPT.node,
                 OPT.pool,
                 OPT.shared,
                 OPT.size,
@@ -659,9 +632,6 @@ ACTIONS = {
     "Node daemon management": {
         "daemon_relay_status": {
             "msg": "Show the daemon relay clients and last update timestamp.",
-            "options": [
-                OPT.node,
-            ],
         },
         "daemon_blacklist_status": {
             "msg": "Show the content of the daemon senders blacklist.",
@@ -688,40 +658,30 @@ ACTIONS = {
         },
         "daemon_status": {
             "msg": "Display the daemon status.",
-            "options": [
-                OPT.node,
-            ],
         },
         "daemon_stats": {
             "msg": "Display the daemon stats.",
-            "options": [
-                OPT.node,
-            ],
         },
         "daemon_start": {
             "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
-            "options": DAEMON_OPTS + [
+            "options": [
                 OPT.thr_id,
             ],
         },
         "daemon_stop": {
             "msg": "Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.",
-            "options": DAEMON_OPTS + [
+            "options": [
                 OPT.thr_id,
             ],
         },
         "daemon_join": {
             "msg": "Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.",
             "options": [
-                OPT.node,
                 OPT.secret,
             ],
         },
         "daemon_rejoin": {
             "msg": "Rejoin the cluster of the node specified by :opt:`--node <node>`, authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.",
-            "options": [
-                OPT.node,
-            ],
         },
         "daemon_leave": {
             "msg": "Inform peer nodes we leave the cluster. Make sure the "

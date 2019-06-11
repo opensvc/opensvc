@@ -1693,22 +1693,75 @@ class Listener(shared.OsvcThread):
         * cmd: list
         * sync: boolean
         """
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         sync = options.get("sync", True)
         action_mode = options.get("action_mode", True)
         cmd = options.get("cmd")
-        if cmd is None or len(cmd) == 0:
-            self.log_request("node action ('cmd' not set)", nodename, lvl="error", **kwargs)
+        action = options.get("action")
+        action_options = options.get("options", {})
+
+        if action_options is None:
+            action_options = {}
+
+        self.rbac_requires(**kwargs)
+
+        if not cmd and not action:
+            self.log_request("node action ('action' not set)", nodename, lvl="error", **kwargs)
             return {
                 "status": 1,
             }
 
-        cmd = drop_option("--node", cmd, drop_value=True)
-        cmd = drop_option("--daemon", cmd)
-        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
-        if action_mode and "--local" not in cmd:
-            cmd += ["--local"]
+        for opt in ("node", "daemon"):
+            if opt in action_options:
+                del action_options[opt]
+        if action_mode and action_options.get("local"):
+            if "local" in action_options:
+                del action_options["local"]
+        for opt, ropt in (("jsonpath_filter", "filter"),):
+            if opt in action_options:
+                action_options[ropt] = action_options[opt]
+                del action_options[opt]
+        action_options["local"] = True
+        pmod = __import__("nodemgr_parser")
+        popt = pmod.OPT
+
+        def find_opt(opt):
+            for k, o in popt.items():
+                if o.dest == opt:
+                    return o
+                if o.dest == "parm_" + opt:
+                    return o
+
+        if cmd:
+            cmd = drop_option("--node", cmd, drop_value=True)
+            cmd = drop_option("--daemon", cmd)
+            if action_mode and "--local" not in cmd:
+                cmd += ["--local"]
+        else:
+            cmd = [action]
+            for opt, val in action_options.items():
+                po = find_opt(opt)
+                if po is None:
+                    continue
+                if val == po.default:
+                    continue
+                if val is None:
+                    continue
+                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
+                if po.action == "append":
+                    cmd += [opt + "=" + str(v) for v in val]
+                elif po.action == "store_true" and val:
+                    cmd.append(opt)
+                elif po.action == "store_false" and not val:
+                    cmd.append(opt)
+                elif po.type == "string":
+                    opt += "=" + val
+                    cmd.append(opt)
+                elif po.type == "integer":
+                    opt += "=" + str(val)
+                    cmd.append(opt)
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
+
         self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)

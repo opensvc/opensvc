@@ -68,6 +68,13 @@ DEFAULT_STATUS_GROUPS = [
     "arbitrator",
 ]
 
+ACTION_ANY_NODE = (
+    "delete",
+    "eval",
+    "get",
+    "set",
+    "unset",
+)
 ACTION_ASYNC = {
     "freeze": {
         "target": "frozen",
@@ -78,16 +85,25 @@ ACTION_ASYNC = {
         "progress": "thawing",
     },
 }
-
-REMOTE_ACTIONS = [
-    "freeze",
+ACTIONS_CUSTOM_REMOTE = (
+    "ls",
+    "ping",
+    "events",
+    "daemon_stats",
+    "daemon_join",
+    "daemon_rejoin",
+)
+ACTIONS_WAIT_RESULT = (
+    "delete",
+    "eval",
+    "get",
+    "set",
+    "unset",
     "reboot",
     "shutdown",
-    "thaw",
     "updatepkg",
     "updatecomp",
-]
-
+)
 ACTIONS_NO_PARALLEL = [
     "edit_config",
     "get",
@@ -437,7 +453,7 @@ class Node(Crypt, ExtConfigMixin):
     @lazy
     def arbitrators(self):
         arbitrators = []
-        for section in self.conf_sections("arbitrator", cd=self.cd):
+        for section in self.conf_sections("arbitrator"):
             data = {
                 "id": section,
             }
@@ -1105,7 +1121,7 @@ class Node(Crypt, ExtConfigMixin):
         else:
             ret = getattr(self, action)()
 
-        if action in REMOTE_ACTIONS and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
+        if action in ACTION_ASYNC and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
             self.wake_monitor()
 
         if ret is None:
@@ -2144,7 +2160,7 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("can not determine array driver (no --array)")
 
         section = "array#" + array_name
-        if section not in self.conf_sections(cat="array", cd=self.cd):
+        if section not in self.conf_sections(cat="array"):
             raise ex.excError("array '%s' not found in configuration" % array_name)
 
         try:
@@ -3065,7 +3081,6 @@ class Node(Crypt, ExtConfigMixin):
                 svcpath: self.svc_conf_set({}, kw, env, interactive)
             }
 
-        #print(json.dumps(data, indent=4))
         if want_context():
             req = {
                 "action": "create",
@@ -3488,7 +3503,11 @@ class Node(Crypt, ExtConfigMixin):
 
     @formatter
     def ls(self):
-        data = self.nodes_selector(self.options.node)
+        if self.options.node:
+            node = self.options.node
+        else:
+            node = "*"
+        data = self.nodes_selector(node)
         if self.options.format is not None:
             return data
         for node in data:
@@ -3502,7 +3521,7 @@ class Node(Crypt, ExtConfigMixin):
                 # the config lazy
                 return sorted([node for node in data])
             elif want_context():
-                return []
+                return self._daemon_status().get("cluster", {}).get("nodes", [])
             else:
                 return self.cluster_nodes
         if selector == "":
@@ -3646,11 +3665,13 @@ class Node(Crypt, ExtConfigMixin):
         if ret != 0:
             raise ex.excError()
 
-    def prepare_async_cmd(self):
-        cmd = sys.argv[1:]
-        cmd = drop_option("--node", cmd, drop_value=True)
-        cmd = drop_option("--cluster", cmd, drop_value=False)
-        return cmd
+    def prepare_async_options(self):
+        options = {}
+        options.update(self.options)
+        for opt in ("node", "cluster"):
+            if opt in options:
+                del options[opt]
+        return options
 
     def async_action(self, action, timeout=None, wait=None):
         """
@@ -3663,19 +3684,11 @@ class Node(Crypt, ExtConfigMixin):
             timeout = self.options.time
         if timeout is not None:
             timeout = convert_duration(timeout)
-        if self.options.node is not None and self.options.node != "" and \
-           action in REMOTE_ACTIONS:
-            cmd = self.prepare_async_cmd()
-            sync = action not in ("reboot", "shutdown", "updatepkg", "updatecomp")
-            ret = self.daemon_node_action(cmd, target=self.options.node, sync=sync)
-            if ret == 0:
-                raise ex.excAbortAction()
-            else:
-                raise ex.excError()
-        if self.options.cluster and action in REMOTE_ACTIONS:
-            cmd = self.prepare_async_cmd()
-            sync = action not in ("reboot", "shutdown", "updatepkg", "updatecomp")
-            ret = self.daemon_cluster_action(cmd, sync=sync)
+        if (want_context() and action not in ACTIONS_CUSTOM_REMOTE and (self.options.node or action not in ACTION_ASYNC)) or \
+           self.options.node and action not in ACTIONS_CUSTOM_REMOTE:
+            options = self.prepare_async_options()
+            sync = action not in ACTIONS_WAIT_RESULT
+            ret = self.daemon_node_action(action=action, options=options, target=self.options.node, sync=sync, action_mode=False)
             if ret == 0:
                 raise ex.excAbortAction()
             else:
@@ -3803,15 +3816,13 @@ class Node(Crypt, ExtConfigMixin):
 
     def daemon_stats(self, svcpaths=None, node=None):
         if node:
-            daemon_node = node
+            pass
         elif self.options.node:
-            daemon_node = self.options.node
+            node = self.options.node
         else:
-            daemon_node = rcEnv.nodename
-        data = self._daemon_stats(svcpaths=svcpaths, node=daemon_node)
-        if data is None or data.get("status", 0) != 0:
-            return
-        return self.print_data(data["data"], default_fmt="flat_json")
+            node = '*'
+        data = self._daemon_stats(svcpaths=svcpaths, node=node)
+        return self.print_data(data, default_fmt="flat_json")
 
     def _daemon_stats(self, svcpaths=None, silent=False, node=None):
         data = self.daemon_send(
@@ -3824,6 +3835,12 @@ class Node(Crypt, ExtConfigMixin):
             },
             silent=silent,
         )
+        if data is None or data.get("status", 0) != 0:
+            return
+        if "nodes" in data:
+            data = {n: d["data"] for n, d in data["nodes"].items()}
+        else:
+            data = data["data"]
         return data
 
     def daemon_status(self, svcpaths=None, node=None):
@@ -3922,7 +3939,7 @@ class Node(Crypt, ExtConfigMixin):
         cluster_name = None
         if self.options.node and self.options.node != rcEnv.nodename:
             cluster_name = "join"
-            for section in self.conf_sections("hb", cd=self.cd):
+            for section in self.conf_sections("hb"):
                 try:
                     relay = self.conf_get(section, "relay")
                 except (ValueError, ex.OptNotFound):
@@ -3998,7 +4015,7 @@ class Node(Crypt, ExtConfigMixin):
         Fetch the daemon senders blacklist as a ping test, from either
         a peer or an arbitrator node, swiching between secrets as appropriate.
         """
-        if node in self.cluster_nodes or node in (rcEnv.nodename, "127.0.0.1"):
+        if not node or node in self.cluster_nodes or node in (rcEnv.nodename, "127.0.0.1"):
             cluster_name = None
             secret = None
         elif node in self.cluster_drpnodes:
@@ -4010,9 +4027,14 @@ class Node(Crypt, ExtConfigMixin):
                 cluster_name = self.conf_get("cluster", "name", impersonate=node)
             except ex.OptNotFound:
                 raise ex.excError("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
+        elif want_context():
+            # relay must be tested from a cluster node
+            data = self.daemon_node_action(action="ping", options={"node": node}, target="ANY", action_mode=False)
+            status, error, info = self.parse_result(data)
+            return status
         else:
             secret = None
-            for section in self.conf_sections("arbitrator", cd=self.cd):
+            for section in self.conf_sections("arbitrator"):
                 try:
                     arbitrator = self.oget(section, "name")
                 except Exception:
@@ -4040,14 +4062,13 @@ class Node(Crypt, ExtConfigMixin):
         return 0
 
     def ping(self):
-        if self.options.cluster:
-            ret = 0
-            for node in self.sorted_cluster_nodes:
-                if self.ping_node(node):
-                    ret = 1
-            return ret
-        else:
+        ret = 0
+        if not self.options.node or want_context():
             return self.ping_node(self.options.node)
+        for node in self.nodes_selector(self.options.node):
+            if self.ping_node(node):
+                ret = 1
+        return ret
 
     def ping_node(self, node):
         try:
@@ -4055,6 +4076,8 @@ class Node(Crypt, ExtConfigMixin):
         except ex.excError as exc:
             print(exc)
             ret = 2
+        if not node:
+            node = "default endpoint"
         if ret == 0:
             print("%s is alive" % node)
         elif ret == 1:
@@ -4525,33 +4548,36 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
 
-    def daemon_cluster_action(self, cmd, sync=True):
-        ret = 0
-        for node in self.sorted_cluster_nodes:
-            if self.daemon_node_action(cmd, nodename=node, sync=sync):
-                ret = 1
-        return ret
-
-    def daemon_node_action(self, cmd, nodename=None, target=None, sync=True):
+    def daemon_node_action(self, action=None, options=None, nodename=None, target=None, sync=True, collect=False, action_mode=True):
         """
         Execute a node action on a peer node.
         If sync is set, wait for the action result.
         """
         if nodename is None:
             nodename = self.options.node
-        options = {
-            "cmd": cmd,
-            "sync": sync,
-        }
+        if options is None:
+            options = {}
+        if want_context():
+            if not self.options.node:
+                if action in ACTION_ANY_NODE:
+                    target = "ANY"
+                else:
+                    raise ex.excError("the --node <selector> option is required")
+
         if want_context():
             if not target:
                 raise ex.excError("the --node <selector> option is required")
 
-        self.log.info("request node action '%s' on node %s", " ".join(cmd), nodename)
+        if action_mode:
+            self.log.info("request node action '%s' on node %s", action, nodename)
         req = {
             "action": "node_action",
             "node": target,
-            "options": options
+            "options": {
+                "action": action,
+                "options": options,
+                "sync": sync,
+            }
         }
         try:
             data = self.daemon_send(
@@ -4564,20 +4590,53 @@ class Node(Crypt, ExtConfigMixin):
             self.log.error("node action on node %s failed: %s",
                            nodename, exc)
             return 1
-        if data is None or data["status"] != 0:
-            self.log.error("node action on node %s failed",
-                           nodename)
-            return 1
-        if "data" not in data:
-            return 0
-        data = data["data"]
-        if data.get("out") and len(data["out"]) > 0:
-            for line in data["out"].splitlines():
-               print(line)
-        if data.get("err") and len(data["err"]) > 0:
-            for line in data["err"].splitlines():
-               print(line, file=sys.stderr)
-        return data["ret"]
+
+        status, error, info = self.parse_result(data)
+        if error:
+            self.log.error(error)
+
+        def print_node_data(nodename, data):
+            outs = False
+            if data.get("out") and len(data["out"]) > 0:
+                for line in data["out"].splitlines():
+                   print(line)
+                   outs = True
+            if data.get("err") and len(data["err"]) > 0:
+                for line in data["err"].splitlines():
+                   print(line, file=sys.stderr)
+                   outs = True
+            if not outs:
+                if data.get("status"):
+                    print("%s: failed" % nodename)
+                else:
+                    print("%s: passed" % nodename)
+
+        if collect:
+            if "data" not in data:
+                return 0
+            data = data["data"]
+            return data["ret"], data.get("out", ""), data.get("err", "")
+        else:
+            if "nodes" in data:
+                if self.options.format in ("json", "flat_json"):
+                    if len(data["nodes"]) == 1:
+                        for _data in data["nodes"].values():
+                            return _data
+                    return data
+                else:
+                    ret = 0
+                    for n, _data in data["nodes"].items():
+                        status = _data.get("status", 0)
+                        _data = _data.get("data", {})
+                        print_node_data(n, _data)
+                        ret += _data.get("ret", 0) + status
+                    return ret
+            else:
+                if "data" not in data:
+                    return 0
+                data = data["data"]
+                print_node_data(nodename, data)
+                return data.get("ret", 0)
 
     def daemon_backlogs(self, nodename):
         options = {
@@ -4660,7 +4719,7 @@ class Node(Crypt, ExtConfigMixin):
 
     def pool_ls_data(self):
         data = set(["default", "shm"])
-        for section in self.conf_sections("pool", cd=self.cd):
+        for section in self.conf_sections("pool"):
             data.add(section.split("#")[-1])
         return sorted(list(data))
 
@@ -4847,7 +4906,7 @@ class Node(Crypt, ExtConfigMixin):
                     "network": "undef",
                 },
             }
-        sections = list(self.conf_sections("network", cd=self.cd))
+        sections = list(self.conf_sections("network"))
         if "network#default" not in sections:
             sections.append("network#default")
         for section in sections:
@@ -5315,7 +5374,7 @@ class Node(Crypt, ExtConfigMixin):
         A hash of hook command sets, indexed by event.
         """
         data = {}
-        for section in self.conf_sections("hook", cd=self.cd):
+        for section in self.conf_sections("hook"):
             try:
                 command = tuple(self.conf_get(section, "command"))
             except Exception:

@@ -109,7 +109,7 @@ def start_events_thread(node, nodename):
 def get_stats(options, node, svcpaths):
     try:
         if options.stats:
-            return {n: data["data"] for n, data in node._daemon_stats(svcpaths=svcpaths, node=options.node).get("nodes").items()}
+            return node._daemon_stats(svcpaths=svcpaths, node=options.node)
         else:
             return None
     except Exception:
