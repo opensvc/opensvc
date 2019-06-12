@@ -299,8 +299,8 @@ class Container(resContainer.Container):
                     raise ex.excError(str(exc))
                 if image_id is None:
                     self.lib.docker_login(self.image)
-                sec_env = self.secrets_environment_env()
-                cfg_env = self.configs_environment_env()
+                sec_env = self.kind_environment_env("sec", self.secrets_environment)
+                cfg_env = self.kind_environment_env("cfg", self.configs_environment)
                 cmd += ["run"]
                 cmd += self._add_run_args()
                 for var in sec_env:
@@ -390,56 +390,6 @@ class Container(resContainer.Container):
             else:
                 volumes.append(volarg)
         return volumes
-
-    def configs_environment_env(self):
-        env = {}
-        for mapping in self.configs_environment:
-            try:
-                var, val = mapping.split("=", 1)
-            except Exception as exc:
-                self.log.info("ignored configs_environment mapping %s: %s", mapping, exc)
-                continue
-            try:
-                name, key = val.split("/", 1)
-            except Exception as exc:
-                self.log.info("ignored configs_environment mapping %s: %s", mapping, exc)
-                continue
-            var = var.upper()
-            cfg = factory("cfg")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
-            if not cfg.exists():
-                self.log.info("ignored configs_environment mapping %s: config %s does not exist", mapping, name)
-                continue
-            if key not in cfg.data_keys():
-                self.log.info("ignored configs_environment mapping %s: key %s does not exist", mapping, key)
-                continue
-            val = cfg.decode_key(key)
-            env[var] = val
-        return env
-
-    def secrets_environment_env(self):
-        env = {}
-        for mapping in self.secrets_environment:
-            try:
-                var, val = mapping.split("=", 1)
-            except Exception as exc:
-                self.log.info("ignored secrets_environment mapping %s: %s", mapping, exc)
-                continue
-            try:
-                name, key = val.split("/", 1)
-            except Exception as exc:
-                self.log.info("ignored secrets_environment mapping %s: %s", mapping, exc)
-                continue
-            var = var.upper()
-            sec = factory("sec")(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
-            if not sec.exists():
-                self.log.info("ignored secrets_environment mapping %s: secret %s does not exist", mapping, name)
-                continue
-            if key not in sec.data_keys():
-                self.log.info("ignored secrets_environment mapping %s: key %s does not exist", mapping, key)
-                continue
-            val = sec.decode_key(key)
-            env[var] = val
-        return env
 
     def environment_options(self):
         options = []

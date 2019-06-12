@@ -36,6 +36,11 @@ Id ``node_config_change``
 
 node config change
 
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
 Id ``max_resource_restart``
 ---------------------------
 
@@ -70,11 +75,6 @@ Id ``resource_restart``
 -----------------------
 
 restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
-
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
 
 Id ``arbitrator_down``
 ----------------------

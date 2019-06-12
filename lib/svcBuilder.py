@@ -1566,6 +1566,8 @@ def add_task_default(svc, s):
     kwargs["snooze"] = svc.oget(s, "snooze")
     kwargs["log"] = svc.oget(s, "log")
     kwargs["confirmation"] = svc.oget(s, "confirmation")
+    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     import resTask
     r = resTask.Task(**kwargs)
     svc += r
@@ -1601,6 +1603,8 @@ def add_app(svc, s):
     kwargs["user"] = svc.oget(s, "user")
     kwargs["group"] = svc.oget(s, "group")
     kwargs["cwd"] = svc.oget(s, "cwd")
+    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
 
     if rtype == "simple":
         kwargs["kill"] = svc.oget(s, "kill")

@@ -14,7 +14,7 @@ import lock
 import rcExceptions as ex
 import rcStatus
 from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
-                        action_triggers, mimport, unset_lazy
+                        action_triggers, mimport, unset_lazy, factory
 from rcGlobalEnv import rcEnv
 import rcColor
 
@@ -1307,3 +1307,32 @@ class Resource(object):
             self.svc.register_dependency("stop", volrid, self.rid)
             self.svc.register_dependency("start", self.rid, volrid)
         return path, vol
+
+    def kind_environment_env(self, kind, mappings):
+        env = {}
+        if mappings is None:
+            return env
+        for mapping in mappings:
+            try:
+                var, val = mapping.split("=", 1)
+            except Exception as exc:
+                self.log.info("ignored %s environment mapping %s: %s", kind, mapping, exc)
+                continue
+            try:
+                name, key = val.split("/", 1)
+            except Exception as exc:
+                self.log.info("ignored %s environment mapping %s: %s", kind, mapping, exc)
+                continue
+            var = var.upper()
+            obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            if not obj.exists():
+                self.log.info("ignored %s environment mapping %s: config %s does not exist", kind, mapping, name)
+                continue
+            if key not in obj.data_keys():
+                self.log.info("ignored %s environment mapping %s: key %s does not exist", kind, mapping, key)
+                continue
+            val = obj.decode_key(key)
+            env[var] = val
+        return env
+
+

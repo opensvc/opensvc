@@ -50,6 +50,8 @@ class Task(Res.Resource):
                  snooze=0,
                  confirmation=False,
                  log=True,
+                 configs_environment=None,
+                 secrets_environment=None,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.command = command
@@ -59,6 +61,8 @@ class Task(Res.Resource):
         self.timeout = timeout
         self.confirmation = confirmation
         self.log_outputs = log
+        self.configs_environment = configs_environment
+        self.secrets_environment = secrets_environment
 
     def __str__(self):
         return "%s command=%s user=%s" % (Res.Resource.__str__(self), self.command, str(self.user))
@@ -155,7 +159,11 @@ class Task(Res.Resource):
             'blocking': True,
         }
         kwargs.update(run_as_popen_kwargs(self.user))
-
+        if self.configs_environment or self.secrets_environment:
+            if "env" not in kwargs:
+                kwargs["env"] = {}
+            kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
+            kwargs["env"].update(self.kind_environment_env("sec", self.secrets_environment))
         try:
             self.action_triggers("", "command", **kwargs)
         except ex.excError:

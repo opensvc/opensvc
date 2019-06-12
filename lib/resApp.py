@@ -159,6 +159,8 @@ class App(Resource):
                  user=None,
                  group=None,
                  cwd=None,
+                 configs_environment=None,
+                 secrets_environment=None,
                  **kwargs):
 
         Resource.__init__(self, rid, **kwargs)
@@ -177,6 +179,8 @@ class App(Resource):
         self.check_timeout = check_timeout
         self.info_timeout = info_timeout
         self.label = self.type.split(".")[-1]
+        self.configs_environment = configs_environment
+        self.secrets_environment = secrets_environment
         if script:
             self.label += ": " + os.path.basename(script)
         elif start:
@@ -590,6 +594,11 @@ class App(Resource):
             kwargs["env"]["OPENSVC_SVC_ID"] = self.svc.id
             if self.svc.namespace:
                 kwargs["env"]["OPENSVC_NAMESPACE"] = self.svc.namespace
+        if self.configs_environment or self.secrets_environment:
+            if "env" not in kwargs:
+                kwargs["env"] = {}
+            kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
+            kwargs["env"].update(self.kind_environment_env("cfg", self.secrets_environment))
         return kwargs
 
     def _run_cmd_dedicated_log(self, action, cmd):
