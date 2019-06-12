@@ -242,7 +242,7 @@ class Mount(Res.Mount):
                                mnt, self.device)
                 return None
             dev = mount.dev
-        if dev in ("shmfs", "none"):
+        if dev in ("tmpfs", "shm", "shmfs", "none"):
             # bind mounts for ex.
             return
         return dev

@@ -65,7 +65,7 @@ class Mount(Res.Resource):
             label = self.device
         if self.mount_point is not None:
             label += "@" + self.mount_point
-        if self.fs_type not in ("shmfs", "none", None):
+        if self.fs_type not in ("tmpfs", "shm", "shmfs", "none", None):
             label = self.fs_type + " " + label
         return label
 
@@ -87,7 +87,7 @@ class Mount(Res.Resource):
             return
         if self.fs_type in ["bind", "lofs"] or "bind" in self.mount_options:
             return
-        if self.device in ("shmfs", "none"):
+        if self.device in ("tmpfs", "shm", "shmfs", "none"):
             # pseudo fs have no dev
             return
         if not self.device:
@@ -109,7 +109,7 @@ class Mount(Res.Resource):
             self.log.warning("failed to create missing mountpoint %s" % self.mount_point)
 
     def fsck(self):
-        if self.fs_type in ("", "shmfs", "none") or os.path.isdir(self.device):
+        if self.fs_type in ("", "tmpfs", "shm", "shmfs", "none") or os.path.isdir(self.device):
             # bind mounts are in this case
             return
         self.set_fsck_h()

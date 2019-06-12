@@ -30,7 +30,8 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         split_svcpath, fmt_svcpath, is_service, factory, \
-                        makedirs, mimport, set_lazy, lazy, split_fullname
+                        makedirs, mimport, set_lazy, lazy, split_fullname, \
+                        unset_lazy
 from converters import convert_size, print_duration
 
 RELAY_DATA = {}
@@ -104,7 +105,7 @@ class Listener(shared.OsvcThread):
     @lazy
     def certfs(self):
         mod = mimport("res", "fs")
-        res = mod.Mount(rid="fs#certs", mount_point=rcEnv.paths.certs, device="shmfs", fs_type="tmpfs", mount_options="size=1m")
+        res = mod.Mount(rid="fs#certs", mount_point=rcEnv.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
         set_lazy(res, "log",  self.log)
         return res
 
@@ -126,7 +127,7 @@ class Listener(shared.OsvcThread):
 
     def prepare_certs(self):
         makedirs(rcEnv.paths.certs)
-        if rcEnv.sysname == "Linux":
+        if rcEnv.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
             self.certfs.start()
         if not self.ca.exists():
             raise ex.excInitError("secret %s does not exist" % self.ca.svcpath)
@@ -325,6 +326,9 @@ class Listener(shared.OsvcThread):
 
     def reconfigure(self):
         shared.NODE.listener = self
+        unset_lazy(self, "ca")
+        unset_lazy(self, "cert")
+        unset_lazy(self, "certfs")
         self.setup_socks()
 
     def do(self):
