@@ -548,13 +548,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if want_context():
             return
         try:
-            self.encapnodes = set(self.oget("DEFAULT", "encapnodes"))
+            ordered_encapnodes = self.oget("DEFAULT", "encapnodes")
+            self.encapnodes = set(ordered_encapnodes)
         except (AttributeError, ValueError):
+            ordered_encapnodes = []
             self.encapnodes = set()
-        try:
-            self.ordered_nodes = self.oget("DEFAULT", "nodes")
-        except (AttributeError, ValueError):
-            self.ordered_nodes = [rcEnv.nodename]
+        if self.encap:
+            self.ordered_nodes = ordered_encapnodes
+        else:
+            try:
+                self.ordered_nodes = self.oget("DEFAULT", "nodes")
+            except (AttributeError, ValueError):
+                self.ordered_nodes = [rcEnv.nodename]
         try:
             self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
         except (AttributeError, ValueError):
@@ -2715,6 +2720,8 @@ class Svc(BaseSvc):
 
     @lazy
     def orchestrate(self):
+        if self.encap:
+            return "no"
         return self.oget("DEFAULT", "orchestrate")
 
     @lazy
