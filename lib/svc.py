@@ -2602,6 +2602,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return 0
 
     @lazy
+    def flex_target(self):
+        return 0
+
+    @lazy
     def flex_cpu_low_threshold(self):
         return 0
 
