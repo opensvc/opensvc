@@ -2391,6 +2391,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         mon_data = self.get_mon_data()
         format_service(self.svcpath, data, mon_data=mon_data, discard_disabled=discard_disabled, nodename=nodename)
 
+    def purge(self):
+        self.options.unprovision = True
+        self.delete()
+
     def delete(self):
         """
         The 'delete' action entrypoint.
