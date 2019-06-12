@@ -1787,7 +1787,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def _clear(self, endpoint=None, node=None):
         if not node and not self.options.local:
-            node = "*"
+            node = self.ordered_nodes
         req = {
             "action": "clear",
             "node": node,
