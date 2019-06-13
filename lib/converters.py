@@ -382,7 +382,10 @@ def print_duration(secs, _round=2):
     if secs > 0:
         buff += "%05.2f" % secs
         if idx == 0:
-            return buff[:2] + "s" + buff[3:]
+            if buff[3:] == "00":
+                return buff[:2] + "s"
+            else:
+                return buff[:2] + "s" + buff[3:]
         else:
             return buff[:-3]
     if buff:
