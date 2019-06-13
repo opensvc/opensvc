@@ -124,7 +124,7 @@ class Prov(provisioning.Prov):
                                          fmt=self.r.format,
                                          shared=self.r.shared)
         if pool is None:
-            raise ex.excError("could not find a pool maching criteria")
+            raise ex.excError("could not find a pool matching criteria")
         pool.log = self.r.log
         try:
             nodes = self.r.svc._get("DEFAULT.nodes")
