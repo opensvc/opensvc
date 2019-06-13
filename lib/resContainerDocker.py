@@ -15,6 +15,7 @@ import rcStatus
 from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options, factory
 from rcGlobalEnv import rcEnv
+from converters import print_duration
 
 ATTR_MAP = {
     "hostname": {
@@ -321,7 +322,14 @@ class Container(resContainer.Container):
         env = {}
         env.update(os.environ)
         env.update(sec_env)
-        ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
+        try:
+            ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
+        except KeyboardInterrupt:
+            self.log.error("%s timeout exceeded", print_duration(self.start_timeout))
+            if action == "start":
+                cmd = self.lib.docker_cmd + ["kill", self.container_name]
+                self.vcall(cmd, warn_to_info=True, env=env)
+            ret = 1
         if not self.detach:
             signal.alarm(0)
         if ret != 0:
