@@ -2312,10 +2312,14 @@ class Monitor(shared.OsvcThread):
                 avails.add(child_avail)
             if avails == set(["n/a"]):
                 return "n/a"
-            avails -= set(["n/a"])
-            if len(avails) == 1:
+            avails -= set(["n/a", "undef", "unknown"])
+            n_avails = len(avails)
+            if n_avails == 0:
+                return "n/a"
+            elif n_avails == 1:
                 return list(avails)[0]
-            return "warn"
+            else:
+                return "warn"
         elif instance.get("scale") is not None:
             # scaler without slaves
             return "n/a"
