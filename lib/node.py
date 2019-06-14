@@ -87,12 +87,15 @@ ACTION_ASYNC = {
 }
 ACTIONS_CUSTOM_REMOTE = (
     "ls",
+    "logs",
     "ping",
     "events",
     "daemon_stats",
     "daemon_status",
+    "daemon_blacklist_status",
     "daemon_join",
     "daemon_rejoin",
+    "stonith",
 )
 ACTIONS_WAIT_RESULT = (
     "delete",
