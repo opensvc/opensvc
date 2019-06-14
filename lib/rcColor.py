@@ -421,7 +421,7 @@ def colorize_log_line(line, last=None, auto=None):
     if auto:
         barel_len = len(AUTO_COLORS)
         for i, word in enumerate(auto):
-            if elements[1].startswith(word+"."):
+            if elements[1].startswith(word+".") or elements[1].startswith(word+" "):
                 elements[1] = colorize(elements[1], AUTO_COLORS[i%barel_len])
     #elements[1] = colorize(elements[1], color.BOLD)
     elements[2] = "%-7s" % elements[2]
