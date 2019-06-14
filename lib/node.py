@@ -4554,8 +4554,6 @@ class Node(Crypt, ExtConfigMixin):
         Execute a node action on a peer node.
         If sync is set, wait for the action result.
         """
-        if nodename is None:
-            nodename = self.options.node
         if options is None:
             options = {}
         if want_context():
