@@ -101,6 +101,9 @@ class Volume(Res.Resource):
         with open(self.flag_path, "w"):
             pass
 
+    def boot(self):
+        self.uninstall_flag()
+
     def _status(self, verbose=False):
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
