@@ -304,6 +304,7 @@ KEYWORDS = [
         "section": "node",
         "keyword": "allowed_networks",
         "default": ["10.0.0.0/8", "172.16.0.0/24", "192.168.0.0/16"],
+        "default_text": "10.0.0.0/8 172.16.0.0/24 192.168.0.0/16",
         "convert": "list",
         "text": "The list of cidr blocks the agents allows creation of backend network into. Should be restricted to match your site constraints."
     },
@@ -677,6 +678,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "keyword": "dns",
         "convert": "list",
         "default": [],
+        "default_text": "",
         "at": True,
         "text": "The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to <svcname>.<clustername> and <clustername>."
     },
@@ -1017,7 +1019,8 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "rtype": ["virtual"],
         "convert": "list",
         "default": ["roo", "rwo", "rox", "rwx"],
-        "text": "The capabilities exposed by the virtual pool.",
+        "default_text": "roo rwo rox rwx",
+        "text": "The capabilities exposed by the virtual pool. Supported capabilities: shared, roo, rox, rwo, rwx, blk",
     },
     {
         "section": "pool",
@@ -1051,6 +1054,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "hook",
         "keyword": "events",
         "default": [],
+        "default_text": "",
         "convert": "list",
         "text": "The list of events to execute the hook command on. The special value 'all' is also supported."
     },
