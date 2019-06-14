@@ -4066,7 +4066,11 @@ class Node(Crypt, ExtConfigMixin):
         ret = 0
         if not self.options.node or want_context():
             return self.ping_node(self.options.node)
-        for node in self.nodes_selector(self.options.node):
+        nodes = self.nodes_selector(self.options.node)
+        if not nodes:
+            # maybe an ip addr
+            return self.ping_node(self.options.node)
+        for node in nodes:
             if self.ping_node(node):
                 ret = 1
         return ret
