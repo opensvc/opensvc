@@ -623,11 +623,11 @@ class ExtConfigMixin(object):
                 return
             if ref.startswith("safe://"):
                 # disallow new refs in val
-                done += s[:m.start()] + val
+                done += s[:m.start()] + str(val)
                 s = s[m.end():]
             else:
                 # allow new refs in val
-                s = s[:m.start()] + val + s[m.end():]
+                s = s[:m.start()] + str(val) + s[m.end():]
 
     @staticmethod
     def _handle_expressions(s):
