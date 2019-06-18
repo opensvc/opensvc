@@ -226,9 +226,7 @@ class ContainerLib(object):
                 return data
 
     def login_as_service_args(self):
-        uuid = self.svc.node.oget("node", "uuid")
-        if not uuid:
-            return []
+        uuid = self.svc.node.conf_get("node", "uuid")
         args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
         args += ["-p", uuid]
         if self.docker_min_version("1.12"):
