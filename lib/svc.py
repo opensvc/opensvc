@@ -59,7 +59,7 @@ ACTION_NO_ASYNC = [
     "print_status",
 ]
 
-ACTION_ANY_NODE = {
+ACTION_ANY_NODE = (
     "decode",
     "delete",
     "eval",
@@ -69,7 +69,7 @@ ACTION_ANY_NODE = {
     "print_config",
     "set",
     "unset",
-}
+)
 
 ACTION_ASYNC = {
     "abort": {
