@@ -3842,7 +3842,7 @@ class Node(Crypt, ExtConfigMixin):
         if data is None or data.get("status", 0) != 0:
             return
         if "nodes" in data:
-            data = {n: d["data"] for n, d in data["nodes"].items()}
+            data = dict((n, d["data"]) for n, d in data["nodes"].items())
         else:
             data = data["data"]
         return data
