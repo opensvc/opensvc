@@ -3438,7 +3438,7 @@ class Monitor(shared.OsvcThread):
         with shared.AGG_LOCK:
             shared.AGG = data
         if paths is not None:
-            return {path: data[path] for path in svcpaths if path in paths}
+            return dict((path, data[path]) for path in svcpaths if path in paths)
         return data
 
     def update_completions(self):
@@ -3465,9 +3465,9 @@ class Monitor(shared.OsvcThread):
         nodes = list([n for n in data])
         for node in data:
             cpaths = [p for p in data[node]["services"]["config"] if p in paths]
-            data[node]["services"]["config"] = {path: data[node]["services"]["config"][path] for path in cpaths}
+            data[node]["services"]["config"] = dict((path, data[node]["services"]["config"][path]) for path in cpaths)
             spaths = [p for p in data[node]["services"]["status"] if p in paths]
-            data[node]["services"]["status"] = {path: data[node]["services"]["status"][path] for path in spaths}
+            data[node]["services"]["status"] = dict((path, data[node]["services"]["status"][path]) for path in spaths)
         return data
 
     def status(self, **kwargs):
