@@ -122,6 +122,7 @@ class rcEnv:
         "root",
         "blacklistadmin",
         "squatter",
+        "heartbeat",
     ]
     ns_roles = [
         "admin",

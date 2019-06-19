@@ -974,7 +974,7 @@ class Listener(shared.OsvcThread):
         """
         Store a relay heartbeat payload emitted by <nodename>.
         """
-        self.rbac_requires(**kwargs)
+        self.rbac_requires(roles=["heartbeat"], **kwargs)
         options = kwargs.get("options", {})
         cluster_id = options.get("cluster_id", "")
         cluster_name = options.get("cluster_name", "")
@@ -994,7 +994,7 @@ class Listener(shared.OsvcThread):
         Serve to <nodename> the relay heartbeat payload emitted by the node in
         <slot>.
         """
-        self.rbac_requires(**kwargs)
+        self.rbac_requires(roles=["heartbeat"], **kwargs)
         options = kwargs.get("options", {})
         cluster_id = options.get("cluster_id", "")
         _nodename = options.get("slot")
@@ -1009,7 +1009,7 @@ class Listener(shared.OsvcThread):
             }
 
     def action_daemon_relay_status(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
+        self.rbac_requires(roles=["heartbeat"], **kwargs)
         data = {}
         with RELAY_LOCK:
             for _nodename, _data in RELAY_DATA.items():
