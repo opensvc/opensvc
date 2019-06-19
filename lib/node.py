@@ -3766,7 +3766,7 @@ class Node(Crypt, ExtConfigMixin):
     def nodes_info(self):
         try:
             return self._daemon_nodes_info(silent=True)["data"]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, socket.error):
             return
 
     def _daemon_nodes_info(self, silent=False, refresh=False, node=None):
