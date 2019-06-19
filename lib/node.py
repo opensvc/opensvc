@@ -95,6 +95,7 @@ ACTIONS_CUSTOM_REMOTE = (
     "daemon_blacklist_status",
     "daemon_join",
     "daemon_rejoin",
+    "daemon_relay_status",
     "stonith",
 )
 ACTIONS_WAIT_RESULT = (
