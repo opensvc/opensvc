@@ -935,6 +935,8 @@ class Node(Crypt, ExtConfigMixin):
             msg += errors[0]
         else:
             msg += "\n".join(["- "+err for err in errors])
+        if n_args == 0 and not msg:
+            return 0
         raise ex.excError(msg)
 
     def rebuild_services(self, svcpaths):
