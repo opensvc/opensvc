@@ -334,6 +334,11 @@ class OsvcThread(threading.Thread, Crypt):
         return len(done)
 
     def join_threads(self, timeout=10):
+        for thr in self.threads:
+            if not hasattr(thr, "stop"):
+                continue
+            self.log.info("stop %s", thr)
+            thr.stop()
         while timeout > 0:
             self.janitor_threads()
             if len(self.threads) == 0:
