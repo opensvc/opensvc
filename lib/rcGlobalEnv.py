@@ -80,6 +80,7 @@ class Paths(object):
 
         self.lsnruxsockd = os.path.join(self.pathvar, "lsnr")
         self.lsnruxsock = os.path.join(self.lsnruxsockd, "lsnr.sock")
+        self.lsnruxh2sock = os.path.join(self.lsnruxsockd, "h2.sock")
         self.dnsuxsockd = os.path.join(self.pathvar, "dns")
         self.dnsuxsock = os.path.join(self.dnsuxsockd, "pdns.sock")
         self.pathcomp = os.path.join(self.pathvar, "compliance")
