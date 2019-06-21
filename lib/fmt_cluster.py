@@ -51,7 +51,7 @@ def fmt_svc_uptime(key, stats_data):
             uptime = now - _data["services"][key]["created"]
             if uptime > top:
                 top = uptime
-        except KeyError as exc:
+        except (TypeError, KeyError) as exc:
             pass
     try:
         return print_duration(top)
@@ -145,7 +145,7 @@ def fmt_blk(get, stats_data):
     for _data in stats_data.values():
         try:
             val += get(_data)
-        except KeyError as exc:
+        except (KeyError, TypeError) as exc:
             pass
     if val == 0:
         return "     -"
@@ -160,6 +160,8 @@ def fmt_thr_tasks(key, stats_data):
     threads = 0
     procs = 0
     for _data in stats_data.values():
+        if not isinstance(_data, dict):
+            continue
         threads += _data.get(key, {}).get("threads", 0)
         procs += _data.get(key, {}).get("procs", 0)
     if not threads and not procs:
@@ -179,7 +181,7 @@ def fmt_mem_total(get, stats_data):
     for _data in stats_data.values():
         try:
             mem += get(_data)
-        except KeyError as exc:
+        except (KeyError, TypeError) as exc:
             pass
     if mem == 0:
         return "     -"
@@ -201,7 +203,7 @@ def fmt_cpu_time(get, stats_data):
     for _data in stats_data.values():
         try:
             time += get(_data)
-        except KeyError as exc:
+        except (KeyError, TypeError) as exc:
             pass
     try:
         return print_duration(time)
