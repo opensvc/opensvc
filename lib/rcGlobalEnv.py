@@ -46,6 +46,7 @@ class Paths(object):
             self.pathtmpv = '/var/tmp/opensvc'
             self.pathvar = '/var/lib/opensvc'
             self.pathdoc = '/usr/share/doc/opensvc'
+            self.pathhtml = '/usr/share/opensvc/html'
             self.pathlock = '/var/lib/opensvc/lock'
             self.pathcron = '/usr/share/opensvc'
             self.postinstall = '/usr/share/opensvc/bin/postinstall'
@@ -59,6 +60,7 @@ class Paths(object):
             self.pathtmpv = os.path.join(self.pathsvc, 'tmp')
             self.pathvar = os.path.join(self.pathsvc, 'var')
             self.pathdoc = os.path.join(self.pathsvc, 'usr', 'share', 'doc')
+            self.pathhtml = os.path.join(self.pathsvc, 'usr', 'share', 'html')
             self.pathlock = os.path.join(self.pathvar, 'lock')
             self.pathcron = self.pathbin
             self.postinstall = os.path.join(self.pathbin, 'postinstall')

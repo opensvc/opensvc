@@ -288,13 +288,13 @@ class Monitor(shared.OsvcThread):
         Fetch and install the most recent service configuration file, using
         the remote node listener.
         """
-        request = {
+        req = {
             "action": "get_service_config",
             "options": {
                 "svcpath": svcpath,
             },
         }
-        resp = self.daemon_send(request, nodename=nodename)
+        resp = self.daemon_get(req, server=nodename)
         if resp is None:
             self.log.error("unable to fetch service %s config from node %s: "
                            "received %s", svcpath, nodename, resp)

@@ -210,10 +210,14 @@ OPT = Storage({
     "namespace": Option(
         "--namespace", action="store", dest="namespace",
         help="The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable."),
+    "server": Option(
+        "--server", default="",
+        action="store", dest="server",
+        help="The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock."),
     "node": Option(
         "--node", default="",
         action="store", dest="node",
-        help="The node to send a request to. If not specified the local node is targeted."),
+        help="A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
@@ -354,6 +358,7 @@ GLOBAL_OPTS = [
     OPT.filter,
     OPT.help,
     OPT.local,
+    OPT.server,
     OPT.node,
 ]
 

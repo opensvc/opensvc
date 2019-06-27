@@ -3098,7 +3098,7 @@ class Node(Crypt, ExtConfigMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_send(req)
+            result = self.daemon_get(req)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.excError(error)
@@ -3284,10 +3284,10 @@ class Node(Crypt, ExtConfigMixin):
         Catch broken pipe.
         """
         path = self.options.jsonpath_filter
-        nodename = self.options.node
+        server = self.options.server
         duration = self.options.duration
         try:
-            self._wait(nodename, path, duration)
+            self._wait(server, path, duration)
         except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
@@ -3295,7 +3295,7 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return 1
 
-    def _wait(self, nodename=None, path=None, duration=None):
+    def _wait(self, server=None, path=None, duration=None):
         """
         Wait for a condition on the monitor thread data or
         a local event data.
@@ -3305,8 +3305,8 @@ class Node(Crypt, ExtConfigMixin):
         if not path:
             return
 
-        if nodename is None:
-            nodename = rcEnv.nodename
+        if server is None:
+            server = rcEnv.nodename
 
         ops = (">=", "<=", "=", ">", "<", "~")
         oper = None
@@ -3403,7 +3403,7 @@ class Node(Crypt, ExtConfigMixin):
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
 
-        for msg in self.daemon_events(nodename):
+        for msg in self.daemon_events(server):
             kind = msg.get("kind")
             if kind == "patch":
                 try:
@@ -3417,9 +3417,9 @@ class Node(Crypt, ExtConfigMixin):
                 if match_event(msg):
                     break
 
-    def events(self, nodename=None):
+    def events(self, server=None):
         try:
-            self._events(nodename=nodename)
+            self._events(server=server)
         except ex.excSignal:
             return
         except (OSError, IOError) as exc:
@@ -3427,12 +3427,12 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return
 
-    def _events(self, nodename=None):
-        if self.options.node:
-            nodename = self.options.node
-        elif nodename is None:
-            nodename = rcEnv.nodename
-        for msg in self.daemon_events(nodename):
+    def _events(self, server=None):
+        if self.options.server:
+            server = self.options.server
+        elif server is None:
+            server = rcEnv.nodename
+        for msg in self.daemon_events(server):
             if self.options.format == "json":
                 print(json.dumps(msg))
                 sys.stdout.flush()
@@ -3452,9 +3452,24 @@ class Node(Crypt, ExtConfigMixin):
                     for key, val in msg.get("data", {}).items():
                         print("  %s=%s" % ((str(key).upper(), str(val))))
 
-    def logs(self, nodename=None):
+    def logs(self):
+        node = "*"
+        if self.options.local:
+            node = None
+        elif self.options.node:
+            node = self.options.node
+        nodes = self.nodes_selector(node)
+        auto = sorted(nodes, reverse=True)
+        self._backlogs(server=self.options.server, node=node,
+                       backlog=self.options.backlog,
+                       debug=self.options.debug,
+                       auto=auto)
+        if not self.options.follow:
+            return
         try:
-            self._logs(nodename=nodename)
+            self._followlogs(server=self.options.server, node=node,
+                             debug=self.options.debug,
+                             auto=auto)
         except ex.excSignal:
             return
         except (OSError, IOError) as exc:
@@ -3462,27 +3477,18 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return
 
-    def _logs(self, nodename=None):
-        if nodename is None:
-            nodename = self.options.node
-        if self.options.local:
-            nodes = [rcEnv.nodename]
-        elif self.options.node:
-            nodes = [self.options.node]
-        else:
-            nodes = self.cluster_nodes
+    def _backlogs(self, server=None, node=None, backlog=None, debug=False, auto=None):
         from rcColor import colorize_log_line
         lines = []
-        auto = sorted(nodes, reverse=True) + sorted(list_services(), reverse=True)
-        for nodename in nodes:
-            lines += self.daemon_backlogs(nodename)
-        for line in sorted(lines):
+        for line in self.daemon_backlogs(server, node, backlog, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
                 print(line)
-        if not self.options.follow:
-            return
-        for line in self.daemon_logs(nodes):
+                sys.stdout.flush()
+
+    def _followlogs(self, server=None, node=None, debug=False, auto=None):
+        from rcColor import colorize_log_line
+        for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
                 print(line)
@@ -3695,7 +3701,7 @@ class Node(Crypt, ExtConfigMixin):
            self.options.node and action not in ACTIONS_CUSTOM_REMOTE:
             options = self.prepare_async_options()
             sync = action not in ACTIONS_WAIT_RESULT
-            ret = self.daemon_node_action(action=action, options=options, target=self.options.node, sync=sync, action_mode=False)
+            ret = self.daemon_node_action(action=action, options=options, node=self.options.node, sync=sync, action_mode=False)
             if ret == 0:
                 raise ex.excAbortAction()
             else:
@@ -3745,7 +3751,7 @@ class Node(Crypt, ExtConfigMixin):
     # daemon actions
     #
     def daemon_collector_xmlrpc(self, *args, **kwargs):
-        data = self.daemon_send(
+        data = self.daemon_get(
             {
                 "action": "collector_xmlrpc",
                 "options": {
@@ -3753,7 +3759,7 @@ class Node(Crypt, ExtConfigMixin):
                     "kwargs": kwargs,
                 },
             },
-            nodename=self.options.node,
+            server=self.options.server,
             silent=True,
             timeout=2,
         )
@@ -3769,19 +3775,19 @@ class Node(Crypt, ExtConfigMixin):
         except (KeyError, TypeError, socket.error):
             return
 
-    def _daemon_nodes_info(self, silent=False, refresh=False, node=None):
-        data = self.daemon_send(
+    def _daemon_nodes_info(self, silent=False, refresh=False, server=None):
+        data = self.daemon_get(
             {
                 "action": "nodes_info",
             },
-            nodename=node,
+            server=server,
             silent=silent,
             timeout=5,
         )
         return data
 
     def _daemon_lock(self, name, timeout=None, silent=False, on_error=None):
-        data = self.daemon_send(
+        data = self.daemon_get(
             {
                 "action": "lock",
                 "options": {"name": name, "timeout": timeout},
@@ -3795,7 +3801,7 @@ class Node(Crypt, ExtConfigMixin):
         return lock_id
 
     def _daemon_unlock(self, name, lock_id, silent=False):
-        data = self.daemon_send(
+        data = self.daemon_get(
             {
                 "action": "unlock",
                 "options": {"name": name, "id": lock_id},
@@ -3804,15 +3810,15 @@ class Node(Crypt, ExtConfigMixin):
             timeout=10,
         )
 
-    def _daemon_status(self, silent=False, refresh=False, node=None):
-        data = self.daemon_send(
+    def _daemon_status(self, silent=False, refresh=False, server=None):
+        data = self.daemon_get(
             {
                 "action": "daemon_status",
                 "options": {
                     "refresh": refresh,
                 },
             },
-            nodename=node,
+            server=server,
             silent=silent,
             timeout=5,
         )
@@ -3832,7 +3838,7 @@ class Node(Crypt, ExtConfigMixin):
         return self.print_data(data, default_fmt="flat_json")
 
     def _daemon_stats(self, svcpaths=None, silent=False, node=None):
-        data = self.daemon_send(
+        data = self.daemon_get(
             {
                 "action": "daemon_stats",
                 "node": node,
@@ -3850,14 +3856,12 @@ class Node(Crypt, ExtConfigMixin):
             data = data["data"]
         return data
 
-    def daemon_status(self, svcpaths=None, node=None):
-        if node:
-            daemon_node = node
-        elif self.options.node:
-            daemon_node = self.options.node
-        else:
-            daemon_node = rcEnv.nodename
-        data = self._daemon_status(node=daemon_node)
+    def daemon_status(self, svcpaths=None, server=None):
+        if server:
+            pass
+        elif self.options.server:
+            server = self.options.server
+        data = self._daemon_status(server=server)
         if data is None or data.get("status", 0) != 0:
             return
 
@@ -3873,9 +3877,9 @@ class Node(Crypt, ExtConfigMixin):
         """
         Tell the daemon to clear the senders blacklist
         """
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_blacklist_clear"},
-            nodename=self.options.node,
+            server=self.options.server,
             timeout=5,
         )
         status, error, info = self.parse_result(data)
@@ -3944,7 +3948,7 @@ class Node(Crypt, ExtConfigMixin):
         """
         secret = None
         cluster_name = None
-        if self.options.node and self.options.node != rcEnv.nodename:
+        if self.options.server and self.options.server not in (None, rcEnv.nodename):
             cluster_name = "join"
             for section in self.conf_sections("hb"):
                 try:
@@ -3959,9 +3963,9 @@ class Node(Crypt, ExtConfigMixin):
                 except ex.OptNotFound:
                     continue
 
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_relay_status"},
-            nodename=self.options.node,
+            server=self.options.server,
             secret=secret,
             cluster_name=cluster_name,
             timeout=5,
@@ -4007,9 +4011,9 @@ class Node(Crypt, ExtConfigMixin):
         """
         Show the daemon senders blacklist
         """
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_blacklist_status"},
-            nodename=self.options.node,
+            server=self.options.server,
             timeout=5,
         )
         status, error, info = self.parse_result(data)
@@ -4036,30 +4040,31 @@ class Node(Crypt, ExtConfigMixin):
                 raise ex.excError("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
         elif want_context():
             # relay must be tested from a cluster node
-            data = self.daemon_node_action(action="ping", options={"node": node}, target="ANY", action_mode=False)
+            data = self.daemon_node_action(action="ping", options={"node": node}, node="ANY", action_mode=False)
             status, error, info = self.parse_result(data)
             return status
         else:
             secret = None
             for section in self.conf_sections("arbitrator"):
                 try:
-                    arbitrator = self.oget(section, "name")
+                    arbitrator = self.conf_get(section, "name")
                 except Exception:
                     continue
                 if arbitrator != node:
                     continue
                 try:
-                    secret = self.oget(section, "secret")
+                    secret = self.conf_get(section, "secret")
                     cluster_name = "join"
+                    node = "raw://" + node
                     break
                 except Exception:
                     self.log.warning("missing 'secret' in configuration section %s" % section)
                     continue
             if secret is None:
                 raise ex.excError("unable to find a secret for node '%s': neither in cluster.nodes, cluster.drpnodes nor arbitrator#*.name" % node)
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_blacklist_status"},
-            nodename=node,
+            server=node,
             cluster_name=cluster_name,
             secret=secret,
             timeout=timeout,
@@ -4101,9 +4106,9 @@ class Node(Crypt, ExtConfigMixin):
         """
         if not self._daemon_running():
             return
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_shutdown"},
-            nodename=self.options.node,
+            server=self.options.server,
         )
         if data is None:
             return 1
@@ -4123,9 +4128,9 @@ class Node(Crypt, ExtConfigMixin):
             options["thr_id"] = self.options.thr_id
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             options["upgrade"] = True
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_stop", "options": options},
-            nodename=self.options.node,
+            server=self.options.node,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -4175,9 +4180,9 @@ class Node(Crypt, ExtConfigMixin):
     def daemon_start_thread(self):
         options = {}
         options["thr_id"] = self.options.thr_id
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_start", "options": options},
-            nodename=self.options.node,
+            server=self.options.server,
             timeout=5,
         )
         if data.get("status") == 0:
@@ -4283,17 +4288,17 @@ class Node(Crypt, ExtConfigMixin):
 
         # leave other nodes
         options = {"thr_id": "tx", "wait": True}
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "daemon_stop", "options": options},
-            nodename=rcEnv.nodename,
+            server=rcEnv.nodename,
             timeout=5,
         )
 
         errors = 0
         for nodename in cluster_nodes:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 {"action": "leave"},
-                nodename=nodename,
+                server=nodename,
                 timeout=5,
             )
             if data is None:
@@ -4357,9 +4362,9 @@ class Node(Crypt, ExtConfigMixin):
         else:
             self.log.info("local node is already frozen")
 
-        data = self.daemon_send(
+        data = self.daemon_get(
             {"action": "join"},
-            nodename=joined,
+            server=joined,
             cluster_name="join",
             secret=secret,
             timeout=5,
@@ -4517,9 +4522,9 @@ class Node(Crypt, ExtConfigMixin):
         for nodename in cluster_nodes.split():
             if nodename in (rcEnv.nodename, joined):
                 continue
-            data = self.daemon_send(
+            data = self.daemon_get(
                 {"action": "join"},
-                nodename=nodename,
+                server=nodename,
                 cluster_name="join",
                 secret=secret,
                 timeout=5,
@@ -4546,9 +4551,9 @@ class Node(Crypt, ExtConfigMixin):
             "global_expect": global_expect,
         }
         try:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 {"action": "set_node_monitor", "options": options},
-                nodename=self.options.node,
+                server=self.options.server,
                 silent=True,
                 timeout=5,
             )
@@ -4559,7 +4564,7 @@ class Node(Crypt, ExtConfigMixin):
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
 
-    def daemon_node_action(self, action=None, options=None, nodename=None, target=None, sync=True, collect=False, action_mode=True):
+    def daemon_node_action(self, action=None, options=None, server=None, node=None, sync=True, collect=False, action_mode=True):
         """
         Execute a node action on a peer node.
         If sync is set, wait for the action result.
@@ -4567,21 +4572,15 @@ class Node(Crypt, ExtConfigMixin):
         if options is None:
             options = {}
         if want_context():
-            if not self.options.node:
+            if not node:
                 if action in ACTION_ANY_NODE:
-                    target = "ANY"
+                    node = "ANY"
                 else:
                     raise ex.excError("the --node <selector> option is required")
-
-        if want_context():
-            if not target:
-                raise ex.excError("the --node <selector> option is required")
-
         if action_mode:
             self.log.info("request node action '%s' on node %s", action, nodename)
         req = {
             "action": "node_action",
-            "node": target,
             "options": {
                 "action": action,
                 "options": options,
@@ -4589,9 +4588,10 @@ class Node(Crypt, ExtConfigMixin):
             }
         }
         try:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 req,
-                nodename=nodename,
+                server=server,
+                node=node,
                 silent=True,
                 timeout=5,
             )
@@ -4615,10 +4615,14 @@ class Node(Crypt, ExtConfigMixin):
                    print(line, file=sys.stderr)
                    outs = True
             if not outs:
-                if data.get("status"):
-                    print("%s: failed" % nodename)
+                if nodename:
+                    prefix = nodename + ": "
                 else:
-                    print("%s: passed" % nodename)
+                    prefix = ""
+                if data.get("status"):
+                    print("%sfailed" % prefix)
+                else:
+                    print("%spassed" % prefix)
 
         if collect:
             if "data" not in data:
@@ -4644,32 +4648,17 @@ class Node(Crypt, ExtConfigMixin):
                 if "data" not in data:
                     return 0
                 data = data["data"]
-                print_node_data(nodename, data)
+                print_node_data(server, data)
                 return data.get("ret", 0)
 
-    def daemon_backlogs(self, nodename):
-        options = {
-            "debug": self.options.debug,
-            "backlog": self.options.backlog,
+    def daemon_events(self, server=None):
+        req = {
+            "action": "events",
         }
-        for lines in self.daemon_get_stream(
-            {"action": "node_logs", "options": options},
-            nodename=nodename,
-        ):
-            if lines is None:
-                break
-            for line in lines:
-                yield line
-
-    def daemon_events(self, nodename=None):
-        options = {}
         while True:
-            for msg in self.daemon_get_streams(
-                {"action": "events", "options": options},
-                nodenames=[nodename],
-            ):
+            for msg in self.daemon_stream(req, server=server):
                 if msg is None:
-                    break
+                    continue
                 yield msg
 
             # retry until daemon restart
@@ -4679,15 +4668,29 @@ class Node(Crypt, ExtConfigMixin):
             self.unset_lazy("cluster_name")
             self.unset_lazy("cluster_key")
 
-    def daemon_logs(self, nodes=None):
-        options = {
-            "debug": self.options.debug,
-            "backlog": 0,
+    def daemon_backlogs(self, server=None, node=None, backlog=None, debug=False):
+        req = {
+            "action": "node_backlogs",
+            "options": {
+                "backlog": backlog,
+                "debug": debug,
+            }
         }
-        for lines in self.daemon_get_streams(
-            {"action": "node_logs", "options": options},
-            nodenames=nodes,
-        ):
+        result = self.daemon_get(req, server=server, node=node)
+        lines = []
+        if "nodes" in result:
+            for logs in result["nodes"].values():
+                lines += logs
+        return sorted(lines)
+
+    def daemon_logs(self, server=None, node=None, debug=False):
+        req = {
+            "action": "node_logs",
+            "options": {
+                "debug": debug,
+            }
+        }
+        for lines in self.daemon_stream(req, server=server, node=node):
             if lines is None:
                 break
             for line in lines:
@@ -4699,9 +4702,9 @@ class Node(Crypt, ExtConfigMixin):
             return
         options = {}
         try:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 {"action": "wake_monitor", "options": options},
-                nodename=self.options.node,
+                server=self.options.server,
                 silent=True,
                 timeout=2,
             )

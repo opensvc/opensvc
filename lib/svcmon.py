@@ -44,9 +44,20 @@ def setup_parser(node):
                       help="colorize output. possible values are : auto=guess based "
                            "on tty presence, always|yes=always colorize, never|no="
                            "never colorize")
+    parser.add_option("--server", default="", action="store", dest="server",
+                      help="The server uri to send a request to. If not "
+                           "specified the local node is targeted. Supported "
+                           "schemes are https and raw. The default scheme is "
+                           "https. The default port is 1214 for the raw "
+                           "scheme, and 1215 for https. The uri can be a "
+                           "fullpath to a listener socket. In this case, "
+                           "the scheme is deduced from the socket. "
+                           "Examples: raw://1.2.3.4:1214, "
+                           "https://relay.opensvc.com, "
+                           "/var/lib/opensvc/lsnr/h2.sock."),
     parser.add_option("--node", action="store", dest="node",
-                      help="The node to send a request to. If not specified the "
-                           "local node is targeted."),
+                      help="The nodes to display information for. If not specified, "
+                           "all nodes are displayed."),
     parser.add_option("--namespace", action="store", dest="namespace",
                       help="The namespace to switch to for the action. "
                            "Namespaces are cluster partitions. A default "
@@ -109,7 +120,7 @@ def start_events_thread(node, nodename):
 def get_stats(options, node, svcpaths):
     try:
         if options.stats:
-            return node._daemon_stats(svcpaths=svcpaths, node=options.node)
+            return node._daemon_stats(svcpaths=svcpaths, server=options.server, node=options.node)
         else:
             return None
     except Exception:
@@ -145,29 +156,23 @@ def svcmon(node, options=None):
         options.interval = 3
     if options.interval:
         options.watch = True
-    endpoint = socket.gethostname().lower()
     nodes = []
-    if "OSVC_CONTEXT" in os.environ:
-        endpoint = None
-    elif options.node is not None:
-        nodes = node.nodes_selector(options.node)
-        if nodes and endpoint not in nodes:
-            endpoint = nodes[0]
 
     node.options.update({
         "color": options.color,
     })
 
-    status_data = node._daemon_status(node=endpoint)
+    status_data = node._daemon_status(server=options.server)
     if status_data is None or status_data.get("status", 0) != 0:
-        raise ex.excError
+        status, error, info = node.parse_result(status_data)
+        raise ex.excError(error)
     nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
     if not nodes:
         nodes = node.nodes_selector(options.node, data=nodes_info)
 
     if options.watch:
-        start_events_thread(node, endpoint)
+        start_events_thread(node, options.server)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
@@ -193,7 +198,7 @@ def svcmon(node, options=None):
                 continue
             if status_changed:
                 try:
-                    status_data = node._daemon_status(node=endpoint)
+                    status_data = node._daemon_status(server=options.server)
                 except Exception:
                     # seen on solaris under high load: decode_msg() raising on invalid json
                     continue

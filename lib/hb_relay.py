@@ -114,7 +114,7 @@ class HbRelayTx(HbRelay):
                 "msg": message,
             },
         }
-        resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
+        resp = self.daemon_get(request, cluster_name="join", server="raw://"+self.relay, secret=self.secret)
         if resp is None:
             raise ex.excError("not responding")
         if resp.get("status", 1) != 0:
@@ -192,7 +192,7 @@ class HbRelayRx(HbRelay):
                 "cluster_id": self.cluster_id,
             },
         }
-        resp = self.daemon_send(request, cluster_name="join", nodename=self.relay, secret=self.secret)
+        resp = self.daemon_get(request, cluster_name="join", server="raw://"+self.relay, secret=self.secret)
         if resp is None:
             raise ex.excError("no response reading relay slot %s" % nodename)
         if resp.get("status", 1) != 0:

@@ -1,6 +1,7 @@
 """
 Listener Thread
 """
+import base64
 import json
 import os
 import sys
@@ -18,6 +19,9 @@ from subprocess import Popen, PIPE
 
 try:
     import ssl
+    import h2.config
+    import h2.connection
+    from hyper.common.headers import HTTPHeaderMap
     has_ssl = True
 except Exception:
     has_ssl = False
@@ -28,6 +32,7 @@ import rcExceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
+from comm import Headers
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         split_svcpath, fmt_svcpath, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
@@ -39,6 +44,7 @@ RELAY_LOCK = threading.RLock()
 RELAY_SLOT_MAX_AGE = 24 * 60 * 60
 RELAY_JANITOR_INTERVAL = 10 * 60
 JANITORS_INTERVAL = 0.5
+ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
 GUEST_ACTIONS = (
     "eval",
@@ -93,6 +99,7 @@ ADMIN_ACTIONS = (
 class DontClose(Exception):
     pass
 
+
 class Listener(shared.OsvcThread):
     events_grace_period = True
     sock_tmo = 1.0
@@ -101,6 +108,8 @@ class Listener(shared.OsvcThread):
     crl_expire = 0
     crl_mode = None
     tls_sock = None
+    tls_context = None
+    usr = None
 
     @lazy
     def certfs(self):
@@ -186,99 +195,51 @@ class Listener(shared.OsvcThread):
             self.log.warning("crl fetch failed: %s", exc)
             return
 
-    def setup_socktls(self):
-        self.vip
-        if not has_ssl:
-            self.log.info("skip tls listener init: ssl module import error")
-            return
-        self.tls_port = shared.NODE.oget("listener", "tls_port")
-        self.tls_addr = shared.NODE.oget("listener", "tls_addr")
+    def get_http2_ssl_context(self):
+        """
+        This function creates an SSLContext object that is suitably configured for
+        HTTP/2. If you're working with Python TLS directly, you'll want to do the
+        exact same setup as this function does.
+        """
+        ca_cert_chain, cert_chain, private_key, crl = self.prepare_certs()
+        # Get the basic context from the standard library.
+        ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+        #ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.verify_mode = ssl.CERT_OPTIONAL
+        ctx.load_cert_chain(cert_chain, keyfile=private_key)
+        ctx.load_verify_locations(ca_cert_chain)
+        if crl:
+            self.log.info("tls crl %s", crl)
+            ctx.verify_flags = ssl.VERIFY_CRL_CHECK_CHAIN
+            ctx.load_verify_locations(crl)
+        self.log.info("tls stats: %s", ctx.cert_store_stats())
+
+        # RFC 7540 Section 9.2: Implementations of HTTP/2 MUST use TLS version 1.2
+        # or higher. Disable TLS 1.1 and lower.
+        ctx.options |= (
+            ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+        )
+
+        # RFC 7540 Section 9.2.1: A deployment of HTTP/2 over TLS 1.2 MUST disable
+        # compression.
+        ctx.options |= ssl.OP_NO_COMPRESSION
+
+        # RFC 7540 Section 9.2.2: "deployments of HTTP/2 that use TLS 1.2 MUST
+        # support TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256". In practice, the
+        # blacklist defined in this section allows only the AES GCM and ChaCha20
+        # cipher suites with ephemeral key negotiation.
+        ctx.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20")
+
+        # We want to negotiate using NPN and ALPN. ALPN is mandatory, but NPN may
+        # be absent, so allow that. This setup allows for negotiation of HTTP/1.1.
+        ctx.set_alpn_protocols(["h2", "http/1.1"])
+
         try:
-            self.tls_sock.close()
-        except Exception:
+            ctx.set_npn_protocols(["h2", "http/1.1"])
+        except NotImplementedError:
             pass
-        try:
-            ca_cert_chain, cert_chain, private_key, crl = self.prepare_certs()
-            context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-            context.verify_mode = ssl.CERT_REQUIRED
-            context.load_cert_chain(cert_chain, keyfile=private_key)
-            context.load_verify_locations(ca_cert_chain)
-            if crl:
-                self.log.info("tls crl %s", crl)
-                context.verify_flags = ssl.VERIFY_CRL_CHECK_CHAIN
-                context.load_verify_locations(crl)
-            self.log.info("tls stats: %s", context.cert_store_stats())
-            addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
-            self.tls_addr = addrinfo[4][0]
-            self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-            self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.tls_sock.bind((self.tls_addr, self.tls_port))
-            self.tls_sock.listen(128)
-            self.tls_sock.settimeout(self.sock_tmo)
-            self.tls_wrapped_sock = context.wrap_socket(self.tls_sock)
-        except socket.error as exc:
-            self.log.error("bind %s:%d error: %s", self.tls_addr, self.tls_port, exc)
-            return
-        except ex.excInitError as exc:
-            self.log.info("skip tls listener init: %s", exc)
-            return
-        except Exception as exc:
-            self.log.info("failed tls listener init: %s", exc)
-            return
-        self.log.info("listening on %s:%s using tls and client auth", self.tls_addr, self.tls_port)
-        self.sockmap[self.tls_wrapped_sock.fileno()] = self.tls_wrapped_sock
 
-    def setup_sock(self):
-        self.port = shared.NODE.oget("listener", "port")
-        self.addr = shared.NODE.oget("listener", "addr")
-
-        try:
-            addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((self.addr, self.port))
-            self.sock.listen(128)
-            self.sock.settimeout(self.sock_tmo)
-        except socket.error as exc:
-            self.log.error("bind %s:%d error: %s", self.addr, self.port, exc)
-            return
-        self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
-        self.sockmap[self.sock.fileno()] = self.sock
-
-    def setup_sockux(self):
-        if os.name == "nt":
-            return
-        if not os.path.exists(rcEnv.paths.lsnruxsockd):
-            os.makedirs(rcEnv.paths.lsnruxsockd)
-        try:
-            if os.path.isdir(rcEnv.paths.lsnruxsock):
-                shutil.rmtree(rcEnv.paths.lsnruxsock)
-            else:
-                os.unlink(rcEnv.paths.lsnruxsock)
-        except Exception:
-            pass
-        try:
-            self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sockux.bind(rcEnv.paths.lsnruxsock)
-            self.sockux.listen(1)
-            self.sockux.settimeout(self.sock_tmo)
-        except socket.error as exc:
-            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxsock, exc)
-            return
-        self.log.info("listening on %s", rcEnv.paths.lsnruxsock)
-        self.sockmap[self.sockux.fileno()] = self.sockux
-
-    def setup_socks(self):
-        for sock in self.sockmap.values():
-            try:
-                sock.close()
-            except socket.error:
-                pass
-        self.sockmap = {}
-        self.setup_socktls()
-        self.setup_sock()
-        self.setup_sockux()
+        return ctx
 
     def run(self):
         shared.NODE.listener = self
@@ -347,32 +308,31 @@ class Listener(shared.OsvcThread):
             return
         for fd in fds[0]:
             sock = self.sockmap[fd]
-            cn = None
             try:
                 conn = None
-                usr = None
                 conn, addr = sock.accept()
                 self.stats.sessions.accepted += 1
-                if len(addr) == 0:
+                if fd == self.sockux.fileno():
+                    tls = False
                     addr = ["local"]
+                    scheme = "raw"
                     encrypted = False
-                elif isinstance(sock, ssl.SSLSocket):
+                elif fd == self.sockuxh2.fileno():
+                    tls = False
+                    addr = ["local"]
+                    scheme = "h2"
                     encrypted = False
-                    cert = conn.getpeercert()
-                    subject = dict(x[0] for x in cert['subject'])
-                    cn = subject["commonName"]
-                    if "." in cn:
-                        # service account
-                        name, namespace, kind = split_fullname(cn, self.cluster_name)
-                        usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
-                    else:
-                        usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
-                    if not usr.exists():
-                        self.log.warning("refused user connection: %s (valid cert, unknown user)", cn)
-                        conn.close()
-                        continue
-                else:
+                elif fd == self.sock.fileno():
+                    scheme = "raw"
+                    tls = False
                     encrypted = True
+                elif fd == self.tls_sock.fileno():
+                    scheme = "h2"
+                    tls = True
+                    encrypted = False
+                else:
+                    print("bug")
+                    continue
                 if addr[0] not in self.stats.sessions.clients:
                     self.stats.sessions.clients[addr[0]] = Storage({
                         "accepted": 0,
@@ -390,7 +350,7 @@ class Listener(shared.OsvcThread):
                     conn.close()
                 continue
             try:
-                thr = threading.Thread(target=self.handle_client, args=(conn, addr, encrypted, usr))
+                thr = ClientHandler(self, conn, addr, encrypted, scheme, tls, self.tls_context)
                 thr.start()
                 self.threads.append(thr)
             except RuntimeError as exc:
@@ -430,12 +390,6 @@ class Listener(shared.OsvcThread):
             if not mtime or mtime > self.crl_expire:
                 return
             self.log.info("refresh crl: installed version is expired since %s", print_duration(self.crl_expire-mtime))
-        try:
-            fno = self.tls_wrapped_sock.fileno()
-            self.tls_wrapped_sock.close()
-            del self.sockmap[fno]
-        except Exception:
-            pass
         self.setup_socktls()
 
     def janitor_relay(self):
@@ -468,15 +422,6 @@ class Listener(shared.OsvcThread):
                 return
         done = []
         while True:
-            # recv pings to avoid filling the client send buffer
-            for idx, (conn, encrypted, sid) in enumerate(self.events_clients):
-                while True:
-                    try:
-                        buff = conn.recv(4096)
-                    except Exception as exc:
-                        break
-                    if not buff:
-                        break
             try:
                 event = shared.EVENT_Q.get(False, 0)
             except queue.Empty:
@@ -484,84 +429,529 @@ class Listener(shared.OsvcThread):
             emsg = self.encrypt(event)
             msg = self.msg_encode(event)
             to_remove = []
-            for idx, (conn, encrypted, sid) in enumerate(self.events_clients):
-                if encrypted:
+            for idx, thr in enumerate(self.events_clients):
+                if thr not in self.threads:
+                    to_remove.append(idx)
+                    continue
+                if thr.h2conn:
+                    if not thr.events_stream_ids:
+                        to_remove.append(idx)
+                        continue
+                    _msg = event
+                elif thr.encrypted:
                     _msg = emsg
                 else:
                     _msg = msg
-                try:
-                    conn.sendall(_msg)
-                except socket.error as exc:
-                    to_remove.append(idx)
+                thr.event_queue.put(_msg)
             for idx in to_remove:
-                try:
-                    self.events_clients[idx][0].close()
-                except Exception:
-                    pass
                 try:
                     del self.events_clients[idx]
                 except IndexError:
                     pass
-                try:
-                    del self.stats.sessions.alive[sid]
-                except KeyError:
-                    pass
 
-    def handle_client(self, conn, addr, encrypted, usr):
+    def setup_socktls(self):
+        self.vip
+        if not has_ssl:
+            self.log.info("skip tls listener init: ssl module import error")
+            return
+        self.tls_port = shared.NODE.oget("listener", "tls_port")
+        self.tls_addr = shared.NODE.oget("listener", "tls_addr")
+        try:
+            self.tls_sock.close()
+        except Exception:
+            pass
+        try:
+            addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
+            self.tls_context = self.get_http2_ssl_context()
+            self.tls_addr = addrinfo[4][0]
+            self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.tls_sock.bind((self.tls_addr, self.tls_port))
+            self.tls_sock.listen(128)
+            self.tls_sock.settimeout(self.sock_tmo)
+        except socket.error as exc:
+            self.log.error("bind %s:%d error: %s", self.tls_addr, self.tls_port, exc)
+            return
+        except ex.excInitError as exc:
+            self.log.info("skip tls listener init: %s", exc)
+            return
+        except Exception as exc:
+            self.log.info("failed tls listener init: %s", exc)
+            return
+        self.log.info("listening on %s:%s using http/2 tls with client auth", self.tls_addr, self.tls_port)
+        self.sockmap[self.tls_sock.fileno()] = self.tls_sock
+
+    def setup_sock(self):
+        self.port = shared.NODE.oget("listener", "port")
+        self.addr = shared.NODE.oget("listener", "addr")
+
+        try:
+            addrinfo = socket.getaddrinfo(self.addr, None)[0]
+            self.addr = addrinfo[4][0]
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.bind((self.addr, self.port))
+            self.sock.listen(128)
+            self.sock.settimeout(self.sock_tmo)
+        except socket.error as exc:
+            self.log.error("bind %s:%d error: %s", self.addr, self.port, exc)
+            return
+        self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
+        self.sockmap[self.sock.fileno()] = self.sock
+
+    def setup_sockux_h2(self):
+        if os.name == "nt":
+            return
+        if not os.path.exists(rcEnv.paths.lsnruxsockd):
+            os.makedirs(rcEnv.paths.lsnruxsockd)
+        try:
+            if os.path.isdir(rcEnv.paths.lsnruxh2sock):
+                shutil.rmtree(rcEnv.paths.lsnruxh2sock)
+            else:
+                os.unlink(rcEnv.paths.lsnruxh2sock)
+        except Exception:
+            pass
+        try:
+            self.sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.sockuxh2.bind(rcEnv.paths.lsnruxh2sock)
+            self.sockuxh2.listen(1)
+            self.sockuxh2.settimeout(self.sock_tmo)
+        except socket.error as exc:
+            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxh2sock, exc)
+            return
+        self.log.info("listening on %s using http/2", rcEnv.paths.lsnruxh2sock)
+        self.sockmap[self.sockuxh2.fileno()] = self.sockuxh2
+
+    def setup_sockux(self):
+        if os.name == "nt":
+            return
+        if not os.path.exists(rcEnv.paths.lsnruxsockd):
+            os.makedirs(rcEnv.paths.lsnruxsockd)
+        try:
+            if os.path.isdir(rcEnv.paths.lsnruxsock):
+                shutil.rmtree(rcEnv.paths.lsnruxsock)
+            else:
+                os.unlink(rcEnv.paths.lsnruxsock)
+        except Exception:
+            pass
+        try:
+            self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.sockux.bind(rcEnv.paths.lsnruxsock)
+            self.sockux.listen(1)
+            self.sockux.settimeout(self.sock_tmo)
+        except socket.error as exc:
+            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxsock, exc)
+            return
+        self.log.info("listening on %s", rcEnv.paths.lsnruxsock)
+        self.sockmap[self.sockux.fileno()] = self.sockux
+
+    def setup_socks(self):
+        for sock in self.sockmap.values():
+            try:
+                sock.close()
+            except socket.error:
+                pass
+        self.sockmap = {}
+        self.setup_socktls()
+        self.setup_sock()
+        self.setup_sockux()
+        self.setup_sockux_h2()
+
+
+class ClientHandler(shared.OsvcThread):
+    def __init__(self, parent, conn, addr, encrypted, scheme, tls, tls_context):
+        shared.OsvcThread.__init__(self)
+        self.parent = parent
+        self.event_queue = None
+        self.conn = conn
+        self.addr = addr
+        self.encrypted = encrypted
+        self.scheme = scheme
+        self.tls = tls
+        self.tls_context = tls_context
+        self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener.%s" % addr[0])
+        self.streams = {}
+        self.h2conn = None
+        self.events_stream_ids = []
+        self.usr = None
+        self.events_counter = 0
+
+    def run(self):
         try:
             close = True
-            sid = str(uuid.uuid4())
-            self.stats.sessions.alive[sid] = Storage({
+            self.sid = str(uuid.uuid4())
+            self.parent.stats.sessions.alive[self.sid] = Storage({
                 "created": time.time(),
-                "addr": addr[0],
-                "encrypted": encrypted,
+                "addr": self.addr[0],
+                "encrypted": self.encrypted,
                 "progress": "init",
             })
-            self._handle_client(conn, addr, encrypted, sid, usr)
+            if self.scheme == "h2":
+                self.handle_h2_client()
+            else:
+                self.handle_raw_client()
         except DontClose:
             close = False
+        except Exception as exc:
+            self.log.error("%s", exc)
         finally:
             if close:
-                del self.stats.sessions.alive[sid]
-                conn.close()
+                del self.parent.stats.sessions.alive[self.sid]
+                if self.h2conn:
+                    self.h2conn.close_connection()
+                self.conn.close()
 
-    def _handle_client(self, conn, addr, encrypted, sid, usr):
+    def negotiate_tls(self):
+        """
+        Given an established TCP connection and a HTTP/2-appropriate TLS context,
+        this function:
+        1. wraps TLS around the TCP connection.
+        2. confirms that HTTP/2 was negotiated and, if it was not, throws an error.
+        """
+        if not self.tls:
+            self.tls_conn = self.conn
+            return
+
+        try:
+            self.tls_conn = self.tls_context.wrap_socket(self.conn, server_side=True)
+        except OSError as exc:
+            raise RuntimeError("tls wrap error: %s"%exc)
+
+        # Always prefer the result from ALPN to that from NPN.
+        # You can only check what protocol was negotiated once the handshake is
+        # complete.
+        negotiated_protocol = self.tls_conn.selected_alpn_protocol()
+        if negotiated_protocol is None:
+            negotiated_protocol = self.tls_conn.selected_npn_protocol()
+
+        if negotiated_protocol != "h2":
+            raise RuntimeError("couldn't negotiate h2: %s" % negotiated_protocol)
+
+    def authenticate_client(self, headers):
+        if self.usr or self.usr is False:
+            return
+        if self.addr[0] == "local":
+            # only root can talk to the ux sockets
+            self.usr = False
+            return
+        try:
+            self.usr = self.authenticate_client_secret(headers)
+            return
+        except Exception as exc:
+            #self.log.warning("%s", exc)
+            pass
+        try:
+            self.usr = self.authenticate_client_x509()
+            return
+        except Exception as exc:
+            #self.log.warning("%s", exc)
+            pass
+        raise ex.excError("refused %s auth" % str(self.addr))
+
+    def authenticate_client_secret(self, headers):
+        secret = headers.get(Headers.secret)
+        if not secret:
+            raise ex.excError("no secret header key")
+        if self.blacklisted(self.addr[0]):
+            raise ex.excError("sender %s is blacklisted" % self.addr[0])
+        if bdecode(self.cluster_key) == secret:
+            self.usr = False
+            return
+        self.blacklist(self.addr[0])
+        raise ex.excError("wrong secret")
+
+    def authenticate_client_x509(self):
+        try:
+            cert = self.tls_conn.getpeercert()
+        except Exception as exc:
+            raise ex.excError("x509 auth: getpeercert failed")
+        if cert is None:
+            raise ex.excError("x509 auth: no client certificate received")
+        subject = dict(x[0] for x in cert['subject'])
+        cn = subject["commonName"]
+        if "." in cn:
+            # service account
+            name, namespace, kind = split_fullname(cn, self.cluster_name)
+            usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
+        else:
+            usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
+        if not usr or not usr.exists():
+            self.conn.close()
+            raise ex.excError("x509 auth failed: %s (valid cert, unknown user)" % cn)
+        return usr
+
+    def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):
+        response_headers = [
+            (':status', str(status)),
+        ]
+        if path:
+            response_headers += [(":path", path)]
+        response_headers += [
+            ('content-type', content_type),
+            ('server', 'opensvc-h2-server/1.0')
+        ]
+        if content_type == "text/event-stream":
+            response_headers += [
+                ('Cache-Control', 'no-cache'),
+                ('Connection', 'keep-alive'),
+                ('Transfer-Encoding', 'chunked'),
+            ]
+        if "json" in content_type:
+            if data is None:
+                data = {}
+            data = json.dumps(data).encode()
+        elif isinstance(data, six.string_types):
+            data = data.encode()
+        elif data is None:
+            data = "".encode()
+        if data:
+            response_headers += [
+                ('content-length', str(len(data))),
+            ]
+        self.h2conn.send_headers(stream_id, response_headers)
+        if stream_id not in self.streams:
+            self.streams[stream_id] = {"outbound": b''}
+        self.streams[stream_id]["outbound"] += data
+        self.send_outbound(stream_id)
+
+    def send_outbound(self, stream_id):
+        data = self.streams[stream_id]["outbound"]
+        end_stream = not self.streams[stream_id].get("pushers") or "request" not in self.streams[stream_id]
+        window_size = self.h2conn.local_flow_control_window(stream_id)
+        window_size = min(window_size, len(data))
+        will_send = data[:window_size]
+        will_queue = data[window_size:]
+
+        max_size = self.h2conn.max_outbound_frame_size
+        for chunk in chunker(will_send, max_size):
+            self.h2conn.send_data(stream_id, data=chunk, end_stream=False)
+            data_to_send = self.h2conn.data_to_send()
+            self.tls_conn.sendall(data_to_send)
+            message_len = len(data_to_send)
+            self.parent.stats.sessions.tx += message_len
+            self.parent.stats.sessions.clients[self.addr[0]].tx += message_len
+
+        self.streams[stream_id]["outbound"] = will_queue
+
+        if not will_queue and end_stream:
+            self.h2conn.end_stream(stream_id)
+            self.tls_conn.sendall(self.h2conn.data_to_send())
+            self.h2_cleanup_stream(stream_id)
+
+    def h2_router(self, stream_id):
+        content_type = "application/json"
+        stream = self.streams[stream_id]
+        req = stream["request"]
+        req_data = stream["data"]
+        headers = dict((bdecode(a), bdecode(b)) for a, b in req.headers)
+        try:
+            self.authenticate_client(headers)
+            self.parent.stats.sessions.auth_validated += 1
+            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
+        except ex.excError:
+            status = 401
+            result = ""
+            return status, content_type, result
+        path = headers.get(":path").lstrip("/")
+        if path == "favicon.ico":
+            return 200, "image/x-icon", ICON
+        elif path in ("", "index.html"):
+            return self.index(stream_id)
+        elif path == "index.js":
+            return self.index_js()
+        elif path == "index.css":
+            return self.index_css()
+        node = headers.get(Headers.node)
+        options = json.loads(bdecode(req_data))
+        data = {
+            "action": path,
+            "node": node,
+            "options": options,
+        }
+        try:
+            result = self.router(None, data, stream_id=stream_id)
+            status = 200
+        except DontClose:
+            raise
+        except ex.excError as exc:
+            status = 400
+            result = {"status": 1, "error": str(exc)}
+        except Exception as exc:
+            status = 500
+            result = {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+            self.log.exception(exc)
+        try:
+            content_type = self.streams[stream_id]["content_type"]
+        except:
+            pass
+        self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
+        return status, content_type, result
+
+    def h2_window_updated(self, event):
+        if event.stream_id:
+            try:
+                self.send_outbound(event.stream_id)
+            except KeyError:
+                # stream cleaned up during iteration
+                pass
+        else:
+            for stream_id in [sid for sid in self.streams]:
+                try:
+                    self.send_outbound(stream_id)
+                except KeyError:
+                    # stream cleaned up during iteration
+                    pass
+
+    def h2_request_received(self, event):
+        stream_id = event.stream_id
+        if event.stream_ended:
+            data = b'{}'
+        else:
+            data = b''
+        self.streams[stream_id] = {
+            "request": event,
+            "data": data,
+            "pushers": [],
+            "outbound": b'',
+        }
+        if event.stream_ended:
+            status, content_type, data = self.h2_router(stream_id)
+            self.prepare_response(stream_id, status, data, content_type)
+
+    def h2_data_received(self, event):
+        self.streams[event.stream_id]["data"] += event.data
+        if not event.stream_ended:
+            return
+        status, content_type, data = self.h2_router(event.stream_id)
+        self.prepare_response(event.stream_id, status, data, content_type)
+
+    def h2_stream_ended(self, event):
+        pass
+
+    def h2_stream_reset(self, event):
+        self.h2_cleanup_stream(event.stream_id)
+
+    def h2_cleanup_stream(self, stream_id):
+        if self.streams[stream_id]["outbound"]:
+            return
+        try:
+            del self.streams[stream_id]
+        except KeyError:
+            pass
+        try:
+            self.events_stream_ids.remove(stream_id)
+            # the janitor will drop the thread from the relay list if
+            # self.events_stream_ids is empty
+        except ValueError:
+            pass
+
+    def h2_received(self, data):
+        if not data:
+            return
+        events = self.h2conn.receive_data(data)
+        for event in events:
+            if isinstance(event, h2.events.RequestReceived):
+                self.h2_request_received(event)
+            elif isinstance(event, h2.events.WindowUpdated):
+                self.h2_window_updated(event)
+            elif isinstance(event, h2.events.DataReceived):
+                self.h2_data_received(event)
+            elif isinstance(event, h2.events.StreamEnded):
+                self.h2_stream_ended(event)
+            elif isinstance(event, h2.events.StreamReset):
+                self.h2_stream_reset(event)
+            elif isinstance(event, h2.events.ConnectionTerminated):
+                self.stop()
+
+    def handle_h2_client(self):
+        self.negotiate_tls()
+
+        # init h2 connection
+        h2config = h2.config.H2Configuration(client_side=False)
+        self.h2conn = h2.connection.H2Connection(config=h2config)
+        self.h2conn.initiate_connection()
+        self.tls_conn.sendall(self.h2conn.data_to_send())
+
+        while True:
+            if self.stopped():
+                break
+            try:
+                data = self.tls_conn.recv(65535)
+                if not data:
+                    break
+                self.parent.stats.sessions.rx += len(data)
+                self.parent.stats.sessions.clients[self.addr[0]].rx += len(data)
+                self.h2_received(data)
+            except socket.timeout:
+                pass
+            except h2.exceptions.StreamClosedError:
+                return
+            except Exception as exc:
+                self.log.error("exit on %s %s", type(exc), exc)
+                return
+
+            # execute all registered pushers
+            pushers_per_stream = [(stream_id, stream.get("pushers", [])) for stream_id, stream in self.streams.items() if stream.get("pushers")]
+            for stream_id, pushers in pushers_per_stream:
+                for pusher in pushers:
+                    fn = pusher.get("fn")
+                    args = pusher.get("args", [])
+                    kwargs = pusher.get("kwargs", {})
+                    if not fn:
+                        continue
+                    try:
+                        getattr(self, fn)(stream_id, *args, **kwargs)
+                    except Exception as exc:
+                        print(exc)
+
+            data_to_send = self.h2conn.data_to_send()
+            if data_to_send:
+                self.tls_conn.sendall(data_to_send)
+
+    def handle_raw_client(self):
+        usr = None
         chunks = []
         buff_size = 4096
-        conn.setblocking(0)
+        self.conn.setblocking(0)
         while True:
-            ready = select.select([conn], [], [conn], 6)
+            if self.stopped():
+                break
+            ready = select.select([self.conn], [], [self.conn], 6)
             if ready[0]:
-                chunk = self.sock_recv(conn, buff_size)
+                chunk = self.sock_recv(self.conn, buff_size)
             else:
-                self.log.warning("timeout waiting for data from client %s", addr[0])
+                self.log.warning("timeout waiting for data")
                 return
             if ready[2]:
-                self.log.debug("exceptional condition on socket with client %s", addr[0])
+                self.log.debug("exceptional condition on socket")
                 return
-            self.stats.sessions.rx += len(chunk)
-            self.stats.sessions.clients[addr[0]].rx += len(chunk)
+            self.parent.stats.sessions.rx += len(chunk)
+            self.parent.stats.sessions.clients[self.addr[0]].rx += len(chunk)
             if chunk:
                 chunks.append(chunk)
             if not chunk or chunk.endswith(b"\x00"):
                 break
         if six.PY3:
             data = b"".join(chunks)
-            dequ = data == b"dequeue_actions"
         else:
             data = "".join(chunks)
-            dequ = data == "dequeue_actions"
         del chunks
+        self.handle_raw_client_data(data)
 
+    def handle_raw_client_data(self, data):
+        if six.PY3:
+            dequ = data == b"dequeue_actions"
+        else:
+            dequ = data == "dequeue_actions"
         if dequ:
-            self.stats.sessions.alive[sid].progress = "dequeue_actions"
+            self.parent.stats.sessions.alive[self.sid].progress = "dequeue_actions"
             p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
             return
 
-        if encrypted:
-            nodename, data = self.decrypt(data, sender_id=addr[0])
+        if self.encrypted:
+            nodename, data = self.decrypt(data, sender_id=self.addr[0])
         else:
             try:
                 data = self.msg_decode(data)
@@ -569,12 +959,12 @@ class Listener(shared.OsvcThread):
                 pass
             nodename = rcEnv.nodename
         #self.log.info("received %s from %s", str(data), nodename)
-        self.stats.sessions.auth_validated += 1
-        self.stats.sessions.clients[addr[0]].auth_validated += 1
+        self.parent.stats.sessions.auth_validated += 1
+        self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
         if data is None:
             return
         try:
-            result = self.router(nodename, data, conn, addr, encrypted, sid, usr)
+            result = self.router(nodename, data)
         except DontClose:
             raise
         except ex.excError as exc:
@@ -582,15 +972,15 @@ class Listener(shared.OsvcThread):
         except Exception as exc:
             result = {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
         if result:
-            self.stats.sessions.alive[sid].progress = "sending %s result" % self.stats.sessions.alive[sid].progress
-            conn.setblocking(1)
-            if encrypted:
+            self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
+            self.conn.setblocking(1)
+            if self.encrypted:
                 message = self.encrypt(result)
             else:
                 message = self.msg_encode(result)
             for chunk in chunker(message, 64*1024):
                 try:
-                    conn.sendall(chunk)
+                    self.conn.sendall(chunk)
                 except socket.error as exc:
                     if exc.errno == 32:
                         # broken pipe
@@ -599,19 +989,19 @@ class Listener(shared.OsvcThread):
                         self.log.warning(exc)
                     break
             message_len = len(message)
-            self.stats.sessions.tx += message_len
-            self.stats.sessions.clients[addr[0]].tx += message_len
+            self.parent.stats.sessions.tx += message_len
+            self.parent.stats.sessions.clients[self.addr[0]].tx += message_len
 
-    def log_request(self, msg, nodename, lvl="info", usr=None, addr=None, **kwargs):
+    def log_request(self, msg, nodename, lvl="info", **kwargs):
         """
         Append the request origin to the message logged by the router action"
         """
         if not msg:
             return
-        if not usr or not addr or addr[0] == "local":
+        if not self.usr or not self.addr or self.addr[0] == "local":
             origin = "requested by %s" % nodename
         else:
-            origin = "requested by %s@%s" % (usr.svcname, addr[0])
+            origin = "requested by %s@%s" % (self.usr.svcname, self.addr[0])
         if lvl == "error":
             fn = self.log.error
         if lvl == "warning":
@@ -856,7 +1246,7 @@ class Listener(shared.OsvcThread):
     # Actions
     #
     #########################################################################
-    def multiplex(self, node, fname, options, data, original_nodename, conn, addr, encrypted, sid, usr, action):
+    def multiplex(self, node, fname, options, data, original_nodename, action, stream_id=None):
         try:
             del data["node"]
         except Exception:
@@ -875,19 +1265,59 @@ class Listener(shared.OsvcThread):
                 return {"error": "unknown service", "status": 1}
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
-        for nodename in nodenames:
+
+        if action in ("node_logs", "events", "service_logs"):
+            mode = "stream"
+        else:
+            mode = "get"
+
+        def do_node(nodename):
             if nodename == rcEnv.nodename:
-                _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                               addr=addr, sid=sid, usr=usr, action=action, options=options)
+                _result = getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
                 result["nodes"][nodename] = _result
-                result["status"] += _result.get("status", 0)
+                try:
+                    result["status"] += _result.get("status", 0)
+                except AttributeError:
+                    # result is not a dict
+                    pass
             else:
-                _result = self.daemon_send(data, nodename=nodename, silent=True)
+                if mode == "stream":
+                    sp = self.socket_parms("https://"+nodename)
+                    client_stream_id, conn, resp = self.h2_daemon_stream_conn(data, sp=sp)
+                    self.streams[stream_id]["pushers"].append({
+                        "fn": "push_peer_stream",
+                        "args": [nodename, client_stream_id, conn, resp],
+                    })
+                    _result = {}
+                else:
+                    _result = self.daemon_get(data, server=nodename, silent=True)
                 result["nodes"][nodename] = _result
-                result["status"] += _result.get("status", 0)
+                try:
+                    result["status"] += _result.get("status", 0)
+                except AttributeError:
+                    # result is not a dict
+                    pass
+
+        for nodename in nodenames:
+            try:
+                do_node(nodename)
+            except Exception:
+                continue
+
         return result
 
-    def create_multiplex(self, fname, options, data, original_nodename, conn, addr, encrypted, sid, usr, action):
+    def push_peer_stream(self, stream_id, nodename, client_stream_id, conn, resp):
+        if conn._sock.can_read:
+            conn._recv_cb(client_stream_id)
+        while True:
+            for msg in self.h2_daemon_stream_fetch(client_stream_id, conn):
+                self.h2_stream_send(stream_id, msg)
+            if conn._sock.can_read:
+                conn._recv_cb(client_stream_id)
+            else:
+                break
+
+    def create_multiplex(self, fname, options, data, original_nodename, action, stream_id=None):
         h = {}
         for svcpath, svcdata in options.get("data", {}).items():
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
@@ -912,21 +1342,20 @@ class Listener(shared.OsvcThread):
             _options.update(options)
             _options["data"] = optdata
             if nodename == rcEnv.nodename:
-                _result = getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                               addr=addr, sid=sid, usr=usr, action=action, options=_options)
+                _result = getattr(self, fname)(nodename, action=action, options=_options, stream_id=stream_id)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
             else:
                 _data = {}
                 _data.update(data)
                 _data["options"] = _options
-                self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename, usr=usr, addr=addr)
-                _result = self.daemon_send(_data, nodename=nodename, silent=True)
+                self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename)
+                _result = self.daemon_get(_data, server=nodename, silent=True)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
         return result
 
-    def router(self, nodename, data, conn, addr, encrypted, sid, usr):
+    def router(self, nodename, data, stream_id=None):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -944,14 +1373,14 @@ class Listener(shared.OsvcThread):
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
-        self.stats.sessions.alive[sid].progress = fname
+        #print("addr:", self.addr, "tls:", self.tls, "action:", action, "options:", options)
+        self.parent.stats.sessions.alive[self.sid].progress = fname
         if action == "create":
-            return self.create_multiplex(fname, options, data, nodename, conn, addr, encrypted, sid, usr, action)
+            return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
         if node:
-            return self.multiplex(node, fname, options, data, nodename, conn, addr, encrypted, sid, usr, action)
-        return getattr(self, fname)(nodename, conn=conn, encrypted=encrypted,
-                                    addr=addr, sid=sid, usr=usr, action=action, options=options)
+            return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
+        return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
 
     def action_run_done(self, nodename, **kwargs):
         self.rbac_requires(**kwargs)
@@ -1715,7 +2144,7 @@ class Listener(shared.OsvcThread):
                 "status": 1,
             }
 
-        for opt in ("node", "daemon"):
+        for opt in ("node", "server", "daemon"):
             if opt in action_options:
                 del action_options[opt]
         if action_mode and action_options.get("local"):
@@ -1738,6 +2167,7 @@ class Listener(shared.OsvcThread):
 
         if cmd:
             cmd = drop_option("--node", cmd, drop_value=True)
+            cmd = drop_option("--server", cmd, drop_value=True)
             cmd = drop_option("--daemon", cmd)
             if action_mode and "--local" not in cmd:
                 cmd += ["--local"]
@@ -1898,7 +2328,7 @@ class Listener(shared.OsvcThread):
         if self.get_service(svcpath) is None and action not in ("create", "deploy"):
             self.log_request("service action (%s not installed)" % svcpath, nodename, lvl="warning", **kwargs)
             return {
-                "error": "service not found",
+                "error": "%s not found" % svcpath,
                 "status": 1,
             }
         if not action and not cmd:
@@ -1979,20 +2409,59 @@ class Listener(shared.OsvcThread):
             }
         return result
 
-    def action_events(self, nodename, **kwargs):
+    def action_events(self, nodename, stream_id=None, **kwargs):
         self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-        encrypted = kwargs.get("encrypted")
-        conn = kwargs.get("conn")
-        sid = kwargs.get("sid")
-        self.events_clients.append((conn, encrypted, sid))
-        raise DontClose
+        if not self.event_queue:
+            self.event_queue = queue.Queue()
+            self.parent.events_clients.append(self)
+        self.events_stream_ids.append(stream_id)
+        if self.h2conn:
+            request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
+            try:
+                content_type = bdecode(request_headers.get("accept").pop())
+            except:
+                content_type = "application/json"
+            self.streams[stream_id]["content_type"] = content_type
+            self.streams[stream_id]["pushers"].append({
+                "fn": "h2_push_action_events",
+            })
+        else:
+            self.raw_push_action_events()
 
-    def action_service_logs(self, nodename, **kwargs):
+    def h2_push_action_events(self, stream_id):
+        content_type = self.streams[stream_id]["content_type"]
+        while True:
+            try:
+                msg = self.event_queue.get(False, 0)
+            except queue.Empty:
+                break
+            if content_type == "text/event-stream":
+                self.h2_sse_stream_send(stream_id, msg)
+            else:
+                self.h2_stream_send(stream_id, msg)
+
+    def raw_push_action_events(self):
+        while True:
+            if self.stopped():
+                break
+            while True:
+                try:
+                    buff = self.conn.recv(4096)
+                except Exception as exc:
+                    break
+                if not buff:
+                    return
+            try:
+                msg = self.event_queue.get(True, 1)
+            except queue.Empty:
+                continue
+            self.conn.sendall(msg)
+
+    def action_service_backlogs(self, *args, stream_id=None, **kwargs):
         """
-        Send service logs.
+        Send service past logs.
         kwargs:
         * svcpath
-        * conn: the connexion socket to the requester
         * backlog: the number of bytes to send from the tail default is 10k.
                    A negative value means send the whole file.
                    The 0 value means follow the file.
@@ -2008,31 +2477,77 @@ class Listener(shared.OsvcThread):
         svc = self.get_service(svcpath)
         if svc is None:
             return {"status": 1}
+        backlog = self.backlog_from_options(options)
         logfile = os.path.join(svc.log_d, svc.svcname+".log")
-        self._action_logs(nodename, logfile, "service %s" % svcpath, **kwargs)
+        ofile = self._action_logs_open(logfile, backlog, "svc")
+        return self.read_file_lines(ofile)
 
-    def action_node_logs(self, nodename, **kwargs):
+    def action_service_logs(self, *args, stream_id=None, **kwargs):
         """
-        Send node logs.
+        Send service logs.
         kwargs:
-        * conn: the connexion socket to the requester
+        * svcpath
+        """
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if not svcpath:
+            svcpath = options.get("svcname")
+        if svcpath is None:
+            return {"status": 1}
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
+        svc = self.get_service(svcpath)
+        if svc is None:
+            return {"status": 1}
+        logfile = os.path.join(svc.log_d, svc.svcname+".log")
+        ofile = self._action_logs_open(logfile, 0, "node")
+        self.streams[stream_id]["pushers"].append({
+            "fn": "h2_push_logs",
+            "args": [ofile, True],
+        })
+
+    def action_node_backlogs(self, *args, stream_id=None, **kwargs):
+        """
+        Send service past logs.
+        kwargs:
         * backlog: the number of bytes to send from the tail default is 10k.
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
         self.rbac_requires(**kwargs)
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
-        self._action_logs(nodename, logfile, "node", **kwargs)
-
-    def _action_logs(self, nodename, logfile, obj, **kwargs):
-        conn = kwargs.get("conn")
-        encrypted = kwargs.get("encrypted")
         options = kwargs.get("options", {})
+        backlog = self.backlog_from_options(options)
+        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
+        ofile = self._action_logs_open(logfile, backlog, "node")
+        return self.read_file_lines(ofile)
+
+    def action_node_logs(self, *args, stream_id=None, **kwargs):
+        """
+        Send node logs.
+        kwargs:
+        * backlog: the number of bytes to send from the tail default is 10k.
+                   A negative value means send the whole file.
+                   The 0 value means follow the file.
+        """
+        self.rbac_requires(**kwargs)
+        options = kwargs.get("options", {})
+        follow = options.get("follow")
+        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
+        ofile = self._action_logs_open(logfile, 0, "node")
+        self.streams[stream_id]["pushers"].append({
+            "fn": "h2_push_logs",
+            "args": [ofile, True],
+        })
+
+    def backlog_from_options(self, options):
         backlog = options.get("backlog")
         if backlog is None:
             backlog = 1024 * 10
         else:
             backlog = convert_size(backlog, _to='B')
+        return backlog
+
+    def logskip(self, backlog, logfile):
         skip = 0
         if backlog > 0:
             fsize = os.path.getsize(logfile)
@@ -2040,79 +2555,61 @@ class Listener(shared.OsvcThread):
                 skip = 0
             else:
                 skip = fsize - backlog
+        return skip
 
-        with open(logfile, "r") as ofile:
-            if backlog > 0:
-                self.log.debug("send %s log to node %s, backlog %d",
-                               obj, nodename, backlog)
-                try:
-                    ofile.seek(skip)
-                except Exception as exc:
-                    self.log.info(str(exc))
-                    ofile.seek(0)
-            elif backlog < 0:
-                self.log.info("send %s log to node %s, whole file",
-                              obj, nodename)
+    def _action_logs_open(self, logfile, backlog, obj):
+        skip =  self.logskip(backlog, logfile)
+        ofile = open(logfile, "r")
+        if backlog > 0:
+            self.log.debug("send %s log, backlog %d",
+                           obj, backlog)
+            try:
+                ofile.seek(skip)
+            except Exception as exc:
+                self.log.info(str(exc))
                 ofile.seek(0)
-            else:
-                self.log.info("follow %s log for node %s",
-                              obj, nodename)
-                ofile.seek(0, 2)
-            lines = []
-            msg_size = 0
-            conn.settimeout(1)
-            loops = 0
+        elif backlog < 0:
+            self.log.info("send %s log, whole file", obj)
+            ofile.seek(0)
+        else:
+            self.log.info("follow %s log", obj)
+            ofile.seek(0, 2)
 
-            if skip:
-                # drop first line (that is incomplete as the seek placed the
-                # cursor in the middle
-                line = ofile.readline()
+        if skip:
+            # drop first line (that is incomplete as the seek placed the
+            # cursor in the middle
+            line = ofile.readline()
+        return ofile
 
-            while True:
-                if self.stopped():
-                    break
-                line = ofile.readline()
-                line_size = len(line)
-                if line_size == 0:
-                    if msg_size > 0:
-                        if encrypted:
-                            message = self.encrypt(lines)
-                        else:
-                            message = self.msg_encode(lines)
-                        try:
-                            conn.sendall(message)
-                        except Exception as exc:
-                            if hasattr(exc, "errno") and getattr(exc, "errno") == 32:
-                                # Broken pipe (client has left)
-                                break
-                    if backlog != 0:
-                        # don't follow file
-                        break
-                    else:
-                        loops += 1
-                        # follow
-                        if loops > 10:
-                            try:
-                                conn.send(b"\0")
-                                loops = 0
-                            except Exception as exc:
-                                self.log.info("stop following %s log for node %s: %s",
-                                              obj, nodename, exc)
-                                break
-                        time.sleep(0.1)
-                        lines = []
-                        msg_size = 0
-                        continue
-                lines.append(line)
-                msg_size += line_size
-                if msg_size > shared.MAX_MSG_SIZE:
-                    if encrypted:
-                        message = self.encrypt(lines)
-                    else:
-                        message = self.msg_encode(lines)
-                    conn.sendall(message)
-                    msg_size = 0
-                    lines = []
+    def read_file_lines(self, ofile):
+        lines = []
+        while True:
+            line = ofile.readline()
+            if not line:
+                return lines
+            lines.append(line)
+        return lines
+
+    def h2_push_logs(self, stream_id, ofile, follow):
+        lines = self.read_file_lines(ofile)
+        if not follow:
+            ofile.close()
+            del self.streams[stream_id]["pushers"]
+        if lines:
+            self.h2_stream_send(stream_id, lines)
+
+    def h2_sse_stream_send(self, stream_id, data):
+        self.events_counter += 1
+        msg = "id: %d\n" % self.events_counter
+        msg += "data: %s\n\n" % json.dumps(data)
+        self.streams[stream_id]["outbound"] += msg.encode()
+        self.send_outbound(stream_id)
+
+    def h2_stream_send(self, stream_id, data):
+        promised_stream_id = self.h2conn.get_next_available_stream_id()
+        request_headers = self.streams[stream_id]["request"].headers
+        self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)
+        self.prepare_response(promised_stream_id, 200, data)
 
     def action_ask_full(self, nodename, **kwargs):
         """
@@ -2134,4 +2631,44 @@ class Listener(shared.OsvcThread):
             "status": 0,
         }
         return result
+
+    def action_container_exec(self, nodename, **kwargs):
+        options = Storage(kwargs.get("options", {}))
+        svcpath = options.get("svcpath")
+        interactive = options.get("interactive", False)
+        tty = options.get("tty", False)
+        command = options.get("command")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(["operator"], namespace=namespace, **kwargs)
+        rid = options.get("rid")
+        svc = factory(kind)(name, namespace, node=shared.NODE, volatile=True)
+        resource = svc.get_resource(rid)
+        cmd = resource.exec_cmd(interactive=interactive, tty=tty, command=command)
+        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+
+    def load_file(self, path):
+        fpath = os.path.join(rcEnv.paths.pathhtml, path)
+        with open(fpath, "r") as f:
+            buff = f.read()
+        return buff
+
+    def h2_push_promise(self, stream_id, path, data, content_type):
+        promised_stream_id = self.h2conn.get_next_available_stream_id()
+        request_headers = [h for h in self.streams[stream_id]["request"].headers if h[0] != ":path"]
+        request_headers.insert(0, (":path", path))
+        self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)
+        self.prepare_response(promised_stream_id, 200, data, content_type)
+
+    def index(self, stream_id):
+        data = self.load_file("index.js")
+        self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
+        data = self.load_file("index.css")
+        self.h2_push_promise(stream_id, "/index.css", data, "text/css")
+        return 200, "text/html", self.load_file("index.html")
+
+    def index_js(self):
+        return 200, "application/javascript", self.load_file("index.js")
+
+    def index_css(self):
+        return 200, "text/css", self.load_file("index.css")
 

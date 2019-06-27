@@ -1299,7 +1299,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if (want_context() and (self.options.node or self.command_is_scoped() or action not in ACTION_ASYNC)) or (self.options.node is not None and self.options.node != ""):
             options = self.prepare_async_options()
-            ret = self.daemon_service_action(action=action, options=options, target=self.options.node, action_mode=False)
+            ret = self.daemon_service_action(action=action, options=options, node=self.options.node, action_mode=False)
             if isinstance(ret, (dict, list)):
                 return ret
             if ret == 0:
@@ -1540,9 +1540,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             else:
                 if "rtype" in data:
                     del data["rtype"]
-                if "DEFAULT" not in self.cd:
-                    self.cd["DEFAULT"] = {}
-                self.cd["DEFAULT"].update(data)
+                if "DEFAULT" not in data:
+                    data["DEFAULT"] = {}
+                data["DEFAULT"].update(data)
 
             if is_resource:
                 rid.append(section)
@@ -1746,30 +1746,31 @@ class BaseSvc(Crypt, ExtConfigMixin):
     # daemon communications
     #
     #########################################################################
-    def daemon_backlogs(self, nodename):
-        options = {
-            "svcpath": self.svcpath,
-            "backlog": self.options.backlog,
-            "debug": self.options.debug,
+    def daemon_backlogs(self, server=None, node=None, backlog=None, debug=False):
+        req = {
+            "action": "service_backlogs",
+            "options": {
+                "svcpath": self.svcpath,
+                "backlog": backlog,
+                "debug": debug,
+            }
         }
-        for lines in self.daemon_get_stream(
-            {"action": "service_logs", "options": options},
-            nodename=nodename,
-        ):
-            if lines is None:
-                break
-            for line in lines:
-                yield line
+        result = self.daemon_get(req, server=server, node=node)
+        lines = []
+        if "nodes" in result:
+            for logs in result["nodes"].values():
+                lines += logs
+        return sorted(lines)
 
-    def daemon_logs(self, nodes=None):
-        options = {
-            "svcpath": self.svcpath,
-            "backlog": 0,
+    def daemon_logs(self, server=None, node=None, backlog=None, debug=None):
+        req = {
+            "action": "service_logs",
+            "options": {
+                "svcpath": self.svcpath,
+                "debug": debug,
+            }
         }
-        for lines in self.daemon_get_streams(
-            {"action": "service_logs", "options": options},
-            nodenames=nodes,
-        ):
+        for lines in self.daemon_stream(req, server=server, node=node):
             if lines is None:
                 break
             for line in lines:
@@ -1790,17 +1791,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def master_clear(self):
         self._clear(node=self.options.node)
 
-    def _clear(self, endpoint=None, node=None):
+    def _clear(self, server=None, node=None):
         if not node and not self.options.local:
             node = self.ordered_nodes
         req = {
             "action": "clear",
-            "node": node,
             "options": {
                 "svcpath": self.svcpath,
             }
         }
-        data = self.daemon_send(req, timeout=5, nodename=endpoint)
+        data = self.daemon_get(req, timeout=5, server=server, node=node)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
@@ -1812,17 +1812,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if rids is None:
             rids = self.action_rid
-        options = {
-            "action": action,
-            "svcpath": self.svcpath,
-            "rids": rids,
+        req = {
+            "action": "run_done",
+            "options": {
+                "action": action,
+                "svcpath": self.svcpath,
+                "rids": rids,
+            }
         }
         try:
-            data = self.daemon_send(
-                {"action": "run_done", "options": options},
-                nodename=self.options.node,
-                silent=True,
-            )
+            data = self.daemon_get(req, server=self.options.node, silent=True)
             if data and data["status"] != 0:
                 if "error" in data:
                     self.log.warning("notify scheduler action is done failed: %s", data["error"])
@@ -1837,13 +1836,17 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if not daemon_test_lock():
             # no need to wake to monitor when the daemon is not running
             return
-        options = {
-            "svcpath": self.svcpath,
+        req = {
+            "action": "wake_monitor",
+            "options": {
+                "svcpath": self.svcpath,
+            }
         }
         try:
-            data = self.daemon_send(
-                {"action": "wake_monitor", "options": options},
-                nodename=self.options.node,
+            data = self.daemon_get(
+                req,
+                server=self.options.server,
+                node=self.options.node,
                 silent=True,
             )
             status, error, info = self.parse_result(data)
@@ -1871,9 +1874,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "stonith": stonith,
         }
         try:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 {"action": "set_service_monitor", "options": options},
-                nodename=self.options.node,
+                server=self.options.server,
+                node=self.options.node,
                 silent=True,
                 with_result=True,
             )
@@ -1911,12 +1915,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def remote_service_config(self, nodename=None):
         req = {
             "action": "get_service_config",
-            "node": nodename if nodename else "ANY",
             "options": {
                 "svcpath": self.svcpath,
             }
         }
-        data = self.daemon_send(req, nodename=nodename, silent=True)
+        node = nodename if nodename else "ANY"
+        data = self.daemon_get(req, server=self.options.server, node=node, silent=True)
         if not data or data.get("status", 1) != 0:
             try:
                 err = data.get("error", "")
@@ -1935,42 +1939,17 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception:
             return
 
-    def daemon_service_action(self, action=None, options=None, nodename=None, target=None, sync=True, timeout=0, collect=False, action_mode=True):
+    def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=0, collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
         """
         if timeout is not None:
             timeout = convert_duration(timeout)
-        if nodename is None:
-            nodename = self.options.node
         if options is None:
             options = {}
-        if want_context():
-            secret = None
-            cluster_name = None
-            if not self.options.node:
-                if action in ACTION_ANY_NODE:
-                    target = "ANY"
-                else:
-                    raise ex.excError("the --node <selector> option is required")
-        elif nodename not in self.node.cluster_nodes:
-            try:
-                secret = self.node.conf_get("cluster", "secret", impersonate=nodename)
-            except:
-                raise ex.excError("unknown cluster secret to communicate with node %s" % nodename)
-            try:
-                cluster_name = self.node.conf_get("cluster", "name", impersonate=nodename)
-            except:
-                raise ex.excError("unknown cluster name to communicate with node %s" % nodename)
-        else:
-            secret = self.cluster_key
-            cluster_name = None
-
-
         req = {
             "action": "service_action",
-            "node": target,
             "options": {
                 "svcpath": self.svcpath,
                 "sync": sync,
@@ -1979,19 +1958,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
             }
         }
         if action_mode:
-            self.log.info("request action '%s' on node %s", action, nodename)
+            self.log.info("request action '%s' on node %s", action, node)
         try:
-            data = self.daemon_send(
+            data = self.daemon_get(
                 req,
-                nodename=nodename,
+                server=server,
                 silent=True,
                 timeout=timeout,
-                secret=secret,
-                cluster_name=cluster_name,
+                node=node,
             )
         except Exception as exc:
             self.log.error("request service action '%s' on node %s failed: %s",
-                           action, nodename, exc)
+                           action, node, exc)
             return 1
         status, error, info = self.parse_result(data)
         if error:
@@ -2029,12 +2007,27 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if "data" not in data:
                     return 0
                 data = data["data"]
-                print_node_data(nodename, data)
+                print_node_data(server, data)
                 return data.get("ret", 0)
 
-    def logs(self, nodename=None):
+    def logs(self):
+        node = "*"
+        if self.options.local:
+            node = None
+        elif self.options.node:
+            node = self.options.node
+        nodes = self.node.nodes_selector(node)
+        auto = sorted(nodes, reverse=True)
+        self._backlogs(server=self.options.server, node=node,
+                       backlog=self.options.backlog,
+                       debug=self.options.debug,
+                       auto=auto)
+        if not self.options.follow:
+            return
         try:
-            self._logs(nodename=nodename)
+            self._followlogs(server=self.options.server, node=node,
+                       debug=self.options.debug,
+                       auto=auto)
         except ex.excSignal:
             return
         except (OSError, IOError) as exc:
@@ -2042,27 +2035,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 # broken pipe
                 return
 
-    def _logs(self, nodename=None):
-        if nodename is None:
-            nodename = self.options.node
-        if self.options.local:
-            nodes = [rcEnv.nodename]
-        elif self.options.node:
-            nodes = [self.options.node]
-        else:
-            nodes = self.peers
+    def _backlogs(self, server=None, node=None, backlog=None, debug=False, auto=None):
         from rcColor import colorize_log_line
         lines = []
-        auto = sorted(nodes, reverse=True)
-        for nodename in nodes:
-            lines += self.daemon_backlogs(nodename)
-            for line in sorted(lines):
-                line = colorize_log_line(line, auto=auto)
-                if line:
-                    print(line)
-        if not self.options.follow:
-            return
-        for line in self.daemon_logs(nodes):
+        for line in self.daemon_backlogs(server, node, backlog, debug):
+            line = colorize_log_line(line, auto=auto)
+            if line:
+                print(line)
+                sys.stdout.flush()
+
+    def _followlogs(self, server=None, node=None, debug=False, auto=None):
+        from rcColor import colorize_log_line
+        lines = []
+        for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
                 print(line)
@@ -5057,13 +5042,13 @@ class Svc(BaseSvc):
         """
         dst = self.destination_node_sanity_checks()
         self.svcunlock()
-        self._clear(endpoint=rcEnv.nodename)
-        self._clear(endpoint=dst)
+        self._clear(server=rcEnv.nodename)
+        self._clear(server=dst)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
-        self.daemon_service_action(action="prstop", nodename=src_node)
+        self.daemon_service_action(action="prstop", server=src_node)
         try:
-            self.daemon_service_action(action="startfs", options={"master": True}, nodename=dst)
+            self.daemon_service_action(action="startfs", options={"master": True}, server=dst)
             self._migrate()
         except:
             if len(self.get_resources('disk.scsireserv')) > 0:
@@ -5072,8 +5057,8 @@ class Svc(BaseSvc):
                                "either on source node or destination node, "
                                "depending on your problem analysis.")
             raise
-        self.daemon_service_action(action="stop", nodename=src_node)
-        self.daemon_service_action(action="prstart", options={"master": True}, nodename=dst)
+        self.daemon_service_action(action="stop", server=src_node)
+        self.daemon_service_action(action="prstart", options={"master": True}, server=dst)
 
     def takeover(self):
         """
@@ -5268,7 +5253,7 @@ class Svc(BaseSvc):
                             ],
                             "eval": True
                         },
-                        nodename=peer,
+                        server=peer,
                         sync=True
                     )
             self.delete_service_conf()

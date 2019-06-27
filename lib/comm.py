@@ -18,10 +18,13 @@ class DummyException(Exception):
 
 try:
     import ssl
+    import h2.connection
+    import hyper
     SSLWantReadError = ssl.SSLWantReadError
     SSLError = ssl.SSLError
     has_ssl = True
 except Exception:
+    # consider py <2.7.9 and <3.4.0 does not have ssl (h2 disabled)
     SSLWantReadError = DummyException
     SSLError = DummyException
     has_ssl = False
@@ -40,6 +43,8 @@ if six.PY3:
 else:
     def to_bytes(x):
         return bytes(x) if not isinstance(x, bytes) else x
+    ConnectionResetError = DummyException
+    ConnectionRefusedError = DummyException
 
 # add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, ECONNREFUSED, EHOSTUNREACH, EPIPE ?
 RETRYABLE = (
@@ -59,6 +64,9 @@ BLACKLIST_LOCK = threading.RLock()
 # new messages
 BLACKLIST_THRESHOLD = 5
 
+class Headers(object):
+    node = "o-node"
+    secret = "o-secret"
 
 class SockReset(Exception):
     pass
@@ -112,6 +120,46 @@ except ImportError:
         message += obj.feed()
         return zlib.decompress(message)
 
+def get_http2_client_ssl_context(cafile=None, keyfile=None, certfile=None):
+    """
+    This function creates an SSLContext object that is suitably configured for
+    HTTP/2. If you're working with Python TLS directly, you'll want to do the
+    exact same setup as this function does.
+    """
+    # Get the basic context from the standard library.
+    ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=cafile)
+    if keyfile and certfile:
+        ctx.load_cert_chain(keyfile=keyfile, certfile=certfile)
+    else:
+        ctx.load_default_certs()
+    ctx.check_hostname = False
+
+    # RFC 7540 Section 9.2: Implementations of HTTP/2 MUST use TLS version 1.2
+    # or higher. Disable TLS 1.1 and lower.
+    ctx.options |= (
+        ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+    )
+
+    # RFC 7540 Section 9.2.1: A deployment of HTTP/2 over TLS 1.2 MUST disable
+    # compression.
+    ctx.options |= ssl.OP_NO_COMPRESSION
+
+    # RFC 7540 Section 9.2.2: "deployments of HTTP/2 that use TLS 1.2 MUST
+    # support TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256". In practice, the
+    # blacklist defined in this section allows only the AES GCM and ChaCha20
+    # cipher suites with ephemeral key negotiation.
+    ctx.set_ciphers("ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20")
+
+    # We want to negotiate using NPN and ALPN. ALPN is mandatory, but NPN may
+    # be absent, so allow that. This setup allows for negotiation of HTTP/1.1.
+    ctx.set_alpn_protocols(["h2", "http/1.1"])
+
+    try:
+        ctx.set_npn_protocols(["h2", "http/1.1"])
+    except NotImplementedError:
+        pass
+
+    return ctx
 
 class Crypt(object):
     """
@@ -318,7 +366,8 @@ class Crypt(object):
             self.log.error("decrypt message from %s: %s", nodename, str(exc))
             self.blacklist(sender_id)
             return None, None
-        self.blacklist_clear(sender_id)
+        if sender_id:
+            self.blacklist_clear(sender_id)
         try:
             return nodename, json.loads(data)
         except ValueError as exc:
@@ -418,10 +467,11 @@ class Crypt(object):
         Get the listener address and port from node.conf.
         """
         node = self.get_node()
-        addr = node.oget("listener", "addr", impersonate=nodename)
-        port = node.oget("listener", "port", impersonate=nodename)
+        addr = node.oget("listener", "tls_addr", impersonate=nodename)
+        port = node.oget("listener", "tls_port", impersonate=nodename)
         if nodename != rcEnv.nodename and addr == "0.0.0.0":
             addr = nodename
+            port = 1214
         return addr, port
 
     def recv_message(self, *args, **kwargs):
@@ -486,50 +536,207 @@ class Crypt(object):
             messages.append(message)
         return messages
 
-    def socket_parms(self, nodename):
-        data = Storage()
-        data.nodename = nodename
-        if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and \
-           want_context():
-            if not has_ssl:
-                raise ex.excError("ssl required but not available")
-            context = get_context()
-            addr = context["cluster"]["addr"]
-            port = context["cluster"]["port"]
-            data.context = context
-            data.af = socket.AF_INET
-            data.to = (addr, port)
-            data.to_s = "%s:%d" % (addr, port)
-            data.encrypted = False
-            data.tls = True
-        elif nodename == rcEnv.nodename and os.name != "nt":
-            data.af = socket.AF_UNIX
-            data.to = rcEnv.paths.lsnruxsock
-            data.to_s = rcEnv.paths.lsnruxsock
-            data.encrypted = False
+    def get_cluster_context(self):
+        context = {}
+        context["secret"] = True
+        cafile = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
+        if os.path.exists(cafile):
+            context["cluster"] = {
+                "certificate_authority": cafile,
+            }
+        keyfile = os.path.join(rcEnv.paths.certs, "private_key")
+        certfile = os.path.join(rcEnv.paths.certs, "certificate_chain")
+        if os.path.exists(keyfile) and os.path.exists(certfile):
+            context["user"] = {
+                "client_key": keyfile,
+                "client_certificate": certfile,
+            }
+            #context["secret"] = False
+        return context
+
+    def socket_parms_ux(self, server):
+        if has_ssl:
+            return self.socket_parms_ux_h2(server)
         else:
-            addr, port = self.get_listener_info(nodename)
-            data.af = socket.AF_INET
-            data.to = (addr, port)
-            data.to_s = "%s:%d" % (addr, port)
-            data.encrypted = True
+            return self.socket_parms_ux_raw(server)
+
+    def socket_parms_ux_h2(self, server):
+        data = Storage()
+        data.scheme = "h2"
+        data.af = socket.AF_UNIX
+        data.to = rcEnv.paths.lsnruxh2sock
+        data.to_s = rcEnv.paths.lsnruxh2sock
+        data.encrypted = False
+        data.server = server
+        data.context = None
         return data
 
-    def daemon_send(self, data, nodename=None, with_result=True, silent=False,
-                    cluster_name=None, secret=None, timeout=0):
+    def socket_parms_ux_raw(self, server):
+        data = Storage()
+        data.scheme = "raw"
+        data.af = socket.AF_UNIX
+        data.to = rcEnv.paths.lsnruxsock
+        data.to_s = rcEnv.paths.lsnruxsock
+        data.encrypted = False
+        data.server = server
+        data.context = None
+        return data
+
+    def socket_parms_from_context(self, server):
+        if not has_ssl:
+            raise ex.excError("tls1.2 capable ssl module is required but not available")
+        data = Storage()
+        context = get_context()
+        addr = context["cluster"]["addr"]
+        port = context["cluster"]["port"]
+        data.context = context
+        data.scheme = "h2"
+        data.af = socket.AF_INET
+        data.to = (addr, port)
+        data.to_s = "%s:%d" % (addr, port)
+        data.encrypted = False
+        data.tls = True
+        data.server = server
+        return data
+
+    def socket_parms_parser(self, server):
+        data = Storage()
+
+        # defaults
+        port = rcEnv.listener_tls_port
+        data.scheme = "h2"
+        data.tls = True
+        data.encrypted = False
+        data.server = server
+
+        if server.startswith("https://"):
+            host = server[8:]
+            data.context = self.get_cluster_context()
+        elif server.startswith("raw://"):
+            data.tls = False
+            data.scheme = "raw"
+            data.encrypted = True
+            port = rcEnv.listener_port
+            host = server[6:]
+        try:
+            addr, port = host.split(":", 1)
+            port = int(port)
+        except:
+            addr = host
+        data.af = socket.AF_INET
+        data.to = (addr, port)
+        data.to_s = "%s:%d" % data.to
+        return data
+
+    def socket_parms_inet_raw(self, server):
+        data = Storage()
+        data.server = server
+        addr, port = self.get_listener_info(server)
+        data.scheme = "raw"
+        data.af = socket.AF_INET
+        data.to = (addr, port)
+        data.to_s = "%s:%d" % (addr, port)
+        data.encrypted = True
+        data.tls = False
+        return data
+
+    def socket_parms(self, server=None):
+        if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and want_context():
+            return self.socket_parms_from_context(server)
+        if server is None or server == "":
+            return self.socket_parms_ux(server)
+        if server == rcEnv.nodename and os.name != "nt":
+            # Local comms
+            return self.socket_parms_ux(server)
+        if server.startswith("/"):
+            return self.socket_parms_ux_h2(server)
+        if ":" in server:
+            # Explicit server uri (ex: --server https://1.2.3.4:1215)
+            return self.socket_parms_parser(server)
+        else:
+            # relay, arbitrator, node-to-node
+            return self.socket_parms_inet_raw(server)
+
+    def h2c(self, sp=None, **kwargs):
+        try:
+            cafile = sp.context["cluster"]["certificate_authority"]
+        except:
+            cafile = None
+        try:
+            keyfile = sp.context["user"]["client_key"]
+            certfile = sp.context["user"]["client_certificate"]
+        except:
+            keyfile = None
+            certfile = None
+        context = get_http2_client_ssl_context(
+            cafile=cafile,
+            keyfile=keyfile,
+            certfile=certfile,
+        )
+        if isinstance(sp.to, tuple):
+            host = sp.to[0]
+            port = sp.to[1]
+        else:
+            host = sp.to
+            port = 0
+        conn = hyper.HTTP20Connection(host, port=port, ssl_context=context, secure=sp.tls, **kwargs)
+        return conn
+
+    def daemon_get(self, *args, **kwargs):
+        sp = self.socket_parms(kwargs.get("server"))
+        if sp.scheme == "raw" and not want_context():
+            return self.raw_daemon_get(*args, sp=sp, **kwargs)
+        else:
+            return self.h2_daemon_get(*args, sp=sp, **kwargs)
+
+    def get_secret(self, sp, secret):
+        if want_context():
+            return
+        if sp.context and not sp.context.get("secret"):
+            return
+        elif secret:
+            return bdecode(secret)
+        else:
+            return bdecode(self.cluster_key)
+
+    def h2_daemon_get(self, data, server=None, node=None, with_result=True, silent=False,
+                        cluster_name=None, secret=None, timeout=0, sp=None):
+        secret = self.get_secret(sp, secret)
+        path = self.h2_path_from_data(data)
+        headers = self.h2_headers(node=node, secret=secret, af=sp.af)
+        body = self.h2_body_from_data(data)
+        conn = self.h2c(sp=sp)
+        method = "GET"
+        try:
+            conn.request(method, path, headers=headers, body=body)
+        except AssertionError as exc:
+            raise ex.excError(str(exc))
+        except ConnectionResetError:
+            return {"status": 1, "error": "%s %s connection reset"%(method, path)}
+        except (ConnectionRefusedError, ssl.SSLError) as exc:
+            return {"status": 1, "error": "%s"%exc}
+        resp = conn.get_response()
+        data = resp.read()
+        data = json.loads(bdecode(data))
+        return data
+
+    def raw_daemon_get(self, data, server=None, node=None, with_result=True, silent=False,
+                        cluster_name=None, secret=None, timeout=0, sp=None):
         """
-        Send a request to the daemon running on nodename and return the result
+        Send a request to the daemon running on server and return the result
         fetched if with_result is set.
         """
         elapsed = 0
         sock = None
-        if nodename is None or nodename == "":
-            nodename = rcEnv.nodename
+        if server is None or server == "":
+            server = rcEnv.nodename
+        if node:
+            data["node"] = node
         progress = "connecting"
         try:
             while True:
                 try:
-                    sp = self.socket_parms(nodename)
+                    sp = self.socket_parms(server)
                     sock = socket.socket(sp.af, socket.SOCK_STREAM)
                     sock.settimeout(SOCK_TMO)
                     sock.connect(sp.to)
@@ -557,14 +764,7 @@ class Crypt(object):
                         continue
                     raise
 
-            if sp.tls:
-                progress = "wrapping in tls"
-                context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
-                context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
-                context.check_hostname = False
-                sock = context.wrap_socket(sock)
-                message = self.msg_encode(data)
-            elif sp.encrypted:
+            if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
             else:
@@ -610,153 +810,116 @@ class Crypt(object):
                 sock.close()
         return {"status": 0}
 
-    def daemon_get_stream(self, data, nodename=None, cluster_name=None,
-                          secret=None):
+    @staticmethod
+    def h2_path_from_data(data):
+        return "/"+data.get("action", "")
+
+    def h2_headers(self, node=None, secret=None, af=None):
+        headers = {}
+        if node:
+            headers[Headers.node] = node
+        if secret and af != socket.AF_UNIX:
+            headers[Headers.secret] = secret
+        return headers
+
+    @staticmethod
+    def h2_body_from_data(data):
+        return json.dumps(data.get("options", {})).encode()
+
+    def daemon_stream(self, *args, **kwargs):
+        sp = self.socket_parms(kwargs.get("server"))
+        if sp.scheme == "h2":
+            iterator = self.h2_daemon_stream
+        else:
+            iterator = self.raw_daemon_stream
+        for e in iterator(*args, sp=sp, **kwargs):
+            yield e
+
+    def h2_daemon_stream(self, *args, **kwargs):
+        while True:
+            try:
+                for msg in self._h2_daemon_stream(*args, **kwargs):
+                    yield msg
+            except hyper.common.exceptions.ConnectionResetError:
+                time.sleep(PAUSE)
+            except socket.error as exc:
+                if exc.errno == 111:
+                    # conn refused
+                    time.sleep(PAUSE)
+                else:
+                    raise
+
+    def _h2_daemon_stream(self, *args, **kwargs):
+        stream_id, conn, resp = self.h2_daemon_stream_conn(*args, **kwargs)
+        while True:
+            for msg in self.h2_daemon_stream_fetch(stream_id, conn):
+                yield msg
+            conn._recv_cb(stream_id=stream_id)
+
+    def h2_daemon_stream_conn(self, data, server=None, node=None, cluster_name=None, secret=None, sp=None):
+        secret = self.get_secret(sp, secret)
+        path = self.h2_path_from_data(data)
+        headers = self.h2_headers(node=node, secret=secret, af=sp.af)
+        body = self.h2_body_from_data(data)
+        conn = self.h2c(sp=sp, enable_push=True)
+        stream_id = conn.request("GET", path, headers=headers, body=body) 
+        #data = resp.read()
+        resp = conn.get_response(stream_id)
+        return stream_id, conn, resp
+
+    def h2_daemon_stream_fetch(self, stream_id, conn):
+        resps = []
+        for push in conn.get_pushes(stream_id):
+            resps.append(push.get_response())
+        for resp in resps:
+            # resp.read() can modify push.promises_headers, which get_pushes iterates
+            # causing a RuntimeError => keep in a separate loop
+            evt = resp.read()
+            evt = json.loads(bdecode(evt))
+            yield evt
+
+    def raw_daemon_stream(self, data, server=None, node=None, cluster_name=None,
+                              secret=None, sp=None):
         """
-        Send a request to the daemon running on nodename and yield the results
+        Send a request to the daemon running on server and yield the results
         fetched if with_result is set.
         """
-        if nodename in (None, ""):
-            nodename = rcEnv.nodename
-        sp = self.socket_parms(nodename)
+        if node:
+            data["node"] = node
+        sp = self.socket_parms(server)
         try:
             sock = socket.socket(sp.af, socket.SOCK_STREAM)
             sock.settimeout(6.2)
             sock.connect(sp.to)
-            if sp.tls:
-                context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
-                context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
-                context.check_hostname = False
-                sock = context.wrap_socket(sock)
-                message = self.msg_encode(data)
-            elif sp.encrypted:
+            if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
             else:
                 message = self.msg_encode(data)
             if message is None:
-                return
+                raise StopIteration()
             sock.sendall(message)
             while True:
-                data = self.recv_messages(
-                    sock, cluster_name=cluster_name, secret=secret,
-                    encrypted=sp.encrypted, bufsize=1
-                )
-                if data is None:
-                    return
-                for message in data:
-                    yield message
+                try:
+                    data = self.recv_messages(
+                        sock, cluster_name=cluster_name, secret=secret,
+                        encrypted=sp.encrypted, bufsize=1
+                    )
+                    if data is None:
+                        raise StopIteration()
+                    for message in data:
+                        yield message
+                except socket.timeout:
+                    time.sleep(PAUSE)
         except socket.error as exc:
             self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
         finally:
             sock.close()
 
-    def daemon_get_streams(self, data, nodenames=None, cluster_name=None,
-                           secret=None):
-        """
-        Send a request to the daemon running on nodename and yield the results
-        fetched if with_result is set.
-        """
-        if nodenames in (None, [None], "", [""]):
-            nodenames = [rcEnv.nodename]
-        else:
-            nodenames = [nodename for nodename in nodenames
-                         if nodename not in (None, "")]
-
-        socks = {}
-        reconnect = set()
-
-        def init_sock(nodename):
-            sp = self.socket_parms(nodename)
-            try:
-                sock = socket.socket(sp.af, socket.SOCK_STREAM)
-                sock.settimeout(6.2)
-                sock.connect(sp.to)
-                if sp.tls:
-                    context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=sp.context["cluster"]["certificate_authority"])
-                    context.load_cert_chain(keyfile=sp.context["user"]["client_key"], certfile=sp.context["user"]["client_certificate"])
-                    context.check_hostname = False
-                    sock = context.wrap_socket(sock)
-                    message = self.msg_encode(data)
-                elif sp.encrypted:
-                    message = self.encrypt(data, cluster_name=cluster_name,
-                                           secret=secret)
-                else:
-                    message = self.msg_encode(data)
-                if message is None:
-                    return
-                sock.sendall(message)
-                socks[sock] = sp
-                if nodename in reconnect:
-                    self.log.debug("reconnected %s", nodename)
-                    reconnect.remove(nodename)
-            except socket.error as exc:
-                self.log.debug("daemon send to %s error: %s",
-                               sp.to_s, str(exc))
-
-        for nodename in nodenames:
-            init_sock(nodename)
-
-        try:
-            while True:
-                for nodename in list(reconnect):
-                    self.log.debug("reconnect %s", nodename)
-                    init_sock(nodename)
-                _socks = [sock for sock in socks]
-                try:
-                    rsock, _, esock = select.select(_socks, [], _socks, 1)
-                except Exception as exc:
-                    # empty socks
-                    break
-                for sock in rsock:
-                    try:
-                        rdata = self.recv_messages(
-                            sock, cluster_name=cluster_name, secret=secret,
-                            use_select=False, encrypted=socks[sock].encrypted,
-                            bufsize=1, stream=True
-                        )
-                    except SockReset:
-                        sp = socks[sock]
-                        self.log.debug("lost stream with %s", sp.nodename)
-                        sock.close()
-                        reconnect.add(sp.nodename)
-                        del socks[sock]
-                        continue
-                    except socket.error as exc2:
-                        # [Errno 10054] An existing connection was forcibly
-                        #               closed by the remote host
-                        if exc2.errno in (104, 10054):
-                            # connection reset by peer
-                            sp = socks[sock]
-                            sock.close()
-                            reconnect.add(sp.nodename)
-                            del socks[sock]
-                            time.sleep(PAUSE)
-                            continue
-                        raise
-                    if rdata is None:
-                        continue
-                    for message in rdata:
-                        yield message
-                for sock in esock:
-                    del socks[sock]
-                if len(socks) == 0:
-                    break
-                for sock in _socks:
-                    if sock in rsock:
-                        continue
-                    try:
-                        sock.send(PING)
-                    except Exception as exc:
-                        pass
-        finally:
-            for sock in socks:
-                sock.close()
-
     @staticmethod
     def parse_result(data):
         """
-        Extract status and formatted errors from a daemon_send() result.
+        Extract status and formatted errors from a daemon_get() result.
         Return a (<status>, <error string>) tuple.
 
         * data format 1:
