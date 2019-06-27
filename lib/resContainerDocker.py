@@ -400,6 +400,8 @@ class Container(resContainer.Container):
         return volumes
 
     def environment_options(self):
+        if self.environment is None:
+            return []
         options = []
         for mapping in self.environment:
             try:
