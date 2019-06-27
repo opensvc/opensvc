@@ -3834,18 +3834,19 @@ class Node(Crypt, ExtConfigMixin):
             node = self.options.node
         else:
             node = '*'
-        data = self._daemon_stats(svcpaths=svcpaths, node=node)
+        data = self._daemon_stats(svcpaths=svcpaths, node=node, server=self.options.server)
         return self.print_data(data, default_fmt="flat_json")
 
-    def _daemon_stats(self, svcpaths=None, silent=False, node=None):
+    def _daemon_stats(self, svcpaths=None, silent=False, node=None, server=None):
         data = self.daemon_get(
             {
                 "action": "daemon_stats",
-                "node": node,
                 "options": {
                     "svcpaths": svcpaths,
                 }
             },
+            node=node,
+            server=server,
             silent=silent,
         )
         if data is None or data.get("status", 0) != 0:
