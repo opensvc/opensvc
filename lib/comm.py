@@ -705,6 +705,7 @@ class Crypt(object):
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, af=sp.af)
         body = self.h2_body_from_data(data)
+        headers["Content-Length"] = str(len(body))
         conn = self.h2c(sp=sp)
         method = "GET"
         try:
@@ -861,6 +862,7 @@ class Crypt(object):
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, af=sp.af)
         body = self.h2_body_from_data(data)
+        headers["Content-Length"] = str(len(body))
         conn = self.h2c(sp=sp, enable_push=True)
         stream_id = conn.request("GET", path, headers=headers, body=body) 
         #data = resp.read()
