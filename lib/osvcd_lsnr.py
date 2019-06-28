@@ -655,8 +655,8 @@ class ClientHandler(shared.OsvcThread):
         if self.blacklisted(self.addr[0]):
             raise ex.excError("sender %s is blacklisted" % self.addr[0])
         if bdecode(self.cluster_key) == secret:
-            self.usr = False
-            return
+            # caller will set self.usr to False, meaning superuser
+            return False
         self.blacklist(self.addr[0])
         raise ex.excError("wrong secret")
 
