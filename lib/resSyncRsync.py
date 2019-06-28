@@ -320,7 +320,7 @@ class Rsync(resSync.Sync):
         Use a long waitlock timeout to give a chance to remote syncs to finish.
         """
         self.svc.daemon_service_action(action="postsync", options={"waitlock": "1h"},
-                                       nodename=nodename, sync=False,
+                                       server=nodename, sync=False,
                                        collect=False)
 
     def sync_nodes(self):
