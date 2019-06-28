@@ -4579,7 +4579,7 @@ class Node(Crypt, ExtConfigMixin):
                 else:
                     raise ex.excError("the --node <selector> option is required")
         if action_mode:
-            self.log.info("request node action '%s' on node %s", action, nodename)
+            self.log.info("request node action '%s' on node %s", action, node)
         req = {
             "action": "node_action",
             "options": {
@@ -4598,7 +4598,7 @@ class Node(Crypt, ExtConfigMixin):
             )
         except Exception as exc:
             self.log.error("node action on node %s failed: %s",
-                           nodename, exc)
+                           node, exc)
             return 1
 
         status, error, info = self.parse_result(data)
