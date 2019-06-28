@@ -714,9 +714,23 @@ class ClientHandler(shared.OsvcThread):
         self.streams[stream_id]["outbound"] += data
         self.send_outbound(stream_id)
 
+    def can_end_stream(self, stream_id):
+        if "request" not in self.streams[stream_id]:
+            return True
+        if self.streams[stream_id].get("pushers"):
+            return False
+        datalen = self.streams[stream_id].get("datalen", 0)
+        headers = self.streams[stream_id].get("request_headers", {})
+        if not headers:
+            return True
+        expectedlen = int(headers.get("Content-Length", [0])[0])
+        if datalen >= expectedlen:
+            return True
+        return False
+
     def send_outbound(self, stream_id):
         data = self.streams[stream_id]["outbound"]
-        end_stream = not self.streams[stream_id].get("pushers") or "request" not in self.streams[stream_id]
+        end_stream = self.can_end_stream(stream_id)
         window_size = self.h2conn.local_flow_control_window(stream_id)
         window_size = min(window_size, len(data))
         will_send = data[:window_size]
@@ -810,7 +824,10 @@ class ClientHandler(shared.OsvcThread):
             data = b''
         self.streams[stream_id] = {
             "request": event,
+            "request_headers": HTTPHeaderMap(event.headers),
             "data": data,
+            "datalen": 0,
+            "stream_ended": False,
             "pushers": [],
             "outbound": b'',
         }
@@ -820,6 +837,8 @@ class ClientHandler(shared.OsvcThread):
 
     def h2_data_received(self, event):
         self.streams[event.stream_id]["data"] += event.data
+        self.streams[event.stream_id]["datalen"] += event.flow_controlled_length
+        self.streams[event.stream_id]["stream_ended"] = event.stream_ended
         if not event.stream_ended:
             return
         status, content_type, data = self.h2_router(event.stream_id)
@@ -2413,8 +2432,10 @@ class ClientHandler(shared.OsvcThread):
         self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         if not self.event_queue:
             self.event_queue = queue.Queue()
+        if not self in self.parent.events_clients:
             self.parent.events_clients.append(self)
-        self.events_stream_ids.append(stream_id)
+        if not stream_id in self.events_stream_ids:
+            self.events_stream_ids.append(stream_id)
         if self.h2conn:
             request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
             try:
