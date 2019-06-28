@@ -2457,7 +2457,7 @@ class ClientHandler(shared.OsvcThread):
                 continue
             self.conn.sendall(msg)
 
-    def action_service_backlogs(self, *args, stream_id=None, **kwargs):
+    def action_service_backlogs(self, nodename, stream_id=None, **kwargs):
         """
         Send service past logs.
         kwargs:
@@ -2482,7 +2482,7 @@ class ClientHandler(shared.OsvcThread):
         ofile = self._action_logs_open(logfile, backlog, "svc")
         return self.read_file_lines(ofile)
 
-    def action_service_logs(self, *args, stream_id=None, **kwargs):
+    def action_service_logs(self, nodename, stream_id=None, **kwargs):
         """
         Send service logs.
         kwargs:
@@ -2506,7 +2506,7 @@ class ClientHandler(shared.OsvcThread):
             "args": [ofile, True],
         })
 
-    def action_node_backlogs(self, *args, stream_id=None, **kwargs):
+    def action_node_backlogs(self, nodename, stream_id=None, **kwargs):
         """
         Send service past logs.
         kwargs:
@@ -2521,7 +2521,7 @@ class ClientHandler(shared.OsvcThread):
         ofile = self._action_logs_open(logfile, backlog, "node")
         return self.read_file_lines(ofile)
 
-    def action_node_logs(self, *args, stream_id=None, **kwargs):
+    def action_node_logs(self, nodename, stream_id=None, **kwargs):
         """
         Send node logs.
         kwargs:
