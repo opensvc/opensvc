@@ -713,7 +713,7 @@ class Crypt(object):
             raise ex.excError(str(exc))
         except ConnectionResetError:
             return {"status": 1, "error": "%s %s connection reset"%(method, path)}
-        except (ConnectionRefusedError, ssl.SSLError) as exc:
+        except (ConnectionRefusedError, ssl.SSLError, socket.error) as exc:
             return {"status": 1, "error": "%s"%exc}
         resp = conn.get_response()
         data = resp.read()
