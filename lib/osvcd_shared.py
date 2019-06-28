@@ -435,6 +435,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def set_nmon(self, status=None, local_expect=None, global_expect=None):
         global NMON_DATA
+        changed = False
         with NMON_DATA_LOCK:
             if status:
                 if status != NMON_DATA.status:
@@ -444,8 +445,9 @@ class OsvcThread(threading.Thread, Crypt):
                         NMON_DATA.status else "none",
                         status
                     )
-                NMON_DATA.status = status
-                NMON_DATA.status_updated = time.time()
+                    changed = True
+                    NMON_DATA.status = status
+                    NMON_DATA.status_updated = time.time()
 
             if local_expect:
                 if local_expect == "unset":
@@ -457,7 +459,8 @@ class OsvcThread(threading.Thread, Crypt):
                         NMON_DATA.local_expect else "none",
                         local_expect
                     )
-                NMON_DATA.local_expect = local_expect
+                    changed = True
+                    NMON_DATA.local_expect = local_expect
 
             if global_expect:
                 if global_expect == "unset":
@@ -469,9 +472,11 @@ class OsvcThread(threading.Thread, Crypt):
                         NMON_DATA.global_expect else "none",
                         global_expect
                     )
-                NMON_DATA.global_expect = global_expect
+                    changed = True
+                    NMON_DATA.global_expect = global_expect
 
-        wake_monitor(reason="node mon change")
+        if changed:
+            wake_monitor(reason="node mon change")
 
     def set_smon(self, svcpath, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
