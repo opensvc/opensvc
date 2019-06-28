@@ -680,7 +680,12 @@ class Monitor(shared.OsvcThread):
         )
 
     def services_init_status(self):
-        proc = self.service_command(",".join(list_services()), ["status", "--parallel", "--refresh"], local=False)
+        svcs = list_services()
+        if not svcs:
+            self.log.info("no objects to get an initial status from")
+            self.services_init_status_callback()
+            return
+        proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
         self.push_proc(
             proc=proc,
             on_success="services_init_status_callback",
