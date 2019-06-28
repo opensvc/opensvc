@@ -96,6 +96,13 @@ ADMIN_ACTIONS = (
 )
 
 
+class HTTP(Exception):
+    def __init__(self, status, msg=""):
+        self.status = status
+        self.msg = msg
+    def __str__(self):
+        return "status %s: %s" % (self.status, self.msg)
+
 class DontClose(Exception):
     pass
 
@@ -574,6 +581,7 @@ class ClientHandler(shared.OsvcThread):
         self.h2conn = None
         self.events_stream_ids = []
         self.usr = None
+        self.usr_auth = None
         self.events_counter = 0
 
     def run(self):
@@ -636,12 +644,14 @@ class ClientHandler(shared.OsvcThread):
             return
         try:
             self.usr = self.authenticate_client_secret(headers)
+            self.usr_auth = "secret"
             return
         except Exception as exc:
             #self.log.warning("%s", exc)
             pass
         try:
             self.usr = self.authenticate_client_x509()
+            self.usr_auth = "x509"
             return
         except Exception as exc:
             #self.log.warning("%s", exc)
@@ -752,6 +762,16 @@ class ClientHandler(shared.OsvcThread):
             self.tls_conn.sendall(self.h2conn.data_to_send())
             self.h2_cleanup_stream(stream_id)
 
+    def h2_push_promise(self, stream_id, path, data, content_type):
+        """
+        Use to promise web resources to a browser.
+        """
+        promised_stream_id = self.h2conn.get_next_available_stream_id()
+        request_headers = [h for h in self.streams[stream_id]["request"].headers if h[0] != ":path"]
+        request_headers.insert(0, (":path", path))
+        self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)
+        self.prepare_response(promised_stream_id, 200, data, content_type)
+
     def h2_router(self, stream_id):
         content_type = "application/json"
         stream = self.streams[stream_id]
@@ -764,7 +784,7 @@ class ClientHandler(shared.OsvcThread):
             self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
         except ex.excError:
             status = 401
-            result = ""
+            result = {"status": status, "error": "Not Authorized"}
             return status, content_type, result
         path = headers.get(":path").lstrip("/")
         if path == "favicon.ico":
@@ -787,12 +807,15 @@ class ClientHandler(shared.OsvcThread):
             status = 200
         except DontClose:
             raise
+        except HTTP as exc:
+            status = exc.status
+            result = {"status": exc.status, "error": exc.msg}
         except ex.excError as exc:
             status = 400
-            result = {"status": 1, "error": str(exc)}
+            result = {"status": status, "error": str(exc)}
         except Exception as exc:
             status = 500
-            result = {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+            result = {"status": status, "error": str(exc), "traceback": traceback.format_exc()}
             self.log.exception(exc)
         try:
             content_type = self.streams[stream_id]["content_type"]
@@ -987,9 +1010,11 @@ class ClientHandler(shared.OsvcThread):
         except DontClose:
             raise
         except ex.excError as exc:
-            result = {"status": 1, "error": str(exc)}
+            result = {"status": 400, "error": str(exc)}
+        except HTTP as exc:
+            result = {"status": exc.status, "error": exc.msg}
         except Exception as exc:
-            result = {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+            result = {"status": 500, "error": str(exc), "traceback": traceback.format_exc()}
         if result:
             self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
             self.conn.setblocking(1)
@@ -1262,7 +1287,7 @@ class ClientHandler(shared.OsvcThread):
 
     #########################################################################
     #
-    # Actions
+    # Routing and Multiplexing
     #
     #########################################################################
     def multiplex(self, node, fname, options, data, original_nodename, action, stream_id=None):
@@ -1387,7 +1412,7 @@ class ClientHandler(shared.OsvcThread):
         action = data["action"]
         fname = "action_" + action
         if not hasattr(self, fname):
-            return {"error": "action not supported", "status": 1}
+            raise HTTP(501, "handler '%s' not supported" % action)
         # prepare options, sanitized for use as keywords
         options = {}
         for key, val in data.get("options", {}).items():
@@ -1400,6 +1425,13 @@ class ClientHandler(shared.OsvcThread):
         if node:
             return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
         return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+
+
+    #########################################################################
+    #
+    # Actions
+    #
+    #########################################################################
 
     def action_run_done(self, nodename, **kwargs):
         self.rbac_requires(**kwargs)
@@ -2673,13 +2705,20 @@ class ClientHandler(shared.OsvcThread):
             buff = f.read()
         return buff
 
-    def h2_push_promise(self, stream_id, path, data, content_type):
-        promised_stream_id = self.h2conn.get_next_available_stream_id()
-        request_headers = [h for h in self.streams[stream_id]["request"].headers if h[0] != ":path"]
-        request_headers.insert(0, (":path", path))
-        self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)
-        self.prepare_response(promised_stream_id, 200, data, content_type)
+    def action_whoami(self, nodename, **kwargs):
+        data = {
+            "name": self.usr.svcname,
+            "namespace": self.usr.namespace,
+            "auth": self.usr_auth,
+            "grant": dict((k, list(v) if v is not None else None) for k, v in self.user_grants(self.usr).items()),
+        }
+        return data
 
+    ##########################################################################
+    #
+    # App
+    #
+    ##########################################################################
     def index(self, stream_id):
         data = self.load_file("index.js")
         self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
