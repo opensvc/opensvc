@@ -116,7 +116,6 @@ class Listener(shared.OsvcThread):
     crl_mode = None
     tls_sock = None
     tls_context = None
-    usr = None
 
     @lazy
     def certfs(self):
@@ -641,6 +640,7 @@ class ClientHandler(shared.OsvcThread):
         if self.addr[0] == "local":
             # only root can talk to the ux sockets
             self.usr = False
+            self.usr_auth = "uxsock"
             return
         try:
             self.usr = self.authenticate_client_secret(headers)
@@ -951,7 +951,6 @@ class ClientHandler(shared.OsvcThread):
                 self.tls_conn.sendall(data_to_send)
 
     def handle_raw_client(self):
-        usr = None
         chunks = []
         buff_size = 4096
         self.conn.setblocking(0)
@@ -1068,8 +1067,8 @@ class ClientHandler(shared.OsvcThread):
             data.add(ns)
         return data
 
-    def user_grants(self, usr, all_ns=None):
-        grants = usr.oget("DEFAULT", "grant")
+    def user_grants(self, all_ns=None):
+        grants = self.usr.oget("DEFAULT", "grant")
         return self.parse_grants(grants, all_ns=all_ns)
 
     def parse_grants(self, grants, all_ns=None):
@@ -1107,14 +1106,14 @@ class ClientHandler(shared.OsvcThread):
                 data[role] = set()
         return data
 
-    def rbac_requires(self, namespaces=None, roles=None, usr=None, grants=None, action=None, **kwargs):
-        if usr is None:
+    def rbac_requires(self, namespaces=None, roles=None, grants=None, action=None, **kwargs):
+        if self.usr is False:
             # ux and aes socket are not constrainted by rbac
             return
         if roles is None:
             roles = ["root"]
         if grants is None:
-            grants = self.user_grants(usr)
+            grants = self.user_grants()
         if "root" in grants:
             return grants
         if isinstance(namespaces, (list, tuple)):
@@ -1136,7 +1135,7 @@ class ClientHandler(shared.OsvcThread):
             if not len(namespaces - role_namespaces):
                 # role granted on all namespaces
                 return grants
-        raise ex.excError("unauthorized: action '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, usr.svcname, self.format_grants(grants), ",".join(roles)))
+        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, self.usr.svcname, self.format_grants(grants), ",".join(roles)))
 
     @staticmethod
     def format_grants(grants):
@@ -1150,21 +1149,21 @@ class ClientHandler(shared.OsvcThread):
                 elements.append("%s:%s" % (role, ",".join(namespaces)))
         return " ".join(elements)
 
-    def rbac_create_data(self, payload=None , usr=None, **kwargs):
-        if usr is None:
+    def rbac_create_data(self, payload=None , **kwargs):
+        if self.usr is False:
             return
         if not payload:
             return
         all_ns = self.get_all_ns()
-        grants = self.user_grants(usr, all_ns)
+        grants = self.user_grants(all_ns)
         if "root" in grants:
             return []
         errors = []
         for path, cd in payload.items():
-            errors += self.rbac_create_obj(path, cd, usr, grants, all_ns, **kwargs)
+            errors += self.rbac_create_obj(path, cd, grants, all_ns, **kwargs)
         return errors
 
-    def rbac_create_obj(self, path, cd, usr, grants, all_ns, **kwargs):
+    def rbac_create_obj(self, path, cd, grants, all_ns, **kwargs):
         errors = []
         name, namespace, kind = split_svcpath(path)
         if namespace not in all_ns:
@@ -1175,9 +1174,9 @@ class ClientHandler(shared.OsvcThread):
                 errors.append("%s: create the new namespace %s requires the squatter cluster role" % (path, namespace))
                 return errors
             elif namespace not in grants["admin"]:
-                usr.set_multi(["grant+=admin:%s" % namespace])
+                self.usr.set_multi(["grant+=admin:%s" % namespace])
                 grants["admin"].add(namespace)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, usr=usr, **kwargs)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, **kwargs)
         try:
             orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)
         except:
@@ -1317,10 +1316,21 @@ class ClientHandler(shared.OsvcThread):
 
         def do_node(nodename):
             if nodename == rcEnv.nodename:
-                _result = getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+                try:
+                    _result = getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+                except HTTP as exc:
+                    status = exc.status
+                    _result = {"status": exc.status, "error": exc.msg}
+                except ex.excError as exc:
+                    status = 400
+                    _result = {"status": status, "error": str(exc)}
+                except Exception as exc:
+                    status = 500
+                    _result = {"status": status, "error": str(exc), "traceback": traceback.format_exc()}
+                    self.log.exception(exc)
                 result["nodes"][nodename] = _result
                 try:
-                    result["status"] += _result.get("status", 0)
+                    result["status"] += 1 if _result.get("status") else 0
                 except AttributeError:
                     # result is not a dict
                     pass
@@ -2710,7 +2720,7 @@ class ClientHandler(shared.OsvcThread):
             "name": self.usr.svcname,
             "namespace": self.usr.namespace,
             "auth": self.usr_auth,
-            "grant": dict((k, list(v) if v is not None else None) for k, v in self.user_grants(self.usr).items()),
+            "grant": dict((k, list(v) if v is not None else None) for k, v in self.user_grants().items()),
         }
         return data
 
