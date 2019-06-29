@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-06\-11
+.TH SVCMGR 1 2019\-06\-29
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -8728,7 +8728,7 @@ Show this help message and exit.
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
-Start a service. The started instances depend on the service placement policy, so the local instance may not start. A failover service is considered started when one instance is started. A flex service is considered started when `<flex_min_nodes>` instances are started.
+Start a service. The started instances depend on the service placement policy, so the local instance may not start. A failover service is considered started when one instance is started. A flex service is considered started when the number of started instances is between `<flex_min>` and `<flex_max>`.
 
 .TP
 .B --dry-run

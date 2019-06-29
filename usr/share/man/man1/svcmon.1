@@ -1,4 +1,4 @@
-.TH SVCMON 1 2019\-06\-11
+.TH SVCMON 1 2019\-06\-29
 .SH NAME
 svcmon - OpenSVC agent's services instances status requesting command.
 .SH SYNOPSIS
@@ -28,8 +28,11 @@ show this help message and exit
 .B --color=COLOR
 colorize output. possible values are : auto=guess based on tty presence, always|yes=always colorize, never|no=never colorize
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+The nodes to display information for. If not specified, all nodes are displayed.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.

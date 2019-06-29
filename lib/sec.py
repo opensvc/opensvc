@@ -120,3 +120,48 @@ class Sec(DataMixin, BaseSvc):
     def get_cert_expire(self):
         buff = self.decode_key("certificate")
         return get_expire(buff)
+
+    def pkcs12(self):
+        print(self._pkcs12())
+
+    def _pkcs12(self):
+        required = set(["private_key", "certificate_chain"])
+        if required & set(self.data_keys()) != required:
+            self.gen_cert()
+        from subprocess import Popen, PIPE
+        import tempfile
+        _tmpcert = tempfile.NamedTemporaryFile()
+        _tmpkey = tempfile.NamedTemporaryFile()
+        tmpcert = _tmpcert.name
+        tmpkey = _tmpkey.name
+        _tmpcert.close()
+        _tmpkey.close()
+        try:
+            with open(tmpkey, "w") as _tmpkey:
+                os.chmod(tmpkey, 0o600)
+                _tmpkey.write(self.decode_key("private_key"))
+            with open(tmpcert, "w") as _tmpcert:
+                os.chmod(tmpcert, 0o600)
+                _tmpcert.write(self.decode_key("certificate_chain"))
+            cmd = ["openssl", "pkcs12", "-export", "-in", tmpcert, "-inkey", tmpkey, "-passout", "stdin"]
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+            out, err = proc.communicate(input="\n")
+            if err:
+                print(err)
+            return out
+        finally:
+            if os.path.exists(tmpcert):
+                os.unlink(tmpcert)
+            if os.path.exists(tmpkey):
+                os.unlink(tmpkey)
+
+    def fullpem(self):
+        print(self._fullpem())
+
+    def _fullpem(self):
+        required = set(["private_key", "certificate_chain"])
+        if required & set(self.data_keys()) != required:
+            self.gen_cert()
+        buff = self.decode_key("private_key")
+        buff += self.decode_key("certificate_chain")
+        return buff

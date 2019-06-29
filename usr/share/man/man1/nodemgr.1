@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-06\-11
+.TH NODEMGR 1 2019\-06\-29
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -45,8 +45,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector alerts\fP
@@ -77,8 +80,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector asset\fP
@@ -109,8 +115,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector checks\fP
@@ -141,8 +150,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector cli\fP
@@ -194,8 +206,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector create tag\fP
@@ -229,8 +244,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector disks\fP
@@ -261,8 +279,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector events\fP
@@ -299,8 +320,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector list actions\fP
@@ -337,8 +361,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector list filtersets\fP
@@ -369,8 +396,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector list nodes\fP
@@ -401,8 +431,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector list services\fP
@@ -433,8 +466,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector list tags\fP
@@ -468,8 +504,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector log\fP
@@ -503,8 +542,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector networks\fP
@@ -535,8 +577,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector search\fP
@@ -570,8 +615,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector show actions\fP
@@ -611,8 +659,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector show tags\fP
@@ -643,8 +694,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector tag\fP
@@ -678,8 +732,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collector untag\fP
@@ -713,8 +770,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRCOMPLIANCE\fP
 
@@ -753,8 +813,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance auto\fP
@@ -788,8 +851,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance check\fP
@@ -835,8 +901,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance detach\fP
@@ -873,8 +942,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance env\fP
@@ -911,8 +983,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance fix\fP
@@ -958,8 +1033,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance fixable\fP
@@ -1005,8 +1083,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance list module\fP
@@ -1037,8 +1118,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance list moduleset\fP
@@ -1072,8 +1156,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance list ruleset\fP
@@ -1107,8 +1194,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance show moduleset\fP
@@ -1139,8 +1229,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance show ruleset\fP
@@ -1171,8 +1264,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr compliance show status\fP
@@ -1203,8 +1299,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRMISC\fP
 
@@ -1237,8 +1336,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRNETWORK ACTIONS\fP
 
@@ -1271,8 +1373,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr network setup\fP
@@ -1303,8 +1408,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr network show\fP
@@ -1338,8 +1446,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr network status\fP
@@ -1376,8 +1487,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRNODE ACTIONS\fP
 
@@ -1410,8 +1524,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr auto reboot\fP
@@ -1445,8 +1562,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr collect stats\fP
@@ -1480,8 +1600,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr dequeue actions\fP
@@ -1515,8 +1638,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr events\fP
@@ -1547,8 +1673,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr freeze\fP
@@ -1585,8 +1714,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr frozen\fP
@@ -1617,8 +1749,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr logs\fP
@@ -1655,8 +1790,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr ls\fP
@@ -1687,8 +1825,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr ping\fP
@@ -1719,8 +1860,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr print devs\fP
@@ -1760,8 +1904,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr print schedule\fP
@@ -1795,8 +1942,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr reboot\fP
@@ -1827,8 +1977,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr rotate root pw\fP
@@ -1862,8 +2015,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr scanscsi\fP
@@ -1903,8 +2059,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr schedule reboot\fP
@@ -1935,8 +2094,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr schedule reboot status\fP
@@ -1967,8 +2129,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr shutdown\fP
@@ -1999,8 +2164,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr snooze\fP
@@ -2034,8 +2202,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr stonith\fP
@@ -2066,8 +2237,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr thaw\fP
@@ -2104,8 +2278,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr unschedule reboot\fP
@@ -2136,8 +2313,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr unsnooze\fP
@@ -2168,8 +2348,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr updatecomp\fP
@@ -2200,8 +2383,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr updatepkg\fP
@@ -2232,8 +2418,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr wait\fP
@@ -2275,8 +2464,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr wol\fP
@@ -2316,8 +2508,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRNODE CONFIGURATION\fP
 
@@ -2377,8 +2572,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr edit config\fP
@@ -2415,8 +2613,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr eval\fP
@@ -2477,8 +2678,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr get\fP
@@ -2550,8 +2754,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr print config\fP
@@ -2582,8 +2789,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr register\fP
@@ -2623,8 +2833,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr set\fP
@@ -2705,8 +2918,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr unset\fP
@@ -2772,8 +2988,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr validate config\fP
@@ -2804,8 +3023,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRNODE DAEMON MANAGEMENT\fP
 
@@ -2838,8 +3060,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon blacklist status\fP
@@ -2870,8 +3095,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon join\fP
@@ -2905,8 +3133,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon leave\fP
@@ -2937,8 +3168,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon lock release\fP
@@ -2975,8 +3209,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon rejoin\fP
@@ -3007,8 +3244,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon relay status\fP
@@ -3039,8 +3279,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon restart\fP
@@ -3071,8 +3314,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon running\fP
@@ -3103,8 +3349,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon shutdown\fP
@@ -3135,8 +3384,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon start\fP
@@ -3170,8 +3422,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon stats\fP
@@ -3202,8 +3457,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon status\fP
@@ -3234,8 +3492,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr daemon stop\fP
@@ -3269,8 +3530,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr dns dump\fP
@@ -3301,8 +3565,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRPOOL ACTIONS\fP
 
@@ -3353,8 +3620,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pool ls\fP
@@ -3385,8 +3655,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pool status\fP
@@ -3420,8 +3693,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 \fRPUSH DATA TO THE COLLECTOR\fP
 
@@ -3457,8 +3733,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushasset\fP
@@ -3495,8 +3774,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushbrocade\fP
@@ -3533,8 +3815,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushcentera\fP
@@ -3571,8 +3856,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushdisks\fP
@@ -3606,8 +3894,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushemcvnx\fP
@@ -3644,8 +3935,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pusheva\fP
@@ -3682,8 +3976,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushfreenas\fP
@@ -3720,8 +4017,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushgcedisks\fP
@@ -3758,8 +4058,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushhds\fP
@@ -3796,8 +4099,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushhp3par\fP
@@ -3834,8 +4140,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushibmds\fP
@@ -3872,8 +4181,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushibmsvc\fP
@@ -3910,8 +4222,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushnecism\fP
@@ -3948,8 +4263,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushnetapp\fP
@@ -3986,8 +4304,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushnsr\fP
@@ -4024,8 +4345,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushpatch\fP
@@ -4059,8 +4383,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushpkg\fP
@@ -4094,8 +4421,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushstats\fP
@@ -4138,8 +4468,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushsym\fP
@@ -4179,8 +4512,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushvioserver\fP
@@ -4217,8 +4553,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr pushxtremio\fP
@@ -4255,8 +4594,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
 \fBnodemgr sysreport\fP
@@ -4293,8 +4635,11 @@ Show this help message and exit
 .B --local
 Set to disable cluster-wide operations.
 .TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
 .B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 .SH OPTIONS
 .SH SEE ALSO
 .BR nodemgr (1)
