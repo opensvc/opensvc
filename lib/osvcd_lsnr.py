@@ -1068,6 +1068,8 @@ class ClientHandler(shared.OsvcThread):
         return data
 
     def user_grants(self, all_ns=None):
+        if self.usr is False or self.tls is False:
+            return {"root": None}
         grants = self.usr.oget("DEFAULT", "grant")
         return self.parse_grants(grants, all_ns=all_ns)
 
