@@ -584,6 +584,14 @@ class ClientHandler(shared.OsvcThread):
         self.usr_grants = {}
         self.events_counter = 0
 
+    def __str__(self):
+        return "client handler thread (client addr: %s, usr: %s, auth: %s, scheme: %s)" % (
+            self.addr[0],
+            self.usr.svcname if self.usr else self.usr,
+            self.usr_auth,
+            self.scheme
+        )
+
     def run(self):
         try:
             close = True
