@@ -581,6 +581,7 @@ class ClientHandler(shared.OsvcThread):
         self.events_stream_ids = []
         self.usr = None
         self.usr_auth = None
+        self.usr_grants = {}
         self.events_counter = 0
 
     def run(self):
@@ -652,6 +653,7 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.usr = self.authenticate_client_x509()
             self.usr_auth = "x509"
+            self.usr_grants = self.user_grants()
             return
         except Exception as exc:
             #self.log.warning("%s", exc)
@@ -793,8 +795,6 @@ class ClientHandler(shared.OsvcThread):
             return self.index(stream_id)
         elif path == "index.js":
             return self.index_js()
-        elif path == "index.css":
-            return self.index_css()
         node = headers.get(Headers.node)
         options = json.loads(bdecode(req_data))
         data = {
@@ -1108,36 +1108,34 @@ class ClientHandler(shared.OsvcThread):
                 data[role] = set()
         return data
 
-    def rbac_requires(self, namespaces=None, roles=None, grants=None, action=None, **kwargs):
+    def rbac_requires(self, namespaces=None, roles=None, action=None, **kwargs):
         if self.usr is False:
             # ux and aes socket are not constrainted by rbac
             return
         if roles is None:
             roles = ["root"]
-        if grants is None:
-            grants = self.user_grants()
-        if "root" in grants:
-            return grants
+        if "root" in self.usr_grants:
+            return
         if isinstance(namespaces, (list, tuple)):
             namespaces = set(namespaces)
         for role in roles:
-            if role not in grants:
+            if role not in self.usr_grants:
                 continue
             if role in rcEnv.cluster_roles:
-                return grants
+                return
 
             # namespaced role
-            role_namespaces = grants[role]
+            role_namespaces = self.usr_grants[role]
             if not role_namespaces:
                 # empty set
                 continue
             if namespaces == "ANY":
                 # role granted on at least one namespace
-                return grants
+                return
             if not len(namespaces - role_namespaces):
                 # role granted on all namespaces
-                return grants
-        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, self.usr.svcname, self.format_grants(grants), ",".join(roles)))
+                return
+        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, self.usr.svcname, self.format_grants(self.usr_grants), ",".join(roles)))
 
     @staticmethod
     def format_grants(grants):
@@ -1431,6 +1429,14 @@ class ClientHandler(shared.OsvcThread):
             options[str(key)] = val
         #print("addr:", self.addr, "tls:", self.tls, "action:", action, "options:", options)
         self.parent.stats.sessions.alive[self.sid].progress = fname
+
+        # validate rbac before multiplexing, before privs escalation
+        try:
+            rbac = getattr(self, "rbac_" + fname)
+            rbac(nodename, action=action, options=options, stream_id=stream_id)
+        except AttributeError:
+            self.rbac_requires(action=action)
+
         if action == "create":
             return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
@@ -1446,7 +1452,6 @@ class ClientHandler(shared.OsvcThread):
     #########################################################################
 
     def action_run_done(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
         if not svcpath:
@@ -1462,11 +1467,13 @@ class ClientHandler(shared.OsvcThread):
             shared.RUN_DONE.add(sig)
         return {"status": 0}
 
+    def rbac_action_relay_tx(self, nodename, **kwargs):
+        self.rbac_requires(roles=["heartbeat"], **kwargs)
+
     def action_relay_tx(self, nodename, **kwargs):
         """
         Store a relay heartbeat payload emitted by <nodename>.
         """
-        self.rbac_requires(roles=["heartbeat"], **kwargs)
         options = kwargs.get("options", {})
         cluster_id = options.get("cluster_id", "")
         cluster_name = options.get("cluster_name", "")
@@ -1481,12 +1488,14 @@ class ClientHandler(shared.OsvcThread):
             }
         return {"status": 0}
 
+    def rbac_action_relay_rx(self, nodename, **kwargs):
+        self.rbac_requires(roles=["heartbeat"], **kwargs)
+
     def action_relay_rx(self, nodename, **kwargs):
         """
         Serve to <nodename> the relay heartbeat payload emitted by the node in
         <slot>.
         """
-        self.rbac_requires(roles=["heartbeat"], **kwargs)
         options = kwargs.get("options", {})
         cluster_id = options.get("cluster_id", "")
         _nodename = options.get("slot")
@@ -1500,8 +1509,10 @@ class ClientHandler(shared.OsvcThread):
                 "updated": RELAY_DATA[key]["updated"],
             }
 
-    def action_daemon_relay_status(self, nodename, **kwargs):
+    def rbac_action_daemon_relay_status(self, nodename, **kwargs):
         self.rbac_requires(roles=["heartbeat"], **kwargs)
+
+    def action_daemon_relay_status(self, nodename, **kwargs):
         data = {}
         with RELAY_LOCK:
             for _nodename, _data in RELAY_DATA.items():
@@ -1513,27 +1524,33 @@ class ClientHandler(shared.OsvcThread):
                 }
         return data
 
+    def rbac_action_daemon_blacklist_clear(self, nodename, **kwargs):
+        self.rbac_requires(roles=["blacklistadmin"], **kwargs)
+
     def action_daemon_blacklist_clear(self, nodename, **kwargs):
         """
         Clear the senders blacklist.
         """
-        self.rbac_requires(roles=["blacklistadmin"], **kwargs)
         self.blacklist_clear()
         return {"status": 0}
+
+    def rbac_action_daemon_blacklist_status(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
 
     def action_daemon_blacklist_status(self, nodename, **kwargs):
         """
         Return the senders blacklist.
         """
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         return {"status": 0, "data": self.get_blacklist()}
+
+    def rbac_action_daemon_stats(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
 
     def action_daemon_stats(self, nodename, **kwargs):
         """
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         data = {
             "timestamp": time.time(),
             "daemon": shared.DAEMON.stats(),
@@ -1554,20 +1571,24 @@ class ClientHandler(shared.OsvcThread):
                     data["services"][svc.svcpath] = _data
         return {"status": 0, "data": data}
 
+    def rbac_action_nodes_info(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
     def action_nodes_info(self, nodename, **kwargs):
         """
         Return a hash indexed by nodename, containing the info
         required by the node selector algorithm.
         """
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         return {"status": 0, "data": self.nodes_info()}
+
+    def rbac_action_daemon_status(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
 
     def action_daemon_status(self, nodename, **kwargs):
         """
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        grants = self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
         options = kwargs.get("options", {})
         data = {
             "pid": shared.DAEMON.pid,
@@ -1577,10 +1598,10 @@ class ClientHandler(shared.OsvcThread):
                 "nodes": self.cluster_nodes,
             }
         }
-        if grants is None or "root" in grants:
+        if self.usr is False or "root" in self.usr_grants:
             allowed_namespaces = None
         else:
-            allowed_namespaces = grants.get("guest", [])
+            allowed_namespaces = self.usr_grants.get("guest", [])
         with shared.THREADS_LOCK:
             for thr_id, thread in shared.THREADS.items():
                 data[thr_id] = thread.status(namespaces=allowed_namespaces, **options)
@@ -1599,7 +1620,6 @@ class ClientHandler(shared.OsvcThread):
         """
         Care with locks
         """
-        self.rbac_requires(**kwargs)
         self.log_request("shutdown daemon", nodename, **kwargs)
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
@@ -1640,7 +1660,6 @@ class ClientHandler(shared.OsvcThread):
         return {"status": 0}
 
     def action_daemon_stop(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         thr_id = options.get("thr_id")
         if not thr_id:
@@ -1679,7 +1698,6 @@ class ClientHandler(shared.OsvcThread):
         return {"status": 0}
 
     def action_daemon_start(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         thr_id = options.get("thr_id")
         if not thr_id:
@@ -1695,7 +1713,6 @@ class ClientHandler(shared.OsvcThread):
         return {"status": 0}
 
     def action_get_node_config(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         fmt = options.get("format")
         if fmt == "json":
@@ -1719,55 +1736,25 @@ class ClientHandler(shared.OsvcThread):
         self.log.info("serve node config to %s", nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
+    def rbac_action_get_service_config(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
+
     def action_get_service_config(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         fmt = options.get("format")
+        svcpath = options.get("svcpath")
         if fmt == "json":
-            return self._action_get_service_config_json(nodename, **kwargs)
+            return self._action_get_service_config_json(nodename, svcpath, **kwargs)
         else:
-            return self._action_get_service_config_file(nodename, **kwargs)
+            return self._action_get_service_config_file(nodename, svcpath, **kwargs)
 
-    def action_get_secret_key(self, nodename, **kwargs):
-        return self.action_get_key(nodename, **kwargs)
-
-    def action_get_key(self, nodename, **kwargs):
+    def _action_get_service_config_json(self, nodename, svcpath, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        name, namespace, kind = split_svcpath(svcpath)
-        if kind == "cfg":
-            role = "guest"
-        else:
-            # sec, usr
-            role = "admin"
-        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
-        key = options.get("key")
-        try:
-            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
-        except Exception as exc:
-            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
-
-    def action_set_key(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-        key = options.get("key")
-        data = options.get("data")
-        shared.SERVICES[svcpath].add_key(key, data)
-        try:
-            return {"status": 0}
-        except Exception as exc:
-            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
-
-    def _action_get_service_config_json(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if not svcpath:
-            return {"error": "no svcpath specified", "status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         evaluate = options.get("evaluate")
         impersonate = options.get("impersonate")
         try:
@@ -1775,15 +1762,8 @@ class ClientHandler(shared.OsvcThread):
         except Exception as exc:
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
-    def _action_get_service_config_file(self, nodename, **kwargs):
+    def _action_get_service_config_file(self, nodename, svcpath, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if not svcpath:
-            return {"error": "no svcpath specified", "status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         if shared.SMON_DATA.get(svcpath, {}).get("status") in ("purging", "deleting") or \
            shared.SMON_DATA.get(svcpath, {}).get("global_expect") in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
@@ -1796,28 +1776,76 @@ class ClientHandler(shared.OsvcThread):
         self.log.info("serve service %s config to %s", svcpath, nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
-    def action_wake_monitor(self, nodename, **kwargs):
+    def action_get_secret_key(self, nodename, **kwargs):
+        return self.action_get_key(nodename, **kwargs)
+
+    def rbac_action_get_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        if kind == "cfg":
+            role = "guest"
+        else:
+            # sec, usr
+            role = "admin"
+        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
+
+    def action_get_key(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        key = options.get("key")
+        try:
+            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
+        except Exception as exc:
+            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+
+    def rbac_action_set_key(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
+
+    def action_set_key(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        key = options.get("key")
+        data = options.get("data")
+        shared.SERVICES[svcpath].add_key(key, data)
+        try:
+            return {"status": 0}
+        except Exception as exc:
+            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
+
+    def rbac_action_wake_monitor(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
         if svcpath:
             name, namespace, kind = split_svcpath(svcpath)
             self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
         else:
             self.rbac_requires(roles=["operator"], namespaces="ANY", **kwargs)
+
+    def action_wake_monitor(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
         shared.wake_monitor(reason="service %s notification" % svcpath)
         return {"status": 0}
+
+    def rbac_action_clear(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
 
     def action_clear(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if svcpath is None:
-            return {"error": "no svcpath specified", "status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
         smon = self.get_service_monitor(svcpath)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
@@ -1853,19 +1881,15 @@ class ClientHandler(shared.OsvcThread):
                 slaves |= self.get_service_slaves(slave, slaves)
         return slaves
 
-    def action_set_service_monitor(self, nodename, **kwargs):
+    def rbac_action_set_service_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
         if svcpath is None:
-            return {"error": ["no svcpath specified"], "status": 1}
+            raise HTTP(400, "object path not set")
         name, namespace, kind = split_svcpath(svcpath)
-        status = options.get("status")
         local_expect = options.get("local_expect")
         global_expect = options.get("global_expect")
         reset_retries = options.get("reset_retries", False)
-        stonith = options.get("stonith")
         role = "admin"
         operator = (
             # (local_expect, global_expect, reset_retries)
@@ -1882,6 +1906,15 @@ class ClientHandler(shared.OsvcThread):
         if (local_expect, _global_expect, reset_retries) in operator:
             role = "operator"
         self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
+
+    def action_set_service_monitor(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        status = options.get("status")
+        local_expect = options.get("local_expect")
+        global_expect = options.get("global_expect")
+        reset_retries = options.get("reset_retries", False)
+        stonith = options.get("stonith")
         svcpaths = set([svcpath])
         if global_expect != "scaled":
             svcpaths |= self.get_service_slaves(svcpath)
@@ -2007,7 +2040,6 @@ class ClientHandler(shared.OsvcThread):
             raise ex.excAbortAction()
 
     def action_set_node_monitor(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         status = options.get("status")
         local_expect = options.get("local_expect")
@@ -2079,7 +2111,6 @@ class ClientHandler(shared.OsvcThread):
         return lock_id
 
     def action_lock(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         name = options.get("name")
         timeout = options.get("timeout")
@@ -2096,7 +2127,6 @@ class ClientHandler(shared.OsvcThread):
         return result
 
     def action_unlock(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         name = options.get("name")
         lock_id = options.get("id")
@@ -2105,7 +2135,6 @@ class ClientHandler(shared.OsvcThread):
         return result
 
     def action_leave(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         self.log.info("node %s is leaving", nodename)
         if nodename not in self.cluster_nodes:
             self.log.info("node %s already left", nodename)
@@ -2120,7 +2149,6 @@ class ClientHandler(shared.OsvcThread):
             }
 
     def action_collector_xmlrpc(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         args = options.get("args", [])
         kwargs = options.get("kwargs", {})
@@ -2131,7 +2159,6 @@ class ClientHandler(shared.OsvcThread):
         return result
 
     def action_join(self, nodename, **kwargs):
-        self.rbac_requires(**kwargs)
         if nodename in self.cluster_nodes:
             new_nodes = self.cluster_nodes
             self.log.info("node %s rejoins", nodename)
@@ -2198,8 +2225,6 @@ class ClientHandler(shared.OsvcThread):
 
         if action_options is None:
             action_options = {}
-
-        self.rbac_requires(**kwargs)
 
         if not cmd and not action:
             self.log_request("node action ('action' not set)", nodename, lvl="error", **kwargs)
@@ -2279,6 +2304,15 @@ class ClientHandler(shared.OsvcThread):
             }
         return result
 
+    def rbac_action_create(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        data = options.get("data")
+        if not data:
+            return
+        errors = self.rbac_create_data(data, **kwargs)
+        if errors:
+            raise HTTP(403, errors)
+
     def action_create(self, nodename, **kwargs):
         """
         Execute a svcmgr create action, feeding the services definitions
@@ -2288,9 +2322,6 @@ class ClientHandler(shared.OsvcThread):
         data = options.get("data")
         if not data:
             return {"status": 0, "info": "no data"}
-        errors = self.rbac_create_data(data, **kwargs)
-        if errors:
-            return {"status": 1, "error": errors}
         sync = options.get("sync", True)
         namespace = options.get("namespace")
         provision = options.get("provision")
@@ -2322,22 +2353,15 @@ class ClientHandler(shared.OsvcThread):
                 self.set_smon(path, global_expect="provisioned")
         return result
 
-    def action_service_action(self, nodename, **kwargs):
-        """
-        Execute a CRM command.
-        kwargs.options:
-        * svcpath: str
-        * action: str
-        * options: dict
-        * sync: boolean
-        * cmd: str (deprecated)
-        """
+    def rbac_action_service_action(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         action = options.get("action")
         cmd = options.get("cmd")
-        sync = options.get("sync", True)
         svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
         action_options = options.get("options", {})
+        name, namespace, kind = split_svcpath(svcpath)
 
         if action_options is None:
             action_options = {}
@@ -2350,14 +2374,6 @@ class ClientHandler(shared.OsvcThread):
         elif action in ADMIN_ACTIONS:
             role = "admin"
 
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if svcpath is None:
-            self.log_request("service action (no 'svcpath' set)", nodename, lvl="error", **kwargs)
-            return {
-                "status": 1,
-            }
-        name, namespace, kind = split_svcpath(svcpath)
         if action == "set":
             # load current config
             try:
@@ -2384,9 +2400,40 @@ class ClientHandler(shared.OsvcThread):
             payload = {svcpath: cf}
             errors = self.rbac_create_data(payload, **kwargs)
             if errors:
-                return {"status": 1, "error": errors}
+                raise HTTP(403, errors)
         else:
             self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
+
+        if cmd:
+            # compat, requires root
+            self.rbac_requires(**kwargs)
+
+    def action_service_action(self, nodename, **kwargs):
+        """
+        Execute a CRM command.
+        kwargs.options:
+        * svcpath: str
+        * action: str
+        * options: dict
+        * sync: boolean
+        * cmd: str (deprecated)
+        """
+        options = kwargs.get("options", {})
+        action = options.get("action")
+        cmd = options.get("cmd")
+        sync = options.get("sync", True)
+        svcpath = options.get("svcpath")
+        action_options = options.get("options", {})
+        name, namespace, kind = split_svcpath(svcpath)
+
+        if action_options is None:
+            action_options = {}
+
+        if svcpath is None:
+            self.log_request("service action (no 'svcpath' set)", nodename, lvl="error", **kwargs)
+            return {
+                "status": 1,
+            }
 
         if self.get_service(svcpath) is None and action not in ("create", "deploy"):
             self.log_request("service action (%s not installed)" % svcpath, nodename, lvl="warning", **kwargs)
@@ -2400,8 +2447,6 @@ class ClientHandler(shared.OsvcThread):
                 "error": "action not set",
                 "status": 1,
             }
-
-        # TODO: rbac on options
 
         for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
             if opt in action_options:
@@ -2421,10 +2466,7 @@ class ClientHandler(shared.OsvcThread):
                 if o.dest == "parm_" + opt:
                     return o
 
-        if cmd:
-            # compat, requires root
-            self.rbac_requires(**kwargs)
-        else:
+        if not cmd:
             cmd = [action]
             for opt, val in action_options.items():
                 po = find_opt(opt)
@@ -2472,8 +2514,10 @@ class ClientHandler(shared.OsvcThread):
             }
         return result
 
-    def action_events(self, nodename, stream_id=None, **kwargs):
+    def rbac_action_events(self, nodename, stream_id=None, **kwargs):
         self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_events(self, nodename, stream_id=None, **kwargs):
         if not self.event_queue:
             self.event_queue = queue.Queue()
         if not self in self.parent.events_clients:
@@ -2522,6 +2566,14 @@ class ClientHandler(shared.OsvcThread):
                 continue
             self.conn.sendall(msg)
 
+    def rbac_action_service_backlogs(self, nodename, stream_id=None, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
+
     def action_service_backlogs(self, nodename, stream_id=None, **kwargs):
         """
         Send service past logs.
@@ -2533,12 +2585,6 @@ class ClientHandler(shared.OsvcThread):
         """
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if svcpath is None:
-            return {"status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
         svc = self.get_service(svcpath)
         if svc is None:
             return {"status": 1}
@@ -2546,6 +2592,14 @@ class ClientHandler(shared.OsvcThread):
         logfile = os.path.join(svc.log_d, svc.svcname+".log")
         ofile = self._action_logs_open(logfile, backlog, "svc")
         return self.read_file_lines(ofile)
+
+    def rbac_action_service_logs(self, nodename, stream_id=None, **kwargs):
+        options = kwargs.get("options", {})
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
 
     def action_service_logs(self, nodename, stream_id=None, **kwargs):
         """
@@ -2555,12 +2609,6 @@ class ClientHandler(shared.OsvcThread):
         """
         options = kwargs.get("options", {})
         svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
-        if svcpath is None:
-            return {"status": 1}
-        name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
         svc = self.get_service(svcpath)
         if svc is None:
             return {"status": 1}
@@ -2579,7 +2627,6 @@ class ClientHandler(shared.OsvcThread):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         backlog = self.backlog_from_options(options)
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
@@ -2594,7 +2641,6 @@ class ClientHandler(shared.OsvcThread):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         follow = options.get("follow")
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
@@ -2681,7 +2727,6 @@ class ClientHandler(shared.OsvcThread):
         Reset the gen number of the dataset of a peer node to force him
         to resend a full.
         """
-        self.rbac_requires(**kwargs)
         options = kwargs.get("options", {})
         peer = options.get("peer")
         if peer is None:
@@ -2697,6 +2742,14 @@ class ClientHandler(shared.OsvcThread):
         }
         return result
 
+    def rbac_action_container_exec(self, nodename, **kwargs):
+        options = Storage(kwargs.get("options", {}))
+        svcpath = options.get("svcpath")
+        if svcpath is None:
+            raise HTTP(400, "object path not set")
+        name, namespace, kind = split_svcpath(svcpath)
+        self.rbac_requires(["operator"], namespace=namespace, **kwargs)
+
     def action_container_exec(self, nodename, **kwargs):
         options = Storage(kwargs.get("options", {}))
         svcpath = options.get("svcpath")
@@ -2704,7 +2757,6 @@ class ClientHandler(shared.OsvcThread):
         tty = options.get("tty", False)
         command = options.get("command")
         name, namespace, kind = split_svcpath(svcpath)
-        self.rbac_requires(["operator"], namespace=namespace, **kwargs)
         rid = options.get("rid")
         svc = factory(kind)(name, namespace, node=shared.NODE, volatile=True)
         resource = svc.get_resource(rid)
@@ -2717,12 +2769,15 @@ class ClientHandler(shared.OsvcThread):
             buff = f.read()
         return buff
 
+    def rbac_action_whoami(self, nodename, **kwargs):
+        pass
+
     def action_whoami(self, nodename, **kwargs):
         data = {
             "name": self.usr.svcname,
             "namespace": self.usr.namespace,
             "auth": self.usr_auth,
-            "grant": dict((k, list(v) if v is not None else None) for k, v in self.user_grants().items()),
+            "grant": dict((k, list(v) if v is not None else None) for k, v in self.usr_grants.items()),
         }
         return data
 
