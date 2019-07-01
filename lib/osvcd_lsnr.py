@@ -2734,13 +2734,8 @@ class ClientHandler(shared.OsvcThread):
     def index(self, stream_id):
         data = self.load_file("index.js")
         self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
-        data = self.load_file("index.css")
-        self.h2_push_promise(stream_id, "/index.css", data, "text/css")
         return 200, "text/html", self.load_file("index.html")
 
     def index_js(self):
         return 200, "application/javascript", self.load_file("index.js")
-
-    def index_css(self):
-        return 200, "text/css", self.load_file("index.css")
 
