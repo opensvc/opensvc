@@ -579,9 +579,14 @@ class ClientHandler(shared.OsvcThread):
         self.streams = {}
         self.h2conn = None
         self.events_stream_ids = []
-        self.usr = None
-        self.usr_auth = None
-        self.usr_grants = {}
+        if scheme == "raw":
+            self.usr = False
+            self.usr_auth = "secret"
+            self.usr_grants = {"root": None}
+        else:
+            self.usr = None
+            self.usr_auth = None
+            self.usr_grants = {}
         self.events_counter = 0
 
     def __str__(self):
@@ -1143,7 +1148,13 @@ class ClientHandler(shared.OsvcThread):
             if not len(namespaces - role_namespaces):
                 # role granted on all namespaces
                 return
-        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with grants '%s' requires role '%s'" % (action, self.usr.svcname, self.format_grants(self.usr_grants), ",".join(roles)))
+        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with "
+                        "grants '%s' requires role '%s'" % (
+                action,
+                self.usr.svcname if self.usr else self.usr,
+                self.format_grants(self.usr_grants),
+                ",".join(roles)
+        ))
 
     @staticmethod
     def format_grants(grants):
