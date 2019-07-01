@@ -95,6 +95,12 @@ ADMIN_ACTIONS = (
     "unset",
 )
 
+# Those actions filter data based on user grants.
+# Don't allow multiplexing to avoid filtering with escalated privs
+ACTIONS_NO_MULTIPLEX = [
+    "daemon_status",
+    "events",
+]
 
 class HTTP(Exception):
     def __init__(self, status, msg=""):
@@ -432,12 +438,13 @@ class Listener(shared.OsvcThread):
                 event = shared.EVENT_Q.get(False, 0)
             except queue.Empty:
                 break
-            emsg = self.encrypt(event)
-            msg = self.msg_encode(event)
             to_remove = []
             for idx, thr in enumerate(self.events_clients):
                 if thr not in self.threads:
                     to_remove.append(idx)
+                    continue
+                event = self.filter_event(event, thr)
+                if event is None:
                     continue
                 if thr.h2conn:
                     if not thr.events_stream_ids:
@@ -445,15 +452,63 @@ class Listener(shared.OsvcThread):
                         continue
                     _msg = event
                 elif thr.encrypted:
-                    _msg = emsg
+                    _msg = self.encrypt(event)
                 else:
-                    _msg = msg
+                    _msg = self.msg_encode(event)
                 thr.event_queue.put(_msg)
             for idx in to_remove:
                 try:
                     del self.events_clients[idx]
                 except IndexError:
                     pass
+
+    def filter_event(self, event, thr):
+        if thr.usr is False:
+            return event
+        if event.get("kind") == "patch":
+            return self.filter_patch_event(event, thr)
+        else:
+            return self.filter_event_event(event, thr)
+
+    def filter_event_event(self, event, thr):
+        namespaces = thr.usr_grants.get("guest", [])
+
+        def valid(change):
+            try:
+                svcpath = event["data"]["svcpath"]
+            except KeyError:
+                return True
+            _, namespace, _ = split_svcpath(svcpath)
+            if namespace in namespaces:
+                return True
+            return False
+        if valid(event):
+            return event
+        return None
+
+    def filter_patch_event(self, event, thr):
+        namespaces = thr.usr_grants.get("guest", [])
+
+        def valid(change):
+            if not change[0]:
+                return False
+            if not change[0][0] == "services":
+                return True
+            try:
+                svcpath = change[0][2]
+            except IndexError:
+                return False
+            _, namespace, _ = split_svcpath(svcpath)
+            if namespace in namespaces:
+                return True
+            return False
+
+        changes = []
+        for change in event.get("data", []):
+            if valid(change):
+                changes.append(change)
+        event["data"] = changes
+        return event
 
     def setup_socktls(self):
         self.vip
@@ -1459,7 +1514,7 @@ class ClientHandler(shared.OsvcThread):
         if action == "create":
             return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
-        if node:
+        if node and action not in ACTIONS_NO_MULTIPLEX:
             return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
         return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
 
