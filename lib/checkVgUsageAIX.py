@@ -10,7 +10,7 @@ class check(checks.check):
                 if not hasattr(resource, "name"):
                     continue
                 if resource.name == vgname:
-                    return svc.svcpath
+                    return svc.path
         return ''
 
     def do_check(self):
@@ -42,7 +42,7 @@ class check(checks.check):
             val = int(100*(size-free)/size)
             r.append({"instance": vg,
                       "value": str(val),
-                      "svcpath": self.find_svc(l[0]),
+                      "path": self.find_svc(l[0]),
                      }
                     )
         return r

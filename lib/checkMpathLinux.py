@@ -15,7 +15,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def do_check_old(self):
@@ -50,7 +50,7 @@ class check(checks.check):
                 if wwid is not None:
                     r.append({"instance": wwid,
                               "value": str(n),
-                              "svcpath": self.find_svc(dev),
+                              "path": self.find_svc(dev),
                              })
                 n = 0
                 l = line.split()
@@ -68,7 +68,7 @@ class check(checks.check):
         if wwid is not None:
             r.append({"instance": wwid,
                       "value": str(n),
-                      "svcpath": self.find_svc(dev),
+                      "path": self.find_svc(dev),
                      })
         return r
 
@@ -96,7 +96,7 @@ class check(checks.check):
                 if wwid is not None:
                     r.append({"instance": wwid,
                               "value": str(n),
-                              "svcpath": self.find_svc(dev),
+                              "path": self.find_svc(dev),
                              })
                 n = 0
                 if line.startswith(": "):
@@ -120,6 +120,6 @@ class check(checks.check):
         if wwid is not None:
             r.append({"instance": wwid,
                       "value": str(n),
-                      "svcpath": self.find_svc(dev),
+                      "path": self.find_svc(dev),
                      })
         return r

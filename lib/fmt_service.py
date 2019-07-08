@@ -1,7 +1,7 @@
 import re
 import os
 
-from rcUtilities import split_svcpath, strip_path, resolve_svcpath
+from rcUtilities import split_path, strip_path, resolve_path
 from rcColor import color, colorize, STATUS_COLOR
 from forest import Forest
 from storage import Storage
@@ -180,28 +180,28 @@ def add_res_node(resource, parent, idata, rid=None, discard_disabled=False):
 
     add_subsets(ers[rid], node_res, idata, discard_disabled=discard_disabled)
 
-def get_scope(svcpath, mon_data):
+def get_scope(path, mon_data):
     nodes = []
     for ndata in mon_data.get("nodes", {}).values():
         try:
-            nodes = ndata["services"]["config"][svcpath]["scope"]
+            nodes = ndata["services"]["config"][path]["scope"]
             break
         except KeyError:
             pass
     return sorted(nodes)
 
-def add_instances(node, svcpath, ref_nodename, mon_data):
-    for nodename in get_scope(svcpath, mon_data):
+def add_instances(node, path, ref_nodename, mon_data):
+    for nodename in get_scope(path, mon_data):
         if nodename == ref_nodename:
             continue
-        add_instance(node, nodename, svcpath, mon_data)
+        add_instance(node, nodename, path, mon_data)
 
-def add_instance(node, nodename, svcpath, mon_data):
+def add_instance(node, nodename, path, mon_data):
     node_child = node.add_node()
     node_child.add_column(nodename, color.BOLD)
     node_child.add_column()
     try:
-        data = mon_data["nodes"][nodename]["services"]["status"][svcpath]
+        data = mon_data["nodes"][nodename]["services"]["status"][path]
         avail = data.get("avail", "n/a")
         node_frozen = mon_data["nodes"][nodename].get("frozen")
     except (TypeError, KeyError) as exc:
@@ -226,22 +226,22 @@ def add_parents(node, idata, mon_data, namespace):
     for parent in parents:
         add_parent(parent, node_parents, mon_data, namespace)
 
-def add_parent(svcpath, node, mon_data, namespace):
+def add_parent(path, node, mon_data, namespace):
     node_parent = node.add_node()
-    node_parent.add_column(svcpath, color.BOLD)
+    node_parent.add_column(path, color.BOLD)
     node_parent.add_column()
     try:
-        svcpath, nodename = svcpath.split("@")
-        svcpath = resolve_svcpath(svcpath, namespace)
+        path, nodename = path.split("@")
+        path = resolve_path(path, namespace)
         try:
-            avail = mon_data["nodes"][nodename]["services"]["status"][svcpath].get("avail", "n/a")
+            avail = mon_data["nodes"][nodename]["services"]["status"][path].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     except ValueError:
         nodename = None
-        svcpath = resolve_svcpath(svcpath, namespace)
+        path = resolve_path(path, namespace)
         try:
-            avail = mon_data["services"][svcpath].get("avail", "n/a")
+            avail = mon_data["services"][path].get("avail", "n/a")
         except KeyError:
             avail = "undef"
     node_parent.add_column(avail, STATUS_COLOR[avail])
@@ -273,13 +273,13 @@ def add_scaler_slaves(node, idata, mon_data, namespace):
     for child in slaves:
         add_child(child, node_slaves, mon_data, namespace)
 
-def add_child(svcpath, node, mon_data, namespace):
+def add_child(path, node, mon_data, namespace):
     node_child = node.add_node()
-    node_child.add_column(svcpath, color.BOLD)
+    node_child.add_column(path, color.BOLD)
     node_child.add_column()
-    svcpath = resolve_svcpath(svcpath, namespace)
+    path = resolve_path(path, namespace)
     try:
-        avail = mon_data["services"][svcpath].get("avail", "n/a")
+        avail = mon_data["services"][path].get("avail", "n/a")
     except KeyError:
         avail = "undef"
     node_child.add_column(avail, STATUS_COLOR[avail])
@@ -323,15 +323,15 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
     add_subsets(subsets, node_nodename, idata, discard_disabled=discard_disabled)
 
 
-def service_nodes(svcpath, mon_data):
+def service_nodes(path, mon_data):
     nodes = set()
     for nodename, data in mon_data.get("nodes", {}).items():
-        _nodes = set(data.get("services", {}).get("config", {}).get(svcpath, {}).get("scope", []))
+        _nodes = set(data.get("services", {}).get("config", {}).get(path, {}).get("scope", []))
         nodes |= _nodes
     return nodes
 
-def format_service(svcpath, idata, mon_data=None, discard_disabled=False, nodename=None):
-    svcname, namespace, kind = split_svcpath(svcpath)
+def format_service(path, idata, mon_data=None, discard_disabled=False, nodename=None):
+    name, namespace, kind = split_path(path)
     svc_notice = get_svc_notice(idata)
 
     tree = Forest(
@@ -343,23 +343,23 @@ def format_service(svcpath, idata, mon_data=None, discard_disabled=False, nodena
             None,
         ),
     )
-    node_svcname = tree.add_node()
-    node_svcname.add_column(strip_path(svcpath, os.environ.get("OSVC_NAMESPACE")), color.BOLD)
-    node_svcname.add_column()
+    node_name = tree.add_node()
+    node_name.add_column(strip_path(path, os.environ.get("OSVC_NAMESPACE")), color.BOLD)
+    node_name.add_column()
     if "cluster" in idata:
-        node_svcname.add_column(idata["cluster"].get("avail", "n/a"), STATUS_COLOR[idata["cluster"].get("avail", "n/a")])
+        node_name.add_column(idata["cluster"].get("avail", "n/a"), STATUS_COLOR[idata["cluster"].get("avail", "n/a")])
     else:
-        node_svcname.add_column()
-    node_svcname.add_column(svc_notice)
-    node_instances = node_svcname.add_node()
+        node_name.add_column()
+    node_name.add_column(svc_notice)
+    node_instances = node_name.add_node()
     node_instances.add_column("instances")
-    add_instances(node_instances, svcpath, nodename, mon_data)
-    if nodename in service_nodes(svcpath, mon_data):
+    add_instances(node_instances, path, nodename, mon_data)
+    if nodename in service_nodes(path, mon_data):
         add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=discard_disabled)
-    add_parents(node_svcname, idata, mon_data, namespace)
-    add_children(node_svcname, idata, mon_data, namespace)
-    add_scaler_slaves(node_svcname, idata, mon_data, namespace)
-    add_slaves(node_svcname, idata, mon_data, namespace)
+    add_parents(node_name, idata, mon_data, namespace)
+    add_children(node_name, idata, mon_data, namespace)
+    add_scaler_slaves(node_name, idata, mon_data, namespace)
+    add_slaves(node_name, idata, mon_data, namespace)
 
     tree.out()
 

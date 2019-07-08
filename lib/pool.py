@@ -57,7 +57,7 @@ class Pool(object):
 
     def default_disk_name(self, volume):
         return "%s.%s.vol.%s" % (
-            volume.svcname,
+            volume.name,
             volume.namespace if volume.namespace else "root",
             self.node.cluster_name,
         )
@@ -91,15 +91,15 @@ class Pool(object):
         return {}
 
     def delete_volume(self, name, namespace=None):
-        volume = factory("vol")(svcname=name, namespace=namespace, node=self.node)
+        volume = factory("vol")(name=name, namespace=namespace, node=self.node)
         if not volume.exists():
             self.log.info("volume does not exist")
             return
-        self.log.info("delete volume %s", volume.svcpath)
+        self.log.info("delete volume %s", volume.path)
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         
     def create_volume(self, name, namespace=None, size=None, access="rwo", fmt=False, nodes=None, shared=False):
-        volume = factory("vol")(svcname=name, namespace=namespace, node=self.node)
+        volume = factory("vol")(name=name, namespace=namespace, node=self.node)
         if volume.exists():
             self.log.info("volume %s already exists", name)
             return volume
@@ -107,7 +107,7 @@ class Pool(object):
             nodes = ""
         self.log.info("create volume %s (pool name: %s, pool type: %s, "
                            "access: %s, size: %s, format: %s, nodes: %s, shared: %s)",
-                           volume.svcpath, self.name, self.type, access, size,
+                           volume.path, self.name, self.type, access, size,
                            fmt, nodes, shared)
         self.configure_volume(volume,
                               fmt=fmt,

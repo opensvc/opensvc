@@ -60,10 +60,10 @@ class check(checks.check):
                     slot = 'LD'+str(l[-1])
                 if line.startswith('  Status of volume') and (chk_dsk == 2):
                     if 'Okay (OKY)' not in line:
-                        r.append({ "instance": ctrl+','+slot, "value": '1', "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '1', "path": '', })
                         errs += 1
                     else :
-                        r.append({ "instance": ctrl+','+slot, "value": '0', "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '0', "path": '', })
                 if line.startswith('Device is a Hard disk'):
                     chk_dsk = 1
                 if line.startswith('  Enclosure #') and (chk_dsk == 1):
@@ -74,10 +74,10 @@ class check(checks.check):
                     slot = 'PD'+str(enc)+':'+str(l[-1])
                 if line.startswith('  State') and (chk_dsk == 1):
                     if 'Optimal (OPT)' not in line:
-                        r.append({ "instance": ctrl+','+slot, "value": '1', "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '1', "path": '', })
                         errs += 1
                     else :
-                        r.append({ "instance": ctrl+','+slot, "value": '0', "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '0', "path": '', })
                 if line.startswith('Device is a Enclosure services device'):
                     chk_dsk = 3
                 if line.startswith('  Enclosure #') and (chk_dsk == 3):
@@ -85,9 +85,9 @@ class check(checks.check):
                     slot = 'Enc'+str(l[-1])
                 if line.startswith('  State') and (chk_dsk == 3):
                     if 'Standby (SBY)' not in line:
-                        r.append({ "instance": ctrl+','+slot, "value": '1', "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '1', "path": '', })
                         errs += 1
                     else :
-                        r.append({ "instance": ctrl+','+slot, "value": '0', "svcpath": '', })
-            r.append({ "instance": 'all SAS20*', "value": str(errs), "svcpath": '', })
+                        r.append({ "instance": ctrl+','+slot, "value": '0', "path": '', })
+            r.append({ "instance": 'all SAS20*', "value": str(errs), "path": '', })
         return r

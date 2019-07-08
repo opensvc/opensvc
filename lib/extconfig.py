@@ -22,7 +22,7 @@ class ExtConfigMixin(object):
 
     @lazy
     def has_default_section(self):
-        if hasattr(self, "svcname"):
+        if hasattr(self, "path"):
             return True
         else:
             return False
@@ -381,7 +381,7 @@ class ExtConfigMixin(object):
             return_length = False
             _ref = ref
 
-        is_svc = hasattr(self, "svcname")
+        is_svc = hasattr(self, "path")
         has_node = hasattr(self, "node")
 
         modifier = None
@@ -413,15 +413,15 @@ class ExtConfigMixin(object):
         elif _ref == "id" and is_svc:
             val = self.id
         elif _ref in ("path", "svcpath") and is_svc:
-            val = self.svcpath
+            val = self.path
         elif _ref in ("name", "svcname") and is_svc:
-            val = self.svcname
+            val = self.name
         elif _ref in ("short_name", "short_svcname") and is_svc:
             val = self.svcname.split(".")[0]
         elif _ref in ("scaler_name", "scaler_svcname") and is_svc:
-            val = re.sub("[0-9]+\.", "", self.svcname)
+            val = re.sub("[0-9]+\.", "", self.name)
         elif _ref in ("scaler_short_name", "scaler_short_svcname") and is_svc:
-            val = re.sub("[0-9]+\.", "", self.svcname.split(".")[0])
+            val = re.sub("[0-9]+\.", "", self.name.split(".")[0])
         elif _ref == "rid" and is_svc:
             val = section
         elif _ref == "rindex" and is_svc:
@@ -438,7 +438,7 @@ class ExtConfigMixin(object):
                 val = self.cluster_name
         elif _ref == "fqdn":
             if has_node:
-                val = "%s.%s.%s.%s" % (self.svcname, self.namespace, self.kind, self.node.cluster_name)
+                val = "%s.%s.%s.%s" % (self.name, self.namespace, self.kind, self.node.cluster_name)
         elif _ref == "domain":
             if has_node:
                 val = "%s.%s.%s" % (self.namespace, self.kind, self.node.cluster_name)
@@ -488,7 +488,7 @@ class ExtConfigMixin(object):
         elif _ref.startswith("safe://"):
             try:
                 if has_node:
-                    val = self.node.download_from_safe(_ref, svcname=self.svcname)
+                    val = self.node.download_from_safe(_ref, path=self.path)
                 else:
                     val = self.download_from_safe(_ref)
                 val = val.decode()
@@ -562,7 +562,7 @@ class ExtConfigMixin(object):
         if _section == "env" and _v.upper() in os.environ:
             return os.environ[_v.upper()]
 
-        if _section == "node" and hasattr(self, "svcname"):
+        if _section == "node" and hasattr(self, "path"):
             # go fetch the reference in the node.conf [node] section
             if not hasattr(self, "node") or getattr(self, "node") is None:
                 from node import Node
@@ -577,7 +577,7 @@ class ExtConfigMixin(object):
             raise ex.excError("%s: section %s does not exist" % (ref, _section))
 
         # deferrable refs
-        if hasattr(self, "svcname"):
+        if hasattr(self, "path"):
             for dref in ("exposed_devs", "base_devs", "sub_devs"):
                 if _v != dref:
                     continue
@@ -828,7 +828,7 @@ class ExtConfigMixin(object):
 
     def convert(self, converter, val):
         if converter == "nodes_selector":
-            if hasattr(self, "svcname"):
+            if hasattr(self, "path"):
                 data = self.node.listener.nodes_info() if self.node.listener else None
                 return self.node.nodes_selector(val, data)
             else:
@@ -907,7 +907,7 @@ class ExtConfigMixin(object):
         candidates = [
             (o+"@"+nodename, True),
         ]
-        if hasattr(self, "svcname"):
+        if hasattr(self, "path"):
             if o != "nodes":
                 candidates.append((o+"@nodes", nodename in self.nodes))
             if o != "drpnodes":
@@ -1071,7 +1071,7 @@ class ExtConfigMixin(object):
             except ex.OptNotFound:
                 return 0
             except ex.RequiredOptNotFound:
-                if hasattr(self, "svcname"):
+                if hasattr(self, "path"):
                     # no need to err here: already caught by svc build
                     return err
                 else:
@@ -1150,11 +1150,11 @@ class ExtConfigMixin(object):
             """
             Try a service build to catch errors missed in other tests.
             """
-            if not hasattr(self, "svcname"):
+            if not hasattr(self, "path"):
                 return ret
             svc = None
             try:
-                svc = factory(self.kind)(self.svcname, namespace=self.namespace,
+                svc = factory(self.kind)(self.name, namespace=self.namespace,
                                          cd=cd, node=self.node, volatile=True)
             except Exception as exc:
                 self.log.error("the new configuration causes the following "
@@ -1204,7 +1204,7 @@ class ExtConfigMixin(object):
         meta = {}
         if hasattr(self, "namespace"):
             meta.update({
-                "name": self.svcname,
+                "name": self.name,
                 "kind": self.kind,
                 "namespace": self.namespace,
             })

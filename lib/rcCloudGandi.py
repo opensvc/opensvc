@@ -31,7 +31,7 @@ class Cloud(rcCloud.Cloud):
     def app_cloud_id(self):
         return self.mode
 
-    def list_svcnames(self):
+    def list_names(self):
         l = []
         _id = self.app_cloud_id()
         try:
@@ -41,7 +41,7 @@ class Cloud(rcCloud.Cloud):
         for vapp in vapps:
             __id = '.'.join((vapp.name, _id))
             for vm in vapp.extra['vms']:
-                svcname = '.'.join((vm['name'], __id))
-                l.append((vm['name'], svcname))
+                name = '.'.join((vm['name'], __id))
+                l.append((vm['name'], name))
         return l
 

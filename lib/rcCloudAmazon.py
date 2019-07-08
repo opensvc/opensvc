@@ -25,8 +25,8 @@ class Cloud(rcCloud.Cloud):
         if 'proxy' in auth:
             self.driver.connection.set_http_proxy(proxy_url=auth['proxy'])
 
-    def app_id(self, svcname):
-        return svcname.rstrip(self.auth['manager']).split('.')[-2]
+    def app_id(self, name):
+        return name.rstrip(self.auth['manager']).split('.')[-2]
 
     def cloud_id(self):
         return self.auth['provider']
@@ -34,7 +34,7 @@ class Cloud(rcCloud.Cloud):
     def app_cloud_id(self):
         return self.cloud_id()
 
-    def list_svcnames(self):
+    def list_names(self):
         l = []
         return l
 

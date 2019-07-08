@@ -105,7 +105,7 @@ class check(checks.check):
                             r.append({
                                       "instance": '%s.%s.speed'%(lag, net),
                                       "value": str(val),
-                                      "svcpath": '',
+                                      "path": '',
                                      })
             return r
         for line in self.lines:
@@ -122,7 +122,7 @@ class check(checks.check):
             r.append({
                       "instance": '%s.%d.speed'%(lag, i),
                       "value": str(val),
-                      "svcpath": '',
+                      "path": '',
                      })
             i += 1
         return r
@@ -164,7 +164,7 @@ class check(checks.check):
                             r.append({
                                       "instance": '%s.%s.%s'%(lag, net, key),
                                       "value": str(val),
-                                      "svcpath": '',
+                                      "path": '',
                                      })
             return r
         for line in self.lines:
@@ -185,7 +185,7 @@ class check(checks.check):
                 r.append({
                           "instance": '%s.%d.%s'%(lag, i, key),
                           "value": str(val),
-                          "svcpath": '',
+                          "path": '',
                          })
                 i += 1
         return r

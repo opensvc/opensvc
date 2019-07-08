@@ -11,7 +11,7 @@ import resSyncRsync
 import rcExceptions as ex
 import rcConfigParser
 from rcUtilities import mimport, list_services, \
-                        svc_pathetc, split_svcpath, makedirs, factory
+                        svc_pathetc, split_path, makedirs, factory
 
 def get_tags(svc, section):
     try:
@@ -853,7 +853,7 @@ def add_fs(svc, s):
 
     svc += r
 
-def container_kwargs(svc, s, default_name="svcname"):
+def container_kwargs(svc, s, default_name="name"):
     """
     Common kwargs for all containers.
     """
@@ -866,7 +866,7 @@ def container_kwargs(svc, s, default_name="svcname"):
         if default_name is None:
             kwargs["name"] = exc.default
         else:
-            kwargs["name"] = svc.svcname
+            kwargs["name"] = svc.name
 
     kwargs["guestos"] = svc.oget(s, "guestos")
     kwargs["start_timeout"] = svc.oget(s, "start_timeout")
@@ -1614,19 +1614,19 @@ def add_app(svc, s):
     svc += r
 
 
-def setup_logging(svcpaths):
+def setup_logging(paths):
     """Setup logging to stream + logfile, and logfile rotation
     class Logger instance name: 'log'
     """
-    max_svcpath_len = 0
+    max_path_len = 0
 
-    # compute max svcpath length to align logging stream output
-    for svcpath in svcpaths:
-        n = len(svcpath)
-        if n > max_svcpath_len:
-            max_svcpath_len = n
+    # compute max path length to align logging stream output
+    for path in paths:
+        n = len(path)
+        if n > max_path_len:
+            max_path_len = n
 
-    rcLogger.max_svcpath_len = max_svcpath_len
+    rcLogger.max_path_len = max_path_len
     rcLogger.initLogger(rcEnv.nodename)
 
 def add_resources(svc):
@@ -1670,7 +1670,7 @@ def add_resources(svc):
     add_mandatory_syncs(svc)
     return ret
 
-def build_services(status=None, svcpaths=None, create_instance=False,
+def build_services(status=None, paths=None, create_instance=False,
                    node=None):
     """
     Returns a list of all services of status matching the specified status.
@@ -1678,44 +1678,44 @@ def build_services(status=None, svcpaths=None, create_instance=False,
     """
     import svc
 
-    if svcpaths is None:
-        svcpaths = []
+    if paths is None:
+        paths = []
 
     errors = []
     services = {}
 
-    if isinstance(svcpaths, str):
-        svcpaths = [svcpaths]
+    if isinstance(paths, str):
+        paths = [paths]
 
-    if len(svcpaths) == 0:
-        svcpaths = list_services()
-        missing_svcpaths = []
+    if len(paths) == 0:
+        paths = list_services()
+        missing_paths = []
     else:
-        local_svcpaths = list_services()
-        missing_svcpaths = sorted(list(set(svcpaths) - set(local_svcpaths)))
-        for m in missing_svcpaths:
-            name, namespace, kind = split_svcpath(m)
+        local_paths = list_services()
+        missing_paths = sorted(list(set(paths) - set(local_paths)))
+        for m in missing_paths:
+            name, namespace, kind = split_path(m)
             if create_instance:
                 services[m] = factory(kind)(name, namespace, node=node)
             else:
                 # foreign service
                 services[m] = factory(kind)(name, namespace, node=node, volatile=True)
-        svcpaths = list(set(svcpaths) & set(local_svcpaths))
+        paths = list(set(paths) & set(local_paths))
 
-    setup_logging(svcpaths)
+    setup_logging(paths)
 
-    for svcpath in svcpaths:
-        svcname, namespace, kind = split_svcpath(svcpath)
+    for path in paths:
+        name, namespace, kind = split_path(path)
         try:
-            svc = factory(kind)(svcname, namespace, node=node)
+            svc = factory(kind)(name, namespace, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.Error) as e:
-            errors.append("%s: %s" % (svcpath, str(e)))
+            errors.append("%s: %s" % (path, str(e)))
             if namespace:
                 log_d = os.path.join(rcEnv.paths.pathlog, namespace, kind)
                 makedirs(log_d)
             else:
                 log_d = rcEnv.paths.pathlog
-            svclog = rcLogger.initLogger(rcEnv.nodename+"."+kind+"."+svcname,
+            svclog = rcLogger.initLogger(rcEnv.nodename+"."+namespace+"."+kind+"."+name,
                                          directory=log_d,
                                          handlers=["file", "syslog"])
             svclog.error(str(e))
@@ -1726,7 +1726,7 @@ def build_services(status=None, svcpaths=None, create_instance=False,
             import traceback
             traceback.print_exc()
             continue
-        services[svc.svcpath] = svc
+        services[svc.path] = svc
     return [s for _, s in sorted(services.items())], errors
 
 

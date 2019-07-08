@@ -5,7 +5,7 @@ a service is frozen.
 """
 import os
 from rcGlobalEnv import rcEnv
-from rcUtilities import split_svcpath
+from rcUtilities import split_path
 
 class Freezer(object):
     """
@@ -88,7 +88,7 @@ class Freezer(object):
         if name == "node":
             self.flag = self.node_flag
         else:
-            name, namespace, kind = split_svcpath(name)
+            name, namespace, kind = split_path(name)
             if namespace:
                 self.flag = os.path.join(rcEnv.paths.pathvar, "namespaces", namespace, kind, name, "frozen")
             else:

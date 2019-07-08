@@ -680,7 +680,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "default": [],
         "default_text": "",
         "at": True,
-        "text": "The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to <svcname>.<clustername> and <clustername>."
+        "text": "The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to <name>.<namespace>.svc.<clustername>, <namespace>.svc.<clustername> and <clustername>."
     },
     {
         "section": "cluster",
@@ -1003,7 +1003,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "template",
         "rtype": ["virtual"],
-        "text": "The service path (<namespace>/<svcname>) of a volume service to use as a template for new volumes.",
+        "text": "The service path (<namespace>/<kind>/<name>) of a volume to use as a template for new volumes.",
     },
     {
         "section": "pool",

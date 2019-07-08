@@ -26,8 +26,8 @@ class Cloud(rcCloud.Cloud):
         self.driver = vcloud(auth['username'], auth['password'],
                              host=auth['manager'], api_version=auth['api_version'])
 
-    def app_id(self, svcname):
-        return svcname.rstrip(self.auth['manager']).split('.')[-2]
+    def app_id(self, name):
+        return name.rstrip(self.auth['manager']).split('.')[-2]
 
     def cloud_id(self):
         return self.auth['manager']
@@ -40,7 +40,7 @@ class Cloud(rcCloud.Cloud):
         _id.append(self.auth['manager'])
         return '.'.join(_id)
 
-    def list_svcnames(self):
+    def list_names(self):
         l = []
         _id = self.app_cloud_id()
         try:
@@ -50,7 +50,7 @@ class Cloud(rcCloud.Cloud):
         for vapp in vapps:
             __id = '.'.join((vapp.name, _id))
             for vm in vapp.extra['vms']:
-                svcname = '.'.join((vm['name'], __id))
-                l.append((vm['name'], svcname))
+                name = '.'.join((vm['name'], __id))
+                l.append((vm['name'], name))
         return l
 

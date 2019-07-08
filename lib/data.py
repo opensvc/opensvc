@@ -7,7 +7,7 @@ import shutil
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory, want_context
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context
 from svc import BaseSvc
 from converters import print_size
 import rcExceptions as ex
@@ -31,7 +31,7 @@ class DataMixin(object):
             "action": "set_key",
             "node": "ANY",
             "options": {
-                "svcpath": self.svcpath,
+                "path": self.path,
                 "key": key,
                 "data": data,
             }
@@ -187,10 +187,10 @@ class DataMixin(object):
         """
         Refresh installed keys
         """
-        for svcpath in self.node.svcs_selector("*/svc/*", namespace=self.namespace):
-            name, _, _ = split_svcpath(svcpath)
+        for path in self.node.svcs_selector("*/svc/*", namespace=self.namespace):
+            name, _, _ = split_path(path)
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
-                if vol.has_data(self.kind, self.svcpath, key) and vol._status() == rcStatus.UP:
+                if vol.has_data(self.kind, self.path, key) and vol._status() == rcStatus.UP:
                     vol._install_data(self.kind)
 

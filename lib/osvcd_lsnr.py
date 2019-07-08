@@ -34,7 +34,7 @@ from rcGlobalEnv import rcEnv
 from storage import Storage
 from comm import Headers
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
-                        split_svcpath, fmt_svcpath, is_service, factory, \
+                        split_path, fmt_path, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
                         unset_lazy
 from converters import convert_size, print_duration
@@ -135,7 +135,7 @@ class Listener(shared.OsvcThread):
         secpath = shared.NODE.oget("cluster", "ca")
         if secpath is None:
             secpath = "system/sec/ca-" + self.cluster_name
-        secname, namespace, kind = split_svcpath(secpath)
+        secname, namespace, kind = split_path(secpath)
         return factory("sec")(secname, namespace=namespace, volatile=True)
 
     @lazy
@@ -143,7 +143,7 @@ class Listener(shared.OsvcThread):
         secpath = shared.NODE.oget("cluster", "cert")
         if secpath is None:
             secpath = "system/sec/cert-" + self.cluster_name
-        secname, namespace, kind = split_svcpath(secpath)
+        secname, namespace, kind = split_path(secpath)
         return factory("sec")(secname, namespace=namespace, volatile=True)
 
     def prepare_certs(self):
@@ -151,10 +151,10 @@ class Listener(shared.OsvcThread):
         if rcEnv.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
             self.certfs.start()
         if not self.ca.exists():
-            raise ex.excInitError("secret %s does not exist" % self.ca.svcpath)
+            raise ex.excInitError("secret %s does not exist" % self.ca.path)
         data = self.ca.decode_key("certificate_chain")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.ca.svcpath, "certificate_chain"))
+            raise ex.excInitError("secret key %s.%s is not set" % (self.ca.path, "certificate_chain"))
         ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
         self.log.info("write %s", ca_cert_chain)
         with open(ca_cert_chain, "w") as fo:
@@ -162,14 +162,14 @@ class Listener(shared.OsvcThread):
         crl_path = self.fetch_crl()
         data = self.cert.decode_key("certificate_chain")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.svcpath, "certificate_chain"))
+            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "certificate_chain"))
         cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
         with open(cert_chain, "w") as fo:
             fo.write(data)
         data = self.cert.decode_key("private_key")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.svcpath, "private_key"))
+            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
         private_key = os.path.join(rcEnv.paths.certs, "private_key")
         self.log.info("write %s", private_key)
         with open(private_key, "w") as fo:
@@ -397,7 +397,7 @@ class Listener(shared.OsvcThread):
                     return
                 if not mtime or mtime > refmtime:
                     return
-                self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), self.ca.svcpath)
+                self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), self.ca.path)
         elif self.crl_mode == "external":
             if not mtime or mtime > self.crl_expire:
                 return
@@ -465,6 +465,8 @@ class Listener(shared.OsvcThread):
     def filter_event(self, event, thr):
         if thr.usr is False:
             return event
+        if event is None:
+            return
         if event.get("kind") == "patch":
             return self.filter_patch_event(event, thr)
         else:
@@ -475,10 +477,10 @@ class Listener(shared.OsvcThread):
 
         def valid(change):
             try:
-                svcpath = event["data"]["svcpath"]
+                path = event["data"]["path"]
             except KeyError:
                 return True
-            _, namespace, _ = split_svcpath(svcpath)
+            _, namespace, _ = split_path(path)
             if namespace in namespaces:
                 return True
             return False
@@ -495,10 +497,10 @@ class Listener(shared.OsvcThread):
             if not change[0][0] == "services":
                 return True
             try:
-                svcpath = change[0][2]
+                path = change[0][2]
             except IndexError:
                 return False
-            _, namespace, _ = split_svcpath(svcpath)
+            _, namespace, _ = split_path(path)
             if namespace in namespaces:
                 return True
             return False
@@ -647,7 +649,7 @@ class ClientHandler(shared.OsvcThread):
     def __str__(self):
         return "client handler thread (client addr: %s, usr: %s, auth: %s, scheme: %s)" % (
             self.addr[0],
-            self.usr.svcname if self.usr else self.usr,
+            self.usr.name if self.usr else self.usr,
             self.usr_auth,
             self.scheme
         )
@@ -1112,7 +1114,7 @@ class ClientHandler(shared.OsvcThread):
         if not self.usr or not self.addr or self.addr[0] == "local":
             origin = "requested by %s" % nodename
         else:
-            origin = "requested by %s@%s" % (self.usr.svcname, self.addr[0])
+            origin = "requested by %s@%s" % (self.usr.name, self.addr[0])
         if lvl == "error":
             fn = self.log.error
         if lvl == "warning":
@@ -1120,6 +1122,17 @@ class ClientHandler(shared.OsvcThread):
         else:
             fn = self.log.info
         fn("%s %s", msg, origin)
+
+    @staticmethod
+    def options_path(options, required=True):
+        for key in ("path", "svcpath", "svcname"):
+            try:
+                return options[key]
+            except KeyError:
+                pass
+        if required:
+            raise HTTP(400, "object path not set")
+        return None
 
     #########################################################################
     #
@@ -1129,7 +1142,7 @@ class ClientHandler(shared.OsvcThread):
     def get_all_ns(self):
         data = set()
         for path in shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}):
-            _, ns, _ = split_svcpath(path)
+            _, ns, _ = split_path(path)
             if ns is None:
                 ns = "root"
             data.add(ns)
@@ -1206,7 +1219,7 @@ class ClientHandler(shared.OsvcThread):
         raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with "
                         "grants '%s' requires role '%s'" % (
                 action,
-                self.usr.svcname if self.usr else self.usr,
+                self.usr.name if self.usr else self.usr,
                 self.format_grants(self.usr_grants),
                 ",".join(roles)
         ))
@@ -1239,7 +1252,7 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_create_obj(self, path, cd, grants, all_ns, **kwargs):
         errors = []
-        name, namespace, kind = split_svcpath(path)
+        name, namespace, kind = split_path(path)
         if namespace not in all_ns:
             if namespace == "system":
                 errors.append("%s: create the new namespace system requires the root cluster role")
@@ -1369,9 +1382,9 @@ class ClientHandler(shared.OsvcThread):
         except Exception:
             pass
         result = {"nodes": {}, "status": 0}
-        svcpath = options.get("svcpath")
-        if node == "ANY" and svcpath:
-            svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(svcpath)]
+        path = self.options_path(options, required=False)
+        if node == "ANY" and path:
+            svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
             try:
                 if rcEnv.nodename in svcnodes:
                     # prefer to not relay, if possible
@@ -1447,13 +1460,13 @@ class ClientHandler(shared.OsvcThread):
 
     def create_multiplex(self, fname, options, data, original_nodename, action, stream_id=None):
         h = {}
-        for svcpath, svcdata in options.get("data", {}).items():
+        for path, svcdata in options.get("data", {}).items():
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
             placement = svcdata.get("DEFAULT", {}).get("placement", "nodes order")
             if nodes:
                 nodes = shared.NODE.nodes_selector(nodes, data=shared.CLUSTER_DATA)
             else:
-                nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(svcpath)]
+                nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
             if nodes:
                 if rcEnv.nodename in nodes:
                     node = rcEnv.nodename
@@ -1463,7 +1476,7 @@ class ClientHandler(shared.OsvcThread):
                 node = rcEnv.nodename
             if node not in h:
                 h[node] = {}
-            h[node][svcpath] = svcdata
+            h[node][path] = svcdata
         result = {"nodes": {}, "status": 0}
         for nodename, optdata in h.items():
             _options = {}
@@ -1527,16 +1540,14 @@ class ClientHandler(shared.OsvcThread):
 
     def action_run_done(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if not svcpath:
-            svcpath = options.get("svcname")
+        path = self.options_path(options, required=True)
         action = options.get("action")
         rids = options.get("rids")
         if not rids is None:
             rids = ",".join(sorted(rids))
         if not action:
             return {"status": 0}
-        sig = (action, svcpath, rids)
+        sig = (action, path, rids)
         with shared.RUN_DONE_LOCK:
             shared.RUN_DONE.add(sig)
         return {"status": 0}
@@ -1642,7 +1653,7 @@ class ClientHandler(shared.OsvcThread):
             for svc in shared.SERVICES.values():
                 _data = svc.pg_stats()
                 if _data:
-                    data["services"][svc.svcpath] = _data
+                    data["services"][svc.path] = _data
         return {"status": 0, "data": data}
 
     def rbac_action_nodes_info(self, nodename, **kwargs):
@@ -1683,7 +1694,7 @@ class ClientHandler(shared.OsvcThread):
 
     def wait_shutdown(self):
         def still_shutting():
-            for svcpath, smon in shared.SMON_DATA.items():
+            for smon in shared.SMON_DATA.values():
                 if smon.local_expect == "shutdown":
                     return True
             return False
@@ -1709,11 +1720,11 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.set_nmon("shutting")
             mon.kill_procs()
-            for svcpath in shared.SMON_DATA:
-                _, _, kind = split_svcpath(svcpath)
+            for path in shared.SMON_DATA:
+                _, _, kind = split_path(path)
                 if kind not in ("svc", "vol"):
                     continue
-                self.set_smon(svcpath, local_expect="shutdown")
+                self.set_smon(path, local_expect="shutdown")
             self.wait_shutdown()
 
             # send a last status to peers so they can takeover asap
@@ -1812,42 +1823,40 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_get_service_config(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        name, namespace, kind = split_path(path)
         self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
 
     def action_get_service_config(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         fmt = options.get("format")
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         if fmt == "json":
-            return self._action_get_service_config_json(nodename, svcpath, **kwargs)
+            return self._action_get_service_config_json(nodename, path, **kwargs)
         else:
-            return self._action_get_service_config_file(nodename, svcpath, **kwargs)
+            return self._action_get_service_config_file(nodename, path, **kwargs)
 
-    def _action_get_service_config_json(self, nodename, svcpath, **kwargs):
+    def _action_get_service_config_json(self, nodename, path, **kwargs):
         options = kwargs.get("options", {})
         evaluate = options.get("evaluate")
         impersonate = options.get("impersonate")
         try:
-            return shared.SERVICES[svcpath].print_config_data(evaluate=evaluate, impersonate=impersonate)
+            return shared.SERVICES[path].print_config_data(evaluate=evaluate, impersonate=impersonate)
         except Exception as exc:
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
-    def _action_get_service_config_file(self, nodename, svcpath, **kwargs):
+    def _action_get_service_config_file(self, nodename, path, **kwargs):
         options = kwargs.get("options", {})
-        if shared.SMON_DATA.get(svcpath, {}).get("status") in ("purging", "deleting") or \
-           shared.SMON_DATA.get(svcpath, {}).get("global_expect") in ("purged", "deleted"):
+        if shared.SMON_DATA.get(path, {}).get("status") in ("purging", "deleting") or \
+           shared.SMON_DATA.get(path, {}).get("global_expect") in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
-        fpath = svc_pathcf(svcpath)
+        fpath = svc_pathcf(path)
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 3}
         mtime = os.path.getmtime(fpath)
         with codecs.open(fpath, "r", "utf8") as filep:
             buff = filep.read()
-        self.log.info("serve service %s config to %s", svcpath, nodename)
+        self.log.info("serve service %s config to %s", path, nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
     def action_get_secret_key(self, nodename, **kwargs):
@@ -1855,10 +1864,8 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_get_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        name, namespace, kind = split_path(path)
         if kind == "cfg":
             role = "guest"
         else:
@@ -1868,27 +1875,25 @@ class ClientHandler(shared.OsvcThread):
 
     def action_get_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         key = options.get("key")
         try:
-            return {"status": 0, "data": shared.SERVICES[svcpath].decode_key(key)}
+            return {"status": 0, "data": shared.SERVICES[path].decode_key(key)}
         except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
 
     def rbac_action_set_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        name, namespace, kind = split_path(path)
         self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
 
     def action_set_key(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         key = options.get("key")
         data = options.get("data")
-        shared.SERVICES[svcpath].add_key(key, data)
+        shared.SERVICES[path].add_key(key, data)
         try:
             return {"status": 0}
         except Exception as exc:
@@ -1896,58 +1901,59 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_wake_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath:
-            name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=False)
+        if path:
+            name, namespace, kind = split_path(path)
             self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
         else:
             self.rbac_requires(roles=["operator"], namespaces="ANY", **kwargs)
 
     def action_wake_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        shared.wake_monitor(reason="service %s notification" % svcpath)
+        path = self.options_path(options, required=False)
+        if path:
+            shared.wake_monitor(reason="service %s notification" % path)
+        else:
+            shared.wake_monitor(reason="node notification" % path)
         return {"status": 0}
 
     def rbac_action_clear(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        _, namespace, _ = split_path(path)
         self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
 
     def action_clear(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        smon = self.get_service_monitor(svcpath)
+        path = self.options_path(options, required=True)
+        smon = self.get_service_monitor(path)
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
-        self.log_request("service %s clear" % svcpath, nodename, **kwargs)
-        self.set_smon(svcpath, status="idle", reset_retries=True)
-        return {"status": 0, "info": "%s instance cleared" % svcpath}
+        self.log_request("service %s clear" % path, nodename, **kwargs)
+        self.set_smon(path, status="idle", reset_retries=True)
+        return {"status": 0, "info": "%s instance cleared" % path}
 
-    def get_service_slaves(self, svcpath, slaves=None):
+    def get_service_slaves(self, path, slaves=None):
         """
         Recursive lookup of service slaves.
         """
         if slaves is None:
             slaves = set()
-        _, namespace, _ = split_svcpath(svcpath)
+        _, namespace, _ = split_path(path)
 
         def set_ns(path, parent_ns):
-            name, _namespace, kind = split_svcpath(path)
+            name, _namespace, kind = split_path(path)
             if _namespace:
                 return path
             else:
-                return fmt_svcpath(name, parent_ns, kind)
+                return fmt_path(name, parent_ns, kind)
 
         for nodename in shared.CLUSTER_DATA:
             try:
-                data = shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
+                data = shared.CLUSTER_DATA[nodename]["services"]["status"][path]
             except KeyError:
                 continue
-            slaves.add(svcpath)
+            slaves.add(path)
             new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
             new_slaves = set([set_ns(slave, namespace) for slave in new_slaves])
             new_slaves -= slaves
@@ -1957,10 +1963,8 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_set_service_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        name, namespace, kind = split_path(path)
         local_expect = options.get("local_expect")
         global_expect = options.get("global_expect")
         reset_retries = options.get("reset_retries", False)
@@ -1983,21 +1987,21 @@ class ClientHandler(shared.OsvcThread):
 
     def action_set_service_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         status = options.get("status")
         local_expect = options.get("local_expect")
         global_expect = options.get("global_expect")
         reset_retries = options.get("reset_retries", False)
         stonith = options.get("stonith")
-        svcpaths = set([svcpath])
+        paths = set([path])
         if global_expect != "scaled":
-            svcpaths |= self.get_service_slaves(svcpath)
+            paths |= self.get_service_slaves(path)
         errors = []
         info = []
-        for svcpath in svcpaths:
+        for path in paths:
             try:
-                self.validate_global_expect(svcpath, global_expect)
-                new_ge = self.validate_destination_node(svcpath, global_expect)
+                self.validate_global_expect(path, global_expect)
+                new_ge = self.validate_destination_node(path, global_expect)
                 if new_ge:
                     global_expect = new_ge
             except ex.excAbortAction as exc:
@@ -2005,9 +2009,9 @@ class ClientHandler(shared.OsvcThread):
             except ex.excError as exc:
                 errors.append(str(exc))
             else:
-                info.append("service %s target state set to %s" % (svcpath, global_expect))
+                info.append("service %s target state set to %s" % (path, global_expect))
                 self.set_smon(
-                    svcpath, status=status,
+                    path, status=status,
                     local_expect=local_expect, global_expect=global_expect,
                     reset_retries=reset_retries,
                     stonith=stonith,
@@ -2019,13 +2023,13 @@ class ClientHandler(shared.OsvcThread):
             ret["error"] = errors
         return ret
 
-    def validate_destination_node(self, svcpath, global_expect):
+    def validate_destination_node(self, path, global_expect):
         """
-        For a placed@<dst> <global_expect> (move action) on <svcpath>,
+        For a placed@<dst> <global_expect> (move action) on <path>,
 
         Raise an excError if
-        * the service <svcpath> does not exist
-        * the service <svcpath> topology is failover and more than 1
+        * the service <path> does not exist
+        * the service <path> topology is failover and more than 1
           destination node was specified
         * the specified destination is not a service candidate node
         * no destination node specified
@@ -2043,7 +2047,7 @@ class ClientHandler(shared.OsvcThread):
             return
         if global_expect != "placed":
             return
-        instances = self.get_service_instances(svcpath)
+        instances = self.get_service_instances(path)
         if not instances:
             raise ex.excError("service does not exist")
         if destination_nodes == "<peer>":
@@ -2057,7 +2061,7 @@ class ClientHandler(shared.OsvcThread):
                 count = len(nodes)
                 if count == 0:
                     raise ex.excError("no candidate destination node")
-                svc = self.get_service(svcpath)
+                svc = self.get_service(path)
                 return "placed@%s" % self.placement_ranks(svc, nodes)[0]
         else:
             destination_nodes = destination_nodes.split(",")
@@ -2079,7 +2083,7 @@ class ClientHandler(shared.OsvcThread):
                     raise ex.excAbortAction("instance on destination node %s is "
                                             "already up" % destination_node)
 
-    def validate_global_expect(self, svcpath, global_expect):
+    def validate_global_expect(self, path, global_expect):
         if global_expect is None:
             return
         if global_expect in ("frozen", "aborted", "provisioned"):
@@ -2088,10 +2092,10 @@ class ClientHandler(shared.OsvcThread):
 
         # wait for service to appear
         for i in range(5):
-            instances = self.get_service_instances(svcpath)
+            instances = self.get_service_instances(path)
             if instances:
                 break
-            if not is_service(svcpath):
+            if not is_service(path):
                 break
             time.sleep(1)
         if not instances:
@@ -2101,15 +2105,15 @@ class ClientHandler(shared.OsvcThread):
             status = _data.get("monitor", {}).get("status", "unknown")
             if status != "idle" and "failed" not in status and "wait" not in status:
                 raise ex.excError("%s instance on node %s in %s state"
-                                  "" % (svcpath, nodename, status))
+                                  "" % (path, nodename, status))
 
         if global_expect not in ("started", "stopped"):
             return
-        agg = Storage(shared.AGG.get(svcpath, {}))
+        agg = Storage(shared.AGG.get(path, {}))
         if global_expect == "started" and agg.avail == "up":
-            raise ex.excAbortAction("service %s is already started" % svcpath)
+            raise ex.excAbortAction("service %s is already started" % path)
         elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
-            raise ex.excAbortAction("service %s is already stopped" % svcpath)
+            raise ex.excAbortAction("service %s is already stopped" % path)
         if agg.avail in ("n/a", "undef"):
             raise ex.excAbortAction()
 
@@ -2431,11 +2435,9 @@ class ClientHandler(shared.OsvcThread):
         options = kwargs.get("options", {})
         action = options.get("action")
         cmd = options.get("cmd")
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
+        path = self.options_path(options, required=True)
         action_options = options.get("options", {})
-        name, namespace, kind = split_svcpath(svcpath)
+        name, namespace, kind = split_path(path)
 
         if action_options is None:
             action_options = {}
@@ -2451,7 +2453,7 @@ class ClientHandler(shared.OsvcThread):
         if action == "set":
             # load current config
             try:
-                cf = shared.SERVICES[svcpath].print_config_data()
+                cf = shared.SERVICES[path].print_config_data()
             except Exception as exc:
                 cf = {}
             # purge unwanted sections
@@ -2471,7 +2473,7 @@ class ClientHandler(shared.OsvcThread):
                 if s not in cf:
                     cf[s] = {}
                 cf[s][k] = v
-            payload = {svcpath: cf}
+            payload = {path: cf}
             errors = self.rbac_create_data(payload, **kwargs)
             if errors:
                 raise HTTP(403, errors)
@@ -2486,7 +2488,7 @@ class ClientHandler(shared.OsvcThread):
         """
         Execute a CRM command.
         kwargs.options:
-        * svcpath: str
+        * path: str
         * action: str
         * options: dict
         * sync: boolean
@@ -2496,31 +2498,19 @@ class ClientHandler(shared.OsvcThread):
         action = options.get("action")
         cmd = options.get("cmd")
         sync = options.get("sync", True)
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         action_options = options.get("options", {})
-        name, namespace, kind = split_svcpath(svcpath)
+        name, namespace, kind = split_path(path)
 
         if action_options is None:
             action_options = {}
 
-        if svcpath is None:
-            self.log_request("service action (no 'svcpath' set)", nodename, lvl="error", **kwargs)
-            return {
-                "status": 1,
-            }
-
-        if self.get_service(svcpath) is None and action not in ("create", "deploy"):
-            self.log_request("service action (%s not installed)" % svcpath, nodename, lvl="warning", **kwargs)
-            return {
-                "error": "%s not found" % svcpath,
-                "status": 1,
-            }
+        if self.get_service(path) is None and action not in ("create", "deploy"):
+            self.log_request("service action (%s not installed)" % path, nodename, lvl="warning", **kwargs)
+            raise HTTP(404, "%s not found" % path)
         if not action and not cmd:
             self.log_request("service action (no action set)", nodename, lvl="error", **kwargs)
-            return {
-                "error": "action not set",
-                "status": 1,
-            }
+            raise HTTP(400, "action not set")
 
         for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
             if opt in action_options:
@@ -2564,7 +2554,7 @@ class ClientHandler(shared.OsvcThread):
                     opt += "=" + str(val)
                     cmd.append(opt)
 
-        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", svcpath] + cmd
+        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", path] + cmd
         self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
         if sync:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
@@ -2642,51 +2632,47 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_service_backlogs(self, nodename, stream_id=None, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        _, namespace, _ = split_path(path)
         self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
 
     def action_service_backlogs(self, nodename, stream_id=None, **kwargs):
         """
         Send service past logs.
         kwargs:
-        * svcpath
+        * path
         * backlog: the number of bytes to send from the tail default is 10k.
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        svc = self.get_service(svcpath)
+        path = self.options_path(options, required=True)
+        svc = self.get_service(path)
         if svc is None:
-            return {"status": 1}
+            raise HTTP(404, "%s not found" % path)
         backlog = self.backlog_from_options(options)
-        logfile = os.path.join(svc.log_d, svc.svcname+".log")
+        logfile = os.path.join(svc.log_d, svc.name+".log")
         ofile = self._action_logs_open(logfile, backlog, "svc")
         return self.read_file_lines(ofile)
 
     def rbac_action_service_logs(self, nodename, stream_id=None, **kwargs):
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        _, namespace, _ = split_path(path)
         self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
 
     def action_service_logs(self, nodename, stream_id=None, **kwargs):
         """
         Send service logs.
         kwargs:
-        * svcpath
+        * path
         """
         options = kwargs.get("options", {})
-        svcpath = options.get("svcpath")
-        svc = self.get_service(svcpath)
+        path = self.options_path(options, required=True)
+        svc = self.get_service(path)
         if svc is None:
-            return {"status": 1}
-        logfile = os.path.join(svc.log_d, svc.svcname+".log")
+            raise HTTP(404, "%s not found" % path)
+        logfile = os.path.join(svc.log_d, svc.name+".log")
         ofile = self._action_logs_open(logfile, 0, "node")
         self.streams[stream_id]["pushers"].append({
             "fn": "h2_push_logs",
@@ -2818,19 +2804,17 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_container_exec(self, nodename, **kwargs):
         options = Storage(kwargs.get("options", {}))
-        svcpath = options.get("svcpath")
-        if svcpath is None:
-            raise HTTP(400, "object path not set")
-        name, namespace, kind = split_svcpath(svcpath)
+        path = self.options_path(options, required=True)
+        _, namespace, _ = split_path(path)
         self.rbac_requires(["operator"], namespace=namespace, **kwargs)
 
     def action_container_exec(self, nodename, **kwargs):
         options = Storage(kwargs.get("options", {}))
-        svcpath = options.get("svcpath")
+        path = self.options_path(options, required=True)
         interactive = options.get("interactive", False)
         tty = options.get("tty", False)
         command = options.get("command")
-        name, namespace, kind = split_svcpath(svcpath)
+        name, namespace, kind = split_path(path)
         rid = options.get("rid")
         svc = factory(kind)(name, namespace, node=shared.NODE, volatile=True)
         resource = svc.get_resource(rid)
@@ -2848,7 +2832,7 @@ class ClientHandler(shared.OsvcThread):
 
     def action_whoami(self, nodename, **kwargs):
         data = {
-            "name": self.usr.svcname,
+            "name": self.usr.name,
             "namespace": self.usr.namespace,
             "auth": self.usr_auth,
             "grant": dict((k, list(v) if v is not None else None) for k, v in self.usr_grants.items()),

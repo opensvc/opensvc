@@ -28,14 +28,14 @@ class Prov(provisioning.Prov):
             volume = self.r.volsvc
         if not self.claimed(volume):
             return False
-        if self.r.svc.svcpath not in volume.children:
+        if self.r.svc.path not in volume.children:
             return False
         return True
 
     def owned_exclusive(self, volume=None):
         if not volume:
             volume = self.r.volsvc
-        if set(volume.children) != set([self.r.svc.svcpath]):
+        if set(volume.children) != set([self.r.svc.path]):
             return False
         return True
 
@@ -43,21 +43,21 @@ class Prov(provisioning.Prov):
         if self.r.shared:
             if self.owned_exclusive(volume):
                 self.r.log.info("volume %s is already claimed exclusively by %s",
-                                volume.svcpath, self.r.svc.svcpath)
+                                volume.path, self.r.svc.path)
                 return
             if self.claimed(volume):
-                raise ex.excError("shared volume %s is already claimed by %s" % (volume.svcname, ",".join(volume.children)))
+                raise ex.excError("shared volume %s is already claimed by %s" % (volume.name, ",".join(volume.children)))
         else:
             if self.owned(volume):
                 self.r.log.info("volume %s is already claimed by %s",
-                                volume.svcpath, self.r.svc.svcpath)
+                                volume.path, self.r.svc.path)
                 return
-        self.r.log.info("claim volume %s", volume.svcname)
-        volume.set_multi(["DEFAULT.children+=%s" % self.r.svc.svcpath])
+        self.r.log.info("claim volume %s", volume.name)
+        volume.set_multi(["DEFAULT.children+=%s" % self.r.svc.path])
 
     def unclaim(self):
-        self.r.log.info("unclaim volume %s", self.r.volsvc.svcname)
-        self.r.volsvc.set_multi(["DEFAULT.children-=%s" % self.r.svc.svcpath], validation=False)
+        self.r.log.info("unclaim volume %s", self.r.volsvc.name)
+        self.r.volsvc.set_multi(["DEFAULT.children-=%s" % self.r.svc.path], validation=False)
 
     def unprovisioner(self):
         if not self.r.volsvc.exists():
@@ -91,7 +91,7 @@ class Prov(provisioning.Prov):
         self.r.unset_lazy("volsvc")
 
     def create_volume(self):
-        volume = factory("vol")(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
+        volume = factory("vol")(name=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
         if volume.exists():
             self.r.log.info("volume %s already exists", self.r.volname)
             data = volume.print_status_data(mon_data=True)
@@ -139,7 +139,7 @@ class Prov(provisioning.Prov):
             args = src.split(".", 1)
             val = self.r.svc.oget(*args)
             if val is None:
-                raise ex.excError("missing mapped key in %s: %s" % (self.r.svc.svcpath, mapping))
+                raise ex.excError("missing mapped key in %s: %s" % (self.r.svc.path, mapping))
             if is_string(val) and ".." in val:
                 raise ex.excError("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
@@ -150,6 +150,6 @@ class Prov(provisioning.Prov):
                               nodes=nodes,
                               shared=self.r.shared,
                               env=env)
-        volume = factory("vol")(svcname=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
+        volume = factory("vol")(name=self.r.volname, namespace=self.r.svc.namespace, node=self.r.svc.node)
         return volume
 

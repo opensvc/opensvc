@@ -69,7 +69,7 @@ class check(checks.check):
         r.append({
                   "instance": "new lines",
                   "value": str(l),
-                  "svcpath": "",
+                  "path": "",
                  })
 
         self.update_marker()

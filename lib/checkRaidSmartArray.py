@@ -93,6 +93,6 @@ class check(checks.check):
                     r.append({
                           "instance": ".".join((slot, inst)),
                           "value": str(value),
-                          "svcpath": '',
+                          "path": '',
                          })
         return r

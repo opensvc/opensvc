@@ -12,14 +12,14 @@ from converters import convert_duration
 from subprocess import *
 
 class Collector(object):
-    def __init__(self, options=None, node=None, svcname=None):
+    def __init__(self, options=None, node=None, path=None):
         if isinstance(options, dict):
             self.options = Storage(options)
         else:
             self.options = options
         self.node = node
         self.collector = node.collector
-        self.svcname = svcname
+        self.path = path
 
     def rotate_root_pw(self, pw):
         opts = {}
@@ -31,11 +31,11 @@ class Collector(object):
             raise ex.excError(d['msg'])
 
     def collector_ack_unavailability(self):
-        if self.svcname is None:
+        if self.path is None:
             return
 
         opts = {}
-        opts['svcname'] = self.svcname
+        opts['svcname'] = self.path
         if self.options.begin is not None:
             opts['begin'] = self.options.begin
         if self.options.end is not None:
@@ -58,11 +58,11 @@ class Collector(object):
             raise ex.excError(d['msg'])
 
     def collector_list_unavailability_ack(self):
-        if self.svcname is None:
+        if self.path is None:
             return
 
         opts = {}
-        opts['svcname'] = self.svcname
+        opts['svcname'] = self.path
         if self.options.begin is not None:
             opts['begin'] = self.options.begin
         if self.options.end is not None:
@@ -88,8 +88,8 @@ class Collector(object):
 
     def collector_list_actions(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         if self.options.begin is not None:
             opts['begin'] = self.options.begin
         if self.options.end is not None:
@@ -107,8 +107,8 @@ class Collector(object):
 
     def collector_ack_action(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         if self.options.author is not None:
             opts['author'] = self.options.author
         if self.options.comment is not None:
@@ -126,8 +126,8 @@ class Collector(object):
 
     def collector_networks(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_networks', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -138,8 +138,8 @@ class Collector(object):
 
     def collector_asset(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_asset', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -150,8 +150,8 @@ class Collector(object):
 
     def collector_checks(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_checks', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -162,8 +162,8 @@ class Collector(object):
 
     def collector_disks(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_disks', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -174,8 +174,8 @@ class Collector(object):
 
     def collector_alerts(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_alerts', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -186,8 +186,8 @@ class Collector(object):
 
     def collector_events(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         if self.options.begin is not None:
             opts['begin'] = self.options.begin
         if self.options.end is not None:
@@ -202,8 +202,8 @@ class Collector(object):
 
     def collector_show_actions(self):
         opts = {}
-        if self.svcname is not None:
-            opts['svcname'] = self.svcname
+        if self.path is not None:
+            opts['svcname'] = self.path
         if self.options.id != 0:
             opts['id'] = self.options.id
         if self.options.begin is not None:
@@ -221,8 +221,8 @@ class Collector(object):
     def collector_untag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
-        if self.svcname:
-            opts['svcname'] = self.svcname
+        if self.path:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_untag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -232,8 +232,8 @@ class Collector(object):
     def collector_tag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
-        if self.svcname:
-            opts['svcname'] = self.svcname
+        if self.path:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_tag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -246,8 +246,8 @@ class Collector(object):
         if opts['tag_name'] is None:
             print("missing parameter: --tag", file=sys.stderr)
             return 1
-        if self.svcname:
-            opts['svcname'] = self.svcname
+        if self.path:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_create_tag', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -261,8 +261,8 @@ class Collector(object):
 
     def _collector_list_tags(self):
         opts = {'pattern': self.options.like}
-        if self.svcname:
-            opts['svcname'] = self.svcname
+        if self.path:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_list_tags', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -272,8 +272,8 @@ class Collector(object):
 
     def collector_show_tags(self):
         opts = {}
-        if self.svcname:
-            opts['svcname'] = self.svcname
+        if self.path:
+            opts['svcname'] = self.path
         d = self.collector.call('collector_show_tags', opts)
         if d is None:
             raise ex.excError("xmlrpc unknown failure")
@@ -332,11 +332,11 @@ class Collector(object):
                 print(" %s: %s" % (e_id, e_name))
 
     def collector_log(self):
-        path = "/logs"
+        rpath = "/logs"
         data = {
           "log_fmt": self.options.message,
         }
-        d = self.node.collector_rest_post(path, data, svcname=self.svcname)
+        d = self.node.collector_rest_post(rpath, data, path=self.path)
         if "error" in d:
             raise ex.excError(d["error"])
         print("logged")

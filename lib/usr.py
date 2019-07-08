@@ -8,7 +8,7 @@ import glob
 import tempfile
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory, bdecode
+from rcUtilities import lazy, makedirs, split_path, factory, bdecode
 from svc import BaseSvc
 from rcSsl import gen_cert
 from sec import Sec
@@ -47,7 +47,7 @@ class Usr(Sec, BaseSvc):
         changes = []
         if not self.oget("DEFAULT", "cn"):
             if self.namespace == "system":
-                changes.append("cn=%s" % self.svcname)
+                changes.append("cn=%s" % self.name)
             else:
                 changes.append("cn=%s" % self.fullname)
         if not self.oget("DEFAULT", "ca"):
@@ -70,7 +70,7 @@ class Usr(Sec, BaseSvc):
     @lazy
     def ca(self):
         capath = self.oget("DEFAULT", "ca")
-        name, namespace, kind = split_svcpath(capath)
+        name, namespace, kind = split_path(capath)
         return factory("sec")(name, namespace=namespace, volatile=True, node=self.node)
 
     def revoke(self):
@@ -82,7 +82,7 @@ class Usr(Sec, BaseSvc):
         p_crlconf = os.path.join(rcEnv.paths.certs, "openssl-crl.conf")
         p_crlnumber = os.path.join(rcEnv.paths.certs, "crlnumber")
         p_crlindex = os.path.join(rcEnv.paths.certs, "crlindex")
-        p_usr_crt = os.path.join(rcEnv.paths.certs, "%s_certificate" % self.svcname)
+        p_usr_crt = os.path.join(rcEnv.paths.certs, "%s_certificate" % self.name)
         if "crlnumber" not in self.data_keys():
             self.ca.add_key("crlnumber", "00")
         if "crlconf" not in self.data_keys():

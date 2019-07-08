@@ -62,7 +62,7 @@ class check(checks.check):
         r.append({
                   "instance": inst,
                   "value": val,
-                  "svcpath": "",
+                  "path": "",
                  })
 
         inst = intf + ".speed"
@@ -77,7 +77,7 @@ class check(checks.check):
         r.append({
                   "instance": inst,
                   "value": val,
-                  "svcpath": "",
+                  "path": "",
                  })
 
         inst = intf + ".autoneg"
@@ -90,7 +90,7 @@ class check(checks.check):
         r.append({
                   "instance": inst,
                   "value": val,
-                  "svcpath": "",
+                  "path": "",
                  })
 
         inst = intf + ".duplex"
@@ -103,7 +103,7 @@ class check(checks.check):
         r.append({
                   "instance": inst,
                   "value": val,
-                  "svcpath": "",
+                  "path": "",
                  })
 
         return r

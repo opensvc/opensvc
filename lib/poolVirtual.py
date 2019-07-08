@@ -6,7 +6,7 @@ import pool
 import rcExceptions as ex
 from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_service, split_svcpath, factory
+from rcUtilities import is_service, split_path, factory
 
 class Pool(pool.Pool):
     type = "virtual"
@@ -30,7 +30,7 @@ class Pool(pool.Pool):
         if not is_service(self.template):
             raise ex.excError("%s template volume not found" % self.template)
         name = self.default_disk_name(volume)
-        tname, tnamespace, tkind = split_svcpath(self.template)
+        tname, tnamespace, tkind = split_path(self.template)
         if tkind != "vol":
             raise ex.excError("%s template kind is not vol")
         svc = factory(tkind)(tname, tnamespace, volatile=True, node=self.node)
@@ -53,7 +53,7 @@ class Pool(pool.Pool):
         config["env"]["size"] = size
         if env:
             config["env"].update(env)
-        self.node.install_svc_conf_from_data(volume.svcname, volume.namespace, volume.kind, config)
+        self.node.install_svc_conf_from_data(volume.name, volume.namespace, volume.kind, config)
 
     def pool_status(self):
         data = {

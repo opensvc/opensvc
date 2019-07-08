@@ -30,9 +30,9 @@ class syncS3(resSync.Sync):
 
     def on_add(self):
         if self.svc.namespace:
-            self.prefix = "/".join(("", self.svc.namespace.lower(), self.svc.svcname, self.rid.replace("#",".")))
+            self.prefix = "/".join(("", self.svc.namespace.lower(), self.svc.name, self.rid.replace("#",".")))
         else:
-            self.prefix = "/".join(("", self.svc.svcname, self.rid.replace("#",".")))
+            self.prefix = "/".join(("", self.svc.name, self.rid.replace("#",".")))
         dst = "s3://"+self.bucket + self.prefix
         self.label += " to " + dst
         if self.snar is None:

@@ -17,7 +17,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def diskpart_rescan(self):
@@ -46,6 +46,6 @@ class check(checks.check):
                 n = drive.numberpaths
                 r.append({"instance": name,
                           "value": str(n),
-                          "svcpath": "",
+                          "path": "",
                          })
         return r

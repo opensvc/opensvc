@@ -26,7 +26,7 @@ class check(checks.check):
             else:
                 # not handled
                 continue
-            svcpath = ids.svcpath if ids.svcpath else ids.svcname if ids.svcname else ""
+            path = ids.path if ids.path else ids.name if ids.name else ""
             jstat = get_executable(Storage(), pid)
             if not jstat:
                 continue
@@ -35,7 +35,7 @@ class check(checks.check):
                     data.append({
                         "instance": "%s.%s.%s" % (instance, stat, key),
                         "value": val,
-                        "svcpath": svcpath,
+                        "path": path,
                     })
         #print(json.dumps(data, indent=4))
         return data
@@ -123,7 +123,7 @@ def pid_to_ids(pid):
         elif key == "OPENSVC_SVCNAME":
             data["svcname"] = val
         elif key == "OPENSVC_SVCPATH":
-            data["svcpath"] = val
+            data["path"] = val
         elif key == "OPENSVC_RID":
             data["rid"] = val
         elif key == "OPENSVC_CHK_INSTANCE":

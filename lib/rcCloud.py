@@ -7,7 +7,7 @@ class Cloud(object):
         self.auth = auth
         self.driver = None
 
-    def list_svcnames(self):
+    def list_names(self):
          print("todo")
          return []
 

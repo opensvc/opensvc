@@ -382,7 +382,7 @@ class ResourceSet(object):
         """
         l = [
             rcEnv.nodename,
-            self.svc.svcname,
+            self.svc.name,
             self.rid
         ]
         if self.svc.namespace:

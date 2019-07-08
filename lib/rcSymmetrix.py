@@ -10,7 +10,7 @@ import rcExceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall, which, factory, split_svcpath
+from rcUtilities import justcall, which, factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
@@ -265,7 +265,7 @@ class Arrays(object):
             password = self.node.oget(s, 'password')
 
             try:
-                secname, namespace, _ = split_svcpath(password)
+                secname, namespace, _ = split_path(password)
                 password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
             except Exception as exc:
                 print("error decoding password: %s", exc, file=sys.stderr)

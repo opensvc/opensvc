@@ -47,7 +47,7 @@ class Cloud(rcCloud.Cloud):
         openstack = get_driver(Provider.OPENSTACK)
         self.driver = openstack( auth['username'], auth['password'], **kwargs)
 
-    def app_id(self, svcname=None):
+    def app_id(self, name=None):
         return self.tenant_name
 
     def cloud_id(self):
@@ -61,11 +61,11 @@ class Cloud(rcCloud.Cloud):
         _id.append(self.cloud_id())
         return '.'.join(_id)
 
-    def list_svcnames(self):
+    def list_names(self):
         l = []
         _id = self.app_cloud_id()
         for node in self.list_nodes():
-            svcname = '.'.join((node.name, _id))
-            l.append((node.name, svcname))
+            name = '.'.join((node.name, _id))
+            l.append((node.name, name))
         return l
 

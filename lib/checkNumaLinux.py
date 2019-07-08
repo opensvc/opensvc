@@ -37,7 +37,7 @@ class check(checks.check):
             r.append({
                   "instance": node+'.mem.leveling',
                   "value": str(deviation),
-                  "svcpath": '',
+                  "path": '',
                  })
         return r
 

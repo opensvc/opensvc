@@ -18,7 +18,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def do_check(self):
@@ -64,7 +64,7 @@ class check(checks.check):
                             name = did
                     r.append({"instance": name,
                               "value": str(n),
-                              "svcpath": self.find_svc(dev),
+                              "path": self.find_svc(dev),
                              })
                     paths = []
                     dev = None

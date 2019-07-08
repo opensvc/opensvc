@@ -45,34 +45,34 @@ class Collector(shared.OsvcThread):
         last_status = {}
         last_status_changed = set()
 
-        def add_parents(_svcname, done=None):
+        def add_parents(_path, done=None):
             """
             Propagate change to the service parents
             """
             if done is None:
                 done = []
-            if _svcname in done:
+            if _path in done:
                 # break recursion loop
                 return
             for nodename, ndata in data["nodes"].items():
-                for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
+                for path, sdata in ndata.get("services", {}).get("status", {}).items():
                     slaves = sdata.get("slaves", []) + sdata.get("scaler_slaves", [])
-                    if _svcname not in slaves:
+                    if _path not in slaves:
                         continue
-                    if svcname in last_status_changed:
+                    if path in last_status_changed:
                         continue
-                    last_status_changed.add(svcname)
-                    add_parents(svcname, done=done+[_svcname])
+                    last_status_changed.add(path)
+                    add_parents(path, done=done+[_path])
 
-        for svcname, nodename in self.last_status:
-            if svcname is None:
+        for path, nodename in self.last_status:
+            if path is None:
                 # node disappeared
                 if data["nodes"].get(nodename) is None:
                     last_status_changed.add("@"+nodename)
             else:
                 # instance disappeared
-                if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(svcname) is None:
-                    last_status_changed |= set([svcname, svcname+"@"+nodename])
+                if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(path) is None:
+                    last_status_changed |= set([path, path+"@"+nodename])
 
         for nodename, ndata in data["nodes"].items():
             # detect node frozen changes
@@ -83,30 +83,30 @@ class Collector(shared.OsvcThread):
             last_status[(None, nodename)] = {"frozen": node_frozen}
 
             # detect instances status changes
-            for svcname, sdata in ndata.get("services", {}).get("status", {}).items():
+            for path, sdata in ndata.get("services", {}).get("status", {}).items():
                 status_csum = sdata.get("csum", "") + \
                     str(sdata.get("monitor", {}).get("status_updated")) + \
                     str(sdata.get("monitor", {}).get("global_status_updated"))
-                prev_status_csum = self.last_status.get((svcname, nodename))
+                prev_status_csum = self.last_status.get((path, nodename))
                 if status_csum != prev_status_csum:
-                    last_status_changed.add(svcname+"@"+nodename)
-                    if svcname not in last_status_changed:
-                        last_status_changed.add(svcname)
-                        add_parents(svcname)
-                last_status[(svcname, nodename)] = status_csum
+                    last_status_changed.add(path+"@"+nodename)
+                    if path not in last_status_changed:
+                        last_status_changed.add(path)
+                        add_parents(path)
+                last_status[(path, nodename)] = status_csum
 
         return last_status, last_status_changed
 
     def get_last_config(self, data):
         last_config = {}
         last_config_changed = []
-        for svcpath, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
+        for path, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
             config_csum = sdata.get("csum", 0)
-            prev_config_csum = self.last_config.get(svcpath, 0)
+            prev_config_csum = self.last_config.get(path, 0)
             if prev_config_csum and config_csum != prev_config_csum:
                 # don't send all configs on daemon start
-                last_config_changed.append(svcpath)
-            last_config[svcpath] = config_csum
+                last_config_changed.append(path)
+            last_config[path] = config_csum
         self.last_config = last_config
         return last_config_changed
 
@@ -150,26 +150,26 @@ class Collector(shared.OsvcThread):
                 time.sleep(0.2)
                 shared.NODE.collector.disable()
 
-    def send_containerinfo(self, svcname):
-        if svcname not in shared.SERVICES:
+    def send_containerinfo(self, path):
+        if path not in shared.SERVICES:
             return
-        if not shared.SERVICES[svcname].has_encap_resources:
+        if not shared.SERVICES[path].has_encap_resources:
             return
-        self.log.info("send service %s container info", svcname)
+        self.log.info("send service %s container info", path)
         with shared.SERVICES_LOCK:
             try:
-                shared.NODE.collector.call("push_containerinfo", shared.SERVICES[svcname])
+                shared.NODE.collector.call("push_containerinfo", shared.SERVICES[path])
             except Exception as exc:
                 self.log.error("call push_containerinfo: %s", exc)
                 shared.NODE.collector.disable()
 
-    def send_service_config(self, svcname):
-        if svcname not in shared.SERVICES:
+    def send_service_config(self, path):
+        if path not in shared.SERVICES:
             return
-        self.log.info("send service %s config", svcname)
+        self.log.info("send service %s config", path)
         with shared.SERVICES_LOCK:
             try:
-                shared.NODE.collector.call("push_config", shared.SERVICES[svcname])
+                shared.NODE.collector.call("push_config", shared.SERVICES[path])
             except Exception as exc:
                 self.log.error("call push_config: %s", exc)
                 shared.NODE.collector.disable()
@@ -227,13 +227,13 @@ class Collector(shared.OsvcThread):
                 continue
             if instances_config is None:
                 continue
-            for svcname in list(instances_status.keys()):
-                if svcname not in instances_config:
+            for path in list(instances_status.keys()):
+                if path not in instances_config:
                     # deleted service instance
                     continue
-                if not instances_status[svcname]:
+                if not instances_status[path]:
                     continue
-                if instances_status[svcname].get("encap") is True:
+                if instances_status[path].get("encap") is True:
                     continue
                 if nodename not in _data["nodes"]:
                     _data["nodes"][nodename] = {
@@ -243,9 +243,9 @@ class Collector(shared.OsvcThread):
                         },
                     }
                 _data["nodes"][nodename]["frozen"] = node_frozen
-                _data["nodes"][nodename]["services"]["status"][svcname] = instances_status[svcname]
-                _data["nodes"][nodename]["services"]["config"][svcname] = instances_config[svcname]
-                _data["services"][svcname] = data["services"][svcname]
+                _data["nodes"][nodename]["services"]["status"][path] = instances_status[path]
+                _data["nodes"][nodename]["services"]["config"][path] = instances_config[path]
+                _data["services"][path] = data["services"][path]
         return _data
 
     def run_collector(self):
@@ -257,9 +257,9 @@ class Collector(shared.OsvcThread):
             return
 
         last_config_changed = self.get_last_config(data)
-        for svcname in last_config_changed:
-            self.send_service_config(svcname)
-            self.send_containerinfo(svcname)
+        for path in last_config_changed:
+            self.send_service_config(path)
+            self.send_containerinfo(path)
 
         if self.speaker():
             last_status, last_status_changed = self.get_last_status(data)

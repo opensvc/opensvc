@@ -23,9 +23,9 @@ import json_delta
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import bdecode, purge_cache, fsum, \
-                        svc_pathetc, svc_pathvar, makedirs, split_svcpath, \
-                        list_services, svc_pathcf, fmt_svcpath, \
-                        resolve_svcpath, factory
+                        svc_pathetc, svc_pathvar, makedirs, split_path, \
+                        list_services, svc_pathcf, fmt_path, \
+                        resolve_path, factory
 from freezer import Freezer
 from jsonpath_ng import jsonpath, parse
 
@@ -167,14 +167,14 @@ class Monitor(shared.OsvcThread):
         """
         The node config references may have changed, update the services objects.
         """
-        for svcpath in shared.SERVICES:
+        for path in shared.SERVICES:
             try:
-                name, namespace, kind = split_svcpath(svcpath)
+                name, namespace, kind = split_path(path)
                 svc = factory(kind)(name, namespace, node=shared.NODE)
             except Exception as exc:
                 continue
             with shared.SERVICES_LOCK:
-                shared.SERVICES[svcpath] = svc
+                shared.SERVICES[path] = svc
 
     def do(self):
         terminated = self.janitor_procs() + self.janitor_threads()
@@ -216,12 +216,12 @@ class Monitor(shared.OsvcThread):
         and fetch the most recent one if needed.
         """
         confs = self.get_services_configs()
-        for svcpath, data in confs.items():
+        for path, data in confs.items():
             new_service = False
             with shared.SERVICES_LOCK:
-                if svcpath not in shared.SERVICES:
+                if path not in shared.SERVICES:
                     new_service = True
-            if self.has_instance_with(svcpath, global_expect=["purged", "deleted"]):
+            if self.has_instance_with(path, global_expect=["purged", "deleted"]):
                 continue
             if rcEnv.nodename not in data:
                 # need to check if we should have this config ?
@@ -249,41 +249,41 @@ class Monitor(shared.OsvcThread):
                 # we already have the most recent version
                 continue
             with shared.SERVICES_LOCK:
-                if svcpath in shared.SERVICES and \
-                   rcEnv.nodename in shared.SERVICES[svcpath].nodes and \
-                   ref_nodename in shared.SERVICES[svcpath].drpnodes:
+                if path in shared.SERVICES and \
+                   rcEnv.nodename in shared.SERVICES[path].nodes and \
+                   ref_nodename in shared.SERVICES[path].drpnodes:
                     # don't fetch drp config from prd nodes
                     return
             self.log.info("node %s has the most recent service %s config",
-                          ref_nodename, svcpath)
-            self.fetch_service_config(svcpath, ref_nodename)
+                          ref_nodename, path)
+            self.fetch_service_config(path, ref_nodename)
             if new_service:
-                self.init_new_service(svcpath)
+                self.init_new_service(path)
 
-    def init_new_service(self, svcpath):
-        name, namespace, kind = split_svcpath(svcpath)
+    def init_new_service(self, path):
+        name, namespace, kind = split_path(path)
         try:
-            shared.SERVICES[svcpath] = factory(kind)(name, namespace, node=shared.NODE)
+            shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
         except Exception as exc:
-            self.log.error("unbuildable service %s fetched: %s", svcpath, exc)
+            self.log.error("unbuildable service %s fetched: %s", path, exc)
             return
 
         try:
-            svc = shared.SERVICES[svcpath]
+            svc = shared.SERVICES[path]
             if svc.kind == "svc":
                 self.event("instance_freeze", {
                     "reason": "install",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                Freezer(svcpath).freeze()
+                Freezer(path).freeze()
             if not os.path.exists(svc.paths.cf):
                 return
-            self.service_status_fallback(svc.svcpath)
+            self.service_status_fallback(svc.path)
         except Exception:
             # can happen when deleting the service
             pass
 
-    def fetch_service_config(self, svcpath, nodename):
+    def fetch_service_config(self, path, nodename):
         """
         Fetch and install the most recent service configuration file, using
         the remote node listener.
@@ -291,13 +291,13 @@ class Monitor(shared.OsvcThread):
         req = {
             "action": "get_service_config",
             "options": {
-                "svcpath": svcpath,
+                "path": path,
             },
         }
         resp = self.daemon_get(req, server=nodename)
         if resp is None:
             self.log.error("unable to fetch service %s config from node %s: "
-                           "received %s", svcpath, nodename, resp)
+                           "received %s", path, nodename, resp)
             return
         status = resp.get("status", 1)
         if status == 2:
@@ -306,7 +306,7 @@ class Monitor(shared.OsvcThread):
             return
         elif status != 0:
             self.log.error("unable to fetch service %s config from node %s: "
-                           "received %s", svcpath, nodename, resp)
+                           "received %s", path, nodename, resp)
             return
         with tempfile.NamedTemporaryFile(dir=rcEnv.paths.pathtmp, delete=False) as filep:
             tmpfpath = filep.name
@@ -314,8 +314,8 @@ class Monitor(shared.OsvcThread):
             with codecs.open(tmpfpath, "w", "utf-8") as filep:
                 filep.write(resp["data"])
             with shared.SERVICES_LOCK:
-                if svcpath in shared.SERVICES:
-                    svc = shared.SERVICES[svcpath]
+                if path in shared.SERVICES:
+                    svc = shared.SERVICES[path]
                 else:
                     svc = None
             if svc:
@@ -323,16 +323,16 @@ class Monitor(shared.OsvcThread):
                     results = svc._validate_config(path=filep.name)
                 except Exception as exc:
                     self.log.error("service %s fetched config validation "
-                                   "error: %s", svcpath, exc)
+                                   "error: %s", path, exc)
                     return
                 try:
                     svc.postinstall()
                 except Exception as exc:
-                    self.log.error("service %s postinstall failed: %s", svcpath, exc)
+                    self.log.error("service %s postinstall failed: %s", path, exc)
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
-                dst = svc_pathcf(svcpath)
+                dst = svc_pathcf(path)
                 makedirs(os.path.dirname(dst))
                 shutil.copy(filep.name, dst)
                 mtime = resp.get("mtime")
@@ -340,13 +340,13 @@ class Monitor(shared.OsvcThread):
                     os.utime(dst, (mtime, mtime))
             else:
                 self.log.error("the service %s config fetched from node %s is "
-                               "not valid", svcpath, nodename)
+                               "not valid", path, nodename)
                 return
         finally:
             os.unlink(tmpfpath)
 
         self.event("service_config_installed", {
-            "svcpath": svcpath,
+            "path": path,
             "from": nodename
         })
 
@@ -355,8 +355,8 @@ class Monitor(shared.OsvcThread):
     # Node and Service Commands
     #
     #########################################################################
-    def generic_callback(self, svcpath, **kwargs):
-        self.set_smon(svcpath, **kwargs)
+    def generic_callback(self, path, **kwargs):
+        self.set_smon(path, **kwargs)
         self.update_hb_data()
 
     def node_stonith(self, node):
@@ -364,9 +364,9 @@ class Monitor(shared.OsvcThread):
 
         # make sure we won't redo the stonith for another service
         with shared.SMON_DATA_LOCK:
-             for svcpath, smon in shared.SMON_DATA.items():
+             for path, smon in shared.SMON_DATA.items():
                  if smon.stonith == node:
-                     del shared.SMON_DATA[svcpath]["stonith"]
+                     del shared.SMON_DATA[path]["stonith"]
 
         # wait for 10sec before giving up
         for step in range(10):
@@ -378,46 +378,46 @@ class Monitor(shared.OsvcThread):
         # timeout, free the caller
         self.push_proc(proc=proc)
 
-    def service_startstandby_resources(self, svcpath, rids, slave=None):
-        self.set_smon(svcpath, "restarting")
+    def service_startstandby_resources(self, path, rids, slave=None):
+        self.set_smon(path, "restarting")
         cmd = ["startstandby", "--rid", ",".join(rids)]
         if slave:
             cmd += ["--slave", slave]
-        proc = self.service_command(svcpath, cmd)
+        proc = self.service_command(path, cmd)
         self.push_proc(
             proc=proc,
             on_success="service_start_resources_on_success",
-            on_success_args=[svcpath, rids],
+            on_success_args=[path, rids],
             on_success_kwargs={"slave": slave},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "idle"},
         )
 
-    def service_start_resources(self, svcpath, rids, slave=None):
-        self.set_smon(svcpath, "restarting")
+    def service_start_resources(self, path, rids, slave=None):
+        self.set_smon(path, "restarting")
         cmd = ["start", "--rid", ",".join(rids)]
         if slave:
             cmd += ["--slave", slave]
-        proc = self.service_command(svcpath, cmd)
+        proc = self.service_command(path, cmd)
         self.push_proc(
             proc=proc,
             on_success="service_start_resources_on_success",
-            on_success_args=[svcpath, rids],
+            on_success_args=[path, rids],
             on_success_kwargs={"slave": slave},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "idle"},
         )
 
-    def service_start_resources_on_success(self, svcpath, rids, slave=None):
-        self.set_smon(svcpath, status="idle")
+    def service_start_resources_on_success(self, path, rids, slave=None):
+        self.set_smon(path, status="idle")
         self.update_hb_data()
         changed = False
         for rid in rids:
-            instance = self.get_service_instance(svcpath, rcEnv.nodename)
+            instance = self.get_service_instance(path, rcEnv.nodename)
             if instance is None:
-                self.reset_smon_retries(svcpath, rid)
+                self.reset_smon_retries(path, rid)
                 changed = True
                 continue
             if slave is None:
@@ -433,15 +433,15 @@ class Monitor(shared.OsvcThread):
                                   "but resource is still not up", rid, slave)
                    continue
             changed = True
-            self.reset_smon_retries(svcpath, rid)
+            self.reset_smon_retries(path, rid)
         if changed:
             self.update_hb_data()
 
-    def service_status(self, svcpath):
-        if rcEnv.nodename not in shared.SERVICES[svcpath].nodes:
+    def service_status(self, path):
+        if rcEnv.nodename not in shared.SERVICES[path].nodes:
             self.log.info("skip service status refresh on foreign service")
             return
-        smon = self.get_service_monitor(svcpath)
+        smon = self.get_service_monitor(path)
         if smon.status and smon.status.endswith("ing"):
             # no need to run status, the running action will refresh the status earlier
             return
@@ -449,81 +449,81 @@ class Monitor(shared.OsvcThread):
         if self.has_proc(cmd):
             # no need to run status twice
             return
-        proc = self.service_command(svcpath, cmd, local=False)
+        proc = self.service_command(path, cmd, local=False)
         self.push_proc(
             proc=proc,
             cmd=cmd,
         )
 
-    def service_toc(self, svcpath):
-        proc = self.service_command(svcpath, ["toc"])
+    def service_toc(self, path):
+        proc = self.service_command(path, ["toc"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"local_expect": "unset"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "toc failed"},
         )
 
-    def service_start(self, svcpath, err_status="start failed"):
-        self.set_smon(svcpath, "starting")
-        proc = self.service_command(svcpath, ["start"])
+    def service_start(self, path, err_status="start failed"):
+        self.set_smon(path, "starting")
+        proc = self.service_command(path, ["start"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle", "local_expect": "started"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": err_status},
         )
 
-    def service_stop(self, svcpath, force=False):
-        self.set_smon(svcpath, "stopping")
+    def service_stop(self, path, force=False):
+        self.set_smon(path, "stopping")
         cmd = ["stop"]
         if force:
             cmd.append("--force")
-        proc = self.service_command(svcpath, cmd)
+        proc = self.service_command(path, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "stop failed"},
         )
 
-    def service_shutdown(self, svcpath):
-        self.set_smon(svcpath, "shutdown")
-        proc = self.service_command(svcpath, ["shutdown"])
+    def service_shutdown(self, path):
+        self.set_smon(path, "shutdown")
+        proc = self.service_command(path, ["shutdown"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "shutdown failed", "local_expect": "unset"},
         )
 
-    def service_delete(self, svcpath):
-        self.set_smon(svcpath, "deleting", local_expect="unset")
-        proc = self.service_command(svcpath, ["delete", "--purge-collector"])
+    def service_delete(self, path):
+        self.set_smon(path, "deleting", local_expect="unset")
+        proc = self.service_command(path, ["delete", "--purge-collector"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "delete failed"},
         )
 
     def service_purge(self, svc, leader=None):
-        self.set_smon(svc.svcpath, "unprovisioning")
+        self.set_smon(svc.path, "unprovisioning")
         if leader is None:
             candidates = self.placement_candidates(svc, discard_frozen=False,
                                                    discard_overloaded=False,
@@ -535,31 +535,31 @@ class Monitor(shared.OsvcThread):
         cmd = ["unprovision"]
         if leader:
             cmd += ["--leader"]
-        proc = self.service_command(svc.svcpath, cmd)
+        proc = self.service_command(svc.path, cmd)
         self.push_proc(
             proc=proc,
             on_success="service_purge_on_success",
-            on_success_args=[svc.svcpath],
+            on_success_args=[svc.path],
             on_error="generic_callback",
-            on_error_args=[svc.svcpath],
+            on_error_args=[svc.path],
             on_error_kwargs={"status": "purge failed"},
         )
 
-    def service_purge_on_success(self, svcpath):
-        self.set_smon(svcpath, "deleting", local_expect="unset")
-        proc = self.service_command(svcpath, ["delete", "--purge-collector"])
+    def service_purge_on_success(self, path):
+        self.set_smon(path, "deleting", local_expect="unset")
+        proc = self.service_command(path, ["delete", "--purge-collector"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "purge failed"},
         )
 
     def service_provision(self, svc):
-        self.set_smon(svc.svcpath, "provisioning")
+        self.set_smon(svc.path, "provisioning")
         candidates = self.placement_candidates(svc, discard_frozen=False,
                                                discard_overloaded=False,
                                                discard_unprovisioned=False,
@@ -567,19 +567,19 @@ class Monitor(shared.OsvcThread):
         cmd = ["provision"]
         if self.placement_leader(svc, candidates):
             cmd += ["--leader", "--disable-rollback"]
-        proc = self.service_command(svc.svcpath, cmd)
+        proc = self.service_command(svc.path, cmd)
         self.push_proc(
             proc=proc,
             on_success="service_thaw",
-            on_success_args=[svc.svcpath],
+            on_success_args=[svc.path],
             on_success_kwargs={"slaves": True},
             on_error="generic_callback",
-            on_error_args=[svc.svcpath],
+            on_error_args=[svc.path],
             on_error_kwargs={"status": "provision failed"},
         )
 
     def service_unprovision(self, svc, leader=None):
-        self.set_smon(svc.svcpath, "unprovisioning", local_expect="unset")
+        self.set_smon(svc.path, "unprovisioning", local_expect="unset")
         if leader is None:
             candidates = self.placement_candidates(svc, discard_frozen=False,
                                                    discard_overloaded=False,
@@ -591,37 +591,37 @@ class Monitor(shared.OsvcThread):
         cmd = ["unprovision"]
         if leader:
             cmd += ["--leader"]
-        proc = self.service_command(svc.svcpath, cmd)
+        proc = self.service_command(svc.path, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svc.svcpath],
+            on_success_args=[svc.path],
             on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
-            on_error_args=[svc.svcpath],
+            on_error_args=[svc.path],
             on_error_kwargs={"status": "unprovision failed"},
         )
 
-    def wait_global_expect_change(self, svcpath, ref, timeout):
+    def wait_global_expect_change(self, path, ref, timeout):
         for step in range(timeout):
-            global_expect = shared.SMON_DATA.get(svcpath, {}).get("global_expect")
+            global_expect = shared.SMON_DATA.get(path, {}).get("global_expect")
             if global_expect != ref:
                 return True
             time.sleep(1)
         return False
 
-    def service_set_flex_instances(self, svcpath, instances):
+    def service_set_flex_instances(self, path, instances):
         cmd = [
             "set",
             "--kw", "flex_min=%d" % instances,
             "--kw", "flex_max=%d" % instances,
             "--kw", "flex_target=%d" % instances,
         ]
-        proc = self.service_command(svcpath, cmd)
+        proc = self.service_command(path, cmd)
         out, err = proc.communicate()
         return proc.returncode
 
-    def service_create_scaler_slave(self, svcpath, svc, data, instances=None):
+    def service_create_scaler_slave(self, path, svc, data, instances=None):
         data["DEFAULT"]["scaler_slave"] = "true"
         if svc.topology == "flex" and instances is not None:
             data["DEFAULT"]["flex_min"] = instances
@@ -632,50 +632,50 @@ class Monitor(shared.OsvcThread):
             except KeyError:
                 pass
         cmd = ["create", "--config=-"]
-        proc = self.service_command(svcpath, cmd, stdin=json.dumps(data))
+        proc = self.service_command(path, cmd, stdin=json.dumps(data))
         out, err = proc.communicate()
         if proc.returncode != 0:
-            self.set_smon(svcpath, "create failed")
-        self.service_status_fallback(svcpath)
+            self.set_smon(path, "create failed")
+        self.service_status_fallback(path)
 
         try:
-            ret = self.wait_service_config_consensus(svcpath, svc.peers)
+            ret = self.wait_service_config_consensus(path, svc.peers)
         except Exception as exc:
             self.log.exception(exc)
             return
 
-        self.set_smon(svcpath, global_expect="thawed")
-        self.wait_global_expect_change(svcpath, "thawed", 600)
+        self.set_smon(path, global_expect="thawed")
+        self.wait_global_expect_change(path, "thawed", 600)
 
-        self.set_smon(svcpath, global_expect="provisioned")
-        self.wait_global_expect_change(svcpath, "provisioned", 600)
+        self.set_smon(path, global_expect="provisioned")
+        self.wait_global_expect_change(path, "provisioned", 600)
 
-    def service_freeze(self, svcpath):
-        self.set_smon(svcpath, "freezing")
-        proc = self.service_command(svcpath, ["freeze"])
+    def service_freeze(self, path):
+        self.set_smon(path, "freezing")
+        proc = self.service_command(path, ["freeze"])
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "idle"},
         )
 
-    def service_thaw(self, svcpath, slaves=False):
-        self.set_smon(svcpath, "thawing")
+    def service_thaw(self, path, slaves=False):
+        self.set_smon(path, "thawing")
         cmd = ["thaw"]
         if slaves:
             cmd += ["--master", "--slaves"]
-        proc = self.service_command(svcpath, cmd)
+        proc = self.service_command(path, cmd)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
-            on_success_args=[svcpath],
+            on_success_args=[path],
             on_success_kwargs={"status": "idle"},
             on_error="generic_callback",
-            on_error_args=[svcpath],
+            on_error_args=[path],
             on_error_kwargs={"status": "idle"},
         )
 
@@ -720,10 +720,10 @@ class Monitor(shared.OsvcThread):
         self.node_orchestrator()
 
         # services (iterate over deleting services too)
-        svcpaths = [svcpath for svcpath in shared.SMON_DATA]
+        paths = [path for path in shared.SMON_DATA]
         self.get_agg_services()
-        for svcpath in svcpaths:
-            self.clear_start_failed(svcpath)
+        for path in paths:
+            self.clear_start_failed(path)
             transitions = self.transition_count()
             if transitions > shared.NODE.max_parallel:
                 self.duplog("info", "delay services orchestration: "
@@ -731,26 +731,26 @@ class Monitor(shared.OsvcThread):
                             "in progress", transitions=transitions,
                             max=shared.NODE.max_parallel)
                 break
-            if self.status_older_than_cf(svcpath):
+            if self.status_older_than_cf(path):
                 #self.log.info("%s status dump is older than its config file",
-                #              svcpath)
-                self.service_status(svcpath)
+                #              path)
+                self.service_status(path)
                 continue
-            svc = self.get_service(svcpath)
-            self.resources_orchestrator(svcpath, svc)
-            self.service_orchestrator(svcpath, svc)
+            svc = self.get_service(path)
+            self.resources_orchestrator(path, svc)
+            self.service_orchestrator(path, svc)
         self.sync_services_conf()
 
-    def resources_orchestrator(self, svcpath, svc):
+    def resources_orchestrator(self, path, svc):
         if shared.NMON_DATA.status == "shutting":
             return
         if svc is None:
             return
-        if self.instance_frozen(svcpath) or self.freezer.node_frozen():
-            #self.log.info("resource %s orchestrator out (frozen)", svc.svcpath)
+        if self.instance_frozen(path) or self.freezer.node_frozen():
+            #self.log.info("resource %s orchestrator out (frozen)", svc.path)
             return
         if svc.disabled:
-            #self.log.info("resource %s orchestrator out (disabled)", svc.svcpath)
+            #self.log.info("resource %s orchestrator out (disabled)", svc.path)
             return
 
         def monitored_resource(svc, rid, resource):
@@ -762,46 +762,46 @@ class Monitor(shared.OsvcThread):
                 nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
             except AttributeError:
                 nb_restart = 0
-            retries = self.get_smon_retries(svc.svcpath, rid)
+            retries = self.get_smon_retries(svc.path, rid)
 
             if retries > nb_restart:
                 return False
             elif retries == nb_restart:
                 if nb_restart > 0:
                     self.event("max_resource_restart", {
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                         "rid": rid,
                         "resource": resource,
                         "restart": nb_restart,
                     })
-                self.inc_smon_retries(svc.svcpath, rid)
+                self.inc_smon_retries(svc.path, rid)
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
                     if candidates != [rcEnv.nodename] and len(candidates) > 0:
                         self.event("resource_toc", {
-                            "svcpath": svc.svcpath,
+                            "path": svc.path,
                             "rid": rid,
                             "resource": resource,
                         })
-                        self.service_toc(svc.svcpath)
+                        self.service_toc(svc.path)
                     else:
                         self.event("resource_would_toc", {
                             "reason": "no_candidate",
-                            "svcpath": svc.svcpath,
+                            "path": svc.path,
                             "rid": rid,
                             "resource": resource,
                         })
                 else:
                     self.event("resource_degraded", {
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                         "rid": rid,
                         "resource": resource,
                     })
                     return False
             else:
-                self.inc_smon_retries(svc.svcpath, rid)
+                self.inc_smon_retries(svc.path, rid)
                 self.event("resource_restart", {
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "rid": rid,
                     "resource": resource,
                     "restart": nb_restart,
@@ -815,21 +815,21 @@ class Monitor(shared.OsvcThread):
             nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
             if nb_restart < self.default_stdby_nb_restart:
                 nb_restart = self.default_stdby_nb_restart
-            retries = self.get_smon_retries(svc.svcpath, rid)
+            retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False
             if retries >= nb_restart:
-                self.inc_smon_retries(svc.svcpath, rid)
+                self.inc_smon_retries(svc.path, rid)
                 self.event("max_stdby_resource_restart", {
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "rid": rid,
                     "resource": resource,
                     "restart": nb_restart,
                 })
                 return False
-            self.inc_smon_retries(svc.svcpath, rid)
+            self.inc_smon_retries(svc.path, rid)
             self.event("stdby_resource_restart", {
-                "svcpath": svc.svcpath,
+                "path": svc.path,
                 "rid": rid,
                 "resource": resource,
                 "restart": nb_restart,
@@ -837,7 +837,7 @@ class Monitor(shared.OsvcThread):
             })
             return True
 
-        smon = self.get_service_monitor(svc.svcpath)
+        smon = self.get_service_monitor(svc.path)
         if smon.status != "idle":
             return
         if smon.global_expect in ("unprovisioned", "purged", "deleted", "frozen"):
@@ -845,7 +845,7 @@ class Monitor(shared.OsvcThread):
 
         try:
             with shared.CLUSTER_DATA_LOCK:
-                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcpath]
+                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]
                 if instance.get("encap") is True:
                     return
                 resources = instance.get("resources", {})
@@ -856,7 +856,7 @@ class Monitor(shared.OsvcThread):
         stdby_rids = []
         for rid, resource in resources.items():
             if resource["status"] not in ("warn", "down", "stdby down"):
-                self.reset_smon_retries(svc.svcpath, rid)
+                self.reset_smon_retries(svc.path, rid)
                 continue
             if resource.get("provisioned", {}).get("state") is False:
                 continue
@@ -866,9 +866,9 @@ class Monitor(shared.OsvcThread):
                 stdby_rids.append(rid)
 
         if len(mon_rids) > 0:
-            self.service_start_resources(svc.svcpath, mon_rids)
+            self.service_start_resources(svc.path, mon_rids)
         if len(stdby_rids) > 0:
-            self.service_startstandby_resources(svc.svcpath, stdby_rids)
+            self.service_startstandby_resources(svc.path, stdby_rids)
 
         # same for encap resources
         rids = []
@@ -880,7 +880,7 @@ class Monitor(shared.OsvcThread):
             stdby_rids = []
             for rid, resource in resources.items():
                 if resource["status"] not in ("warn", "down", "stdby down"):
-                    self.reset_smon_retries(svc.svcpath, rid)
+                    self.reset_smon_retries(svc.path, rid)
                     continue
                 if resource.get("provisioned", {}).get("state") is False:
                     continue
@@ -889,9 +889,9 @@ class Monitor(shared.OsvcThread):
                 elif stdby_resource(svc, rid, resource):
                     stdby_rids.append(rid)
             if len(mon_rids) > 0:
-                self.service_start_resources(svc.svcpath, mon_rids, slave=crid)
+                self.service_start_resources(svc.path, mon_rids, slave=crid)
             if len(stdby_rids) > 0:
-                self.service_startstandby_resources(svc.svcpath, stdby_rids, slave=crid)
+                self.service_startstandby_resources(svc.path, stdby_rids, slave=crid)
 
     def node_orchestrator(self):
         if shared.NMON_DATA.status == "shutting":
@@ -918,26 +918,26 @@ class Monitor(shared.OsvcThread):
                 self.event("node_thaw", {"reason": "target"})
                 self.freezer.node_thaw()
 
-    def service_orchestrator(self, svcpath, svc):
-        smon = self.get_service_monitor(svcpath)
+    def service_orchestrator(self, path, svc):
+        smon = self.get_service_monitor(path)
         if svc is None:
-            if smon and svcpath in shared.AGG:
+            if smon and path in shared.AGG:
                 # deleting service: unset global expect if done cluster-wide
-                status = shared.AGG[svcpath].avail
-                self.set_smon_g_expect_from_status(svcpath, smon, status)
+                status = shared.AGG[path].avail
+                self.set_smon_g_expect_from_status(path, smon, status)
             return
         if self.peer_init(svc):
             return
         if smon.global_expect and smon.global_expect != "aborted":
             if "failed" in smon.status:
                 if self.abort_state(smon.status, smon.global_expect, smon.placement):
-                    self.set_smon(svcpath, global_expect="unset")
+                    self.set_smon(path, global_expect="unset")
                     return
             elif smon.status not in ORCHESTRATE_STATES:
-                #self.log.info("service %s orchestrator out (mon status %s)", svc.svcpath, smon.status)
+                #self.log.info("service %s orchestrator out (mon status %s)", svc.path, smon.status)
                 return
-        status = shared.AGG[svc.svcpath].avail
-        self.set_smon_g_expect_from_status(svc.svcpath, smon, status)
+        status = shared.AGG[svc.path].avail
+        self.set_smon_g_expect_from_status(svc.path, smon, status)
         if shared.NMON_DATA.status == "shutting":
             self.service_orchestrator_shutting(svc, smon, status)
         elif smon.global_expect:
@@ -956,9 +956,9 @@ class Monitor(shared.OsvcThread):
         return False
 
     @staticmethod
-    def scale_svcpath(svcpath, idx):
-        name, namespace, kind = split_svcpath(svcpath)
-        return fmt_svcpath(str(idx)+"."+name, namespace, kind)
+    def scale_path(path, idx):
+        name, namespace, kind = split_path(path)
+        return fmt_path(str(idx)+"."+name, namespace, kind)
 
     def service_orchestrator_auto(self, svc, smon, status):
         """
@@ -971,36 +971,36 @@ class Monitor(shared.OsvcThread):
         if svc.topology == "span":
             return
         if svc.disabled:
-            #self.log.info("service %s orchestrator out (disabled)", svc.svcpath)
+            #self.log.info("service %s orchestrator out (disabled)", svc.path)
             return
         if not self.compat:
             return
         if svc.topology == "failover" and smon.local_expect == "started":
             # decide if the service local_expect=started should be reset
-            if status == "up" and self.get_service_instance(svc.svcpath, rcEnv.nodename).avail != "up":
+            if status == "up" and self.get_service_instance(svc.path, rcEnv.nodename).avail != "up":
                 self.log.info("service '%s' is globally up but the local instance is "
                               "not and is in 'started' local expect. reset",
-                              svc.svcpath)
-                self.set_smon(svc.svcpath, local_expect="unset")
-            elif self.service_started_instances_count(svc.svcpath) > 1 and \
-                 self.get_service_instance(svc.svcpath, rcEnv.nodename).avail != "up" and \
+                              svc.path)
+                self.set_smon(svc.path, local_expect="unset")
+            elif self.service_started_instances_count(svc.path) > 1 and \
+                 self.get_service_instance(svc.path, rcEnv.nodename).avail != "up" and \
                  not self.placement_leader(svc):
                 self.log.info("service '%s' has multiple instance in 'started' "
                               "local expect and we are not leader. reset",
-                              svc.svcpath)
-                self.set_smon(svc.svcpath, local_expect="unset")
+                              svc.path)
+                self.set_smon(svc.path, local_expect="unset")
             elif status != "up" and \
-                 self.get_service_instance(svc.svcpath, rcEnv.nodename).avail in ("down", "stdby down", "undef", "n/a") and \
+                 self.get_service_instance(svc.path, rcEnv.nodename).avail in ("down", "stdby down", "undef", "n/a") and \
                  not self.resources_orchestrator_will_handle(svc):
                 self.log.info("service '%s' is not up and no resource monitor "
                               "action will be attempted, but "
                               "is in 'started' local expect. reset",
-                              svc.svcpath)
-                self.set_smon(svc.svcpath, local_expect="unset")
+                              svc.path)
+                self.set_smon(svc.path, local_expect="unset")
             else:
                 return
-        if self.instance_frozen(svc.svcpath) or self.freezer.node_frozen():
-            #self.log.info("service %s orchestrator out (frozen)", svc.svcpath)
+        if self.instance_frozen(svc.path) or self.freezer.node_frozen():
+            #self.log.info("service %s orchestrator out (frozen)", svc.path)
             return
         if not self.rejoin_grace_period_expired:
             return
@@ -1009,7 +1009,7 @@ class Monitor(shared.OsvcThread):
             return
         if status in (None, "undef", "n/a"):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
-            #              svc.svcpath, status)
+            #              svc.path, status)
             return
 
         if not self.pass_hard_affinities(svc):
@@ -1034,11 +1034,11 @@ class Monitor(shared.OsvcThread):
                 # after loosing the placement leader status, the smon state
                 # may need a reset
                 if smon.status in ("ready", "wait parents"):
-                    self.set_smon(svc.svcpath, "idle")
+                    self.set_smon(svc.path, "idle")
                 # not natural leader, skip orchestration
                 return
             # natural leader, let orchestration unroll
-        instance = self.get_service_instance(svc.svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(svc.path, rcEnv.nodename)
         if smon.global_expect in ("started", "placed"):
             allowed_status = ("down", "stdby down", "stdby up", "warn")
         else:
@@ -1047,80 +1047,80 @@ class Monitor(shared.OsvcThread):
             if instance.avail == "up":
                 self.log.info("abort '%s' because the local instance "
                               "has started", smon.status)
-                self.set_smon(svc.svcpath, "idle")
+                self.set_smon(svc.path, "idle")
                 return
             if status not in allowed_status or \
-               self.peer_warn(svc.svcpath):
+               self.peer_warn(svc.path):
                 self.log.info("abort '%s' because the aggregated status has "
                               "gone %s", smon.status, status)
-                self.set_smon(svc.svcpath, "idle")
+                self.set_smon(svc.path, "idle")
                 return
             peer = self.better_peer_ready(svc, candidates)
             if peer:
                 self.log.info("abort '%s' because node %s has a better "
                               "placement score for service %s and is also "
-                              "ready", smon.status, peer, svc.svcpath)
-                self.set_smon(svc.svcpath, "idle")
+                              "ready", smon.status, peer, svc.path)
+                self.set_smon(svc.path, "idle")
                 return
-            peer = self.peer_transitioning(svc.svcpath)
+            peer = self.peer_transitioning(svc.path)
             if peer:
                 self.log.info("abort '%s' because node %s is already "
                               "acting on service %s", smon.status, peer,
-                              svc.svcpath)
-                self.set_smon(svc.svcpath, "idle")
+                              svc.path)
+                self.set_smon(svc.path, "idle")
                 return
         if smon.status == "wait parents":
             if self.parents_available(svc):
-                self.set_smon(svc.svcpath, status="idle")
+                self.set_smon(svc.path, status="idle")
                 return
         elif smon.status == "ready":
             if self.parent_transitioning(svc):
                 self.log.info("abort 'ready' because a parent is transitioning")
-                self.set_smon(svc.svcpath, "idle")
+                self.set_smon(svc.path, "idle")
                 return
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
                 self.event("instance_start", {
                     "reason": "from_ready",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "since": int(now-smon.status_updated),
                 })
                 if smon.stonith and smon.stonith not in shared.CLUSTER_DATA:
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
-                self.service_start(svc.svcpath, err_status="place failed" if smon.global_expect == "placed" else "start failed")
+                self.service_start(svc.path, err_status="place failed" if smon.global_expect == "placed" else "start failed")
                 return
             tmo = int(smon.status_updated + self.ready_period - now) + 1
             self.log.info("service %s will start in %d seconds",
-                          svc.svcpath, tmo)
+                          svc.path, tmo)
             self.set_next(tmo)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
                 return
             if status not in allowed_status:
                 return
-            if self.peer_warn(svc.svcpath):
+            if self.peer_warn(svc.path):
                 return
-            if svc.disable_rollback and self.peer_start_failed(svc.svcpath):
+            if svc.disable_rollback and self.peer_start_failed(svc.path):
                 return
-            peer = self.peer_transitioning(svc.svcpath)
+            peer = self.peer_transitioning(svc.path)
             if peer:
                 return
             if not self.placement_leader(svc, candidates):
                 return
             if not self.parents_available(svc) or self.parent_transitioning(svc):
-                self.set_smon(svc.svcpath, status="wait parents")
+                self.set_smon(svc.path, status="wait parents")
                 return
             if len(svc.peers) == 1:
                 self.event("instance_start", {
                     "reason": "single_node",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_start(svc.svcpath)
+                self.service_start(svc.path)
                 return
-            self.log.info("failover service %s status %s", svc.svcpath,
+            self.log.info("failover service %s status %s", svc.path,
                           status)
-            self.set_smon(svc.svcpath, "ready")
+            self.set_smon(svc.path, "ready")
 
     def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
         if svc.orchestrate == "start":
@@ -1135,12 +1135,12 @@ class Monitor(shared.OsvcThread):
                 # after loosing the placement leader status, the smon state
                 # may need a reset
                 if smon.status in ("ready", "wait parents"):
-                    self.set_smon(svc.svcpath, "idle")
+                    self.set_smon(svc.path, "idle")
                 # natural not a leader, skip orchestration
                 return
             # natural leader, let orchestration unroll
-        instance = self.get_service_instance(svc.svcpath, rcEnv.nodename)
-        up_nodes = self.up_service_instances(svc.svcpath)
+        instance = self.get_service_instance(svc.path, rcEnv.nodename)
+        up_nodes = self.up_service_instances(svc.path)
         n_up = len(up_nodes)
         n_missing = svc.flex_target - n_up
 
@@ -1148,33 +1148,33 @@ class Monitor(shared.OsvcThread):
             if n_up > svc.flex_target:
                 self.log.info("flex service %s instance count reached "
                               "required minimum while we were ready",
-                              svc.svcpath)
-                self.set_smon(svc.svcpath, "idle")
+                              svc.path)
+                self.set_smon(svc.path, "idle")
                 return
             better_peers = self.better_peers_ready(svc);
             if n_missing > 0 and len(better_peers) >= n_missing:
                 self.log.info("abort 'ready' because nodes %s have a better "
                               "placement score for service %s and are also "
-                              "ready", ','.join(better_peers), svc.svcpath)
-                self.set_smon(svc.svcpath, "idle")
+                              "ready", ','.join(better_peers), svc.path)
+                self.set_smon(svc.path, "idle")
                 return
         if smon.status == "wait parents":
             if self.parents_available(svc):
-                self.set_smon(svc.svcpath, status="idle")
+                self.set_smon(svc.path, status="idle")
                 return
         if smon.status == "ready":
             now = time.time()
             if smon.status_updated < (now - self.ready_period):
                 self.event("instance_start", {
                     "reason": "from_ready",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "since": now-smon.status_updated,
                 })
-                self.service_start(svc.svcpath)
+                self.service_start(svc.path)
             else:
                 tmo = int(smon.status_updated + self.ready_period - now) + 1
                 self.log.info("service %s will start in %d seconds",
-                              svc.svcpath, tmo)
+                              svc.path, tmo)
                 self.set_next(tmo)
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
@@ -1189,36 +1189,36 @@ class Monitor(shared.OsvcThread):
                 if not self.placement_leader(svc, candidates):
                     return
                 if not self.parents_available(svc):
-                    self.set_smon(svc.svcpath, status="wait parents")
+                    self.set_smon(svc.path, status="wait parents")
                     return
                 self.log.info("flex service %s started, starting or ready to "
                               "start instances: %d/%d. local status %s",
-                              svc.svcpath, n_up, svc.flex_target,
+                              svc.path, n_up, svc.flex_target,
                               instance.avail)
-                self.set_smon(svc.svcpath, "ready")
+                self.set_smon(svc.path, "ready")
             elif n_up > svc.flex_target:
                 if instance is None:
                     return
                 if instance.avail not in STARTED_STATES:
                     return
                 n_to_stop = n_up - svc.flex_target
-                overloaded_up_nodes = self.overloaded_up_service_instances(svc.svcpath)
+                overloaded_up_nodes = self.overloaded_up_service_instances(svc.path)
                 to_stop = self.placement_ranks(svc, candidates=overloaded_up_nodes)[-n_to_stop:]
                 n_to_stop -= len(to_stop)
                 if n_to_stop > 0:
                     to_stop += self.placement_ranks(svc, candidates=set(up_nodes)-set(overloaded_up_nodes))[-n_to_stop:]
                 self.log.info("%d nodes to stop to honor service %s "
                               "flex_target=%d. choose %s",
-                              n_to_stop, svc.svcpath, svc.flex_target,
+                              n_to_stop, svc.path, svc.flex_target,
                               ", ".join(to_stop))
                 if rcEnv.nodename not in to_stop:
                     return
                 self.event("instance_stop", {
                     "reason": "flex_threshold",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "up": n_up,
                 })
-                self.service_stop(svc.svcpath)
+                self.service_stop(svc.path)
 
     def service_orchestrator_shutting(self, svc, smon, status):
         """
@@ -1227,106 +1227,106 @@ class Monitor(shared.OsvcThread):
 
         Honor parents/children sequencing.
         """
-        instance = self.get_service_instance(svc.svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(svc.path, rcEnv.nodename)
         if smon.local_expect == "shutdown":
             if smon.status in ("shutdown", "shutdown failed"):
                 return
             if self.is_instance_shutdown(instance):
-                self.set_smon(svc.svcpath, local_expect="unset")
+                self.set_smon(svc.path, local_expect="unset")
                 return
             if not self.local_children_down(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             elif smon.status == "wait children":
-                self.set_smon(svc.svcpath, status="idle")
-            self.service_shutdown(svc.svcpath)
+                self.set_smon(svc.path, status="idle")
+            self.service_shutdown(svc.path)
 
     def service_orchestrator_manual(self, svc, smon, status):
         """
         Take actions to meet global expect target, set by user or by
         service_orchestrator_auto()
         """
-        instance = self.get_service_instance(svc.svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(svc.path, rcEnv.nodename)
         if smon.global_expect == "frozen":
-            if not self.instance_frozen(svc.svcpath):
+            if not self.instance_frozen(svc.path):
                 self.event("instance_freeze", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "monitor": smon,
                 })
-                self.service_freeze(svc.svcpath)
+                self.service_freeze(svc.path)
         elif smon.global_expect == "thawed":
-            if self.instance_frozen(svc.svcpath):
+            if self.instance_frozen(svc.path):
                 self.event("instance_thaw", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                     "monitor": smon,
                 })
-                self.service_thaw(svc.svcpath)
+                self.service_thaw(svc.path)
         elif smon.global_expect == "shutdown":
             if not self.children_down(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             elif smon.status == "wait children":
-                self.set_smon(svc.svcpath, status="idle")
+                self.set_smon(svc.path, status="idle")
 
-            if not self.instance_frozen(svc.svcpath):
+            if not self.instance_frozen(svc.path):
                 self.event("instance_freeze", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_freeze(svc.svcpath)
+                self.service_freeze(svc.path)
             elif not self.is_instance_shutdown(instance):
-                thawed_on = self.service_instances_thawed(svc.svcpath)
+                thawed_on = self.service_instances_thawed(svc.path)
                 if thawed_on:
-                    self.duplog("info", "service %(svcpath)s still has thawed "
+                    self.duplog("info", "service %(path)s still has thawed "
                                 "instances on nodes %(thawed_on)s, delay "
                                 "shutdown",
-                                svcpath=svc.svcpath,
+                                path=svc.path,
                                 thawed_on=", ".join(thawed_on))
                 else:
-                    self.service_shutdown(svc.svcpath)
+                    self.service_shutdown(svc.path)
         elif smon.global_expect == "stopped":
             if not self.children_down(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             elif smon.status == "wait children":
-                self.set_smon(svc.svcpath, status="idle")
+                self.set_smon(svc.path, status="idle")
 
-            if not self.instance_frozen(svc.svcpath):
-                self.log.info("freeze service %s", svc.svcpath)
+            if not self.instance_frozen(svc.path):
+                self.log.info("freeze service %s", svc.path)
                 self.event("instance_freeze", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_freeze(svc.svcpath)
+                self.service_freeze(svc.path)
             elif instance.avail not in STOPPED_STATES:
-                thawed_on = self.service_instances_thawed(svc.svcpath)
+                thawed_on = self.service_instances_thawed(svc.path)
                 if thawed_on:
-                    self.duplog("info", "service %(svcpath)s still has thawed instances "
+                    self.duplog("info", "service %(path)s still has thawed instances "
                                 "on nodes %(thawed_on)s, delay stop",
-                                svcpath=svc.svcpath,
+                                path=svc.path,
                                 thawed_on=", ".join(thawed_on))
                 else:
                     self.event("instance_stop", {
                         "reason": "target",
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                     })
-                    self.service_stop(svc.svcpath)
+                    self.service_stop(svc.path)
         elif smon.global_expect == "started":
             if not self.parents_available(svc):
-                self.set_smon(svc.svcpath, status="wait parents")
+                self.set_smon(svc.path, status="wait parents")
                 return
             elif smon.status == "wait parents":
-                self.set_smon(svc.svcpath, status="idle")
-            if self.instance_frozen(svc.svcpath):
+                self.set_smon(svc.path, status="idle")
+            if self.instance_frozen(svc.path):
                 self.event("instance_thaw", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_thaw(svc.svcpath)
+                self.service_thaw(svc.path)
             elif status not in STARTED_STATES:
-                if shared.AGG[svc.svcpath].frozen != "thawed":
+                if shared.AGG[svc.path].frozen != "thawed":
                     return
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect == "unprovisioned":
@@ -1335,33 +1335,33 @@ class Monitor(shared.OsvcThread):
             if instance.avail not in STOPPED_STATES:
                 self.event("instance_stop", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_stop(svc.svcpath, force=True)
+                self.service_stop(svc.path, force=True)
                 return
-            if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
+            if shared.AGG[svc.path].avail not in STOPPED_STATES:
                 return
             if smon.status == "wait children":
                 if not self.children_unprovisioned(svc):
                     return
             elif smon.status == "wait non-leader":
                 if not self.leader_last(svc, provisioned=False, silent=True):
-                    self.log.info("service %s still waiting non leaders", svc.svcpath)
+                    self.log.info("service %s still waiting non leaders", svc.path)
                     return
-            if svc.svcpath not in shared.SERVICES or self.instance_unprovisioned(instance):
+            if svc.path not in shared.SERVICES or self.instance_unprovisioned(instance):
                 if smon.status != "idle":
-                    self.set_smon(svc.svcpath, status="idle")
+                    self.set_smon(svc.path, status="idle")
                 return
             if not self.children_unprovisioned(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             leader = self.leader_last(svc, provisioned=False)
             if not leader:
-                self.set_smon(svc.svcpath, status="wait non-leader")
+                self.set_smon(svc.path, status="wait non-leader")
                 return
             self.event("instance_unprovision", {
                 "reason": "target",
-                "svcpath": svc.svcpath,
+                "path": svc.path,
             })
             self.service_unprovision(svc, leader)
         elif smon.global_expect == "provisioned":
@@ -1375,45 +1375,45 @@ class Monitor(shared.OsvcThread):
                 if not self.min_instances_reached(svc):
                     return
             if self.instance_provisioned(instance):
-                self.set_smon(svc.svcpath, status="idle")
+                self.set_smon(svc.path, status="idle")
                 return
             if not self.min_instances_reached(svc):
-                self.set_smon(svc.svcpath, status="wait sync")
+                self.set_smon(svc.path, status="wait sync")
                 return
             if not self.parents_available(svc):
-                self.set_smon(svc.svcpath, status="wait parents")
+                self.set_smon(svc.path, status="wait parents")
                 return
             if not self.leader_first(svc, provisioned=True):
-                self.set_smon(svc.svcpath, status="wait leader")
+                self.set_smon(svc.path, status="wait leader")
                 return
             self.event("instance_provision", {
                 "reason": "target",
-                "svcpath": svc.svcpath,
+                "path": svc.path,
             })
             self.service_provision(svc)
         elif smon.global_expect == "deleted":
             if not self.children_down(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             elif smon.status == "wait children":
-                self.set_smon(svc.svcpath, status="idle")
-            if svc.svcpath in shared.SERVICES:
+                self.set_smon(svc.path, status="idle")
+            if svc.path in shared.SERVICES:
                 self.event("instance_delete", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_delete(svc.svcpath)
+                self.service_delete(svc.path)
         elif smon.global_expect == "purged":
             if smon.status in ("purging", "deleting", "stopping"):
                 return
             if instance.avail not in STOPPED_STATES:
                 self.event("instance_stop", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_stop(svc.svcpath, force=True)
+                self.service_stop(svc.path, force=True)
                 return
-            if shared.AGG[svc.svcpath].avail not in STOPPED_STATES:
+            if shared.AGG[svc.path].avail not in STOPPED_STATES:
                 return
             if smon.status == "wait children":
                 if not self.children_unprovisioned(svc):
@@ -1422,45 +1422,45 @@ class Monitor(shared.OsvcThread):
                 if not self.leader_last(svc, provisioned=False, silent=True, deleted=True):
                     return
             if not self.children_unprovisioned(svc):
-                self.set_smon(svc.svcpath, status="wait children")
+                self.set_smon(svc.path, status="wait children")
                 return
             leader = self.leader_last(svc, provisioned=False, deleted=True)
             if not leader:
-                self.set_smon(svc.svcpath, status="wait non-leader")
+                self.set_smon(svc.path, status="wait non-leader")
                 return
-            if svc.svcpath in shared.SERVICES and svc.kind not in ("vol", "svc"):
+            if svc.path in shared.SERVICES and svc.kind not in ("vol", "svc"):
                 # base services do not implement the purge action
                 self.event("instance_delete", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_delete(svc.svcpath)
+                self.service_delete(svc.path)
                 return
-            if svc.svcpath not in shared.SERVICES or not instance:
+            if svc.path not in shared.SERVICES or not instance:
                 if smon.status != "idle":
-                    self.set_smon(svc.svcpath, status="idle")
+                    self.set_smon(svc.path, status="idle")
                 return
             self.event("instance_purge", {
                 "reason": "target",
-                "svcpath": svc.svcpath,
+                "path": svc.path,
             })
             self.service_purge(svc, leader)
         elif smon.global_expect == "aborted" and \
              smon.local_expect not in (None, "started"):
             self.event("instance_abort", {
                 "reason": "target",
-                "svcpath": svc.svcpath,
+                "path": svc.path,
             })
-            self.set_smon(svc.svcpath, local_expect="unset")
+            self.set_smon(svc.path, local_expect="unset")
         elif smon.global_expect == "placed":
             # refresh smon for placement attr change caused by a clear
-            smon = self.get_service_monitor(svc.svcpath)
-            if self.instance_frozen(svc.svcpath):
+            smon = self.get_service_monitor(svc.path)
+            if self.instance_frozen(svc.path):
                 self.event("instance_thaw", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_thaw(svc.svcpath)
+                self.service_thaw(svc.path)
             elif smon.placement != "leader":
                 if not self.has_leader(svc):
                     # avoid stopping the instance if no peer node can takeover
@@ -1468,11 +1468,11 @@ class Monitor(shared.OsvcThread):
                 if instance.avail not in STOPPED_STATES:
                     self.event("instance_stop", {
                         "reason": "target",
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                     })
-                    self.service_stop(svc.svcpath)
-            elif self.non_leaders_stopped(svc.svcpath) and \
-                 (shared.AGG[svc.svcpath].placement not in ("optimal", "n/a") or shared.AGG[svc.svcpath].avail != "up") and \
+                    self.service_stop(svc.path)
+            elif self.non_leaders_stopped(svc.path) and \
+                 (shared.AGG[svc.path].placement not in ("optimal", "n/a") or shared.AGG[svc.path].avail != "up") and \
                  instance.avail not in STARTED_STATES:
                 self.service_orchestrator_auto(svc, smon, status)
         elif smon.global_expect.startswith("placed@"):
@@ -1484,34 +1484,34 @@ class Monitor(shared.OsvcThread):
                 discard_constraints_violation=False,
                 discard_start_failed=False
             )
-            if self.instance_frozen(svc.svcpath):
+            if self.instance_frozen(svc.path):
                 self.event("instance_thaw", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_thaw(svc.svcpath)
+                self.service_thaw(svc.path)
             elif rcEnv.nodename not in target:
                 if smon.status == "stop failed":
                     return
                 if instance.avail not in STOPPED_STATES and (set(target) & set(candidates)):
                     self.event("instance_stop", {
                         "reason": "target",
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                     })
-                    self.service_stop(svc.svcpath)
-            elif self.instances_stopped(svc.svcpath, set(svc.peers) - set(target)) and \
+                    self.service_stop(svc.path)
+            elif self.instances_stopped(svc.path, set(svc.peers) - set(target)) and \
                  rcEnv.nodename in target and \
                  instance.avail in STOPPED_STATES + ["warn"]:
                 if smon.status in ("start failed", "place failed"):
                     return
                 self.event("instance_start", {
                     "reason": "target",
-                    "svcpath": svc.svcpath,
+                    "path": svc.path,
                 })
-                self.service_start(svc.svcpath, err_status="place failed" if smon.global_expect == "placed" else "start failed")
+                self.service_start(svc.path, err_status="place failed" if smon.global_expect == "placed" else "start failed")
 
-    def scaler_current_slaves(self, svcpath):
-        name, namespace, kind = split_svcpath(svcpath)
+    def scaler_current_slaves(self, path):
+        name, namespace, kind = split_path(path)
         pattern = "[0-9]+\." + name + "$"
         if namespace:
             pattern = "^%s/%s/%s" % (namespace, kind, pattern)
@@ -1520,10 +1520,10 @@ class Monitor(shared.OsvcThread):
         return [slave for slave in shared.SERVICES if re.match(pattern, slave)]
 
     def service_orchestrator_scaler(self, svc):
-        smon = self.get_service_monitor(svc.svcpath)
+        smon = self.get_service_monitor(svc.path)
         if smon.status != "idle":
             return
-        peer = self.peer_transitioning(svc.svcpath)
+        peer = self.peer_transitioning(svc.path)
         if peer:
             return
         candidates = self.placement_candidates(
@@ -1539,20 +1539,20 @@ class Monitor(shared.OsvcThread):
         if ranks[0] != rcEnv.nodename:
             # not natural leader
             return
-        current_slaves = self.scaler_current_slaves(svc.svcpath)
+        current_slaves = self.scaler_current_slaves(svc.path)
         n_slots = self.scaler_slots(current_slaves)
         if n_slots == svc.scale_target:
             return
         missing = svc.scale_target - n_slots
         if missing > 0:
             self.event("scale_up", {
-               "svcpath": svc.svcpath,
+               "path": svc.path,
                "delta": missing,
             })
             self.service_orchestrator_scaler_up(svc, missing, current_slaves)
         else:
             self.event("scale_down", {
-               "svcpath": svc.svcpath,
+               "path": svc.path,
                "delta": -missing,
             })
             self.service_orchestrator_scaler_down(svc, missing, current_slaves)
@@ -1608,7 +1608,7 @@ class Monitor(shared.OsvcThread):
         max_burst = 3
 
         # create services in holes first
-        for slavename in [self.scale_svcpath(svc.svcpath, idx) for idx in range(n_current_slaves)]:
+        for slavename in [self.scale_path(svc.path, idx) for idx in range(n_current_slaves)]:
             if slavename in current_slaves:
                 continue
             to_add.append([slavename, width])
@@ -1616,20 +1616,20 @@ class Monitor(shared.OsvcThread):
             if slaves_count == 0:
                 break
 
-        to_add += [[self.scale_svcpath(svc.svcpath, n_current_slaves+idx), width] for idx in range(slaves_count)]
+        to_add += [[self.scale_path(svc.path, n_current_slaves+idx), width] for idx in range(slaves_count)]
         if left != 0 and len(to_add):
             to_add[-1][1] = left
         to_add = to_add[:max_burst]
         delta = "add " + ",".join([elem[0] for elem in to_add])
-        self.log.info("scale service %s: %s", svc.svcpath, delta)
-        self.set_smon(svc.svcpath, status="scaling")
+        self.log.info("scale service %s: %s", svc.path, delta)
+        self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
             self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.svcpath, exc)
+                             "%s: %s", svc.path, exc)
 
     def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
@@ -1649,15 +1649,15 @@ class Monitor(shared.OsvcThread):
         if len(to_remove) == 0:
             return
         delta = "delete " + ",".join(to_remove)
-        self.log.info("scale service %s: %s", svc.svcpath, delta)
-        self.set_smon(svc.svcpath, status="scaling")
+        self.log.info("scale service %s: %s", svc.path, delta)
+        self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
             self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.svcpath, exc)
+                             "%s: %s", svc.path, exc)
 
     @staticmethod
     def sort_scaler_slaves(slaves, reverse=False):
@@ -1666,61 +1666,61 @@ class Monitor(shared.OsvcThread):
     def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
         slaves_count = missing
         n_current_slaves = len(current_slaves)
-        new_slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves+idx) for idx in range(slaves_count)]
+        new_slaves_list = [self.scale_path(svc.path, n_current_slaves+idx) for idx in range(slaves_count)]
 
         to_add = self.sort_scaler_slaves(new_slaves_list)
-        to_add = [[svcpath, None] for svcpath in to_add]
+        to_add = [[path, None] for path in to_add]
         delta = "add " + ",".join([elem[0] for elem in to_add])
-        self.log.info("scale service %s: %s", svc.svcpath, delta)
-        self.set_smon(svc.svcpath, status="scaling")
+        self.log.info("scale service %s: %s", svc.path, delta)
+        self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
             self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.svcpath, exc)
+                             "%s: %s", svc.path, exc)
 
     def service_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
         slaves_count = -missing
         n_current_slaves = len(current_slaves)
-        slaves_list = [self.scale_svcpath(svc.svcpath, n_current_slaves-1-idx) for idx in range(slaves_count)]
+        slaves_list = [self.scale_path(svc.path, n_current_slaves-1-idx) for idx in range(slaves_count)]
 
         to_remove = self.sort_scaler_slaves(slaves_list)
-        to_remove = [svcpath for svcpath in to_remove]
+        to_remove = [path for path in to_remove]
         delta = "delete " + ",".join([elem[0] for elem in to_remove])
-        self.log.info("scale service %s: %s", svc.svcpath, delta)
-        self.set_smon(svc.svcpath, status="scaling")
+        self.log.info("scale service %s: %s", svc.path, delta)
+        self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
             self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.svcpath, exc)
+                             "%s: %s", svc.path, exc)
 
     def scaling_worker(self, svc, to_add, to_remove):
         threads = []
-        for svcpath, instances in to_add:
-            if svcpath in shared.SERVICES:
+        for path, instances in to_add:
+            if path in shared.SERVICES:
                 continue
             data = svc.print_config_data()
             try:
                 thr = threading.Thread(
                     target=self.service_create_scaler_slave,
-                    args=(svcpath, svc, data, instances)
+                    args=(path, svc, data, instances)
                 )
                 thr.start()
                 threads.append(thr)
             except RuntimeError as exc:
                 self.log.warning("failed to start a scaling thread for "
-                                 "service %s: %s", svc.svcpath, exc)
-        for svcpath in to_remove:
-            if svcpath not in shared.SERVICES:
+                                 "service %s: %s", svc.path, exc)
+        for path in to_remove:
+            if path not in shared.SERVICES:
                 continue
-            self.set_smon(svcpath, global_expect="purged")
-        for svcpath in to_remove:
-            self.wait_global_expect_change(svcpath, "purged", 300)
+            self.set_smon(path, global_expect="purged")
+        for path in to_remove:
+            self.wait_global_expect_change(path, "purged", 300)
         while True:
             for thr in threads:
                 thr.join(0)
@@ -1730,20 +1730,20 @@ class Monitor(shared.OsvcThread):
                     break
                 continue
             break
-        self.set_smon(svc.svcpath, global_expect="unset", status="idle")
+        self.set_smon(svc.path, global_expect="unset", status="idle")
 
     def pass_hard_affinities(self, svc):
         if svc.hard_anti_affinity:
-            intersection = set(self.get_local_svcpaths()) & set(svc.hard_anti_affinity)
+            intersection = set(self.get_local_paths()) & set(svc.hard_anti_affinity)
             if len(intersection) > 0:
                 #self.log.info("service %s orchestrator out (hard anti-affinity with %s)",
-                #              svc.svcpath, ','.join(intersection))
+                #              svc.path, ','.join(intersection))
                 return False
         if svc.hard_affinity:
-            intersection = set(self.get_local_svcpaths()) & set(svc.hard_affinity)
+            intersection = set(self.get_local_paths()) & set(svc.hard_affinity)
             if len(intersection) < len(set(svc.hard_affinity)):
                 #self.log.info("service %s orchestrator out (hard affinity with %s)",
-                #              svc.svcpath, ','.join(intersection))
+                #              svc.path, ','.join(intersection))
                 return False
         return True
 
@@ -1752,16 +1752,16 @@ class Monitor(shared.OsvcThread):
             # the local node is not the only candidate, we can apply soft
             # affinity filtering
             if svc.soft_anti_affinity:
-                intersection = set(self.get_local_svcpaths()) & set(svc.soft_anti_affinity)
+                intersection = set(self.get_local_paths()) & set(svc.soft_anti_affinity)
                 if len(intersection) > 0:
                     #self.log.info("service %s orchestrator out (soft anti-affinity with %s)",
-                    #              svc.svcpath, ','.join(intersection))
+                    #              svc.path, ','.join(intersection))
                     return False
             if svc.soft_affinity:
-                intersection = set(self.get_local_svcpaths()) & set(svc.soft_affinity)
+                intersection = set(self.get_local_paths()) & set(svc.soft_affinity)
                 if len(intersection) < len(set(svc.soft_affinity)):
                     #self.log.info("service %s orchestrator out (soft affinity with %s)",
-                    #              svc.svcpath, ','.join(intersection))
+                    #              svc.path, ','.join(intersection))
                     return False
         return True
 
@@ -1802,27 +1802,27 @@ class Monitor(shared.OsvcThread):
         self.duplog("info", "in rejoin grace period", nodename="")
         return True
 
-    def clear_start_failed(self, svcpath):
+    def clear_start_failed(self, path):
         try:
-            avail = shared.AGG[svcpath].avail
+            avail = shared.AGG[path].avail
         except KeyError:
             avail = "unknown"
         if avail != "up":
             return
-        smon = self.get_service_monitor(svcpath)
+        smon = self.get_service_monitor(path)
         if not smon:
             return
         if smon.status != "start failed":
             return
-        self.log.info("clear %s start failed: the service is up", svcpath)
-        self.set_smon(svcpath, status="idle")
+        self.log.info("clear %s start failed: the service is up", path)
+        self.set_smon(path, status="idle")
 
     def local_children_down(self, svc):
         missing = []
         if len(svc.children_and_slaves) == 0:
             return True
         for child in svc.children_and_slaves:
-            if child == svc.svcpath:
+            if child == svc.path:
                 continue
             instance = self.get_service_instance(child, rcEnv.nodename)
             if not instance:
@@ -1832,11 +1832,11 @@ class Monitor(shared.OsvcThread):
                 continue
             missing.append(child)
         if len(missing) == 0:
-            self.duplog("info", "service %(svcpath)s local children all avail down",
-                        svcpath=svc.svcpath)
+            self.duplog("info", "service %(path)s local children all avail down",
+                        path=svc.path)
             return True
-        self.duplog("info", "service %(svcpath)s local children still available:"
-                    " %(missing)s", svcpath=svc.svcpath,
+        self.duplog("info", "service %(path)s local children still available:"
+                    " %(missing)s", path=svc.path,
                     missing=" ".join(missing))
         return False
 
@@ -1848,8 +1848,8 @@ class Monitor(shared.OsvcThread):
         if len(svc.children_and_slaves) == 0:
             return True
         for child in svc.children_and_slaves:
-            child = resolve_svcpath(child, svc.namespace)
-            if child == svc.svcpath:
+            child = resolve_path(child, svc.namespace)
+            if child == svc.path:
                 continue
             try:
                 avail = shared.AGG[child].avail
@@ -1870,15 +1870,15 @@ class Monitor(shared.OsvcThread):
             state = "avail down"
             if unprovisioned:
                 state += " and unprovisioned"
-            self.duplog("info", "service %(svcpath)s children all %(state)s:"
-                        " %(children)s", svcpath=svc.svcpath, state=state,
+            self.duplog("info", "service %(path)s children all %(state)s:"
+                        " %(children)s", path=svc.path, state=state,
                         children=" ".join(svc.children_and_slaves))
             return True
         state = "available"
         if unprovisioned:
             state += " or provisioned"
-        self.duplog("info", "service %(svcpath)s children still %(state)s:"
-                    " %(missing)s", svcpath=svc.svcpath, state=state,
+        self.duplog("info", "service %(path)s children still %(state)s:"
+                    " %(missing)s", path=svc.path, state=state,
                     missing=" ".join(missing))
         return False
 
@@ -1891,8 +1891,8 @@ class Monitor(shared.OsvcThread):
                 parent, nodename = parent.split("@")
             except ValueError:
                 nodename = None
-            parent = resolve_svcpath(parent, svc.namespace)
-            if parent == svc.svcpath:
+            parent = resolve_path(parent, svc.namespace)
+            if parent == svc.path:
                 continue
             if nodename:
                 instance = self.get_service_instance(parent, nodename)
@@ -1909,50 +1909,50 @@ class Monitor(shared.OsvcThread):
                 continue
             missing.append(parent)
         if len(missing) == 0:
-            self.duplog("info", "service %(svcpath)s parents all avail up",
-                        svcpath=svc.svcpath)
+            self.duplog("info", "service %(path)s parents all avail up",
+                        path=svc.path)
             return True
-        self.duplog("info", "service %(svcpath)s parents not available:"
-                    " %(missing)s", svcpath=svc.svcpath,
+        self.duplog("info", "service %(path)s parents not available:"
+                    " %(missing)s", path=svc.path,
                     missing=" ".join(missing))
         return False
 
     def min_instances_reached(self, svc):
-        instances = self.get_service_instances(svc.svcpath, discard_empty=False)
+        instances = self.get_service_instances(svc.path, discard_empty=False)
         live_nodes = [nodename for nodename in shared.CLUSTER_DATA if shared.CLUSTER_DATA[nodename] is not None]
         min_instances = set(svc.peers) & set(live_nodes)
         return len(instances) >= len(min_instances)
 
-    def instances_started_or_start_failed(self, svcpath, nodes):
+    def instances_started_or_start_failed(self, path, nodes):
         for nodename in nodes:
-            instance = self.get_service_instance(svcpath, nodename)
+            instance = self.get_service_instance(path, nodename)
             if instance is None:
                 continue
             if instance.get("avail") in STOPPED_STATES and instance["monitor"].get("status") != "start failed":
                 return False
         self.log.info("service '%s' instances on nodes '%s' are stopped",
-            svcpath, ", ".join(nodes))
+            path, ", ".join(nodes))
         return True
 
-    def instances_stopped(self, svcpath, nodes):
+    def instances_stopped(self, path, nodes):
         for nodename in nodes:
-            instance = self.get_service_instance(svcpath, nodename)
+            instance = self.get_service_instance(path, nodename)
             if instance is None:
                 continue
             if instance.get("avail") not in STOPPED_STATES:
                 self.log.info("service '%s' instance node '%s' is not stopped yet",
-                              svcpath, nodename)
+                              path, nodename)
                 return False
         return True
 
     def has_leader(self, svc):
-        for nodename, instance in self.get_service_instances(svc.svcpath).items():
+        for nodename, instance in self.get_service_instances(svc.path).items():
             if instance["monitor"].get("placement") == "leader":
                 return True
         return False
 
-    def non_leaders_stopped(self, svcpath, exclude_status=None):
-        svc = self.get_service(svcpath)
+    def non_leaders_stopped(self, path, exclude_status=None):
+        svc = self.get_service(path)
         if svc is None:
             return True
         if exclude_status is None:
@@ -1960,7 +1960,7 @@ class Monitor(shared.OsvcThread):
         for nodename in svc.peers:
             if nodename == rcEnv.nodename:
                 continue
-            instance = self.get_service_instance(svc.svcpath, nodename)
+            instance = self.get_service_instance(svc.path, nodename)
             if instance is None:
                 continue
             if instance.get("monitor", {}).get("placement") == "leader":
@@ -1974,7 +1974,7 @@ class Monitor(shared.OsvcThread):
                     extra = "(%s)" % avail
                 self.log.info("service '%s' non leader instance on node '%s' "
                               "is not stopped yet %s",
-                              svc.svcpath, nodename, extra)
+                              svc.path, nodename, extra)
                 return False
         return True
 
@@ -1991,7 +1991,7 @@ class Monitor(shared.OsvcThread):
           whatever their frozen, and current provisioning state. Still
           honor the constraints and overload discards.
         """
-        if shared.AGG[svc.svcpath].avail is None:
+        if shared.AGG[svc.path].avail is None:
             # base services can be unprovisioned and purged in parallel
             return rcEnv.nodename
         candidates = self.placement_candidates(
@@ -2005,35 +2005,35 @@ class Monitor(shared.OsvcThread):
             top = ranks[0]
             if not silent:
                 self.log.info("elected %s as the last node to take action on "
-                              "service %s", top, svc.svcpath)
+                              "service %s", top, svc.path)
         except IndexError:
             if not silent:
-                self.log.info("unblock service %s leader last action (placement ranks empty)", svc.svcpath)
+                self.log.info("unblock service %s leader last action (placement ranks empty)", svc.path)
             return rcEnv.nodename
         if top != rcEnv.nodename:
             if not silent:
                 self.log.info("unblock service %s leader last action (not leader)",
-                              svc.svcpath)
+                              svc.path)
             return top
         for node in svc.peers:
             if node == rcEnv.nodename:
                 continue
-            instance = self.get_service_instance(svc.svcpath, node)
+            instance = self.get_service_instance(svc.path, node)
             if instance is None:
                 continue
             elif deleted:
                 if not silent:
                     self.log.info("delay leader-last action on service %s: "
-                                  "node %s is still not deleted", svc.svcpath, node)
+                                  "node %s is still not deleted", svc.path, node)
                 return
             if instance.get("provisioned", False) is not provisioned:
                 if not silent:
                     self.log.info("delay leader-last action on service %s: "
-                                  "node %s is still %s", svc.svcpath, node,
+                                  "node %s is still %s", svc.path, node,
                                   "unprovisioned" if provisioned else "provisioned")
                 return
         self.log.info("unblock service %s leader last action (leader)",
-                      svc.svcpath)
+                      svc.path)
         return rcEnv.nodename
 
     def leader_first(self, svc, provisioned=False, deleted=None, silent=False):
@@ -2049,13 +2049,13 @@ class Monitor(shared.OsvcThread):
           whatever their frozen, and current provisioning state. Still
           honor the constraints and overload discards.
         """
-        instances = self.get_service_instances(svc.svcpath, discard_empty=True)
+        instances = self.get_service_instances(svc.path, discard_empty=True)
         candidates = [nodename for (nodename, data) in instances.items() \
                       if data.get("avail") in ("up", "warn")]
         if len(candidates) == 0:
             if not silent:
                 self.log.info("service %s has no up instance, relax candidates "
-                              "constraints", svc.svcpath)
+                              "constraints", svc.path)
             candidates = self.placement_candidates(
                 svc, discard_frozen=False,
                 discard_unprovisioned=False,
@@ -2064,29 +2064,29 @@ class Monitor(shared.OsvcThread):
             top = self.placement_ranks(svc, candidates=candidates)[0]
             if not silent:
                 self.log.info("elected %s as the first node to take action on "
-                              "service %s", top, svc.svcpath)
+                              "service %s", top, svc.path)
         except IndexError:
             if not silent:
-                self.log.error("service %s placement ranks list is empty", svc.svcpath)
+                self.log.error("service %s placement ranks list is empty", svc.path)
             return True
         if top == rcEnv.nodename:
             return True
-        instance = self.get_service_instance(svc.svcpath, top)
+        instance = self.get_service_instance(svc.path, top)
         if instance is None and deleted:
             return True
         if instance.get("provisioned", True) is provisioned:
             return True
         if not silent:
-            self.log.info("delay leader-first action on service %s", svc.svcpath)
+            self.log.info("delay leader-first action on service %s", svc.path)
         return False
 
-    def overloaded_up_service_instances(self, svcpath):
-        return [nodename for nodename in self.up_service_instances(svcpath) if self.node_overloaded(nodename)]
+    def overloaded_up_service_instances(self, path):
+        return [nodename for nodename in self.up_service_instances(path) if self.node_overloaded(nodename)]
 
-    def scaler_slots(self, svcpaths):
+    def scaler_slots(self, paths):
         count = 0
-        for svcpath in svcpaths:
-            svc = shared.SERVICES[svcpath]
+        for path in paths:
+            svc = shared.SERVICES[path]
             if svc.topology == "flex":
                 width = len([1 for nodename in svc.peers if nodename in shared.CLUSTER_DATA])
                 count += min(width, svc.flex_target)
@@ -2103,22 +2103,22 @@ class Monitor(shared.OsvcThread):
             if res.disabled:
                 continue
             try:
-                status = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcpath]["resources"][res.rid]["status"]
+                status = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]["resources"][res.rid]["status"]
             except KeyError:
                 continue
             if status in ("up", "stdby up", "n/a", "undef"):
                 continue
-            if res.nb_restart and self.get_smon_retries(svc.svcpath, res.rid) < res.nb_restart:
+            if res.nb_restart and self.get_smon_retries(svc.path, res.rid) < res.nb_restart:
                 return True
             if res.monitor:
                 return True
         return False
 
-    def service_started_instances_count(self, svcpath):
+    def service_started_instances_count(self, path):
         """
         Count the number of service instances in 'started' local expect state.
         """
-        jsonpath_expr = parse("*.services.status.'%s'.monitor.local_expect" % svcpath)
+        jsonpath_expr = parse("*.services.status.'%s'.monitor.local_expect" % path)
         try:
             count = len([True for match in jsonpath_expr.find(shared.CLUSTER_DATA) if match.value == "started"])
             return count
@@ -2126,9 +2126,9 @@ class Monitor(shared.OsvcThread):
             self.log.warning(exc)
             return 0
 
-    def up_service_instances(self, svcpath):
+    def up_service_instances(self, path):
         nodenames = []
-        for nodename, instance in self.get_service_instances(svcpath).items():
+        for nodename, instance in self.get_service_instances(path).items():
             if instance["avail"] == "up":
                 nodenames.append(nodename)
             elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning", "placing"):
@@ -2139,7 +2139,7 @@ class Monitor(shared.OsvcThread):
         if len(svc.parents) == 0:
             return False
         for parent in svc.parents:
-            if parent == svc.svcpath:
+            if parent == svc.path:
                 continue
             if self.peer_transitioning(parent, discard_local=False):
                 return True
@@ -2158,23 +2158,23 @@ class Monitor(shared.OsvcThread):
                 return True
         return False
 
-    def peer_warn(self, svcpath, with_self=False):
+    def peer_warn(self, path, with_self=False):
         """
         For failover services, return the nodename of the first peer with the
         service in warn avail status.
         """
         try:
-            if shared.SERVICES[svcpath].topology != "failover":
+            if shared.SERVICES[path].topology != "failover":
                 return
         except:
             return
-        for nodename, instance in self.get_service_instances(svcpath).items():
+        for nodename, instance in self.get_service_instances(path).items():
             if not with_self and nodename == rcEnv.nodename:
                 continue
             if instance["avail"] == "warn" and not instance["monitor"].get("status").endswith("ing"):
                 return nodename
 
-    def peers_options(self, svcpath, candidates, status):
+    def peers_options(self, path, candidates, status):
         """
         Return the nodes in <candidates> that are a viable start/place
         orchestration option.
@@ -2184,7 +2184,7 @@ class Monitor(shared.OsvcThread):
         """
         nodenames = []
         for nodename in candidates:
-            instance = self.get_service_instance(svcpath, nodename)
+            instance = self.get_service_instance(path, nodename)
             if instance is None:
                 continue
             smon_status = instance["monitor"].get("status", "")
@@ -2196,23 +2196,23 @@ class Monitor(shared.OsvcThread):
                 nodenames.append(nodename)
         return nodenames
 
-    def peer_transitioning(self, svcpath, discard_local=True):
+    def peer_transitioning(self, path, discard_local=True):
         """
         Return the nodename of the first peer with the service in a transition
         state.
         """
-        for nodename, instance in self.get_service_instances(svcpath).items():
+        for nodename, instance in self.get_service_instances(path).items():
             if discard_local and nodename == rcEnv.nodename:
                 continue
             if instance["monitor"].get("status", "").endswith("ing"):
                 return nodename
 
-    def peer_start_failed(self, svcpath):
+    def peer_start_failed(self, path):
         """
         Return the nodename of the first peer with the service in a start failed
         state.
         """
-        for nodename, instance in self.get_service_instances(svcpath).items():
+        for nodename, instance in self.get_service_instances(path).items():
             if nodename == rcEnv.nodename:
                 continue
             if instance["monitor"].get("status") == "start failed":
@@ -2224,7 +2224,7 @@ class Monitor(shared.OsvcThread):
         for nodename in ranks:
             if nodename == rcEnv.nodename:
                 return peers
-            instance = self.get_service_instance(svc.svcpath, nodename)
+            instance = self.get_service_instance(svc.path, nodename)
             if instance is None:
                 continue
             if instance["monitor"].get("status") == "ready":
@@ -2238,7 +2238,7 @@ class Monitor(shared.OsvcThread):
         """
         if self.placement_leader(svc, candidates):
             return
-        for nodename, instance in self.get_service_instances(svc.svcpath).items():
+        for nodename, instance in self.get_service_instances(svc.path).items():
             if nodename == rcEnv.nodename:
                 continue
             if instance["monitor"].get("status") == "ready":
@@ -2278,9 +2278,9 @@ class Monitor(shared.OsvcThread):
     # Service instances status aggregation
     #
     #########################################################################
-    def get_agg_avail(self, svcpath):
+    def get_agg_avail(self, path):
         try:
-            instance = self.get_any_service_instance(svcpath)
+            instance = self.get_any_service_instance(path)
         except IndexError:
             instance = None
         if instance is None:
@@ -2288,15 +2288,15 @@ class Monitor(shared.OsvcThread):
             return "unknown"
         topology = instance.get("topology")
         if topology == "failover":
-            avail = self.get_agg_avail_failover(svcpath)
+            avail = self.get_agg_avail_failover(path)
         elif topology == "flex":
-            avail = self.get_agg_avail_flex(svcpath)
+            avail = self.get_agg_avail_flex(path)
         else:
             avail = "unknown"
 
         if instance.get("scale") is not None:
             n_up = 0
-            for slave in self.scaler_current_slaves(svcpath):
+            for slave in self.scaler_current_slaves(path):
                 n_up += len(self.up_service_instances(slave))
             if n_up == 0:
                 return "n/a"
@@ -2306,10 +2306,10 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
-            _, namespace, _ = split_svcpath(svcpath)
+            _, namespace, _ = split_path(path)
             avails = set([avail])
             for child in slaves:
-                child = resolve_svcpath(child, namespace)
+                child = resolve_path(child, namespace)
                 try:
                     child_avail = shared.AGG[child]["avail"]
                 except KeyError:
@@ -2330,11 +2330,11 @@ class Monitor(shared.OsvcThread):
             return "n/a"
         return avail
 
-    def get_agg_overall(self, svcpath):
+    def get_agg_overall(self, path):
         ostatus = 'undef'
         ostatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances(path).values():
             if "overall" not in instance:
                 continue
             ostatus_l.append(instance["overall"])
@@ -2358,7 +2358,7 @@ class Monitor(shared.OsvcThread):
         if "stdby" in ostatus:
             ostatus = "down"
         try:
-            instance = self.get_any_service_instance(svcpath)
+            instance = self.get_any_service_instance(path)
         except IndexError:
             instance = Storage()
         if instance is None:
@@ -2367,10 +2367,10 @@ class Monitor(shared.OsvcThread):
         slaves = instance.get("slaves", [])
         slaves += instance.get("scaler_slaves", [])
         if slaves:
-            _, namespace, _ = split_svcpath(svcpath)
+            _, namespace, _ = split_path(path)
             avails = set([ostatus])
             for child in slaves:
-                child = resolve_svcpath(child, namespace)
+                child = resolve_path(child, namespace)
                 try:
                     child_status = shared.AGG[child]["overall"]
                 except KeyError:
@@ -2387,10 +2387,10 @@ class Monitor(shared.OsvcThread):
             return "n/a"
         return ostatus
 
-    def get_agg_frozen(self, svcpath):
+    def get_agg_frozen(self, path):
         frozen = 0
         total = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances(path).values():
             if "frozen" not in instance:
                 # deleting instance
                 continue
@@ -2418,16 +2418,16 @@ class Monitor(shared.OsvcThread):
             return False
         return True
 
-    def get_agg_shutdown(self, svcpath):
-        for instance in self.get_service_instances(svcpath).values():
+    def get_agg_shutdown(self, path):
+        for instance in self.get_service_instances(path).values():
             if not self.is_instance_shutdown(instance):
                 return False
         return True
 
-    def get_agg_avail_failover(self, svcpath):
+    def get_agg_avail_failover(self, path):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances(path).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2448,10 +2448,10 @@ class Monitor(shared.OsvcThread):
         else:
             return 'down'
 
-    def get_agg_avail_flex(self, svcpath):
+    def get_agg_avail_flex(self, path):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances(path).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2477,15 +2477,15 @@ class Monitor(shared.OsvcThread):
         else:
             return 'up'
 
-    def get_agg_placement(self, svcpath):
+    def get_agg_placement(self, path):
         try:
-            if shared.SERVICES[svcpath].placement == "none":
+            if shared.SERVICES[path].placement == "none":
                 return "n/a"
-            if shared.SERVICES[svcpath].topology == "flex" and shared.SERVICES[svcpath].flex_min == 0:
+            if shared.SERVICES[path].topology == "flex" and shared.SERVICES[path].flex_min == 0:
                 return "n/a"
         except KeyError:
             pass
-        instances = [instance for instance in self.get_service_instances(svcpath).values() \
+        instances = [instance for instance in self.get_service_instances(path).values() \
                      if not instance.get("frozen")]
         if len(instances) < 2:
             return "optimal"
@@ -2507,10 +2507,10 @@ class Monitor(shared.OsvcThread):
             return "n/a"
         return placement
 
-    def get_agg_provisioned(self, svcpath):
+    def get_agg_provisioned(self, path):
         provisioned = 0
         total = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances(path).values():
             if "provisioned" not in instance:
                 continue
             total += 1
@@ -2524,8 +2524,8 @@ class Monitor(shared.OsvcThread):
             return False
         return "mixed"
 
-    def get_agg_aborted(self, svcpath):
-        for inst in self.get_service_instances(svcpath).values():
+    def get_agg_aborted(self, path):
+        for inst in self.get_service_instances(path).values():
             try:
                 global_expect = inst["monitor"].get("global_expect")
             except KeyError:
@@ -2540,8 +2540,8 @@ class Monitor(shared.OsvcThread):
                 return False
         return True
 
-    def get_agg_deleted(self, svcpath):
-        if len([True for inst in self.get_service_instances(svcpath).values() if "updated" in inst]) > 0:
+    def get_agg_deleted(self, path):
+        if len([True for inst in self.get_service_instances(path).values() if "updated" in inst]) > 0:
             return False
         return True
 
@@ -2557,69 +2557,69 @@ class Monitor(shared.OsvcThread):
     # Convenience methods
     #
     #########################################################################
-    def status_older_than_cf(self, svcpath):
+    def status_older_than_cf(self, path):
         """
         Return True if the instance status data is older than its config data
         or if one of the age is not a timestamp float.
 
         Returning True skips orchestration of the instance.
         """
-        status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(svcpath, {}).get("updated", 0)
-        config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(svcpath, {}).get("updated", 0)
+        status_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("status", {}).get(path, {}).get("updated", 0)
+        config_age = shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}).get(path, {}).get("updated", 0)
         try:
             return status_age < config_age
         except TypeError:
             return True
 
-    def service_instances_frozen(self, svcpath):
+    def service_instances_frozen(self, path):
         """
         Return the nodenames with a frozen instance of the specified service.
         """
         return [nodename for (nodename, instance) in \
-                self.get_service_instances(svcpath).items() if \
+                self.get_service_instances(path).items() if \
                 instance.get("frozen")]
 
-    def service_instances_thawed(self, svcpath):
+    def service_instances_thawed(self, path):
         """
         Return the nodenames with a frozen instance of the specified service.
         """
         return [nodename for (nodename, instance) in \
-                self.get_service_instances(svcpath).items() if \
+                self.get_service_instances(path).items() if \
                 not instance.get("frozen")]
 
-    def has_instance_with(self, svcpath, global_expect=None):
+    def has_instance_with(self, path, global_expect=None):
         """
         Return True if an instance of the specified service is in the
         specified state.
         """
         nodenames = []
-        if shared.SMON_DATA.get(svcpath, {}).get("global_expect") in global_expect:
+        if shared.SMON_DATA.get(path, {}).get("global_expect") in global_expect:
             # relayed smon may no longer have an instance
             return True
-        for nodename, instance in self.get_service_instances(svcpath).items():
+        for nodename, instance in self.get_service_instances(path).items():
             if global_expect and instance.get("monitor", {}).get("global_expect") in global_expect:
                 return True
         return False
 
     @staticmethod
-    def get_local_svcpaths():
+    def get_local_paths():
         """
         Extract service instance names from the locally maintained hb data.
         """
-        svcpaths = []
+        paths = []
         try:
             with shared.CLUSTER_DATA_LOCK:
-                for svcpath in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
-                    if shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcpath]["avail"] == "up":
-                        svcpaths.append(svcpath)
+                for path in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
+                    if shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]["avail"] == "up":
+                        paths.append(path)
         except KeyError:
             return []
-        return svcpaths
+        return paths
 
     @staticmethod
     def get_services_configs():
         """
-        Return a hash indexed by svcpath and nodename, containing the services
+        Return a hash indexed by path and nodename, containing the services
         configuration mtime and checksum.
         """
         data = {}
@@ -2629,51 +2629,51 @@ class Monitor(shared.OsvcThread):
                     configs = ndata["services"]["config"]
                 except (TypeError, KeyError):
                     continue
-                for svcpath, config in configs.items():
-                    if svcpath not in data:
-                        data[svcpath] = {}
-                    data[svcpath][nodename] = Storage(config)
+                for path, config in configs.items():
+                    if path not in data:
+                        data[path] = {}
+                    data[path][nodename] = Storage(config)
         return data
 
     @staticmethod
-    def get_any_service_instance(svcpath):
+    def get_any_service_instance(path):
         """
         Return the specified service status structure on any node.
         """
         with shared.CLUSTER_DATA_LOCK:
             for nodename in shared.CLUSTER_DATA:
                 try:
-                    if svcpath in shared.CLUSTER_DATA[nodename]["services"]["status"]:
-                        if shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath] in (None, ""):
+                    if path in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                        if shared.CLUSTER_DATA[nodename]["services"]["status"][path] in (None, ""):
                             continue
-                        return shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
+                        return shared.CLUSTER_DATA[nodename]["services"]["status"][path]
                 except KeyError:
                     continue
 
     @staticmethod
-    def get_last_svc_config(svcpath):
+    def get_last_svc_config(path):
         with shared.CLUSTER_DATA_LOCK:
             try:
-                return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][svcpath]
+                return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][path]
             except KeyError:
                 return
 
-    def wait_service_config_consensus(self, svcpath, peers, timeout=60):
+    def wait_service_config_consensus(self, path, peers, timeout=60):
         if len(peers) < 2:
             return True
         self.log.info("wait for service %s consensus on config amongst peers %s",
-                      svcpath, ",".join(peers))
+                      path, ",".join(peers))
         for _ in range(timeout):
-            if self.service_config_consensus(svcpath, peers):
+            if self.service_config_consensus(path, peers):
                 return True
             time.sleep(1)
         self.log.error("service %s couldn't reach config consensus in %d seconds",
-                       svcpath, timeout)
+                       path, timeout)
         return False
 
-    def service_config_consensus(self, svcpath, peers):
+    def service_config_consensus(self, path, peers):
         if len(peers) < 2:
-            self.log.debug("%s auto consensus. peers: %s", svcpath, peers)
+            self.log.debug("%s auto consensus. peers: %s", path, peers)
             return True
         ref_csum = None
         for peer in peers:
@@ -2681,9 +2681,9 @@ class Monitor(shared.OsvcThread):
                 # discard unreachable nodes from the consensus
                 continue
             try:
-                csum = shared.CLUSTER_DATA[peer]["services"]["config"][svcpath]["csum"]
+                csum = shared.CLUSTER_DATA[peer]["services"]["config"][path]["csum"]
             except KeyError:
-                #self.log.debug("service %s peer %s has no config cksum yet", svcpath, peer)
+                #self.log.debug("service %s peer %s has no config cksum yet", path, peer)
                 return False
             except Exception as exc:
                 self.log.exception(exc)
@@ -2691,50 +2691,50 @@ class Monitor(shared.OsvcThread):
             if ref_csum is None:
                 ref_csum = csum
             if ref_csum is not None and ref_csum != csum:
-                #self.log.debug("service %s peer %s has a different config cksum", svcpath, peer)
+                #self.log.debug("service %s peer %s has a different config cksum", path, peer)
                 return False
-        self.log.info("service %s config consensus reached", svcpath)
+        self.log.info("service %s config consensus reached", path)
         return True
 
     def get_services_config(self):
         config = {}
-        for svcpath in list_services():
-            cfg = svc_pathcf(svcpath)
+        for path in list_services():
+            cfg = svc_pathcf(path)
             try:
                 config_mtime = os.path.getmtime(cfg)
             except Exception as exc:
                 self.log.warning("failed to get %s mtime: %s", cfg, str(exc))
                 config_mtime = 0
-            last_config = self.get_last_svc_config(svcpath)
+            last_config = self.get_last_svc_config(path)
             if last_config is None or config_mtime > last_config["updated"]:
-                self.log.debug("compute service %s config checksum", svcpath)
+                self.log.debug("compute service %s config checksum", path)
                 try:
                     csum = fsum(cfg)
                 except (OSError, IOError) as exc:
-                    self.log.warning("service %s config checksum error: %s", svcpath, exc)
+                    self.log.warning("service %s config checksum error: %s", path, exc)
                     continue
                 try:
                     with shared.SERVICES_LOCK:
-                        name, namespace, kind = split_svcpath(svcpath)
-                        shared.SERVICES[svcpath] = factory(kind)(name, namespace, node=shared.NODE)
+                        name, namespace, kind = split_path(path)
+                        shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
                 except Exception as exc:
-                    self.log.error("%s build error: %s", svcpath, str(exc))
+                    self.log.error("%s build error: %s", path, str(exc))
                     continue
             else:
                 csum = last_config["csum"]
             if last_config is None or last_config["csum"] != csum:
                 if last_config is not None:
-                    self.log.info("service %s configuration change" % svcpath)
+                    self.log.info("service %s configuration change" % path)
                 try:
-                    status_mtime = os.path.getmtime(shared.SERVICES[svcpath].status_data_dump)
+                    status_mtime = os.path.getmtime(shared.SERVICES[path].status_data_dump)
                     if config_mtime > status_mtime:
-                        self.log.info("service %s refresh instance status older than config", svcpath)
-                        self.service_status(svcpath)
+                        self.log.info("service %s refresh instance status older than config", path)
+                        self.service_status(path)
                 except OSError:
                     pass
             with shared.SERVICES_LOCK:
-                scope = sorted(list(shared.SERVICES[svcpath].nodes | shared.SERVICES[svcpath].drpnodes))
-            config[svcpath] = {
+                scope = sorted(list(shared.SERVICES[path].nodes | shared.SERVICES[path].drpnodes))
+            config[path] = {
                 "updated": config_mtime,
                 "csum": csum,
                 "scope": scope,
@@ -2742,22 +2742,22 @@ class Monitor(shared.OsvcThread):
 
         # purge deleted services
         with shared.SERVICES_LOCK:
-            for svcpath in list(shared.SERVICES.keys()):
-                if svcpath not in config:
-                    self.log.info("purge deleted service %s", svcpath)
-                    del shared.SERVICES[svcpath]
+            for path in list(shared.SERVICES.keys()):
+                if path not in config:
+                    self.log.info("purge deleted service %s", path)
+                    del shared.SERVICES[path]
                     try:
-                        del shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcpath]
+                        del shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]
                     except KeyError:
                         pass
         return config
 
-    def get_last_svc_status_mtime(self, svcpath):
+    def get_last_svc_status_mtime(self, path):
         """
         Return the mtime of the specified service configuration file on the
         local node. If unknown, return 0.
         """
-        instance = self.get_service_instance(svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(path, rcEnv.nodename)
         if instance is None:
             return 0
         mtime = instance["updated"]
@@ -2765,18 +2765,18 @@ class Monitor(shared.OsvcThread):
             return 0
         return mtime
 
-    def service_status_fallback(self, svcpath):
+    def service_status_fallback(self, path):
         """
         Return the specified service status structure fetched from an execution
-        of svcmgr -s <svcpath> json status". As we arrive here when the
+        of svcmgr -s <path> json status". As we arrive here when the
         status.json doesn't exist, we don't have to specify --refresh.
         """
-        self.log.info("synchronous service status eval: %s", svcpath)
+        self.log.info("synchronous service status eval: %s", path)
         cmd = ["status", "--refresh"]
-        proc = self.service_command(svcpath, cmd, local=False)
+        proc = self.service_command(path, cmd, local=False)
         self.push_proc(proc=proc)
         proc.communicate()
-        fpath = svc_pathvar(svcpath, "status.json")
+        fpath = svc_pathvar(path, "status.json")
         return self.load_instance_status_cache(fpath)
 
     @staticmethod
@@ -2792,7 +2792,7 @@ class Monitor(shared.OsvcThread):
             # json not found
             return
 
-    def get_services_status(self, svcpaths):
+    def get_services_status(self, paths):
         """
         Return the local services status data, fetching data from status.json
         caches if their mtime changed or from CLUSTER_DATA[rcEnv.nodename] if
@@ -2810,10 +2810,10 @@ class Monitor(shared.OsvcThread):
         # this data ends up in CLUSTER_DATA[rcEnv.nodename]["services"]["status"]
         data = {}
 
-        for svcpath in svcpaths:
+        for path in paths:
             idata = None
-            last_mtime = self.get_last_svc_status_mtime(svcpath)
-            fpath = svc_pathvar(svcpath, "status.json")
+            last_mtime = self.get_last_svc_status_mtime(path)
+            fpath = svc_pathvar(path, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception as exc:
@@ -2833,34 +2833,34 @@ class Monitor(shared.OsvcThread):
             if not idata and last_mtime > 0:
                 # the status.json did not change or failed to load
                 #  => preserve current data
-                idata = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svcpath]
+                idata = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]
 
             if idata:
-                data[svcpath] = idata
+                data[path] = idata
             else:
-                self.service_status(svcpath)
+                self.service_status(path)
                 continue
 
             # update the frozen instance attribute
             with shared.SERVICES_LOCK:
-                data[svcpath]["frozen"] = shared.SERVICES[svcpath].frozen()
+                data[path]["frozen"] = shared.SERVICES[path].frozen()
 
             # embed the updated smon data
-            self.set_smon_l_expect_from_status(data, svcpath)
-            data[svcpath]["monitor"] = dict(self.get_service_monitor(svcpath))
+            self.set_smon_l_expect_from_status(data, path)
+            data[path]["monitor"] = dict(self.get_service_monitor(path))
 
             # forget the stonith target node if we run the service
-            if data[svcpath].get("avail", "n/a") == "up":
+            if data[path].get("avail", "n/a") == "up":
                 try:
-                    del data[svcpath]["monitor"]["stonith"]
+                    del data[path]["monitor"]["stonith"]
                 except KeyError:
                     pass
 
         # deleting services (still in SMON_DATA, no longer has cf).
         # emulate a status
-        for svcpath in set(shared.SMON_DATA.keys()) - set(svcpaths):
-            data[svcpath] = {
-                "monitor": dict(self.get_service_monitor(svcpath)),
+        for path in set(shared.SMON_DATA.keys()) - set(paths):
+            data[path] = {
+                "monitor": dict(self.get_service_monitor(path)),
                 "resources": {},
             }
 
@@ -2872,40 +2872,40 @@ class Monitor(shared.OsvcThread):
     #
     #########################################################################
     @staticmethod
-    def reset_smon_retries(svcpath, rid):
+    def reset_smon_retries(path, rid):
         with shared.SMON_DATA_LOCK:
-            if svcpath not in shared.SMON_DATA:
+            if path not in shared.SMON_DATA:
                 return
-            if "restart" not in shared.SMON_DATA[svcpath]:
+            if "restart" not in shared.SMON_DATA[path]:
                 return
-            if rid in shared.SMON_DATA[svcpath].restart:
-                del shared.SMON_DATA[svcpath].restart[rid]
-            if len(shared.SMON_DATA[svcpath].restart.keys()) == 0:
-                del shared.SMON_DATA[svcpath].restart
+            if rid in shared.SMON_DATA[path].restart:
+                del shared.SMON_DATA[path].restart[rid]
+            if len(shared.SMON_DATA[path].restart.keys()) == 0:
+                del shared.SMON_DATA[path].restart
 
     @staticmethod
-    def get_smon_retries(svcpath, rid):
+    def get_smon_retries(path, rid):
         with shared.SMON_DATA_LOCK:
-            if svcpath not in shared.SMON_DATA:
+            if path not in shared.SMON_DATA:
                 return 0
-            if "restart" not in shared.SMON_DATA[svcpath]:
+            if "restart" not in shared.SMON_DATA[path]:
                 return 0
-            if rid not in shared.SMON_DATA[svcpath].restart:
+            if rid not in shared.SMON_DATA[path].restart:
                 return 0
             else:
-                return shared.SMON_DATA[svcpath].restart[rid]
+                return shared.SMON_DATA[path].restart[rid]
 
     @staticmethod
-    def inc_smon_retries(svcpath, rid):
+    def inc_smon_retries(path, rid):
         with shared.SMON_DATA_LOCK:
-            if svcpath not in shared.SMON_DATA:
+            if path not in shared.SMON_DATA:
                 return
-            if "restart" not in shared.SMON_DATA[svcpath]:
-                shared.SMON_DATA[svcpath].restart = {}
-            if rid not in shared.SMON_DATA[svcpath].restart:
-                shared.SMON_DATA[svcpath].restart[rid] = 1
+            if "restart" not in shared.SMON_DATA[path]:
+                shared.SMON_DATA[path].restart = {}
+            if rid not in shared.SMON_DATA[path].restart:
+                shared.SMON_DATA[path].restart[rid] = 1
             else:
-                shared.SMON_DATA[svcpath].restart[rid] += 1
+                shared.SMON_DATA[path].restart[rid] += 1
 
     def all_nodes_frozen(self):
         with shared.CLUSTER_DATA_LOCK:
@@ -2934,108 +2934,108 @@ class Monitor(shared.OsvcThread):
                           nmon.global_expect)
             self.set_nmon(global_expect="unset")
 
-    def set_smon_g_expect_from_status(self, svcpath, smon, status):
+    def set_smon_g_expect_from_status(self, path, smon, status):
         """
         Align global_expect with the actual service states.
         """
         if smon.global_expect is None:
             return
-        instance = self.get_service_instance(svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(path, rcEnv.nodename)
         if instance is None:
             return
         local_frozen = instance.get("frozen", 0)
-        frozen = shared.AGG[svcpath].frozen
-        provisioned = shared.AGG[svcpath].provisioned
-        deleted = self.get_agg_deleted(svcpath)
+        frozen = shared.AGG[path].frozen
+        provisioned = shared.AGG[path].provisioned
+        deleted = self.get_agg_deleted(path)
         purged = self.get_agg_purged(provisioned, deleted)
         stopped = status in STOPPED_STATES
         if smon.global_expect == "stopped" and stopped and local_frozen:
             self.log.info("service %s global expect is %s and its global "
-                          "status is %s", svcpath, smon.global_expect, status)
-            self.set_smon(svcpath, global_expect="unset")
-        elif smon.global_expect == "shutdown" and self.get_agg_shutdown(svcpath) and \
+                          "status is %s", path, smon.global_expect, status)
+            self.set_smon(path, global_expect="unset")
+        elif smon.global_expect == "shutdown" and self.get_agg_shutdown(path) and \
            local_frozen:
             self.log.info("service %s global expect is %s and its global "
-                          "status is %s", svcpath, smon.global_expect, status)
-            self.set_smon(svcpath, global_expect="unset")
+                          "status is %s", path, smon.global_expect, status)
+            self.set_smon(path, global_expect="unset")
         elif smon.global_expect == "started":
             if smon.placement == "none":
-                self.set_smon(svcpath, global_expect="unset")
+                self.set_smon(path, global_expect="unset")
             if status in STARTED_STATES and not local_frozen:
                 self.log.info("service %s global expect is %s and its global "
-                              "status is %s", svcpath, smon.global_expect, status)
-                self.set_smon(svcpath, global_expect="unset")
+                              "status is %s", path, smon.global_expect, status)
+                self.set_smon(path, global_expect="unset")
                 return
             if frozen != "thawed":
                 return
-            svc = self.get_service(svcpath)
-            if self.peer_warn(svcpath, with_self=True):
-                self.set_smon(svcpath, global_expect="unset")
+            svc = self.get_service(path)
+            if self.peer_warn(path, with_self=True):
+                self.set_smon(path, global_expect="unset")
                 return
         elif (smon.global_expect == "frozen" and frozen == "frozen") or \
              (smon.global_expect == "thawed" and frozen == "thawed") or \
              (smon.global_expect == "unprovisioned" and provisioned in (False, "n/a") and stopped):
             self.log.debug("service %s global expect is %s, already is",
-                           svcpath, smon.global_expect)
-            self.set_smon(svcpath, global_expect="unset")
+                           path, smon.global_expect)
+            self.set_smon(path, global_expect="unset")
         elif smon.global_expect == "provisioned" and provisioned in (True, "n/a"):
             if smon.placement == "none":
-                self.set_smon(svcpath, global_expect="unset")
-            if shared.AGG[svcpath].avail in ("up", "n/a"):
+                self.set_smon(path, global_expect="unset")
+            if shared.AGG[path].avail in ("up", "n/a"):
                 # provision success, thaw
-                self.set_smon(svcpath, global_expect="thawed")
+                self.set_smon(path, global_expect="thawed")
             else:
-                self.set_smon(svcpath, global_expect="started")
+                self.set_smon(path, global_expect="started")
         elif (smon.global_expect == "purged" and purged is True) or \
              (smon.global_expect == "deleted" and deleted is True):
             self.log.debug("service %s global expect is %s, already is",
-                           svcpath, smon.global_expect)
+                           path, smon.global_expect)
             with shared.SMON_DATA_LOCK:
-                del shared.SMON_DATA[svcpath]
+                del shared.SMON_DATA[path]
         elif smon.global_expect == "aborted" and \
-             self.get_agg_aborted(svcpath):
-            self.log.info("service %s action aborted", svcpath)
-            self.set_smon(svcpath, global_expect="unset")
+             self.get_agg_aborted(path):
+            self.log.info("service %s action aborted", path)
+            self.set_smon(path, global_expect="unset")
         elif smon.global_expect == "placed":
-            if shared.AGG[svcpath].placement in ("optimal", "n/a") and \
-               shared.AGG[svcpath].avail == "up":
-                self.set_smon(svcpath, global_expect="unset")
+            if shared.AGG[path].placement in ("optimal", "n/a") and \
+               shared.AGG[path].avail == "up":
+                self.set_smon(path, global_expect="unset")
                 return
             if frozen != "thawed":
                 return
-            svc = self.get_service(svcpath)
+            svc = self.get_service(path)
             if svc is None:
                 # foreign
                 return
             candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
             candidates = self.placement_leaders(svc, candidates=candidates)
-            peers = self.peers_options(svcpath, candidates, ["place failed"])
-            if not peers and self.non_leaders_stopped(svcpath, ["place failed"]):
+            peers = self.peers_options(path, candidates, ["place failed"])
+            if not peers and self.non_leaders_stopped(path, ["place failed"]):
                 self.log.info("service %s global expect is %s, not optimal "
-                              "and no options left", svcpath, smon.global_expect)
-                self.set_smon(svcpath, global_expect="unset")
+                              "and no options left", path, smon.global_expect)
+                self.set_smon(path, global_expect="unset")
                 return
         elif smon.global_expect.startswith("placed@"):
             target = smon.global_expect.split("@")[-1].split(",")
-            if self.instances_started_or_start_failed(svcpath, target):
-                self.set_smon(svcpath, global_expect="unset")
+            if self.instances_started_or_start_failed(path, target):
+                self.set_smon(path, global_expect="unset")
 
-    def set_smon_l_expect_from_status(self, data, svcpath):
-        if svcpath not in data:
+    def set_smon_l_expect_from_status(self, data, path):
+        if path not in data:
             return
-        if data.get(svcpath, {}).get("avail") != "up":
+        if data.get(path, {}).get("avail") != "up":
             return
         with shared.SMON_DATA_LOCK:
-            if svcpath not in shared.SMON_DATA:
+            if path not in shared.SMON_DATA:
                 return
-            if shared.SMON_DATA[svcpath].global_expect is not None or \
-               shared.SMON_DATA[svcpath].status != "idle" or \
-               shared.SMON_DATA[svcpath].local_expect in ("started", "shutdown"):
+            if shared.SMON_DATA[path].global_expect is not None or \
+               shared.SMON_DATA[path].status != "idle" or \
+               shared.SMON_DATA[path].local_expect in ("started", "shutdown"):
                 return
             self.log.info("service %s monitor local_expect "
-                          "%s => %s", svcpath,
-                          shared.SMON_DATA[svcpath].local_expect, "started")
-            shared.SMON_DATA[svcpath].local_expect = "started"
+                          "%s => %s", path,
+                          shared.SMON_DATA[path].local_expect, "started")
+            shared.SMON_DATA[path].local_expect = "started"
 
     def get_arbitrators_data(self):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
@@ -3091,25 +3091,25 @@ class Monitor(shared.OsvcThread):
             data["arbitrators"] = self.get_arbitrators_data()
 
         # purge deleted service instances
-        for svcpath in set(chain(data["services"]["status"].keys(), shared.SMON_DATA.keys())):
-            if svcpath in data["services"]["config"]:
+        for path in set(chain(data["services"]["status"].keys(), shared.SMON_DATA.keys())):
+            if path in data["services"]["config"]:
                 continue
             try:
-                smon = shared.SMON_DATA[svcpath]
+                smon = shared.SMON_DATA[path]
                 global_expect = smon.get("global_expect")
                 global_expect_updated = smon.get("global_expect_updated", 0)
                 if global_expect is not None and time.time() < global_expect_updated + 3:
                     # keep the smon around for a while
                     self.log.info("relay foreign service %s global expect %s",
-                                  svcpath, global_expect)
+                                  path, global_expect)
                     continue
                 else:
-                    del shared.SMON_DATA[svcpath]
+                    del shared.SMON_DATA[path]
             except KeyError:
                 pass
             try:
-                del data["services"]["status"][svcpath]
-                self.log.debug("purge deleted service %s from status data", svcpath)
+                del data["services"]["status"][path]
+                self.log.debug("purge deleted service %s from status data", path)
             except KeyError:
                 pass
 
@@ -3259,7 +3259,7 @@ class Monitor(shared.OsvcThread):
                 #    self.log.info("node %s wants local node %s, already is", nodename, global_expect)
 
             # merge every service monitors
-            for svcpath, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
+            for path, instance in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"].items():
                 if instance is None:
                     continue
                 current_global_expect = instance["monitor"].get("global_expect")
@@ -3268,12 +3268,12 @@ class Monitor(shared.OsvcThread):
                     continue
                 current_global_expect_updated = instance["monitor"].get("global_expect_updated")
                 for nodename in nodenames:
-                    rinstance = self.get_service_instance(svcpath, nodename)
+                    rinstance = self.get_service_instance(path, nodename)
                     if rinstance is None:
                         continue
                     if rinstance.get("stonith") is True and \
                        instance["monitor"].get("stonith") != nodename:
-                        self.set_smon(svcpath, stonith=nodename)
+                        self.set_smon(path, stonith=nodename)
                     global_expect = rinstance["monitor"].get("global_expect")
                     if global_expect is None:
                         continue
@@ -3283,25 +3283,25 @@ class Monitor(shared.OsvcThread):
                        global_expect_updated < current_global_expect_updated:
                         # we have a more recent update
                         continue
-                    if svcpath in shared.SERVICES and shared.SERVICES[svcpath].disabled and \
+                    if path in shared.SERVICES and shared.SERVICES[path].disabled and \
                        global_expect not in ("frozen", "thawed", "aborted", "deleted", "purged"):
                         continue
                     if global_expect == current_global_expect:
                         self.log.debug("node %s wants service %s %s, already targeting that",
-                                       nodename, svcpath, global_expect)
+                                       nodename, path, global_expect)
                         continue
                     #else:
-                    #    self.log.info("node %s wants service %s %s, already is", nodename, svcpath, global_expect)
-                    if self.accept_g_expect(svcpath, instance, global_expect):
-                        self.log.info("node %s wants service %s %s", nodename, svcpath, global_expect)
-                        self.set_smon(svcpath, global_expect=global_expect)
+                    #    self.log.info("node %s wants service %s %s, already is", nodename, path, global_expect)
+                    if self.accept_g_expect(path, instance, global_expect):
+                        self.log.info("node %s wants service %s %s", nodename, path, global_expect)
+                        self.set_smon(path, global_expect=global_expect)
 
-    def accept_g_expect(self, svcpath, instance, global_expect):
-        if svcpath in shared.AGG:
-            agg = shared.AGG[svcpath]
+    def accept_g_expect(self, path, instance, global_expect):
+        if path in shared.AGG:
+            agg = shared.AGG[path]
         else:
             agg = Storage()
-        smon = self.get_service_monitor(svcpath)
+        smon = self.get_service_monitor(path)
         if global_expect not in ("aborted", "thawed", "frozen") and \
            self.abort_state(smon.status, global_expect, smon.placement):
             return False
@@ -3313,7 +3313,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "shutdown":
-            return not self.get_agg_shutdown(svcpath)
+            return not self.get_agg_shutdown(path)
         elif global_expect == "started":
             if smon.placement == "none":
                 return False
@@ -3347,7 +3347,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "deleted":
-            deleted = self.get_agg_deleted(svcpath)
+            deleted = self.get_agg_deleted(path)
             if deleted is False:
                 return True
             else:
@@ -3355,14 +3355,14 @@ class Monitor(shared.OsvcThread):
         elif global_expect == "purged":
             if smon.placement == "none":
                 return False
-            deleted = self.get_agg_deleted(svcpath)
+            deleted = self.get_agg_deleted(path)
             purged = self.get_agg_purged(agg.provisioned, deleted)
             if purged is False:
                 return True
             else:
                 return False
         elif global_expect == "aborted":
-            aborted = self.get_agg_aborted(svcpath)
+            aborted = self.get_agg_aborted(path)
             if aborted is False:
                 return True
             else:
@@ -3371,13 +3371,13 @@ class Monitor(shared.OsvcThread):
             if smon.placement == "none":
                 return False
             if agg.placement == "non-optimal" or agg.avail != "up" or agg.frozen == "frozen":
-                svc = shared.SERVICES.get(svcpath)
+                svc = shared.SERVICES.get(path)
                 if svc is None:
                     return True
                 candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
                 candidates = self.placement_leaders(svc, candidates=candidates)
-                peers = self.peers_options(svcpath, candidates, ["place failed"])
-                if not peers and self.non_leaders_stopped(svcpath, ["place failed"]):
+                peers = self.peers_options(path, candidates, ["place failed"])
+                if not peers and self.non_leaders_stopped(path, ["place failed"]):
                     return False
                 return True
             else:
@@ -3408,42 +3408,42 @@ class Monitor(shared.OsvcThread):
                 return False
         return not instance.get("provisioned", False)
 
-    def get_agg(self, svcpath):
+    def get_agg(self, path):
         data = Storage()
-        data.avail = self.get_agg_avail(svcpath)
-        data.frozen = self.get_agg_frozen(svcpath)
-        data.overall = self.get_agg_overall(svcpath)
-        data.placement = self.get_agg_placement(svcpath)
-        data.provisioned = self.get_agg_provisioned(svcpath)
+        data.avail = self.get_agg_avail(path)
+        data.frozen = self.get_agg_frozen(path)
+        data.overall = self.get_agg_overall(path)
+        data.placement = self.get_agg_placement(path)
+        data.provisioned = self.get_agg_provisioned(path)
         return data
 
-    def get_all_svcpaths(self):
-        svcpaths = set()
+    def get_all_paths(self):
+        paths = set()
         with shared.CLUSTER_DATA_LOCK:
             for nodename, data in shared.CLUSTER_DATA.items():
                 try:
-                    for svcpath in data["services"]["config"]:
-                        svcpaths.add(svcpath)
+                    for path in data["services"]["config"]:
+                        paths.add(path)
                 except KeyError:
                     continue
-        return svcpaths
+        return paths
 
     def get_agg_services(self, paths=None):
         data = {}
-        svcpaths = self.get_all_svcpaths()
-        for svcpath in svcpaths:
+        paths = self.get_all_paths()
+        for path in paths:
             try:
-                if self.get_service(svcpath).topology == "span":
-                    data[svcpath] = Storage()
+                if self.get_service(path).topology == "span":
+                    data[path] = Storage()
                     continue
             except Exception as exc:
-                data[svcpath] = Storage()
+                data[path] = Storage()
                 pass
-            data[svcpath] = self.get_agg(svcpath)
+            data[path] = self.get_agg(path)
         with shared.AGG_LOCK:
             shared.AGG = data
         if paths is not None:
-            return dict((path, data[path]) for path in svcpaths if path in paths)
+            return dict((path, data[path]) for path in paths if path in paths)
         return data
 
     def update_completions(self):
@@ -3482,7 +3482,7 @@ class Monitor(shared.OsvcThread):
         if namespaces is None:
             paths = None
         else:
-            paths = [p for p in self.get_all_svcpaths() if split_svcpath(p)[1] in namespaces]
+            paths = [p for p in self.get_all_paths() if split_path(p)[1] in namespaces]
         data = shared.OsvcThread.status(self, **kwargs)
         data["nodes"] = self.filter_cluster_data(paths)
         data["compat"] = self.compat
@@ -3560,22 +3560,22 @@ class Monitor(shared.OsvcThread):
             if len(svc.peers) < 2:
                 continue
             try:
-                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.svcpath]
+                instance = shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]
             except:
                 continue
             frozen = instance.get("frozen", 0)
             if frozen:
                 continue
-            if self.instance_frozen(svc.svcpath):
+            if self.instance_frozen(svc.path):
                 continue
-            smon = self.get_service_monitor(svc.svcpath)
+            smon = self.get_service_monitor(svc.path)
             if smon.global_expect == "thawed":
                 continue
             for peer in svc.peers:
                 if peer == rcEnv.nodename:
                     continue
                 try:
-                    instance = shared.CLUSTER_DATA[peer]["services"]["status"][svc.svcpath]
+                    instance = shared.CLUSTER_DATA[peer]["services"]["status"][svc.path]
                 except:
                     continue
                 frozen = instance.get("frozen", 0)
@@ -3585,15 +3585,15 @@ class Monitor(shared.OsvcThread):
                     self.event("instance_freeze", data={
                         "reason": "merge_frozen",
                         "peer": peer,
-                        "svcpath": svc.svcpath,
+                        "path": svc.path,
                     })
                     svc.freezer.freeze()
 
-    def instance_frozen(self, svcpath, nodename=None):
+    def instance_frozen(self, path, nodename=None):
         if not nodename:
             nodename = rcEnv.nodename
         try:
-            return shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath].get("frozen", 0)
+            return shared.CLUSTER_DATA[nodename]["services"]["status"][path].get("frozen", 0)
         except:
             return 0
 

@@ -71,9 +71,9 @@ class Fs(resources.Resource):
     @lazy
     def volname(self):
         if self.svc.namespace:
-            return ".".join([self.svc.namespace.lower(), self.svc.svcname, self.rid.replace("#", ".")])
+            return ".".join([self.svc.namespace.lower(), self.svc.name, self.rid.replace("#", ".")])
         else:
-            return ".".join([self.svc.svcname, self.rid.replace("#", ".")])
+            return ".".join([self.svc.name, self.rid.replace("#", ".")])
 
     def create_vol(self):
         if self.has_it():

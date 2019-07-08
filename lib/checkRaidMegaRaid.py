@@ -54,7 +54,7 @@ class check(checks.check):
                     r.append({
                              "instance": slot,
                               "value": str(errs),
-                              "svcpath": '',
+                              "path": '',
                              })
                 slot = 'slot'+l[-1]
                 errs = 0
@@ -65,7 +65,7 @@ class check(checks.check):
             r.append({
                  "instance": slot,
                   "value": str(errs),
-                  "svcpath": '',
+                  "path": '',
                  })
         return r
 
@@ -100,21 +100,21 @@ class check(checks.check):
                 r.append({
                           "instance": '%s battery NoBattery'%slot,
                           "value": str(val),
-                          "svcpath": '',
+                          "path": '',
                          })
             if line.startswith('Relative State of Charge:'):
                 val = line.strip('%').split()[-1]
                 r.append({
                           "instance": '%s battery charge'%slot,
                           "value": str(val),
-                          "svcpath": '',
+                          "path": '',
                          })
             if line.startswith('Temperature:'):
                 val = line.split()[-2]
                 r.append({
                           "instance": '%s battery temp'%slot,
                           "value": str(val),
-                          "svcpath": '',
+                          "path": '',
                          })
             if line.startswith('isSOHGood:'):
                 if 'Yes' in line:
@@ -124,6 +124,6 @@ class check(checks.check):
                 r.append({
                           "instance": '%s battery isSOHGood'%slot,
                           "value": str(val),
-                          "svcpath": '',
+                          "path": '',
                          })
         return r

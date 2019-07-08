@@ -98,7 +98,7 @@ class Module(object):
                 action,
                 self.rset_md5]
         if self.context.svc:
-            vals.append(self.context.svc.svcpath)
+            vals.append(self.context.svc.path)
         else:
             vals.append("")
         self.context.action_log_vals.append(vals)
@@ -150,8 +150,8 @@ class Module(object):
 
         # add services env section keys, with values eval'ed on this node
         if self.context.svc:
-            os.environ[self.context.format_rule_var("SVC_NAME")] = self.context.format_rule_val(self.context.svc.svcname)
-            os.environ[self.context.format_rule_var("SVC_PATH")] = self.context.format_rule_val(self.context.svc.svcpath)
+            os.environ[self.context.format_rule_var("SVC_NAME")] = self.context.format_rule_val(self.context.svc.name)
+            os.environ[self.context.format_rule_var("SVC_PATH")] = self.context.format_rule_val(self.context.svc.path)
             if self.context.svc.namespace:
                 os.environ[self.context.format_rule_var("SVC_NAMESPACE")] = self.context.format_rule_val(self.context.svc.namespace)
             for key, val in self.context.svc.env_section_keys_evaluated().items():
@@ -366,7 +366,7 @@ class Module(object):
 
 class Compliance(object):
     def __init__(self, o=None):
-        if hasattr(o, "svcname"):
+        if hasattr(o, "path"):
             self.svc = o
             self.node = o.node
         else:
@@ -547,7 +547,7 @@ class Compliance(object):
 
     def get_moduleset(self):
         if self.svc:
-            moduleset = self.node.collector.call('comp_get_svc_data_moduleset', self.svc.svcpath)
+            moduleset = self.node.collector.call('comp_get_svc_data_moduleset', self.svc.path)
         else:
             moduleset = self.node.collector.call('comp_get_data_moduleset')
         if moduleset is None:
@@ -562,7 +562,7 @@ class Compliance(object):
 
     def get_current_ruleset(self):
         if self.svc:
-            ruleset = self.node.collector.call('comp_get_svc_ruleset', self.svc.svcpath)
+            ruleset = self.node.collector.call('comp_get_svc_ruleset', self.svc.path)
         else:
             ruleset = self.node.collector.call('comp_get_ruleset')
         if ruleset is None:
@@ -595,7 +595,7 @@ class Compliance(object):
     def get_comp_data(self):
         if self.svc:
             return self.node.collector.call('comp_get_svc_data',
-                                            self.svc.svcpath,
+                                            self.svc.path,
                                             modulesets=self.options.moduleset.split(','))
         else:
             return self.node.collector.call('comp_get_data',
@@ -739,7 +739,7 @@ class Compliance(object):
         err = False
         for moduleset in modulesets:
             if self.svc:
-                d = self.node.collector.call('comp_attach_svc_moduleset', self.svc.svcpath, moduleset)
+                d = self.node.collector.call('comp_attach_svc_moduleset', self.svc.path, moduleset)
             else:
                 d = self.node.collector.call('comp_attach_moduleset', moduleset)
             if d is None:
@@ -756,7 +756,7 @@ class Compliance(object):
         err = False
         for moduleset in modulesets:
             if self.svc:
-                d = self.node.collector.call('comp_detach_svc_moduleset', self.svc.svcpath, moduleset)
+                d = self.node.collector.call('comp_detach_svc_moduleset', self.svc.path, moduleset)
             else:
                 d = self.node.collector.call('comp_detach_moduleset', moduleset)
             if d is None:
@@ -773,7 +773,7 @@ class Compliance(object):
         err = False
         for ruleset in rulesets:
             if self.svc:
-                d = self.node.collector.call('comp_attach_svc_ruleset', self.svc.svcpath, ruleset)
+                d = self.node.collector.call('comp_attach_svc_ruleset', self.svc.path, ruleset)
             else:
                 d = self.node.collector.call('comp_attach_ruleset', ruleset)
             if d is None:
@@ -790,7 +790,7 @@ class Compliance(object):
         err = False
         for ruleset in rulesets:
             if self.svc:
-                d = self.node.collector.call('comp_detach_svc_ruleset', self.svc.svcpath, ruleset)
+                d = self.node.collector.call('comp_detach_svc_ruleset', self.svc.path, ruleset)
             else:
                 d = self.node.collector.call('comp_detach_ruleset', ruleset)
             if d is None:
@@ -810,7 +810,7 @@ class Compliance(object):
     def _compliance_show_status(self):
         args = ['comp_show_status']
         if self.svc:
-           args.append(self.svc.svcpath)
+           args.append(self.svc.path)
         else:
            args.append('')
         if hasattr(self.options, 'module') and \

@@ -39,11 +39,11 @@ class Scheduler(shared.OsvcThread):
         data["running"] = len(self.running)
         data["delayed"] = [{
             "action": action,
-            "svcname": svcname,
+            "path": path,
             "rid": rid,
             "queued": entry["queued"],
             "expire": entry["expire"],
-        } for (action, svcname, rid), entry in self.delayed.items()]
+        } for (action, path, rid), entry in self.delayed.items()]
         return data
 
     def run(self):
@@ -101,24 +101,24 @@ class Scheduler(shared.OsvcThread):
                 continue
             if ca != self.cluster_ca:
                 continue
-            cf_mtime = shared.CLUSTER_DATA.get(rcEnv.nodename, {}).get("services", {}).get("config", {}).get(obj.svcpath, {}).get("updated")
-            if obj.svcpath not in self.certificates or self.certificates[obj.svcpath]["mtime"] < cf_mtime:
+            cf_mtime = shared.CLUSTER_DATA.get(rcEnv.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
+            if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
                 try:
                     expire = obj.get_cert_expire()
                 except ex.excError:
                     # usr in creation
                     expire = None
-                self.certificates[obj.svcpath] = {
+                self.certificates[obj.path] = {
                     "mtime": cf_mtime,
                     "expire": expire,
                 }
-            expire = self.certificates[obj.svcpath]["expire"]
+            expire = self.certificates[obj.path]["expire"]
             if not expire:
                 continue
             expire_delay = expire - self.now
-            #print(obj.svcpath, "expire in:", print_duration(expire_delay))
+            #print(obj.path, "expire in:", print_duration(expire_delay))
             if expire_delay < 3600:
-                self.log.info("renew %s certificate, expiring in %s", obj.svcpath, print_duration(expire_delay))
+                self.log.info("renew %s certificate, expiring in %s", obj.path, print_duration(expire_delay))
                 obj.gen_cert()
 
     def janitor_run_done(self):
@@ -163,13 +163,13 @@ class Scheduler(shared.OsvcThread):
                        on_error="drop_running",
                        on_error_args=[sigs])
 
-    def format_cmd(self, action, svcname=None, rids=None):
-        if svcname is None:
+    def format_cmd(self, action, path=None, rids=None):
+        if path is None:
             cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py"), action]
-        elif isinstance(svcname, list):
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(svcname), action, "--waitlock=5", "--parallel"]
+        elif isinstance(path, list):
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5", "--parallel"]
         else:
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", svcname, action, "--waitlock=5"]
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", path, action, "--waitlock=5"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
@@ -181,8 +181,8 @@ class Scheduler(shared.OsvcThread):
             self.delayed[sig]["delay"] = 0
             self.delayed[sig]["expire"] = time.time()
 
-    def queue_action(self, action, delay=0, svcname=None, rid=None):
-        sig = (action, svcname, rid)
+    def queue_action(self, action, delay=0, path=None, rid=None):
+        sig = (action, path, rid)
         if sig in self.running:
             self.log.debug("drop already running action '%s'", sig)
             return
@@ -216,43 +216,43 @@ class Scheduler(shared.OsvcThread):
         for sig, task in self.delayed.items():
             if task["expire"] > now:
                 continue
-            action, svcname, rid = sig
-            merge_key = (action, svcname)
+            action, path, rid = sig
+            merge_key = (action, path)
             if merge_key not in merge:
-                if svcname:
-                    _svcname = [svcname]
+                if path:
+                    _path = [path]
                 else:
-                    _svcname = None
+                    _path = None
                 merge[merge_key] = {"rids": set([rid]), "task": task}
             else:
                 merge[merge_key]["rids"].add(rid)
                 if task["queued"] < merge[merge_key]["task"]["queued"]:
                     merge[merge_key]["task"]["queued"] = task["queued"]
 
-        for (action, svcname), data in merge.items():
+        for (action, path), data in merge.items():
             if None in data["rids"]:
                 data["rids"] = None
-                sigs = [(action, svcname, None)]
-                merge_key = (svcname is None, action, None)
+                sigs = [(action, path, None)]
+                merge_key = (path is None, action, None)
             else:
-                sigs = [(action, svcname, rid) for rid in data["rids"]]
-                merge_key = (svcname is None, action, tuple(sorted(list(data["rids"]))))
+                sigs = [(action, path, rid) for rid in data["rids"]]
+                merge_key = (path is None, action, tuple(sorted(list(data["rids"]))))
             if merge_key not in todo:
-                if svcname:
-                    _svcname = [svcname]
+                if path:
+                    _path = [path]
                 else:
-                    _svcname = None
+                    _path = None
                 todo[merge_key] = {
                     "action": action,
                     "rids": data["rids"],
-                    "svcname": _svcname,
+                    "path": _path,
                     "sigs": sigs,
                     "queued": task["queued"],
                 }
             else:
                 todo[merge_key]["sigs"] += sigs
-                if svcname:
-                    todo[merge_key]["svcname"].append(svcname)
+                if path:
+                    todo[merge_key]["path"].append(path)
                 if task["queued"] < todo[merge_key]["queued"]:
                     todo[merge_key]["queued"] = task["queued"]
         return sorted(todo.values(), key=lambda task: task["queued"])[:open_slots]
@@ -265,7 +265,7 @@ class Scheduler(shared.OsvcThread):
         dequeued = []
         now = time.time()
         for task in self.get_todo():
-            cmd = self.format_cmd(task["action"], task["svcname"], task["rids"])
+            cmd = self.format_cmd(task["action"], task["path"], task["rids"])
             self.log.info("run '%s' queued %s ago", " ".join(cmd), print_duration(now - task["queued"]))
             self.exec_action(task["sigs"], cmd)
             dequeued += task["sigs"]
@@ -288,21 +288,21 @@ class Scheduler(shared.OsvcThread):
                 except ex.excAbortAction:
                     continue
                 self.queue_action(action, delay)
-        for svcname in list(shared.SERVICES.keys()):
+        for path in list(shared.SERVICES.keys()):
             try:
-                svc = shared.SERVICES[svcname]
+                svc = shared.SERVICES[path]
             except KeyError:
                 # deleted during previous iterations
                 continue
             svc.configure_scheduler()
             svc.options.cron = True
             try:
-                provisioned = shared.AGG[svcname].provisioned
+                provisioned = shared.AGG[path].provisioned
             except KeyError:
                 continue
             for action in svc.sched.scheduler_actions:
                 if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
-                    nonprov.append(action+"@"+svcname)
+                    nonprov.append(action+"@"+path)
                     continue
                 try:
                     data = svc.sched.validate_action(action)
@@ -314,10 +314,10 @@ class Scheduler(shared.OsvcThread):
                     delay = data
                     rids = None
                 if rids is None:
-                    self.queue_action(action, delay, svcname, rids)
+                    self.queue_action(action, delay, path, rids)
                 else:
                     for rid in rids:
-                        self.queue_action(action, delay, svcname, rid)
+                        self.queue_action(action, delay, path, rid)
 
         # log a scheduler loop digest
         msg = []

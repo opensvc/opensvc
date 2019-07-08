@@ -5,7 +5,7 @@ import os
 
 class check(object):
     undef = [{
-              'svcpath': '',
+              'path': '',
               'instance': 'undef',
               'value': '-1'
              }]
@@ -120,13 +120,13 @@ class checks(check):
                 _instance = {
                     "instance": instance.get("instance", ""),
                     "value": instance.get("value", ""),
-                    "svcpath": instance.get("svcpath", ""),
+                    "path": instance.get("path", ""),
                     "driver": driver,
                 }
 
                 vals.append([\
                     rcEnv.nodename,
-                    _instance["svcpath"],
+                    _instance["path"],
                     chk.chk_type,
                     _instance['instance'],
                     str(_instance['value']).replace("%",""),
@@ -159,7 +159,7 @@ class checks(check):
             for instance in instances:
                 _node = node.add_node()
                 _node.add_column(str(instance["instance"]), color.LIGHTBLUE)
-                _node.add_column(instance["svcpath"])
+                _node.add_column(instance["path"])
                 _node.add_column(str(instance["value"]))
                 if instance["driver"] == "generic":
                     _node.add_column()

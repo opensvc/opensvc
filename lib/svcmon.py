@@ -117,10 +117,10 @@ def start_events_thread(node, nodename):
     thr.start()
     return thr
 
-def get_stats(options, node, svcpaths):
+def get_stats(options, node, paths):
     try:
         if options.stats:
-            return node._daemon_stats(svcpaths=svcpaths, server=options.server, node=options.node)
+            return node._daemon_stats(paths=paths, server=options.server, node=options.node)
         else:
             return None
     except Exception:
@@ -176,7 +176,7 @@ def svcmon(node, options=None):
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
-        outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
+        outs = format_cluster(paths=expanded_svcs, node=nodes,
                               data=status_data, sections=options.sections,
                               selector=options.parm_svcs,
                               namespace=namespace)
@@ -216,7 +216,7 @@ def svcmon(node, options=None):
                 chars = 1
             preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             outs = format_cluster(
-                svcpaths=expanded_svcs,
+                paths=expanded_svcs,
                 node=nodes,
                 data=status_data,
                 prev_stats_data=prev_stats_data,
@@ -233,7 +233,7 @@ def svcmon(node, options=None):
             last_refresh = now
             time.sleep(0.2)
     else:
-        outs = format_cluster(svcpaths=expanded_svcs, node=nodes,
+        outs = format_cluster(paths=expanded_svcs, node=nodes,
                               data=status_data, sections=options.sections,
                               selector=options.parm_svcs,
                               namespace=namespace)

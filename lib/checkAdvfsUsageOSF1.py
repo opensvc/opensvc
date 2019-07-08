@@ -17,7 +17,7 @@ class check(checks.check):
                 if not hasattr(resource, "poolname"):
                     continue
                 if resource.poolname == name:
-                    return svc.svcpath
+                    return svc.path
         return ""
 
     def do_check(self):
@@ -29,7 +29,7 @@ class check(checks.check):
                 r.append({
                           "instance": dom,
                           "value": str(d.used_pct),
-                          "svcpath": self.find_svc(dom),
+                          "path": self.find_svc(dom),
                          })
             except rcAdvfs.ExInit:
                 pass

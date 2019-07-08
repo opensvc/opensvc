@@ -15,7 +15,7 @@ import errno
 import rcStatus
 import rcColor
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs, split_svcpath, get_option
+from rcUtilities import ximport, check_privs, split_path, get_option
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -56,9 +56,9 @@ class Mgr(object):
         """
         build_kwargs = {}
 
-        if len(set(["svcpaths", "status"]) & set(build_kwargs.keys())) == 0:
+        if len(set(["paths", "status"]) & set(build_kwargs.keys())) == 0:
             if hasattr(options, "svcs") and options.svcs is not None:
-                build_kwargs["svcpaths"] = options.svcs
+                build_kwargs["paths"] = options.svcs
 
         if hasattr(options, "status") and options.status is not None:
             build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
@@ -178,7 +178,7 @@ class Mgr(object):
         data = {}
         for path in paths:
             try:
-                _, _, kind = split_svcpath(path)
+                _, _, kind = split_path(path)
             except ValueError:
                 continue
             try:
@@ -209,7 +209,7 @@ class Mgr(object):
         else:
             expanded_svcs = self.node.svcs_selector(selector, namespace)
         svc_by_kind = self.dispatch_svcs(expanded_svcs)
-        for kind, svcpaths in svc_by_kind.items():
+        for kind, paths in svc_by_kind.items():
             mod = __import__(kind+"mgr_parser")
             parser = getattr(mod, kind.capitalize()+"mgrOptParser")()
             yield parser
@@ -288,13 +288,13 @@ class Mgr(object):
                 build_err = True
 
         if self.node.svcs is not None and len(self.node.svcs) > 0:
-            svcpaths = [svc.svcpath for svc in self.node.svcs]
-        elif action == "create" and "svcpaths" in build_kwargs:
-            svcpaths = build_kwargs["svcpaths"]
+            paths = [svc.path for svc in self.node.svcs]
+        elif action == "create" and "paths" in build_kwargs:
+            paths = build_kwargs["paths"]
         else:
-            svcpaths = []
+            paths = []
 
-        if action != "create" and len(svcpaths) == 0:
+        if action != "create" and len(paths) == 0:
             if action == "ls":
                 return
             if not build_err:
@@ -302,7 +302,7 @@ class Mgr(object):
             return 1
 
         if action == "create":
-            return self.node.create_service(svcpaths, options)
+            return self.node.create_service(paths, options)
 
         ret = self.do_svcs_action(options, action, argv=argv)
 

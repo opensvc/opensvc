@@ -123,7 +123,7 @@ def set_namelen(svcs=[], force=None):
     for svc in svcs:
         if svc.disabled:
             continue
-        svc_len = len(svc.svcname)
+        svc_len = len(svc.name)
 
         # init with the "scheduler" length
         max_res_len = 10

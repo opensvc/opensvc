@@ -85,7 +85,7 @@ class Hp3pars(object):
             yield(array)
 
 class Hp3par(object):
-    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", svcname="", log=None, node=None):
+    def __init__(self, name, method, manager=None, username=None, key=None, pwf=None, cli="cli", path="", log=None, node=None):
         self.name = name
         self.node = node
         self.manager = manager
@@ -93,7 +93,7 @@ class Hp3par(object):
         self.username = username
         self.pwf = pwf
         self.cli = cli
-        self.svcname = svcname
+        self.path = path
         self.key = key
         self.keys = ['showvv', 'showsys', 'shownode', "showcpg", "showport", "showversion"]
         self.uuid = None
@@ -115,7 +115,7 @@ class Hp3par(object):
         values = {
           'array' : self.name,
           'cmd' : cmd,
-          'svcname' : self.svcname,
+          'path' : self.path,
           'uuid' : self.uuid,
         }
 

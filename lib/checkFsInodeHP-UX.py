@@ -10,7 +10,7 @@ class check(checks.check):
                 if not hasattr(resource, "mount_point"):
                     continue
                 if resource.mount_point == mountpt:
-                    return svc.svcpath
+                    return svc.path
         return ''
 
     def do_check(self):
@@ -33,14 +33,14 @@ class check(checks.check):
                 inst = ' '.join(l[8:])
                 r.append({"instance": inst,
                       "value": l[7],
-                      "svcpath": self.find_svc(inst),
+                      "path": self.find_svc(inst),
                      }
                     )
             elif len(l) == 8:
                 inst = ' '.join(l[7:])
                 r.append({"instance": inst,
                       "value": l[6],
-                      "svcpath": self.find_svc(inst),
+                      "path": self.find_svc(inst),
                      }
                     )
         return r

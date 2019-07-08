@@ -12,7 +12,7 @@ class ClusterSvc(BaseSvc):
             del kwargs["namespace"]
         except KeyError:
             pass
-        BaseSvc.__init__(self, svcname="cluster", namespace=None, **kwargs)
+        BaseSvc.__init__(self, name="cluster", namespace=None, **kwargs)
 
     @lazy
     def kwdict(self):

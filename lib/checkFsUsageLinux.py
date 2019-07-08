@@ -11,7 +11,7 @@ class check(checks.check):
                 if not hasattr(resource, "mount_point"):
                     continue
                 if resource.mount_point == mountpt:
-                    return svc.svcpath
+                    return svc.path
         return ''
 
     def do_check(self):
@@ -55,20 +55,20 @@ class check(checks.check):
             if "osvc_sync_" in l[0]:
                 # do not report osvc sync snapshots fs usage
                 continue
-            svcpath = self.find_svc(l[5])
+            path = self.find_svc(l[5])
             r.append({
                       "instance": l[5],
                       "value": l[4],
-                      "svcpath": svcpath,
+                      "path": path,
                      })
             r.append({
                       "instance": l[5]+".free",
                       "value": l[3],
-                      "svcpath": svcpath,
+                      "path": path,
                      })
             r.append({
                       "instance": l[5]+".size",
                       "value": l[1],
-                      "svcpath": svcpath,
+                      "path": path,
                      })
         return r

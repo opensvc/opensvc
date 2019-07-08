@@ -35,6 +35,6 @@ class check(checks.check):
         r.append({
               "instance": 'faults ',
               "value": str(len(out)),
-              "svcpath": '',
+              "path": '',
             })
         return r

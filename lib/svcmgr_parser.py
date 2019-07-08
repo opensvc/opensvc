@@ -142,7 +142,7 @@ ACTIONS["Service actions"].update({
     },
     "dns_update": {
         "msg": "Update the collector dns records for the service. The "
-               "managed dns record is <svcname>.<app>.<collector "
+               "managed dns record is <name>.<app>.<collector "
                "domain>``.",
         "options": mp.ACTION_OPTS,
     },
@@ -500,7 +500,7 @@ ACTIONS["Service actions"].update({
                "{instances} words "
                "in the wrapped command are replaced by, respectively, "
                "the registry login username/password/email parameters to "
-               "log as a service using <svcname>@<nodename> as the "
+               "log as a service using <path>@<nodename> as the "
                "username and the node uuid as password (which is what "
                "is expected when the opensvc collector is used as the "
                "JWT manager for the registry), the set of podman "
@@ -517,7 +517,7 @@ ACTIONS["Service actions"].update({
                "daemon. The {as_service}, {images} and {instances} words "
                "in the wrapped command are replaced by, respectively, "
                "the registry login username/password/email parameters to "
-               "log as a service using <svcname>@<nodename> as the "
+               "log as a service using <path>@<nodename> as the "
                "username and the node uuid as password (which is what "
                "is expected when the opensvc collector is used as the "
                "JWT manager for the registry), the set of docker "

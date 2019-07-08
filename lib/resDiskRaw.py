@@ -131,7 +131,7 @@ class Disk(resDisk.Disk):
             n = self.rid.split('#')[1]
         except:
             n = "0"
-        self.name = self.svc.svcname+".raw"+n
+        self.name = self.svc.name+".raw"+n
         self.label = self.name
 
     @lazy

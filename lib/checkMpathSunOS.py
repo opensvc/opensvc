@@ -28,7 +28,7 @@ class check(checks.check):
                 except Exception as e:
                     self.svcdevs[svc] = []
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def do_check(self):
@@ -70,7 +70,7 @@ class check(checks.check):
                 if dev is not None:
                     r.append({"instance": wwid,
                               "value": str(n),
-                              "svcpath": self.find_svc(dev),
+                              "path": self.find_svc(dev),
                              })
                     dev = None
                     n = 0

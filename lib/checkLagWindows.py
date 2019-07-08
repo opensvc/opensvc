@@ -24,7 +24,7 @@ class check(checks.check):
         r.append({
                 "instance": inst+'.redundancy',
                 "value": str(val),
-                "svcpath": '',
+                "path": '',
                })
         return r
 

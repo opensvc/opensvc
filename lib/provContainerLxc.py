@@ -172,7 +172,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def purge_known_hosts(self, ip=None):
         if ip is None:
-            cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
+            cmd = ['ssh-keygen', '-R', self.r.svc.name]
         else:
             cmd = ['ssh-keygen', '-R', ip]
         ret, out, err = self.r.vcall(cmd, err_to_info=True)

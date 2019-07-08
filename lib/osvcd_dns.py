@@ -15,7 +15,7 @@ import six
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import lazy, bdecode, split_svcpath
+from rcUtilities import lazy, bdecode, split_path
 
 PTR_SUFFIX = ".in-addr.arpa."
 PTR_SUFFIX_LEN = 14
@@ -399,20 +399,20 @@ class Dns(shared.OsvcThread):
         with shared.CLUSTER_DATA_LOCK:
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
-                for svcpath, svc in status.items():
-                    svcname, namespace, kind = split_svcpath(svcpath)
+                for path, svc in status.items():
+                    name, namespace, kind = split_path(path)
                     if kind != "svc":
                         continue
                     if not namespace:
                         namespace = "root"
-                    for rid, resource in status[svcpath].get("resources", {}).items():
+                    for rid, resource in status[path].get("resources", {}).items():
                         addr = resource.get("info", {}).get("ipaddr")
                         if addr is None:
                             continue
                         if addr != ref:
                             continue
                         hostname = resource.get("info", {}).get("hostname")
-                        name = "%s.%s.%s.%s." % (svcname, namespace, kind, self.cluster_name)
+                        name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
                         name = name.lower()
                         if hostname:
                             names.append("%s.%s" % (hostname.split(".")[0], name))
@@ -446,8 +446,8 @@ class Dns(shared.OsvcThread):
         with shared.CLUSTER_DATA_LOCK:
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
-                for svcpath, svc in status.items():
-                    svcname, namespace, kind = split_svcpath(svcpath)
+                for path, svc in status.items():
+                    name, namespace, kind = split_path(path)
                     if kind != "svc":
                         continue
                     if namespace:
@@ -456,14 +456,14 @@ class Dns(shared.OsvcThread):
                         namespace = "root"
                     scaler_slave = svc.get("scaler_slave")
                     if scaler_slave:
-                        _svcname = svcname[svcname.index(".")+1:]
+                        _name = name[name.index(".")+1:]
                     else:
-                        _svcname = svcname
+                        _name = name
                     zone = "%s.%s.%s." % (namespace, kind, self.cluster_name)
-                    qname = "%s.%s" % (_svcname, zone)
+                    qname = "%s.%s" % (_name, zone)
                     if qname not in names:
                         names[qname] = set()
-                    for rid, resource in status.get(svcpath, {}).get("resources", {}).items():
+                    for rid, resource in status.get(path, {}).get("resources", {}).items():
                         addr = resource.get("info", {}).get("ipaddr")
                         if addr is None:
                             continue
@@ -498,8 +498,8 @@ class Dns(shared.OsvcThread):
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
                 weight = node.get("stats", {}).get("score", 10)
-                for svcpath, svc in status.items():
-                    svcname, namespace, kind = split_svcpath(svcpath)
+                for path, svc in status.items():
+                    name, namespace, kind = split_path(path)
                     if kind != "svc":
                         continue
                     if namespace:
@@ -508,17 +508,17 @@ class Dns(shared.OsvcThread):
                         namespace = "root"
                     scaler_slave = svc.get("scaler_slave")
                     if scaler_slave:
-                        _svcname = svcname[svcname.index(".")+1:]
+                        _name = name[name.index(".")+1:]
                     else:
-                        _svcname = svcname
-                    for rid, resource in status[svcpath].get("resources", {}).items():
+                        _name = name
+                    for rid, resource in status[path].get("resources", {}).items():
                         addr = resource.get("info", {}).get("ipaddr")
                         if addr is None:
                             continue
                         for expose in resource.get("info", {}).get("expose", []):
                             if "#" in expose:
                                 # expose data by reference
-                                expose_data = status[svcpath].get("resources", {}).get(expose, {}).get("info")
+                                expose_data = status[path].get("resources", {}).get(expose, {}).get("info")
                                 try:
                                     port = expose_data["port"]
                                     proto = expose_data["protocol"]
@@ -532,16 +532,16 @@ class Dns(shared.OsvcThread):
                                 except Exception as exc:
                                     continue
                             qnames = set()
-                            qnames.add("_%s._%s.%s.%s.%s.%s." % (str(port), proto, _svcname, namespace, kind, self.cluster_name))
+                            qnames.add("_%s._%s.%s.%s.%s.%s." % (str(port), proto, _name, namespace, kind, self.cluster_name))
                             try:
                                 serv = socket.getservbyport(port)
-                                qnames.add("_%s._%s.%s.%s.%s.%s." % (serv, proto, _svcname, namespace, kind, self.cluster_name))
+                                qnames.add("_%s._%s.%s.%s.%s.%s." % (serv, proto, _name, namespace, kind, self.cluster_name))
                             except (socket.error, OSError) as exc:
                                 # port/proto not found
                                 pass
                             except Exception as exc:
                                 self.log.warning("port %d resolution failed: %s", port, exc)
-                            target = "%s.%s.%s.%s.%s." % (self.unique_name(addr), _svcname, namespace, kind, self.cluster_name)
+                            target = "%s.%s.%s.%s.%s." % (self.unique_name(addr), _name, namespace, kind, self.cluster_name)
                             content = "%(prio)d %(weight)d %(port)d %(target)s" % {
                                 "prio": 0,
                                 "weight": weight,
@@ -564,8 +564,8 @@ class Dns(shared.OsvcThread):
         with shared.CLUSTER_DATA_LOCK:
             for nodename, node in shared.CLUSTER_DATA.items():
                 status = node.get("services", {}).get("status", {})
-                for svcpath, svc in status.items():
-                    for rid, resource in status[svcpath].get("resources", {}).items():
+                for path, svc in status.items():
+                    for rid, resource in status[path].get("resources", {}).items():
                         addr = resource.get("info", {}).get("ipaddr")
                         if addr is None:
                             continue

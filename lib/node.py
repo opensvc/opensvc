@@ -44,10 +44,10 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         drop_option, is_string, try_decode, is_service, \
                         bencode, bdecode, set_lazy, \
                         list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
-                        makedirs, fmt_svcpath, \
-                        glob_services_config, split_svcpath, validate_name, \
+                        makedirs, fmt_path, \
+                        glob_services_config, split_path, validate_name, \
                         validate_ns_name, unset_all_lazy, \
-                        factory, resolve_svcpath, strip_path, normalize_paths, \
+                        factory, resolve_path, strip_path, normalize_paths, \
                         normalize_jsonpath, daemon_test_lock
 from contexts import want_context
 from converters import *
@@ -610,8 +610,8 @@ class Node(Crypt, ExtConfigMixin):
         if not namespace:
             return paths
         if namespace == "root":
-            return [path for path in paths if split_svcpath(path)[1] is None]
-        return [path for path in paths if split_svcpath(path)[1] == namespace]
+            return [path for path in paths if split_path(path)[1] is None]
+        return [path for path in paths if split_path(path)[1] == namespace]
 
     def svcs_selector(self, selector, namespace=None, data=None):
         """
@@ -657,13 +657,13 @@ class Node(Crypt, ExtConfigMixin):
     def _svcs_selector(self, selector, data=None, namespace=None):
         cluster_data = self._daemon_status()
         if cluster_data:
-            self.build_services(svcpaths=[s for s in cluster_data.get("monitor", {}).get("services", {})])
+            self.build_services(paths=[s for s in cluster_data.get("monitor", {}).get("services", {})])
         elif not want_context():
             self.build_services()
         if data and "services" in data:
             paths = [path for path in data["services"]]
         else:
-            paths = [svc.svcpath for svc in self.svcs]
+            paths = [svc.path for svc in self.svcs]
         paths = self.filter_ns(paths, namespace)
         if "," in selector:
             ored_selectors = selector.split(",")
@@ -750,7 +750,7 @@ class Node(Crypt, ExtConfigMixin):
             if param.startswith("$."):
                 try:
                     jsonpath_expr = parse(param)
-                    data = self.cluster_svc_data(svc.svcpath, cluster_data)
+                    data = self.cluster_svc_data(svc.path, cluster_data)
                     matches = jsonpath_expr.find(data)
                     for match in matches:
                         current = match.value
@@ -847,27 +847,27 @@ class Node(Crypt, ExtConfigMixin):
         for svc in self.svcs:
             ret = svc_matching(svc, param, op, value, cluster_data)
             if ret ^ negate:
-                result.append(svc.svcpath)
+                result.append(svc.path)
 
         return result
 
-    def cluster_svc_data(self, svcpath, cluster_data):
+    def cluster_svc_data(self, path, cluster_data):
         """
         Extract from the cluster data the structures refering to a
-        svcpath.
+        path.
         """
         if not cluster_data:
             return
         try:
-            data = cluster_data.get("monitor", {}).get("services", {}).get(svcpath, {})
+            data = cluster_data.get("monitor", {}).get("services", {}).get(path, {})
             data["nodes"] = {}
         except KeyError:
             return
         for node, ndata in cluster_data.get("monitor", {}).get("nodes", {}).items():
             try:
                 data["nodes"][node] = {
-                    "status": ndata["services"]["status"][svcpath],
-                    "config": ndata["services"]["config"][svcpath],
+                    "status": ndata["services"]["status"][path],
+                    "config": ndata["services"]["config"][path],
                 }
             except KeyError:
                 pass
@@ -879,33 +879,33 @@ class Node(Crypt, ExtConfigMixin):
         the node.
         """
         if self.svcs is not None and \
-           ('svcpaths' not in kwargs or \
-           (isinstance(kwargs['svcpaths'], list) and len(kwargs['svcpaths']) == 0)):
+           ('paths' not in kwargs or \
+           (isinstance(kwargs['paths'], list) and len(kwargs['paths']) == 0)):
             return
 
-        if 'svcpaths' in kwargs and \
-           isinstance(kwargs['svcpaths'], list) and \
-           len(kwargs['svcpaths']) > 0 and \
+        if 'paths' in kwargs and \
+           isinstance(kwargs['paths'], list) and \
+           len(kwargs['paths']) > 0 and \
            self.svcs is not None:
-            svcpaths_request = set(kwargs['svcpaths'])
-            svcpaths_actual = set([s.svcpath for s in self.svcs])
-            if len(svcpaths_request-svcpaths_actual) == 0:
+            paths_request = set(kwargs['paths'])
+            paths_actual = set([s.path for s in self.svcs])
+            if len(paths_request-paths_actual) == 0:
                 return
 
         self.services = {}
 
         if want_context():
             # build volatile objects
-            for svcpath in kwargs['svcpaths']:
-                name, namespace, kind = split_svcpath(svcpath)
+            for path in kwargs['paths']:
+                name, namespace, kind = split_path(path)
                 self += factory(kind)(name, namespace=namespace, volatile=True,
                                       cf=os.devnull, node=self)
             return
 
         kwargs["node"] = self
         svcs, errors = svcBuilder.build_services(*args, **kwargs)
-        if 'svcpaths' in kwargs:
-            self.check_build_errors(kwargs['svcpaths'], svcs, errors)
+        if 'paths' in kwargs:
+            self.check_build_errors(kwargs['paths'], svcs, errors)
 
         opt_status = kwargs.get("status")
         for svc in svcs:
@@ -916,13 +916,13 @@ class Node(Crypt, ExtConfigMixin):
         rcLogger.set_namelen(self.svcs)
 
     @staticmethod
-    def check_build_errors(svcpaths, svcs, errors):
+    def check_build_errors(paths, svcs, errors):
         """
         Raise error if the service builder did not return a Svc object for
         each service we requested.
         """
-        if isinstance(svcpaths, list):
-            n_args = len(svcpaths)
+        if isinstance(paths, list):
+            n_args = len(paths)
         else:
             n_args = 1
         n_svcs = len(svcs)
@@ -939,16 +939,16 @@ class Node(Crypt, ExtConfigMixin):
             return 0
         raise ex.excError(msg)
 
-    def rebuild_services(self, svcpaths):
+    def rebuild_services(self, paths):
         """
         Delete the list of Svc objects in the Node object and create a new one.
 
         Args:
-          svcpaths: add only Svc objects for services specified
+          paths: add only Svc objects for services specified
         """
         del self.services
         self.services = None
-        self.build_services(svcpaths=svcpaths, node=self)
+        self.build_services(paths=paths, node=self)
 
     def close(self):
         """
@@ -1078,11 +1078,11 @@ class Node(Crypt, ExtConfigMixin):
         Implement the Node() += Svc() operation, setting the node backpointer
         in the added service, storing the service in a list
         """
-        if not hasattr(svc, "svcname"):
+        if not hasattr(svc, "path"):
             return self
         if self.services is None:
             self.services = {}
-        self.services[svc.svcpath] = svc
+        self.services[svc.path] = svc
         return self
 
     def action(self, action, options=None):
@@ -1567,9 +1567,9 @@ class Node(Crypt, ExtConfigMixin):
             disk_node.add_column(disk["vendor"])
             disk_node.add_column(disk["model"])
 
-            for svcpath, service in disk["services"].items():
+            for path, service in disk["services"].items():
                 svc_node = disk_node.add_node()
-                svc_node.add_column(svcpath, color.LIGHTBLUE)
+                svc_node.add_column(path, color.LIGHTBLUE)
                 svc_node.add_column(disk["dg"])
                 svc_node.add_column(print_size(service["used"]))
 
@@ -1645,17 +1645,17 @@ class Node(Crypt, ExtConfigMixin):
                                 "services": {},
                             }
 
-                        if svc.svcpath not in data["disks"][disk_id]["services"]:
-                            data["disks"][disk_id]["services"][svc.svcpath] = {
-                                "svcname": svc.svcpath,
+                        if svc.path not in data["disks"][disk_id]["services"]:
+                            data["disks"][disk_id]["services"][svc.path] = {
+                                "svcname": svc.path,
                                 "used": used,
                                 "region": region
                             }
                         else:
                             # consume space at service level
-                            data["disks"][disk_id]["services"][svc.svcpath]["used"] += used
-                            if data["disks"][disk_id]["services"][svc.svcpath]["used"] > disk_size:
-                                data["disks"][disk_id]["services"][svc.svcpath]["used"] = disk_size
+                            data["disks"][disk_id]["services"][svc.path]["used"] += used
+                            if data["disks"][disk_id]["services"][svc.path]["used"] > disk_size:
+                                data["disks"][disk_id]["services"][svc.path]["used"] = disk_size
 
                         # consume space at disk level
                         data["disks"][disk_id]["used"] += used
@@ -2391,7 +2391,7 @@ class Node(Crypt, ExtConfigMixin):
             svcmon.svcmon(self, options)
             return
         if action == "ls":
-            data = strip_path(sorted([svc.svcpath for svc in svcs]), options.namespace)
+            data = strip_path(sorted([svc.path for svc in svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:
@@ -2434,19 +2434,19 @@ class Node(Crypt, ExtConfigMixin):
             if self.can_parallel(action, svcs, options):
                 while running() >= self.max_parallel:
                     time.sleep(1)
-                data.svcs[svc.svcpath] = svc
-                data.procs[svc.svcpath] = Process(
+                data.svcs[svc.path] = svc
+                data.procs[svc.path] = Process(
                     target=self.service_action_worker,
-                    name='worker_'+svc.svcpath,
+                    name='worker_'+svc.path,
                     args=[svc, action, options],
                 )
-                data.procs[svc.svcpath].start()
+                data.procs[svc.path].start()
             else:
                 try:
                     ret = svc.action(action, options)
                     if need_aggregate:
                         if ret is not None:
-                            data.outs[svc.svcpath] = ret
+                            data.outs[svc.path] = ret
                     elif action.startswith("print_"):
                         self.print_data(ret)
                         if isinstance(ret, dict):
@@ -2468,17 +2468,17 @@ class Node(Crypt, ExtConfigMixin):
                     ret = 1
                     err += ret
                     if not need_aggregate:
-                        print("%s: %s" % (svc.svcpath, exc), file=sys.stderr)
+                        print("%s: %s" % (svc.path, exc), file=sys.stderr)
                     continue
                 except ex.excSignal:
                     break
 
         if self.can_parallel(action, svcs, options):
-            for svcpath in data.procs:
-                data.procs[svcpath].join()
-                ret = data.procs[svcpath].exitcode
+            for path in data.procs:
+                data.procs[path].join()
+                ret = data.procs[path].exitcode
                 if ret > 0:
-                    # r is negative when data.procs[svcpath] is killed by signal.
+                    # r is negative when data.procs[path] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += ret
         if timeout:
@@ -2492,10 +2492,10 @@ class Node(Crypt, ExtConfigMixin):
 
         if need_aggregate:
             if self.options.single_service:
-                svcpath = svcs[0].svcpath
-                if svcpath not in data.outs:
+                path = svcs[0].path
+                if path not in data.outs:
                     return 1
-                self.print_data(data.outs[svcpath])
+                self.print_data(data.outs[path])
             else:
                 self.print_data(data.outs)
 
@@ -2551,7 +2551,7 @@ class Node(Crypt, ExtConfigMixin):
         cli = Cli(**data)
         return cli.run(argv=argv)
 
-    def download_from_safe(self, safe_id, svcname=None):
+    def download_from_safe(self, safe_id, path=None):
         import base64
         from rcUtilities import bdecode
         if safe_id.startswith("safe://"):
@@ -2568,9 +2568,9 @@ class Node(Crypt, ExtConfigMixin):
                 return base64.urlsafe_b64decode(data)
             except TypeError:
                 return base64.urlsafe_b64decode(data.encode())
-        path = "/safe/%s/download" % safe_id
-        api = self.collector_api(svcname=svcname)
-        request = self.collector_request(path)
+        rpath = "/safe/%s/download" % safe_id
+        api = self.collector_api(path=path)
+        request = self.collector_request(rpath)
         if api["url"].startswith("https"):
             try:
                 import ssl
@@ -2601,7 +2601,7 @@ class Node(Crypt, ExtConfigMixin):
         f.close()
         return buff
 
-    def collector_api(self, svcname=None):
+    def collector_api(self, path=None):
         """
         Prepare the authentication info, either as node or as user.
         Fetch and cache the collector's exposed rest api metadata.
@@ -2613,8 +2613,8 @@ class Node(Crypt, ExtConfigMixin):
         data = {}
         if self.options.user is None:
             username, password = self.collector_auth_node()
-            if svcname:
-                username = svcname+"@"+username
+            if path:
+                username = path+"@"+username
         else:
             username, password = self.collector_auth_user()
         data["username"] = username
@@ -2650,17 +2650,17 @@ class Node(Crypt, ExtConfigMixin):
             raise KeyboardInterrupt()
         return username, password
 
-    def collector_request(self, path, svcname=None):
+    def collector_request(self, rpath, path=None):
         """
         Make a request to the collector's rest api
         """
         import base64
-        api = self.collector_api(svcname=svcname)
+        api = self.collector_api(path=path)
         url = api["url"]
         if not url.startswith("https"):
             raise ex.excError("refuse to submit auth tokens through a "
                               "non-encrypted transport")
-        request = Request(url+path)
+        request = Request(url+rpath)
         auth_string = '%s:%s' % (api["username"], api["password"])
         if six.PY3:
             base64string = base64.encodestring(auth_string.encode()).decode()
@@ -2670,29 +2670,29 @@ class Node(Crypt, ExtConfigMixin):
         request.add_header("Authorization", "Basic %s" % base64string)
         return request
 
-    def collector_rest_get(self, path, data=None, svcname=None):
+    def collector_rest_get(self, rpath, data=None, path=None):
         """
         Make a GET request to the collector's rest api
         """
-        return self.collector_rest_request(path, data=data, svcname=svcname)
+        return self.collector_rest_request(rpath, data=data, path=path)
 
-    def collector_rest_post(self, path, data=None, svcname=None):
+    def collector_rest_post(self, rpath, data=None, path=None):
         """
         Make a POST request to the collector's rest api
         """
-        return self.collector_rest_request(path, data, svcname=svcname, get_method="POST")
+        return self.collector_rest_request(rpath, data, path=path, get_method="POST")
 
-    def collector_rest_put(self, path, data=None, svcname=None):
+    def collector_rest_put(self, rpath, data=None, path=None):
         """
         Make a PUT request to the collector's rest api
         """
-        return self.collector_rest_request(path, data, svcname=svcname, get_method="PUT")
+        return self.collector_rest_request(rpath, data, path=path, get_method="PUT")
 
-    def collector_rest_delete(self, path, data=None, svcname=None):
+    def collector_rest_delete(self, rpath, data=None, path=None):
         """
         Make a DELETE request to the collector's rest api
         """
-        return self.collector_rest_request(path, data, svcname=svcname, get_method="DELETE")
+        return self.collector_rest_request(rpath, data, path=path, get_method="DELETE")
 
     @staticmethod
     def set_ssl_context(kwargs):
@@ -2723,7 +2723,7 @@ class Node(Crypt, ExtConfigMixin):
                 ofile.write(chunk)
         ufile.close()
 
-    def collector_rest_request(self, path, data=None, svcname=None, get_method="GET"):
+    def collector_rest_request(self, rpath, data=None, path=None, get_method="GET"):
         """
         Make a request to the collector's rest api
         """
@@ -2731,10 +2731,10 @@ class Node(Crypt, ExtConfigMixin):
             if len(data) == 0 or not isinstance(data, dict):
                 data = None
             else:
-                path += "?" + urlencode(data)
+                rpath += "?" + urlencode(data)
                 data = None
 
-        request = self.collector_request(path, svcname=svcname)
+        request = self.collector_request(rpath, path=path)
         if get_method:
             request.get_method = lambda: get_method
         if data is not None:
@@ -2761,11 +2761,11 @@ class Node(Crypt, ExtConfigMixin):
         ufile.close()
         return data
 
-    def collector_rest_get_to_file(self, path, fpath):
+    def collector_rest_get_to_file(self, rpath, fpath):
         """
         Download bulk chunked data from the collector's rest api
         """
-        request = self.collector_request(path)
+        request = self.collector_request(rpath)
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
         try:
@@ -2857,7 +2857,7 @@ class Node(Crypt, ExtConfigMixin):
         svc = factory(kind)(name, namespace=namespace, cf=fpath, node=self, volatile=True)
         svc.options.format = "json"
         data = {
-            svc.svcpath: svc._print_config()
+            svc.path: svc._print_config()
         }
         return data
 
@@ -2873,13 +2873,13 @@ class Node(Crypt, ExtConfigMixin):
         return data
 
     def svc_conf_from_selector(self, selector):
-        svcpaths = self.svcs_selector(selector)
+        paths = self.svcs_selector(selector)
         data = {}
-        for _svcpath in svcpaths:
-            name, _namespace, kind = split_svcpath(_svcpath)
+        for _path in paths:
+            name, _namespace, kind = split_path(_path)
             svc = factory(kind)(name, _namespace, node=self, volatile=True)
             svc.options.format = "json"
-            data[_svcpath] = svc.print_config()
+            data[_path] = svc.print_config()
         return data
 
     def install_svc_conf_from_data(self, name, namespace, kind, data, restore=False, info=None):
@@ -2894,8 +2894,8 @@ class Node(Crypt, ExtConfigMixin):
             # freeze before the installing the config so the daemon never
             # has a chance to consider the new service unfrozen and take undue
             # action before we have the change to modify the service config
-            svcpath = fmt_svcpath(name, namespace, kind)
-            Freezer(svcpath).freeze()
+            path = fmt_path(name, namespace, kind)
+            Freezer(path).freeze()
 
         if not restore:
             try:
@@ -2912,7 +2912,7 @@ class Node(Crypt, ExtConfigMixin):
         if namespace:
             validate_ns_name(namespace)
         data = Storage()
-        data.path = fmt_svcpath(name, namespace, kind)
+        data.path = fmt_path(name, namespace, kind)
         data.pathetc = svc_pathetc(data.path, namespace)
         data.cf = os.path.join(data.pathetc, name+'.conf')
         data.id = factory(kind)(name, namespace=namespace, volatile=True, cf=data.cf, node=self).id
@@ -3002,7 +3002,7 @@ class Node(Crypt, ExtConfigMixin):
                 env[key] = newval
         return env
 
-    def install_service(self, svcpath, fpath=None, template=None,
+    def install_service(self, path, fpath=None, template=None,
                         restore=False, resources=[], kw=[], namespace=None,
                         env=None, interactive=False, provision=False):
         """
@@ -3016,8 +3016,8 @@ class Node(Crypt, ExtConfigMixin):
         data = None
         installed = []
 
-        if svcpath:
-            name, _namespace, kind = split_svcpath(svcpath)
+        if path:
+            name, _namespace, kind = split_path(path)
             if not namespace:
                 namespace = _namespace
         else:
@@ -3047,13 +3047,13 @@ class Node(Crypt, ExtConfigMixin):
         _data = {}
         if isinstance(data, dict):
             if "metadata" in data:
-                path = fmt_svcpath(data["metadata"]["name"], data["metadata"]["namespace"], data["metadata"]["kind"])
+                path = fmt_path(data["metadata"]["name"], data["metadata"]["namespace"], data["metadata"]["kind"])
                 del data["metadata"]
                 _data = {path: data}
             else:
                 for path, __data in data.items():
                     try:
-                        split_svcpath(path)
+                        split_path(path)
                     except ValueError:
                         raise ex.excError("invalid injected data format: %s is not a path" % path)
                     if "metadata" in __data:
@@ -3062,30 +3062,30 @@ class Node(Crypt, ExtConfigMixin):
         elif isinstance(data, list):
             for __data in data:
                  try:
-                     path = fmt_svcpath(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
+                     path = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
                  except (ValueError, KeyError):
                      raise ex.excError("invalid injected data format: list need a metadata section in each entry")
                  del __data["metadata"]
                  _data[path] = __data
 
         if _data:
-            if svcpath:
+            if path:
                  if len(_data) > 1:
                      raise ex.excError("multiple configs available to create a single service")
-                 # force the new svcpath
+                 # force the new path
                  for path, __data in _data.items():
                      break
                  _data = {
-                     svcpath: __data,
+                     path: __data,
                  }
             data = _data
 
         if data:
             for path in data:
                 data[path] = self.svc_conf_set(data[path], kw, env, interactive)
-        elif svcpath:
+        elif path:
             data = {
-                svcpath: self.svc_conf_set({}, kw, env, interactive)
+                path: self.svc_conf_set({}, kw, env, interactive)
             }
 
         if want_context():
@@ -3104,18 +3104,18 @@ class Node(Crypt, ExtConfigMixin):
                 raise ex.excError(error)
             return
 
-        if svcpath and not data:
+        if path and not data:
             info = self.install_service_info(name, namespace, kind)
         elif not data:
             raise ex.excError("feed service configurations to stdin and set --config=-")
         else:
-            for _svcpath, _data in data.items():
+            for _path, _data in data.items():
                 if namespace:
-                    # discard namespace in svcpath, use --namespace value instead
-                    name, _, kind = split_svcpath(_svcpath)
+                    # discard namespace in path, use --namespace value instead
+                    name, _, kind = split_path(_path)
                     _namespace = namespace
                 else:
-                    name, _namespace, kind = split_svcpath(_svcpath)
+                    name, _namespace, kind = split_path(_path)
                 info = self.install_service_info(name, namespace, kind)
                 print("create %s" % info.path)
                 self.install_svc_conf_from_data(name, _namespace, kind, _data, restore, info)
@@ -3222,7 +3222,7 @@ class Node(Crypt, ExtConfigMixin):
         sections["DEFAULT"] = defaults
         return defaults
 
-    def create_svcpath(self, paths, namespace):
+    def create_path(self, paths, namespace):
         if isinstance(paths, list):
             if len(paths) != 1:
                 raise ex.excError("only one service must be specified")
@@ -3233,29 +3233,29 @@ class Node(Crypt, ExtConfigMixin):
         except Exception:
            raise ex.excError("the service name must be ascii-encodable")
 
-        path = resolve_svcpath(path, namespace)
+        path = resolve_path(path, namespace)
         return path
 
-    def create_service(self, svcpaths, options):
+    def create_service(self, paths, options):
         """
         The "svcmgr create" entrypoint.
         """
         ret = 0
-        if svcpaths:
-            svcpath = self.create_svcpath(svcpaths, options.namespace)
+        if paths:
+            path = self.create_path(paths, options.namespace)
         else:
-            svcpath = None
+            path = None
 
         try:
-            svcpaths = self.install_service(svcpath, fpath=options.config,
-                                            template=options.template,
-                                            restore=options.restore,
-                                            resources=options.resource,
-                                            kw=options.kw,
-                                            namespace=options.namespace,
-                                            env=options.env,
-                                            interactive=options.interactive,
-                                            provision=options.provision)
+            paths = self.install_service(path, fpath=options.config,
+                                         template=options.template,
+                                         restore=options.restore,
+                                         resources=options.resource,
+                                         kw=options.kw,
+                                         namespace=options.namespace,
+                                         env=options.env,
+                                         interactive=options.interactive,
+                                         provision=options.provision)
         except Exception as exc:
             print(str(exc), file=sys.stderr)
             return 1
@@ -3265,7 +3265,7 @@ class Node(Crypt, ExtConfigMixin):
 
         # force a refresh of self.svcs
         try:
-            self.rebuild_services(svcpaths)
+            self.rebuild_services(paths)
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             ret = 1
@@ -3827,22 +3827,22 @@ class Node(Crypt, ExtConfigMixin):
     def daemon_lock_release(self):
         self._daemon_unlock(self.options.name, self.options.id)
 
-    def daemon_stats(self, svcpaths=None, node=None):
+    def daemon_stats(self, paths=None, node=None):
         if node:
             pass
         elif self.options.node:
             node = self.options.node
         else:
             node = '*'
-        data = self._daemon_stats(svcpaths=svcpaths, node=node, server=self.options.server)
+        data = self._daemon_stats(paths=paths, node=node, server=self.options.server)
         return self.print_data(data, default_fmt="flat_json")
 
-    def _daemon_stats(self, svcpaths=None, silent=False, node=None, server=None):
+    def _daemon_stats(self, paths=None, silent=False, node=None, server=None):
         data = self.daemon_get(
             {
                 "action": "daemon_stats",
                 "options": {
-                    "svcpaths": svcpaths,
+                    "paths": paths,
                 }
             },
             node=node,
@@ -3857,7 +3857,7 @@ class Node(Crypt, ExtConfigMixin):
             data = data["data"]
         return data
 
-    def daemon_status(self, svcpaths=None, server=None):
+    def daemon_status(self, paths=None, server=None):
         if server:
             pass
         elif self.options.server:
@@ -3871,7 +3871,7 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         from fmt_cluster import format_cluster
-        print(format_cluster(svcpaths=svcpaths, node=self.cluster_nodes, data=data))
+        print(format_cluster(paths=paths, node=self.cluster_nodes, data=data))
         return 0
 
     def daemon_blacklist_clear(self):
@@ -4779,12 +4779,12 @@ class Node(Crypt, ExtConfigMixin):
         for nodename, ndata in data.items():
             if not isinstance(ndata, dict):
                 continue
-            for svcpath, sdata in ndata.get("services", {}).get("status", {}).items():
+            for path, sdata in ndata.get("services", {}).get("status", {}).items():
                 poolname = sdata.get("pool")
                 try:
-                    pools[poolname].add(svcpath)
+                    pools[poolname].add(path)
                 except Exception:
-                    pools[poolname] = set([svcpath])
+                    pools[poolname] = set([path])
         return pools
 
     def pool_status_data(self):
@@ -5245,11 +5245,11 @@ class Node(Crypt, ExtConfigMixin):
             ips_node.add_column("node", color.BOLD)
             ips_node.add_column("service", color.BOLD)
             ips_node.add_column("resource", color.BOLD)
-            for ip in sorted(ndata.get("ips", []), key=lambda x: (x["ip"], x["node"], x["svcpath"], x["rid"])):
+            for ip in sorted(ndata.get("ips", []), key=lambda x: (x["ip"], x["node"], x["path"], x["rid"])):
                 ip_node = ips_node.add_node()
                 ip_node.add_column(ip["ip"])
                 ip_node.add_column(ip["node"])
-                ip_node.add_column(ip["svcpath"])
+                ip_node.add_column(ip["path"])
                 ip_node.add_column(ip["rid"])
         print(tree)
 
@@ -5257,7 +5257,7 @@ class Node(Crypt, ExtConfigMixin):
         data = []
         cdata = self._daemon_status(silent=True)["monitor"]["nodes"]
         for nodename, node in cdata.items():
-            for svcpath, sdata in node.get("services", {}).get("status", {}).items():
+            for path, sdata in node.get("services", {}).get("status", {}).items():
                 for rid, rdata in sdata.get("resources", {}).items():
                     ip = rdata.get("info", {}).get("ipaddr")
                     if not ip:
@@ -5265,7 +5265,7 @@ class Node(Crypt, ExtConfigMixin):
                     data.append({
                         "ip": ip,
                         "node": nodename,
-                        "svcpath": svcpath,
+                        "path": path,
                         "rid": rid,
                     })
         return data

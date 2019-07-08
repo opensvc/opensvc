@@ -42,7 +42,7 @@ class Prov(provisioning.Prov):
 
     def purge_known_hosts(self, ip=None):
         if ip is None:
-            cmd = ['ssh-keygen', '-R', self.r.svc.svcname]
+            cmd = ['ssh-keygen', '-R', self.r.svc.name]
         else:
             cmd = ['ssh-keygen', '-R', ip]
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
@@ -120,7 +120,7 @@ class Prov(provisioning.Prov):
     def setup_cfdisk(self):
         config = self.get_config()
         block = len(config)//512 + 1
-        cfdisk = os.path.join(rcEnv.paths.pathtmp, self.r.svc.svcname+'.cfdisk')
+        cfdisk = os.path.join(rcEnv.paths.pathtmp, self.r.svc.name+'.cfdisk')
         try:
             with open(cfdisk, 'w') as f:
                 f.write(config)

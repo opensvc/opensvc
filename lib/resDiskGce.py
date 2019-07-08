@@ -163,9 +163,9 @@ class Disk(resDisk.Disk, rcGce.GceMixin):
     def fmt_disk_devname(self, name):
         index = self.names.index(name)
         if self.svc.namespace:
-            return ".".join([self.svc.namespace.lower(), self.svc.svcname, self.rid.replace("#", "."), str(index)])
+            return ".".join([self.svc.namespace.lower(), self.svc.name, self.rid.replace("#", "."), str(index)])
         else:
-            return ".".join([self.svc.svcname, self.rid.replace("#", "."), str(index)])
+            return ".".join([self.svc.name, self.rid.replace("#", "."), str(index)])
 
     def exposed_devs(self):
         attached = self.get_attached_disks()

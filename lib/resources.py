@@ -121,14 +121,14 @@ class Resource(object):
                 key[-1] = ""
             if count == 2:
                 keys[idx] = [
-                    self.svc.svcpath,
+                    self.svc.path,
                     self.svc.node.nodename,
                     self.svc.topology,
                     self.rid
                 ] + key
             elif count == 3:
                 keys[idx] = [
-                    self.svc.svcpath,
+                    self.svc.path,
                     self.svc.node.nodename,
                     self.svc.topology
                 ] + key
@@ -140,7 +140,7 @@ class Resource(object):
         """
         label = rcEnv.nodename + "."
         if hasattr(self, "svc"):
-            label += self.svc.svcname + '.'
+            label += self.svc.name + '.'
 
         if self.rid is None:
             label += self.type

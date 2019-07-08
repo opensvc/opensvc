@@ -7,7 +7,7 @@ from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, factory, split_svcpath
+from rcUtilities import justcall, which, factory, split_path
 from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
@@ -69,7 +69,7 @@ class EmcVnxs(object):
                     print("error parsing section %s: username and password are mandatory" % s, file=sys.stderr)
                     continue
                 try:
-                    secname, namespace, _ = split_svcpath(password)
+                    secname, namespace, _ = split_path(password)
                     password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
                 except Exception as exc:
                     print("error decoding password: %s", exc, file=sys.stderr)

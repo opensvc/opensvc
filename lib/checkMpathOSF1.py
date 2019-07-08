@@ -16,7 +16,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def do_check(self):
@@ -25,6 +25,6 @@ class check(checks.check):
         for dev, data in di.h.items():
             r.append({"instance": data['wwid'],
                       "value": str(data['path_count']),
-                      "svcpath": self.find_svc(dev),
+                      "path": self.find_svc(dev),
                      })
         return r

@@ -5,7 +5,7 @@ from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, factory, split_svcpath
+from rcUtilities import justcall, factory, split_path
 from node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
@@ -44,7 +44,7 @@ class Netapps(object):
             if "server" not in kwargs or "username" not in kwargs or "key" not in kwargs:
                 continue
             try:
-                secname, namespace, _ = split_svcpath(kwargs["password"])
+                secname, namespace, _ = split_path(kwargs["password"])
                 kwargs["password"] = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
             except Exception as exc:
                 print("error decoding password: %s", exc, file=sys.stderr)

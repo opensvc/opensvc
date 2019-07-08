@@ -109,7 +109,7 @@ class check(checks.check):
                 r.append({
                           "instance": inst+'.mii_status',
                           "value": val,
-                          "svcpath": '',
+                          "path": '',
                          })
             elif line.startswith('Link Failure Count:'):
                 val = int(line.split()[-1])
@@ -123,11 +123,11 @@ class check(checks.check):
                 r.append({
                           "instance": inst+'.link_failure_per_hour',
                           "value": "%.2f"%val,
-                          "svcpath": '',
+                          "path": '',
                          })
         r.append({
                   "instance": lag+'.paths',
                   "value": str(n_slave),
-                  "svcpath": '',
+                  "path": '',
                  })
         return r

@@ -130,9 +130,9 @@ class Disk(resDisk.Disk):
 
     def devname(self):
         if self.svc.namespace:
-            return "/dev/md/"+self.svc.namespace.lower()+"."+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
+            return "/dev/md/"+self.svc.namespace.lower()+"."+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
         else:
-            return "/dev/md/"+self.svc.svcname.split(".")[0]+"."+self.rid.replace("#", ".")
+            return "/dev/md/"+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
 
     def devpath(self):
         return "/dev/disk/by-id/md-uuid-"+self.uuid

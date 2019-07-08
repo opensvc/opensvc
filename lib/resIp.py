@@ -512,10 +512,7 @@ class Ip(Res.Resource):
         self.log.info("dns updated")
 
     def dns_rec_name(self):
-        if self.svc.namespace:
-            return self.svc.svcname
-        else:
-            return "%s.%s" % (self.svc.svcname, self.svc.namespace.lower() if self.svc.namespace else "root")
+        return "%s.%s" % (self.svc.name, self.svc.namespace.lower() if self.svc.namespace else "root")
 
     def stop(self):
         """

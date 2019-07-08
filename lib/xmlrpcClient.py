@@ -2,7 +2,7 @@ from __future__ import print_function
 import socket
 import sys
 import os
-from rcUtilities import split_svcpath
+from rcUtilities import split_path
 
 socket.setdefaulttimeout(5)
 
@@ -278,13 +278,13 @@ class Collector(object):
         args += [(self.node.collector_env.uuid, rcEnv.nodename)]
         self.proxy.begin_action(*args)
 
-    def end_action(self, svcpath, action, begin, end, cron, alogfile):
+    def end_action(self, path, action, begin, end, cron, alogfile):
         err = 'ok'
         res = None
         res_err = None
         pid = None
         msg = None
-        name, namespace, kind = split_svcpath(svcpath)
+        name, namespace, kind = split_path(path)
         with open(alogfile, 'r') as ofile:
             lines = ofile.read()
         try:
@@ -352,7 +352,7 @@ class Collector(object):
                 continue
             
             last = [
-                svcpath,
+                path,
                 res_action,
                 rcEnv.nodename,
                 pid,
@@ -391,7 +391,7 @@ class Collector(object):
              'time',
              'status',
              'cron'],
-            [str(svcpath),
+            [str(path),
              str(action),
              str(rcEnv.nodename),
              ','.join(map(str, pids)),
@@ -454,7 +454,7 @@ class Collector(object):
                 'svc_config',
                 'svc_ha']
 
-        vals = [svc.svcpath,
+        vals = [svc.path,
                 svc.node.cluster_id,
                 svc.topology,
                 svc.flex_min,
@@ -487,7 +487,7 @@ class Collector(object):
 
         for container in svc.get_resources('container'):
             container_info = container.get_container_info()
-            vals += [[svc.svcpath,
+            vals += [[svc.path,
                       rcEnv.nodename,
                       container.vm_hostname,
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",

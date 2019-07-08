@@ -8,7 +8,7 @@ import glob
 import tempfile
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_svcpath, fmt_svcpath, factory
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
@@ -70,7 +70,7 @@ class Sec(DataMixin, BaseSvc):
         ca = data.get("ca")
         casec = None
         if ca is not None:
-            casecname, canamespace, _ = split_svcpath(ca)
+            casecname, canamespace, _ = split_path(ca)
             casec = factory("sec")(casecname, namespace=canamespace, log=self.log, volatile=True)
             if not casec.exists():
                 raise ex.excError("ca secret %s does not exist" % ca)

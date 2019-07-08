@@ -71,7 +71,7 @@ class check(checks.check):
     def find_svc(self, dev):
         for svc in self.svcs:
             if dev in svc.sub_devs():
-                return svc.svcpath
+                return svc.path
         return ''
 
     def do_check(self):
@@ -83,7 +83,7 @@ class check(checks.check):
             for err_type, val in _data.items():
                 r.append({"instance": dev+'.'+err_type,
                           "value": val,
-                          "svcpath": self.find_svc(dev),
+                          "path": self.find_svc(dev),
                         })
         return r
 

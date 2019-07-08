@@ -170,7 +170,7 @@ class Container(resContainer.Container):
             container_name = self.svc.namespace+".."
         else:
             container_name = ""
-        container_name += self.svc.svcname+'.'+self.rid
+        container_name += self.svc.name+'.'+self.rid
         return container_name.replace('#', '.')
 
     @lazy

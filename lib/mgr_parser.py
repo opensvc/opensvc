@@ -227,7 +227,7 @@ OPT = Storage({
              "      - ``<group>:``\n\n"
              "      - ``<rid>.<key>``\n\n"
              "      - ``<group>.<key>``\n\n"
-             "      - ``<single value jsonpath expression on the $.monitor.services.<svcname> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>``\n\n"
+             "      - ``<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>``\n\n"
              "    - ``<op>`` can be:\n\n"
              "      - ``<``  ``>``  ``<=``  ``>=``  ``=``\n\n"
              "      - ``~`` with regexp value\n\n"

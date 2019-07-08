@@ -10,7 +10,7 @@ class check(checks.check):
                 if not hasattr(resource, "mount_point"):
                     continue
                 if resource.mount_point == mountpt:
-                    return svc.svcpath
+                    return svc.path
         return ''
 
     def do_check(self):
@@ -43,6 +43,6 @@ class check(checks.check):
             r.append({
                       "instance": l[5],
                       "value": l[4],
-                      "svcpath": self.find_svc(l[5]),
+                      "path": self.find_svc(l[5]),
                      })
         return r

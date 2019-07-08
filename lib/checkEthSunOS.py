@@ -179,7 +179,7 @@ class check(checks.check):
                         r.append({
                             "instance": '%s.%s.speed' % (ifn, self.phys[phy]["device"]),
                             "value": str(self.phys[phy]["speed"]),
-                            "svcpath": '',
+                            "path": '',
                         })
             return r
         for ifn in self.ifs:
@@ -187,7 +187,7 @@ class check(checks.check):
             r.append({
                       "instance": '%s.speed'%ifn,
                       "value": str(val),
-                      "svcpath": '',
+                      "path": '',
                      })
         return r
 
@@ -204,7 +204,7 @@ class check(checks.check):
                         r.append({
                             "instance": '%s.%s.duplex' % (ifn, self.phys[phy]["device"]),
                             "value": val,
-                            "svcpath": '',
+                            "path": '',
                         })
             return r
         for ifn in self.ifs:
@@ -212,7 +212,7 @@ class check(checks.check):
             r.append({
                       "instance": '%s.duplex'%ifn,
                       "value": str(val),
-                      "svcpath": '',
+                      "path": '',
                      })
         return r
 
@@ -229,7 +229,7 @@ class check(checks.check):
                         r.append({
                             "instance": '%s.%s.link' % (ifn, self.phys[phy]["device"]),
                             "value": val,
-                            "svcpath": '',
+                            "path": '',
                         })
             return r
         for ifn in self.ifs:
@@ -237,7 +237,7 @@ class check(checks.check):
             r.append({
                       "instance": '%s.link'%ifn,
                       "value": str(val),
-                      "svcpath": '',
+                      "path": '',
                      })
         return r
 

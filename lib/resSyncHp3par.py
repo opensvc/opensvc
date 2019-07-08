@@ -47,7 +47,7 @@ class syncHp3par(resSync.Sync):
             self.array_obj = arrays.arrays[0]
         if self.array_obj is None:
             raise ex.excError("array %s is not accessible" % self.array)
-        self.array_obj.svcname = self.svc.svcname
+        self.array_obj.path = self.svc.path
 
     def get_array_obj(self, target=None, log=False):
         if target is None:
@@ -60,7 +60,7 @@ class syncHp3par(resSync.Sync):
                     self.remote_array_obj = rc.Hp3pars(objects=[target], log=self.log, node=self.svc.node).arrays[0]
                     if self.remote_array_obj is None:
                         raise ex.excError("array %s is not accessible" % array_name)
-                    self.remote_array_obj.svcname = self.svc.svcname
+                    self.remote_array_obj.path = self.svc.path
                     return self.remote_array_obj
                 except Exception as e:
                     raise ex.excError(str(e))

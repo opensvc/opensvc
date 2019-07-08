@@ -41,7 +41,7 @@ class syncHp3parSnap(resSync.Sync):
         if self.array_obj is None:
             self.log.error("no 3par array object")
             return
-        self.array_obj.svcname = self.svc.svcname
+        self.array_obj.path = self.svc.path
 
     def can_sync(self, target=None, s=None):
         data = self.showvv()

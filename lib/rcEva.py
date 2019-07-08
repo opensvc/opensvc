@@ -6,7 +6,7 @@ import sys
 import rcExceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, factory, split_svcpath
+from rcUtilities import justcall, which, factory, split_path
 from node import Node
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):
@@ -61,7 +61,7 @@ class Evas(object):
                 print("error parsing section %s: %s" % (s, exc), file=sys.stderr)
                 pass
             try:
-                secname, namespace, _ = split_svcpath(password)
+                secname, namespace, _ = split_path(password)
                 password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
             except Exception as exc:
                 print("error decoding password: %s", exc, file=sys.stderr)

@@ -224,7 +224,7 @@ class App(Resource):
         Converts the script path to a realpath.
         Invalidate the script if not found.
         If the script is specified as a basename, consider it is to be found
-        in the <pathetc>/<svcname>.d directory.
+        in the <pathetc>/<name>.d directory.
         """
         if cmd is None:
             return
@@ -590,8 +590,11 @@ class App(Resource):
             kwargs["shell"] = True
         if "env" in kwargs:
             kwargs["env"]["OPENSVC_RID"] = self.rid
-            kwargs["env"]["OPENSVC_SVCNAME"] = self.svc.svcname
-            kwargs["env"]["OPENSVC_SVC_ID"] = self.svc.id
+            kwargs["env"]["OPENSVC_NAME"] = self.svc.name
+            kwargs["env"]["OPENSVC_KIND"] = self.svc.kind
+            kwargs["env"]["OPENSVC_ID"] = self.svc.name
+            kwargs["env"]["OPENSVC_SVCNAME"] = self.svc.name # deprecated
+            kwargs["env"]["OPENSVC_SVC_ID"] = self.svc.id # deprecated
             if self.svc.namespace:
                 kwargs["env"]["OPENSVC_NAMESPACE"] = self.svc.namespace
         if self.configs_environment or self.secrets_environment:

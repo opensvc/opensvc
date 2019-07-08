@@ -15,11 +15,11 @@ class Prov(provFs.Prov):
 
     @lazy
     def raw_label(self):
-        return '{svcname}.' + self.r.rid.replace("#", ".")
+        return '{name}.' + self.r.rid.replace("#", ".")
 
     @lazy
     def label(self):
-        return self.r.svc.svcname + '.' + self.r.rid.replace("#", ".")
+        return self.r.svc.name + '.' + self.r.rid.replace("#", ".")
 
     def is_provisioned(self):
         ret = provFs.Prov.is_provisioned(self)
@@ -59,7 +59,7 @@ class Prov(provFs.Prov):
         current_label = self.current_label(mnt)
         if current_label is not None:
             label = current_label
-            raw_label = current_label.replace(self.r.svc.svcname, "{svcname}")
+            raw_label = current_label.replace(self.r.svc.name, "{name}")
         else:
             label = self.label
             raw_label = self.raw_label

@@ -5,7 +5,7 @@ import tempfile
 from subprocess import *
 
 import rcExceptions as ex
-from rcUtilities import which, factory, split_svcpath
+from rcUtilities import which, factory, split_path
 from rcGlobalEnv import rcEnv
 from node import Node
 
@@ -48,7 +48,7 @@ class Centeras(object):
                 print("error parsing section", s, file=sys.stderr)
 
             try:
-                secname, namespace, _ = split_svcpath(password)
+                secname, namespace, _ = split_path(password)
                 password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
             except Exception as exc:
                 print("error decoding password: %s", exc, file=sys.stderr)

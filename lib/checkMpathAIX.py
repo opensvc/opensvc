@@ -14,7 +14,7 @@ class check(checks.check):
                     devs = []
                 self.svcdevs[svc] = devs
             if dev in self.svcdevs[svc]:
-                return svc.svcpath
+                return svc.path
         return ''
 
     def odmget(self, lname, attr):
@@ -60,7 +60,7 @@ class check(checks.check):
             elif dev is not None and wwid is not None and dev != l[1]:
                 r.append({"instance": wwid,
                           "value": str(n),
-                          "svcpath": self.find_svc(dev),
+                          "path": self.find_svc(dev),
                          })
                 dev = l[1]
                 typ = l[2]
@@ -71,6 +71,6 @@ class check(checks.check):
         if dev is not None and wwid is not None:
             r.append({"instance": wwid,
                       "value": str(n),
-                      "svcpath": self.find_svc(dev),
+                      "path": self.find_svc(dev),
                      })
         return r

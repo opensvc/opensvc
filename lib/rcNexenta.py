@@ -7,7 +7,7 @@ import rcExceptions as ex
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv
-from rcUtilities import factory, split_svcpath
+from rcUtilities import factory, split_path
 from node import Node
 
 class logger(object):
@@ -60,7 +60,7 @@ class Nexenta(object):
             raise ex.excError("no password information for head %s"%self.head)
         self.port = self.node.oget(s, "port")
         try:
-            secname, namespace, _ = split_svcpath(self.password)
+            secname, namespace, _ = split_path(self.password)
             self.password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
         except Exception as exc:
             raise ex.excError("error decoding password: %s" % exc)

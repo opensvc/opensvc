@@ -27,7 +27,7 @@ DAEMON = None
 
 # disable orchestration if a peer announces a different compat version than
 # ours
-COMPAT_VERSION = 9
+COMPAT_VERSION = 10
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
@@ -399,11 +399,11 @@ class OsvcThread(threading.Thread, Crypt):
             self.stop()
 
     @staticmethod
-    def get_service(svcpath):
+    def get_service(path):
         with SERVICES_LOCK:
-            if svcpath not in SERVICES:
+            if path not in SERVICES:
                 return
-        return SERVICES[svcpath]
+        return SERVICES[path]
 
     @staticmethod
     def on_labels_change():
@@ -478,11 +478,11 @@ class OsvcThread(threading.Thread, Crypt):
         if changed:
             wake_monitor(reason="node mon change")
 
-    def set_smon(self, svcpath, status=None, local_expect=None,
+    def set_smon(self, path, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
                  stonith=None):
         global SMON_DATA
-        instance = self.get_service_instance(svcpath, rcEnv.nodename)
+        instance = self.get_service_instance(path, rcEnv.nodename)
         if instance and not instance.get("resources", {}) and \
            not status and \
            (
@@ -501,81 +501,81 @@ class OsvcThread(threading.Thread, Crypt):
             # skip slavers, wrappers, scalers
             return
         with SMON_DATA_LOCK:
-            if svcpath not in SMON_DATA:
-                SMON_DATA[svcpath] = Storage({
+            if path not in SMON_DATA:
+                SMON_DATA[path] = Storage({
                     "status": "idle",
                     "status_updated": time.time(),
                     "global_expect_updated": time.time(),
                 })
             if status:
                 reset_placement = False
-                if status != SMON_DATA[svcpath].status:
+                if status != SMON_DATA[path].status:
                     self.log.info(
                         "service %s monitor status change: %s => %s",
-                        svcpath,
-                        SMON_DATA[svcpath].status if
-                        SMON_DATA[svcpath].status else "none",
+                        path,
+                        SMON_DATA[path].status if
+                        SMON_DATA[path].status else "none",
                         status
                     )
-                    if SMON_DATA[svcpath].status is not None and \
-                       "failed" in SMON_DATA[svcpath].status and \
+                    if SMON_DATA[path].status is not None and \
+                       "failed" in SMON_DATA[path].status and \
                        (status is None or "failed" not in status):
                         # the placement might become "leader" after transition
                         # from "failed" to "not-failed". recompute asap so the
                         # orchestrator won't take an undue "stop_instance"
                         # decision.
                         reset_placement = True
-                SMON_DATA[svcpath].status = status
-                SMON_DATA[svcpath].status_updated = time.time()
+                SMON_DATA[path].status = status
+                SMON_DATA[path].status_updated = time.time()
                 if reset_placement:
-                    SMON_DATA[svcpath].placement = \
-                        self.get_service_placement(svcpath)
+                    SMON_DATA[path].placement = \
+                        self.get_service_placement(path)
 
             if local_expect:
                 if local_expect == "unset":
                     local_expect = None
-                if local_expect != SMON_DATA[svcpath].local_expect:
+                if local_expect != SMON_DATA[path].local_expect:
                     self.log.info(
                         "service %s monitor local expect change: %s => %s",
-                        svcpath,
-                        SMON_DATA[svcpath].local_expect if
-                        SMON_DATA[svcpath].local_expect else "none",
+                        path,
+                        SMON_DATA[path].local_expect if
+                        SMON_DATA[path].local_expect else "none",
                         local_expect
                     )
-                SMON_DATA[svcpath].local_expect = local_expect
+                SMON_DATA[path].local_expect = local_expect
 
             if global_expect:
                 if global_expect == "unset":
                     global_expect = None
-                if global_expect != SMON_DATA[svcpath].global_expect:
+                if global_expect != SMON_DATA[path].global_expect:
                     self.log.info(
                         "service %s monitor global expect change: %s => %s",
-                        svcpath,
-                        SMON_DATA[svcpath].global_expect if
-                        SMON_DATA[svcpath].global_expect else "none",
+                        path,
+                        SMON_DATA[path].global_expect if
+                        SMON_DATA[path].global_expect else "none",
                         global_expect
                     )
-                SMON_DATA[svcpath].global_expect = global_expect
-                SMON_DATA[svcpath].global_expect_updated = time.time()
+                SMON_DATA[path].global_expect = global_expect
+                SMON_DATA[path].global_expect_updated = time.time()
 
-            if reset_retries and "restart" in SMON_DATA[svcpath]:
+            if reset_retries and "restart" in SMON_DATA[path]:
                 self.log.info("service %s monitor resources restart count "
-                              "reset", svcpath)
-                del SMON_DATA[svcpath]["restart"]
+                              "reset", path)
+                del SMON_DATA[path]["restart"]
 
             if stonith:
                 if stonith == "unset":
                     stonith = None
-                if stonith != SMON_DATA[svcpath].stonith:
+                if stonith != SMON_DATA[path].stonith:
                     self.log.info(
                         "service %s monitor stonith change: %s => %s",
-                        svcpath,
-                        SMON_DATA[svcpath].stonith if
-                        SMON_DATA[svcpath].stonith else "none",
+                        path,
+                        SMON_DATA[path].stonith if
+                        SMON_DATA[path].stonith else "none",
                         stonith
                     )
-                SMON_DATA[svcpath].stonith = stonith
-        wake_monitor(reason="service %s mon change" % svcpath)
+                SMON_DATA[path].stonith = stonith
+        wake_monitor(reason="service %s mon change" % path)
 
     def get_node_monitor(self, nodename=None):
         """
@@ -591,22 +591,22 @@ class OsvcThread(threading.Thread, Crypt):
                 data = Storage(CLUSTER_DATA[nodename].get("monitor", {}))
         return data
 
-    def get_service_monitor(self, svcpath):
+    def get_service_monitor(self, path):
         """
         Return the Monitor data of a service.
         """
         with SMON_DATA_LOCK:
-            if svcpath not in SMON_DATA:
-                self.set_smon(svcpath, "idle")
-            data = Storage(SMON_DATA[svcpath])
-            data["placement"] = self.get_service_placement(svcpath)
+            if path not in SMON_DATA:
+                self.set_smon(path, "idle")
+            data = Storage(SMON_DATA[path])
+            data["placement"] = self.get_service_placement(path)
             return data
 
-    def get_service_placement(self, svcpath):
+    def get_service_placement(self, path):
         with SERVICES_LOCK:
-            if svcpath not in SERVICES:
+            if path not in SERVICES:
                 return ""
-            svc = SERVICES[svcpath]
+            svc = SERVICES[path]
             if self.placement_leader(svc, silent=True):
                 return "leader"
         return ""
@@ -642,7 +642,7 @@ class OsvcThread(threading.Thread, Crypt):
                      close_fds=True, env=env)
         return proc
 
-    def service_command(self, svcpath, cmd, stdin=None, local=True):
+    def service_command(self, path, cmd, stdin=None, local=True):
         """
         A generic svcmgr command Popen wrapper.
         """
@@ -650,8 +650,8 @@ class OsvcThread(threading.Thread, Crypt):
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         _cmd = [] + rcEnv.python_cmd
         _cmd += [os.path.join(rcEnv.paths.pathlib, "svcmgr.py")]
-        if svcpath:
-            cmd = ["-s", svcpath] + cmd
+        if path:
+            cmd = ["-s", path] + cmd
         if local:
             cmd += ["--local"]
         self.log.info("execute: svcmgr %s", " ".join(cmd))
@@ -820,20 +820,20 @@ class OsvcThread(threading.Thread, Crypt):
         return True
 
     @staticmethod
-    def get_service_instance(svcpath, nodename):
+    def get_service_instance(path, nodename):
         """
         Return the specified service status structure on the specified node.
         """
         try:
             with CLUSTER_DATA_LOCK:
                 return Storage(
-                    CLUSTER_DATA[nodename]["services"]["status"][svcpath]
+                    CLUSTER_DATA[nodename]["services"]["status"][path]
                 )
         except (TypeError, KeyError):
             return
 
     @staticmethod
-    def get_service_instances(svcpath, discard_empty=False):
+    def get_service_instances(path, discard_empty=False):
         """
         Return the specified service status structures on all nodes.
         """
@@ -841,27 +841,27 @@ class OsvcThread(threading.Thread, Crypt):
         with CLUSTER_DATA_LOCK:
             for nodename in CLUSTER_DATA:
                 try:
-                    if svcpath in CLUSTER_DATA[nodename]["services"]["status"]:
+                    if path in CLUSTER_DATA[nodename]["services"]["status"]:
                         try:
-                            CLUSTER_DATA[nodename]["services"]["status"][svcpath]["updated"]
+                            CLUSTER_DATA[nodename]["services"]["status"][path]["updated"]
                         except (TypeError, KeyError):
                             # foreign
                             continue
-                        if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][svcpath]:
+                        if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][path]:
                             continue
-                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][svcpath]
+                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][path]
                 except (TypeError, KeyError):
                     continue
         return instances
 
     @staticmethod
-    def get_service_agg(svcpath):
+    def get_service_agg(path):
         """
         Return the specified service aggregated status structure.
         """
         try:
             with AGG_LOCK:
-                return AGG[svcpath]
+                return AGG[path]
         except KeyError:
             return
 
@@ -904,7 +904,7 @@ class OsvcThread(threading.Thread, Crypt):
                 if discard_frozen and data.get("frozen"):
                     # node frozen
                     continue
-                instance = self.get_service_instance(svc.svcpath, nodename)
+                instance = self.get_service_instance(svc.path, nodename)
                 if instance is None:
                     continue
                 if discard_start_failed and \
@@ -971,22 +971,22 @@ class OsvcThread(threading.Thread, Crypt):
             if not silent:
                 self.duplog("info",
                             "placement constraints prevent us from starting "
-                            "service %(svcpath)s on any node",
-                            svcpath=svc.svcpath)
+                            "service %(path)s on any node",
+                            path=svc.path)
             return False
         if rcEnv.nodename not in candidates:
             if not silent:
                 self.duplog("info",
                             "placement constraints prevent us from starting "
-                            "service %(svcpath)s on this node",
-                            svcpath=svc.svcpath)
+                            "service %(path)s on this node",
+                            path=svc.path)
             return False
         if len(candidates) == 1:
             if not silent:
                 self.duplog("info",
                             "we have the greatest placement priority for "
-                            "service %(svcpath)s (alone)",
-                            svcpath=svc.svcpath)
+                            "service %(path)s (alone)",
+                            path=svc.path)
             return True
 
         ranks = self.placement_ranks(svc, candidates=candidates)
@@ -998,26 +998,26 @@ class OsvcThread(threading.Thread, Crypt):
                     self.duplog("info",
                                 "we have the highest '%(placement)s' "
                                 "placement priority for failover service "
-                                "%(svcpath)s",
-                                placement=svc.placement, svcpath=svc.svcpath)
+                                "%(path)s",
+                                placement=svc.placement, path=svc.path)
                 return True
             else:
                 if not silent:
                     self.duplog("info",
                                 "node %(nodename)s is alive and has a higher "
                                 "'%(placement)s' placement priority for "
-                                "failover service %(svcpath)s",
+                                "failover service %(path)s",
                                 nodename=ranks[0], placement=svc.placement,
-                                svcpath=svc.svcpath)
+                                path=svc.path)
                 return False
         elif svc.topology == "flex":
             index = ranks.index(rcEnv.nodename) + 1
             if not silent:
                 self.duplog("info",
                             "we have the %(idx)d/%(tgt)d '%(placement)s' "
-                            "placement priority for flex service %(svcpath)s",
+                            "placement priority for flex service %(path)s",
                             idx=index, tgt=svc.flex_target,
-                            placement=svc.placement, svcpath=svc.svcpath)
+                            placement=svc.placement, path=svc.path)
             if index <= svc.flex_target:
                 return True
             else:
@@ -1031,7 +1031,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def placement_ranks_spread(self, svc, candidates, silent=False):
         """
-        hash together each candidate nodename+svcpath, and sort the resulting
+        hash together each candidate nodename+path, and sort the resulting
         list.
         """
         def fn(s):
@@ -1039,7 +1039,7 @@ class OsvcThread(threading.Thread, Crypt):
             h.update(s.encode())
             return h.digest()
         return [nodename for nodename in
-                sorted(candidates, key=lambda x: fn(svc.svcpath+x))]
+                sorted(candidates, key=lambda x: fn(svc.path+x))]
 
     def placement_ranks_score(self, svc, candidates, silent=False):
         data = []
@@ -1178,7 +1178,7 @@ class OsvcThread(threading.Thread, Crypt):
     def event(self, eid, data=None, log_data=None, level="info"):
         """
         Put an "event"-kind event in the events queue, then log in node.log
-        and in the service.log if a svcpath is provided in <data>. If a
+        and in the service.log if a path is provided in <data>. If a
         <log_data> is passed, merge it in <data> before formatting the messages
         to log.
         """
@@ -1190,22 +1190,22 @@ class OsvcThread(threading.Thread, Crypt):
         if not isinstance(data, dict):
             data = {}
         data["id"] = eid
-        svcpath = data.get("svcpath")
+        path = data.get("path")
         data["monitor"] = Storage(self.get_node_monitor())
-        if svcpath:
+        if path:
             try:
-                data["service"] = Storage(self.get_service_agg(svcpath))
+                data["service"] = Storage(self.get_service_agg(path))
             except TypeError:
                 data["service"] = Storage()
             try:
                 data["instance"] = Storage(
-                    self.get_service_instance(svcpath, rcEnv.nodename)
+                    self.get_service_instance(path, rcEnv.nodename)
                 )
             except TypeError:
                 data["instance"] = Storage()
             try:
                 data["instance"]["monitor"] = Storage(
-                    self.get_service_monitor(svcpath)
+                    self.get_service_monitor(path)
                 )
             except TypeError:
                 data["instance"]["monitor"] = Storage()
@@ -1253,15 +1253,15 @@ class OsvcThread(threading.Thread, Crypt):
         if isinstance(log_data, dict):
             fmt_data.update(log_data)
 
-        svcpath = fmt_data.get("svcpath")
-        if svcpath:
-            # log to node.log with a "service <svcpath> " prefix
-            node_fmt = "service {svcpath} "+fmt
+        path = fmt_data.get("path")
+        if path:
+            # log to node.log with a "service <path> " prefix
+            node_fmt = "service {path} "+fmt
             getattr(self.log, level)(node_fmt.format(**fmt_data))
 
-            # log to <svcname.log>
+            # log to <name>.log
             with SERVICES_LOCK:
-                svc = SERVICES.get(svcpath)
+                svc = SERVICES.get(path)
                 if svc:
                     getattr(svc.log, level)(fmt.format(**fmt_data))
         else:
@@ -1334,11 +1334,11 @@ class OsvcThread(threading.Thread, Crypt):
                 extraneous.append(_kw)
         if changes:
             for k in changes:
-                self.log.info("set %s: %s", svc.svcpath, k)
+                self.log.info("set %s: %s", svc.path, k)
             svc.set_multi(changes, validation=False)
         if extraneous:
             for k in extraneous:
-                self.log.info("unset %s: %s (undue)", svc.svcpath, k)
+                self.log.info("unset %s: %s (undue)", svc.path, k)
             svc.unset_multi(extraneous)
         return svc
 

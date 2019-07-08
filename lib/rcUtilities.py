@@ -1125,10 +1125,10 @@ def is_service(f, namespace=None, data=None):
     f = re.sub(".conf$", "", f)
     f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
     try:
-        name, namespace, kind = split_svcpath(f)
+        name, namespace, kind = split_path(f)
     except ValueError:
         return
-    path = fmt_svcpath(name, namespace, kind)
+    path = fmt_path(name, namespace, kind)
     try:
         data["services"][path]
         return path
@@ -1147,10 +1147,10 @@ def list_services(namespace=None):
             s = name[:-5]
             if len(s) == 0:
                 continue
-            svcpath = is_service(name)
-            if svcpath is None:
+            path = is_service(name)
+            if path is None:
                 continue
-            l.append(svcpath)
+            l.append(path)
     n = len(os.path.join(rcEnv.paths.pathetcns, ""))
     for path in glob_ns_config(namespace):
         path = path[n:-5]
@@ -1177,7 +1177,7 @@ def glob_ns_config(namespace=None):
 def glob_services_config():
     return chain(glob_root_config(), glob_ns_config())
 
-def split_svcpath(path):
+def split_path(path):
     path = path.strip("/")
     if path in ("node", "auth"):
         raise ValueError
@@ -1204,7 +1204,7 @@ def split_svcpath(path):
     return name, namespace, kind
 
 def svc_pathcf(path, namespace=None):
-    name, _namespace, kind = split_svcpath(path)
+    name, _namespace, kind = split_path(path)
     if namespace:
         return os.path.join(rcEnv.paths.pathetcns, namespace, kind, name+".conf")
     elif _namespace:
@@ -1218,7 +1218,7 @@ def svc_pathetc(path, namespace=None):
     return os.path.dirname(svc_pathcf(path, namespace=namespace))
 
 def svc_pathtmp(path):
-    name, namespace, kind = split_svcpath(path)
+    name, namespace, kind = split_path(path)
     if namespace:
         return os.path.join(rcEnv.paths.pathtmp, "namespaces", namespace, kind)
     elif kind in ("svc", "ccfg"):
@@ -1227,7 +1227,7 @@ def svc_pathtmp(path):
         return os.path.join(rcEnv.paths.pathtmp, kind)
 
 def svc_pathlog(path):
-    name, namespace, kind = split_svcpath(path)
+    name, namespace, kind = split_path(path)
     if namespace:
         return os.path.join(rcEnv.paths.pathlog, "namespaces", namespace, kind)
     elif kind in ("svc", "ccfg"):
@@ -1236,7 +1236,7 @@ def svc_pathlog(path):
         return os.path.join(rcEnv.paths.pathlog, kind)
 
 def svc_pathvar(path, relpath=""):
-    name, namespace, kind = split_svcpath(path)
+    name, namespace, kind = split_path(path)
     if namespace:
         l = [rcEnv.paths.pathvar, "namespaces", namespace, kind, name]
     else:
@@ -1245,7 +1245,7 @@ def svc_pathvar(path, relpath=""):
         l.append(relpath)
     return os.path.join(*l)
 
-def fmt_svcpath(name, namespace, kind):
+def fmt_path(name, namespace, kind):
     if namespace:
         return "/".join((namespace.strip("/"), kind, name))
     elif kind not in ("svc", "ccfg"):
@@ -1275,26 +1275,26 @@ def strip_path(paths, namespace):
         return re.sub("^svc/", "", path) # strip default kind
 
 def normalize_path(path):
-    name, namespace, kind = split_svcpath(path)
+    name, namespace, kind = split_path(path)
     if namespace is None:
         namespace = "root"
-    return fmt_svcpath(name, namespace, kind)
+    return fmt_path(name, namespace, kind)
 
 def normalize_paths(paths):
     for path in paths:
         yield normalize_path(path)
 
-def resolve_svcpath(path, namespace=None):
+def resolve_path(path, namespace=None):
     """
     Return the path, parented in <namespace> if specified and if not found
     in <path>.
     """
-    name, _namespace, kind = split_svcpath(path)
+    name, _namespace, kind = split_path(path)
     if namespace and not _namespace:
         _namespace = namespace
     if _namespace is "root":
         _namespace = None
-    return fmt_svcpath(name, _namespace, kind)
+    return fmt_path(name, _namespace, kind)
 
 def makedirs(path, mode=0o755):
     """

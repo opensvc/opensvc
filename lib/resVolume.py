@@ -6,7 +6,7 @@ import os
 import resources as Res
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, factory, fmt_svcpath, split_svcpath, makedirs
+from rcUtilities import lazy, factory, fmt_path, split_path, makedirs
 
 class Volume(Res.Resource):
     """
@@ -47,11 +47,11 @@ class Volume(Res.Resource):
         if self.name:
             return self.name
         else:
-            return "%s-vol-%s" % (self.svc.svcname, self.rid.split("#")[-1])
+            return "%s-vol-%s" % (self.svc.name, self.rid.split("#")[-1])
 
     @lazy
     def volsvc(self):
-        return factory("vol")(svcname=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        return factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
 
     @lazy
     def mount_point(self):
@@ -110,7 +110,7 @@ class Volume(Res.Resource):
             return rcStatus.DOWN
         status = rcStatus.Status(self.volsvc.print_status_data()["avail"])
         if not self.flag_installed():
-            self.status_log("%s is %s" % (self.volsvc.svcpath, status), "info")
+            self.status_log("%s is %s" % (self.volsvc.path, status), "info")
             return rcStatus.DOWN
         return status
 
@@ -156,7 +156,7 @@ class Volume(Res.Resource):
                 # self.mount_point changed to None since tested, so has no rstrip()
                 continue
             data.append({
-                "obj": fmt_svcpath(datapath, namespace=self.svc.namespace, kind=kind),
+                "obj": fmt_path(datapath, namespace=self.svc.namespace, kind=kind),
                 "key": key,
                 "path": path,
             })
@@ -164,7 +164,7 @@ class Volume(Res.Resource):
 
     def _install_data(self, kind):
         for data in self.data_data(kind):
-            name, _, kind = split_svcpath(data["obj"])
+            name, _, kind = split_path(data["obj"])
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
             for key in obj.resolve_key(data["key"]):
                 obj._install(key, data["path"])

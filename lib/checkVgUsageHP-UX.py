@@ -10,7 +10,7 @@ class check(checks.check):
                 if not hasattr(resource, "name"):
                     continue
                 if resource.name == vgname:
-                    return svc.svcpath
+                    return svc.path
         return ''
 
     def do_check(self):
@@ -45,7 +45,7 @@ vg_name=/dev/vg00:vg_write_access=read,write:vg_status=available:max_lv=255:cur_
             val = int(100*(size-free)/size)
             r.append({"instance": instance,
                       "value": str(val),
-                      "svcpath": self.find_svc(instance),
+                      "path": self.find_svc(instance),
                      }
                     )
         return r

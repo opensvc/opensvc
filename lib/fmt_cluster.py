@@ -7,7 +7,7 @@ from converters import print_duration, print_size
 from rcColor import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from rcStatus import Status, colorize_status
-from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_svcpath, strip_path, format_path_selector
+from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector
 from storage import Storage
 
 DEFAULT_SECTIONS = [
@@ -250,7 +250,7 @@ def print_section(data):
         return ""
     return list_print(data)
 
-def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
+def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                    stats_data=None, sections=None, selector=None, namespace=None):
     if not data or data.get("status", 0) != 0:
         return
@@ -284,17 +284,17 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             line.append(colorize(nodename, color.BOLD))
         out.append(line)
 
-    def load_svc(svcpath, prefix=""):
-        if svcpath not in services:
+    def load_svc(path, prefix=""):
+        if path not in services:
             return
-        data = services[svcpath]
-        if svcpath in slave_parents and prefix == "":
+        data = services[path]
+        if path in slave_parents and prefix == "":
             return
         try:
-            topology = services[svcpath].topology
+            topology = services[path].topology
         except KeyError:
             topology = ""
-        if services[svcpath].get("drp", False):
+        if services[path].get("drp", False):
             topology = "drp " + topology
 
         # status
@@ -324,18 +324,18 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             info["status"] = ""
         info = "%(orchestrate)-5s %(status)-5s" % info
         line = [
-            " "+colorize(prefix+strip_path(svcpath, os.environ.get("OSVC_NAMESPACE")), color.BOLD),
+            " "+colorize(prefix+strip_path(path, os.environ.get("OSVC_NAMESPACE")), color.BOLD),
             status,
             info,
-            fmt_svc_uptime(svcpath, stats_data),
-            fmt_svc_tasks(svcpath, prev_stats_data),
-            fmt_svc_cpu_usage(svcpath, prev_stats_data, stats_data),
-            fmt_svc_cpu_time(svcpath, stats_data),
-            fmt_svc_mem_total(svcpath, stats_data),
-            fmt_svc_blk_rb(svcpath, stats_data),
-            fmt_svc_blk_wb(svcpath, stats_data),
-            fmt_svc_blk_rbps(svcpath, prev_stats_data, stats_data),
-            fmt_svc_blk_wbps(svcpath, prev_stats_data, stats_data),
+            fmt_svc_uptime(path, stats_data),
+            fmt_svc_tasks(path, prev_stats_data),
+            fmt_svc_cpu_usage(path, prev_stats_data, stats_data),
+            fmt_svc_cpu_time(path, stats_data),
+            fmt_svc_mem_total(path, stats_data),
+            fmt_svc_blk_rb(path, stats_data),
+            fmt_svc_blk_wb(path, stats_data),
+            fmt_svc_blk_rbps(path, prev_stats_data, stats_data),
+            fmt_svc_blk_wbps(path, prev_stats_data, stats_data),
             "|" if show_nodenames else "",
         ]
         for nodename in show_nodenames:
@@ -868,13 +868,13 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                 node_svc_status = data["monitor"]["nodes"][_node]["services"]["status"]
             except KeyError:
                 continue
-            for svcpath, _data in node_svc_status.items():
+            for path, _data in node_svc_status.items():
                 if _data is None:
                     continue
-                if svcpaths is not None and svcpath not in svcpaths:
+                if paths is not None and path not in paths:
                     continue
-                if svcpath not in services:
-                    services[svcpath] = Storage({
+                if path not in services:
+                    services[path] = Storage({
                         "drp": _data.get("drp", False),
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate", "-"),
@@ -888,35 +888,35 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                         "resources": set(),
                     })
                 try:
-                    services[svcpath]["resources"] |= set(_data["resources"].keys())
+                    services[path]["resources"] |= set(_data["resources"].keys())
                 except KeyError:
                     pass
                 slaves = _data.get("slaves", [])
                 scale = _data.get("scale")
                 if scale:
-                    svcname, _namespace, kind = split_svcpath(svcpath)
+                    name, _namespace, kind = split_path(path)
                     if _namespace:
-                        pattern = "^%s/%s/[0-9]+\.%s$" % (_namespace, kind, svcname)
+                        pattern = "^%s/%s/[0-9]+\.%s$" % (_namespace, kind, name)
                     else:
-                        pattern = "^[0-9]+\.%s$" % svcname
+                        pattern = "^[0-9]+\.%s$" % name
                     for child in data["monitor"]["services"]:
                         if re.match(pattern, child) is None:
                             continue
                         slaves.append(child)
                         if node_svc_status.get(child, {}).get("avail") == "up":
-                            services[svcpath].n_up += 1
+                            services[path].n_up += 1
                 else:
-                    if node_svc_status.get(svcpath, {}).get("avail") == "up":
-                        services[svcpath].n_up += 1
+                    if node_svc_status.get(path, {}).get("avail") == "up":
+                        services[path].n_up += 1
                 for child in slaves:
                     if child not in slave_parents:
-                        slave_parents[child] = set([svcpath])
+                        slave_parents[child] = set([path])
                     else:
-                        slave_parents[child] |= set([svcpath])
+                        slave_parents[child] |= set([path])
                 global_expect = _data["monitor"].get("global_expect")
                 if global_expect and "@" in global_expect:
                     global_expect = global_expect[:global_expect.index("@")+1]
-                services[svcpath].nodes[_node] = {
+                services[path].nodes[_node] = {
                     "avail": _data.get("avail", "undef"),
                     "overall": _data.get("overall", "undef"),
                     "frozen": _data.get("frozen", False),
@@ -925,34 +925,34 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                 }
-                services[svcpath].slaves |= set(slaves)
-                services[svcpath]["wrapper"] = (
-                    services[svcpath].resources == set() and
-                    services[svcpath].slaves != set() and
+                services[path].slaves |= set(slaves)
+                services[path]["wrapper"] = (
+                    services[path].resources == set() and
+                    services[path].slaves != set() and
                     scale is None
                 )
             try:
                 # hint we have missing instances
-                for svcpath, cnf in data["monitor"]["nodes"][_node]["services"]["config"].items():
-                    if svcpath not in services:
+                for path, cnf in data["monitor"]["nodes"][_node]["services"]["config"].items():
+                    if path not in services:
                         continue
                     for __node in cnf.get("scope", []):
-                        if __node not in services[svcpath].nodes:
-                            services[svcpath].nodes[__node] = None
+                        if __node not in services[path].nodes:
+                            services[path].nodes[__node] = None
             except KeyError:
                 pass
-        for svcpath, _data in data["monitor"]["services"].items():
-            if svcpaths is not None and svcpath not in svcpaths:
+        for path, _data in data["monitor"]["services"].items():
+            if paths is not None and path not in paths:
                 continue
-            if svcpath not in services:
-                services[svcpath] = Storage({
+            if path not in services:
+                services[path] = Storage({
                     "avail": "undef",
                     "overall": "",
                     "nodes": {}
                 })
-            services[svcpath].avail = _data.get("avail", "n/a")
-            services[svcpath].overall = _data.get("overall", "n/a")
-            services[svcpath].placement = _data.get("placement", "n/a")
+            services[path].avail = _data.get("avail", "n/a")
+            services[path].overall = _data.get("overall", "n/a")
+            services[path].placement = _data.get("placement", "n/a")
 
     def load_services(selector, namespace=None):
         if "services" not in sections:
@@ -977,8 +977,8 @@ def format_cluster(svcpaths=None, node=None, data=None, prev_stats_data=None,
             "blkwbps" if stats_data else "",
             "",
         ])
-        for svcpath in sorted(list(services.keys())):
-            load_svc(svcpath)
+        for path in sorted(list(services.keys())):
+            load_svc(path)
 
     # load data in lists
     load_threads()

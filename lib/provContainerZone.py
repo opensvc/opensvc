@@ -41,7 +41,7 @@ class Prov(provisioning.Prov):
           protocol_ipv6=no
           default_route=172.30.5.1}
         """
-        cf = os.path.join(rcEnv.paths.pathetc, self.r.svc.svcname+'.conf')
+        cf = os.path.join(rcEnv.paths.pathetc, self.r.svc.name+'.conf')
         s = ""
 
         for r in self.r.svc.get_resources(["ip"]):

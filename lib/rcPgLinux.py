@@ -232,11 +232,11 @@ def get_namespace(o):
         buff = o.svc.namespace
     return buff
 
-def get_svcname(o):
-    if hasattr(o, "svcname"):
-        buff = o.svcname
+def get_name(o):
+    if hasattr(o, "path"):
+        buff = o.name
     else:
-        buff = o.svc.svcname
+        buff = o.svc.name
     return buff
 
 def get_log(o):
@@ -249,12 +249,12 @@ def get_log(o):
     return log
 
 def get_cgroup_svc_relpath(o, suffix=".slice"):
-    svcname = get_svcname(o)
+    name = get_name(o)
     namespace = get_namespace(o)
     elements = ["opensvc" + suffix]
     if namespace:
         elements.append(namespace + suffix)
-    elements.append(svcname + suffix)
+    elements.append(name + suffix)
     return os.path.join(*elements)
 
 def get_cgroup_relpath(o, suffix=".slice"):
@@ -367,7 +367,7 @@ def kill(o):
     cmd = ["kill"] + list(pids)
     _o.vcall(cmd)
 
-    if hasattr(o, "svcname"):
+    if hasattr(o, "path"):
         # lxc containers are not parented to the service cgroup
         # so we have to kill them individually
         for r in o.get_resources("container.lxc"):
@@ -379,7 +379,7 @@ def freezer(o, a):
         return
     cgp = get_cgroup_path(o, "freezer")
     _freezer(o, a, cgp)
-    if hasattr(o, "svcname"):
+    if hasattr(o, "path"):
         # lxc containers are not parented to the service cgroup
         # so we have to freeze them individually
         for r in o.get_resources("container.lxc"):
@@ -437,7 +437,7 @@ def frozen(res):
             state = None
         if state in ("FROZEN", "FREEZING"):
             try:
-                name = o.svcname
+                name = o.name
             except:
                 name = o.rid
             res.status_log("process group %s is %s" % (name, state))

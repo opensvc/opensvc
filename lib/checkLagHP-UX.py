@@ -55,7 +55,7 @@ class check(checks.check):
             r.append({
                   "instance": inst,
                   "value": val,
-                  "svcpath": '',
+                  "path": '',
                  })
 
         return r

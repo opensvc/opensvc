@@ -96,8 +96,8 @@ class ContainerLib(object):
     def get_container_id_by_name(self, resource, refresh=False):
         """
         Return the container id for the <resource> container resource.
-        Lookup in docker ps by docker name <svcname>.container.<n> where
-        <n> is the identifier part of the resource id.
+        Lookup in docker ps by docker name <namepace>..<name>.container.<n>
+        where <n> is the identifier part of the resource id.
         """
         if refresh:
             unset_lazy(self, "container_ps")
@@ -227,12 +227,12 @@ class ContainerLib(object):
 
     def login_as_service_args(self):
         uuid = self.svc.node.conf_get("node", "uuid")
-        args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
+        args = ["-u", self.svc.path+"@"+rcEnv.nodename]
         args += ["-p", uuid]
         if self.docker_min_version("1.12"):
             pass
         elif self.docker_min_version("1.10"):
-            args += ["--email", self.svc.svcpath+"@"+rcEnv.nodename]
+            args += ["--email", self.svc.path+"@"+rcEnv.nodename]
         return args
 
     def docker_login(self, ref):
@@ -467,13 +467,13 @@ class DockerLib(ContainerLib):
 
         if self.docker_daemon_private:
             self.docker_socket = os.path.join(self.svc.var_d, "docker.sock")
-            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "docker.sock")
+            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.name, "docker.sock")
         else:
             self.docker_socket = None
 
         if self.docker_daemon_private:
             self.docker_pid_file = os.path.join(self.svc.var_d, "docker.pid")
-            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.svcname, "docker.pid")
+            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.name, "docker.pid")
         else:
             self.docker_pid_file = None
             try:
@@ -775,7 +775,7 @@ class PodmanLib(ContainerLib):
         self.docker_daemon_args = []
         self.docker_daemon_args += [
             "--cgroup-manager", "cgroupfs",
-            "--namespace", self.svc.svcpath,
+            "--namespace", self.svc.path,
             "--cni-config-dir", self.svc.node.cni_config,
         ]
 
@@ -815,7 +815,7 @@ class PodmanLib(ContainerLib):
         uuid = self.svc.node.oget("node", "uuid")
         if not uuid:
             return []
-        args = ["-u", self.svc.svcpath+"@"+rcEnv.nodename]
+        args = ["-u", self.svc.path+"@"+rcEnv.nodename]
         args += ["-p", uuid]
         return args
 
