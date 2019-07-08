@@ -1914,7 +1914,7 @@ class ClientHandler(shared.OsvcThread):
         if path:
             shared.wake_monitor(reason="service %s notification" % path)
         else:
-            shared.wake_monitor(reason="node notification" % path)
+            shared.wake_monitor(reason="node notification")
         return {"status": 0}
 
     def rbac_action_clear(self, nodename, **kwargs):
