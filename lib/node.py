@@ -69,6 +69,7 @@ DEFAULT_STATUS_GROUPS = [
 ]
 
 ACTION_ANY_NODE = (
+    "collector_cli",
     "delete",
     "eval",
     "get",
