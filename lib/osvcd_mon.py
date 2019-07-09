@@ -624,15 +624,19 @@ class Monitor(shared.OsvcThread):
     def service_create_scaler_slave(self, path, svc, data, instances=None):
         data["DEFAULT"]["scaler_slave"] = "true"
         if svc.topology == "flex" and instances is not None:
-            data["DEFAULT"]["flex_min"] = instances
-            data["DEFAULT"]["flex_max"] = instances
+            data["DEFAULT"]["flex_target"] = instances
+        try:
+            del data["metadata"]
+        except KeyError:
+            pass
         for kw in ("scale", "id"):
             try:
                 del data["DEFAULT"][kw]
             except KeyError:
                 pass
-        cmd = ["create", "--config=-"]
-        proc = self.service_command(path, cmd, stdin=json.dumps(data))
+        data = {path: data}
+        cmd = ["create", "--config=-", "--namespace=%s" % svc.namespace]
+        proc = self.service_command(None, cmd, stdin=json.dumps(data))
         out, err = proc.communicate()
         if proc.returncode != 0:
             self.set_smon(path, "create failed")
@@ -936,7 +940,10 @@ class Monitor(shared.OsvcThread):
             elif smon.status not in ORCHESTRATE_STATES:
                 #self.log.info("service %s orchestrator out (mon status %s)", svc.path, smon.status)
                 return
-        status = shared.AGG[svc.path].avail
+        try:
+            status = shared.AGG[svc.path].avail
+        except KeyError:
+            return
         self.set_smon_g_expect_from_status(svc.path, smon, status)
         if shared.NMON_DATA.status == "shutting":
             self.service_orchestrator_shutting(svc, smon, status)
@@ -3430,9 +3437,8 @@ class Monitor(shared.OsvcThread):
 
     def get_agg_services(self, paths=None):
         data = {}
-        if paths is None:
-            paths = self.get_all_paths()
-        for path in paths:
+        all_paths = self.get_all_paths()
+        for path in all_paths:
             try:
                 if self.get_service(path).topology == "span":
                     data[path] = Storage()
@@ -3444,7 +3450,7 @@ class Monitor(shared.OsvcThread):
         with shared.AGG_LOCK:
             shared.AGG = data
         if paths is not None:
-            return dict((path, data[path]) for path in paths if path in paths)
+            return dict((path, data[path]) for path in paths if path in data)
         return data
 
     def update_completions(self):
