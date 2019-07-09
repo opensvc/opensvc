@@ -3430,7 +3430,8 @@ class Monitor(shared.OsvcThread):
 
     def get_agg_services(self, paths=None):
         data = {}
-        paths = self.get_all_paths()
+        if paths is None:
+            paths = self.get_all_paths()
         for path in paths:
             try:
                 if self.get_service(path).topology == "span":
