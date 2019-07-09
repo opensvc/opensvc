@@ -292,7 +292,10 @@ class Container(Res.Resource):
 
     def dns_search(self):
         if self.svc.scaler_slave:
-            _name = self.svc.name[self.svc.name.index(".")+1:]
+            try:
+                _name = self.svc.name[self.svc.name.index(".")+1:]
+            except ValueError:
+                raise ex.excError("misnamed scaler slave %s: should be <n>.<scalername>" % self.svc.name)
         else:
             _name = self.svc.name
         namespace = self.svc.namespace.lower() if self.svc.namespace else "root"
