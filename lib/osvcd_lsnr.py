@@ -1393,6 +1393,8 @@ class ClientHandler(shared.OsvcThread):
                     nodenames = [svcnodes[0]]
             except KeyError:
                 return {"error": "unknown service", "status": 1}
+        if node == "ANY":
+            nodenames = [rcEnv.nodename]
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
 
@@ -2838,6 +2840,67 @@ class ClientHandler(shared.OsvcThread):
             "grant": dict((k, list(v) if v is not None else None) for k, v in self.usr_grants.items()),
         }
         return data
+
+    def rbac_action_get_catalogs(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_catalogs(self, nodename, **kwargs):
+        data = []
+        if shared.NODE.collector_env.dbopensvc is not None:
+            data.append({
+                "name": "collector",
+            })
+        return data
+
+    def rbac_action_get_templates(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_templates(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        catalog = options.get("catalog")
+        data = {}
+        if catalog == "collector":
+            if shared.NODE.collector_env.dbopensvc is None:
+                raise HTTP(400, "This node is not registered on a collector")
+            data = []
+            options = {
+                "limit": 0,
+                "props": "id,tpl_name,tpl_author,tpl_comment",
+                "orderby": "tpl_name",
+            }
+
+            for tpl in shared.NODE.collector_rest_get("/provisioning_templates", options)["data"]:
+                data.append({
+                    "id": tpl["id"],
+                    "name": tpl["tpl_name"],
+                    "desc": tpl["tpl_comment"],
+                    "author": tpl["tpl_author"],
+                    "catalog": "collector",
+                })
+        else:
+            raise HTTP(400, "unknown catalog %s" % catalog)
+        return data
+
+    def rbac_action_get_template(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_template(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        catalog = options.get("catalog")
+        template = options.get("template")
+        if catalog == "collector":
+            if template is None:
+                raise HTTP(400, "template is not set")
+            options = {
+                "props": "tpl_definition"
+            }
+            try:
+                data = shared.NODE.collector_rest_get("/provisioning_templates/%s" % template, options)
+                return data["data"][0]["tpl_definition"]
+            except IndexError:
+                raise HTTP(404, "template not found")
+        raise HTTP(400, "unknown catalog %s" % catalog)
+
 
     ##########################################################################
     #
