@@ -2490,19 +2490,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
             raise ex.excError(data["error"])
 
     def collector_rest_get(self, *args, **kwargs):
-        kwargs["svcname"] = self.path
+        kwargs["path"] = self.path
         return self.node.collector_rest_get(*args, **kwargs)
 
     def collector_rest_post(self, *args, **kwargs):
-        kwargs["svcname"] = self.path
+        kwargs["path"] = self.path
         return self.node.collector_rest_post(*args, **kwargs)
 
     def collector_rest_put(self, *args, **kwargs):
-        kwargs["svcname"] = self.path
+        kwargs["path"] = self.path
         return self.node.collector_rest_put(*args, **kwargs)
 
     def collector_rest_delete(self, *args, **kwargs):
-        kwargs["svcname"] = self.path
+        kwargs["path"] = self.path
         return self.node.collector_rest_delete(*args, **kwargs)
 
     def options_to_rids(self, options, action):
