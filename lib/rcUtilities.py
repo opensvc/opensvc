@@ -998,6 +998,40 @@ def read_cf(fpaths, defaults=None):
                 raise
     return config
 
+def read_cf_comments(fpath):
+    data = {}
+    if isinstance(fpath, list):
+        return data
+    if not os.path.exists(fpath):
+        return data
+    section = ".header"
+    current = []
+
+    import codecs
+    with codecs.open(fpath, "r", "utf8") as ofile:
+        buff = ofile.read()
+
+    for line in buff.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if re.match("\[.+\]", line):
+            if current:
+                data[section] = current
+                current = []
+            section = line[1:-1]
+            continue
+        if line[0] in (";", "#"):
+            stripped = line.lstrip("#;").strip()
+            if re.match("\[.+\]", stripped):
+                # add an empty line before a commented section
+                current.append("")
+            current.append(stripped)
+    if current:
+        data[section] = current
+        current = []
+    return data
+
 def has_option(option, cmd):
     """
     Return True if <option> is set in the <cmd> shlex list.
