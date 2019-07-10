@@ -10,7 +10,7 @@ import six
 import rcExceptions as ex
 from converters import *
 from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
-                        lazy, makedirs, factory
+                        lazy, makedirs, factory, read_cf_comments
 from rcGlobalEnv import rcEnv
 
 SECRETS = []
@@ -1312,6 +1312,24 @@ class ExtConfigMixin(object):
                 if config.has_option(section, option):
                     tmpsection[option] = config.get(section, option)
             data[section] = tmpsection
+
+        comments = read_cf_comments(cf)
+        for section, comments in comments.items():
+            if section in data:
+                if "comment" not in data[section]:
+                    data[section]["comment"] = ""
+                else:
+                    data[section]["comment"] += "\n"
+                data[section]["comment"] += "\n".join(comments)
+            else:
+                if "DEFAULT" not in data:
+                    data["DEFAULT"] = {}
+                if "comment" not in data["DEFAULT"]:
+                    data["DEFAULT"]["comment"] = ""
+                else:
+                    data["DEFAULT"]["comment"] += "\n"
+                data["DEFAULT"]["comment"] += "\n".join(comments)
+
         return data
 
     def dump_config_data(self, cd=None, cf=None, validation=True):
@@ -1344,24 +1362,27 @@ class ExtConfigMixin(object):
                 raise ex.excError
 
         makedirs(os.path.dirname(cf))
-        import rcConfigParser
-        config = rcConfigParser.RawConfigParser()
+        lines = []
 
         for section_name, section in cd.items():
-            if section_name != "DEFAULT":
-                config.add_section(section_name)
+            lines.append("[%s]" % section_name)
             for key, value in section.items():
-                config.set(section_name, key, value)
+                if key != "comment":
+                    lines.append("%s = %s" % (key, value))
+                else:
+                    lines += map(lambda x: "# "+x if x else "", value.split("\n"))
+            lines.append("")
 
         try:
+            buff = "\n".join(lines)
             if six.PY2:
                 with codecs.open(cf, "w", "utf-8") as ofile:
                     os.chmod(cf, 0o0600)
-                    config.write(ofile)
+                    ofile.write(buff)
             else:
                 with open(cf, "w") as ofile:
                     os.chmod(cf, 0o0600)
-                    config.write(ofile)
+                    ofile.write(buff)
         except Exception as exc:
             raise ex.excError("failed to write %s: %s" % (cf, exc))
         self.unset_all_lazy()
