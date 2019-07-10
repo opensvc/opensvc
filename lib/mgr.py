@@ -169,6 +169,8 @@ class Mgr(object):
         if options.get("daemon"):
             os.environ["OSVC_DETACHED"] = "1"
         for arg in options.get("env", []):
+            if arg in ("-", "stdin", "/dev/stdin"):
+                continue
             option, value = self.split_env(arg)
             option = option.upper()
             os.environ[option] = value

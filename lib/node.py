@@ -2805,6 +2805,10 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("service not found on the collector")
         if len(data["data"][0]["tpl_definition"]) == 0:
             raise ex.excError("service has an empty configuration")
+        try:
+            return json.loads(data["data"][0]["tpl_definition"])
+        except Exception:
+            pass
         with open(tmpfpath, "w") as ofile:
             os.chmod(tmpfpath, 0o0600)
             ofile.write(data["data"][0]["tpl_definition"].replace("\\n", "\n").replace("\\t", "\t"))
@@ -2952,7 +2956,7 @@ class Node(Crypt, ExtConfigMixin):
         * or leave the value as is, considering the default is accepted
         """
         if args is None:
-            args = {}
+            args = []
         if env is None:
             env = {}
 
@@ -3016,6 +3020,7 @@ class Node(Crypt, ExtConfigMixin):
 
         data = None
         installed = []
+        env_to_merge = {}
 
         if path:
             name, _namespace, kind = split_path(path)
@@ -3025,8 +3030,29 @@ class Node(Crypt, ExtConfigMixin):
             name = "dummy"
             kind = "svc"
 
+        if sys.stdin and env in (["-"], ["stdin"], ["/dev/stdin"]):
+            env_to_merge = self.svc_conf_from_stdin()
+            env = []
+
+        if template and want_context():
+            req = {
+                "action": "create",
+                "options": {
+                    "namespace": namespace,
+                    "provision": provision,
+                    "template": template,
+                    "restore": restore,
+                    "data": env_to_merge,
+                }
+            }
+            result = self.daemon_get(req)
+            status, error, info = self.parse_result(result)
+            if status:
+                raise ex.excError(error)
+            return
+
         # convert to a pivotal dataset: dict of configs, indexed by path
-        if sys.stdin and fpath in ("-", "/dev/stdin"):
+        if sys.stdin and fpath in ("-", "stdin", "/dev/stdin"):
             data = self.svc_conf_from_stdin()
         elif fpath and "://" not in fpath and not os.path.exists(fpath):
             data = self.svc_conf_from_selector(fpath)
@@ -3080,14 +3106,27 @@ class Node(Crypt, ExtConfigMixin):
                      path: __data,
                  }
             data = _data
+        else:
+            if path:
+                data = {path: {}}
 
         if data:
             for path in data:
                 data[path] = self.svc_conf_set(data[path], kw, env, interactive)
-        elif path:
-            data = {
-                path: self.svc_conf_set({}, kw, env, interactive)
-            }
+                if path in env_to_merge:
+                    if "env" in env_to_merge[path]:
+                        _env_to_merge = env_to_merge[path]["env"]
+                    else:
+                        _env_to_merge = env_to_merge[path]
+                elif "env" in env_to_merge:
+                    _env_to_merge = env_to_merge["env"]
+                else:
+                    _env_to_merge = env_to_merge
+                if isinstance(_env_to_merge, dict) and _env_to_merge:
+                    if "env" not in data[path]:
+                        data[path]["env"] = _env_to_merge
+                    else:
+                        data[path]["env"].update(_env_to_merge)
 
         if want_context():
             req = {

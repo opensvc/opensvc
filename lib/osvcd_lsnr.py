@@ -2405,9 +2405,13 @@ class ClientHandler(shared.OsvcThread):
         sync = options.get("sync", True)
         namespace = options.get("namespace")
         provision = options.get("provision")
+        template = options.get("template")
         restore = options.get("restore")
         self.log_request("create/update %s" % ",".join([p for p in data]), nodename, **kwargs)
-        cmd = ["create", "--config=-"]
+        if template is not None:
+            cmd = ["create", "--template=%s" % template, "--env=-"]
+        else:
+            cmd = ["create", "--config=-"]
         if namespace:
             cmd.append("--namespace="+namespace)
         if restore:
