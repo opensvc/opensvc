@@ -2386,6 +2386,11 @@ class ClientHandler(shared.OsvcThread):
 
     def rbac_action_create(self, nodename, **kwargs):
         options = kwargs.get("options", {})
+        template = options.get("template")
+        namespace = options.get("namespace")
+        if template is not None:
+            self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
+            return
         data = options.get("data")
         if not data:
             return
@@ -2407,9 +2412,13 @@ class ClientHandler(shared.OsvcThread):
         provision = options.get("provision")
         template = options.get("template")
         restore = options.get("restore")
+        path = options.get("path")
         self.log_request("create/update %s" % ",".join([p for p in data]), nodename, **kwargs)
         if template is not None:
-            cmd = ["create", "--template=%s" % template, "--env=-"]
+            if path:
+                cmd = ["create", "-s", path, "--template=%s" % template, "--env=-"]
+            else:
+                cmd = ["create", "--template=%s" % template, "--env=-"]
         else:
             cmd = ["create", "--config=-"]
         if namespace:
@@ -2420,7 +2429,7 @@ class ClientHandler(shared.OsvcThread):
         if sync:
             out, err = proc.communicate()
             result = {
-                "status": 0,
+                "status": proc.returncode,
                 "data": {
                     "out": bdecode(out),
                     "err": bdecode(err),
@@ -2904,6 +2913,13 @@ class ClientHandler(shared.OsvcThread):
             except IndexError:
                 raise HTTP(404, "template not found")
         raise HTTP(400, "unknown catalog %s" % catalog)
+
+    def rbac_action_get_node(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_node(self, nodename, **kwargs):
+        data = shared.NODE.asset.get_asset_dict()
+        return data
 
 
     ##########################################################################
