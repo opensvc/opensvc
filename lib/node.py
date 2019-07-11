@@ -3038,6 +3038,7 @@ class Node(Crypt, ExtConfigMixin):
             req = {
                 "action": "create",
                 "options": {
+                    "path": path,
                     "namespace": namespace,
                     "provision": provision,
                     "template": template,
@@ -3102,6 +3103,8 @@ class Node(Crypt, ExtConfigMixin):
                  # force the new path
                  for path, __data in _data.items():
                      break
+                 if path.endswith("svc/dummy"):
+                     raise ex.excError("no path in deployment data")
                  _data = {
                      path: __data,
                  }
