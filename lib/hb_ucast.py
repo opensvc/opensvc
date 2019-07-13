@@ -10,7 +10,6 @@ import six
 import rcExceptions as ex
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv
-from storage import Storage
 from hb import Hb
 
 class HbUcast(Hb):
@@ -24,10 +23,10 @@ class HbUcast(Hb):
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
-        data.stats = Storage(self.stats)
-        data.config = {
-            "addr": self.peer_config[rcEnv.nodename].addr,
-            "port": self.peer_config[rcEnv.nodename].port,
+        data["stats"]= self.stats
+        data["config"] = {
+            "addr": self.peer_config[rcEnv.nodename]["addr"],
+            "port": self.peer_config[rcEnv.nodename]["port"],
             "timeout": self.timeout,
         }
         return data
@@ -58,10 +57,10 @@ class HbUcast(Hb):
                     addr = "0.0.0.0"
                 else:
                     addr = nodename
-                peer_config[nodename] = Storage({
+                peer_config[nodename] = {
                     "addr": addr,
                     "port": port,
-                })
+                }
 
         if peer_config != self.peer_config:
             self.config_change = True
@@ -118,11 +117,11 @@ class HbUcastTx(HbUcast):
 
     def _do(self, message, message_bytes, nodename, config):
         try:
-            #self.log.info("sending to %s:%s", config.addr, config.port)
+            #self.log.info("sending to %s:%s", config["addr"], config["port"])
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
-            sock.bind((self.peer_config[rcEnv.nodename].addr, 0))
-            sock.connect((config.addr, config.port))
+            sock.bind((self.peer_config[rcEnv.nodename]["addr"], 0))
+            sock.connect((config["addr"], config["port"]))
             sock.sendall((message+"\0").encode())
             self.set_last(nodename)
             self.push_stats(message_bytes)
@@ -130,13 +129,13 @@ class HbUcastTx(HbUcast):
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) timeout", nodename,
-                                 config.addr, config.port)
+                                 config["addr"], config["port"])
             self.set_last(nodename, success=False)
         except socket.error as exc:
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
-                               config.addr, config.port, str(exc))
+                               config["addr"], config["port"], str(exc))
             self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
@@ -171,8 +170,8 @@ class HbUcastRx(HbUcast):
     def configure_listener(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((self.peer_config[rcEnv.nodename].addr,
-                        self.peer_config[rcEnv.nodename].port))
+        self.sock.bind((self.peer_config[rcEnv.nodename]["addr"],
+                        self.peer_config[rcEnv.nodename]["port"]))
         self.sock.listen(5)
         self.sock.settimeout(2)
 
@@ -184,8 +183,8 @@ class HbUcastRx(HbUcast):
             return
 
         self.log.info("listening on %s:%s",
-                      self.peer_config[rcEnv.nodename].addr,
-                      self.peer_config[rcEnv.nodename].port)
+                      self.peer_config[rcEnv.nodename]["addr"],
+                      self.peer_config[rcEnv.nodename]["port"])
 
         while True:
             self.do()

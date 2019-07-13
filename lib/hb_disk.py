@@ -13,7 +13,6 @@ import time
 import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
 from hb import Hb
 from rcUtilities import bdecode
 
@@ -32,13 +31,13 @@ class HbDisk(Hb):
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
-        data.stats = Storage(self.stats)
-        data.config = {
+        data["stats"] = self.stats
+        data["config"] = {
             "dev": self.dev,
             "timeout": self.timeout,
         }
-        for peer in data.peers:
-            data.peers[peer].update(self.peer_config.get(peer, {}))
+        for peer in data["peers"]:
+            data["peers"][peer].update(self.peer_config.get(peer, {}))
         return data
 
     def configure(self):
@@ -166,9 +165,9 @@ class HbDisk(Hb):
     def load_peer_config(self, fo=None, verbose=True):
         for nodename in self.hb_nodes:
             if nodename not in self.peer_config:
-                self.peer_config[nodename] = Storage({
+                self.peer_config[nodename] = {
                     "slot": -1,
-                })
+                }
         for slot in range(self.MAX_SLOTS):
             buff = self.meta_read_slot(slot, fo=fo)
             if buff is None or buff[0] == "\0":
@@ -179,12 +178,12 @@ class HbDisk(Hb):
                 continue
             if nodename not in self.peer_config:
                 continue
-            if self.peer_config[nodename].slot >= 0 and \
-               slot != self.peer_config[nodename].slot:
+            if self.peer_config[nodename]["slot"] >= 0 and \
+               slot != self.peer_config[nodename]["slot"]:
                 if verbose:
                     self.log.warning("duplicate slot %d for node %s (first %d)",
                                      slot, nodename,
-                                     self.peer_config[nodename].slot)
+                                     self.peer_config[nodename]["slot"])
                 continue
             if verbose:
                 self.log.info("detect slot %d for node %s", slot, nodename)
@@ -196,7 +195,7 @@ class HbDisk(Hb):
                 buff = self.meta_read_slot(slot, fo=fo)
                 if buff is None or buff[0] != "\0":
                     continue
-                self.peer_config[rcEnv.nodename].slot = slot
+                self.peer_config[rcEnv.nodename]["slot"] = slot
                 try:
                     nodename = bytes(rcEnv.nodename, "utf-8")
                 except TypeError:
@@ -215,7 +214,7 @@ class HbDiskTx(HbDisk):
 
     def _configure(self):
         HbDisk._configure(self)
-        if self.peer_config[rcEnv.nodename].slot < 0:
+        if self.peer_config[rcEnv.nodename]["slot"] < 0:
             self.allocate_slot()
 
     def run(self):
@@ -246,7 +245,7 @@ class HbDiskTx(HbDisk):
         self.reload_config()
         if rcEnv.nodename not in self.peer_config:
             return
-        slot = self.peer_config[rcEnv.nodename].slot
+        slot = self.peer_config[rcEnv.nodename]["slot"]
         if slot < 0:
             return
         message, message_bytes = self.get_message()
@@ -317,10 +316,10 @@ class HbDiskRx(HbDisk):
         for nodename, data in self.peer_config.items():
             if nodename == rcEnv.nodename:
                 continue
-            if data.slot < 0:
+            if data["slot"] < 0:
                 continue
             try:
-                slot_data = json.loads(self.read_slot(data.slot, fo=fo))
+                slot_data = json.loads(self.read_slot(data["slot"], fo=fo))
                 _nodename, _data = self.decrypt(slot_data["msg"])
                 if _nodename is None:
                     # invalid crypt
@@ -348,7 +347,7 @@ class HbDiskRx(HbDisk):
                 self.push_stats()
                 if self.get_last(nodename).success:
                     self.log.error("read from %s slot %d (%s) error: %s", self.dev,
-                                   data.slot, nodename, str(exc))
+                                   data["slot"], nodename, str(exc))
                 self.set_last(nodename, success=False)
             finally:
                 self.set_beating(nodename)

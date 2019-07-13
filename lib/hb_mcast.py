@@ -12,7 +12,6 @@ import time
 import rcExceptions as ex
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv
-from storage import Storage
 from rcUtilities import chunker, bdecode
 from hb import Hb
 
@@ -34,8 +33,8 @@ class HbMcast(Hb):
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
-        data.stats = Storage(self.stats)
-        data.config = {
+        data["stats"] = self.stats
+        data["config"] = {
             "addr": self.addr,
             "port": self.port,
             "intf": self.intf,

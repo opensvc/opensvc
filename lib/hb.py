@@ -54,10 +54,10 @@ class Hb(shared.OsvcThread):
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
-        data.peers = {}
+        data["peers"] = {}
         for nodename in self.hb_nodes:
             if nodename == rcEnv.nodename:
-                data.peers[nodename] = {}
+                data["peers"][nodename] = {}
                 continue
             if "*" in self.peers:
                 _data = self.peers["*"]
@@ -67,7 +67,7 @@ class Hb(shared.OsvcThread):
                     "beating": False,
                     "success": True,
                 }))
-            data.peers[nodename] = {
+            data["peers"][nodename] = {
                 "last": _data.last,
                 "beating": _data.beating,
             }
@@ -235,11 +235,6 @@ class Hb(shared.OsvcThread):
                     try:
                         json_delta.patch(shared.CLUSTER_DATA[nodename], deltas[str(gen)])
                         current_gen = gen
-                        shared.EVENT_Q.put({
-                            "nodename": nodename,
-                            "kind": "patch",
-                            "data": deltas[str(gen)],
-                        })
                         shared.REMOTE_GEN[nodename] = gen
                         shared.LOCAL_GEN[nodename] = our_gen_on_peer
                         shared.CLUSTER_DATA[nodename]["gen"] = {

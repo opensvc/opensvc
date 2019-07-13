@@ -9,7 +9,6 @@ import contextlib
 import osvcd_shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
 from hb import Hb
 
 class HbRelay(Hb):
@@ -19,12 +18,12 @@ class HbRelay(Hb):
     """
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
-        data.stats = Storage(self.stats)
-        data.config = {
+        data["stats"] = self.stats
+        data["config"] = {
             "timeout": self.timeout,
         }
         if hasattr(self, "relay"):
-            data.config["relay"] = self.relay
+            data["config"]["relay"] = self.relay
         return data
 
     def configure(self):
