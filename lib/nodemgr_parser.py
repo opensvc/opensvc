@@ -376,7 +376,9 @@ ACTIONS = {
             ],
         },
         "events": {
-            "msg": "Follow the daemon events",
+            "msg": "Follow the daemon events feed. Two kinds of event "
+                   "can be received: event and patch. Patch data "
+                   "applies to the daemon status structure.",
         },
         "frozen": {
             "msg": "Return 0 if the services are frozen node-wide, "

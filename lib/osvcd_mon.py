@@ -200,7 +200,6 @@ class Monitor(shared.OsvcThread):
                 self.stop()
         else:
             self.update_cluster_data()
-            self.merge_hb_data()
             self.orchestrator()
         self.update_hb_data()
         shared.wake_collector()
@@ -3066,6 +3065,8 @@ class Monitor(shared.OsvcThread):
     def update_cluster_data(self):
         self.update_node_data()
         self.purge_left_nodes()
+        self.merge_hb_data()
+        self.update_daemon_status()
 
     def purge_left_nodes(self):
         left = set([node for node in shared.CLUSTER_DATA]) - set(self.cluster_nodes)
@@ -3133,13 +3134,6 @@ class Monitor(shared.OsvcThread):
 
         if diff is None:
             return
-
-        shared.EVENT_Q.put({
-            "nodename": rcEnv.nodename,
-            "kind": "patch",
-            "ts": time.time(),
-            "data": diff,
-        })
 
         # don't store the diff if we have no peers
         if len(shared.LOCAL_GEN) == 0:
@@ -3435,7 +3429,7 @@ class Monitor(shared.OsvcThread):
                     continue
         return paths
 
-    def get_agg_services(self, paths=None):
+    def get_agg_services(self):
         data = {}
         all_paths = self.get_all_paths()
         for path in all_paths:
@@ -3449,8 +3443,6 @@ class Monitor(shared.OsvcThread):
             data[path] = self.get_agg(path)
         with shared.AGG_LOCK:
             shared.AGG = data
-        if paths is not None:
-            return dict((path, data[path]) for path in paths if path in data)
         return data
 
     def update_completions(self):
@@ -3469,33 +3461,13 @@ class Monitor(shared.OsvcThread):
             print(exc)
             pass
 
-    def filter_cluster_data(self, paths=None):
-        with shared.CLUSTER_DATA_LOCK:
-            data = copy.deepcopy(shared.CLUSTER_DATA)
-        if paths is None:
-            return data
-        nodes = list([n for n in data])
-        for node in data:
-            cpaths = [p for p in data[node]["services"]["config"] if p in paths]
-            data[node]["services"]["config"] = dict((path, data[node]["services"]["config"][path]) for path in cpaths)
-            spaths = [p for p in data[node]["services"]["status"] if p in paths]
-            data[node]["services"]["status"] = dict((path, data[node]["services"]["status"][path]) for path in spaths)
-        return data
-
-    def status(self, **kwargs):
-        if kwargs.get("refresh"):
-            self.update_hb_data()
-        namespaces = kwargs.get("namespaces")
-        if namespaces is None:
-            paths = None
-        else:
-            paths = [p for p in self.get_all_paths() if split_path(p)[1] in namespaces]
-        data = shared.OsvcThread.status(self, **kwargs)
-        data["nodes"] = self.filter_cluster_data(paths)
+    def status(self):
+        data = shared.OsvcThread.status(self)
+        data["nodes"] = json.loads(json.dumps(shared.CLUSTER_DATA))
         data["compat"] = self.compat
         data["transitions"] = self.transition_count()
         data["frozen"] = self.get_clu_agg_frozen()
-        data["services"] = self.get_agg_services(paths)
+        data["services"] = self.get_agg_services()
         return data
 
     def get_last_shutdown(self):

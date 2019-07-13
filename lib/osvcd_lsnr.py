@@ -2,6 +2,7 @@
 Listener Thread
 """
 import base64
+import copy
 import json
 import os
 import sys
@@ -443,18 +444,18 @@ class Listener(shared.OsvcThread):
                 if thr not in self.threads:
                     to_remove.append(idx)
                     continue
-                event = self.filter_event(event, thr)
-                if event is None:
+                fevent = self.filter_event(event, thr)
+                if fevent is None:
                     continue
                 if thr.h2conn:
                     if not thr.events_stream_ids:
                         to_remove.append(idx)
                         continue
-                    _msg = event
+                    _msg = fevent
                 elif thr.encrypted:
-                    _msg = self.encrypt(event)
+                    _msg = self.encrypt(fevent)
                 else:
-                    _msg = self.msg_encode(event)
+                    _msg = self.msg_encode(fevent)
                 thr.event_queue.put(_msg)
             for idx in to_remove:
                 try:
@@ -467,6 +468,8 @@ class Listener(shared.OsvcThread):
             return event
         if event is None:
             return
+        if "root" in thr.usr_grants:
+            return event
         if event.get("kind") == "patch":
             return self.filter_patch_event(event, thr)
         else:
@@ -491,24 +494,84 @@ class Listener(shared.OsvcThread):
     def filter_patch_event(self, event, thr):
         namespaces = thr.usr_grants.get("guest", [])
 
-        def valid(change):
-            if not change[0]:
-                return False
-            if not change[0][0] == "services":
-                return True
+        def filter_change(change):
             try:
-                path = change[0][2]
-            except IndexError:
-                return False
-            _, namespace, _ = split_path(path)
-            if namespace in namespaces:
-                return True
-            return False
+                key, value = change
+            except:
+                key = change[0]
+                value = None
+            try:
+                key_len = len(key)
+            except:
+                return change
+            if key_len == 0:
+                if value is None:
+                    return change
+                value = self.filter_daemon_status(value, namespaces)
+                return [key, value]
+            elif key[0] == "monitor":
+                if key_len == 1:
+                    if value is None:
+                        return change
+                    value = self.filter_daemon_status({"monitor": value}, namespaces)["monitor"]
+                    return [key, value]
+                if key[1] == "services":
+                    if key_len == 2:
+                        if value is None:
+                            return change
+                        value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                        return [key, value]
+                    if split_path(key[2])[1] in namespaces:
+                        return change
+                    else:
+                        return
+                if key[1] == "nodes":
+                    if key_len == 2:
+                        if value is None:
+                            return change
+                        value = self.filter_daemon_status({"monitor": {"nodes": value}}, namespaces)["monitor"]["nodes"]
+                        return [key, value]
+                    if key_len == 3:
+                        if value is None:
+                            return change
+                        value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: value}}}, namespaces)["monitor"]["nodes"][key[2]]
+                        return [key, value]
+                    if key[3] == "services":
+                        if key_len == 4:
+                            if value is None:
+                                return change
+                            value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: {"services": value}}}}, namespaces)["monitor"]["nodes"][key[2]]["services"]
+                            return [key, value]
+                        if key[4] == "status":
+                            if key_len == 5:
+                                if value is None:
+                                    return change
+                                value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                                return [key, value]
+                            if split_path(key[5])[1] in namespaces:
+                                return change
+                            else:
+                                return
+                        if key[4] == "config":
+                            if key_len == 5:
+                                if value is None:
+                                    return change
+                                value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                                return [key, value]
+                            if split_path(key[5])[1] in namespaces:
+                                return change
+                            else:
+                                return
+            return change
 
         changes = []
         for change in event.get("data", []):
-            if valid(change):
-                changes.append(change)
+            filtered_change = filter_change(change)
+            if filtered_change:
+                changes.append(filtered_change)
+            #    print("ACCEPT", thr.usr.name, filtered_change)
+            #else:
+            #    print("DROP  ", thr.usr.name, change)
         event["data"] = changes
         return event
 
@@ -1000,6 +1063,8 @@ class ClientHandler(shared.OsvcThread):
                 return
             except Exception as exc:
                 self.log.error("exit on %s %s", type(exc), exc)
+                #import traceback
+                #traceback.print_exc()
                 return
 
             # execute all registered pushers
@@ -1447,6 +1512,8 @@ class ClientHandler(shared.OsvcThread):
             except Exception:
                 continue
 
+        if mode == "stream":
+            return
         return result
 
     def push_peer_stream(self, stream_id, nodename, client_stream_id, conn, resp):
@@ -1498,6 +1565,37 @@ class ClientHandler(shared.OsvcThread):
                 result["status"] += _result.get("status", 0)
         return result
 
+    @staticmethod
+    def parse_path(s):
+        l = s.split("/")
+        path = None
+        node = None
+        if len(l) == 1:
+            return node, path, s
+
+        if l[0] == "node":
+            node = l[1]
+            action = "/".join(l[2:])
+        elif l[0] == "object":
+            path = fmt_path(l[3], l[1], l[2])
+            action = "/".join(l[4:])
+        elif l[0] == "instance":
+            node = l[1]
+            path = fmt_path(l[4], l[2], l[3])
+            action = "/".join(l[5:])
+
+        # translate action
+        if action == "logs" and path:
+            action = "service_logs"
+        elif action == "backlogs" and path:
+            action = "service_backlogs"
+        elif action == "logs" and node:
+            action = "node_logs"
+        elif action == "backlogs" and node:
+            action = "node_backlogs"
+
+        return node, path, action
+
     def router(self, nodename, data, stream_id=None):
         """
         For a request data, extract the requested action and options,
@@ -1508,7 +1606,19 @@ class ClientHandler(shared.OsvcThread):
             return {"error": "invalid data format", "status": 1}
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
+
+        # url path router
+        # ex: nodes/n1/logs => n1, None, node_logs
         action = data["action"]
+        node, path, action = self.parse_path(action)
+        if node:
+            data["node"] = node
+        if path:
+            if "options" in data:
+                data["options"]["path"] = path
+            else:
+                data["options"] = {"path": path}
+
         fname = "action_" + action
         if not hasattr(self, fname):
             raise HTTP(501, "handler '%s' not supported" % action)
@@ -1676,23 +1786,11 @@ class ClientHandler(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        options = kwargs.get("options", {})
-        data = {
-            "pid": shared.DAEMON.pid,
-            "cluster": {
-                "name": self.cluster_name,
-                "id": self.cluster_id,
-                "nodes": self.cluster_nodes,
-            }
-        }
+        data = copy.deepcopy(self.daemon_status())
         if self.usr is False or "root" in self.usr_grants:
-            allowed_namespaces = None
-        else:
-            allowed_namespaces = self.usr_grants.get("guest", [])
-        with shared.THREADS_LOCK:
-            for thr_id, thread in shared.THREADS.items():
-                data[thr_id] = thread.status(namespaces=allowed_namespaces, **options)
-        return data
+            return data
+        namespaces = self.usr_grants.get("guest", [])
+        return self.filter_daemon_status(data, namespaces)
 
     def wait_shutdown(self):
         def still_shutting():
@@ -2617,16 +2715,12 @@ class ClientHandler(shared.OsvcThread):
             self.raw_push_action_events()
 
     def h2_push_action_events(self, stream_id):
-        content_type = self.streams[stream_id]["content_type"]
         while True:
             try:
                 msg = self.event_queue.get(False, 0)
             except queue.Empty:
                 break
-            if content_type == "text/event-stream":
-                self.h2_sse_stream_send(stream_id, msg)
-            else:
-                self.h2_stream_send(stream_id, msg)
+            self.h2_stream_send(stream_id, msg)
 
     def raw_push_action_events(self):
         while True:
@@ -2687,6 +2781,12 @@ class ClientHandler(shared.OsvcThread):
         svc = self.get_service(path)
         if svc is None:
             raise HTTP(404, "%s not found" % path)
+        request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
+        try:
+            content_type = bdecode(request_headers.get("accept").pop())
+        except:
+            content_type = "application/json"
+        self.streams[stream_id]["content_type"] = content_type
         logfile = os.path.join(svc.log_d, svc.name+".log")
         ofile = self._action_logs_open(logfile, 0, "node")
         self.streams[stream_id]["pushers"].append({
@@ -2716,10 +2816,14 @@ class ClientHandler(shared.OsvcThread):
                    A negative value means send the whole file.
                    The 0 value means follow the file.
         """
-        options = kwargs.get("options", {})
-        follow = options.get("follow")
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
         ofile = self._action_logs_open(logfile, 0, "node")
+        request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
+        try:
+            content_type = bdecode(request_headers.get("accept").pop())
+        except:
+            content_type = "application/json"
+        self.streams[stream_id]["content_type"] = content_type
         self.streams[stream_id]["pushers"].append({
             "fn": "h2_push_logs",
             "args": [ofile, True],
@@ -2792,6 +2896,13 @@ class ClientHandler(shared.OsvcThread):
         self.send_outbound(stream_id)
 
     def h2_stream_send(self, stream_id, data):
+        try:
+            content_type = self.streams[stream_id]["content_type"]
+        except KeyError:
+            content_type = None
+        if content_type == "text/event-stream":
+            self.h2_sse_stream_send(stream_id, data)
+            return
         promised_stream_id = self.h2conn.get_next_available_stream_id()
         request_headers = self.streams[stream_id]["request"].headers
         self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)

@@ -1,6 +1,7 @@
 """
 A module to share variables used by osvcd threads.
 """
+import copy
 import os
 import sys
 import threading
@@ -8,13 +9,14 @@ import time
 import codecs
 import hashlib
 import json
+import json_delta
 from subprocess import Popen, PIPE
 
 import six
 from six.moves import queue
 
 import rcExceptions as ex
-from rcUtilities import lazy, unset_lazy, is_string, factory
+from rcUtilities import lazy, unset_lazy, is_string, factory, split_path
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from freezer import Freezer
@@ -24,6 +26,10 @@ from osvcd_events import EVENTS
 
 # a global to store the Daemon() instance
 DAEMON = None
+
+# daemon_status cache
+LAST_DAEMON_STATUS = {}
+DAEMON_STATUS = {}
 
 # disable orchestration if a peer announces a different compat version than
 # ours
@@ -238,10 +244,10 @@ class OsvcThread(threading.Thread, Crypt):
                 state = "running"
             else:
                 state = "terminated"
-        data = Storage({
+        data = {
             "state": state,
             "created": self.created,
-        })
+        }
         if self.tid:
             data["tid"] = self.tid
         return data
@@ -1348,4 +1354,62 @@ class OsvcThread(threading.Thread, Crypt):
         its configuration.
         """
         return NODE
+
+    def _daemon_status(self):
+        """
+        Return a hash indexed by thead id, containing the status data
+        structure of each thread.
+        """
+        data = {
+            "pid": DAEMON.pid,
+            "cluster": {
+                "name": self.cluster_name,
+                "id": self.cluster_id,
+                "nodes": self.cluster_nodes,
+            }
+        }
+        with THREADS_LOCK:
+            for thr_id, thread in THREADS.items():
+                data[thr_id] = thread.status()
+        return data
+
+    def update_daemon_status(self):
+        global LAST_DAEMON_STATUS
+        global DAEMON_STATUS
+        global EVENT_Q
+        LAST_DAEMON_STATUS = json.loads(json.dumps(DAEMON_STATUS))
+        DAEMON_STATUS = self._daemon_status()
+        diff = json_delta.diff(
+            LAST_DAEMON_STATUS, DAEMON_STATUS,
+            verbose=False, array_align=False, compare_lengths=False
+        )
+        if not diff:
+            return
+        EVENT_Q.put({
+            "kind": "patch",
+            "ts": time.time(),
+            "data": diff,
+        })
+
+    def daemon_status(self):
+        return DAEMON_STATUS
+
+    @staticmethod
+    def filter_daemon_status(data, namespaces):
+        keep = []
+        for path in [p for p in data.get("monitor", {}).get("services", {})]:
+            namespace = split_path(path)[1]
+            if namespace not in namespaces:
+                del data["monitor"]["services"][path]
+            else:
+                keep.append(path)
+        for node in [n for n in data.get("monitor", {}).get("nodes", {})]:
+            for path in [p for p in data["monitor"]["nodes"][node].get("services", {}).get("status", {})]:
+                if path not in keep:
+                    del data["monitor"]["nodes"][node]["services"]["status"][path]
+            for path in [p for p in data["monitor"]["nodes"][node].get("services", {}).get("config", {})]:
+                if path not in keep:
+                    del data["monitor"]["nodes"][node]["services"]["config"][path]
+        return data
+
 
