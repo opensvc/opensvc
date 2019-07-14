@@ -19,7 +19,8 @@ def update_rpm(fpath):
 if os.path.exists('/etc/debian_version'):
     update = update_deb
     repo_subdir = "deb"
-elif os.path.exists('/etc/SuSE-release') or \
+elif os.path.exists('/etc/SuSE-release') or \ #sles14-
+     os.path.exists('/etc/SUSE-brand') or \ # sles12+
      os.path.exists('/etc/redhat-release'):
     repo_subdir = "rpms"
     update = update_rpm
