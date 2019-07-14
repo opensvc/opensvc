@@ -30,6 +30,7 @@ DAEMON = None
 # daemon_status cache
 LAST_DAEMON_STATUS = {}
 DAEMON_STATUS = {}
+PATCH_ID = 0
 
 # disable orchestration if a peer announces a different compat version than
 # ours
@@ -1377,6 +1378,7 @@ class OsvcThread(threading.Thread, Crypt):
         global LAST_DAEMON_STATUS
         global DAEMON_STATUS
         global EVENT_Q
+        global PATCH_ID
         LAST_DAEMON_STATUS = json.loads(json.dumps(DAEMON_STATUS))
         DAEMON_STATUS = self._daemon_status()
         diff = json_delta.diff(
@@ -1385,8 +1387,10 @@ class OsvcThread(threading.Thread, Crypt):
         )
         if not diff:
             return
+        PATCH_ID += 1
         EVENT_Q.put({
             "kind": "patch",
+            "id": PATCH_ID,
             "ts": time.time(),
             "data": diff,
         })
