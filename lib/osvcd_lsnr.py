@@ -47,6 +47,22 @@ RELAY_JANITOR_INTERVAL = 10 * 60
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
+STREAM_ACTIONS = (
+    "service_logs",
+    "node_logs",
+    "events",
+)
+ROUTED_ACTIONS = {
+    "node": {
+        "logs": "node_logs",
+        "backlogs": "node_backlogs",
+    },
+    "object": {
+        "logs": "service_logs",
+        "backlogs": "service_backlogs",
+    },
+}
+
 GUEST_ACTIONS = (
     "eval",
     "get",
@@ -1463,7 +1479,7 @@ class ClientHandler(shared.OsvcThread):
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
 
-        if action in ("node_logs", "events", "service_logs"):
+        if action in STREAM_ACTIONS:
             mode = "stream"
         else:
             mode = "get"
@@ -1577,22 +1593,32 @@ class ClientHandler(shared.OsvcThread):
             node = l[1]
             action = "/".join(l[2:])
         elif l[0] == "object":
-            path = fmt_path(l[3], l[1], l[2])
-            action = "/".join(l[4:])
+            if l[2] in rcEnv.kinds:
+                path = fmt_path(l[3], l[1], l[2])
+                action = "/".join(l[4:])
+            elif l[1] in rcEnv.kinds:
+                path = fmt_path(l[2], None, l[1])
+                action = "/".join(l[3:])
+            else:
+                path = fmt_path(l[1], None, "svc")
+                action = "/".join(l[2:])
         elif l[0] == "instance":
             node = l[1]
-            path = fmt_path(l[4], l[2], l[3])
-            action = "/".join(l[5:])
+            if l[3] in rcEnv.kinds:
+                path = fmt_path(l[4], l[2], l[3])
+                action = "/".join(l[4:])
+            elif l[2] in rcEnv.kinds:
+                path = fmt_path(l[3], None, l[2])
+                action = "/".join(l[4:])
+            else:
+                path = fmt_path(l[2], None, "svc")
+                action = "/".join(l[3:])
 
         # translate action
-        if action == "logs" and path:
-            action = "service_logs"
-        elif action == "backlogs" and path:
-            action = "service_backlogs"
-        elif action == "logs" and node:
-            action = "node_logs"
-        elif action == "backlogs" and node:
-            action = "node_backlogs"
+        if path:
+            action = ROUTED_ACTIONS["object"].get(action)
+        elif node:
+            action = ROUTED_ACTIONS["node"].get(action)
 
         return node, path, action
 
@@ -1611,6 +1637,8 @@ class ClientHandler(shared.OsvcThread):
         # ex: nodes/n1/logs => n1, None, node_logs
         action = data["action"]
         node, path, action = self.parse_path(action)
+        if action != data["action"]:
+            data["action"] = action
         if node:
             data["node"] = node
         if path:
