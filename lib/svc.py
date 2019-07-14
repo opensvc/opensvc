@@ -608,7 +608,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             handlers = ["stream"]
         else:
             handlers = None
-        return rcLogger.initLogger(self.loggerpath, directory=self.log_d, handlers=handlers)
+        log_file = os.path.join(self.log_d, self.name+".log")
+        return rcLogger.initLogger(self.loggerpath, log_file, handlers=handlers)
 
     @lazy
     def compliance(self):

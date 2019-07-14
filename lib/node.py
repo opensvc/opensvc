@@ -179,9 +179,13 @@ class Node(Crypt, ExtConfigMixin):
             value=None,
             extra_argv=[],
         )
-        self.log = rcLogger.initLogger(rcEnv.nodename)
         self.stats_data = {}
         self.stats_updated = 0
+
+    @lazy
+    def log(self):
+        log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
+        return rcLogger.initLogger(rcEnv.nodename, log_file)
 
     def get_node(self):
         """

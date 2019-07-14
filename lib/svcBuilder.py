@@ -1627,7 +1627,8 @@ def setup_logging(paths):
             max_path_len = n
 
     rcLogger.max_path_len = max_path_len
-    rcLogger.initLogger(rcEnv.nodename)
+    log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
+    rcLogger.initLogger(rcEnv.nodename, log_file)
 
 def add_resources(svc):
     """
