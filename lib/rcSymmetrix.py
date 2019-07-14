@@ -264,11 +264,12 @@ class Arrays(object):
             username = self.node.oget(s, 'username')
             password = self.node.oget(s, 'password')
 
-            try:
-                secname, namespace, _ = split_path(password)
-                password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
-            except Exception as exc:
-                print("error decoding password: %s", exc, file=sys.stderr)
+            if password:
+                try:
+                    secname, namespace, _ = split_path(password)
+                    password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
+                except Exception as exc:
+                    print("error decoding password: %s", exc, file=sys.stderr)
 
             symcfg = os.path.join(symcli_path, "symcfg")
             if which(symcfg) is None:
