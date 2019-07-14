@@ -63,7 +63,7 @@ class HbDisk(Hb):
 
         self.timeout = shared.NODE.oget(self.name, "timeout")
         try:
-            new_dev = shared.NODE.oget(self.name, "timeout")
+            new_dev = shared.NODE.oget(self.name, "dev")
         except ex.RequiredOptNotFound:
             raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
 
