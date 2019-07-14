@@ -6,6 +6,9 @@ import time
 import datetime
 import socket
 import threading
+import json
+import json_delta
+from six.moves import queue
 
 #
 # add project lib to path
@@ -22,7 +25,7 @@ CLEAREOLNEW = "\x1b[K\n"
 CLEAREOS = "\x1b[J"
 CURSORHOME = "\x1b[H"
 
-EVENT = threading.Event()
+PATCH_Q = queue.Queue()
 
 def setup_parser(node):
     __ver = prog + " version " + node.agent_version
@@ -108,8 +111,11 @@ def setup_parser(node):
     return parser
 
 def events(node, nodename):
+    global PATCH_Q
     for msg in node.daemon_events(nodename):
-        EVENT.set()
+        if msg.get("kind") != "patch":
+            continue
+        PATCH_Q.put(msg)
 
 def start_events_thread(node, nodename):
     thr = threading.Thread(target=events, args=(node, nodename,))
@@ -144,11 +150,13 @@ def _main(node, argv=None):
     svcmon(node, options)
 
 def svcmon(node, options=None):
+    global PATCH_Q
     rcColor.use_color = options.color
     if not options.node:
         options.node = "*"
     chars = 0
     last_refresh = 0
+    last_patch_id = None
 
     namespace = options.namespace if options.namespace else os.environ.get("OSVC_NAMESPACE")
 
@@ -188,20 +196,37 @@ def svcmon(node, options=None):
         while True:
             now = time.time()
             try:
-                EVENT.wait(0.5)
+                patch = PATCH_Q.get(False, 0.5)
+                #for change in patch["data"]:
+                #    print(change)
             except Exception:
-                break
+                patch = None
+
+            if patch:
+                if last_patch_id and patch["id"] != last_patch_id + 1:
+                    try:
+                        status_data = node._daemon_status(server=options.server)
+                        last_patch_id = patch["id"]
+                    except Exception:
+                        # seen on solaris under high load: decode_msg() raising on invalid json
+                        pass
+                else:
+                    try:
+                        json_delta.patch(status_data, patch["data"])
+                        last_patch_id = patch["id"]
+                    except Exception as exc:
+                        print(exc)
+                        try:
+                            status_data = node._daemon_status(server=options.server)
+                            last_patch_id = patch["id"]
+                        except Exception:
+                            # seen on solaris under high load: decode_msg() raising on invalid json
+                            pass
+
             stats_changed = options.interval and now - last_refresh >= options.interval
-            status_changed = bool(EVENT.is_set())
-            EVENT.clear()
-            if not status_changed and not stats_changed:
+            if not patch and not stats_changed:
                 continue
-            if status_changed:
-                try:
-                    status_data = node._daemon_status(server=options.server)
-                except Exception:
-                    # seen on solaris under high load: decode_msg() raising on invalid json
-                    continue
+            if patch:
                 if status_data is None:
                     # can happen when the secret is being reset on daemon join
                     continue
@@ -228,7 +253,6 @@ def svcmon(node, options=None):
             if outs is not None:
                 print(CURSORHOME+preamble+CLEAREOLNEW+CLEAREOL)
                 print(CLEAREOLNEW.join(outs.split("\n"))+CLEAREOS)
-                pass
             # min delay
             last_refresh = now
             time.sleep(0.2)
