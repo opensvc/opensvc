@@ -75,6 +75,7 @@ ACTION_ANY_NODE = (
     "get",
     "set",
     "unset",
+    "wait",
 )
 ACTION_ASYNC = {
     "freeze": {
@@ -3450,18 +3451,26 @@ class Node(Crypt, ExtConfigMixin):
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
 
-        for msg in self.daemon_events(server):
-            kind = msg.get("kind")
+        last_patch_id = 0
+        for patch in self.daemon_events(server):
+            kind = patch.get("kind")
             if kind == "patch":
-                try:
+                if last_patch_id and last_patch_id+1 == patch["id"]:
+                    try:
+                        json_delta.patch(cluster_data, patch["data"])
+                        last_patch_id = patch["id"]
+                    except Exception:
+                        cluster_data = self._daemon_status()
+                else:
                     cluster_data = self._daemon_status()
+                try:
                     cluster_data["monitor"]
                 except KeyError:
                     continue
                 if match_patch():
                     break
             elif kind == "event":
-                if match_event(msg):
+                if match_event(patch):
                     break
 
     def events(self, server=None):
