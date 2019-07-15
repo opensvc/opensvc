@@ -2,7 +2,6 @@
 Listener Thread
 """
 import base64
-import copy
 import json
 import os
 import sys
@@ -1820,7 +1819,7 @@ class ClientHandler(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        data = copy.deepcopy(self.daemon_status())
+        data = self.daemon_status()
         if self.usr is False or "root" in self.usr_grants:
             return data
         namespaces = self.usr_grants.get("guest", [])

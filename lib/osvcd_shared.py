@@ -29,6 +29,7 @@ DAEMON = None
 
 # daemon_status cache
 LAST_DAEMON_STATUS = {}
+DAEMON_STATUS_LOCK = threading.RLock()
 DAEMON_STATUS = {}
 PATCH_ID = 0
 
@@ -1380,11 +1381,12 @@ class OsvcThread(threading.Thread, Crypt):
         global EVENT_Q
         global PATCH_ID
         LAST_DAEMON_STATUS = json.loads(json.dumps(DAEMON_STATUS))
-        DAEMON_STATUS = self._daemon_status()
-        diff = json_delta.diff(
-            LAST_DAEMON_STATUS, DAEMON_STATUS,
-            verbose=False, array_align=False, compare_lengths=False
-        )
+        with DAEMON_STATUS_LOCK:
+            DAEMON_STATUS = self._daemon_status()
+            diff = json_delta.diff(
+                LAST_DAEMON_STATUS, DAEMON_STATUS,
+                verbose=False, array_align=False, compare_lengths=False
+            )
         if not diff:
             return
         PATCH_ID += 1
@@ -1396,7 +1398,8 @@ class OsvcThread(threading.Thread, Crypt):
         })
 
     def daemon_status(self):
-        return DAEMON_STATUS
+        with DAEMON_STATUS_LOCK:
+            return DAEMON_STATUS
 
     @staticmethod
     def filter_daemon_status(data, namespaces):
