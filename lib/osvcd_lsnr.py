@@ -590,6 +590,21 @@ class Listener(shared.OsvcThread):
         event["data"] = changes
         return event
 
+    @staticmethod
+    def bind_inet(sock, addr, port):
+        """
+        Retry bind until the error is no longer "in use"
+        """
+        while True:
+            try:
+                sock.bind((addr, port))
+                break
+            except socket.error as exc:
+                if exc.errno == 98:
+                    time.sleep(0.5)
+                    continue
+                raise
+
     def setup_socktls(self):
         self.vip
         if not has_ssl:
@@ -607,7 +622,7 @@ class Listener(shared.OsvcThread):
             self.tls_addr = addrinfo[4][0]
             self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
             self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.tls_sock.bind((self.tls_addr, self.tls_port))
+            self.bind_inet(self.tls_sock, self.tls_addr, self.tls_port)
             self.tls_sock.listen(128)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
@@ -631,7 +646,7 @@ class Listener(shared.OsvcThread):
             self.addr = addrinfo[4][0]
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((self.addr, self.port))
+            self.bind_inet(self.sock, self.tls_addr, self.tls_port)
             self.sock.listen(128)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
