@@ -3458,8 +3458,10 @@ class Node(Crypt, ExtConfigMixin):
                         last_patch_id = patch["id"]
                     except Exception:
                         cluster_data = self._daemon_status()
+                        last_patch_id = patch["id"]
                 else:
                     cluster_data = self._daemon_status()
+                    last_patch_id = patch["id"]
                 try:
                     cluster_data["monitor"]
                 except KeyError:
