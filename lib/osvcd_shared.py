@@ -1399,7 +1399,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def daemon_status(self):
         with DAEMON_STATUS_LOCK:
-            return DAEMON_STATUS
+            return copy.deepcopy(DAEMON_STATUS)
 
     @staticmethod
     def filter_daemon_status(data, namespaces):
