@@ -3080,35 +3080,35 @@ class Node(Crypt, ExtConfigMixin):
         _data = {}
         if isinstance(data, dict):
             if "metadata" in data:
-                path = fmt_path(data["metadata"]["name"], data["metadata"]["namespace"], data["metadata"]["kind"])
+                tmppath = fmt_path(data["metadata"]["name"], data["metadata"]["namespace"], data["metadata"]["kind"])
                 del data["metadata"]
-                _data = {path: data}
+                _data = {tmppath: data}
             else:
-                for path, __data in data.items():
+                for tmppath, __data in data.items():
                     try:
-                        split_path(path)
+                        split_path(tmppath)
                     except ValueError:
-                        raise ex.excError("invalid injected data format: %s is not a path" % path)
+                        raise ex.excError("invalid injected data format: %s is not a path" % tmppath)
                     if "metadata" in __data:
                         del __data["metadata"]
-                    _data[path] = __data
+                    _data[tmppath] = __data
         elif isinstance(data, list):
             for __data in data:
                  try:
-                     path = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
+                     tmppath = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
                  except (ValueError, KeyError):
                      raise ex.excError("invalid injected data format: list need a metadata section in each entry")
                  del __data["metadata"]
-                 _data[path] = __data
+                 _data[tmppath] = __data
 
         if _data:
             if path:
                  if len(_data) > 1:
                      raise ex.excError("multiple configs available to create a single service")
                  # force the new path
-                 for path, __data in _data.items():
+                 for tmppath, __data in _data.items():
                      break
-                 if path.endswith("svc/dummy"):
+                 if tmppath.endswith("svc/dummy"):
                      raise ex.excError("no path in deployment data")
                  _data = {
                      path: __data,
@@ -3119,22 +3119,22 @@ class Node(Crypt, ExtConfigMixin):
                 data = {path: {}}
 
         if data:
-            for path in data:
-                data[path] = self.svc_conf_set(data[path], kw, env, interactive)
-                if path in env_to_merge:
-                    if "env" in env_to_merge[path]:
-                        _env_to_merge = env_to_merge[path]["env"]
+            for tmppath in data:
+                data[tmppath] = self.svc_conf_set(data[tmppath], kw, env, interactive)
+                if tmppath in env_to_merge:
+                    if "env" in env_to_merge[tmppath]:
+                        _env_to_merge = env_to_merge[tmppath]["env"]
                     else:
-                        _env_to_merge = env_to_merge[path]
+                        _env_to_merge = env_to_merge[tmppath]
                 elif "env" in env_to_merge:
                     _env_to_merge = env_to_merge["env"]
                 else:
                     _env_to_merge = env_to_merge
                 if isinstance(_env_to_merge, dict) and _env_to_merge:
-                    if "env" not in data[path]:
-                        data[path]["env"] = _env_to_merge
+                    if "env" not in data[tmppath]:
+                        data[tmppath]["env"] = _env_to_merge
                     else:
-                        data[path]["env"].update(_env_to_merge)
+                        data[tmppath]["env"].update(_env_to_merge)
 
         if want_context():
             req = {
