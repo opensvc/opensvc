@@ -471,19 +471,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.set_lazy("log", log)
 
         self.paths = ObjPaths(self.path, name, cf)
-        self.init_resources_errors = 0
-        self.resources_initialized = False
         self.scheduler_configured = False
-        self.resources_by_id = {}
-        self.encap_resources = {}
-        self.resourcesets_by_id = {}
+        self.reset_resources()
 
         self.encap_json_status_cache = {}
         self.rset_status_cache = None
         self.lockfd = None
         self.abort_start_done = False
         self.action_start_date = datetime.datetime.now()
-        self.has_encap_resources = False
         self.action_rid = []
         self.action_rid_before_depends = []
         self.action_rid_depends = []
@@ -530,6 +525,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
             waitlock=None,
             wait=False,
         )
+
+    def reset_resources(self):
+        self.init_resources_errors = 0
+        self.resources_initialized = False
+        self.resources_by_id = {}
+        self.encap_resources = {}
+        self.resourcesets_by_id = {}
+        self.has_encap_resources = False
 
     def get_node(self):
         """
@@ -882,7 +885,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.node is None:
             self.node = node.Node()
 
-        if action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
+        if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
            'collector' not in action and \
             not options.dry_run and \
@@ -1073,8 +1076,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.save_exc()
         finally:
             self.running_action = None
+            if action in ACTIONS_CF_CHANGE:
+                self.unset_conf_lazy()
+                self.reset_resources()
+                self.init_resources()
             if not want_context() and \
-               action not in ACTIONS_NO_STATUS_CHANGE + ACTIONS_CF_CHANGE and \
+               action not in ACTIONS_NO_STATUS_CHANGE and \
                not (action == "delete" and not self.command_is_scoped()):
                 data = self.print_status_data(refresh=True)
                 if action == "start" and not self.command_is_scoped() and \
@@ -1087,8 +1094,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     self.log.error("start action returned 0 but instance "
                                    "avail status is %s", data.get("avail"))
                     err = 1
-            elif action in ACTIONS_CF_CHANGE:
-                self.wake_monitor()
             if action != "toc":
                 self.clear_action(action, err, force=options.notify)
             if action not in ("sync_all", "run"):
