@@ -258,6 +258,8 @@ class Monitor(shared.OsvcThread):
             self.fetch_service_config(path, ref_nodename)
             if new_service:
                 self.init_new_service(path)
+            else:
+                self.service_status_fallback(path)
 
     def init_new_service(self, path):
         name, namespace, kind = split_path(path)
