@@ -1545,7 +1545,13 @@ class ClientHandler(shared.OsvcThread):
 
     def create_multiplex(self, fname, options, data, original_nodename, action, stream_id=None):
         h = {}
-        for path, svcdata in options.get("data", {}).items():
+        template = options.get("template")
+        path = options.get("path")
+        if template:
+            odata = shared.NODE.svc_conf_from_templ("dummy", None, "svc", template)
+        else:
+            odata = options.get("data", {})
+        for path, svcdata in odata.items():
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
             placement = svcdata.get("DEFAULT", {}).get("placement", "nodes order")
             if nodes:
@@ -2531,12 +2537,12 @@ class ClientHandler(shared.OsvcThread):
         """
         options = kwargs.get("options", {})
         data = options.get("data")
-        if not data:
+        template = options.get("template")
+        if not data and not template:
             return {"status": 0, "info": "no data"}
         sync = options.get("sync", True)
         namespace = options.get("namespace")
         provision = options.get("provision")
-        template = options.get("template")
         restore = options.get("restore")
         path = options.get("path")
         self.log_request("create/update %s" % ",".join([p for p in data]), nodename, **kwargs)
