@@ -1716,9 +1716,9 @@ def build_services(status=None, paths=None, create_instance=False,
                 makedirs(log_d)
             else:
                 log_d = rcEnv.paths.pathlog
-            svclog = rcLogger.initLogger(rcEnv.nodename+"."+namespace+"."+kind+"."+name,
-                                         directory=log_d,
-                                         handlers=["file", "syslog"])
+            log_root = ".".join([rcEnv.nodename, namespace, kind, name])
+            log_file = os.path.join(log_d, name+".log")
+            svclog = rcLogger.initLogger(log_root, log_file, handlers=["file", "syslog"])
             svclog.error(str(e))
             continue
         except ex.excAbortAction:
