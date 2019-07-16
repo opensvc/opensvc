@@ -105,7 +105,7 @@ OPT.update({
         help="The tag name, as shown by :cmd:`svcmgr collector list tags`."),
     "to": Option(
         "--to", default=None,
-        action="store", dest="parm_destination_node",
+        action="store", dest="to",
         help="The remote node to start or migrate the service to. Or the "
              "target number of instance to scale to."),
     "upto": Option(

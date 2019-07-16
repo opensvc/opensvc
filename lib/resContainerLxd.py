@@ -136,7 +136,7 @@ class Container(resContainer.Container):
                 self.log.debug("failed to remove leftover cgroup %s: %s" % (p, str(e)))
 
     def _migrate(self):
-        cmd = [lxc, 'move', self.name, self.svc.options.destination_node+":"+self.name]
+        cmd = [lxc, 'move', self.name, self.svc.options.to+":"+self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError

@@ -109,7 +109,7 @@ class HpVm(resContainer.Container):
         return False
 
     def _migrate(self):
-        cmd = ['hpvmmigrate', '-o', '-P', self.name, '-h', self.svc.options.destination_node]
+        cmd = ['hpvmmigrate', '-o', '-P', self.name, '-h', self.svc.options.to]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.excError

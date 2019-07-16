@@ -1365,9 +1365,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             global_expect = "purged"
             action = "purge"
         elif action == "move":
-            if self.options.destination_node is None:
+            if self.options.to is None:
                 raise ex.excError("the --to <node>[,<node>,...] option is required")
-            global_expect += self.options.destination_node
+            global_expect += self.options.to
         elif action == "switch":
             dst = self.destination_node_sanity_checks() # pylint: disable=assignment-from-none
             if dst is None:
@@ -5033,7 +5033,7 @@ class Svc(BaseSvc):
         Return the validated destination node name.
         """
         if destination_node is None:
-            destination_node = self.options.destination_node
+            destination_node = self.options.to
         if destination_node is None:
             destination_node = "<peer>"
         return destination_node
@@ -5082,7 +5082,7 @@ class Svc(BaseSvc):
         if self.scale_target is None:
             raise ex.excError("can't scale: not a scaler")
         try:
-            value = int(self.options.destination_node)
+            value = int(self.options.to)
             assert value >= 0
         except Exception:
             raise ex.excError("invalid scale target: set '--to <n>' where n>=0")
