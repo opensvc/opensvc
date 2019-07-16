@@ -3331,8 +3331,9 @@ class Node(Crypt, ExtConfigMixin):
         path = self.options.jsonpath_filter
         server = self.options.server
         duration = self.options.duration
+        verbose = self.options.verbose
         try:
-            self._wait(server, path, duration)
+            self._wait(server, path, duration, verbose)
         except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
@@ -3340,7 +3341,7 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return 1
 
-    def _wait(self, server=None, path=None, duration=None):
+    def _wait(self, server=None, path=None, duration=None, verbose=None):
         """
         Wait for a condition on the monitor thread data or
         a local event data.
@@ -3350,7 +3351,7 @@ class Node(Crypt, ExtConfigMixin):
         if not path:
             return
 
-        if self.options.verbose:
+        if verbose:
             begin = time.time()
 
         if server is None:
@@ -3445,18 +3446,16 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("could not fetch cluster data")
 
         if neg ^ eval_cond(val, cluster_data):
-            if self.options.verbose:
+            if verbose:
                 elapsed(self, begin)
             return
 
         if duration:
             import signal
             def alarm_handler(signum, frame):
-                msg = "timeout"
-                if self.options.verbose:
-                    elapsed = time.time() - begin
-                    msg = "timeout. elapsed %.2f seconds"%elapsed
-                print(msg, file=sys.stderr)
+                if verbose:
+                    elapsed(self, begin)
+                print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
@@ -3485,7 +3484,7 @@ class Node(Crypt, ExtConfigMixin):
                 if match_event(patch):
                     break
 
-        if self.options.verbose:
+        if verbose:
             elapsed(self, begin)
 
     def events(self, server=None):
