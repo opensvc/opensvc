@@ -959,7 +959,10 @@ class ClientHandler(shared.OsvcThread):
             return self.index(stream_id)
         elif path == "index.js":
             return self.index_js()
-        node = headers.get(Headers.node)
+        node = stream["request_headers"].get(Headers.node)
+        if node is not None:
+            # rebuild the selector from split o-node header
+            node = ",".join([bdecode(x) for x in stream["request_headers"].get(Headers.node)])
         options = json.loads(bdecode(req_data))
         data = {
             "action": path,
