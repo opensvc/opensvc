@@ -508,6 +508,7 @@ ACTIONS = {
                    "lists, non-emptry strings).",
             "options": [
                 OPT.duration,
+                OPT.verbose,
             ]
         },
         "wol": {

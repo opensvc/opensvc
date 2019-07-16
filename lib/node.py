@@ -3350,6 +3350,9 @@ class Node(Crypt, ExtConfigMixin):
         if not path:
             return
 
+        if self.options.verbose:
+            begin = time.time()
+
         if server is None:
             server = rcEnv.nodename
 
@@ -3382,6 +3385,10 @@ class Node(Crypt, ExtConfigMixin):
             jsonpath_expr = parse(path)
         except Exception as exc:
             raise ex.excError(exc)
+
+        def elapsed(self, begin):
+            elapsed = time.time() - begin
+            print("elapsed %.2f seconds"%elapsed)
 
         def eval_cond(val, data):
             for match in jsonpath_expr.find(data):
@@ -3435,15 +3442,21 @@ class Node(Crypt, ExtConfigMixin):
             cluster_data = self._daemon_status()
             cluster_data["monitor"]
         except KeyError:
-            raise ex.excError("could fetch cluster data")
+            raise ex.excError("could not fetch cluster data")
 
         if neg ^ eval_cond(val, cluster_data):
+            if self.options.verbose:
+                elapsed(self, begin)
             return
 
         if duration:
             import signal
             def alarm_handler(signum, frame):
-                print("timeout", file=sys.stderr)
+                msg = "timeout"
+                if self.options.verbose:
+                    elapsed = time.time() - begin
+                    msg = "timeout. elapsed %.2f seconds"%elapsed
+                print(msg, file=sys.stderr)
                 raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
@@ -3471,6 +3484,9 @@ class Node(Crypt, ExtConfigMixin):
             elif kind == "event":
                 if match_event(patch):
                     break
+
+        if self.options.verbose:
+            elapsed(self, begin)
 
     def events(self, server=None):
         try:
