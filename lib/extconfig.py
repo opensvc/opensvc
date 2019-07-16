@@ -418,7 +418,7 @@ class ExtConfigMixin(object):
         elif _ref in ("name", "svcname") and is_svc:
             val = self.name
         elif _ref in ("short_name", "short_svcname") and is_svc:
-            val = self.svcname.split(".")[0]
+            val = self.name.split(".")[0]
         elif _ref in ("scaler_name", "scaler_svcname") and is_svc:
             val = re.sub("[0-9]+\.", "", self.name)
         elif _ref in ("scaler_short_name", "scaler_short_svcname") and is_svc:
