@@ -31,7 +31,7 @@ class Cfg(DataMixin, BaseSvc):
         if not data:
             raise ex.excError("configuration value can not be empty")
         if not is_string(data) or "\n" in data:
-            data = "base64:"+base64.urlsafe_b64encode(data.encode()).decode()
+            data = "base64:"+base64.urlsafe_b64encode(data)
         else:
             data = "literal:"+data
         self.set_multi(["data.%s=%s" % (key, data)])
