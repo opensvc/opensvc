@@ -324,6 +324,7 @@ class ExtConfigMixin(object):
         self._set_multi(changes, validation=validation)
 
     def _set_one(self, section, option, value):
+        value = try_decode(value)
         try:
             cd = self.private_cd
         except AttributeError:
