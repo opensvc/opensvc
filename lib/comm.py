@@ -20,6 +20,7 @@ try:
     import ssl
     import h2.connection
     import hyper
+    from hyper.common.headers import HTTPHeaderMap
     SSLWantReadError = ssl.SSLWantReadError
     SSLError = ssl.SSLError
     has_ssl = True
@@ -705,7 +706,7 @@ class Crypt(object):
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, af=sp.af)
         body = self.h2_body_from_data(data)
-        headers["Content-Length"] = str(len(body))
+        headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp)
         method = "GET"
         try:
@@ -816,11 +817,15 @@ class Crypt(object):
         return "/"+data.get("action", "")
 
     def h2_headers(self, node=None, secret=None, af=None):
-        headers = {}
+        headers = HTTPHeaderMap()
         if node:
-            headers[Headers.node] = node
+            if isinstance(node, (tuple, list, set)):
+                for n in node:
+                    headers.update({Headers.node: n})
+            else:
+                headers.update({Headers.node: node})
         if secret and af != socket.AF_UNIX:
-            headers[Headers.secret] = secret
+            headers.update({Headers.secret: secret})
         return headers
 
     @staticmethod
@@ -862,7 +867,7 @@ class Crypt(object):
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, af=sp.af)
         body = self.h2_body_from_data(data)
-        headers["Content-Length"] = str(len(body))
+        headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp, enable_push=True)
         stream_id = conn.request("GET", path, headers=headers, body=body) 
         #data = resp.read()

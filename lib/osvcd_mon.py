@@ -2550,6 +2550,18 @@ class Monitor(shared.OsvcThread):
                 return False
         return True
 
+    def get_agg_conf(self, path):
+        data = Storage()
+        for inst in self.get_service_instances(path).values():
+            scale = inst.get("scale")
+            if scale is not None:
+                data.scale = scale
+            scaler_slave = inst.get("scaler_slave")
+            if scaler_slave:
+                data.scaler_slave = True
+            break
+        return data
+
     def get_agg_deleted(self, path):
         if len([True for inst in self.get_service_instances(path).values() if "updated" in inst]) > 0:
             return False
@@ -3414,7 +3426,7 @@ class Monitor(shared.OsvcThread):
         return not instance.get("provisioned", False)
 
     def get_agg(self, path):
-        data = Storage()
+        data = self.get_agg_conf(path)
         data.avail = self.get_agg_avail(path)
         data.frozen = self.get_agg_frozen(path)
         data.overall = self.get_agg_overall(path)
