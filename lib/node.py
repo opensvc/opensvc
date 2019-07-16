@@ -3297,8 +3297,12 @@ class Node(Crypt, ExtConfigMixin):
         path = self.options.jsonpath_filter
         nodename = self.options.node
         duration = self.options.duration
+        begin = time.time()
+
         try:
             self._wait(nodename, path, duration)
+            if self.options.verbose:
+                print("elapsed %.2f seconds" % (time.time() - begin))
         except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
@@ -3401,7 +3405,7 @@ class Node(Crypt, ExtConfigMixin):
             cluster_data = self._daemon_status()
             cluster_data["monitor"]
         except KeyError:
-            raise ex.excError("could fetch cluster data")
+            raise ex.excError("could not fetch cluster data")
 
         if neg ^ eval_cond(val, cluster_data):
             return
@@ -3409,7 +3413,8 @@ class Node(Crypt, ExtConfigMixin):
         if duration:
             import signal
             def alarm_handler(signum, frame):
-                print("timeout", file=sys.stderr)
+                msg = "timeout"
+                print(msg, file=sys.stderr)
                 raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
             signal.alarm(convert_duration(duration))
