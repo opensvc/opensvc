@@ -89,7 +89,7 @@ class Monitor(shared.OsvcThread):
         self.compat = True
         self.last_node_data = None
 
-    def run(self):
+    def init(self):
         self.set_tid()
         self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
         self.event("monitor_started")
@@ -134,6 +134,12 @@ class Monitor(shared.OsvcThread):
         # we are in init state.
         self.update_hb_data()
 
+    def run(self):
+        try:
+            self.init()
+        except Excetpions as exc:
+            self.log.exception(exc)
+            raise
         try:
             while True:
                 self.do()
