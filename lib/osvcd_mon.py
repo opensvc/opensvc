@@ -137,7 +137,7 @@ class Monitor(shared.OsvcThread):
     def run(self):
         try:
             self.init()
-        except Excetpions as exc:
+        except Exception as exc:
             self.log.exception(exc)
             raise
         try:
