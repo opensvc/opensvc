@@ -152,7 +152,7 @@ class Node(Crypt, ExtConfigMixin):
         self.clouds = None
         self.paths = Storage(
             reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
-            last_boot_id=os.path.join(rcEnv.paths.pathvar, "last_boot_id"),
+            last_boot_id=os.path.join(rcEnv.paths.pathvar, "node", "last_boot_id"),
             tmp_cf=os.path.join(rcEnv.paths.pathvar, "node.conf.tmp"),
             cf=rcEnv.paths.nodeconf,
         )
