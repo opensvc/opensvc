@@ -1,5 +1,4 @@
 # variables users can override in the defaults file
-OSVC_ROOT_PATH="/usr/share/opensvc"
 OSVC_PYTHON="python"
 OSVC_PYTHON_ARGS=""
 
@@ -25,8 +24,10 @@ then
 	. "/etc/rc.config.d/opensvc"
 fi
 
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+
 LAST=$(git describe --abbrev=0 --tags)
 COMMITS=${1:-$LAST..HEAD}
 echo COMMITS=$COMMITS
 
-$OSVC_PYTHON $OSVC_ROOT_PATH/bin/pkg/changelog.py $COMMITS
+$OSVC_PYTHON $PATH_SCRIPT/changelog.py $COMMITS
