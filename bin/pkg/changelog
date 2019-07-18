@@ -30,4 +30,4 @@ LAST=$(git describe --abbrev=0 --tags)
 COMMITS=${1:-$LAST..HEAD}
 echo COMMITS=$COMMITS
 
-$OSVC_PYTHON $PATH_SCRIPT/changelog.py $COMMITS
+$OSVC_PYTHON $PATH_SCRIPT/changelog.py --commits $COMMITS --verbose
