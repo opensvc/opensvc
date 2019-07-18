@@ -1146,13 +1146,6 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "text": "The path to the private key to use to log in the switch."
     },
     {
-        "section": "switch",
-        "rtype": "brocade",
-        "keyword": "password",
-        "example": "admin",
-        "text": "The password to use to log in the switch. Either username or key must be specified."
-    },
-    {
         "section": "array",
         "keyword": "type",
         "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio"],
