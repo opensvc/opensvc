@@ -162,6 +162,10 @@ class Keyword(object):
                 fill="node."
             if "template.cluster" in self.top.template_prefix:
                 fill="cluster."
+            if "template.secret" in self.top.template_prefix:
+                fill="secret."
+            if "template.cfg" in self.top.template_prefix:
+                fill="cfg."
             s += ".. _%s%s.%s:\n\n" % (fill, section, self.keyword)
 
         s += ':kw:`%s`\n' % self.keyword
