@@ -621,7 +621,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "name",
         "at": True,
-        "rtype": rcEnv.vt_supported,
+        "rtype": list(set(rcEnv.vt_supported)-set(["docker", "podman"])),
         "default_text": "the service name",
         "text": "Set if the container hostname is different from the container name."
     },
