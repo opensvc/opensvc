@@ -60,8 +60,7 @@ PRIVATE_KEYWORDS = [
         "section": "node",
         "keyword": "connect_to",
         "example": "1.2.3.4",
-        "default_text": "On GCE instances, defaults to the instance ip address.",
-        "text": "An asset information to push to the collector on pushasset, overriding the currently stored value."
+        "text": "An asset information to push to the collector on pushasset, overriding the currently discovered value. On GCE instances, defaults to the instance ip address."
     },
     {
         "section": "node",
@@ -169,12 +168,6 @@ PRIVATE_KEYWORDS = [
         "section": "node",
         "keyword": "tz",
         "example": "+0200",
-        "text": "Override for the corresponding pushasset discovery probe."
-    },
-    {
-        "section": "node",
-        "keyword": "connect_to",
-        "example": "1.2.3.4",
         "text": "Override for the corresponding pushasset discovery probe."
     },
     {
