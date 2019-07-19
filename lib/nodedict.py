@@ -405,7 +405,9 @@ KEYWORDS = [
         "keyword": "repo",
         "example": "http://opensvc.repo.corp",
         "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatepkg' and 'nodemgr updatecomp' commands.
+
 Expected repository structure::
+
 	ROOT
 	+- compliance
 	 +- compliance-100.tar.gz
@@ -423,6 +425,7 @@ Expected repository structure::
 	   +- opensvc-1.9-49.rpm
 	   +- opensvc-1.9-50.rpm
 	 +- tbz
+
 """
     },
     {
@@ -430,7 +433,9 @@ Expected repository structure::
         "keyword": "repopkg",
         "example": "http://repo.opensvc.com",
         "text": """Set the uri of the opensvc agent package repository. This parameter is used by the 'nodemgr updatepkg' command.
+
 Expected repository structure::
+
 	ROOT
 	+- deb
 	+- depot
@@ -443,6 +448,7 @@ Expected repository structure::
 	  +- opensvc-1.9-49.rpm
 	  +- opensvc-1.9-50.rpm
 	+- tbz
+
 """
     },
     {
@@ -450,11 +456,14 @@ Expected repository structure::
         "keyword": "repocomp",
         "example": "http://compliance.repo.corp",
         "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatecomp' command.
+
 Expected repository structure::
+
 	ROOT
 	+- compliance-100.tar.gz
 	+- compliance-101.tar.gz
 	+- current -> compliance-101.tar.gz
+
 """
     },
     {
