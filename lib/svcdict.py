@@ -2053,16 +2053,6 @@ KEYWORDS = [
     {
         "section": "disk",
         "rtype": "disk",
-        "keyword": "size",
-        "convert": "size",
-        "at": True,
-        "provisioning": True,
-        "text": "The size of the disk to provision.",
-        "example": "15g"
-    },
-    {
-        "section": "disk",
-        "rtype": "disk",
         "keyword": "array",
         "at": True,
         "provisioning": True,
