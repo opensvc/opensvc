@@ -621,7 +621,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "name",
         "at": True,
-        "rtype": rcEnv.vt_supported,
+        "rtype": list(set(rcEnv.vt_supported)-set(["docker", "podman"])),
         "default_text": "the service name",
         "text": "Set if the container hostname is different from the container name."
     },
@@ -2053,16 +2053,6 @@ KEYWORDS = [
     {
         "section": "disk",
         "rtype": "disk",
-        "keyword": "size",
-        "convert": "size",
-        "at": True,
-        "provisioning": True,
-        "text": "The size of the disk to provision.",
-        "example": "15g"
-    },
-    {
-        "section": "disk",
-        "rtype": "disk",
         "keyword": "array",
         "at": True,
         "provisioning": True,
@@ -2944,7 +2934,8 @@ KEYWORDS = [
     {
         "section": "task",
         "keyword": "type",
-        "candidates": [None, "docker", "podman"],
+        "candidates": ["host", "docker", "podman"],
+        "default": "host",
         "text": "The type of task. Default tasks run on the host, their use is limited to the cluster admin population. Containerized tasks are safe for unprivileged population."
     },
     {

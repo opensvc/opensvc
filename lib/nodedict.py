@@ -60,8 +60,7 @@ PRIVATE_KEYWORDS = [
         "section": "node",
         "keyword": "connect_to",
         "example": "1.2.3.4",
-        "default_text": "On GCE instances, defaults to the instance ip address.",
-        "text": "An asset information to push to the collector on pushasset, overriding the currently stored value."
+        "text": "An asset information to push to the collector on pushasset, overriding the currently discovered value. On GCE instances, defaults to the instance ip address."
     },
     {
         "section": "node",
@@ -169,12 +168,6 @@ PRIVATE_KEYWORDS = [
         "section": "node",
         "keyword": "tz",
         "example": "+0200",
-        "text": "Override for the corresponding pushasset discovery probe."
-    },
-    {
-        "section": "node",
-        "keyword": "connect_to",
-        "example": "1.2.3.4",
         "text": "Override for the corresponding pushasset discovery probe."
     },
     {
@@ -412,7 +405,9 @@ KEYWORDS = [
         "keyword": "repo",
         "example": "http://opensvc.repo.corp",
         "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatepkg' and 'nodemgr updatecomp' commands.
+
 Expected repository structure::
+
 	ROOT
 	+- compliance
 	 +- compliance-100.tar.gz
@@ -430,6 +425,7 @@ Expected repository structure::
 	   +- opensvc-1.9-49.rpm
 	   +- opensvc-1.9-50.rpm
 	 +- tbz
+
 """
     },
     {
@@ -437,7 +433,9 @@ Expected repository structure::
         "keyword": "repopkg",
         "example": "http://repo.opensvc.com",
         "text": """Set the uri of the opensvc agent package repository. This parameter is used by the 'nodemgr updatepkg' command.
+
 Expected repository structure::
+
 	ROOT
 	+- deb
 	+- depot
@@ -450,6 +448,7 @@ Expected repository structure::
 	  +- opensvc-1.9-49.rpm
 	  +- opensvc-1.9-50.rpm
 	+- tbz
+
 """
     },
     {
@@ -457,11 +456,14 @@ Expected repository structure::
         "keyword": "repocomp",
         "example": "http://compliance.repo.corp",
         "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatecomp' command.
+
 Expected repository structure::
+
 	ROOT
 	+- compliance-100.tar.gz
 	+- compliance-101.tar.gz
 	+- current -> compliance-101.tar.gz
+
 """
     },
     {
@@ -1144,13 +1146,6 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "key",
         "example": "/path/to/key",
         "text": "The path to the private key to use to log in the switch."
-    },
-    {
-        "section": "switch",
-        "rtype": "brocade",
-        "keyword": "password",
-        "example": "admin",
-        "text": "The password to use to log in the switch. Either username or key must be specified."
     },
     {
         "section": "array",

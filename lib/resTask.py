@@ -10,34 +10,6 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import lcall
 from six.moves import input
 
-def run_as_popen_kwargs(user):
-    if rcEnv.sysname == "Windows":
-        return {}
-    if user is None:
-        return {}
-    cwd = rcEnv.paths.pathtmp
-    import pwd
-    try:
-        pw_record = pwd.getpwnam(user)
-    except Exception as exc:
-        raise ex.excError("user lookup failure: %s" % str(exc))
-    user_name      = pw_record.pw_name
-    user_home_dir  = pw_record.pw_dir
-    user_uid  = pw_record.pw_uid
-    user_gid  = pw_record.pw_gid
-    env = os.environ.copy()
-    env['HOME']  = user_home_dir
-    env['LOGNAME']  = user_name
-    env['PWD']  = cwd
-    env['USER']  = user_name
-    return {'preexec_fn': demote(user_uid, user_gid), 'cwd': cwd, 'env': env}
-
-def demote(user_uid, user_gid):
-    def result():
-        os.setgid(user_gid)
-        os.setuid(user_uid)
-    return result
-
 class Task(Res.Resource):
     default_optional = True
     def __init__(self,
@@ -154,27 +126,10 @@ class Task(Res.Resource):
 
 
     def _run_call(self):
-        kwargs = {
-            'timeout': self.timeout,
-            'blocking': True,
-        }
-        kwargs.update(run_as_popen_kwargs(self.user))
-        if self.configs_environment or self.secrets_environment:
-            if "env" not in kwargs:
-                kwargs["env"] = {}
-            kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
-            kwargs["env"].update(self.kind_environment_env("sec", self.secrets_environment))
-        try:
-            self.action_triggers("", "command", **kwargs)
-        except ex.excError:
-            if self.on_error:
-                kwargs["blocking"] = False
-                self.action_triggers("", "on_error", **kwargs)
-            raise
+        pass
 
     def _status(self, verbose=False):
         return rcStatus.NA
 
     def is_provisioned(self, refresh=False):
         return True
-

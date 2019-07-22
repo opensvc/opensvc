@@ -1490,8 +1490,8 @@ def add_task(svc, s):
         add_task_docker(svc, s)
     elif rtype == "podman":
         add_task_podman(svc, s)
-    else:
-        add_task_default(svc, s)
+    elif rtype == "host":
+        add_task_host(svc, s)
 
 def add_task_podman(svc, s):
     kwargs = init_kwargs(svc, s)
@@ -1557,7 +1557,7 @@ def add_task_docker(svc, s):
     r = resTaskDocker.Task(**kwargs)
     svc += r
 
-def add_task_default(svc, s):
+def add_task_host(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["command"] = svc.oget(s, "command")
     kwargs["on_error"] = svc.oget(s, "on_error")
@@ -1568,8 +1568,8 @@ def add_task_default(svc, s):
     kwargs["confirmation"] = svc.oget(s, "confirmation")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
     kwargs["configs_environment"] = svc.oget(s, "configs_environment")
-    import resTask
-    r = resTask.Task(**kwargs)
+    import resTaskHost
+    r = resTaskHost.Task(**kwargs)
     svc += r
 
 def add_app_winservice(svc, s):
