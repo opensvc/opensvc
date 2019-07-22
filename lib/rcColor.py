@@ -9,6 +9,11 @@ from rcUtilities import is_string
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    OrderedDict = dict
+
 if os.name == "nt":
     import colorama
     colorama.init()
@@ -115,8 +120,10 @@ def colorize_json(s):
 def format_json(d):
     import json
 
+    sort_keys = not isinstance(d, OrderedDict) and OrderedDict != dict
+
     kwargs = {
-      "sort_keys": True,
+      "sort_keys": sort_keys,
       "ensure_ascii": False,
       "indent": 4,
       "separators": (',', ': '),
