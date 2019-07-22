@@ -1199,8 +1199,7 @@ class ExtConfigMixin(object):
                 cd = self.private_cd
             except AttributeError:
                 cd = self.cd
-            data = {}
-            data.update(cd)
+            data = type(cd)(cd)
         meta = {}
         if hasattr(self, "namespace"):
             meta.update({
