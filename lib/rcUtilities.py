@@ -1153,7 +1153,7 @@ def daemon_test_lock():
 #
 #############################################################################
 
-def is_service(f, namespace=None, data=None):
+def is_service(f, namespace=None, data=None, local=False):
     if f is None:
         return
     f = re.sub(".conf$", "", f)
@@ -1163,12 +1163,13 @@ def is_service(f, namespace=None, data=None):
     except ValueError:
         return
     path = fmt_svcpath(name, namespace, kind)
-    try:
-        data["services"][path]
-        return path
-    except Exception:
-        if want_context():
-            return
+    if not local:
+        try:
+            data["services"][path]
+            return path
+        except Exception:
+            if want_context():
+                return
     cf = svc_pathcf(path)
     if not os.path.exists(cf):
         return

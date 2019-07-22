@@ -618,6 +618,13 @@ class Node(Crypt, ExtConfigMixin):
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
         """
+        # fully qualified name
+        path = is_service(selector, namespace, data=data, local=data is None)
+        if path:
+            self.options.single_service = True
+            paths = self.filter_ns([path], namespace)
+            return paths
+
         if data is None or not data.get("retryable"):
             try:
                 data = self._daemon_status(silent=True)["monitor"]
@@ -639,11 +646,12 @@ class Node(Crypt, ExtConfigMixin):
             return paths
 
         # fully qualified name
-        path = is_service(selector, namespace, data=data)
-        if path:
-            self.options.single_service = True
-            paths = self.filter_ns([path], namespace)
-            return paths
+        if data is not None:
+            path = is_service(selector, namespace, data=data)
+            if path:
+                self.options.single_service = True
+                paths = self.filter_ns([path], namespace)
+                return paths
 
         # fnmatch on names and service config/status filtering
         try:
@@ -655,7 +663,10 @@ class Node(Crypt, ExtConfigMixin):
         return paths
 
     def _svcs_selector(self, selector, data=None, namespace=None):
-        cluster_data = self._daemon_status()
+        if data:
+            cluster_data = {"monitor": data}
+        else:
+            cluster_data = self._daemon_status()
         if cluster_data:
             self.build_services(svcpaths=[s for s in cluster_data.get("monitor", {}).get("services", {})])
         elif not want_context():

@@ -206,6 +206,10 @@ class Mgr(object):
         action = self.get_action(argv)
         if action in ("create", "deploy"):
             expanded_svcs = selector.split(",")
+        elif action == "ls":
+            mod = __import__("svcmgr_parser")
+            parser = getattr(mod, "SvcmgrOptParser")()
+            yield parser
         else:
             expanded_svcs = self.node.svcs_selector(selector, namespace)
         svc_by_kind = self.dispatch_svcs(expanded_svcs)
