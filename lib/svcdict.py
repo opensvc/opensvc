@@ -2943,6 +2943,7 @@ KEYWORDS = [
         "keyword": "command",
         "at": True,
         "required": True,
+        "rtype": "host",
         "text": "The command to execute on 'run' action and at scheduled interval. The default schedule for tasks is @0.",
         "example": "/srv/{name}/data/scripts/backup.sh"
     },
