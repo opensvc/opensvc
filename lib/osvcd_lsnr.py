@@ -520,6 +520,9 @@ class Listener(shared.OsvcThread):
             self._handle_client(conn, addr, encrypted, sid, usr)
         except DontClose:
             close = False
+        except Exception as exc:
+            self.log.exception(exc)
+            raise
         finally:
             if close:
                 del self.stats.sessions.alive[sid]
