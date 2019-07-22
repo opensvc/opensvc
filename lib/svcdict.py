@@ -2934,7 +2934,8 @@ KEYWORDS = [
     {
         "section": "task",
         "keyword": "type",
-        "candidates": [None, "docker", "podman"],
+        "candidates": ["host", "docker", "podman"],
+        "default": "host",
         "text": "The type of task. Default tasks run on the host, their use is limited to the cluster admin population. Containerized tasks are safe for unprivileged population."
     },
     {
