@@ -102,6 +102,8 @@ class Scheduler(shared.OsvcThread):
             if ca != self.cluster_ca:
                 continue
             cf_mtime = shared.CLUSTER_DATA.get(rcEnv.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
+            if cf_mtime is None:
+                continue
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
                 try:
                     expire = obj.get_cert_expire()
