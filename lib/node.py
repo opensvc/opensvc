@@ -3343,8 +3343,11 @@ class Node(Crypt, ExtConfigMixin):
         server = self.options.server
         duration = self.options.duration
         verbose = self.options.verbose
+        begin = time.time()
         try:
-            self._wait(server, path, duration, verbose)
+            self._wait(server, path, duration)
+            if self.options.verbose:
+                print("elapsed %.2f seconds"% (time.time() - begin))
         except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
@@ -3352,7 +3355,7 @@ class Node(Crypt, ExtConfigMixin):
                 # broken pipe
                 return 1
 
-    def _wait(self, server=None, path=None, duration=None, verbose=None):
+    def _wait(self, server=None, path=None, duration=None):
         """
         Wait for a condition on the monitor thread data or
         a local event data.
@@ -3361,9 +3364,6 @@ class Node(Crypt, ExtConfigMixin):
 
         if not path:
             return
-
-        if verbose:
-            begin = time.time()
 
         if server is None:
             server = rcEnv.nodename
@@ -3397,10 +3397,6 @@ class Node(Crypt, ExtConfigMixin):
             jsonpath_expr = parse(path)
         except Exception as exc:
             raise ex.excError(exc)
-
-        def elapsed(self, begin):
-            elapsed = time.time() - begin
-            print("elapsed %.2f seconds"%elapsed)
 
         def eval_cond(val, data):
             for match in jsonpath_expr.find(data):
@@ -3457,15 +3453,11 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excError("could not fetch cluster data")
 
         if neg ^ eval_cond(val, cluster_data):
-            if verbose:
-                elapsed(self, begin)
             return
 
         if duration:
             import signal
             def alarm_handler(signum, frame):
-                if verbose:
-                    elapsed(self, begin)
                 print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
@@ -3494,9 +3486,6 @@ class Node(Crypt, ExtConfigMixin):
             elif kind == "event":
                 if match_event(patch):
                     break
-
-        if verbose:
-            elapsed(self, begin)
 
     def events(self, server=None):
         try:
