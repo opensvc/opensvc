@@ -195,6 +195,8 @@ class Keyword(object):
 
     def dump(self):
         data = {}
+        if self.rtype:
+            data["type"] = self.rtype
         if self.at:
             data["at"] = self.at
         if self.required:
