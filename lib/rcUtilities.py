@@ -1153,7 +1153,7 @@ def daemon_test_lock():
 #
 #############################################################################
 
-def is_service(f, namespace=None, data=None, local=False):
+def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if f is None:
         return
     f = re.sub(".conf$", "", f)
@@ -1161,6 +1161,8 @@ def is_service(f, namespace=None, data=None, local=False):
     try:
         name, namespace, kind = split_path(f)
     except ValueError:
+        return
+    if kinds and kind not in kinds:
         return
     path = fmt_path(name, namespace, kind)
     if not local:
@@ -1175,14 +1177,14 @@ def is_service(f, namespace=None, data=None, local=False):
         return
     return path
 
-def list_services(namespace=None):
+def list_services(namespace=None, kinds=None):
     l = []
     if namespace in (None, "root"):
         for name in glob_root_config():
             s = name[:-5]
             if len(s) == 0:
                 continue
-            path = is_service(name)
+            path = is_service(name, kinds=kinds)
             if path is None:
                 continue
             l.append(path)
@@ -1191,6 +1193,13 @@ def list_services(namespace=None):
         path = path[n:-5]
         if path[-1] == os.sep:
             continue
+        if kinds:
+            try:
+                name, namespace, kind = split_path(path)
+            except ValueError:
+                continue
+            if kind not in kinds:
+                continue
         l.append(path)
     return l
 
