@@ -3084,6 +3084,33 @@ class ClientHandler(shared.OsvcThread):
         data = shared.NODE.asset.get_asset_dict()
         return data
 
+    def rbac_action_get_pools(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_pools(self, nodename, **kwargs):
+        data = shared.NODE.pool_status_data()
+        return data
+
+    def rbac_action_get_networks(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_get_networks(self, nodename, **kwargs):
+        data = shared.NODE.network_status_data()
+        return data
+
+    def rbac_action_get_keywords(self, nodename, **kwargs):
+        pass
+
+    def action_get_keywords(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        kind = options.get("kind", {})
+        if kind == "node":
+            obj = shared.NODE
+        elif kind:
+            obj = factory(kind)(node=self)
+        else:
+            raise HTTP(400, "A kind must be specified.")
+        return obj.kwdict.KEYS.dump()
 
     ##########################################################################
     #
