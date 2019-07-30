@@ -194,7 +194,7 @@ class Keyword(object):
         return s
 
     def dump(self):
-        data = {}
+        data = {"keyword": self.keyword}
         if self.rtype:
             data["type"] = self.rtype
         if self.at:
@@ -228,9 +228,9 @@ class Section(object):
         return self
 
     def dump(self):
-        data = {}
+        data = []
         for kw in self.keywords:
-            data[kw.keyword] = kw.dump()
+            data.append(kw.dump())
         return data
 
     def template(self, fmt="text", write=False):
