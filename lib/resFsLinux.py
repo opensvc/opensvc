@@ -215,6 +215,8 @@ class Mount(Res.Mount):
     def realdev(self):
         if self.fs_type in ("none", "tmpfs", "bind"):
             return
+        if self.device is None:
+            return
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
             try:
                 _dev = label_to_dev(self.device, self.svc.node.devtree)
