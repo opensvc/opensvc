@@ -109,6 +109,7 @@ ACTIONS_WAIT_RESULT = (
     "reboot",
     "shutdown",
     "updatepkg",
+    "updateclumgr",
     "updatecomp",
 )
 ACTIONS_NO_PARALLEL = [
@@ -2162,6 +2163,86 @@ class Node(Crypt, ExtConfigMixin):
         except OSError:
             pass
         os.system("%s pushasset" % rcEnv.paths.nodemgr)
+        return 0
+
+    def updateclumgr(self):
+        """
+        Downloads and installs the cluster manager bundle archive from the url
+        specified as node.repopkg or node.repo in node.conf.
+        """
+        import osvcd_shared as shared
+        api_version = str(shared.API_VERSION)
+        repopkg = self.oget("node", "repopkg")
+        repo = self.oget("node", "repo")
+        if repopkg:
+            bundle_basename = repopkg.strip('/') 
+        elif repo:
+            bundle_basename = repo.strip('/')
+        else:
+            if self.options.cron:
+                return 0
+            print("node.repo or node.repopkg must be set in node.conf",
+                  file=sys.stderr)
+            return 1
+        bundle_name = bundle_basename + "/cluster-manager/" + api_version + '/current'
+        import tempfile
+        tmpf = tempfile.NamedTemporaryFile()
+        fpath = tmpf.name
+        tmpf.close()
+        try:
+            ret = self._updateclumgr(bundle_name, fpath)
+        finally:
+            if os.path.exists(fpath):
+                os.unlink(fpath)
+        return ret
+
+    def _updateclumgr(self, bundle_name, fpath):
+        """
+        Downloads and installs the cluster manager bundle archive from the url
+        specified by the bundle_name argument. The download destination file
+        is specified by fpath. The caller is responsible for its deletion.
+        """
+        print("get %s (%s)"%(bundle_name, fpath))
+        try:
+            self.urlretrieve(bundle_name, fpath)
+        except IOError as exc:
+            print("download failed", ":", exc, file=sys.stderr)
+            if self.options.cron:
+                return 0
+            return 1
+        tmpp = os.path.join(rcEnv.paths.pathtmp, 'html')
+        backp = os.path.join(rcEnv.paths.pathsvc, 'html.bck')
+        htmlp = os.path.join(rcEnv.paths.pathsvc, 'html')
+        makedirs(htmlp)
+        makedirs(tmpp)
+
+        print("extract cluster manager in", tmpp)
+        import tarfile
+        tar = tarfile.open(fpath)
+        os.chdir(tmpp)
+        try:
+            tar.extractall()
+            tar.close()
+        except (OSError, IOError):
+            print("failed to unpack", file=sys.stderr)
+            return 1
+        os.chdir("/")
+
+        print("install new cluster manager in %s"%htmlp)
+        for root, dirs, files in os.walk(tmpp):
+            for fpath in dirs:
+                os.chown(os.path.join(root, fpath), 0, 0)
+                for fpath in files:
+                    os.chown(os.path.join(root, fpath), 0, 0)
+
+        import shutil
+        try:
+            shutil.rmtree(backp)
+        except (OSError, IOError):
+            pass
+
+        shutil.move(htmlp, backp)
+        shutil.move(tmpp, htmlp)
         return 0
 
     def array(self):

@@ -432,7 +432,13 @@ ACTIONS = {
         },
         "updatepkg": {
             "msg": "Upgrade the opensvc agent version. the packages must be "
-                   "available behind the node.repo/packages url.",
+                   "available behind the node.repo/packages url, or behind "
+                   "a mirrored node.repopkg url.",
+        },
+        "updateclumgr": {
+            "msg": "Upgrade the opensvc cluster manager version. the bundles "
+                   "must be available behind the node.repo/cluster-manager "
+                   "url, or behind a mirrored node.repopkg url.",
         },
         "updatecomp": {
             "msg": "Upgrade the opensvc compliance modules. The modules must "
