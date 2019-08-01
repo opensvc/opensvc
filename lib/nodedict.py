@@ -1106,13 +1106,6 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
     },
     {
         "section": "network",
-        "rtype": ["routed_bridge"],
-        "keyword": "subnet",
-        "default": "10.22.0.0/16",
-        "text": "The cluster backend network to fragment for nodes into <ips_per_nodes> blocks."
-    },
-    {
-        "section": "network",
         "rtype": "weave",
         "keyword": "network",
         "default": "10.32.0.0/12",
