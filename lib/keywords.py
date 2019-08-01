@@ -203,8 +203,15 @@ class Keyword(object):
             data["required"] = self.required
         if self.candidates:
             data["candidates"] = self.candidates
+            data["strict_candidates"] = self.strict_candidates
         if self.default:
             data["default"] = self.default
+        if self.default_text:
+            data["default_text"] = self.default_text
+        if self.inheritance:
+            data["inheritance"] = self.inheritance
+        if self.scope_order:
+            data["scope_order"] = self.scope_order
         if self.provisioning:
             data["provisioning"] = self.provisioning
         if self.depends:
