@@ -3107,7 +3107,7 @@ class ClientHandler(shared.OsvcThread):
         if kind == "node":
             obj = shared.NODE
         elif kind:
-            obj = factory(kind)(node=self)
+            obj = factory(kind)(name="dummy", node=self, volatile=True)
         else:
             raise HTTP(400, "A kind must be specified.")
         return obj.kwdict.KEYS.dump()
