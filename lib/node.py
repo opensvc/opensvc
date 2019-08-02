@@ -1975,6 +1975,8 @@ class Node(Crypt, ExtConfigMixin):
 
         try:
             self.set_multi(["node.uuid="+uuid])
+            self.unset_lazy("private_cd")
+            self.unset_lazy("cd")
             self.unset_lazy("collector_env")
         except ex.excError:
             print("failed to write registration number: %s" % uuid,
