@@ -191,8 +191,8 @@ class Daemon(object):
 
     def init(self):
         shared.NODE = node_mod.Node()
-        self.log.info("daemon started, version %s, crypto mod %s",
-                      shared.NODE.agent_version, CRYPTO_MODULE)
+        self.log.info("daemon started, version %s, crypto mod %s, api version %s",
+                      shared.NODE.agent_version, CRYPTO_MODULE, shared.API_VERSION)
 
     def loop_forever(self):
         """

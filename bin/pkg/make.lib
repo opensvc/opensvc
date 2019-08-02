@@ -52,6 +52,45 @@ else
 	SUDO="sudo"
 fi
 
+function deploy_cluster_manager {
+
+	# need curl to be available
+        if ! [ -x "$(command -v curl)" ]; then
+          echo 'Warning: curl is not installed. skipping cluster manager installation' >&2
+          return
+        fi
+
+	# OSVC_CLUMGR_REPO can be set to use a custom repository
+	# OSVC_CURL_OPTS can be set to custom download parameters
+        CLUMGR_DIR="$CHROOT/opt/opensvc/usr/share/html"
+        API_VERSION=$(grep ^API_VERSION $CHROOT/opt/opensvc/lib/osvcd_shared.py | awk '{print $3}')
+	CLUMGR_REPO=${OSVC_CLUMGR_REPO:-https://repo.opensvc.com/cluster-manager}
+        CLUMGR_URL="${CLUMGR_REPO}/${API_VERSION}/latest"
+        CLUMGR_BUNDLE="$CHROOT/opt/opensvc/bundle.tar.gz"
+
+	echo $CLUMGR_REPO | grep -qw "^https"
+	ret=$?
+	if [ $ret -eq 0 ]; then
+	    CURL_OPTS=${OSVC_CURL_OPTS:--k -s}
+	else
+	    CURL_OPTS=${OSVC_CURL_OPTS:--s}
+	fi
+        
+	echo "Downloading cluster manager bundle from ${CLUMGR_URL}"
+        curl $CURL_OPTS -o $CLUMGR_BUNDLE $CLUMGR_URL || {
+           echo 'Warning: could not download cluster manager bundle. skipping cluster manager installation' >&2
+           return
+        }
+
+        [[ ! -d $CLUMGR_DIR ]] && mkdir -p $CLUMGR_DIR
+
+        echo "Extracting cluster manager bundle to $CLUMGR_DIR"
+        tar xzf $CLUMGR_BUNDLE -C $CLUMGR_DIR 2>/dev/null || {
+           echo 'Warning: could not extract cluster manager bundle. skipping cluster manager installation' >&2
+	   return
+        }
+}
+
 function prepare_chroot {
         # cleanup
         $SUDO rm -rf $OSVC/tmp/BUILDROOT/*
@@ -84,8 +123,11 @@ function prepare_chroot {
 		gzip -9 -n $f
 	done
 
+        deploy_cluster_manager
+
 	# purge unwanted files
 	cd /tmp
+	rm -f $CHROOT/opt/opensvc/*.tar.gz >> /dev/null 2>&1
 	rm -rf $CHROOT/opt/opensvc/bin/pkg
 	rm -rf $CHROOT/opt/opensvc/lib/tests
 	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
@@ -109,6 +151,7 @@ function prepare_chroot {
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $DOCDIR/
 	mv $CHROOT/opt/opensvc/usr/share/man/man1/* $CHROOT/usr/share/man/man1/
+	mv $CHROOT/opt/opensvc/usr/share/html $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/bash_completion.d/opensvc.sh $CHROOT/etc/bash_completion.d/
 	ln -sf ../share/opensvc/bin/om $CHROOT/usr/bin/om
 	ln -sf ../share/opensvc/bin/opensvc $CHROOT/usr/bin/svcmgr

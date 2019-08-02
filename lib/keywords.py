@@ -193,6 +193,35 @@ class Keyword(object):
         s += '\n'
         return s
 
+    def dump(self):
+        data = {"keyword": self.keyword}
+        if self.rtype:
+            data["type"] = self.rtype
+        if self.at:
+            data["at"] = self.at
+        if self.required:
+            data["required"] = self.required
+        if self.candidates:
+            data["candidates"] = self.candidates
+            data["strict_candidates"] = self.strict_candidates
+        if self.default:
+            data["default"] = self.default
+        if self.default_text:
+            data["default_text"] = self.default_text
+        if self.inheritance:
+            data["inheritance"] = self.inheritance
+        if self.scope_order:
+            data["scope_order"] = self.scope_order
+        if self.provisioning:
+            data["provisioning"] = self.provisioning
+        if self.depends:
+            data["depends"] = self.depends
+        if self.convert:
+            data["convert"] = self.convert
+        if self.text:
+            data["text"] = self.text
+        return data
+
 class Section(object):
     def __init__(self, section, top=None):
         self.section = section
@@ -204,6 +233,12 @@ class Section(object):
             return self
         self.keywords.append(o)
         return self
+
+    def dump(self):
+        data = []
+        for kw in self.keywords:
+            data.append(kw.dump())
+        return data
 
     def template(self, fmt="text", write=False):
         k = self.getkey("type")
@@ -378,6 +413,12 @@ class KeywordStore(dict):
         if k not in self.sections:
             return Section(k, top=self)
         return self.sections[k]
+
+    def dump(self):
+        data = {}
+        for section in sorted(self.sections):
+            data[section] = self.sections[section].dump()
+        return data
 
     def print_templates(self, fmt="text"):
         """

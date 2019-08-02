@@ -37,6 +37,9 @@ PATCH_ID = 0
 # ours
 COMPAT_VERSION = 10
 
+# expose api handlers version
+API_VERSION = 3
+
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
 CONFIG_LOCK = threading.RLock()

@@ -101,6 +101,7 @@ class Monitor(shared.OsvcThread):
         with shared.CLUSTER_DATA_LOCK:
             shared.CLUSTER_DATA[rcEnv.nodename] = {
                 "compat": shared.COMPAT_VERSION,
+                "api": shared.API_VERSION,
                 "agent": shared.NODE.agent_version,
                 "monitor": dict(shared.NMON_DATA),
                 "labels": shared.NODE.labels,
@@ -706,7 +707,7 @@ class Monitor(shared.OsvcThread):
         )
 
     def services_init_boot(self):
-        proc = self.service_command(",".join(list_services()), ["boot", "--parallel"])
+        proc = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
         self.push_proc(
             proc=proc,
             on_success="services_init_status_callback",
