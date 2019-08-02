@@ -97,6 +97,7 @@ ADMIN_ACTIONS = (
     "add",
     "boot",
     "decode",
+    "delete",
     "gen_cert",
     "install",
     "pg_kill",
