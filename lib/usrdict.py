@@ -49,7 +49,7 @@ KEYWORDS = [
         "keyword": "lock_timeout",
         "default": 60,
         "convert": "duration",
-        "text": "A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The svcmgr --waitlock option overrides this parameter."
+        "text": "A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The :cmd:`svcmgr --waitlock` option overrides this parameter."
     },
     {
         "section": "DEFAULT",
