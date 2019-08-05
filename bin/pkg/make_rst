@@ -2,6 +2,7 @@
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 
+python $PATH_SCRIPT/../../lib/usrdict.py rst
 python $PATH_SCRIPT/../../lib/svcdict.py rst
 python $PATH_SCRIPT/../../lib/secdict.py rst
 python $PATH_SCRIPT/../../lib/cfgdict.py rst
