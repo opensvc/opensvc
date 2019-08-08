@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-07\-08
+.TH NODEMGR 1 2019\-08\-08
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -160,11 +160,11 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector cli\fP
 .RS
 
-Open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. If executed as root and with no :opt:`--user`, the collector is logged in with the node credentials.
+Open a Command Line Interface to the collector rest API. The CLI offers autocompletion of paths and arguments, piping JSON data from files. If executed as root and with no '--user', the collector is logged in with the node credentials.
 
 .TP
 .B --user=USER
-Authenticate with the collector using the specified user credentials instead of the node credentials. Required with :cmd:`nodenmgr register` when the collector is configured to refuse anonymous register.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Required with 'om node register' when the collector is configured to refuse anonymous register.
 .TP
 .B --password=PASSWORD
 Authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
@@ -216,11 +216,11 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector create tag\fP
 .RS
 
-Create a new tag with name specified by :opt:`--tag`.
+Create a new tag with name specified by '--tag'.
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`nodemgr collector list tags`.
+The tag name, as shown by 'om node collector list tags'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -371,7 +371,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector list filtersets\fP
 .RS
 
-Show the list of filtersets available on the collector. If specified, :opt:`--filterset <pattern>` limits the resultset to filtersets matching the pattern.
+Show the list of filtersets available on the collector. If specified, '--filterset <pattern>' limits the resultset to filtersets matching the pattern.
 
 .TP
 .B --color=COLOR
@@ -406,7 +406,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector list nodes\fP
 .RS
 
-Show the list of nodes matching the filterset pointed by :opt:`--filterset`.
+Show the list of nodes matching the filterset pointed by '--filterset'.
 
 .TP
 .B --color=COLOR
@@ -441,7 +441,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector list services\fP
 .RS
 
-Show the list of services matching the filterset pointed by :opt:`--filterset`.
+Show the list of services matching the filterset pointed by '--filterset'.
 
 .TP
 .B --color=COLOR
@@ -476,7 +476,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector list tags\fP
 .RS
 
-List all available tags. Use :opt:`--like` to filter the output.
+List all available tags. Use '--like' to filter the output.
 
 .TP
 .B --like=LIKE
@@ -587,7 +587,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collector search\fP
 .RS
 
-Report the collector objects matching :opt:`--like [<type>:]<substring>`, where `<type>` is the object type acronym as shown in the collector search widget.
+Report the collector objects matching '--like [<type>:]<substring>', where `<type>` is the object type acronym as shown in the collector search widget.
 
 .TP
 .B --like=LIKE
@@ -708,7 +708,7 @@ Set a node tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`nodemgr collector list tags`.
+The tag name, as shown by 'om node collector list tags'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -746,7 +746,7 @@ Unset a node tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`nodemgr collector list tags`.
+The tag name, as shown by 'om node collector list tags'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -782,7 +782,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr compliance attach\fP
 .RS
 
-Attach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` to this node. Attached modulesets are scheduled for check or autofix.
+Attach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' to this node. Attached modulesets are scheduled for check or autofix.
 
 .TP
 .B --moduleset=MODULESET
@@ -911,7 +911,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr compliance detach\fP
 .RS
 
-Detach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` from this node. Detached modulesets are no longer scheduled for check and autofix.
+Detach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' from this node. Detached modulesets are no longer scheduled for check and autofix.
 
 .TP
 .B --moduleset=MODULESET
@@ -1128,7 +1128,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr compliance list moduleset\fP
 .RS
 
-List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the `f%` pattern.
+List available compliance modulesets. Setting '--moduleset f%' limits the resultset to modulesets matching the `f%` pattern.
 
 .TP
 .B --moduleset=MODULESET
@@ -1166,7 +1166,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr compliance list ruleset\fP
 .RS
 
-List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the `f%` pattern.
+List available compliance rulesets. Setting '--ruleset f%' limits the scope to rulesets matching the `f%` pattern.
 
 .TP
 .B --ruleset=RULESET
@@ -1463,7 +1463,7 @@ Show allocated ip address in networks.
 The name of the object.
 .TP
 .B --verbose
-Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'om node print schedule'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1572,7 +1572,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr collect stats\fP
 .RS
 
-Write in local files metrics not found in the standard metrics collector. These files will be fed to the collector by the :cmd:`pushstat` action.
+Write in local files metrics not found in the standard metrics collector. These files will be fed to the collector by the 'pushstat' action.
 
 .TP
 .B --cron
@@ -1648,7 +1648,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr events\fP
 .RS
 
-Follow the daemon events
+Follow the daemon events feed. Two kinds of event can be received: event and patch. Patch data applies to the daemon status structure.
 
 .TP
 .B --color=COLOR
@@ -1880,7 +1880,7 @@ A device path to limit or apply the action to.
 Print the tree leaf-to-root.
 .TP
 .B --verbose
-Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'om node print schedule'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -1918,7 +1918,7 @@ Print the node tasks schedule.
 
 .TP
 .B --verbose
-Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`nodemgr print schedule`.
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'om node print schedule'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2174,7 +2174,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr snooze\fP
 .RS
 
-Snooze alerts on the node for :opt:`--duration`
+Snooze alerts on the node for '--duration'
 
 .TP
 .B --duration=DURATION
@@ -2355,10 +2355,45 @@ The server uri to send a request to. If not specified the local node is targeted
 A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
 
 .RE
+\fBnodemgr updateclumgr\fP
+.RS
+
+Upgrade the opensvc cluster manager version. the bundles must be available behind the node.repo/cluster-manager url, or behind a mirrored node.repopkg url.
+
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+.TP
+.B --local
+Set to disable cluster-wide operations.
+.TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
+.B --node=NODE
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
+
+.RE
 \fBnodemgr updatecomp\fP
 .RS
 
-Upgrade the opensvc compliance modules. The modules must be available as a tarball behind the :kw:`node.repocomp` url.
+Upgrade the opensvc compliance modules. The modules must be available as a tarball behind the 'node.repocomp' url.
 
 .TP
 .B --color=COLOR
@@ -2393,7 +2428,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr updatepkg\fP
 .RS
 
-Upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url.
+Upgrade the opensvc agent version. the packages must be available behind the node.repo/packages url, or behind a mirrored node.repopkg url.
 
 .TP
 .B --color=COLOR
@@ -2442,6 +2477,9 @@ If '<op><val>' is not specified, any value evaluated as True is considered a mat
 .B --duration=DURATION
 A duration expression like, '1h10m'.
 .TP
+.B --verbose
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'om node print schedule'.
+.TP
 .B --color=COLOR
 Colorize output. Possible values are:
 
@@ -2474,7 +2512,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr wol\fP
 .RS
 
-Forge and send a udp Wake-On-LAN packet to the mac addresses specified by :opt:`--mac` and :opt:`--broadcast` arguments.
+Forge and send a udp Wake-On-LAN packet to the mac addresses specified by '--mac' and '--broadcast' arguments.
 
 .TP
 .B --broadcast=BROADCAST
@@ -2589,7 +2627,7 @@ Edit the node configuration.
 Discard the stashed, invalid, configuration file.
 .TP
 .B --recover
-Recover the stashed erroneous configuration file in a :cmd:`nodemgr edit config` command
+Recover the stashed erroneous configuration file in a 'om node edit config' command
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2692,7 +2730,7 @@ Get the raw value of a node configuration keyword.
 
 .TP
 .B --eval
-If set with the :cmd:`nodemgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`nodemgr set` action, the current value is evaluated before mangling.
+If set with the 'om node get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'om node set' action, the current value is evaluated before mangling.
 .TP
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
@@ -2809,7 +2847,7 @@ Optional with the register command. Register the node in the specified app. If n
 Authenticate with the collector using the specified user credentials instead of the node credentials. Prompted if necessary but not specified.
 .TP
 .B --user=USER
-Authenticate with the collector using the specified user credentials instead of the node credentials. Required with :cmd:`nodenmgr register` when the collector is configured to refuse anonymous register.
+Authenticate with the collector using the specified user credentials instead of the node credentials. Required with 'om node register' when the collector is configured to refuse anonymous register.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -2847,10 +2885,10 @@ Set a service configuration parameter.
 
 .TP
 .B --add=ADD
-A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
+A list member to add to the value pointed by '--param'. If '--index' is set, insert the new element at the specified position in the list.
 .TP
 .B --eval
-If set with the :cmd:`nodemgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`nodemgr set` action, the current value is evaluated before mangling.
+If set with the 'om node get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'om node set' action, the current value is evaluated before mangling.
 .TP
 .B --kw=KW
 An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
@@ -2891,10 +2929,10 @@ An expression like '[<section>.]<keyword>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 .TP
 .B --remove=REMOVE
-A list member to drop from the value pointed by :kw:`--param`.
+A list member to drop from the value pointed by '--param'.
 .TP
 .B --value=VALUE
-The value to set for the keyword pointed by :opt:`--param`
+The value to set for the keyword pointed by '--param'
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -3105,7 +3143,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr daemon join\fP
 .RS
 
-Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.
+Join the cluster of the node specified by '--node <node>', authenticating with '--secret <secret>'.
 
 .TP
 .B --secret=SECRET
@@ -3219,7 +3257,7 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr daemon rejoin\fP
 .RS
 
-Rejoin the cluster of the node specified by :opt:`--node <node>`, authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.
+Rejoin the cluster of the node specified by '--node <node>', authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.
 
 .TP
 .B --color=COLOR
@@ -3394,11 +3432,11 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr daemon start\fP
 .RS
 
-Start the daemon or a daemon thread pointed by :opt:`--thread-id`.
+Start the daemon or a daemon thread pointed by '--thread-id'.
 
 .TP
 .B --thread-id=THR_ID
-Specify a daemon thread, as listed in the :cmd:`nodemgr daemon status` output.
+Specify a daemon thread, as listed in the 'om daemon status' output.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -3502,11 +3540,11 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 \fBnodemgr daemon stop\fP
 .RS
 
-Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.
+Stop the daemon or a daemon thread pointed by '--thread-id'.
 
 .TP
 .B --thread-id=THR_ID
-Specify a daemon thread, as listed in the :cmd:`nodemgr daemon status` output.
+Specify a daemon thread, as listed in the 'om daemon status' output.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:
@@ -3747,7 +3785,7 @@ Push asset information to collector.
 
 .TP
 .B --sync
-Use synchronous collector communication. For example, :cmd:`pushasset --sync` before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
+Use synchronous collector communication. For example, 'om node pushasset --sync' before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
 .TP
 .B --cron
 If set, the action is actually executed impersonating the scheduler thread.

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-07\-08
+.TH SVCMGR 1 2019\-08\-08
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -102,7 +102,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -114,7 +114,7 @@ Show this help message and exit.
 \fBsvcmgr collector ack unavailability\fP
 .RS
 
-Acknowledge an unavailability period. The period is specified by :opt:`--begin` :opt:`--end` or :opt:`--begin` :opt:`--duration`. :opt:`--begin` defaults to now.
+Acknowledge an unavailability period. The period is specified by '--begin' '--end' or '--begin' '--duration'. '--begin' defaults to now.
 
 .TP
 .B --author=AUTHOR
@@ -214,7 +214,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -314,7 +314,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -414,7 +414,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -514,7 +514,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -530,7 +530,7 @@ Create a new tag.
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`svcmgr collector list tags`.
+The tag name, as shown by 'svcmgr collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -611,7 +611,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -711,7 +711,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -817,7 +817,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -923,7 +923,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -935,7 +935,7 @@ Show this help message and exit.
 \fBsvcmgr collector list tags\fP
 .RS
 
-List all available tags. Use :opt:`--like` to filter the output.
+List all available tags. Use '--like' to filter the output.
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -1026,7 +1026,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1132,7 +1132,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1229,7 +1229,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1329,7 +1329,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1438,7 +1438,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1538,7 +1538,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1554,7 +1554,7 @@ Set a service tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`svcmgr collector list tags`.
+The tag name, as shown by 'svcmgr collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -1635,7 +1635,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1651,7 +1651,7 @@ Unset a service tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by :cmd:`svcmgr collector list tags`.
+The tag name, as shown by 'svcmgr collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -1732,7 +1732,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1746,7 +1746,7 @@ Show this help message and exit.
 \fBsvcmgr compliance attach\fP
 .RS
 
-Attach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` to this service. Attached modulesets are scheduled for check or autofix.
+Attach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' to this service. Attached modulesets are scheduled for check or autofix.
 
 .TP
 .B --moduleset=MODULESET
@@ -1834,7 +1834,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -1946,7 +1946,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2055,7 +2055,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2067,7 +2067,7 @@ Show this help message and exit.
 \fBsvcmgr compliance detach\fP
 .RS
 
-Detach rulesets specified by :opt:`--ruleset` and modulesets specified by :opt:`--moduleset` from this service. Detached modulesets are no longer scheduled for check and autofix.
+Detach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' from this service. Detached modulesets are no longer scheduled for check and autofix.
 
 .TP
 .B --moduleset=MODULESET
@@ -2155,7 +2155,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2255,7 +2255,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2364,7 +2364,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2473,7 +2473,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2485,7 +2485,7 @@ Show this help message and exit.
 \fBsvcmgr compliance list moduleset\fP
 .RS
 
-List available compliance modulesets. Setting :opt:`--moduleset f%` limits the resultset to modulesets matching the `f%` pattern.
+List available compliance modulesets. Setting '--moduleset f%' limits the resultset to modulesets matching the `f%` pattern.
 
 .TP
 .B --moduleset=MODULESET
@@ -2570,7 +2570,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2582,7 +2582,7 @@ Show this help message and exit.
 \fBsvcmgr compliance list ruleset\fP
 .RS
 
-List available compliance rulesets. Setting :opt:`--ruleset f%` limits the scope to rulesets matching the `f%` pattern.
+List available compliance rulesets. Setting '--ruleset f%' limits the scope to rulesets matching the `f%` pattern.
 
 .TP
 .B --ruleset=RULESET
@@ -2667,7 +2667,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2761,7 +2761,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2855,7 +2855,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -2949,7 +2949,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3060,7 +3060,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3192,7 +3192,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3292,7 +3292,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3469,7 +3469,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3481,7 +3481,7 @@ Show this help message and exit.
 \fBsvcmgr disable\fP
 .RS
 
-Disable resources specified by :opt:`--rid` in services specified by :opt:`--service`. Specifying no resource disables the whole service.
+Disable resources specified by '--rid' in services specified by '--service'. Specifying no resource disables the whole service.
 
 .TP
 .B --rid=PARM_RID
@@ -3583,7 +3583,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3715,7 +3715,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3809,7 +3809,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -3821,7 +3821,7 @@ Show this help message and exit.
 \fBsvcmgr enable\fP
 .RS
 
-Enable resources specified by :opt:`--rid` in services specified by :opt:`--service`. Specifying no resource enables the whole service.
+Enable resources specified by '--rid' in services specified by '--service'. Specifying no resource enables the whole service.
 
 .TP
 .B --rid=PARM_RID
@@ -3923,7 +3923,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4043,7 +4043,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4137,7 +4137,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4249,7 +4249,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4363,7 +4363,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4466,7 +4466,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4566,7 +4566,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4599,7 +4599,7 @@ refresh the information every --interval.
 .B --interval=INTERVAL
 with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
-.B --to=PARM_DESTINATION_NODE
+.B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B --namespace=NAMESPACE
@@ -4681,7 +4681,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4784,7 +4784,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -4796,7 +4796,7 @@ Show this help message and exit.
 \fBsvcmgr move\fP
 .RS
 
-Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by :opt:`--to <nodename>,<nodename>`.
+Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by '--to <nodename>,<nodename>'.
 
 .TP
 .B --disable-rollback
@@ -4817,7 +4817,7 @@ refresh the information every --interval.
 .B --interval=INTERVAL
 with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
-.B --to=PARM_DESTINATION_NODE
+.B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B --namespace=NAMESPACE
@@ -4899,7 +4899,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5031,7 +5031,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5163,7 +5163,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5295,7 +5295,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5389,7 +5389,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5521,7 +5521,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5653,7 +5653,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5773,7 +5773,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5867,7 +5867,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -5879,7 +5879,7 @@ Show this help message and exit.
 \fBsvcmgr print devs\fP
 .RS
 
-Aggregate the information of :cmd:`print base devs`, :cmd:`print sub devs` and :cmd:`print exposed devs`.
+Aggregate the information of 'print base devs', 'print sub devs' and 'print exposed devs'.
 
 .TP
 .B --filter=JSONPATH_FILTER
@@ -5987,7 +5987,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6107,7 +6107,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6207,7 +6207,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6324,7 +6324,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6346,7 +6346,7 @@ A JSONPath expression to filter a JSON output.
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --verbose
-Include more information to some print commands output. For example, add the 'next run' column in the output of :cmd:`svcmgr print schedule`.
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'svcmgr print schedule'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -6427,7 +6427,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6468,13 +6468,13 @@ A JSONPath expression to filter a JSON output.
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --hide-disabled
-Do not include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
+Do not include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
 .TP
 .B -r, --refresh
 Drop status caches and re-evaluate before printing.
 .TP
 .B --show-disabled
-Include the disabled resources. This option supersedes the :kw:`show_disabled` value in the service configuration.
+Include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -6555,7 +6555,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6675,7 +6675,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6830,7 +6830,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -6924,7 +6924,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7024,7 +7024,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7179,7 +7179,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7276,7 +7276,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7373,7 +7373,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7392,7 +7392,7 @@ Push the local service instance resources and application launchers info key/val
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
 .TP
 .B --sync
-Use synchronous collector communication. For example, :cmd:`push resinfo --sync` before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
+Use synchronous collector communication. For example, 'push resinfo --sync' before a compliance run makes sure the pushed data has hit the collector database before the rulesets are contextualized.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -7473,7 +7473,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7567,7 +7567,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7702,7 +7702,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7837,7 +7837,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -7972,7 +7972,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8107,7 +8107,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8122,7 +8122,7 @@ Show this help message and exit.
 Create-provision or delete-unprovision instances to meet service scale target.
 
 .TP
-.B --to=PARM_DESTINATION_NODE
+.B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B --namespace=NAMESPACE
@@ -8204,7 +8204,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8336,7 +8336,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8468,7 +8468,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8617,7 +8617,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8629,7 +8629,7 @@ Show this help message and exit.
 \fBsvcmgr snooze\fP
 .RS
 
-Snooze alerts on the node for :opt:`--duration`
+Snooze alerts on the node for '--duration'
 
 .TP
 .B --duration=DURATION
@@ -8714,7 +8714,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -8869,7 +8869,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9004,7 +9004,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9104,7 +9104,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9118,7 +9118,7 @@ Show this help message and exit.
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
-Stop all service instances. The standby resources are not stopped, unless :opt:`--force` is specified.
+Stop all service instances. The standby resources are not stopped, unless '--force' is specified.
 
 .TP
 .B --dry-run
@@ -9256,7 +9256,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9350,7 +9350,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9362,7 +9362,7 @@ Show this help message and exit.
 \fBsvcmgr switch\fP
 .RS
 
-Stop the running failover service instance and start the instance on the peer node specified by :opt:`--to <nodename>`.
+Stop the running failover service instance and start the instance on the peer node specified by '--to <nodename>'.
 
 .TP
 .B --disable-rollback
@@ -9383,7 +9383,7 @@ refresh the information every --interval.
 .B --interval=INTERVAL
 with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
-.B --to=PARM_DESTINATION_NODE
+.B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
 .TP
 .B --namespace=NAMESPACE
@@ -9465,7 +9465,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9600,7 +9600,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9732,7 +9732,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9864,7 +9864,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -9996,7 +9996,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10128,7 +10128,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10260,7 +10260,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10392,7 +10392,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10524,7 +10524,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10656,7 +10656,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10668,7 +10668,7 @@ Show this help message and exit.
 \fBsvcmgr sync resync\fP
 .RS
 
-Like :cmd:`sync update`, but not triggered by the scheduler (thus adapted for clone/snap operations).
+Like 'sync update', but not triggered by the scheduler (thus adapted for clone/snap operations).
 
 .TP
 .B --dry-run
@@ -10788,7 +10788,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -10920,7 +10920,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11052,7 +11052,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11184,7 +11184,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11316,7 +11316,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11428,7 +11428,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11548,7 +11548,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11682,7 +11682,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11834,7 +11834,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -11928,7 +11928,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12113,7 +12113,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12127,7 +12127,7 @@ Show this help message and exit.
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
-Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.
+Delete a service, or only the resources specified by '--rid' on the local service instance.
 
 .TP
 .B --time=TIME
@@ -12268,7 +12268,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12287,7 +12287,7 @@ Edit the service configuration. The new configuration file is actually installed
 Discard the stashed, invalid, configuration file.
 .TP
 .B --recover
-Recover the stashed erroneous configuration file in a :cmd:`svcmgr edit config` command
+Recover the stashed erroneous configuration file in a 'svcmgr edit config' command
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -12368,7 +12368,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12533,7 +12533,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12587,7 +12587,7 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
@@ -12709,7 +12709,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12731,7 +12731,7 @@ A JSONPath expression to filter a JSON output.
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
 .TP
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
@@ -12815,7 +12815,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -12896,10 +12896,10 @@ Examples:
 
 .TP
 .B --add=ADD
-A list member to add to the value pointed by :opt:'--param'. If :opt:'--index' is set, insert the new element at the specified position in the list.
+A list member to add to the value pointed by '--param'. If '--index' is set, insert the new element at the specified position in the list.
 .TP
 .B --eval
-If set with the :cmd:`svcmgr get` action, the printed value of :opt:`--param` is evaluated, scoped and dereferenced. If set with the :cmd:`svcmgr set` action, the current value is evaluated before mangling.
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
 .TP
 .B --index=INDEX
 The position in the list pointed by --param where to add the new list element on a set action
@@ -12913,10 +12913,10 @@ An expression like '[<section>.]<keyword>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 .TP
 .B --remove=REMOVE
-A list member to drop from the value pointed by :kw:`--param`.
+A list member to drop from the value pointed by '--param'.
 .TP
 .B --value=VALUE
-The value to set for the keyword pointed by :opt:`--param`
+The value to set for the keyword pointed by '--param'
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -12997,7 +12997,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -13164,7 +13164,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -13305,7 +13305,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
@@ -13399,7 +13399,7 @@ Export the uppercased variable in the os environment.
 With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
 .TP
 .B -p, --parallel
-Start actions on specified services in parallel. :kw:`max_parallel` in node.conf limits the number of parallel running subprocesses.
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
 .TP
 .B --waitlock=PARM_WAITLOCK
 A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
