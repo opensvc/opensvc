@@ -89,6 +89,10 @@ class ManPageFormatter(optparse.HelpFormatter):
         # highlight sections
         commands = re.sub(r'^(\w.+)\n(-+)', lambda pat: "\\fR"+pat.group(1).upper()+"\\fP", commands, flags=re.MULTILINE)
 
+        # remove rest markup
+        commands = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'"+pat.group(2)+"'", commands, flags=re.MULTILINE)
+        commands = re.sub(r'``(.*?)``', lambda pat: "'"+pat.group(1)+"'", commands, flags=re.MULTILINE)
+
         if len(commands) > 0:
             ret.append('.SH COMMANDS\n%s\n' % commands)
 
