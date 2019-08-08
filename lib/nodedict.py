@@ -48,7 +48,7 @@ PRIVATE_KEYWORDS = [
     {
         "section": "node",
         "keyword": "uuid",
-        "text": "The auth token provided by the collector on 'nodemgr register'."
+        "text": "The auth token provided by the collector on :cmd:`nodemgr register`."
     },
     {
         "section": "node",
@@ -185,82 +185,82 @@ PRIVATE_KEYWORDS = [
     {
         "section": "centera",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'centera' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushcentera` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "xtremio",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushxtremio' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushxtremio` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "hp3par",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushhp3par' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushhp3par` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "emcvnx",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushvnx' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushvnx` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "freenas",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushfreenas' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushfreenas` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "gcedisks",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushgcedisks' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushgcedisks` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "sym",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushsym' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushsym` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "nsr",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushnsr' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushnsr` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "hds",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushhds' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushhds` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "necism",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushnecism' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushnecism` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "eva",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pusheva' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pusheva` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "ibmds",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushibmds' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushibmds` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "ibmsvc",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushibmsvc' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushibmsvc` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "vioserver",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushvioserver' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushvioserver` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "netapp",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushnetapp' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushnetapp` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "brocade",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'pushbrocade' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushbrocade` node action. See usr/share/doc/schedule for the schedule syntax."
     },
 ]
 
@@ -291,7 +291,7 @@ KEYWORDS = [
         "keyword": "max_parallel",
         "default": 10,
         "convert": "integer",
-        "text": "Allow a maximum of <max_parallel> subprocesses to run simultaneously on 'svcmgr --parallel <action>' commands."
+        "text": "Allow a maximum of :kw:`max_parallel` subprocesses to run simultaneously on :cmd:`svcmgr --parallel <action>` commands."
     },
     {
         "section": "node",
@@ -384,13 +384,13 @@ KEYWORDS = [
         "keyword": "dbcompliance",
         "example": "https://collector.opensvc.com/init/compliance/call/xmlrpc",
         "default_text": "Same protocol, server and port as dbopensvc, but with an different path.",
-        "text": "Set the uri of the collectors' main xmlrpc server. The path part of the uri can be left unspecified."
+        "text": "Set the uri of the collector's main xmlrpc server. The path part of the uri can be left unspecified."
     },
     {
         "section": "node",
         "keyword": "branch",
         "example": "1.9",
-        "text": "Set the targeted opensvc agent branch. The downloaded upgrades will honor that branch. If not set, the repopkg imposes the target branch, which is not recommended with a public repopkg."
+        "text": "Set the targeted opensvc agent branch. The downloaded upgrades will honor that branch. If not set, the :kw:`repopkg` imposes the target branch, which is not recommended with a public repopkg."
     },
     {
         "section": "node",
@@ -404,7 +404,7 @@ KEYWORDS = [
         "section": "node",
         "keyword": "repo",
         "example": "http://opensvc.repo.corp",
-        "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatepkg' and 'nodemgr updatecomp' commands.
+        "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the :cmd:`nodemgr updatepkg` and :cmd:`nodemgr updatecomp` commands.
 
 Expected repository structure::
 
@@ -419,11 +419,14 @@ Expected repository structure::
 	 +- pkg
 	 +- sunos-pkg
 	 +- rpms
-	  +- current -> 1.9/current
+	  +- current -> 2.0/current
 	  +- 1.9
 	   +- current -> opensvc-1.9-50.rpm
 	   +- opensvc-1.9-49.rpm
 	   +- opensvc-1.9-50.rpm
+	  +- 2.0
+	   +- current -> opensvc-2.0-90.rpm
+	   +- opensvc-2.0-90.rpm
 	 +- tbz
 
 """
@@ -432,7 +435,7 @@ Expected repository structure::
         "section": "node",
         "keyword": "repopkg",
         "example": "http://repo.opensvc.com",
-        "text": """Set the uri of the opensvc agent package repository. This parameter is used by the 'nodemgr updatepkg' command.
+        "text": """Set the uri of the opensvc agent package repository. This parameter is used by the :cmd:`nodemgr updatepkg` command.
 
 Expected repository structure::
 
@@ -442,11 +445,14 @@ Expected repository structure::
 	+- pkg
 	+- sunos-pkg
 	+- rpms
-	 +- current -> 1.9/current
+	 +- current -> 2.0/current
 	 +- 1.9
 	  +- current -> opensvc-1.9-50.rpm
 	  +- opensvc-1.9-49.rpm
 	  +- opensvc-1.9-50.rpm
+	 +- 2.0
+	  +- current -> opensvc-2.0-90.rpm
+	  +- opensvc-2.0-90.rpm
 	+- tbz
 
 """
@@ -455,7 +461,7 @@ Expected repository structure::
         "section": "node",
         "keyword": "repocomp",
         "example": "http://compliance.repo.corp",
-        "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the 'nodemgr updatecomp' command.
+        "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the :cmd:`nodemgr updatecomp` command.
 
 Expected repository structure::
 
@@ -483,51 +489,51 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
         "keyword": "maintenance_grace_period",
         "convert": "duration",
         "default": 60,
-        "text": "A duration expression, like 1m30s, defining how long the daemon retains a remote in-maintenance node data. The maintenance state is announced to peers on daemon stop and daemon restart, but not on daemon shutdown. As long as the remote node data are retained, the local daemon won't opt-in to takeover its running instances. This parameter should be adjusted to span the daemon restart time."
+        "text": "A duration expression, like ``1m30s``, defining how long the daemon retains a remote in-maintenance node data. The maintenance state is announced to peers on daemon stop and daemon restart, but not on daemon shutdown. As long as the remote node data are retained, the local daemon won't opt-in to takeover its running instances. This parameter should be adjusted to span the daemon restart time."
     },
     {
         "section": "node",
         "keyword": "rejoin_grace_period",
         "convert": "duration",
         "default": 90,
-        "text": "A duration expression, like 90m, defining how long the daemon restrains from taking start decisions if no heartbeat has been received from a peer since daemon startup. This should be adjusted to the maximum delay you can afford to give a chance to services to start on their placement leader after a simultaneous node reboot."
+        "text": "A duration expression, like ``90m``, defining how long the daemon restrains from taking start decisions if no heartbeat has been received from a peer since daemon startup. This should be adjusted to the maximum delay you can afford to give a chance to services to start on their placement leader after a simultaneous node reboot."
     },
     {
         "section": "node",
         "keyword": "ready_period",
         "convert": "duration",
         "default": 5,
-        "text": "A duration expression, like 10s, defining how long the daemon monitor waits before starting a service instance in ready state. A peer node can preempt the start during this period. Usually set to allow at least a couple of heartbeats to be received."
+        "text": "A duration expression, like ``10s``, defining how long the daemon monitor waits before starting a service instance in ``ready`` state. A peer node can preempt the start during this period. Usually set to allow at least a couple of heartbeats to be received."
     },
     {
         "section": "dequeue_actions",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'dequeue actions' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`dequeue actions` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "sysreport",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'sysreport' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`sysreport` node action, which check all modules and fix only modules flagged ``autofix``. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "compliance",
         "keyword": "schedule",
         "default": "02:00-06:00",
-        "text": "Schedule parameter for the 'compliance auto' node action, which check all modules and fix only modules flagged 'autofix'. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`compliance auto` node action, which check all modules and fix only modules flagged ``autofix``. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "compliance",
         "keyword": "auto_update",
         "convert": "boolean",
         "default": False,
-        "text": "If set to True, and if the execution context indicates a scheduled run, execute 'updatecomp' upon 'compliance check'. This toggle helps keep the compliance modules in sync with the reference repository. Beware of the security impact of this setting: you must be careful your module repository is kept secure."
+        "text": "If set to ``true``, and if the execution context indicates a scheduled run, execute :cmd:`om node updatecomp` upon :cmd:`om node compliance check`. This toggle helps keep the compliance modules in sync with the reference repository. Beware of the security impact of this setting: you must be careful your module repository is kept secure."
     },
     {
         "section": "stats",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushstats' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushstats` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "stats",
@@ -540,58 +546,58 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
         "section": "checks",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushchecks' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushchecks` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "packages",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushpkg' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushpkg` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "patches",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushpatch' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushpatch` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "asset",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushasset' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushasset` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "disks",
         "keyword": "schedule",
         "default": "00:00-06:00",
-        "text": "Schedule parameter for the 'pushdisks' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`pushdisks` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "rotate_root_pw",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'rotate root pw' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`rotate root pw` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "stats_collection",
         "keyword": "schedule",
         "default": "@10",
-        "text": "Schedule parameter for the 'collect stats' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`collect stats` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "reboot",
         "keyword": "schedule",
-        "text": "Schedule parameter for the 'auto reboot' node action. See usr/share/doc/schedule for the schedule syntax."
+        "text": "Schedule parameter for the :c-action:`auto reboot node` action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "reboot",
         "keyword": "once",
         "convert": "boolean",
         "default": True,
-        "text": """If once is set to false, do not remove the reboot flag before rebooting,
+        "text": """If once is set to ``false``, do not remove the reboot flag before rebooting,
 so that the node is ready to reboot again in the next allowed timerange.
 This setup is needed to enforce a periodic reboot, with a patching script
 hooked as a pre trigger for example.
-If not set, or set to true, the reboot flag is removed before reboot, and a 'nodemgr schedule reboot' is needed to rearm.
+If not set, or set to ``true``, the reboot flag is removed before reboot, and a :cmd:`om node schedule reboot` is needed to rearm.
 """
     },
     {
@@ -613,7 +619,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "keyword": "crl",
         "example": "https://crl.opensvc.com",
         "default": rcEnv.paths.crl,
-        "text": "The url serving the certificate revocation list. The default points to the path of the cluster ca crl in {var}/certs/ca_crl."
+        "text": "The url serving the certificate revocation list. The default points to the path of the cluster ca crl in ``{var}/certs/ca_crl``."
     },
     {
         "section": "listener",
@@ -641,7 +647,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "keyword": "port",
         "convert": "integer",
         "default": 1214,
-        "text": """The port the daemon listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the 'dequeue actions' node action upon receive. The listener.port parameter is sent to the collector upon pushasset. The collector uses this port to notify the node."""
+        "text": """The port the daemon listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the :c-action:`dequeue actions` node action upon receive. The :kw:`listener.port` parameter is sent to the collector upon :c-action:`pushasset`. The collector uses this port to notify the node."""
     },
     {
         "section": "syslog",
@@ -673,7 +679,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "keyword": "vip",
         "example": "192.168.99.12/24@eth0",
         "at": True,
-        "text": "The cluster virtual ip. If configured, the daemon creates a system/svc/vip failover service to manage this ip."
+        "text": "The cluster virtual ip. If configured, the daemon creates a ``system/svc/vip`` failover service to manage this ip."
     },
     {
         "section": "cluster",
@@ -682,7 +688,7 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "default": [],
         "default_text": "",
         "at": True,
-        "text": "The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to <name>.<namespace>.svc.<clustername>, <namespace>.svc.<clustername> and <clustername>."
+        "text": "The list of nodes to set as dns in the containers resolvers. If set, the search will also be set to :c-dns-domain:`<name>.<namespace>.svc.<clustername>`, :c-dns-domain:`<namespace>.svc.<clustername>` and :c-dns-domain:`<clustername>`."
     },
     {
         "section": "cluster",
@@ -721,20 +727,20 @@ If not set, or set to true, the reboot flag is removed before reboot, and a 'nod
         "section": "cluster",
         "keyword": "nodes",
         "convert": "list",
-        "text": "This list is fetched from the join command payload received from the joined node. The service configuration {clusternodes} is resolved to this keyword value."
+        "text": "This list is fetched from the join command payload received from the joined node. The service configuration ``{clusternodes}`` is resolved to this keyword value."
     },
     {
         "section": "cluster",
         "keyword": "drpnodes",
         "convert": "list",
-        "text": "This list is fetched from the join command payload received from the joined node. The service configuration {clusterdrpnodes} is resolved to this keyword value."
+        "text": "This list is fetched from the join command payload received from the joined node. The service configuration ``{clusterdrpnodes}`` is resolved to this keyword value."
     },
     {
         "section": "cluster",
         "keyword": "quorum",
         "convert": "boolean",
         "default": False,
-        "text": "Should a split segment of the cluster commit suicide. Default is False. If set to true, please set at least 2 arbitrators so you can rolling upgrade the opensvc daemons."
+        "text": "Should a split segment of the cluster commit suicide. Default is False. If set to ``true``, please set at least 2 arbitrators so you can rolling upgrade the opensvc daemons."
     },
     {
         "section": "arbitrator",
@@ -755,7 +761,7 @@ all fail together. Usually, this can be interpreted as: same site,
 not same rack and power lines.
 Arbitrators usually don't run services, even though they could, as their
 secret might be known by multiple clusters of different responsibles.
-Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
+Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
 """
     },
     {
@@ -886,13 +892,15 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "cni",
         "keyword": "plugins",
         "default": "/opt/cni/bin",
-        "text": "The directory hosting the CNI plugins."
+        "text": "The directory hosting the CNI plugins.",
+        "example": "/var/lib/opensvc/cni/bin"
     },
     {
         "section": "cni",
         "keyword": "config",
         "default": "/opt/cni/net.d",
-        "text": "The directory hosting the CNI network configuration files."
+        "text": "The directory hosting the CNI network configuration files.",
+        "example": "/var/lib/opensvc/cni/net.d"
     },
     {
         "section": "pool",
@@ -913,7 +921,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "array",
         "at": True,
         "required": True,
-        "text": "The name of the array, known as array#<name> in the node or cluster configuration."
+        "text": "The name of the array, known as :c-array:`array#<name>` in the node or cluster configuration."
     },
     {
         "section": "pool",
@@ -1005,7 +1013,8 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "section": "pool",
         "keyword": "template",
         "rtype": ["virtual"],
-        "text": "The service path (<namespace>/<kind>/<name>) of a volume to use as a template for new volumes.",
+        "text": "The service path ``<namespace>/<kind>/<name>`` of a volume to use as a template for new volumes.",
+        "example": "templates/vol/mpool-over-loop"
     },
     {
         "section": "pool",
@@ -1022,7 +1031,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "convert": "list",
         "default": ["roo", "rwo", "rox", "rwx"],
         "default_text": "roo rwo rox rwx",
-        "text": "The capabilities exposed by the virtual pool. Supported capabilities: shared, roo, rox, rwo, rwx, blk",
+        "text": "The capabilities exposed by the virtual pool. Supported capabilities: ``shared``, ``roo``, ``rox``, ``rwo``, ``rwx``, ``blk``",
     },
     {
         "section": "pool",
@@ -1058,7 +1067,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "default": [],
         "default_text": "",
         "convert": "list",
-        "text": "The list of events to execute the hook command on. The special value 'all' is also supported."
+        "text": "The list of events to execute the hook command on. The special value ``all`` is also supported."
     },
     {
         "section": "hook",
@@ -1095,14 +1104,14 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "keyword": "tunnel",
         "default": "auto",
         "candidates": ["auto", "always"],
-        "text": "Create and route trafic through tunnels to peer nodes policy. `auto`: tunnel if the peer is not in the same subnet, `always`: tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes."
+        "text": "Create and route trafic through tunnels to peer nodes policy. ``auto`` tunnel if the peer is not in the same subnet, ``always`` tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes."
     },
     {
         "section": "network",
         "rtype": ["bridge", "routed_bridge"],
         "keyword": "network",
         "default": "10.22.0.0/16",
-        "text": "The cluster backend network. The routed_bridge driver fragments this network into <ips_per_nodes> blocks> subnets."
+        "text": "The cluster backend network. The routed_bridge driver fragments this network into :kw:`ips_per_nodes` blocks subnets."
     },
     {
         "section": "network",
@@ -1192,7 +1201,7 @@ Arbitrators can be tested using "nodemgr ping --node <arbitrator name>".
         "rtype": "symmetrix",
         "keyword": "symcli_connect",
         "example": "MY_SYMAPI_SERVER",
-        "text": "Set the SYMCLI_CONNECT environment variable to this value, if set. If not set, the scsi communication channels are used. The value set must be declared in the /var/symapi/config/netcnfg file."
+        "text": "Set the ``SYMCLI_CONNECT`` environment variable to this value, if set. If not set, the scsi communication channels are used. The value set must be declared in the ``/var/symapi/config/netcnfg`` file."
     },
     {
         "section": "array",
