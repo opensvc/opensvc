@@ -34,7 +34,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor start and stop actions. These actions immediately return success.\n\n:cmd:`sudo svcmgr -s <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`sudo svcmgr -s <path> enable` does not enable disabled resources."
+        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor :c-action:`start` and :c-action:`stop` actions. These actions immediately return success.\n\n:cmd:`sudo svcmgr -s <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`sudo svcmgr -s <path> enable` does not enable disabled resources."
     },
     {
         "section": "DEFAULT",
@@ -49,7 +49,8 @@ KEYWORDS = [
         "keyword": "lock_timeout",
         "default": 60,
         "convert": "duration",
-        "text": "A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The svcmgr --waitlock option overrides this parameter."
+        "text": "A duration expression, like ``1m30s``. The maximum wait time for the action lock acquire. The :cmd:`svcmgr --waitlock` option overrides this parameter."
+
     },
     {
         "section": "DEFAULT",
@@ -69,7 +70,7 @@ KEYWORDS = [
         "convert": "list_lower",
         "default": [],
         "default_text": "",
-        "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
+        "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for :c-res:`sync` resources.",
         "example": "node1 node2"
     },
     {
