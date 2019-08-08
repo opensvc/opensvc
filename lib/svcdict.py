@@ -95,14 +95,14 @@ KEYWORDS = [
         "keyword": "lock_timeout",
         "default": "60s",
         "convert": "duration",
-        "text": "A duration expression, like '1m30s'. The maximum wait time for the action lock acquire. The svcmgr --waitlock option overrides this parameter."
+        "text": "A duration expression, like ``1m30s``. The maximum wait time for the action lock acquire. The :cmd:`svcmgr --waitlock` option overrides this parameter."
     },
     {
         "section": "DEFAULT",
         "keyword": "mode",
         "default": "hosted",
         "candidates": ["hosted"],
-        "text": "Deprecated. The value is always 'hosted'. The keyword is kept around for now the ease transition from older agents."
+        "text": "Deprecated. The value is always ``hosted``. The keyword is kept around for now the ease transition from older agents."
     },
     {
         "section": "DEFAULT",
@@ -110,7 +110,7 @@ KEYWORDS = [
         "at": True,
         "default": True,
         "convert": "boolean",
-        "text": "If set to False, the default 'rollback on action error' "
+        "text": "If set to ``false``, the default 'rollback on action error' "
                 "behaviour is inhibited, leaving the service in its "
                 "half-started state. The daemon also refuses to takeover "
                 "a service if rollback is disabled and a peer instance is "
@@ -121,21 +121,21 @@ KEYWORDS = [
         "keyword": "comp_schedule",
         "at": True,
         "default": "00:00-06:00@361",
-        "text": "The service compliance run schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The service compliance run schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
         "keyword": "status_schedule",
         "at": True,
         "default": "@10",
-        "text": "The service status evaluation schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The service status evaluation schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
         "keyword": "sync_schedule",
         "at": True,
         "default": "04:00-06:00@121",
-        "text": "The default sync resources schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The default sync resources schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
@@ -155,20 +155,20 @@ KEYWORDS = [
         "keyword": "resinfo_schedule",
         "at": True,
         "default": "@60",
-        "text": "The service resource info push schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The service resource info push schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
         "keyword": "monitor_schedule",
         "at": True,
-        "text": "The service resource monitor schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The service resource monitor schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
         "keyword": "push_schedule",
         "at": True,
         "default": "00:00-06:00@361",
-        "text": "The service configuration emission to the collector schedule. See usr/share/doc/schedule for the schedule syntax."
+        "text": "The service configuration emission to the collector schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
         "section": "DEFAULT",
@@ -178,7 +178,7 @@ KEYWORDS = [
         "at": True,
         "depends": [('topology', ["flex"])],
         "default_text": "<first node of the nodes parameter>",
-        "text": "The node in charge of syncing the other nodes. --cluster actions on the flex_primary are execute on all peer nodes (ie, not drpnodes)."
+        "text": "The node in charge of syncing the other nodes. :opt:`--cluster` actions on the flex_primary are executed on all peer nodes (ie, not drpnodes)."
     },
     {
         "section": "DEFAULT",
@@ -188,20 +188,20 @@ KEYWORDS = [
         "at": True,
         "depends": [('topology', ["flex"])],
         "default_text": "<first node of the drpnodes parameter>",
-        "text": "The drpnode in charge of syncing the other drpnodes. --cluster actions on the drp_flex_primary are execute on all drpnodes (ie, not pri nodes)."
+        "text": "The drpnode in charge of syncing the other drpnodes. :opt:`--cluster` actions on the drp_flex_primary are executed on all drpnodes (ie, not pri nodes)."
     },
     {
         "section": "DEFAULT",
         "keyword": "docker_exe",
         "at": True,
-        "text": "If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker executable.",
+        "text": "If you have multiple docker versions installed and want the service to stick to a version whatever the ``PATH`` definition, you should set this parameter to the full path to the docker executable.",
         "example": "/usr/bin/docker-1.8"
     },
     {
         "section": "DEFAULT",
         "keyword": "dockerd_exe",
         "at": True,
-        "text": "If you have multiple docker versions installed and want the service to stick to a version whatever the PATH definition, you should set this parameter to the full path to the docker daemon executable.",
+        "text": "If you have multiple docker versions installed and want the service to stick to a version whatever the ``PATH`` definition, you should set this parameter to the full path to the docker daemon executable.",
         "example": "/usr/bin/dockerd-1.8"
     },
     {
@@ -223,9 +223,9 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "docker_daemon_private",
         "at": True,
-        "default_text": "<True if container_data_dir is set, else False>",
+        "default_text": "<true if container_data_dir is set, else false>",
         "convert": "boolean",
-        "text": "If set to False, this service will use the system's shared docker daemon instance. This is parameter is forced to False on non-Linux systems.",
+        "text": "If set to ``false``, this service will use the system's shared docker daemon instance. This is parameter is forced to ``false`` on non-Linux systems.",
         "example": "True"
     },
     {
@@ -234,7 +234,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the --ip parameter for a docker registry service.",
+        "text": "If the service has docker-type container resources, the service handles the startup of a private docker daemon. OpenSVC sets the socket and data dir parameters. Admins can set extra parameters using this keyword. For example, it can be useful to set the :opt:`--ip` parameter for a docker registry service.",
         "example": "--ip 1.2.3.4"
     },
     {
@@ -246,7 +246,7 @@ KEYWORDS = [
         "candidates": ["rwo", "roo", "rwx", "rox"],
         "at": True,
         "required": False,
-        "text": "The access mode of the volume. rwo is Read Write Once, roo is Read Only Once, rwx is Read Write Many, rox is Read Only Many. rox and rwx modes are served by flex volume services.",
+        "text": "The access mode of the volume. ``rwo`` is Read Write Once, ``roo`` is Read Only Once, ``rwx`` is Read Write Many, ``rox`` is Read Only Many. ``rox`` and ``rwx`` modes are served by flex volume services.",
     },
     {
         "section": "DEFAULT",
@@ -264,7 +264,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to true, actions are executed in parallel amongst the subset member resources.",
+        "text": "If set to ``true``, actions are executed in parallel amongst the subset member resources.",
     },
     {
         "section": "container",
@@ -281,7 +281,7 @@ KEYWORDS = [
         "keyword": "delete_on_stop",
         "at": True,
         "candidates": (True, False),
-        "text": "If set to true, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
+        "text": "If set to ``true``, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
         "default": False,
         "convert": "boolean",
     },
@@ -300,7 +300,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "default": True,
         "convert": "boolean",
-        "text": "Run container in background. Set to False only for init containers, alongside start_timeout and the nostatus tag.",
+        "text": "Run container in background. Set to ``false`` only for init containers, alongside :kw:`start_timeout` and the :c-tag:`nostatus` tag.",
     },
     {
         "sections": ["task", "container"],
@@ -317,7 +317,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "default": False,
         "convert": "boolean",
-        "text": "If set to True, add --rm to the docker run args and make sure the instance is removed on resource stop.",
+        "text": "If set to ``true``, add :opt:`--rm` to the docker run args and make sure the instance is removed on resource stop.",
         "example": False
     },
     {
@@ -327,7 +327,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <volume name>:<containerized mount path>:<mount options>.",
+        "text": "The whitespace separated list of ``<volume name>:<containerized mount path>:<mount options>``.",
         "example": "myvol1:/vol1 myvol2:/vol2"
     },
     {
@@ -337,7 +337,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <var>=<value>. A shell expression spliter is applied, so double quotes can be around values only or whole <var>=<value>. Variables are uppercased.",
+        "text": "The whitespace separated list of ``<var>=<value>``. A shell expression spliter is applied, so double quotes can be around values only or whole ``<var>=<value>``. Variables are uppercased.",
         "example": """AA="a a" "BB=c c" CC=d """
     },
     {
@@ -347,7 +347,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "A whitespace separated list of <var>=<secret name>/<key path>. A shell expression spliter is applied, so double quotes can be around <secret name>/<key path> only or whole <var>=<secret name>/<key path>. Variables are uppercased.",
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -356,7 +356,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "A whitespace separated list of <var>=<secret name>/<key path>. A shell expression spliter is applied, so double quotes can be around <secret name>/<key path> only or whole <var>=<secret name>/<key path>. Variables are uppercased.",
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -366,7 +366,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <var>=<config name>/<key path>. A shell expression spliter is applied, so double quotes can be around <config name>/<key path> only or whole <var>=<config name>/<key path>. Variables are uppercased.",
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -375,7 +375,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <var>=<config name>/<key path>. A shell expression spliter is applied, so double quotes can be around <config name>/<key path> only or whole <var>=<config name>/<key path>. Variables are uppercased.",
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -385,7 +385,7 @@ KEYWORDS = [
         "rtype": ["docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <host devpath>:<containerized devpath>, specifying the host devices the container should have access to.",
+        "text": "The whitespace separated list of ``<host devpath>:<containerized devpath>``, specifying the host devices the container should have access to.",
         "example": "myvol1:/dev/xvda myvol2:/dev/xvdb"
     },
     {
@@ -393,7 +393,7 @@ KEYWORDS = [
         "keyword": "netns",
         "at": True,
         "rtype": ["docker", "podman"],
-        "text": "Sets the docker run --net argument. The default is ``none`` if --net is not specified in run_args, meaning the container will have a private netns other containers can share. A ip.netns or ip.cni resource can configure an ip address in this container. A container with netns=container#0 will share the container#0 netns. In this case agent format a --net=container:<name of container#0 docker instance>. netns=host shares the host netns.",
+        "text": "Sets the :cmd:`docker run --net` argument. The default is ``none`` if :opt:`--net` is not specified in :kw:`run_args`, meaning the container will have a private netns other containers can share. A :c-res:`ip.netns` or :c-res:`ip.cni` resource can configure an ip address in this container. A container with ``netns=container#0`` will share the container#0 netns. In this case agent format a :opt:`--net=container:<name of container#0 docker instance>`. ``netns=host`` shares the host netns.",
         "example": "container#0"
     },
     {
@@ -402,7 +402,7 @@ KEYWORDS = [
         "at": True,
         "rtype": ["docker", "podman"],
         "candidates": ("host", None),
-        "text": "Sets the docker run --userns argument. If not set, the container will have a private userns other containers can share. A container with userns=host will share the host's userns.",
+        "text": "Sets the :cmd:`docker run --userns` argument. If not set, the container will have a private userns other containers can share. A container with ``userns=host`` will share the host's userns.",
         "example": "container#0"
     },
     {
@@ -410,7 +410,7 @@ KEYWORDS = [
         "keyword": "pidns",
         "at": True,
         "rtype": ["docker", "podman"],
-        "text": "Sets the docker run --pid argument. If not set, the container will have a private pidns other containers can share. Usually a pidns sharer will run a google/pause image to reap zombies. A container with pidns=container#0 will share the container#0 pidns. In this case agent format a --pid=container:<name of container#0 docker instance>. Use pidns=host to share the host's pidns.",
+        "text": "Sets the :cmd:`docker run --pid` argument. If not set, the container will have a private pidns other containers can share. Usually a pidns sharer will run a google/pause image to reap zombies. A container with ``pidns=container#0`` will share the container#0 pidns. In this case agent format a :opt:`--pid=container:<name of container#0 docker instance>`. Use ``pidns=host`` to share the host's pidns.",
         "example": "container#0"
     },
     {
@@ -418,7 +418,7 @@ KEYWORDS = [
         "keyword": "ipcns",
         "at": True,
         "rtype": ["docker", "podman"],
-        "text": "Sets the docker run --ipc argument. If not set, the docker daemon's default value is used. ipcns=none does not mount /dev/shm. ipcns=private creates a ipcns other containers can not share. ipcns=shareable creates a netns other containers can share. ipcns=container#0 will share the container#0 ipcns.",
+        "text": "Sets the :cmd:`docker run --ipc` argument. If not set, the docker daemon's default value is used. ``ipcns=none`` does not mount /dev/shm. ``ipcns=private`` creates a ipcns other containers can not share. ``ipcns=shareable`` creates a netns other containers can share. ``ipcns=container#0`` will share the container#0 ipcns.",
         "example": "container#0"
     },
     {
@@ -427,7 +427,7 @@ KEYWORDS = [
         "at": True,
         "rtype": ["docker", "podman"],
         "candidates": (None, "host"),
-        "text": "Sets the docker run --uts argument. If not set, the container will have a private utsns. A container with utsns=host will share the host's hostname.",
+        "text": "Sets the :cmd:`docker run --uts` argument. If not set, the container will have a private utsns. A container with ``utsns=host`` will share the host's hostname.",
         "example": "container#0"
     },
     {
@@ -461,7 +461,8 @@ KEYWORDS = [
         "at": True,
         "rtype": ["docker", "podman"],
         "default_text": "<autogenerated>",
-        "text": "The name to assign to the container on docker run. If none is specified a <namespace>..<name>.container.<rid idx> name is automatically assigned."
+        "text": "The name to assign to the container on docker run. If none is specified a ``<namespace>..<name>.container.<rid idx>`` name is automatically assigned.",
+        "example": "osvcprd..rundeck.container.db"
     },
     {
         "sections": ["task", "container"],
@@ -470,7 +471,7 @@ KEYWORDS = [
         "required": True,
         "rtype": ["docker", "podman"],
         "text": "The docker image pull, and run the container with.",
-        "example": "83f2a3dd2980"
+        "example": "83f2a3dd2980 or ubuntu:latest"
     },
     {
         "sections": ["task", "container"],
@@ -480,7 +481,7 @@ KEYWORDS = [
         "default": "once",
         "rtype": ["docker", "podman"],
         "candidates": ["once", "always"],
-        "text": "The docker image pull policy. always: pull upon each container start, once: pull if not already pulled (default).",
+        "text": "The docker image pull policy. ``always`` pull upon each container start, ``once`` pull if not already pulled (default).",
         "example": "once"
     },
     {
@@ -505,7 +506,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "virtinst",
         "rtype": ["kvm", "xen", "ovm"],
-        "text": "The virt-install command to use to create the container.",
+        "text": "The :cmd:`virt-install` command to use to create the container.",
         "convert": "shlex",
         "required": True,
         "provisioning": True
@@ -547,7 +548,7 @@ KEYWORDS = [
         "required": True,
         "rtype": "lxd",
         "provisioning": True,
-        "text": "The lxd image to instanciate on provision.",
+        "text": "The lxd image to instantiate on provision.",
         "example": "ubuntu:16.04"
     },
     {
@@ -559,7 +560,7 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "default_text": "",
-        "text": "The :cmd:``lxc launch <image> ... <name>`` options set on provision.",
+        "text": "The :cmd:`lxc launch <image> ... <name>` options set on provision.",
         "example": "-p default"
     },
     {
@@ -590,7 +591,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "template",
         "rtype": ["lxc"],
-        "text": "Sets the url of the template unpacked into the container root fs or the name of the template passed to lxc-create.",
+        "text": "Sets the url of the template unpacked into the container root fs or the name of the template passed to :cmd:`lxc-create`.",
         "required": True,
         "provisioning": True
     },
@@ -598,7 +599,7 @@ KEYWORDS = [
         "section": "container",
         "keyword": "template_options",
         "rtype": ["lxc"],
-        "text": "The arguments to pass through lxc-create to the per-template script.",
+        "text": "The arguments to pass through :cmd:`lxc-create` to the per-template script.",
         "convert": "shlex",
         "default": [],
         "provisioning": True
@@ -607,14 +608,14 @@ KEYWORDS = [
         "section": "container",
         "keyword": "mirror",
         "rtype": ["lxc"],
-        "text": "Sets the MIRROR environment variable for lxc-create, pointing the distribution server to use.",
+        "text": "Sets the ``MIRROR`` environment variable for :cmd:`lxc-create`, pointing the distribution server to use.",
         "provisioning": True
     },
     {
         "section": "container",
         "keyword": "security_mirror",
         "rtype": ["lxc"],
-        "text": "Sets the SECURITY_MIRROR environment variable for lxc-create, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
+        "text": "Sets the ``SECURITY_MIRROR`` environment variable for :cmd:`lxc-create`, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
         "provisioning": True
     },
     {
@@ -694,7 +695,8 @@ KEYWORDS = [
         "keyword": "size",
         "at": True,
         "rtype": rcEnv.vt_cloud,
-        "text": "The cloud vm size, as known to the cloud manager. Example: tiny."
+        "text": "The cloud vm size, as known to the cloud manager.",
+        "example": "tiny"
     },
     {
         "section": "container",
@@ -735,7 +737,8 @@ KEYWORDS = [
         "required": True,
         "at": True,
         "rtype": rcEnv.vt_cloud,
-        "text": "The cloud id as configured in node.conf. Example: cloud#1."
+        "text": "The cloud id as configured in ``node.conf``.",
+        "example": "cloud#1"
     },
     {
         "section": "container",
@@ -789,7 +792,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "prkey",
         "at": True,
-        "text": "Defines a specific default persistent reservation key for the service. A prkey set in a resource takes priority. If no prkey is specified in the service nor in the DEFAULT section, the prkey in node.conf is used. If node.conf has no prkey set, the hostid is computed and written in node.conf."
+        "text": "Defines a specific default persistent reservation key for the service. A prkey set in a resource takes priority. If no prkey is specified in the service nor in the ``DEFAULT`` section, the prkey in ``node.conf`` is used. If ``node.conf`` has no prkey set, the hostid is computed and written in ``node.conf``."
     },
     {
         "section": "DEFAULT",
@@ -798,7 +801,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
     },
     {
         "section": "DEFAULT",
@@ -817,7 +820,7 @@ KEYWORDS = [
         "at": True,
         "default": "failover",
         "candidates": ["failover", "flex"],
-        "text": "failover: the service is allowed to be up on one node at a time. flex: the service can be up on 'flex_target' nodes, where flex_target must be in the [flex_min, flex_max] range."
+        "text": "``failover`` the service is allowed to be up on one node at a time. ``flex`` the service can be up on :kw:`flex_target` nodes, where :kw:`flex_target` must be in the [flex_min, flex_max] range."
     },
     {
         "section": "DEFAULT",
@@ -825,7 +828,8 @@ KEYWORDS = [
         "inheritance": "head",
         "at": True,
         "convert": "integer",
-        "text": "If set, create and provision the necessary slave services, named <n>.<name>, to meet the target <scale> number of started instances."
+        "text": "If set, create and provision the necessary slave services, named ``<n>.<name>``, to meet the target ``<scale>`` number of started instances.",
+        "example": "4"
     },
     {
         "section": "DEFAULT",
@@ -834,7 +838,7 @@ KEYWORDS = [
         "convert": "boolean",
         "default": False,
         "at": True,
-        "text": "Automatically set to true by the daemon monitor when creating new scaler slaves."
+        "text": "Automatically set to ``true`` by the daemon monitor when creating new scaler slaves."
     },
     {
         "section": "DEFAULT",
@@ -844,7 +848,7 @@ KEYWORDS = [
         "default": "no",
         "convert": "string",
         "candidates": ("ha", "start", "no"),
-        "text": "If set to 'no', disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to 'start' failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't restart the flex_target number of up instances. Resource restart is still active whatever the orchestrate value.",
+        "text": "If set to ``no``, disable service orchestration by the OpenSVC daemon monitor, including service start on boot. If set to ``start`` failover services won't failover automatically, though the service instance on the natural placement leader is started if another instance is not already up. Flex services won't restart the :kw:`flex_target` number of up instances. Resource restart is still active whatever the :kw:`orchestrate` value.",
     },
     {
         "section": "DEFAULT",
@@ -863,12 +867,12 @@ KEYWORDS = [
         "default": "nodes order",
         "candidates": ["none", "nodes order", "load avg", "shift", "spread", "score"],
         "text": "Set a service instances placement policy:\n\n"
-                       "* none: no placement policy. a policy for dummy, observe-only, services.\n"
-                       "* nodes order: the left-most available node is allowed to start a service instance when necessary.\n"
-                       "* load avg: the least loaded node takes precedences.\n"
-                       "* shift: shift the nodes order ranking by the service prefix converter to an integer.\n"
-                       "* spread: a spread policy tends to perfect leveling with many services.\n"
-                       "* score: the highest scoring node takes precedence (the score is a composite indice of load, mem and swap).\n",
+                       "* ``none`` no placement policy. a policy for dummy, observe-only, services.\n"
+                       "* ``nodes order`` the left-most available node is allowed to start a service instance when necessary.\n"
+                       "* ``load avg`` the least loaded node takes precedences.\n"
+                       "* ``shift`` shift the nodes order ranking by the service prefix converter to an integer.\n"
+                       "* ``spread`` a spread policy tends to perfect leveling with many services.\n"
+                       "* ``score`` the highest scoring node takes precedence (the score is a composite indice of load, mem and swap).\n",
     },
     {
         "section": "DEFAULT",
@@ -895,7 +899,7 @@ KEYWORDS = [
         "default_text": "<number of svc nodes>",
         "convert": "integer",
         "depends": [("topology", ["flex"])],
-        "text": "Maximum number of up instances in the cluster. Above this number the aggregated service status is degraded to warn. 0 means unlimited."
+        "text": "Maximum number of up instances in the cluster. Above this number the aggregated service status is degraded to warn. ``0`` means unlimited."
     },
     {
         "section": "DEFAULT",
@@ -904,7 +908,7 @@ KEYWORDS = [
         "default_text": "<the value of flex_min>",
         "convert": "integer",
         "depends": [("topology", ["flex"])],
-        "text": "Optimal number of up instances in the cluster. The value must be between flex_min and flex_max. If orchestrate=ha, The monitor ensures the flex_target is met."
+        "text": "Optimal number of up instances in the cluster. The value must be between :kw:`flex_min` and :kw:`flex_max`. If ``orchestrate=ha``, the monitor ensures the :kw:`flex_target` is met."
     },
     {
         "section": "DEFAULT",
@@ -930,7 +934,7 @@ KEYWORDS = [
         "inheritance": "head",
         "default_text": "<same as node env>",
         "candidates": rcEnv.allowed_svc_envs,
-        "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
+        "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node :kw:`env`."
     },
     {
         "section": "DEFAULT",
@@ -940,7 +944,7 @@ KEYWORDS = [
         "default": [],
         "default_text": "",
         "convert": "list_lower",
-        "text": "List of services or instances expressed as <path>[@<nodename>] that must be 'avail up' before allowing this service to be started by the daemon monitor. Whitespace separated."
+        "text": "List of services or instances expressed as ``<path>[@<nodename>]`` that must be ``avail up`` before allowing this service to be started by the daemon monitor. Whitespace separated."
     },
     {
         "section": "DEFAULT",
@@ -950,7 +954,7 @@ KEYWORDS = [
         "default": [],
         "default_text": "",
         "convert": "list_lower",
-        "text": "List of services that must be 'avail down' before allowing this service to be stopped by the daemon monitor. Whitespace separated."
+        "text": "List of services that must be ``avail down`` before allowing this service to be stopped by the daemon monitor. Whitespace separated."
     },
     {
         "section": "DEFAULT",
@@ -959,7 +963,7 @@ KEYWORDS = [
         "at": True,
         "default": [],
         "convert": "list",
-        "text": "List of services to propagate the start and stop actions to."
+        "text": "List of services to propagate the :c-action:`start` and :c-action:`stop` actions to."
     },
     {
         "section": "DEFAULT",
@@ -978,7 +982,7 @@ KEYWORDS = [
         "convert": "lower",
         "default": "",
         "at": True,
-        "text": "The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for 'sync' resources.",
+        "text": "The backup node where the service is activated in a DRP situation. This node is also a data synchronization target for :c-res:`sync` resources.",
         "example": "node1"
     },
     {
@@ -989,7 +993,7 @@ KEYWORDS = [
         "convert": "list_lower",
         "default": [],
         "default_text": "",
-        "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for 'sync' resources.",
+        "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for :c-res:`sync` resources.",
         "example": "node1 node2"
     },
     {
@@ -999,7 +1003,7 @@ KEYWORDS = [
         "convert": "list_lower",
         "default": [],
         "default_text": "",
-        "text": "The list of containers handled by this service and with an OpenSVC agent installed to handle the encapsulated resources. With this parameter set, parameters can be scoped with the @encapnodes suffix.",
+        "text": "The list of `containers` handled by this service and with an OpenSVC agent installed to handle the encapsulated resources. With this parameter set, parameters can be scoped with the ``@encapnodes`` suffix.",
         "example": "vm1 vm2"
     },
     {
@@ -1015,7 +1019,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to disks of every disk group attached to this service. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
     },
     {
         "section": "DEFAULT",
@@ -1029,14 +1033,14 @@ KEYWORDS = [
         "keyword": "sync_interval",
         "default": 121,
         "convert": "duration",
-        "text": "Set the minimum delay between syncs in minutes. If a sync is triggered through a scheduler or manually, it is skipped if last sync occurred less than 'sync_min_delay' ago. The mecanism is enforced by a timestamp created upon each sync completion in <pathvar>/services/<namespace>/<kind>/<name>/<rid>/last_sync_<node>"
+        "text": "Set the minimum delay between syncs in minutes. If a sync is triggered through a scheduler or manually, it is skipped if last sync occurred less than :kw:`sync_min_delay` ago. The mecanism is enforced by a timestamp created upon each sync completion in ``<pathvar>/services/<namespace>/<kind>/<name>/<rid>/last_sync_<node>``"
     },
     {
         "section": "DEFAULT",
         "keyword": "sync_max_delay",
         "default": "1d",
         "convert": "duration_minute",
-        "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
+        "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between :kw:`sync_min_delay` and :kw:`sync_max_delay`."
     },
     {
         "section": "DEFAULT",
@@ -1049,7 +1053,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "postsnap_trigger",
         "convert": "shlex",
-        "text": "Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of 'presnap_trigger'.",
+        "text": "Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of :kw:`presnap_trigger`.",
         "example": "/srv/svc1/etc/init.d/post_snap.sh"
     },
     {
@@ -1064,7 +1068,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "pre_monitor_action",
         "at": True,
-        "text": "A script to execute before the monitor_action. For example, if the monitor_action is set to freezestop, the script can decide to crash the server if it detects a situation were the freezestop can not succeed (ex. fs can not be umounted with a dead storage array).",
+        "text": "A script to execute before the :kw:`monitor_action`. For example, if the :kw:`monitor_action` is set to ``freezestop``, the script can decide to crash the server if it detects a situation were the freezestop can not succeed (ex. fs can not be umounted with a dead storage array).",
         "example": "/bin/true"
     },
     {
@@ -1081,7 +1085,7 @@ KEYWORDS = [
         "inheritance": "leaf",
         "candidates": ("simple", "forking", "winservice"),
         "default": "forking",
-        "text": "The app driver to use. 'simple' for foreground-running apps. 'forking' for daemonizing apps."
+        "text": "The app driver to use. ``simple`` for foreground-running apps. ``forking`` for daemonizing apps."
     },
     {
         "section": "app",
@@ -1097,14 +1101,14 @@ KEYWORDS = [
         "candidates": ["parent", "tree"],
         "default": "parent",
         "at": True,
-        "text": "Select a process kill strategy to use on resource stop. parent: kill only the parent process forked by the agent. tree: also kill its children."
+        "text": "Select a process kill strategy to use on resource stop. ``parent`` kill only the parent process forked by the agent. ``tree`` also kill its children."
     },
     {
         "section": "app",
         "keyword": "script",
         "at": True,
         "required": False,
-        "text": "Full path to the app launcher script. Or its basename if the file is hosted in the <pathetc>/<namespace>/<kind>/<name>.d/ path. This script must accept as arg0 the activated actions word: start for start, stop for stop, status for check, info for info."
+        "text": "Full path to the app launcher script. Or its basename if the file is hosted in the ``<pathetc>/<namespace>/<kind>/<name>.d/`` path. This script must accept as arg0 the activated actions word: ``start`` for start, ``stop`` for stop, ``status`` for check, ``info`` for info."
     },
     {
         "section": "app",
@@ -1113,14 +1117,14 @@ KEYWORDS = [
         "required": False,
         "default": False,
         "convert": "boolean",
-        "text": "Redirect the checker script stdout to the resource status info-log, and stderr to warn-log. The default is false, for it is common the checker scripts outputs are not tuned for opensvc."
+        "text": "Redirect the checker script stdout to the resource status info-log, and stderr to warn-log. The default is ``false``, for it is common the checker scripts outputs are not tuned for opensvc."
     },
     {
         "section": "app",
         "keyword": "timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance start when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance action when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -1128,7 +1132,7 @@ KEYWORDS = [
         "keyword": "start_timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher start action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`start_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance start when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher start action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`start_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance start when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -1136,7 +1140,7 @@ KEYWORDS = [
         "keyword": "stop_timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher stop action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`stop_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance stop when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher stop action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`stop_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance stop when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -1144,7 +1148,7 @@ KEYWORDS = [
         "keyword": "check_timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher check action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`check_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance check when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher check action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`check_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance check when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -1152,7 +1156,7 @@ KEYWORDS = [
         "keyword": "info_timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher info action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`info_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a servicea instance info when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher info action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`info_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance info when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -1160,28 +1164,28 @@ KEYWORDS = [
         "keyword": "start",
         "at": True,
         "default": False,
-        "text": "true: execute '<script> start' on start action. false: do nothing on start action. <shlex expression>: execute the command on start.",
+        "text": "``true`` execute :cmd:`<script> start` on start action. ``false`` do nothing on start action. ``<shlex expression>`` execute the command on start.",
     },
     {
         "section": "app",
         "keyword": "stop",
         "at": True,
         "default": False,
-        "text": "true: execute '<script> stop' on stop action. false: do nothing on stop action. <shlex expression>: execute the command on stop action.",
+        "text": "``true`` execute :cmd:`<script> stop` on stop action. ``false`` do nothing on stop action. ``<shlex expression>`` execute the command on stop action.",
     },
     {
         "section": "app",
         "keyword": "check",
         "at": True,
         "default": False,
-        "text": "true: execute '<script> status' on status evaluation. false: do nothing on status evaluation. <shlex expression>: execute the command on status evaluation.",
+        "text": "``true`` execute :cmd:`<script> status` on status evaluation. ``false`` do nothing on status evaluation. ``<shlex expression>`` execute the command on status evaluation.",
     },
     {
         "section": "app",
         "keyword": "info",
         "at": True,
         "default": False,
-        "text": "true: execute '<script> info' on info action. false: do nothing on info action. <shlex expression>: execute the command on info action.",
+        "text": "``true`` execute :cmd:`<script> info` on info action. ``false`` do nothing on info action. ``<shlex expression>`` execute the command on info action.",
     },
     {
         "section": "app",
@@ -1276,7 +1280,7 @@ KEYWORDS = [
         "section": "app",
         "keyword": "cwd",
         "at": True,
-        "text": "Change the working directory to the specified location instead of the default <pathtmp>."
+        "text": "Change the working directory to the specified location instead of the default ``<pathtmp>``."
     },
     {
         "section": "sync",
@@ -1338,7 +1342,7 @@ KEYWORDS = [
         "rtype": "s3",
         "at": True,
         "example": "@1441 sun",
-        "text": "The schedule of full backups. sync_update actions are triggered according to the resource 'schedule' parameter, and do a full backup if the current date matches the 'full_schedule' parameter or an incremental backup otherwise."
+        "text": "The schedule of full backups. :c-action:`sync_update` actions are triggered according to the resource :kw:`schedule` parameter, and do a full backup if the current date matches the :kw:`full_schedule` parameter or an incremental backup otherwise."
     },
     {
         "section": "sync",
@@ -1356,7 +1360,7 @@ KEYWORDS = [
         "rtype": "zfssnap",
         "at": True,
         "example": "weekly",
-        "text": "A name included in the snapshot name to avoid retention conflicts between multiple zfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
+        "text": "A name included in the snapshot name to avoid retention conflicts between multiple zfs snapshot resources. A full snapshot name is formatted as ``<subvol>.<name>.snap.<datetime>``. Example: data.weekly.snap.2016-03-09.10:09:52"
     },
     {
         "section": "sync",
@@ -1384,7 +1388,7 @@ KEYWORDS = [
         "rtype": "btrfssnap",
         "at": True,
         "example": "weekly",
-        "text": "A name included in the snapshot name to avoid retention conflicts between multiple btrfs snapshot resources. A full snapshot name is formatted as <subvol>.<name>.snap.<datetime>. Example: data.weekly.snap.2016-03-09.10:09:52"
+        "text": "A name included in the snapshot name to avoid retention conflicts between multiple btrfs snapshot resources. A full snapshot name is formatted as ``<subvol>.<name>.snap.<datetime>``. Example: data.weekly.snap.2016-03-09.10:09:52"
     },
     {
         "section": "sync",
@@ -1394,7 +1398,7 @@ KEYWORDS = [
         "at": True,
         "required": True,
         "example": "svc1fs:data svc1fs:log",
-        "text": "A whitespace separated list of <label>:<subvol> to snapshot."
+        "text": "A whitespace separated list of ``<label>:<subvol>`` to snapshot."
     },
     {
         "section": "sync",
@@ -1487,7 +1491,7 @@ KEYWORDS = [
         "default_text": "",
         "example": "delay_snap",
         "at": True,
-        "text": "The zfs sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the sync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
+        "text": "The zfs sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the sync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
     },
     {
         "section": "sync",
@@ -1514,7 +1518,7 @@ KEYWORDS = [
         "example": "delay_snap",
         "at": True,
         "rtype": "rsync",
-        "text": "The sync resource supports the 'delay_snap' tag. This tag is used to delay the snapshot creation just before the rsync, thus after 'postsnap_trigger' execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between 'presnap_trigger' and 'postsnap_trigger'."
+        "text": "The sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the rsync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
     },
     {
         "section": "sync",
@@ -1544,7 +1548,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to true, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
+        "text": "If set to ``true``, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
     },
     {
         "section": "sync",
@@ -1557,13 +1561,13 @@ KEYWORDS = [
         "keyword": "bwlimit",
         "convert": "integer",
         "rtype": "rsync",
-        "text": "Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over 'bwlimit' set in [DEFAULT]."
+        "text": "Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over :kw:`bwlimit` set in [DEFAULT]."
     },
     {
         "section": "sync",
         "keyword": "schedule",
         "at": True,
-        "text": "Set the this resource synchronization schedule. See usr/share/doc/node.conf for the schedule syntax reference.",
+        "text": "Set the this resource synchronization schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
         "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
     },
     {
@@ -1571,7 +1575,7 @@ KEYWORDS = [
         "keyword": "sync_max_delay",
         "default": "1d",
         "convert": "duration_minute",
-        "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between 'sync_min_delay' and 'sync_max_delay'."
+        "text": "Unit is minutes. This sets to delay above which the sync status of the resource is to be considered down. Should be set according to your application service level agreement. The scheduler task frequency should be set between :kw:`sync_min_delay` and :kw:`sync_max_delay`."
     },
     {
         "section": "ip",
@@ -1579,7 +1583,7 @@ KEYWORDS = [
         "keyword": "ipname",
         "required": False,
         "at": True,
-        "text": "The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case '@nodename' can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special <allocate> value tells the provisioner to assign a new private address."
+        "text": "The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case ``@nodename`` can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special ``<allocate>`` value tells the provisioner to assign a new private address."
     },
     {
         "section": "ip",
@@ -1593,7 +1597,7 @@ KEYWORDS = [
         "section": "ip",
         "keyword": "dns_name_suffix",
         "at": True,
-        "text": "Add the value as a suffix to the DNS record name. The record created is thus formatted as <name>-<dns_name_suffix>.<app>.<managed zone>."
+        "text": "Add the value as a suffix to the DNS record name. The record created is thus formatted as ``<name>-<dns_name_suffix>.<app>.<managed zone>``."
     },
     {
         "section": "ip",
@@ -1619,7 +1623,7 @@ KEYWORDS = [
         "keyword": "network",
         "at": True,
         "example": "10.0.0.0",
-        "text": "The network, in dotted notation, from where the ip provisioner allocates. Also used by the docker ip driver to delete the network route if del_net_route is set to true.",
+        "text": "The network, in dotted notation, from where the ip provisioner allocates. Also used by the docker ip driver to delete the network route if :kw:`del_net_route` is set to ``true``.",
     },
     {
         "section": "ip",
@@ -1628,7 +1632,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": [True, False],
-        "text": "Setting this parameter triggers a DNS update. The record created is formatted as <name>.<app>.<managed zone>, unless dns_record_name is specified."
+        "text": "Setting this parameter triggers a DNS update. The record created is formatted as ``<name>.<app>.<managed zone>``, unless dns_record_name is specified."
     },
     {
         "section": "ip",
@@ -1695,7 +1699,7 @@ KEYWORDS = [
         "required": False,
         "default": True,
         "convert": "boolean",
-        "text": "Use ip aliasing. Modern ip stack support multiple ip/mask per interface, so 'alias' should be set to false when possible.",
+        "text": "Use ip aliasing. Modern ip stack support multiple ip/mask per interface, so :kw:`alias` should be set to false when possible.",
     },
     {
         "section": "ip",
@@ -1704,7 +1708,7 @@ KEYWORDS = [
         "required": False,
         "default": [],
         "convert": "list",
-        "text": "A whitespace-separated list of <port>/<protocol>[:<host port>] "
+        "text": "A whitespace-separated list of ``<port>/<protocol>[:<host port>]`` "
                        "describing socket services that mandate a SRV exposition. With "
                        "<host_port> set, the ip.cni driver configures port mappings too.",
         "example": "443/tcp:8443 53/udp"
@@ -1723,7 +1727,7 @@ KEYWORDS = [
         "rtype": "amazon",
         "keyword": "eip",
         "at": True,
-        "text": "The public elastic ip to associate to <ipname>. The special <allocate> value tells the provisioner to assign a new public address.",
+        "text": "The public elastic ip to associate to :kw:`ipname`. The special ``allocate`` value tells the provisioner to assign a new public address.",
         "example": "52.27.90.63"
     },
     {
@@ -1734,7 +1738,7 @@ KEYWORDS = [
         "default": [],
         "provisioning": True,
         "at": True,
-        "text": "Set new allocated ip as value to other ip resources ipname parameter. The syntax is a whitespace separated list of <rid>.ipname[@<scope>].",
+        "text": "Set new allocated ip as value to other ip resources :kw:`ipname` parameter. The syntax is a whitespace separated list of ``<rid>.ipname[@<scope>]``.",
         "example": "ip#1.ipname ip#1.ipname@nodes"
     },
     {
@@ -1744,7 +1748,7 @@ KEYWORDS = [
         "provisioning": True,
         "at": False,
         "candidates": [True, False],
-        "text": "Set new allocated ip as value as a '--ip <addr>' argument in the DEFAULT.docker_daemon_args parameter.",
+        "text": "Set new allocated ip as value as a :opt:`--ip <addr>` argument in the :kw:`DEFAULT.docker_daemon_args` parameter.",
         "example": "True"
     },
     {
@@ -1824,7 +1828,7 @@ KEYWORDS = [
         "keyword": "disk_type",
         "provisioning": True,
         "at": True,
-        "text": "Specifies the type of disk to create. To get a list of available disk types, run 'gcloud compute disk-types list'. The default disk type is pd-standard.",
+        "text": "Specifies the type of disk to create. To get a list of available disk types, run :cmd:`gcloud compute disk-types list`. The default disk type is ``pd-standard``.",
         "example": "pd-standard"
     },
     {
@@ -1858,7 +1862,7 @@ KEYWORDS = [
         "keyword": "ipdev",
         "at": True,
         "required": True,
-        "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the '@nodename' can be specified."
+        "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified."
     },
     {
         "section": "ip",
@@ -1866,7 +1870,7 @@ KEYWORDS = [
         "keyword": "nsdev",
         "at": True,
         "required": False,
-        "text": "If specified, use this interface name in the netns. If not specified the first free eth<n> is chosen."
+        "text": "If specified, use this interface name in the netns. If not specified the first free ``eth<n>`` is chosen."
     },
     {
         "section": "ip",
@@ -1951,7 +1955,7 @@ KEYWORDS = [
         "keyword": "options",
         "at": True,
         "convert": "shlex",
-        "text": "The docker volume create options to use for the resource. --label and --opt",
+        "text": "The docker volume create options to use for the resource. :opt:`--label` and :opt:`--opt`",
         "example": "--opt o=size=100m,uid=1000 --opt type=tmpfs --opt device=tmpfs"
     },
     {
@@ -1969,7 +1973,7 @@ KEYWORDS = [
         "keyword": "name",
         "required": True,
         "at": True,
-        "text": "The full name of the zfs volume in the <pool>/<name> form.",
+        "text": "The full name of the zfs volume in the ``<pool>/<name>`` form.",
         "example": "tank/zvol1"
     },
     {
@@ -1990,7 +1994,7 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "at": True,
-        "text": "The zfs create -V <name> extra options.",
+        "text": "The :cmd:`zfs create -V <name>` extra options.",
         "example": "-o dedup=on"
     },
     {
@@ -2028,7 +2032,7 @@ KEYWORDS = [
         "default": [],
         "at": True,
         "provisioning": True,
-        "text": "Additional options to pass to the logical volume create command (lvcreate or vxassist, depending on the driver). Size and name are alread set.",
+        "text": "Additional options to pass to the logical volume create command (:cmd:`lvcreate` or :cmd:`vxassist`, depending on the driver). Size and name are alread set.",
         "example": "--contiguous y"
     },
     {
@@ -2296,7 +2300,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": True,
         "convert": "boolean",
-        "text": "HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed /dev/dsk/... devices. Otherwize, ad-hoc multipathed /dev/disk/... devices."
+        "text": "HP-UX only. 'dsf' must be set to false for LVM to use never-multipathed ``/dev/dsk/...`` devices. Otherwize, ad-hoc multipathed ``/dev/disk/...`` devices."
     },
     {
         "section": "disk",
@@ -2304,7 +2308,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
     },
     {
         "section": "disk",
@@ -2312,7 +2316,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
+        "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
     },
     {
         "section": "disk",
@@ -2321,7 +2325,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
     },
     {
         "section": "fs",
@@ -2329,7 +2333,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
+        "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
     },
     {
         "section": "fs",
@@ -2337,7 +2341,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
     },
     {
         "section": "fs",
@@ -2346,7 +2350,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
     },
     {
         "section": "container",
@@ -2354,7 +2358,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to promote the base devices to read-write on start."
+        "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
     },
     {
         "section": "container",
@@ -2362,7 +2366,7 @@ KEYWORDS = [
         "default": False,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "If set to 'true', OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to 'false' or not set, 'scsireserv' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
     },
     {
         "section": "container",
@@ -2371,7 +2375,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "If set to 'true', OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to 'false' or not set, 'no_preempt_abort' can be activated on a per-resource basis."
+        "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
     },
     {
         "sections": ["task", "container"],
@@ -2427,7 +2431,7 @@ KEYWORDS = [
         "keyword": "multihost",
         "convert": "tristate",
         "at": True,
-        "text": "If set to true, sets multihost=on on start if not already set. This requires all nodes to be booted with a /etc/hostid installed, preferrably generated by the zgenhostid command."
+        "text": "If set to ``true``, sets zfs option ``multihost=on`` on start if not already set. This requires all nodes to be booted with a /etc/hostid installed, preferrably generated by the zgenhostid command."
     },
     {
         "section": "disk",
@@ -2478,7 +2482,7 @@ KEYWORDS = [
         "rtype": "drbd",
         "keyword": "res",
         "required": True,
-        "text": "The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in '/etc/drbd.d/resname.res'. The 'sync#i0' resource will take care of replicating this file to remote nodes."
+        "text": "The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in ``/etc/drbd.d/resname.res``. The :c-res:`sync#i0` resource will take care of replicating this file to remote nodes."
     },
     {
         "section": "share",
@@ -2509,7 +2513,7 @@ KEYWORDS = [
         "keyword": "dev",
         "at": True,
         "required": True,
-        "text": "The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the dev@nodename syntax"
+        "text": "The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the ``dev@nodename`` syntax"
     },
     {
         "section": "fs",
@@ -2641,7 +2645,7 @@ KEYWORDS = [
         "rtype": "netapp",
         "required": True,
         "at": True,
-        "text": "The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the filer@nodename syntax."
+        "text": "The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the ``filer@nodename`` syntax."
     },
     {
         "section": "sync",
@@ -2728,7 +2732,7 @@ KEYWORDS = [
         "rtype": "nexenta",
         "candidates": [True, False],
         "required": True,
-        "text": "Defines if the replication link can be reversed. Set to no for prd to drp replications to protect production data."
+        "text": "Defines if the replication link can be reversed. Set to ``false`` for prd to drp replications to protect production data."
     },
     {
         "section": "sync",
@@ -2799,7 +2803,7 @@ KEYWORDS = [
         "keyword": "pairs",
         "rtype": "evasnap",
         "required": True,
-        "text": "A json-formatted list of dictionaries representing the device pairs. Each dict must have the 'src', 'dst' and 'mask' keys. The mask key value is a list of \\<hostpath>\\<lunid> strings."
+        "text": "A json-formatted list of dictionaries representing the device pairs. Each dict must have the ``src``, ``dst`` and ``mask`` keys. The ``mask`` key value is a list of ``\\<hostpath>\\<lunid>`` strings."
     },
     {
         "section": "sync",
@@ -2813,7 +2817,7 @@ KEYWORDS = [
         "keyword": "devs",
         "rtype": "necism",
         "required": True,
-        "text": "A whitespace-separated list of SV:LD."
+        "text": "A whitespace-separated list of ``SV:LD``."
     },
     {
         "section": "sync",
@@ -2847,7 +2851,7 @@ KEYWORDS = [
         "rtype": "symclone",
         "default": True,
         "convert": "boolean",
-        "text": "Use -precopy on recreate."
+        "text": "Use :opt:`-precopy` on recreate."
     },
     {
         "section": "sync",
@@ -2872,7 +2876,7 @@ KEYWORDS = [
         "keyword": "symid",
         "rtype": ["symclone", "symsnap"],
         "required": True,
-        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by 'pairs'."
+        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by :kw:`pairs`."
     },
     {
         "section": "sync",
@@ -2881,7 +2885,7 @@ KEYWORDS = [
         "rtype": ["symclone", "symsnap"],
         "required": True,
         "at": True,
-        "text": "Whitespace-separated list of devices <src>:<dst> devid pairs to drive with this resource.",
+        "text": "Whitespace-separated list of devices ``<src>:<dst>`` devid pairs to drive with this resource.",
         "example": "00B60:00B61 00B62:00B63",
     },
     {
@@ -2891,7 +2895,7 @@ KEYWORDS = [
         "at": True,
         "default": True,
         "convert": "boolean",
-        "text": "Use -consistent in symclone commands.",
+        "text": "Use :opt:`-consistent` in symclone commands.",
     },
     {
         "section": "sync",
@@ -2915,7 +2919,7 @@ KEYWORDS = [
         "rtype": "dds",
         "required": True,
         "candidates": ['nodes', 'drpnodes'],
-        "text": "Accepted values are 'drpnodes', 'nodes' or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a 'stop-sync_update-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
+        "text": "Accepted values are ``drpnodes``, ``nodes`` or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a stop-sync_update-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
     },
     {
         "section": "sync",
@@ -2944,7 +2948,7 @@ KEYWORDS = [
         "at": True,
         "required": True,
         "rtype": "host",
-        "text": "The command to execute on 'run' action and at scheduled interval. The default schedule for tasks is @0.",
+        "text": "The command to execute on 'run' action and at scheduled interval. The default schedule for tasks is ``@0``.",
         "example": "/srv/{name}/data/scripts/backup.sh"
     },
     {
@@ -2985,7 +2989,7 @@ KEYWORDS = [
         "section": "task",
         "keyword": "on_error",
         "at": True,
-        "text": "A command to execute on 'run' action if 'command' returned an error.",
+        "text": "A command to execute on :c-action:`run` action if :kw:`command` returned an error.",
         "example": "/srv/{name}/data/scripts/task_on_error.sh"
     },
     {
@@ -3000,7 +3004,7 @@ KEYWORDS = [
         "keyword": "schedule",
         "default": "@0",
         "at": True,
-        "text": "Set the this task run schedule. See usr/share/doc/node.conf for the schedule syntax reference.",
+        "text": "Set the this task run schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
         "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
     },
     {
@@ -3026,7 +3030,7 @@ KEYWORDS = [
         "provisioning": True,
         "at": True,
         "required": False,
-        "text": "The access mode of the volume. rwo is Read Write Once, roo is Read Only Once, rwx is Read Write Many, rox is Read Only Many. rox and rwx modes are served by flex volume services.",
+        "text": "The access mode of the volume. ``rwo`` is Read Write Once, ``roo`` is Read Only Once, ``rwx`` is Read Write Many, ``rox`` is Read Only Many. ``rox`` and ``rwx`` modes are served by flex volume services.",
     },
     {
         "section": "volume",
@@ -3059,7 +3063,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <config name>/<key>:<volume relative path>:<options>.",
+        "text": "The whitespace separated list of ``<config name>/<key>:<volume relative path>:<options>``.",
         "example": "conf/mycnf:/etc/mysql/my.cnf:ro,mode=0640 conf/sysctl:/etc/sysctl.d/01-db.conf"
     },
     {
@@ -3069,7 +3073,7 @@ KEYWORDS = [
         "rtype": ["shm"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of <secret name>/<key>:<volume relative path>:<options>.",
+        "text": "The whitespace separated list of ``<secret name>/<key>:<volume relative path>:<options>``.",
         "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
     },
     {
@@ -3251,7 +3255,7 @@ KEYWORDS = [
         "keyword": "match_case_sensitive",
         "rtype": ["envoy"],
         "at": True,
-        "text": "Indicates that prefix/path matching should be case sensitive. The default is true.",
+        "text": "Indicates that prefix/path matching should be case sensitive. The default is ``true``.",
     },
     {
         "section": "route",
@@ -3325,7 +3329,7 @@ KEYWORDS = [
         "convert": "boolean",
         "default": False,
         "at": True,
-        "text": "Indicates that during redirection, the query portion of the URL will be removed. Default value is false.",
+        "text": "Indicates that during redirection, the query portion of the URL will be removed. Default value is ``false``.",
     },
     {
         "section": "route",
@@ -3444,7 +3448,7 @@ KEYWORDS = [
         "default": set(),
         "default_text": "",
         "example": "encap noaction",
-        "text": "A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example 'noaction' avoids any state changing action from the driver and implies optional=true, 'nostatus' forces the status to n/a."
+        "text": "A list of tags. Arbitrary tags can be used to limit action scope to resources with a specific tag. Some tags can influence the driver behaviour. For example :c-tag:`noaction` avoids any state changing action from the driver and implies ``optional=true``, :c-tag:`nostatus` forces the status to n/a."
     },
     {
         "sections": SECTIONS,
@@ -3461,7 +3465,7 @@ KEYWORDS = [
         "at": True,
         "default": 0,
         "convert": "integer",
-        "text": "The agent will try to restart a resource n times before falling back to the monitor action. A resource restart is triggered if the resource is not disabled and its status is not up, and the node is not frozen, and the service instance is not frozen and its local expect is set to 'started'. If a resource has a restart set to a value >0, its status is evaluated at the frequency defined by :kw:`DEFAULT.monitor_schedule` instead of the frequency defined by :kw:`DEFAULT.status_schedule`."
+        "text": "The agent will try to restart a resource <n> times before falling back to the monitor action. A resource restart is triggered if the resource is not disabled and its status is not up, and the node is not frozen, and the service instance is not frozen and its local expect is set to ``started``. If a resource has a restart set to a value >0, its status is evaluated at the frequency defined by :kw:`DEFAULT.monitor_schedule` instead of the frequency defined by :kw:`DEFAULT.status_schedule`."
     },
     {
         "sections": SECTIONS,
@@ -3491,7 +3495,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "Set to True to skip the resource on provision and unprovision actions if the action has already been done by a peer. Shared resources, like vg built on SAN disks must be provisioned once. All resources depending on a shared resource must also be flagged as shared."
+        "text": "Set to ``true`` to skip the resource on provision and unprovision actions if the action has already been done by a peer. Shared resources, like vg built on SAN disks must be provisioned once. All resources depending on a shared resource must also be flagged as shared."
     },
     {
         "sections": SECTIONS,
@@ -3501,7 +3505,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "Set to True to ignore this resource in the nodes context and consider it in the encapnodes context. The resource is thus handled by the agents deployed in the service containers."
+        "text": "Set to ``true`` to ignore this resource in the nodes context and consider it in the encapnodes context. The resource is thus handled by the agents deployed in the service containers."
     },
     {
         "sections": SECTIONS,
@@ -3522,7 +3526,7 @@ KEYWORDS = [
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor start and stop actions. These actions immediately return success.\n\n:cmd:`sudo svcmgr -s <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`sudo svcmgr -s <path> enable` does not enable disabled resources."
+        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor :c-action:`start` and :c-action:`stop` actions. These actions immediately return success.\n\n:cmd:`sudo svcmgr -s <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`sudo svcmgr -s <path> enable` does not enable disabled resources."
     },
     {
         "sections": SECTIONS,
@@ -3530,8 +3534,8 @@ KEYWORDS = [
         "generic": True,
         "at": True,
         "convert": "tristate",
-        "default_text": "True for tasks, syncs and resources tagged 'noaction', else False",
-        "text": "Action failures on optional resources are logged but do not stop the action sequence. Also the optional resource status is not aggregated to the instance 'availstatus', but aggregated to the 'overallstatus'. Resource tagged 'noaction' and sync resources are automatically considered optional. Useful for resources like dump filesystems for example."
+        "default_text": "true for tasks, syncs and resources tagged 'noaction', else false",
+        "text": "Action failures on optional resources are logged but do not stop the action sequence. Also the optional resource status is not aggregated to the instance 'availstatus', but aggregated to the 'overallstatus'. Resource tagged :c-tag:`noaction` and sync resources are automatically considered optional. Useful for resources like dump filesystems for example."
     },
     {
         "sections": SECTIONS,
@@ -3552,287 +3556,287 @@ KEYWORDS = [
         "default_text": "",
         "candidates": ['nodes', 'drpnodes'],
         "strict_candidates": False,
-        "text": "Possible values are 'nodes', 'drpnodes' or 'nodes drpnodes', or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
+        "text": "Possible values are ``nodes``, ``drpnodes`` or ``nodes drpnodes``, or a list of nodes. Sets the nodes on which the resource is always kept up. Primary usage is file synchronization receiving on non-shared disks. Don't set this on shared disk !! danger !!"
     },
     {
         "sections": SECTIONS,
         "keyword": "pre_unprovision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource unprovision action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`unprovision` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "post_unprovision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource unprovision action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`unprovision` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "pre_provision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource provision action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`provision` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "post_provision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource provision action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`provision` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "pre_start",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource start action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`start` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "post_start",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource start action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`start` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "pre_stop",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource stop action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`stop` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "post_stop",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource stop action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`stop` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "pre_sync_nodes",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_nodes action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_nodes` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "post_sync_nodes",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_nodes action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_nodes` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "pre_sync_drp",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_drp action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_drp` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "post_sync_drp",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_drp action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_drp` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "pre_sync_restore",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_restore action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_restore` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "post_sync_restore",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_restore action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_restore` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "pre_sync_resync",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_resync action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_resync` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "post_sync_resync",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_resync action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_resync` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "pre_sync_update",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_update action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_update` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "post_sync_update",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_update action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_update` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "task"],
         "keyword": "pre_run",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource run action. Errors do not interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors do not interrupt the action."
     },
     {
         "sections": ["DEFAULT", "task"],
         "keyword": "post_run",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource run action. Errors do not interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors do not interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_pre_unprovision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource unprovision action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`unprovision` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_post_unprovision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource unprovision action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`unprovision` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_pre_provision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource provision action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`provision` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_post_provision",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource provision action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`provision` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_pre_start",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource start action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`start` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_post_start",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource start action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`start` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_pre_stop",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource stop action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`stop` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
         "keyword": "blocking_post_stop",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource stop action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`stop` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_pre_sync_nodes",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_nodes action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_nodes` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_post_sync_nodes",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_nodes action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_nodes` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_pre_sync_drp",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_drp action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_drp` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_post_sync_drp",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_drp action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_drp` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_pre_sync_restore",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_restore action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_restore` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_post_sync_restore",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_restore action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_restore` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_pre_sync_resync",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_resync action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_resync` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_post_sync_resync",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_resync action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_resync` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_pre_sync_update",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource sync_update action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`sync_update` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "sync"],
         "keyword": "blocking_post_sync_update",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource sync_update action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`sync_update` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "task"],
         "keyword": "blocking_pre_run",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute before the resource run action. Errors interrupt the action."
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors interrupt the action."
     },
     {
         "sections": ["DEFAULT", "task"],
         "keyword": "blocking_post_run",
         "generic": True,
         "at": True,
-        "text": "A command or script to execute after the resource run action. Errors interrupt the action."
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors interrupt the action."
     },
     {
         "sections": SECTIONS,
@@ -3842,7 +3846,7 @@ KEYWORDS = [
         "at": True,
         "example": "ip#0 fs#0(down,stdby down)",
         "default": "",
-        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states."
+        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
         "sections": ["DEFAULT", "task"],
@@ -3852,7 +3856,7 @@ KEYWORDS = [
         "at": True,
         "example": "ip#0 fs#0(down,stdby down)",
         "default": "",
-        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states."
+        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
         "sections": ["DEFAULT", "sync"],
@@ -3862,7 +3866,7 @@ KEYWORDS = [
         "at": True,
         "example": "ip#0 fs#0(down,stdby down)",
         "default": "",
-        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as <rid>(<state>,...). If states are omitted, 'up,stdby up' is used as the default expected states."
+        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
         "sections": SECTIONS + ["subset"],
@@ -3902,7 +3906,7 @@ KEYWORDS = [
         "inheritance": "leaf",
         "at": True,
         "depends": [('create_pg', [True])],
-        "text": "The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, -1 means unlimited, and a positive absolute value means the number of microseconds to allocate each period. 50%@all means 50% of all cores, and 50%@2 means 50% of two cores.",
+        "text": "The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, ``-1`` means unlimited, and a positive absolute value means the number of microseconds to allocate each period. ``50%@all`` means 50% of all cores, and ``50%@2`` means 50% of two cores.",
         "example": "50%@all"
     },
     {
@@ -3935,7 +3939,7 @@ KEYWORDS = [
         "at": True,
         "convert": "size",
         "depends": [('create_pg', [True])],
-        "text": "Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than pg_mem_limit.",
+        "text": "Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than :kw:`pg_mem_limit`.",
         "example": "1024000000"
     },
     {
