@@ -19,8 +19,8 @@ OPT = Storage({
     "add": Option(
         "--add", default=None,
         action="store",
-        help="A list member to add to the value pointed by :opt:``--param``. "
-             "If :opt:``--index`` is set, insert the new element at the "
+        help="A list member to add to the value pointed by :opt:`--param`. "
+             "If :opt:`--index` is set, insert the new element at the "
              "specified position in the list."),
     "app": Option(
         "--app", default=None, action="store", dest="app",
@@ -99,9 +99,9 @@ OPT = Storage({
     "eval": Option(
         "--eval", default=False,
         action="store_true", dest="eval",
-        help="If set with the :cmd:`nodemgr get` action, the printed value of "
+        help="If set with the :cmd:`om node get` action, the printed value of "
              ":opt:`--param` is evaluated, scoped and dereferenced. If set "
-             "with the :cmd:`nodemgr set` action, the current value is "
+             "with the :cmd:`om node set` action, the current value is "
              "evaluated before mangling."),
     "filter": Option(
         "--filter", default="",
@@ -254,7 +254,7 @@ OPT = Storage({
         "--recover", default=False,
         action="store_true", dest="recover",
         help="Recover the stashed erroneous configuration file "
-             "in a :cmd:`nodemgr edit config` command"),
+             "in a :cmd:`om node edit config` command"),
     "refresh_api": Option(
         "--refresh-api", default=False,
         action="store_true", dest="refresh_api",
@@ -308,20 +308,20 @@ OPT = Storage({
         "--sync", default=False,
         action="store_true", dest="syncrpc",
         help="Use synchronous collector communication. For example, "
-             ":cmd:`pushasset --sync` before a compliance run makes sure "
+             ":cmd:`om node pushasset --sync` before a compliance run makes sure "
              "the pushed data has hit the collector database before the "
              "rulesets are contextualized."),
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
-        help="The tag name, as shown by :cmd:`nodemgr collector list tags`."),
+        help="The tag name, as shown by :cmd:`om node collector list tags`."),
     "target": Option(
         "--target", default=None, action="store", dest="target",
         help="Specify a target to scan for new block devices. Example: "
              "5000097358185088 or iqn.clementine.tgt1."),
     "thr_id": Option(
         "--thread-id", default=None, action="store", dest="thr_id",
-        help="Specify a daemon thread, as listed in the :cmd:`nodemgr daemon "
+        help="Specify a daemon thread, as listed in the :cmd:`om daemon "
              "status` output."),
     "time": Option(
         "--time", default=300,
@@ -332,7 +332,7 @@ OPT = Storage({
         "--user", default=None, action="store", dest="user",
         help="Authenticate with the collector using the "
              "specified user credentials instead of the node "
-             "credentials. Required with :cmd:`nodenmgr register` "
+             "credentials. Required with :cmd:`om node register` "
              "when the collector is configured to refuse "
              "anonymous register."),
     "value": Option(
@@ -344,7 +344,7 @@ OPT = Storage({
         action="store_true", dest="verbose",
         help="Include more information to some print commands output. "
              "For example, add the ``next run`` column in the output of "
-             ":cmd:`nodemgr print schedule`."),
+             ":cmd:`om node print schedule`."),
     "wait": Option(
         "--wait", default=False,
         action="store_true", dest="wait",

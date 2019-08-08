@@ -6,8 +6,8 @@ OPT = Storage({
     "add": Option(
         "--add", default=None,
         action="store",
-        help="A list member to add to the value pointed by :opt:``--param``. "
-             "If :opt:``--index`` is set, insert the new element at the "
+        help="A list member to add to the value pointed by :opt:`--param`. "
+             "If :opt:`--index` is set, insert the new element at the "
              "specified position in the list."),
     "color": Option(
         "--color", default="auto",
