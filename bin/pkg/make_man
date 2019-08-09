@@ -12,6 +12,8 @@ pathman = os.path.join(pathsvc, "usr", "share", "man", "man1")
 
 sys.path = [pathlib] + sys.path
 
+from rcUtilities import wipe_rest_markup
+
 class ManPageFormatter(optparse.HelpFormatter):
     def __init__(self, indent_increment=2, max_help_position=24,
              width=None, short_first=1):
@@ -90,8 +92,7 @@ class ManPageFormatter(optparse.HelpFormatter):
         commands = re.sub(r'^(\w.+)\n(-+)', lambda pat: "\\fR"+pat.group(1).upper()+"\\fP", commands, flags=re.MULTILINE)
 
         # remove rest markup
-        commands = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'"+pat.group(2)+"'", commands, flags=re.MULTILINE)
-        commands = re.sub(r'``(.*?)``', lambda pat: "'"+pat.group(1)+"'", commands, flags=re.MULTILINE)
+        commands = wipe_rest_markup(commands)
 
         if len(commands) > 0:
             ret.append('.SH COMMANDS\n%s\n' % commands)

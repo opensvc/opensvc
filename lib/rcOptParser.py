@@ -13,9 +13,10 @@ import sys
 import optparse
 import textwrap
 import rcColor
-from rcUtilities import term_width, is_string
+from rcUtilities import term_width, is_string, wipe_rest_markup
 import rcExceptions as ex
 import svc
+import re
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):
@@ -181,6 +182,7 @@ class OptParser(object):
         if options:
             desc += self.format_options(section, action)
 
+        desc = wipe_rest_markup(desc)
         desc += '\n'
         return desc
 
