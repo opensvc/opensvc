@@ -8,10 +8,11 @@ class ClusterSvc(BaseSvc):
     kind = "ccfg"
 
     def __init__(self, *args, **kwargs):
-        try:
-            del kwargs["namespace"]
-        except KeyError:
-            pass
+        for kwarg in ("name", "namespace"):
+            try:
+                del kwargs[kwarg]
+            except KeyError:
+                pass
         BaseSvc.__init__(self, name="cluster", namespace=None, **kwargs)
 
     @lazy
