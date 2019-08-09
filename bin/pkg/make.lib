@@ -65,7 +65,7 @@ function deploy_cluster_manager {
         CLUMGR_DIR="$CHROOT/opt/opensvc/usr/share/html"
         API_VERSION=$(grep ^API_VERSION $CHROOT/opt/opensvc/lib/osvcd_shared.py | awk '{print $3}')
 	CLUMGR_REPO=${OSVC_CLUMGR_REPO:-https://repo.opensvc.com/cluster-manager}
-        CLUMGR_URL="${CLUMGR_REPO}/${API_VERSION}/latest"
+        CLUMGR_URL="${CLUMGR_REPO}/${API_VERSION}/current"
         CLUMGR_BUNDLE="$CHROOT/opt/opensvc/bundle.tar.gz"
 
 	echo $CLUMGR_REPO | grep -qw "^https"
