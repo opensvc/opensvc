@@ -3,6 +3,7 @@
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 . $PATH_SCRIPT/make.lib
 
+echo "==> Preparing chroot"
 prepare_chroot || exit 1
 
 SPEC_D=$OSVC/tmp/SPECS
@@ -24,6 +25,7 @@ mkdir -p $OSVC/tmp/SRPMS/noarch $OSVC/tmp/RPMS/noarch $OSVC/tmp/BUILD || exit 1
 
 CHANGELOG=$(changelog)
 
+echo "==> Building specfile"
 cat - <<-EOF >$SPEC
 Summary: $SUMMARY
 Name: opensvc
@@ -80,6 +82,7 @@ which python3 >> /dev/null 2>&1 && PYTHON=python3 || PYTHON=python
 %{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc
 %{_datadir}/opensvc/lib
+%{_datadir}/opensvc/html
 %attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
 %attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.AIX
 %attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.Darwin
@@ -117,12 +120,18 @@ $CHANGELOG
 EOF
 
 cat $SPEC
+
+echo "==> Running rpmbuild"
 sudo rpmbuild --define "_topdir $OSVC/tmp" --clean -ba $SPEC
 #GNUPGHOME=~/.gpg sudo rpmsign --addsign $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
 RPMFILE=$(ls -1rt $OSVC/tmp/RPMS/noarch | tail -1)
-which rpmlint >/dev/null 2>&1 && rpmlint $OSVC/tmp/RPMS/noarch/$RPMFILE
+which rpmlint >/dev/null 2>&1 && {
+    echo "==> Running rpmlint"
+    rpmlint $OSVC/tmp/RPMS/noarch/$RPMFILE
+}
 
 [ -x $PATH_SCRIPT/release_rpm ] && {
+        echo "==> Releasing rpm"
 	$PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/$RPMFILE || exit 1
 }
 
