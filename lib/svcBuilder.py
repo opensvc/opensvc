@@ -206,6 +206,7 @@ def add_ip(svc, s):
         kwargs["nsdev"] = svc.oget(s, "nsdev")
         kwargs["mode"] = svc.oget(s, "mode")
         kwargs["network"] = svc.oget(s, "network")
+        kwargs["macaddr"] = svc.oget(s, "macaddr")
         kwargs["del_net_route"] = svc.oget(s, "del_net_route")
         if kwargs["mode"] == "ovs":
             kwargs["vlan_tag"] = svc.oget(s, "vlan_tag")

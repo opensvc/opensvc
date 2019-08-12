@@ -19,6 +19,7 @@ class Ip(Res.Ip):
                  del_net_route=False,
                  netns=None,
                  nsdev=None,
+                 macaddr=None,
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
@@ -28,11 +29,13 @@ class Ip(Res.Ip):
                         ipdev=ipdev,
                         ipname=ipname,
                         gateway=gateway,
+                        macaddr=macaddr,
                         mask=mask,
                         **kwargs)
         self.mode = mode if mode else "bridge"
         self.network = network
         self.nsdev = nsdev
+        self.macaddr = macaddr
         self.del_net_route = del_net_route
         self.container_rid = str(netns)
         self.vlan_tag = vlan_tag
@@ -45,6 +48,20 @@ class Ip(Res.Ip):
         self.svc.register_dependency("start", self.container_rid, self.rid)
         self.svc.register_dependency("stop", self.container_rid, self.rid)
         self.set_label()
+
+    def set_macaddr(self):
+        """
+        Set the intf mac addr
+        """
+        if not self.macaddr:
+            return
+        try:
+            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "address", self.macaddr]
+            ret, out, err = self.vcall(cmd)
+        except ex.excError:
+             pass
+        if ret != 0:
+            return ret, out, err
 
     def set_label(self):
         """
@@ -333,6 +350,9 @@ class Ip(Res.Ip):
         if ret != 0:
             return ret, out, err
 
+        # set the mac addr
+        self.set_macaddr()
+
         # plumb ip
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
@@ -414,6 +434,9 @@ class Ip(Res.Ip):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
+
+        # set the mac addr
+        self.set_macaddr()
 
         # plumb the ip
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]

@@ -1874,6 +1874,14 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "rtype": ["netns", "docker"],
+        "keyword": "macaddr",
+        "at": True,
+        "required": False,
+        "text": "If specified, use this mac address in the netns."
+    },
+    {
+        "section": "ip",
         "rtype": "cni",
         "keyword": "ipdev",
         "default": "eth12",
