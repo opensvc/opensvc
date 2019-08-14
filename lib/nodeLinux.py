@@ -107,20 +107,20 @@ class Node(node.Node):
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
 
-    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, tunnel="auto"):
+    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto"):
         if dst is None:
             return
         if tunnel == "auto":
             if gw is not None:
-                cmd = ["ip", "route", "replace", dst, "via", gw]
+                cmd = ["ip", "route", "replace", dst, "via", gw, "table", table]
             elif dev is not None:
-                cmd = ["ip", "route", "replace", dst, "dev", dev]
+                cmd = ["ip", "route", "replace", dst, "dev", dev, "table", table]
             out, err, ret = justcall(cmd)
         else:
             err = ""
         if tunnel == "always" or "invalid gateway" in err or "is unreachable" in err:
             tun = self.network_tunnel_ipip_add(local_ip, gw)
-            cmd = ["ip", "route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0]]
+            cmd = ["ip", "route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
             self.vcall(cmd)
         else:
             self.log.info(" ".join(cmd))

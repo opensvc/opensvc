@@ -5087,10 +5087,12 @@ class Node(Crypt, ExtConfigMixin):
                 nets[name] = {}
             nets[name]["config"] = config
             nets[name]["routes"] = self.routes(name, config)
+            nets[name]["tables"] = self.tables(name)
         nets["lo"] = {
             "config": {
                 "type": "loopback",
                 "network": "127.0.0.1/32",
+                "tables": ["main"],
             },
         }
         return nets
@@ -5134,6 +5136,12 @@ class Node(Crypt, ExtConfigMixin):
         subnet = next(summarize_address_range(first, last))
         return subnet
 
+    def tables(self, name):
+        try:
+            return self.oget("network#"+name, "tables")
+        except:
+            return
+
     def routes(self, name, config=None):
         routes = []
         if not config:
@@ -5158,26 +5166,29 @@ class Node(Crypt, ExtConfigMixin):
                 self.log.warning("node %s is not resolvable", rcEnv.nodename)
                 return routes
         for nodename in self.cluster_nodes:
-            if nodename == rcEnv.nodename:
+            for table in config["tables"]:
+                if nodename == rcEnv.nodename:
+                    routes.append({
+                        "dst": str(self.node_subnet(name, nodename, config=config)),
+                        "dev": "obr_"+name,
+                        "brdev": "obr_"+name,
+                        "table": table,
+                    })
+                    continue
+                try:
+                    gw = socket.getaddrinfo(nodename, None)[0][4][0]
+                except socket.gaierror:
+                    self.log.warning("node %s is not resolvable", nodename)
+                    continue
                 routes.append({
+                    "local_ip": local_ip,
                     "dst": str(self.node_subnet(name, nodename, config=config)),
-                    "dev": "obr_"+name,
+                    "gw": gw,
                     "brdev": "obr_"+name,
+                    "brip": self.network_bridge_ip(name, config=config),
+                    "table": table,
+                    "tunnel": config["tunnel"],
                 })
-                continue
-            try:
-                gw = socket.getaddrinfo(nodename, None)[0][4][0]
-            except socket.gaierror:
-                self.log.warning("node %s is not resolvable", nodename)
-                continue
-            routes.append({
-                "local_ip": local_ip,
-                "dst": str(self.node_subnet(name, nodename, config=config)),
-                "gw": gw,
-                "brdev": "obr_"+name,
-                "brip": self.network_bridge_ip(name, config=config),
-                "tunnel": config["tunnel"],
-            })
         return routes
 
     def network_overlaps(self, name, nets=None):

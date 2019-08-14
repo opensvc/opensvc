@@ -1093,6 +1093,16 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "network",
         "rtype": "routed_bridge",
+        "keyword": "tables",
+        "default": ["main"],
+        "default_text": "main",
+        "convert": "list",
+        "text": "The list of routing tables to add the backend network routes to. The list of available tables is in ``/etc/iproute2/rt_tables``.",
+        "example": "main custom1 custom2"
+    },
+    {
+        "section": "network",
+        "rtype": "routed_bridge",
         "keyword": "addr",
         "at": True,
         "default_text": "Detect using a name resolution of <nodename>. Beware, if the nodename resolves to 127.0.1.1 or 127.0.0.1 the ipip tunnel can not work.",
