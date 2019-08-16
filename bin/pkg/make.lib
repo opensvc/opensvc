@@ -54,11 +54,6 @@ fi
 
 function deploy_cluster_manager {
 
-	# need curl to be available
-        if ! [ -x "$(command -v curl)" ]; then
-          echo 'Warning: curl is not installed. skipping cluster manager installation' >&2
-          return
-        fi
 
 	# OSVC_CLUMGR_REPO can be set to use a custom repository
 	# OSVC_CURL_OPTS can be set to custom download parameters
@@ -76,13 +71,19 @@ function deploy_cluster_manager {
 	    CURL_OPTS=${OSVC_CURL_OPTS:--s}
 	fi
         
+        [[ ! -d $CLUMGR_DIR ]] && mkdir -p $CLUMGR_DIR
+
+	# need curl to be available
+        if ! [ -x "$(command -v curl)" ]; then
+          echo 'Warning: curl is not installed. skipping cluster manager installation' >&2
+          return
+        fi
+
 	echo "Downloading cluster manager bundle from ${CLUMGR_URL}"
         curl $CURL_OPTS -o $CLUMGR_BUNDLE $CLUMGR_URL || {
            echo 'Warning: could not download cluster manager bundle. skipping cluster manager installation' >&2
            return
         }
-
-        [[ ! -d $CLUMGR_DIR ]] && mkdir -p $CLUMGR_DIR
 
         echo "Extracting cluster manager bundle to $CLUMGR_DIR"
         tar xzf $CLUMGR_BUNDLE -C $CLUMGR_DIR 2>/dev/null || {
