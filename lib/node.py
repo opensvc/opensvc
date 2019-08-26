@@ -692,16 +692,7 @@ class Node(Crypt, ExtConfigMixin):
                 if path not in result:
                     result.append(path)
         if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
-            kind = 'service'
-            if 'sec/' in selector:
-                kind = 'secret'
-            if 'vol/' in selector:
-                kind = 'volume'
-            if 'cfg/' in selector:
-                kind = 'config'
-            if 'usr/' in selector:
-                kind = 'user'
-            raise ex.excError("%s not found" % kind)
+            raise ex.excError("no object found")
         return result
 
     def __svcs_selector(self, selector, data, paths, namespace=None,
