@@ -284,6 +284,7 @@ class Container(resContainer.Container):
         if self.lib.docker_cmd is None:
             raise ex.excError("docker executable not found")
         sec_env = {}
+        cfg_env = {}
         cmd = self.lib.docker_cmd + []
         if action == "start":
             if not self.detach:
@@ -306,6 +307,8 @@ class Container(resContainer.Container):
                 cmd += self._add_run_args()
                 for var in sec_env:
                     cmd += ["-e", var]
+                for var in cfg_env:
+                    cmd += ["-e", var]
                 cmd += [self.image]
                 if self.run_command:
                     cmd += self.run_command
@@ -322,6 +325,7 @@ class Container(resContainer.Container):
         env = {}
         env.update(os.environ)
         env.update(sec_env)
+        env.update(cfg_env)
         try:
             ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
         except KeyboardInterrupt:
