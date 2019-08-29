@@ -698,7 +698,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
     except ex.OptNotFound:
         return
 
-    if cmd is None:
+    if not cmd:
         svc.log.warning("empty trigger: %s.%s", section, attr)
         return
 
