@@ -6,6 +6,7 @@ import fnmatch
 import shutil
 import glob
 import tempfile
+import six
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs, split_path, fmt_path, factory
@@ -122,7 +123,10 @@ class Sec(DataMixin, BaseSvc):
         return get_expire(buff)
 
     def pkcs12(self):
-        print(self._pkcs12())
+        if six.PY3:
+            sys.stdout.buffer.write(self._pkcs12())
+        else:
+            print(self._pkcs12())
 
     def _pkcs12(self):
         required = set(["private_key", "certificate_chain"])
@@ -145,7 +149,8 @@ class Sec(DataMixin, BaseSvc):
                 _tmpcert.write(self.decode_key("certificate_chain"))
             cmd = ["openssl", "pkcs12", "-export", "-in", tmpcert, "-inkey", tmpkey, "-passout", "stdin"]
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-            out, err = proc.communicate(input="\n")
+            pwd = "\n" if six.PY2 else b"\n"
+            out, err = proc.communicate(input=pwd)
             if err:
                 print(err)
             return out
