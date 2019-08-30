@@ -293,22 +293,13 @@ class Mgr(object):
                     print(exc, file=sys.stderr)
                 build_err = True
 
-        if self.node.svcs is not None and len(self.node.svcs) > 0:
-            paths = [svc.path for svc in self.node.svcs]
-        elif action == "create" and "paths" in build_kwargs:
-            paths = build_kwargs["paths"]
-        else:
-            paths = []
-
-        if action != "create" and len(paths) == 0:
-            if action == "ls":
-                return
+        if action not in ("ls", "create") and len(options.svcs) == 0:
             if not build_err:
                 sys.stderr.write("no match\n")
             return 1
 
         if action == "create":
-            return self.node.create_service(paths, options)
+            return self.node.create_service(options.svcs, options)
 
         ret = self.do_svcs_action(options, action, argv=argv)
 

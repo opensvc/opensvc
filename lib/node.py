@@ -692,7 +692,7 @@ class Node(Crypt, ExtConfigMixin):
                 if path not in result:
                     result.append(path)
         if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
-            raise ex.excError("no object found")
+            raise ex.excError("object not found")
         return result
 
     def __svcs_selector(self, selector, data, paths, namespace=None,
@@ -2488,7 +2488,7 @@ class Node(Crypt, ExtConfigMixin):
             svcmon.svcmon(self, options)
             return
         if action == "ls":
-            data = strip_path(sorted([svc.path for svc in svcs]), options.namespace)
+            data = strip_path(sorted([svc.path for svc in svcs if svc.path in options.svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
             else:
