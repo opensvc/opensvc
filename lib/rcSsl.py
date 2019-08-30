@@ -22,6 +22,7 @@ def gen_cert(log=None, **data):
         if not os.path.isdir(d):
             makedirs(d)
     data["subject"] = format_subject(**data)
+    gen_csr(log=log, **data)
     if data.get("ca") is None:
         gen_self_signed_cert(log=log, **data)
     else:
@@ -50,8 +51,7 @@ def gen_self_signed_cert(log=None, **data):
     if days < 1:
         days = 1
     cmd = ["openssl", "req", "-x509", "-nodes",
-           "-newkey", "rsa:%d" % data.get("bits", 4096),
-           "-keyout", data["key"],
+           "-key", data["key"],
            "-out", data["crt"],
            "-days", str(days),
            "-subj", "%s" % data["subject"]]
@@ -62,7 +62,6 @@ def gen_self_signed_cert(log=None, **data):
         raise ex.excError(out+err)
 
 def gen_ca_signed_cert(log=None, **data):
-    gen_csr(log=log, **data)
     sign_csr(log=log, **data)
 
 def gen_csr(log=None, **data):

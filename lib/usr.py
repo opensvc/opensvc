@@ -45,16 +45,12 @@ class Usr(Sec, BaseSvc):
 
     def on_create(self):
         changes = []
+        has_ca = False
         if not self.oget("DEFAULT", "cn"):
             if self.namespace == "system":
                 changes.append("cn=%s" % self.name)
             else:
                 changes.append("cn=%s" % self.fullname)
-        if not self.oget("DEFAULT", "ca"):
-            ca = self.node.oget("cluster", "ca")
-            if ca is None:
-                ca = "system/sec/ca-" + self.node.cluster_name
-            changes.append("ca=%s" % ca)
         if self.namespace != "system":
             try:
                 self.conf_get("DEFAULT", "validity")
@@ -62,9 +58,19 @@ class Usr(Sec, BaseSvc):
                 changes.append("validity=%s" % DEFAULT_SACC_CERT_VALIDITY)
             grant = "guest:" + self.namespace
             changes.append("grant=%s" % grant)
+        if not self.oget("DEFAULT", "ca"):
+            capath = self.node.oget("cluster", "ca")
+            if capath is None:
+                capath = "system/sec/ca-" + self.node.cluster_name
+                name, namespace, kind = split_path(capath)
+            if factory("sec")(name, namespace="system", volatile=True, log=self.log).exists():
+                has_ca = True
+                changes.append("ca=%s" % capath)
+            else:
+                print("no cluster.ca defined. skip certificate generation.")
         if changes:
             self.set_multi(changes)
-        if "certificate" not in self.data_keys():
+        if has_ca and "certificate" not in self.data_keys():
             self.gen_cert()
 
     @lazy
