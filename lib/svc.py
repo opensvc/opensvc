@@ -557,6 +557,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.ordered_nodes = self.oget("DEFAULT", "nodes")
         except (AttributeError, ValueError):
             self.ordered_nodes = [rcEnv.nodename]
+        if self.encap and rcEnv.nodename not in self.ordered_nodes:
+            self.ordered_nodes = [rcEnv.nodename]
         try:
             self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
         except (AttributeError, ValueError):
