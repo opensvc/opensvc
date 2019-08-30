@@ -23,6 +23,7 @@ try:
     from hyper.common.headers import HTTPHeaderMap
     SSLWantReadError = ssl.SSLWantReadError
     SSLError = ssl.SSLError
+    ssl.HAS_ALPN # stack on Attribute error on py <3.5 and <2.7.10
     has_ssl = True
 except Exception:
     # consider py <2.7.9 and <3.4.0 does not have ssl (h2 disabled)
