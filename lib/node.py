@@ -3695,9 +3695,12 @@ class Node(Crypt, ExtConfigMixin):
         if isinstance(selector, (list, tuple, set)):
             return selector
         selector = selector.strip()
-        if not re.search("[\*?=,\+]", selector) and re.search("\s", selector):
-            # simple node list
-            return selector.split()
+        if not re.search("[\*?=,\+]", selector):
+            if re.search("\s", selector):
+                # simple node list
+                return selector.split()
+            elif selector in self.cluster_nodes:
+                return [selector]
         if data is None:
             data = self.nodes_info
         if data is None:
