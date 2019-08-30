@@ -1289,24 +1289,26 @@ class ClientHandler(shared.OsvcThread):
                 data[role] = set()
         return data
 
-    def rbac_requires(self, namespaces=None, roles=None, action=None, **kwargs):
+    def rbac_requires(self, namespaces=None, roles=None, action=None, grants=None, **kwargs):
         if self.usr is False:
             # ux and aes socket are not constrainted by rbac
             return
         if roles is None:
             roles = ["root"]
-        if "root" in self.usr_grants:
+        if grants is None:
+            grants = self.usr_grants
+        if "root" in grants:
             return
         if isinstance(namespaces, (list, tuple)):
             namespaces = set(namespaces)
         for role in roles:
-            if role not in self.usr_grants:
+            if role not in grants:
                 continue
             if role in rcEnv.cluster_roles:
                 return
 
             # namespaced role
-            role_namespaces = self.usr_grants[role]
+            role_namespaces = grants[role]
             if not role_namespaces:
                 # empty set
                 continue
@@ -1320,7 +1322,7 @@ class ClientHandler(shared.OsvcThread):
                         "grants '%s' requires role '%s'" % (
                 action,
                 self.usr.name if self.usr else self.usr,
-                self.format_grants(self.usr_grants),
+                self.format_grants(grants),
                 ",".join(roles)
         ))
 
@@ -1347,12 +1349,13 @@ class ClientHandler(shared.OsvcThread):
             return []
         errors = []
         for path, cd in payload.items():
-            errors += self.rbac_create_obj(path, cd, grants, all_ns, **kwargs)
+            errors += self.rbac_create_obj(path, cd, all_ns, **kwargs)
         return errors
 
-    def rbac_create_obj(self, path, cd, grants, all_ns, **kwargs):
+    def rbac_create_obj(self, path, cd, all_ns, **kwargs):
         errors = []
         name, namespace, kind = split_path(path)
+        grants = self.user_grants(all_ns | set([namespace]))
         if namespace not in all_ns:
             if namespace == "system":
                 errors.append("%s: create the new namespace system requires the root cluster role")
