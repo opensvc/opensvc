@@ -62,12 +62,12 @@ class Usr(Sec, BaseSvc):
             capath = self.node.oget("cluster", "ca")
             if capath is None:
                 capath = "system/sec/ca-" + self.node.cluster_name
-                name, namespace, kind = split_path(capath)
+            name, namespace, kind = split_path(capath)
             if factory("sec")(name, namespace="system", volatile=True, log=self.log).exists():
                 has_ca = True
                 changes.append("ca=%s" % capath)
             else:
-                print("no cluster.ca defined. skip certificate generation.")
+                print("no cluster CA defined. skip certificate generation.")
         if changes:
             self.set_multi(changes)
         if has_ca and "certificate" not in self.data_keys():
