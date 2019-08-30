@@ -3705,7 +3705,7 @@ class Node(Crypt, ExtConfigMixin):
             data = {rcEnv.nodename: {"labels": self.labels}}
 
         nodes = []
-        for selector in shlex.split(selector):
+        for selector in selector.split():
             _nodes = self._nodes_selector(selector, data)
             for node in _nodes:
                 if node not in nodes:
