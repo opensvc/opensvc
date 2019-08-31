@@ -59,14 +59,13 @@ def get_context(context=None):
     info["cluster"] = cdata
     
     certificate_authority = cdata.get("certificate_authority")
-    if certificate_authority is None:
-        raise ex.excError("invalid context '%s'. cluster.%s.certificate_authority not found in %s" % (context, cluster, fpath))
 
     server = cdata.get("server")
     if server is None:
         raise ex.excError("invalid context '%s'. cluster.%s.server not found in %s" % (context, cluster, fpath))
 
     server = server.replace("tls://", "").strip("/")
+    server = server.replace("https://", "").strip("/")
     if ":" in server:
         addr, port = server.split(":", 1)
     else:
