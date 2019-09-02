@@ -139,6 +139,8 @@ class Listener(shared.OsvcThread):
     crl_mode = None
     tls_sock = None
     tls_context = None
+    port = -1
+    addr = ""
 
     @lazy
     def certfs(self):
