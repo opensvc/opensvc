@@ -731,6 +731,7 @@ class ClientHandler(shared.OsvcThread):
         self.streams = {}
         self.h2conn = None
         self.events_stream_ids = []
+        self.usr_cf_sum = None
         if scheme == "raw":
             self.usr = False
             self.usr_auth = "secret"
@@ -800,8 +801,16 @@ class ClientHandler(shared.OsvcThread):
         if negotiated_protocol != "h2":
             raise RuntimeError("couldn't negotiate h2: %s" % negotiated_protocol)
 
+    def current_usr_cf_sum(self):
+        try:
+            return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][self.usr.path]["csum"]
+        except:
+            return "unknown"
+
     def authenticate_client(self, headers):
-        if self.usr or self.usr is False:
+        if self.usr is False:
+            return
+        if self.usr and self.usr_cf_sum == self.current_usr_cf_sum():
             return
         if self.addr[0] == "local":
             # only root can talk to the ux sockets
@@ -819,6 +828,8 @@ class ClientHandler(shared.OsvcThread):
             self.usr = self.authenticate_client_x509()
             self.usr_auth = "x509"
             self.usr_grants = self.user_grants()
+            self.usr_cf_sum = self.current_usr_cf_sum()
+            #self.log.info("loaded grants for %s, conf %s", self.usr.path, self.usr_cf_sum)
             return
         except Exception as exc:
             #self.log.warning("%s", exc)
