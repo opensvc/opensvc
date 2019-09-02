@@ -48,7 +48,7 @@ class Sec(DataMixin, BaseSvc):
             raise ex.excError("secret key name can not be empty")
         data = self.oget("data", key)
         if not data:
-            raise ex.excError("secret key %s does not exist or has no value" % key)
+            raise ex.excError("secret %s key %s does not exist or has no value" % (self.path, key))
         if data.startswith("crypt:"):
             data = data[6:]
             return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")))[1]
@@ -82,16 +82,19 @@ class Sec(DataMixin, BaseSvc):
         try:
             if casec:
                 for key, kw in (("cacrt", "certificate"), ("cakey", "private_key")):
+                    if kw not in casec.data_keys():
+                        continue
                     data[key] = self.tempfilename()
                     buff = casec.decode_key(kw)
                     with open(data[key], "w") as ofile:
                         ofile.write(buff)
             gen_cert(log=self.log, **data)
             self._add("private_key", value_from=data["key"])
-            self._add("certificate", value_from=data["crt"])
+            if data.get("crt") is not None:
+                self._add("certificate", value_from=data["crt"])
             if data.get("csr") is not None:
                 self._add("certificate_signing_request", value_from=data["csr"])
-            if data.get("ca") is None:
+            if data.get("cakey") is None:
                 self._add("certificate_chain", value_from=data["crt"])
             else:
                 # merge cacrt and crt

@@ -23,7 +23,7 @@ def gen_cert(log=None, **data):
             makedirs(d)
     data["subject"] = format_subject(**data)
     gen_csr(log=log, **data)
-    if data.get("ca") is None:
+    if data.get("cakey") is None:
         gen_self_signed_cert(log=log, **data)
     else:
         gen_ca_signed_cert(log=log, **data)
