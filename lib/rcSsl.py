@@ -85,6 +85,8 @@ def gen_csr(log=None, **data):
            "-keyout", data["key"],
            "-out", data["csr"],
            "-subj", "%s" % data["subject"]]
+    if data.get("alt_names"):
+        cmd += data.get("alt_names")
     if log:
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
