@@ -5422,7 +5422,10 @@ class Node(Crypt, ExtConfigMixin):
 
     def network_ip_data(self):
         data = []
-        cdata = self._daemon_status(silent=True)["monitor"]["nodes"]
+        try:
+            cdata = self._daemon_status(silent=True).get("monitor", {}).get("nodes", {})
+        except Exception:
+            cdata = {}
         for nodename, node in cdata.items():
             for path, sdata in node.get("services", {}).get("status", {}).items():
                 for rid, rdata in sdata.get("resources", {}).items():
