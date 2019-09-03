@@ -5319,6 +5319,7 @@ class Svc(BaseSvc):
                         argv.insert(idx, image)
             for idx, arg in enumerate(argv):
                 if arg in ("%as_service%", "{as_service}"):
+                    container = self.get_resources("container."+ctype)[0]
                     del argv[idx]
                     argv[idx:idx] = container.lib.login_as_service_args()
             return argv
