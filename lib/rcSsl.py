@@ -22,6 +22,7 @@ def gen_cert(log=None, **data):
         if not os.path.isdir(d):
             makedirs(d)
     data["subject"] = format_subject(**data)
+    data["alt_names"] = format_alt_names(**data)
     gen_csr(log=log, **data)
     if data.get("cakey") is None:
         gen_self_signed_cert(log=log, **data)
@@ -34,17 +35,29 @@ def format_subject(**data):
         if sk not in data:
             continue
         l.append(k+"="+data[sk])
-    if "alt_names" in data and len(data["alt_names"]) > 0:
-        dns = []
-        for i, d in enumerate(data["alt_names"]):
-            if is_string(d):
-                dns.append("DNS.%d=%s" % (i+1, d))
-            elif "DNS" in d:
-                dns.append("DNS.%d=%s" % (i+1, d["DNS"]))
-        l.append("subjectAltName="+",".join(dns))
     l.append("")
     subject = "/".join(l)
     return subject
+
+def format_alt_names(**data):
+    if "alt_names" not in data:
+        return
+    if len(data["alt_names"]) == 0:
+        return
+    from ipaddress import ip_address
+    l = []
+    for i, d in enumerate(data["alt_names"]):
+        try:
+            ip = ip_address(d)
+        except ValueError:
+            ip = None
+        if d.startswith("IP:") or d.startswith("DNS:"):
+            l.append(d)
+        elif ip:
+            l.append("IP:%s" % d)
+        else:
+            l.append("DNS:%s" % d)
+    return ["-addext", "subjectAltName = %s" % ",".join(l)]
 
 def gen_self_signed_cert(log=None, **data):
     days = data["validity"]
@@ -55,6 +68,8 @@ def gen_self_signed_cert(log=None, **data):
            "-out", data["crt"],
            "-days", str(days),
            "-subj", "%s" % data["subject"]]
+    if data.get("alt_names"):
+        cmd += data.get("alt_names")
     if log:
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
