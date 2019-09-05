@@ -402,7 +402,7 @@ class Scheduler(object):
             raise SchedNoDefault
 
         try:
-            schedule_s = self.obj.oget(section, "schedule")
+            schedule_s = self.obj.oget(section, option if section == "DEFAULT" else "schedule")
         except ValueError:
             # keyword not found
             schedule_s = None
