@@ -411,10 +411,10 @@ class OsvcThread(threading.Thread, Crypt):
 
     @staticmethod
     def get_service(path):
-        with SERVICES_LOCK:
-            if path not in SERVICES:
-                return
-        return SERVICES[path]
+        try:
+            return SERVICES[path]
+        except KeyError:
+            return
 
     @staticmethod
     def on_labels_change():
@@ -431,18 +431,6 @@ class OsvcThread(threading.Thread, Crypt):
             except KeyError:
                 continue
         return False
-
-    @staticmethod
-    def get_services_nodenames():
-        """
-        Return the services nodes and drpnodes name, fetching the information
-        from the Svc objects.
-        """
-        nodenames = set()
-        with SERVICES_LOCK:
-            for svc in SERVICES.values():
-                nodenames |= svc.nodes | svc.drpnodes
-        return nodenames
 
     def set_nmon(self, status=None, local_expect=None, global_expect=None):
         global NMON_DATA
