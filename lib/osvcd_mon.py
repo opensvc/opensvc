@@ -3034,6 +3034,10 @@ class Monitor(shared.OsvcThread):
              self.get_agg_aborted(path):
             self.log.info("service %s action aborted", path)
             self.set_smon(path, global_expect="unset")
+            if smon.status and smon.status.startswith("wait "):
+                # don't leave lingering "wait" mon state when we no longer
+                # have a target state to reach
+                self.set_smon(path, status="idle")
         elif smon.global_expect == "placed":
             if shared.AGG[path].placement in ("optimal", "n/a") and \
                shared.AGG[path].avail == "up":
