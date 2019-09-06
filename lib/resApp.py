@@ -372,6 +372,8 @@ class App(Resource):
         """
         Release the app action lock.
         """
+        if not self.lockfd:
+            return
         self.log.debug("release app lock")
         lock.unlock(self.lockfd)
         try:

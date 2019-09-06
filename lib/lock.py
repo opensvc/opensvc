@@ -117,23 +117,20 @@ def lock_nowait(lockfile=None, intent=None):
     data = {"pid": os.getpid(), "intent": intent}
     lockd = os.path.dirname(lockfile)
 
-    if not os.path.exists(lockd):
-        os.makedirs(lockd)
-
     try:
         with open(lockfile, 'r') as ofile:
             prev_data = json.load(ofile)
         if not isinstance(prev_data, dict) or "pid" not in prev_data or "intent" not in prev_data:
             prev_data = {"pid": 0, "intent": ""}
-    except Exception:
+    except Exception as exc:
+        if hasattr(exc, "errno") and exc.errno == 21:
+            raise LockCreateError("lockfile points to a directory")
         prev_data = {"pid": 0, "intent": ""}
 
     # test if we already own the lock
     if prev_data["pid"] == os.getpid():
         return
 
-    if os.path.isdir(lockfile):
-        raise LockCreateError("lockfile points to a directory")
 
     try:
         flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
@@ -143,6 +140,12 @@ def lock_nowait(lockfile=None, intent=None):
             flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
+        if hasattr(exc, "errno") and exc.errno == 2:
+            os.makedirs(lockd)
+            try:
+                lockfd = os.open(lockfile, flags, 0o644)
+            except Exception as exc:
+                raise LockCreateError(str(exc))
         raise LockCreateError(str(exc))
 
     try:
