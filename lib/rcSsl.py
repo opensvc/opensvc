@@ -112,6 +112,8 @@ def sign_csr(log=None, **data):
         raise ex.excError(out+err)
 
 def get_expire(data):
+    if not data:
+        return
     cmd = ["openssl", "x509", "-noout", "-enddate"]
     out, err, ret = justcall(cmd, input=data)
     out = out.split("=", 1)[-1].strip()
