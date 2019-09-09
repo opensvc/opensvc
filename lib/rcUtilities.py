@@ -1164,11 +1164,13 @@ def is_service(f, namespace=None, data=None, local=False, kinds=None):
     f = re.sub(".conf$", "", f)
     f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
     try:
-        name, namespace, kind = split_path(f)
+        name, _namespace, kind = split_path(f)
     except ValueError:
         return
     if kinds and kind not in kinds:
         return
+    if not namespace:
+        namespace = _namespace
     path = fmt_path(name, namespace, kind)
     if not local:
         try:
