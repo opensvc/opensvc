@@ -96,6 +96,7 @@ class Monitor(shared.OsvcThread):
         self.rejoin_grace_period_expired = False
         self.shortloops = 0
         self.unfreeze_when_all_nodes_joined = False
+        self.node_frozen = self.freezer.node_frozen()
 
         with shared.CLUSTER_DATA_LOCK:
             shared.CLUSTER_DATA[rcEnv.nodename] = {
@@ -108,10 +109,11 @@ class Monitor(shared.OsvcThread):
             }
 
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
-            if not self.freezer.node_frozen():
+            if not self.node_frozen:
                 self.event("node_freeze", data={"reason": "upgrade"})
                 self.unfreeze_when_all_nodes_joined = True
                 self.freezer.node_freeze()
+                self.node_frozen = self.freezer.node_frozen()
 
         last_boot_id = shared.NODE.last_boot_id()
         boot_id = shared.NODE.asset.get_boot_id()
@@ -186,6 +188,7 @@ class Monitor(shared.OsvcThread):
             with shared.MON_TICKER:
                 shared.MON_TICKER.wait(self.monitor_period)
             return
+        self.node_frozen = self.freezer.node_frozen()
         if changed:
             with shared.MON_TICKER:
                 self.log.debug("woken for:")
@@ -740,7 +743,7 @@ class Monitor(shared.OsvcThread):
             return
         if svc is None:
             return
-        if self.instance_frozen(svcpath) or self.freezer.node_frozen():
+        if self.node_frozen or self.instance_frozen(svcpath):
             #self.log.info("resource %s orchestrator out (frozen)", svc.svcpath)
             return
         if svc.disabled:
@@ -892,25 +895,26 @@ class Monitor(shared.OsvcThread):
             return
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
-        node_frozen = self.freezer.node_frozen()
-        if self.unfreeze_when_all_nodes_joined and node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
+        if self.unfreeze_when_all_nodes_joined and self.node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
             self.event("node_thaw", data={"reason": "upgrade"})
             self.freezer.node_thaw()
             self.unfreeze_when_all_nodes_joined = False
-            node_frozen = 0
+            self.node_frozen = 0
         if nmon.status != "idle":
             return
         self.set_nmon_g_expect_from_status()
         if nmon.global_expect == "frozen":
             self.unfreeze_when_all_nodes_joined = False
-            if not node_frozen:
+            if not self.node_frozen:
                 self.event("node_freeze", {"reason": "target"})
                 self.freezer.node_freeze()
+                self.node_frozen = self.freezer.node_frozen()
         elif nmon.global_expect == "thawed":
             self.unfreeze_when_all_nodes_joined = False
-            if node_frozen:
+            if self.node_frozen:
                 self.event("node_thaw", {"reason": "target"})
                 self.freezer.node_thaw()
+                self.node_frozen = 0
 
     def service_orchestrator(self, svcpath, svc):
         smon = self.get_service_monitor(svcpath)
@@ -993,7 +997,7 @@ class Monitor(shared.OsvcThread):
                 self.set_smon(svc.svcpath, local_expect="unset")
             else:
                 return
-        if self.instance_frozen(svc.svcpath) or self.freezer.node_frozen():
+        if self.node_frozen or self.instance_frozen(svc.svcpath):
             #self.log.info("service %s orchestrator out (frozen)", svc.svcpath)
             return
         if not self.rejoin_grace_period_expired:
@@ -1792,6 +1796,7 @@ class Monitor(shared.OsvcThread):
                                          "unreacheable. freeze node.")
             self.event("node_freeze", data={"reason": "rejoin_expire"})
             self.freezer.node_freeze()
+            self.node_frozen = self.freezer.node_frozen()
             return False
         self.duplog("info", "in rejoin grace period", nodename="")
         return True
@@ -3074,7 +3079,7 @@ class Monitor(shared.OsvcThread):
         """
         data = shared.CLUSTER_DATA[rcEnv.nodename]
         data["stats"] = shared.NODE.stats()
-        data["frozen"] = self.freezer.node_frozen()
+        data["frozen"] = self.node_frozen
         data["env"] = shared.NODE.env
         data["labels"] = shared.NODE.labels
         data["targets"] = shared.NODE.targets
@@ -3521,7 +3526,7 @@ class Monitor(shared.OsvcThread):
         frozen = node.get("frozen", 0)
         if frozen:
             return
-        if self.freezer.node_frozen():
+        if self.node_frozen:
             return
         nmon = self.get_node_monitor()
         if nmon.global_expect == "thawed":
@@ -3542,6 +3547,7 @@ class Monitor(shared.OsvcThread):
                     "peer": peer,
                 })
                 self.freezer.node_freeze()
+                self.node_frozen = self.freezer.node_frozen()
 
     def merge_service_frozen(self, last_shutdown):
         """
@@ -3605,3 +3611,4 @@ class Monitor(shared.OsvcThread):
         if "osvc.freeze" in buff.split():
             self.event("node_freeze", data={"reason": "kern_freeze"})
             self.freezer.node_freeze()
+            self.node_frozen = self.freezer.node_frozen()
