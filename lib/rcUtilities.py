@@ -1159,9 +1159,11 @@ def is_service(f, namespace=None, data=None, local=False):
     f = re.sub(".conf$", "", f)
     f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
     try:
-        name, namespace, kind = split_svcpath(f)
+        name, _namespace, kind = split_svcpath(f)
     except ValueError:
         return
+    if not namespace:
+        namespace = _namespace
     path = fmt_svcpath(name, namespace, kind)
     if not local:
         try:
