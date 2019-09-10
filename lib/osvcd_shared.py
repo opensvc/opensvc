@@ -139,6 +139,24 @@ RUN_DONE = set()
 # min interval between thread stats refresh
 STATS_INTERVAL = 1
 
+# try to give a name to the locks, for debugging when using
+# the pure python locks (native locks don't support setattr)
+try:
+    DAEMON_STATUS_LOCK.name = "DAEMON_STATUS"
+    CONFIG_LOCK.name = "CONFIG"
+    THREADS_LOCK.name = "THREADS"
+    NODE_LOCK.name = "NODE"
+    SERVICES_LOCK.name = "SERVICES"
+    AGG_LOCK.name = "AGG"
+    HB_MSG_LOCK.name = "HB_MSG"
+    SMON_DATA_LOCK.name = "SMON_DATA"
+    NMON_DATA_LOCK.name = "NMON_DATA"
+    LOCKS_LOCK.name = "LOCKS_LOCK"
+    CLUSTER_DATA_LOCK.name = "CLUSTER_DATA"
+    RUN_DONE_LOCK.name = "RUN_DONE"
+except AttributeError:
+    pass
+
 def wake_heartbeat_tx():
     """
     Notify the heartbeat tx thread to do they periodic job immediatly
@@ -824,33 +842,35 @@ class OsvcThread(threading.Thread, Crypt):
         Return the specified service status structure on the specified node.
         """
         try:
-            with CLUSTER_DATA_LOCK:
-                return Storage(
-                    CLUSTER_DATA[nodename]["services"]["status"][path]
-                )
+            return Storage(
+                CLUSTER_DATA[nodename]["services"]["status"][path]
+            )
         except (TypeError, KeyError):
             return
 
+    def get_service_instances(self, *args, **kwargs):
+        with CLUSTER_DATA_LOCK:
+            return self.get_service_instances_unlocked(*args, **kwargs)
+
     @staticmethod
-    def get_service_instances(path, discard_empty=False):
+    def get_service_instances_unlocked(path, discard_empty=False):
         """
         Return the specified service status structures on all nodes.
         """
         instances = {}
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
-                try:
-                    if path in CLUSTER_DATA[nodename]["services"]["status"]:
-                        try:
-                            CLUSTER_DATA[nodename]["services"]["status"][path]["updated"]
-                        except (TypeError, KeyError):
-                            # foreign
-                            continue
-                        if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][path]:
-                            continue
-                        instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][path]
-                except (TypeError, KeyError):
-                    continue
+        for nodename in CLUSTER_DATA:
+            try:
+                if path in CLUSTER_DATA[nodename]["services"]["status"]:
+                    try:
+                        CLUSTER_DATA[nodename]["services"]["status"][path]["updated"]
+                    except (TypeError, KeyError):
+                        # foreign
+                        continue
+                    if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][path]:
+                        continue
+                    instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][path]
+            except (TypeError, KeyError):
+                continue
         return instances
 
     @staticmethod

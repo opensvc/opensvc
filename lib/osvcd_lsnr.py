@@ -131,6 +131,7 @@ class DontClose(Exception):
 
 
 class Listener(shared.OsvcThread):
+    name = "listener"
     events_grace_period = True
     sock_tmo = 1.0
     sockmap = {}
