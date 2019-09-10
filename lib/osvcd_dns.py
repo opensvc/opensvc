@@ -28,6 +28,7 @@ else:
     MAKEFILE_KWARGS = {"buffering": None}
 
 class Dns(shared.OsvcThread):
+    name = "dns"
     sock_tmo = 1.0
 
     def run(self):

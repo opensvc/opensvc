@@ -75,6 +75,7 @@ class Monitor(shared.OsvcThread):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
+    name = "monitor"
     monitor_period = 0.5
     arbitrators_check_period = 60
     max_shortloops = 30
@@ -191,9 +192,9 @@ class Monitor(shared.OsvcThread):
         self.node_frozen = self.freezer.node_frozen()
         if changed:
             with shared.MON_TICKER:
-                self.log.debug("woken for:")
-                for idx, reason in enumerate(shared.MON_CHANGED):
-                    self.log.debug("%d. %s", idx, reason)
+                #self.log.debug("woken for:")
+                #for idx, reason in enumerate(shared.MON_CHANGED):
+                #    self.log.debug("%d. %s", idx, reason)
                 self.unset_mon_changed()
         self.shortloops = 0
         self.reload_config()
@@ -2284,7 +2285,7 @@ class Monitor(shared.OsvcThread):
     #########################################################################
     def get_agg_avail(self, svcpath):
         try:
-            instance = self.get_any_service_instance(svcpath)
+            instance = self.get_any_service_instance_unlocked(svcpath)
         except IndexError:
             instance = None
         if instance is None:
@@ -2338,7 +2339,7 @@ class Monitor(shared.OsvcThread):
         ostatus = 'undef'
         ostatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances_unlocked(svcpath).values():
             if "overall" not in instance:
                 continue
             ostatus_l.append(instance["overall"])
@@ -2362,7 +2363,7 @@ class Monitor(shared.OsvcThread):
         if "stdby" in ostatus:
             ostatus = "down"
         try:
-            instance = self.get_any_service_instance(svcpath)
+            instance = self.get_any_service_instance_unlocked(svcpath)
         except IndexError:
             instance = Storage()
         if instance is None:
@@ -2394,7 +2395,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_frozen(self, svcpath):
         frozen = 0
         total = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances_unlocked(svcpath).values():
             if "frozen" not in instance:
                 # deleting instance
                 continue
@@ -2431,7 +2432,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_avail_failover(self, svcpath):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances_unlocked(svcpath).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2455,7 +2456,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_avail_flex(self, svcpath):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances_unlocked(svcpath).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2489,7 +2490,7 @@ class Monitor(shared.OsvcThread):
                 return "n/a"
         except KeyError:
             pass
-        instances = [instance for instance in self.get_service_instances(svcpath).values() \
+        instances = [instance for instance in self.get_service_instances_unlocked(svcpath).values() \
                      if not instance.get("frozen")]
         if len(instances) < 2:
             return "optimal"
@@ -2514,7 +2515,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_provisioned(self, svcpath):
         provisioned = 0
         total = 0
-        for instance in self.get_service_instances(svcpath).values():
+        for instance in self.get_service_instances_unlocked(svcpath).values():
             if "provisioned" not in instance:
                 continue
             total += 1
@@ -2639,20 +2640,23 @@ class Monitor(shared.OsvcThread):
                     data[svcpath][nodename] = Storage(config)
         return data
 
+    def get_any_service_instance(self, path):
+        with shared.CLUSTER_DATA_LOCK:
+            return self.get_any_service_instance_unlocked(path)
+
     @staticmethod
-    def get_any_service_instance(svcpath):
+    def get_any_service_instance_unlocked(svcpath):
         """
         Return the specified service status structure on any node.
         """
-        with shared.CLUSTER_DATA_LOCK:
-            for nodename in shared.CLUSTER_DATA:
-                try:
-                    if svcpath in shared.CLUSTER_DATA[nodename]["services"]["status"]:
-                        if shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath] in (None, ""):
-                            continue
-                        return shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
-                except KeyError:
-                    continue
+        for nodename in shared.CLUSTER_DATA:
+            try:
+                if svcpath in shared.CLUSTER_DATA[nodename]["services"]["status"]:
+                    if shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath] in (None, ""):
+                        continue
+                    return shared.CLUSTER_DATA[nodename]["services"]["status"][svcpath]
+            except KeyError:
+                continue
 
     @staticmethod
     def get_last_svc_config(svcpath):
@@ -2711,7 +2715,7 @@ class Monitor(shared.OsvcThread):
                 config_mtime = 0
             last_config = self.get_last_svc_config(svcpath)
             if last_config is None or config_mtime > last_config["updated"]:
-                self.log.debug("compute service %s config checksum", svcpath)
+                #self.log.debug("compute service %s config checksum", svcpath)
                 try:
                     csum = fsum(cfg)
                 except (OSError, IOError) as exc:
@@ -3421,31 +3425,33 @@ class Monitor(shared.OsvcThread):
         data.provisioned = self.get_agg_provisioned(svcpath)
         return data
 
-    def get_all_svcpaths(self):
-        svcpaths = set()
-        with shared.CLUSTER_DATA_LOCK:
-            for nodename, data in shared.CLUSTER_DATA.items():
-                try:
-                    for svcpath in data["services"]["config"]:
-                        svcpaths.add(svcpath)
-                except KeyError:
-                    continue
-        return svcpaths
+    def get_all_paths(self):
+        """
+        Caller needs CLUSTER_DATA_LOCK.
+        """
+        paths = set()
+        for nodename, data in shared.CLUSTER_DATA.items():
+            try:
+                for path in data["services"]["config"]:
+                    paths.add(path)
+            except KeyError:
+                continue
+        return paths
 
     def get_agg_services(self, paths=None):
         data = {}
-        svcpaths = self.get_all_svcpaths()
-        for svcpath in svcpaths:
-            try:
-                if self.get_service(svcpath).topology == "span":
+        with shared.CLUSTER_DATA_LOCK:
+            svcpaths = self.get_all_paths()
+            for svcpath in svcpaths:
+                try:
+                    if self.get_service(svcpath).topology == "span":
+                        data[svcpath] = Storage()
+                        continue
+                except Exception as exc:
                     data[svcpath] = Storage()
-                    continue
-            except Exception as exc:
-                data[svcpath] = Storage()
-                pass
-            data[svcpath] = self.get_agg(svcpath)
-        with shared.AGG_LOCK:
-            shared.AGG = data
+                    pass
+                data[svcpath] = self.get_agg(svcpath)
+        shared.AGG = data
         if paths is not None:
             return dict((path, data[path]) for path in svcpaths if path in paths)
         return data
@@ -3486,7 +3492,7 @@ class Monitor(shared.OsvcThread):
         if namespaces is None:
             paths = None
         else:
-            paths = [p for p in self.get_all_svcpaths() if split_svcpath(p)[1] in namespaces]
+            paths = [p for p in self.get_all_paths() if split_svcpath(p)[1] in namespaces]
         data = shared.OsvcThread.status(self, **kwargs)
         data["nodes"] = self.filter_cluster_data(paths)
         data["compat"] = self.compat

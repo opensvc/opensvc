@@ -21,6 +21,7 @@ ACTIONS_SKIP_ON_UNPROV = [
 ]
 
 class Scheduler(shared.OsvcThread):
+    name = "scheduler"
     interval = 60
     delayed = {}
     running = set()

@@ -13,6 +13,7 @@ from rcGlobalEnv import rcEnv
 MAX_QUEUED = 1000
 
 class Collector(shared.OsvcThread):
+    name = "collector"
     update_interval = 300
     min_update_interval = 10
     min_ping_interval = 60
