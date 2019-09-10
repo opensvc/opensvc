@@ -27,7 +27,6 @@ from rcUtilities import bdecode, purge_cache, fsum, \
                         list_services, svc_pathcf, fmt_svcpath, \
                         resolve_svcpath, factory
 from freezer import Freezer
-from jsonpath_ng import jsonpath, parse
 
 STARTED_STATES = [
     "n/a",
@@ -2109,16 +2108,21 @@ class Monitor(shared.OsvcThread):
                 return True
         return False
 
-    def service_started_instances_count(self, svcpath):
+    def service_started_instances_count(self, path):
         """
         Count the number of service instances in 'started' local expect state.
         """
-        jsonpath_expr = parse("*.services.status.'%s'.monitor.local_expect" % svcpath)
+        count = 0
         try:
-            count = len([True for match in jsonpath_expr.find(shared.CLUSTER_DATA) if match.value == "started"])
+            for node, ndata in shared.CLUSTER_DATA.items():
+                try:
+                    local_expect = ndata["services"]["status"][path]["monitor"]["local_expect"]
+                except Exception:
+                    continue
+                if local_expect == "started":
+                    count += 1
             return count
         except Exception as exc:
-            self.log.warning(exc)
             return 0
 
     def up_service_instances(self, svcpath):
