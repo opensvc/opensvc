@@ -72,7 +72,7 @@ svcmgr_move="--color --debug --disable-rollback --env --interval --local --names
 svcmgr_shutdown="--color --debug --dry-run --env --interval --local --master --namespace --node --nolock --rid --slave --slaves --stats --status --subsets --tags --time --wait --waitlock -f --force -h --help -p --parallel -s --service -w --watch"
 svcmgr_push_resinfo="--color --cron --debug --env --local --namespace --node --status --sync --waitlock -h --help -p --parallel -s --service"
 svcmgr_unsnooze="--color --debug --env --local --namespace --node --status --waitlock -h --help -p --parallel -s --service"
-svcmgr_monitor="--color --debug --env --interval --local --namespace --node --stats --status --waitlock -h --help -p --parallel -s --service -w --watch"
+svcmgr_monitor="--color --debug --env --interval --local --namespace --node --sections --stats --status --waitlock -h --help -p --parallel -s --service -w --watch"
 svcmgr_sync_establish="--color --debug --dry-run --env --local --master --namespace --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -f --force -h --help -p --parallel -s --service"
 svcmgr_support="--color --debug --env --local --namespace --node --status --waitlock -h --help -p --parallel -s --service"
 svcmgr_set_unprovisioned="--color --debug --dry-run --env --local --master --namespace --node --nolock --rid --slave --slaves --status --subsets --tags --waitlock -f --force -h --help -p --parallel -s --service"
@@ -139,7 +139,7 @@ svcmgr_switch="--color --debug --disable-rollback --env --interval --local --nam
 svcmgr_disable="--color --debug --env --local --namespace --node --rid --status --subsets --tags --waitlock -h --help -p --parallel -s --service"
 svcmgr_print_schedule="--color --debug --env --filter --format --local --namespace --node --status --verbose --waitlock -h --help -p --parallel -s --service"
 svcmgr_docker="--color --debug --env --local --namespace --node --status --waitlock -h --help -p --parallel -s --service"
-nodemgr="array auto checks collect collector compliance daemon delete dequeue dns edit eval events freeze frozen get logs ls network ping pool print prkey pushasset pushbrocade pushcentera pushdisks pushemcvnx pusheva pushfreenas pushgcedisks pushhds pushhp3par pushibmds pushibmsvc pushnecism pushnetapp pushnsr pushpatch pushpkg pushstats pushsym pushvioserver pushxtremio reboot register rotate scanscsi schedule set shutdown snooze stonith sysreport thaw unschedule unset unsnooze updatecomp updatepkg updateclumgr validate wait wol"
+nodemgr="array auto checks collect collector compliance daemon delete dequeue dns edit eval events freeze frozen get logs ls network ping pool print prkey pushasset pushbrocade pushcentera pushdisks pushemcvnx pusheva pushfreenas pushgcedisks pushhds pushhp3par pushibmds pushibmsvc pushnecism pushnetapp pushnsr pushpatch pushpkg pushstats pushsym pushvioserver pushxtremio reboot register rotate scanscsi schedule set shutdown snooze stonith sysreport thaw unschedule unset unsnooze updateclumgr updatecomp updatepkg validate wait wol"
 nodemgr_auto="reboot"
 nodemgr_collect="stats"
 nodemgr_collector="ack alerts asset checks cli create disks events list log networks search show tag untag"
@@ -236,12 +236,12 @@ nodemgr_schedule_reboot_status="--color --debug --filter --format --local --node
 nodemgr_print_devs="--color --debug --dev --filter --format --local --node --reverse --server --verbose -h --help"
 nodemgr_dequeue_actions="--color --cron --debug --filter --format --local --node --server -h --help"
 nodemgr_snooze="--color --debug --duration --filter --format --local --node --server -h --help"
-nodemgr_wait="--color --debug --duration --filter --format --local --node --server -h --help"
+nodemgr_wait="--color --debug --duration --filter --format --local --node --server --verbose -h --help"
 nodemgr_updatepkg="--color --debug --filter --format --local --node --server -h --help"
-nodemgr_updateclumgr="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_frozen="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_stonith="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_rotate_root_pw="--color --cron --debug --filter --format --local --node --server -h --help"
+nodemgr_updateclumgr="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_updatecomp="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_print_schedule="--color --debug --filter --format --local --node --server --verbose -h --help"
 nodemgr_daemon_join="--color --debug --filter --format --local --node --secret --server -h --help"
@@ -284,7 +284,7 @@ nodemgr_collector_ack_action="--author --color --comment --debug --filter --form
 nodemgr_collector_alerts="--color --debug --filter --format --local --node --server -h --help"
 nodemgr_collector_asset="--color --debug --filter --format --local --node --server -h --help"
 
-opts_with_arg=( "--access" "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--filter" "--format" "--hba" "--id" "--impersonate" "--index" "--interval" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--name" "--namespace" "--node" "--object" "--param" "--password" "--pool" "--port" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--server" "--service" "--size" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
+opts_with_arg=( "--access" "--add" "--api" "--app" "--author" "--backlog" "--begin" "--broadcast" "--color" "--comment" "--config" "--dev" "--downto" "--duration" "--end" "--env" "--filter" "--format" "--hba" "--id" "--impersonate" "--index" "--interval" "--kw" "--like" "--lun" "--mac" "--message" "--module" "--moduleset" "--name" "--namespace" "--node" "--object" "--param" "--password" "--pool" "--port" "--remove" "--resource" "--rid" "--ruleset" "--ruleset-date" "--secret" "--sections" "--server" "--service" "--size" "--slave" "--stats-dir" "--status" "--subsets" "--symcli-db-file" "--tag" "--tags" "--target" "--template" "--thread-id" "--time" "--to" "--upto" "--user" "--value" "--waitlock" "-s" )
 
 
 

@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-08\-08
+.TH SVCMGR 1 2019\-09\-11
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -2973,7 +2973,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -3947,7 +3947,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -4162,7 +4162,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -4591,7 +4591,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -4696,8 +4696,11 @@ Show this help message and exit.
 Display or watch the synthetic service status, and perf metrics.
 
 .TP
+.B --sections=SECTIONS
+the comma-separated list of sections to display. if not set, all sections are displayed. sections names are: threads,arbitrators,nodes,services.
+.TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -4809,7 +4812,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -6699,7 +6702,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -7048,7 +7051,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -8530,7 +8533,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -8779,7 +8782,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -9166,7 +9169,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -9375,7 +9378,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -11341,7 +11344,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -11452,7 +11455,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -11706,7 +11709,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.
@@ -12137,7 +12140,7 @@ A duration expression like '1m5s'. The maximum wait time for an async action to 
 Wait for asynchronous action termination.
 .TP
 .B --stats
-refresh the information every --interval.
+Show system resources usage metrics and refresh the information every --interval.
 .TP
 .B -w, --watch
 refresh the information every --interval.

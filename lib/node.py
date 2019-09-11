@@ -2484,7 +2484,10 @@ class Node(Crypt, ExtConfigMixin):
         svcs = [] + self.svcs
         if action == "monitor":
             import svcmon
-            options.sections = ["services"]
+            if not options.sections:
+                options.sections = "services"
+            elif "services" not in options.sections:
+                options.sections += ",services"
             svcmon.svcmon(self, options)
             return
         if action == "ls":

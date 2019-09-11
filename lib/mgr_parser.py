@@ -211,6 +211,12 @@ OPT = Storage({
              "* ``container#1,ip#1``\n"
              "  only container#1 and ip#1\n"
         ),
+    "sections": Option(
+        "--sections",
+        action="store", dest="sections",
+        help="the comma-separated list of sections to display. "
+             "if not set, all sections are displayed. sections "
+             "names are: threads,arbitrators,nodes,services."),
     "service": Option(
         "-s", "--service", default=None,
         action="store", dest="parm_svcs",
@@ -265,7 +271,7 @@ OPT = Storage({
     "stats": Option(
         "--stats", default=False,
         action="store_true", dest="stats",
-        help="refresh the information every --interval."),
+        help="Show system resources usage metrics and refresh the information every --interval."),
     "tags": Option(
         "--tags", default=None,
         action="store", dest="parm_tags",
@@ -373,6 +379,7 @@ ACTIONS = {
         "monitor": {
             "msg": "Display or watch the synthetic service status, and perf metrics.",
             "options": [
+                OPT.sections,
                 OPT.stats,
                 OPT.watch,
                 OPT.interval,
