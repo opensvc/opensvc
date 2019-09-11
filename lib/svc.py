@@ -1545,9 +1545,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             else:
                 if "rtype" in data:
                     del data["rtype"]
-                if "DEFAULT" not in data:
-                    data["DEFAULT"] = {}
-                data["DEFAULT"].update(data)
+                if "DEFAULT" in self.cd:
+                    self.cd["DEFAULT"].update(data)
+                else:
+                    self.cd["DEFAULT"] = data
 
             if is_resource:
                 rid.append(section)
