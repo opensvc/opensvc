@@ -157,9 +157,10 @@ class Monitor(shared.OsvcThread):
 
     def transition_count(self):
         count = 0
-        for data in shared.SMON_DATA.values():
-            if data.status and data.status != "scaling" and data.status.endswith("ing"):
-                count += 1
+        with shared.SMON_DATA_LOCK:
+            for data in shared.SMON_DATA.values():
+                if data.status and data.status != "scaling" and data.status.endswith("ing"):
+                    count += 1
         return count
 
     def set_next(self, timeout):
