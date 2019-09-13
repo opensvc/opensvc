@@ -24,12 +24,41 @@ from converters import convert_duration, convert_boolean
 from comm import Crypt
 from osvcd_events import EVENTS
 
+
+class DebugRLock(object):
+    def __init__(self):
+        self._lock = threading.RLock()
+        self.t = 0
+        self.name = ""
+
+    def acquire(self, *args, **kwargs):
+        self._lock.acquire(*args, **kwargs)
+
+    def release(self, *args, **kwargs):
+        self._lock.release(*args, **kwargs)
+
+    def __enter__(self):
+        self.t = time.time()
+        self._lock.acquire()
+
+    def __exit__(self, type, value, traceback):
+        self._lock.release()
+        d = time.time() - self.t
+        if d < 0.1:
+            return
+        from traceback import format_stack
+        print("=== %s held %.2fs\n%s" % (self.name, d, "".join(format_stack()[2:-1])))
+
+
+#RLock = DebugRLock
+RLock = threading.RLock
+
 # a global to store the Daemon() instance
 DAEMON = None
 
 # daemon_status cache
 LAST_DAEMON_STATUS = {}
-DAEMON_STATUS_LOCK = threading.RLock()
+DAEMON_STATUS_LOCK = RLock()
 DAEMON_STATUS = {}
 PATCH_ID = 0
 
@@ -42,7 +71,7 @@ API_VERSION = 3
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
-CONFIG_LOCK = threading.RLock()
+CONFIG_LOCK = RLock()
 
 # the event queue to feed to clients listening for changes
 EVENT_Q = queue.Queue()
@@ -65,39 +94,39 @@ MAX_MSG_SIZE = 1024 * 1024
 
 # The threads store
 THREADS = {}
-THREADS_LOCK = threading.RLock()
+THREADS_LOCK = RLock()
 
 # A node object instance. Used to access node properties and methods.
 NODE = None
-NODE_LOCK = threading.RLock()
+NODE_LOCK = RLock()
 
 # CRM services objects. Used to access services properties.
 # The monitor thread reloads a new Svc object when the corresponding
 # configuration file changes.
 SERVICES = {}
-SERVICES_LOCK = threading.RLock()
+SERVICES_LOCK = RLock()
 
 # Per service aggretated data of instances.
 # Refresh on monitor status eval, and embedded in the returned data
 AGG = {}
-AGG_LOCK = threading.RLock()
+AGG_LOCK = RLock()
 
 # The encrypted message all the heartbeat tx threads send.
 # It is refreshed in the monitor thread loop.
 HB_MSG = None
 HB_MSG_LEN = 0
-HB_MSG_LOCK = threading.RLock()
+HB_MSG_LOCK = RLock()
 
 # the local service monitor data, where the listener can set expected states
 SMON_DATA = {}
-SMON_DATA_LOCK = threading.RLock()
+SMON_DATA_LOCK = RLock()
 
 # the local node monitor data, where the listener can set expected states
 NMON_DATA = Storage({
     "status": "init",
     "status_updated": time.time(),
 })
-NMON_DATA_LOCK = threading.RLock()
+NMON_DATA_LOCK = RLock()
 
 # the node monitor states evicting a node from ranking algorithms
 NMON_STATES_PRESERVED = (
@@ -113,12 +142,12 @@ MON_CHANGED = []
 # cluster wide locks, aquire/release via the listener (usually the unix socket),
 # consensus via the heartbeat links.
 LOCKS = {}
-LOCKS_LOCK = threading.RLock()
+LOCKS_LOCK = RLock()
 
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
 CLUSTER_DATA = {}
-CLUSTER_DATA_LOCK = threading.RLock()
+CLUSTER_DATA_LOCK = RLock()
 
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
@@ -133,7 +162,7 @@ COLLECTOR_XMLRPC_QUEUE = []
 
 # a set of run action signatures done, fed by the crm to the lsnr,
 # purged by the scheduler thread
-RUN_DONE_LOCK = threading.RLock()
+RUN_DONE_LOCK = RLock()
 RUN_DONE = set()
 
 # min interval between thread stats refresh
@@ -1392,12 +1421,11 @@ class OsvcThread(threading.Thread, Crypt):
         global EVENT_Q
         global PATCH_ID
         LAST_DAEMON_STATUS = json.loads(json.dumps(DAEMON_STATUS))
-        with DAEMON_STATUS_LOCK:
-            DAEMON_STATUS = self._daemon_status()
-            diff = json_delta.diff(
-                LAST_DAEMON_STATUS, DAEMON_STATUS,
-                verbose=False, array_align=False, compare_lengths=False
-            )
+        DAEMON_STATUS = self._daemon_status()
+        diff = json_delta.diff(
+            LAST_DAEMON_STATUS, DAEMON_STATUS,
+            verbose=False, array_align=False, compare_lengths=False
+        )
         if not diff:
             return
         PATCH_ID += 1
