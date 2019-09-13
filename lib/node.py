@@ -3870,7 +3870,7 @@ class Node(Crypt, ExtConfigMixin):
         if action not in ACTION_ASYNC:
             return
         self.set_node_monitor(global_expect=ACTION_ASYNC[action]["target"])
-        self.log.info("%s action requested", action)
+        self.log.info("cluster nodes target state '%s' requested", ACTION_ASYNC[action]["target"])
         if not wait:
             raise ex.excAbortAction()
         self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout)
