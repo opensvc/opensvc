@@ -80,7 +80,7 @@ class OptionParserNoHelpOptions(optparse.OptionParser):
             msg = self.get_version()
         else:
             msg = ""
-        raise ex.excError(msg)
+        raise ex.excVersion(msg)
 
 
 class OptParser(object):
