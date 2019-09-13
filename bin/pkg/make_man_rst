@@ -54,11 +54,15 @@ def write_section(prog, name, data):
     with open(fpath, "w") as f:
         f.write(buff)
 
+def prog2om(prog):
+    kind = prog.replace("mgr", "")
+    return "om " + kind
+
 def write_action(prog, section_name, action_name, action_data):
     pname = action_pname(prog, section_name, action_name)
     buff = ".. _%s:\n\n" % pname 
 
-    title = ":cmd:`%s %s`\n" % (prog, action_name.replace("_", " "))
+    title = ":cmd:`%s %s`\n" % (prog2om(prog), action_name.replace("_", " "))
     title += (len(title) - 1) * "-" + "\n\n"
 
     buff += title
@@ -111,7 +115,7 @@ def write(prog, mod):
 
     buff = ""
 
-    title = "%s\n" % prog
+    title = "%s\n" % prog2om(prog)
     title += (len(title) - 1) * "*" + "\n\n"
     buff += title
 
