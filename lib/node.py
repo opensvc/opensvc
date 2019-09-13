@@ -3454,7 +3454,7 @@ class Node(Crypt, ExtConfigMixin):
         if server is None:
             server = rcEnv.nodename
 
-        ops = (">=", "<=", "=", ">", "<", "~")
+        ops = (">=", "<=", "=", ">", "<", "~", " in ")
         oper = None
         val = None
 
@@ -3519,6 +3519,13 @@ class Node(Crypt, ExtConfigMixin):
                         return True
                 elif is_string(match.value) and oper == "~":
                     if re.match(val, match.value):
+                        return True
+                elif oper == " in ":
+                    try:
+                        l = json.loads(val)
+                    except:
+                        l = val.split(",")
+                    if match.value in l:
                         return True
             return False
 
