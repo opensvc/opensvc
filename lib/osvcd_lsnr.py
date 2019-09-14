@@ -1510,7 +1510,7 @@ class ClientHandler(shared.OsvcThread):
                     nodenames = [svcnodes[0]]
             except KeyError:
                 return {"error": "unknown service", "status": 1}
-        if node == "ANY":
+        elif node == "ANY":
             nodenames = [rcEnv.nodename]
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
