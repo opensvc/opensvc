@@ -412,12 +412,16 @@ class Dns(shared.OsvcThread):
                             continue
                         if addr != ref:
                             continue
-                        hostname = resource.get("info", {}).get("hostname")
-                        name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
-                        name = name.lower()
-                        if hostname:
-                            names.append("%s.%s" % (hostname.split(".")[0], name))
-                        names.append(name)
+                        try:
+                            hostname = resource.get("info", {}).get("hostname").split(".")[0].lower()
+                        except Exception:
+                            hostname = None
+                        gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
+                        gen_name = gen_name.lower()
+                        if hostname and hostname != name:
+                            names.append("%s.%s" % (hostname, gen_name))
+                        else:
+                            names.append(gen_name)
         return names
 
     def set_cache(self, kind, data):

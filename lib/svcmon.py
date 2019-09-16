@@ -215,7 +215,6 @@ def svcmon(node, options=None):
                         json_delta.patch(status_data, patch["data"])
                         last_patch_id = patch["id"]
                     except Exception as exc:
-                        print(exc)
                         try:
                             status_data = node._daemon_status(server=options.server)
                             last_patch_id = patch["id"]
