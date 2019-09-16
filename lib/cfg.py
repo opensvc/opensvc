@@ -5,9 +5,10 @@ import re
 import fnmatch
 import shutil
 import glob
+import six
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, is_string
+from rcUtilities import lazy, makedirs, is_string, bencode, bdecode
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
@@ -30,8 +31,10 @@ class Cfg(DataMixin, BaseSvc):
             raise ex.excError("configuration key name can not be empty")
         if not data:
             raise ex.excError("configuration value can not be empty")
-        if not is_string(data) or "\n" in data:
-            data = "base64:"+base64.urlsafe_b64encode(data)
+        if not is_string(data):
+            data = "base64:"+bdecode(base64.urlsafe_b64encode(data))
+        elif "\n" in data:
+            data = "base64:"+bdecode(base64.urlsafe_b64encode(bencode(data)))
         else:
             data = "literal:"+data
         self.set_multi(["data.%s=%s" % (key, data)])
@@ -46,8 +49,14 @@ class Cfg(DataMixin, BaseSvc):
         if not data:
             raise ex.excError("configuration key %s does not exist or has no value" % key)
         if data.startswith("base64:"):
+            if six.PY2:
+                data = str(data)
             data = data[7:]
-            return base64.urlsafe_b64decode(data).decode()
+            data = base64.urlsafe_b64decode(data)
+            try:
+                return data.decode()
+            except:
+                return data
         elif data.startswith("literal:"):
             return data[8:]
         else:

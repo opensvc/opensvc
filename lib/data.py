@@ -67,7 +67,7 @@ class DataMixin(object):
         if key is None:
             key = os.path.basename(path)
         #key = key.replace(".", "_")
-        with open(path, "r") as ofile:
+        with open(path, "rb") as ofile:
             data = ofile.read()
         self.add_key(key, data)
 
@@ -99,7 +99,10 @@ class DataMixin(object):
         buff = self.decode_key(self.options.key)
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
-        sys.stdout.write(buff)
+        try:
+            sys.stdout.write(buff)
+        except Exception:
+            sys.stdout.buffer.write(buff)
 
     def keys(self):
         data = sorted(self.data_keys())
