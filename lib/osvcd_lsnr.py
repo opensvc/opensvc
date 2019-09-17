@@ -2290,10 +2290,10 @@ class ClientHandler(shared.OsvcThread):
     def validate_cluster_global_expect(self, global_expect):
         if global_expect is None:
             return
-        if global_expect == "thawed" and shared.DAEMON_STATUS.get("frozen") == "thawed":
-            raise ex.excAbortAction
-        if global_expect == "frozen" and shared.DAEMON_STATUS.get("frozen") == "frozen":
-            raise ex.excAbortAction
+        if global_expect == "thawed" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
+            raise ex.excAbortAction("cluster is already thawed")
+        if global_expect == "frozen" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
+            raise ex.excAbortAction("cluster is already frozen")
 
     def action_set_node_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})

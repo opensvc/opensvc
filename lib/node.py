@@ -3887,7 +3887,7 @@ class Node(Crypt, ExtConfigMixin):
         for line in data.get("info", []):
             self.log.info(line)
             if " already " in line:
-                raise ex.excAlreadyDone
+                raise ex.excAbortAction()
         if not wait:
             raise ex.excAbortAction()
         self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout, begin=begin)
