@@ -494,6 +494,7 @@ class OsvcThread(threading.Thread, Crypt):
                     changed = True
                     NMON_DATA.status = status
                     NMON_DATA.status_updated = time.time()
+                    NMON_DATA.global_expect_updated = time.time()
 
             if local_expect:
                 if local_expect == "unset":
@@ -520,6 +521,7 @@ class OsvcThread(threading.Thread, Crypt):
                     )
                     changed = True
                     NMON_DATA.global_expect = global_expect
+                    NMON_DATA.global_expect_updated = time.time()
 
         if changed:
             wake_monitor(reason="node mon change")

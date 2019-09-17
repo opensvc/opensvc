@@ -3882,40 +3882,42 @@ class Node(Crypt, ExtConfigMixin):
             return
         if action not in ACTION_ASYNC:
             return
-        self.set_node_monitor(global_expect=ACTION_ASYNC[action]["target"])
-        self.log.info("cluster nodes target state '%s' requested", ACTION_ASYNC[action]["target"])
+        begin = time.time()
+        data = self.set_node_monitor(global_expect=ACTION_ASYNC[action]["target"])
+        for line in data.get("info", []):
+            self.log.info(line)
+            if " already " in line:
+                raise ex.excAlreadyDone
         if not wait:
             raise ex.excAbortAction()
-        self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout)
+        self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout, begin=begin)
 
-    def poll_async_action(self, state, timeout=None):
+    def poll_async_action(self, state, timeout=None, begin=None):
         """
         Display an asynchronous action progress until its end or timeout
         """
-        prev_global_expect_set = set()
-
         for _ in range(timeout):
             data = self._daemon_status()
             if data is None:
                 raise ex.excError("the daemon is not running")
-            global_expect_set = []
+            done = True
+            failed = 0
             for nodename in data["monitor"]["nodes"]:
                 try:
                     _data = data["monitor"]["nodes"][nodename]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") == state:
-                    global_expect_set.append(nodename)
-            if prev_global_expect_set != global_expect_set:
-                for nodename in set(global_expect_set) - prev_global_expect_set:
-                    self.log.info(" work starting on %s", nodename)
-                for nodename in prev_global_expect_set - set(global_expect_set):
-                    self.log.info(" work over on %s", nodename)
-            if not global_expect_set:
-                self.log.info("final status: frozen=%s",
-                              data["monitor"]["frozen"])
+                ge = _data["monitor"].get("global_expect")
+                ge_u = _data["monitor"].get("global_expect_updated")
+                if not ge_u or ge_u < begin or ge:
+                    done = False
+                    break
+                if "failed" in _data["monitor"].get("status", ""):
+                    failed += 1
+            if done:
+                if failed:
+                    raise ex.excError("finished with %d node in failed state" % failed)
                 return
-            prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
         raise ex.excError("wait timeout exceeded")
 
@@ -4736,6 +4738,7 @@ class Node(Crypt, ExtConfigMixin):
                 raise ex.excError("set monitor status failed")
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
+        return data
 
     def daemon_node_action(self, action=None, options=None, server=None, node=None, sync=True, collect=False, action_mode=True):
         """

@@ -2287,16 +2287,39 @@ class ClientHandler(shared.OsvcThread):
         if agg.avail in ("n/a", "undef"):
             raise ex.excAbortAction()
 
+    def validate_cluster_global_expect(self, global_expect):
+        if global_expect is None:
+            return
+        if global_expect == "thawed" and shared.DAEMON_STATUS.get("frozen") == "thawed":
+            raise ex.excAbortAction
+        if global_expect == "frozen" and shared.DAEMON_STATUS.get("frozen") == "frozen":
+            raise ex.excAbortAction
+
     def action_set_node_monitor(self, nodename, **kwargs):
         options = kwargs.get("options", {})
         status = options.get("status")
         local_expect = options.get("local_expect")
         global_expect = options.get("global_expect")
+        info = []
+        error = []
+        try:
+            self.validate_cluster_global_expect(global_expect)
+        except ex.excAbortAction as exc:
+            info.append(str(exc))
+        except ex.excError as exc:
+            errors.append(str(exc))
+        else:
+            info.append("cluster target state set to %s" % global_expect)
         self.set_nmon(
             status=status,
             local_expect=local_expect, global_expect=global_expect,
         )
-        return {"status": 0}
+        data = {"status": 0}
+        if info:
+            data["info"] = info
+        if error:
+            data["error"] = error
+        return data
 
     def lock_accepted(self, name, lock_id):
         for nodename, node in shared.CLUSTER_DATA.items():
