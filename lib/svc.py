@@ -828,6 +828,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if msg:
                 self.log.info(msg)
             return 0
+        except ex.excAlreadyDone as exc:
+            # so do_svcs_action() can decide not to wait for the
+            # service to reach the global_expect
+            return -1
         self.allow_on_this_node(action)
         if (self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
             self.configure_scheduler()
@@ -1358,8 +1362,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if global_expect is None:
             # not applicable action on this service
             return
-        self.set_service_monitor(global_expect=global_expect)
-        self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout)
+        begin = time.time()
+        data = self.set_service_monitor(global_expect=global_expect)
+        if data:
+            for line in data.get("error", []):
+                self.log.error(line)
+            for line in data.get("info", []):
+                self.log.info(line)
+                if " already " in line:
+                    raise ex.excAlreadyDone
+            if data.get("error", []):
+                raise ex.excError
+        self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout, begin=begin)
 
     def prepare_global_expect(self, action):
         global_expect = ACTION_ASYNC[action]["target"]
@@ -1382,7 +1396,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             global_expect += dst
         return global_expect
 
-    def wait_daemon_mon_action(self, global_expect, wait=None, timeout=None, log_progress=True):
+    def wait_daemon_mon_action(self, global_expect, wait=None, timeout=None, log_progress=True, begin=None):
         if wait is None:
             wait = self.options.wait
         if not wait:
@@ -1392,39 +1406,30 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if timeout is not None:
             timeout = convert_duration(timeout)
         # poll global service status
-        prev_global_expect_set = set()
         for _ in range(timeout):
             data = self.node._daemon_status(refresh=True)
             if data is None or "monitor" not in data:
                 # interrupted, daemon died
                 time.sleep(1)
                 continue
-            global_expect_set = set()
-            inprogress = set()
-            for nodename in data["monitor"]["nodes"]:
+            done = True
+            failed = 0
+            for nodename in self.peers:
                 try:
                     _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.path]
                 except (KeyError, TypeError) as exc:
                     continue
-                if _data["monitor"].get("global_expect") is not None or "ing" in _data["monitor"].get("status"):
-                    inprogress.add(nodename)
-                if _data["monitor"].get("global_expect") in (global_expect, "n/a"):
-                    global_expect_set.add(nodename)
-            if log_progress and prev_global_expect_set != global_expect_set:
-                for nodename in global_expect_set - prev_global_expect_set:
-                    self.log.info(" work starting on %s", nodename)
-                for nodename in prev_global_expect_set - global_expect_set:
-                    self.log.info(" work over on %s", nodename)
-            if not inprogress and not global_expect_set:
-                if self.path not in data["monitor"]["services"]:
-                    self.log.info("final status: deleted")
-                    return
-                self.log.info("final status: avail=%s overall=%s frozen=%s",
-                              data["monitor"]["services"][self.path]["avail"],
-                              data["monitor"]["services"][self.path]["overall"],
-                              data["monitor"]["services"][self.path].get("frozen", False))
+                ge = _data["monitor"].get("global_expect")
+                ge_u = _data["monitor"].get("global_expect_updated")
+                if not ge_u or ge_u < begin or ge:
+                    done = False
+                    break
+                if "failed" in _data["monitor"].get("status", ""):
+                    failed += 1
+            if done:
+                if failed:
+                    raise ex.excError("finished with %d instance in failed state" % failed)
                 return
-            prev_global_expect_set = set(global_expect_set)
             time.sleep(1)
         raise ex.excError("wait timeout exceeded")
 

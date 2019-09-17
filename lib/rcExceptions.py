@@ -17,6 +17,9 @@ class excVersion(Exception):
     def __str__(self):
         return str(self.value)
 
+class excAlreadyDone(Exception):
+    pass
+
 class OptNotFound(Exception):
     """
     Service config file option not found.

@@ -2499,9 +2499,11 @@ class Node(Crypt, ExtConfigMixin):
             return
 
         err = 0
+        errs = {}
         data = Storage()
         data.outs = {}
         need_aggregate = self.action_need_aggregate(action, options)
+        begin = time.time()
 
         # generic cache janitoring
         purge_cache_expired()
@@ -2563,7 +2565,9 @@ class Node(Crypt, ExtConfigMixin):
                             else:
                                 print("unsupported format for this action", file=sys.stderr)
                             ret = 1
-                        err += ret
+                        if ret > 0:
+                            err += ret
+                        errs[svc.path] = ret
                 except ex.excError as exc:
                     ret = 1
                     err += ret
@@ -2577,15 +2581,17 @@ class Node(Crypt, ExtConfigMixin):
             for path in data.procs:
                 data.procs[path].join()
                 ret = data.procs[path].exitcode
+                errs[path] = ret
                 if ret > 0:
                     # r is negative when data.procs[path] is killed by signal.
                     # in this case, we don't want to decrement the err counter.
                     err += ret
         if timeout:
             for svc in svcs:
+                if errs.get(svc.path, -1) != 0:
+                    continue
                 global_expect = svc.prepare_global_expect(action)
-                begin = time.time()
-                svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, log_progress=False)
+                svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, begin=begin)
                 timeout = timeout - (time.time() - begin)
                 if timeout < 0:
                     break
