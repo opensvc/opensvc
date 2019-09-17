@@ -1356,6 +1356,13 @@ class Monitor(shared.OsvcThread):
         elif smon.global_expect == "unprovisioned":
             if smon.status in ("unprovisioning", "stopping"):
                 return
+            if svc.path not in shared.SERVICES or self.instance_unprovisioned(instance):
+                if smon.status != "idle":
+                    self.set_smon(svc.path, status="idle")
+                return
+            if not self.children_unprovisioned(svc):
+                self.set_smon(svc.path, status="wait children")
+                return
             if instance.avail not in STOPPED_STATES:
                 self.event("instance_stop", {
                     "reason": "target",
@@ -1372,13 +1379,6 @@ class Monitor(shared.OsvcThread):
                 if not self.leader_last(svc, provisioned=False, silent=True):
                     self.log.info("service %s still waiting non leaders", svc.path)
                     return
-            if svc.path not in shared.SERVICES or self.instance_unprovisioned(instance):
-                if smon.status != "idle":
-                    self.set_smon(svc.path, status="idle")
-                return
-            if not self.children_unprovisioned(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
             leader = self.leader_last(svc, provisioned=False)
             if not leader:
                 self.set_smon(svc.path, status="wait non-leader")
@@ -1430,6 +1430,9 @@ class Monitor(shared.OsvcThread):
         elif smon.global_expect == "purged":
             if smon.status in ("purging", "deleting", "stopping"):
                 return
+            if not self.children_unprovisioned(svc):
+                self.set_smon(svc.path, status="wait children")
+                return
             if instance.avail not in STOPPED_STATES:
                 self.event("instance_stop", {
                     "reason": "target",
@@ -1445,9 +1448,6 @@ class Monitor(shared.OsvcThread):
             elif smon.status == "wait non-leader":
                 if not self.leader_last(svc, provisioned=False, silent=True, deleted=True):
                     return
-            if not self.children_unprovisioned(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
             leader = self.leader_last(svc, provisioned=False, deleted=True)
             if not leader:
                 self.set_smon(svc.path, status="wait non-leader")
