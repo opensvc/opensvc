@@ -14,7 +14,7 @@ import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import qcall, which, getaddr, lazy, to_cidr
-from converters import convert_duration
+from converters import convert_duration, print_duration
 from arp import send_arp
 
 IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
@@ -34,6 +34,7 @@ class Ip(Res.Resource):
                  expose=None,
                  check_carrier=True,
                  alias=True,
+                 wait_dns=0,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.ipdev = ipdev
@@ -46,9 +47,34 @@ class Ip(Res.Resource):
         self.expose = expose
         self.check_carrier = check_carrier
         self.alias = alias
+        self.wait_dns = wait_dns
 
     def on_add(self):
         self.set_label()
+
+    def wait_dns_records(self):
+        if not self.wait_dns:
+            return
+        try:
+            self.svc.node.dns
+        except Exception:
+            self.log.info("skip wait_dns before this cluster has no dns configuration")
+            return
+        data = self.svc.print_status_data(refresh=False)
+        self.svc.wake_monitor()
+        t0 = time.time()
+        timeout = self.wait_dns
+        for node in self.svc.node.dnsnodes:
+            self.log.info("wait address propagation to %s dns", node)
+            try:
+                self.svc.node._wait(path=path, server=node, duration=timeout)
+            except KeyboardInterrupt:
+                raise ex.excError("dns resolution not ready after %s" % print_duration(self.wait_dns))
+            except Exception:
+                continue
+            now = time.time()
+            timeout -= now - t0
+            t0 = now
 
     @lazy
     def dns_name_suffix(self):
@@ -412,6 +438,7 @@ class Ip(Res.Resource):
             self.dns_update()
         except ex.excError as exc:
             self.log.error(str(exc))
+        self.wait_dns_records()
 
     def get_mask(self, ifconfig=None):
         if ifconfig is None:

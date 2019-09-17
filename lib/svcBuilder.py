@@ -161,6 +161,7 @@ def add_ip_gce(svc, s):
     kwargs["ipdev"] = svc.oget(s, "ipdev")
     kwargs["routename"] = svc.oget(s, "routename")
     kwargs["gce_zone"] = svc.oget(s, "gce_zone")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
     ip = __import__("resIpGce")
     r = ip.Ip(**kwargs)
     svc += r
@@ -170,6 +171,7 @@ def add_ip_amazon(svc, s):
     kwargs["ipname"] = svc.oget(s, "ipname")
     kwargs["ipdev"] = svc.oget(s, "ipdev")
     kwargs["eip"] = svc.oget(s, "eip")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
     ip = __import__("resIpAmazon")
     r = ip.Ip(**kwargs)
     svc += r
@@ -193,6 +195,7 @@ def add_ip(svc, s):
     kwargs["check_carrier"] = svc.oget(s, "check_carrier")
     kwargs["alias"] = svc.oget(s, "alias")
     kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
     zone = svc.oget(s, "zone")
 
     if rtype == "cni":

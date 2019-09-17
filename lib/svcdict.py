@@ -1595,6 +1595,15 @@ KEYWORDS = [
     },
     {
         "section": "ip",
+        "keyword": "wait_dns",
+        "at": True,
+        "convert": "duration",
+        "default": 0,
+        "example": "10s",
+        "text": "Wait for the cluster DNS records associated to the resource to appear after a resource start and before the next resource can be started. This can be used for apps or containers that require the ip or ip name to be resolvable to provision or execute properly."
+    },
+    {
+        "section": "ip",
         "keyword": "dns_name_suffix",
         "at": True,
         "text": "Add the value as a suffix to the DNS record name. The record created is thus formatted as ``<name>-<dns_name_suffix>.<app>.<managed zone>``."

@@ -393,6 +393,7 @@ class Ip(Res.Ip):
         self.unset_lazy("netns")
         self.add_netns()
         self.add_cni()
+        self.wait_dns_records()
 
     def stop(self):
         self.del_cni()
