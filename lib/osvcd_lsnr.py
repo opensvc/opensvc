@@ -2168,30 +2168,34 @@ class ClientHandler(shared.OsvcThread):
             paths |= self.get_service_slaves(path)
         errors = []
         info = []
+        data = {"data": {}}
         for path in paths:
             try:
                 self.validate_global_expect(path, global_expect)
                 new_ge = self.validate_destination_node(path, global_expect)
-                if new_ge:
-                    global_expect = new_ge
             except ex.excAbortAction as exc:
                 info.append(str(exc))
             except ex.excError as exc:
                 errors.append(str(exc))
             else:
+                if new_ge:
+                    global_expect = new_ge
+                if global_expect:
+                    data["data"]["global_expect"] = global_expect
                 info.append("service %s target state set to %s" % (path, global_expect))
                 self.set_smon(
                     path, status=status,
-                    local_expect=local_expect, global_expect=global_expect,
+                    local_expect=local_expect,
+                    global_expect=global_expect,
                     reset_retries=reset_retries,
                     stonith=stonith,
                 )
-        ret = {"status": len(errors)}
+        data["status"] = len(errors)
         if info:
-            ret["info"] = info
+            data["info"] = info
         if errors:
-            ret["error"] = errors
-        return ret
+            data["error"] = errors
+        return data
 
     def validate_destination_node(self, path, global_expect):
         """
@@ -2302,19 +2306,23 @@ class ClientHandler(shared.OsvcThread):
         global_expect = options.get("global_expect")
         info = []
         error = []
+        data = {"data": {}}
         try:
             self.validate_cluster_global_expect(global_expect)
         except ex.excAbortAction as exc:
             info.append(str(exc))
         except ex.excError as exc:
-            errors.append(str(exc))
+            error.append(str(exc))
         else:
+            self.set_nmon(
+                status=status,
+                local_expect=local_expect,
+                global_expect=global_expect,
+            )
+            if global_expect:
+                data["data"]["global_expect"] = global_expect
             info.append("cluster target state set to %s" % global_expect)
-        self.set_nmon(
-            status=status,
-            local_expect=local_expect, global_expect=global_expect,
-        )
-        data = {"status": 0}
+        data["status"] = len(error)
         if info:
             data["info"] = info
         if error:

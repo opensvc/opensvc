@@ -2590,11 +2590,15 @@ class Node(Crypt, ExtConfigMixin):
             for svc in svcs:
                 if errs.get(svc.path, -1) != 0:
                     continue
-                global_expect = svc.prepare_global_expect(action)
-                svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, begin=begin)
+                try:
+                    global_expect = svc.last_global_expect
+                except AttributeError:
+                    continue
+                try:
+                    svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, begin=begin)
+                except Exception as exc:
+                    err += 1
                 timeout = timeout - (time.time() - begin)
-                if timeout < 0:
-                    break
 
         if need_aggregate:
             if self.options.single_service:
@@ -3867,8 +3871,6 @@ class Node(Crypt, ExtConfigMixin):
             wait = self.options.wait
         if timeout is None:
             timeout = self.options.time
-        if timeout is not None:
-            timeout = convert_duration(timeout)
         if (want_context() and action not in ACTIONS_CUSTOM_REMOTE and (self.options.node or action not in ACTION_ASYNC)) or \
            self.options.node and action not in ACTIONS_CUSTOM_REMOTE:
             options = self.prepare_async_options()
@@ -3892,34 +3894,17 @@ class Node(Crypt, ExtConfigMixin):
             raise ex.excAbortAction()
         self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout, begin=begin)
 
-    def poll_async_action(self, state, timeout=None, begin=None):
+    def poll_async_action(self, global_expect, timeout=None, begin=None):
         """
         Display an asynchronous action progress until its end or timeout
         """
-        for _ in range(timeout):
-            data = self._daemon_status()
-            if data is None:
-                raise ex.excError("the daemon is not running")
-            done = True
-            failed = 0
-            for nodename in data["monitor"]["nodes"]:
-                try:
-                    _data = data["monitor"]["nodes"][nodename]
-                except (KeyError, TypeError) as exc:
-                    continue
-                ge = _data["monitor"].get("global_expect")
-                ge_u = _data["monitor"].get("global_expect_updated")
-                if not ge_u or ge_u < begin or ge:
-                    done = False
-                    break
-                if "failed" in _data["monitor"].get("status", ""):
-                    failed += 1
-            if done:
-                if failed:
-                    raise ex.excError("finished with %d node in failed state" % failed)
-                return
-            time.sleep(1)
-        raise ex.excError("wait timeout exceeded")
+        try:
+            if global_expect == "frozen":
+                self._wait(path="monitor.frozen=frozen", duration=timeout)
+            elif global_expect == "thawed":
+                self._wait(path="monitor.frozen=thawed", duration=timeout)
+        except KeyboardInterrupt:
+            raise ex.excError
 
     #
     # daemon actions

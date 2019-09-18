@@ -1373,6 +1373,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     raise ex.excAlreadyDone
             if data.get("error", []):
                 raise ex.excError
+        try:
+            # the daemon may have changed and return global expect
+            # (placed@<peer>)
+            global_expect = data["data"]["global_expect"]
+            # save for Node::do_svcs_action()
+            self.last_global_expect = global_expect
+        except KeyError:
+            pass
         self.wait_daemon_mon_action(global_expect, wait=wait, timeout=timeout, begin=begin)
 
     def prepare_global_expect(self, action):
@@ -1403,35 +1411,35 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if timeout is None:
             timeout = self.options.time
-        if timeout is not None:
-            timeout = convert_duration(timeout)
-        # poll global service status
-        for _ in range(timeout):
-            data = self.node._daemon_status(refresh=True)
-            if data is None or "monitor" not in data:
-                # interrupted, daemon died
-                time.sleep(1)
-                continue
-            done = True
-            failed = 0
-            for nodename in self.peers:
-                try:
-                    _data = data["monitor"]["nodes"][nodename]["services"]["status"][self.path]
-                except (KeyError, TypeError) as exc:
-                    continue
-                ge = _data["monitor"].get("global_expect")
-                ge_u = _data["monitor"].get("global_expect_updated")
-                if not ge_u or ge_u < begin or ge:
-                    done = False
-                    break
-                if "failed" in _data["monitor"].get("status", ""):
-                    failed += 1
-            if done:
-                if failed:
-                    raise ex.excError("finished with %d instance in failed state" % failed)
-                return
-            time.sleep(1)
-        raise ex.excError("wait timeout exceeded")
+        try:
+             if global_expect == "frozen":
+                 self.node._wait(path="monitor.services.'%s'.frozen=frozen" % self.path, duration=timeout)
+             elif global_expect == "thawed":
+                 self.node._wait(path="monitor.services.'%s'.frozen=thawed" % self.path, duration=timeout)
+             elif global_expect == "purged":
+                 self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
+             elif global_expect == "deleted":
+                 self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
+             elif global_expect == "aborted":
+                 self.node._wait(path="!monitor.services.'%s'.global_expect" % self.path, duration=timeout)
+             elif global_expect == "provisioned":
+                 self.node._wait(path="monitor.services.'%s'.provisioned=true" % self.path, duration=timeout)
+             elif global_expect == "unprovisioned":
+                 self.node._wait(path="monitor.services.'%s'.provisioned=false" % self.path, duration=timeout)
+             elif global_expect == "shutdown":
+                 self.node._wait(path="monitor.services.'%s'.avail~(down|n/a)" % self.path, duration=timeout)
+             elif global_expect == "stopped":
+                 self.node._wait(path="monitor.services.'%s'.avail~(down|stdby up|n/a)" % self.path, duration=timeout)
+             elif global_expect == "started":
+                 self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
+             elif global_expect == "placed":
+                 self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
+                 self.node._wait(path="monitor.services.'%s'.placement=optimal" % self.path, duration=timeout)
+             elif global_expect.startswith("placed@"):
+                 node = global_expect[7:]
+                 self.node._wait(path="monitor.nodes.'%s'.services.status.'%s'.avail~(up|n/a)" % (node, self.path), duration=timeout)
+        except KeyboardInterrupt:
+            raise ex.excError
 
     def current_node(self):
         data = self.node._daemon_status()
