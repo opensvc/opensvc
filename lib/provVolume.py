@@ -86,6 +86,7 @@ class Prov(provisioning.Prov):
         }) 
         if ret != 0:
             raise ex.excError("volume provision returned %d" % ret)
+        self.r.can_rollback = True
         self.r.unset_lazy("device")
         self.r.unset_lazy("mount_point")
         self.r.unset_lazy("volsvc")

@@ -76,7 +76,7 @@ class Volume(Res.Resource):
             raise ex.excError("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.excError
-        self.can_rollback = any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
         self.install_flag()
         self.install_secrets()
         self.install_configs()
