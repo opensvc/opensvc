@@ -433,6 +433,10 @@ class OsvcThread(threading.Thread, Crypt):
             return
         if NMON_DATA.status not in (None, "idle"):
             return
+        with SMON_DATA_LOCK:
+            for data in SMON_DATA.values():
+                if data.status not in (None, "idle") and "failed" not in data.status:
+                    return
         self._node_conf_event.clear()
         self.event("node_config_change")
         unset_lazy(self, "config")
