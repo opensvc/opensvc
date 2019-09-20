@@ -5416,14 +5416,6 @@ class Svc(BaseSvc):
         if self.options.provision:
             self.action("provision")
 
-    def placement_optimal(self, data=None):
-        if data is None:
-            data = self.node._daemon_status()
-        placement = data.get("monitor").get("services").get(self.path).get("placement")
-        if placement == "optimal":
-            return True
-        return False
-
     def get_pg_settings(self, s):
         d = {}
         options = (
