@@ -7,7 +7,7 @@ import shutil
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context, bencode
 from svc import BaseSvc
 from converters import print_size
 import rcExceptions as ex
@@ -17,10 +17,15 @@ class DataMixin(object):
     def add(self):
         self._add(self.options.key, self.options.value_from)
 
+    def append(self):
+        self._add(self.options.key, self.options.value_from, append=True)
+
     def _add_key(self, key, data):
         pass
 
-    def add_key(self, key, data):
+    def add_key(self, key, data, append=False):
+        if append:
+            data = self.decode_key(key) + data
         if want_context():
             self.remote_add_key(key, data)
         else:
@@ -43,43 +48,49 @@ class DataMixin(object):
         if status:
             raise ex.excError(error)
 
-    def _add(self, key=None, value_from=None):
+    def _add(self, key=None, value_from=None, append=False):
         if key and sys.stdin and value_from in ("-", "/dev/stdin"):
-            self.add_stdin(key)
+            self.add_stdin(key, append=append)
         elif key and self.options.value:
-            self.add_key(key, self.options.value)
+            self.add_key(key, self.options.value, append=append)
         elif value_from and os.path.isdir(value_from):
-            self.add_directory(key, value_from)
+            self.add_directory(key, value_from, append=append)
         elif value_from and os.path.isfile(value_from):
-            self.add_file(key, value_from)
+            self.add_file(key, value_from, append=append)
         elif value_from:
-            self.add_glob(key, value_from)
+            self.add_glob(key, value_from, append=append)
         else:
             raise ex.excError("missing arguments")
 
-    def add_stdin(self, key):
-        data = ""
+    def add_stdin(self, key, append=False):
+        if append:
+            data = self.decode_key(key)
+        else:
+            data = ""
         for line in sys.stdin.readlines():
             data += line
         self.add_key(key, data)
 
-    def add_file(self, key, path):
+    def add_file(self, key, path, append=None):
         if key is None:
             key = os.path.basename(path)
-        #key = key.replace(".", "_")
+        if append:
+            data = bencode(self.decode_key(key))
+        else:
+            data = b""
         with open(path, "rb") as ofile:
-            data = ofile.read()
+            data += ofile.read()
         self.add_key(key, data)
 
-    def add_glob(self, key, path):
+    def add_glob(self, key, path, append=False):
         if key is None:
             key = ""
         fpaths = glob.glob(path)
         for path in fpaths:
             _key = os.path.join(key, os.path.basename(path))
-            self.add_file(_key, path)
+            self.add_file(_key, path, append=append)
 
-    def add_directory(self, key, path):
+    def add_directory(self, key, path, append=False):
         if key is None:
             key = ""
         plen = len(os.path.dirname(path)) + 1
@@ -88,7 +99,7 @@ class DataMixin(object):
                 for fname in files:
                     fpath = os.path.join(path, fname)
                     _key = os.path.join(key, fpath[plen:])
-                    self.add_file(_key, fpath)
+                    self.add_file(_key, fpath, append=append)
                 for fname in dirs:
                     fpath = os.path.join(path, fname)
                     recurse(key, fpath)

@@ -39,6 +39,14 @@ ACTIONS.update({
                 OPT.value,
             ],
         },
+        "append": {
+            "msg": "Append data to a key in the object.",
+            "options": mp.ACTION_OPTS + [
+                OPT.value_from,
+                OPT.key,
+                OPT.value,
+            ],
+        },
         "keys": {
             "msg": "Show all keys available in this configuration.",
         },
