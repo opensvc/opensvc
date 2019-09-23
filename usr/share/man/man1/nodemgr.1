@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-09\-11
+.TH NODEMGR 1 2019\-09\-23
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2467,9 +2467,10 @@ Wait for the condition given by --filter <condition> to become true.
 
 condition := [!]<jsonpath>[<op><val>]
 jsonpath : a jsonpath in the cluster data as reported by 'om node daemon status --format flat_json'
-op := { = | > | >= | < | <= | ~ }
+op := { = | > | >= | < | <= | ~ | in }
 
 '~' is a fullmatch of the <val> regular expression unless '^' or '$' are specified.
+'in' supports comma-separated or json list format.
 '!' is the negation operator.
 If '<op><val>' is not specified, any value evaluated as True is considered a match (non-zero numerics, non-empty lists, non-emptry strings).
 
