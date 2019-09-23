@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import base64
@@ -9,7 +11,7 @@ import tempfile
 import six
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, bdecode
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, bdecode, bencode
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
@@ -127,11 +129,11 @@ class Sec(DataMixin, BaseSvc):
 
     def pkcs12(self):
         if six.PY3:
-            sys.stdout.buffer.write(self._pkcs12())
+            sys.stdout.buffer.write(self._pkcs12(self.options.password))
         else:
-            print(self._pkcs12())
+            print(self._pkcs12(self.options.password))
 
-    def _pkcs12(self):
+    def _pkcs12(self, password):
         required = set(["private_key", "certificate_chain"])
         if required & set(self.data_keys()) != required:
             self.gen_cert()
@@ -143,6 +145,17 @@ class Sec(DataMixin, BaseSvc):
         tmpkey = _tmpkey.name
         _tmpcert.close()
         _tmpkey.close()
+        if password is None:
+            from getpass import getpass
+            pwd = getpass("Password: ", stream=sys.stderr)
+            if not pwd:
+                pwd = "\n"
+        elif password in ["/dev/stdin", "-"]:
+            pwd = sys.stdin.readline()
+        else:
+            pwd = password+"\n"
+        if six.PY3:
+            pwd = bencode(pwd)
         try:
             with open(tmpkey, "w") as _tmpkey:
                 os.chmod(tmpkey, 0o600)
@@ -152,10 +165,9 @@ class Sec(DataMixin, BaseSvc):
                 _tmpcert.write(self.decode_key("certificate_chain"))
             cmd = ["openssl", "pkcs12", "-export", "-in", tmpcert, "-inkey", tmpkey, "-passout", "stdin"]
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-            pwd = "\n" if six.PY2 else b"\n"
             out, err = proc.communicate(input=pwd)
             if err:
-                print(err)
+                print(err, file=sys.stderr)
             return out
         finally:
             if os.path.exists(tmpcert):

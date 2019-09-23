@@ -18,6 +18,10 @@ OPT.update({
         "--from", default=None,
         action="store", dest="value_from",
         help="Read the secret value from a file or a directory. If set to '-' or '/dev/stdin', the value is read from stdin, and the --key is mandatory. If set to a file path, the key name is the file basename. If set to a directory, one key per file is added, and the keyname is the relative path, the --key value being used as the relative path prefix."),
+    "password": Option(
+        "--password", default=None,
+        action="store", dest="password",
+        help="The pkcs bundle encryption password."),
     "path": Option(
         "--path", default=None,
         action="store", dest="path",
@@ -49,7 +53,10 @@ ACTIONS.update({
             "msg": "Print to stdout a ascii pem-formatted concatenation of the private key and certificate. This format is accepted by opensvc context configuration. If certificate and private key are not generated yet, run the gen_cert action.",
         },
         "pkcs12" : {
-            "msg": "Print to stdout a binary pkcs12-formatted concatenation of the private key and certificate. This format is accepted by most browsers certificate store. If certificate and private key are not generated yet, run the gen_cert action.",
+            "msg": "Print to stdout a binary pkcs12-formatted concatenation of the private key and certificate. This format is accepted by most browsers certificate store. If certificate and private key are not generated yet, run the gen_cert action. A password is prompted if not already provided by --password.",
+            "options": [
+                OPT.password,
+            ],
         },
         "decode": {
             "msg": "Decode a secret key from the secret object.",
