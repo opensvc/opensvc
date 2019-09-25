@@ -7,16 +7,20 @@ import sys
 import threading
 import time
 import codecs
+import fnmatch
 import hashlib
 import json
 import json_delta
+import re
+import tempfile
+import shutil
 from subprocess import Popen, PIPE
 
 import six
 from six.moves import queue
 
 import rcExceptions as ex
-from rcUtilities import lazy, unset_lazy, is_string, factory, split_path
+from rcUtilities import lazy, unset_lazy, is_string, factory, split_path, normalize_paths, normalize_jsonpath
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from freezer import Freezer
@@ -468,16 +472,15 @@ class OsvcThread(threading.Thread, Crypt):
             return
 
     @staticmethod
-    def on_labels_change():
-        NODE.unset_lazy("nodes_info")
-        for svc in SERVICES.values():
-            svc.unset_conf_lazy()
-
-    @staticmethod
-    def patch_has_labels_change(patch):
+    def patch_has_nodes_info_change(patch):
         for _patch in patch:
             try:
                 if _patch[0][0] == "labels":
+                    return True
+            except KeyError:
+                continue
+            try:
+                if _patch[0][0] == "targets":
                     return True
             except KeyError:
                 continue
@@ -1220,6 +1223,47 @@ class OsvcThread(threading.Thread, Crypt):
                 }
         return data
 
+    def dump_nodes_info(self):
+        try:
+            with open(rcEnv.paths.nodes_info, "r") as ofile:
+                data = json.load(ofile)
+        except Exception:
+            data = {}
+        new_data = {}
+        for node, ndata in data.items():
+            if node not in self.cluster_nodes:
+                # drop nodes no longer in cluster
+                continue
+            new_data[node] = ndata
+        for node, ndata in self.nodes_info().items():
+            if not ndata and data.get(node):
+                # preserve data we had info for
+                continue
+            new_data[node] = ndata
+        if new_data == data:
+            return
+        try:
+            tmpf = tempfile.NamedTemporaryFile()
+            fpath = tmpf.name
+            tmpf.close()
+            with open(fpath, "w") as ofile:
+                json.dump(new_data, ofile)
+            shutil.move(fpath, rcEnv.paths.nodes_info)
+        except Exception as exc:
+            self.log.warning("failed to refresh %s: %s", rcEnv.paths.nodes_info, exc)
+        self.log.info("%s updated", rcEnv.paths.nodes_info)
+
+    def on_nodes_info_change(self):
+        NODE.unset_lazy("nodes_info")
+        NODE.unset_lazy("labels")
+        NODE.unset_lazy("targets")
+        with CLUSTER_DATA_LOCK:
+            CLUSTER_DATA[rcEnv.nodename]["labels"] = NODE.labels
+            CLUSTER_DATA[rcEnv.nodename]["targets"] = NODE.targets
+        self.dump_nodes_info()
+        for svc in SERVICES.values():
+            svc.unset_conf_lazy()
+
     def speaker(self):
         for nodename in self.sorted_cluster_nodes:
             if nodename in CLUSTER_DATA and \
@@ -1446,15 +1490,10 @@ class OsvcThread(threading.Thread, Crypt):
         with DAEMON_STATUS_LOCK:
             return copy.deepcopy(DAEMON_STATUS)
 
-    @staticmethod
-    def filter_daemon_status(data, namespaces):
-        keep = []
-        for path in [p for p in data.get("monitor", {}).get("services", {})]:
-            namespace = split_path(path)[1]
-            if namespace not in namespaces:
-                del data["monitor"]["services"][path]
-            else:
-                keep.append(path)
+    def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
+        if selector is None:
+            selector = "**"
+        keep = self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces)
         for node in [n for n in data.get("monitor", {}).get("nodes", {})]:
             for path in [p for p in data["monitor"]["nodes"][node].get("services", {}).get("status", {})]:
                 if path not in keep:
@@ -1462,6 +1501,205 @@ class OsvcThread(threading.Thread, Crypt):
             for path in [p for p in data["monitor"]["nodes"][node].get("services", {}).get("config", {})]:
                 if path not in keep:
                     del data["monitor"]["nodes"][node]["services"]["config"][path]
+        for path in [p for p in data.get("monitor", {}).get("services", {})]:
+            if path not in keep:
+                del data["monitor"]["services"][path]
         return data
+
+    def object_selector(self, selector=None, namespace=None, namespaces=None):
+        if not selector:
+            return []
+        if namespace:
+            if namespaces is not None and namespace not in namespaces:
+                return []
+            namespaces = set([namespace])
+        if "root" in namespaces:
+            namespaces.add(None)
+
+        # all objects
+        paths = [p for p in AGG if split_path(p)[1] in namespaces]
+        if selector == "**":
+            return paths
+
+        # all services
+        if selector == "*":
+            return [p for p in paths if split_path(p)[2] == "svc"]
+
+        def or_fragment_selector(s):
+            expanded = []
+            for _selector in s.split(","):
+                for p in and_fragment_selector(_selector):
+                    if p in expanded:
+                        continue
+                    expanded.append(p)
+            return expanded
+
+        def and_fragment_selector(s):
+            expanded = None
+            for _selector in s.split("+"):
+                _expanded = fragment_selector(_selector)
+                if expanded is None:
+                    expanded = _expanded
+                else:
+                    expanded = [p for p in expanded if p in _expanded]
+            return expanded
+
+        def fragment_selector(s):
+            # empty
+            if not s:
+                return []
+
+            # explicit object path
+            if s in AGG:
+                if s not in paths:
+                    return []
+                return [s]
+
+            # fnmatch expression
+            ops = r"(<=|>=|<|>|=|~|:)"
+            negate = s[0] == "!"
+            s = s.lstrip("!")
+            elts = re.split(ops, s)
+            if len(elts) == 1:
+                norm_paths = normalize_paths(paths)
+                norm_elts = s.split("/")
+                norm_elts_count = len(norm_elts)
+                if norm_elts_count == 3:
+                    _namespace, _kind, _name = norm_elts
+                    if not _name:
+                        # test/svc/
+                        _name = "*"
+                elif norm_elts_count == 2:
+                    if not norm_elts[1]:
+                        # svc/
+                        _name = "*"
+                        _kind = norm_elts[0]
+                        _namespace = "*"
+                    elif norm_elts[1] == "**":
+                        # prod/**
+                        _name = "*"
+                        _kind = "*"
+                        _namespace = norm_elts[0]
+                    elif norm_elts[0] == "**":
+                        # **/s*
+                        _name = norm_elts[1]
+                        _kind = "*"
+                        _namespace = "*"
+                    else:
+                        # svc/s*
+                        _name = norm_elts[1]
+                        _kind = norm_elts[0]
+                        _namespace = "*"
+                elif norm_elts_count == 1:
+                    if norm_elts[0] == "**":
+                        _name = "*"
+                        _kind = "*"
+                        _namespace = "*"
+                    else:
+                        _name = norm_elts[0]
+                        _kind = "svc"
+                        _namespace = "*"
+                else:
+                    return []
+                _selector = "/".join((_namespace, _kind, _name))
+                filtered_paths = [path  for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
+                return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
+            elif len(elts) != 3:
+                return []
+
+            param, op, value = elts
+            if op in ("<", ">", ">=", "<="):
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    return []
+
+            expanded = []
+            
+            if param.startswith("."):
+                param = "$"+param
+            if param.startswith("$."):
+                jsonpath_expr = parse(param)
+            else:
+                jsonpath_expr = None
+
+            for path in paths:
+                ret = svc_matching(path, param, op, value, jsonpath_expr)
+                if ret ^ negate:
+                    expanded.append(path)
+
+            return expanded
+
+        def matching(current, op, value):
+            if op in ("<", ">", ">=", "<="):
+                try:
+                    current = float(current)
+                except (ValueError, TypeError):
+                    return False
+            if op == "=":
+                if current.lower() in ("true", "false"):
+                    match = current.lower() == value.lower()
+                else:
+                    match = current == value
+            elif op == "~":
+                match = re.search(value, current)
+            elif op == ">":
+                match = current > value
+            elif op == ">=":
+                match = current >= value
+            elif op == "<":
+                match = current < value
+            elif op == "<=":
+                match = current <= value
+            elif op == ":":
+                match = True
+            return match
+
+        def svc_matching(path, param, op, value, jsonpath_expr):
+            if param.startswith("$."):
+                try:
+                    data = self.object_data(path)
+                    matches = jsonpath_expr.find(data)
+                    for match in matches:
+                        current = match.value
+                        if matching(current, op, value):
+                            return True
+                except Exception as exc:
+                    current = None
+            else:
+                try:
+                    svc = SERVICES[path]
+                except KeyError:
+                    return False
+                try:
+                    current = svc._get(param, evaluate=True)
+                except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                    current = None
+                if current is None:
+                    if "." in param:
+                        group, _param = param.split(".", 1)
+                    else:
+                        group = param
+                        _param = None
+                    rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
+                    if op == ":" and len(rids) > 0 and _param is None:
+                        return True
+                    elif _param:
+                        for rid in rids:
+                            try:
+                                _current = svc._get(rid+"."+_param, evaluate=True)
+                            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                                continue
+                            if matching(_current, op, value):
+                                return True
+                    return False
+                if current is None:
+                    return op == ":"
+                if matching(current, op, value):
+                    return True
+            return False
+
+        expanded = or_fragment_selector(selector)
+        return expanded
 
 

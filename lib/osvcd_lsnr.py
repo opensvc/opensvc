@@ -38,6 +38,8 @@ from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
                         unset_lazy
 from converters import convert_size, print_duration
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
 
 RELAY_DATA = {}
 RELAY_LOCK = threading.RLock()
@@ -495,23 +497,22 @@ class Listener(shared.OsvcThread):
             return self.filter_event_event(event, thr)
 
     def filter_event_event(self, event, thr):
-        namespaces = thr.usr_grants.get("guest", [])
+        namespaces = self.get_namespaces()
 
         def valid(change):
             try:
                 path = event["data"]["path"]
             except KeyError:
                 return True
-            _, namespace, _ = split_path(path)
-            if namespace in namespaces:
-                return True
+            if thr.selector and path not in self.object_selector(thr.selector, namespaces=namespaces):
+                return False
             return False
         if valid(event):
             return event
         return None
 
     def filter_patch_event(self, event, thr):
-        namespaces = thr.usr_grants.get("guest", [])
+        namespaces = self.get_namespaces()
 
         def filter_change(change):
             try:
@@ -526,13 +527,13 @@ class Listener(shared.OsvcThread):
             if key_len == 0:
                 if value is None:
                     return change
-                value = self.filter_daemon_status(value, namespaces)
+                value = self.filter_daemon_status(value, namespaces=namespaces, selector=thr.selector)
                 return [key, value]
             elif key[0] == "monitor":
                 if key_len == 1:
                     if value is None:
                         return change
-                    value = self.filter_daemon_status({"monitor": value}, namespaces)["monitor"]
+                    value = self.filter_daemon_status({"monitor": value}, namespaces=namespaces, selector=thr.selector)["monitor"]
                     return [key, value]
                 if key[1] == "services":
                     if key_len == 2:
@@ -548,18 +549,18 @@ class Listener(shared.OsvcThread):
                     if key_len == 2:
                         if value is None:
                             return change
-                        value = self.filter_daemon_status({"monitor": {"nodes": value}}, namespaces)["monitor"]["nodes"]
+                        value = self.filter_daemon_status({"monitor": {"nodes": value}}, namespaces=namespaces, selector=thr.selector)["monitor"]["nodes"]
                         return [key, value]
                     if key_len == 3:
                         if value is None:
                             return change
-                        value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: value}}}, namespaces)["monitor"]["nodes"][key[2]]
+                        value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: value}}}, namespaces=namespaces, selector=thr.selector)["monitor"]["nodes"][key[2]]
                         return [key, value]
                     if key[3] == "services":
                         if key_len == 4:
                             if value is None:
                                 return change
-                            value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: {"services": value}}}}, namespaces)["monitor"]["nodes"][key[2]]["services"]
+                            value = self.filter_daemon_status({"monitor": {"nodes": {key[2]: {"services": value}}}}, namespaces=namespaces, selector=thr.selector)["monitor"]["nodes"][key[2]]["services"]
                             return [key, value]
                         if key[4] == "status":
                             if key_len == 5:
@@ -1262,6 +1263,12 @@ class ClientHandler(shared.OsvcThread):
             data.add(ns)
         return data
 
+    def get_namespaces(self, role="guest"):
+        if self.usr is False or "root" in self.usr_grants:
+            return self.get_all_ns()
+        else:
+            return self.usr_grants.get(role, "guest", [])
+
     def user_grants(self, all_ns=None):
         if self.usr is False or self.tls is False:
             return {"root": None}
@@ -1856,11 +1863,12 @@ class ClientHandler(shared.OsvcThread):
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
+        options = kwargs.get("options", {})
+        selector = options.get("selector")
+        namespace = options.get("namespace")
         data = self.daemon_status()
-        if self.usr is False or "root" in self.usr_grants:
-            return data
-        namespaces = self.usr_grants.get("guest", [])
-        return self.filter_daemon_status(data, namespaces)
+        namespaces = self.get_namespaces()
+        return self.filter_daemon_status(data, namespace=namespace, namespaces=namespaces, selector=selector)
 
     def wait_shutdown(self):
         def still_shutting():
@@ -2796,6 +2804,8 @@ class ClientHandler(shared.OsvcThread):
         self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
 
     def action_events(self, nodename, stream_id=None, **kwargs):
+        options = kwargs.get("options", {})
+        self.selector = options.get("selector")
         if not self.event_queue:
             self.event_queue = queue.Queue()
         if not self in self.parent.events_clients:
@@ -3126,6 +3136,16 @@ class ClientHandler(shared.OsvcThread):
                 raise HTTP(404, "template not found")
         raise HTTP(400, "unknown catalog %s" % catalog)
 
+    def rbac_action_object_selector(self, nodename, **kwargs):
+        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
+
+    def action_object_selector(self, nodename, **kwargs):
+        options = kwargs.get("options", {})
+        selector = options.get("selector")
+        namespace = options.get("namespace")
+        namespaces = self.get_namespaces()
+        return self.object_selector(selector, namespace, namespaces)
+
     def rbac_action_get_node(self, nodename, **kwargs):
         self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
 
@@ -3160,6 +3180,28 @@ class ClientHandler(shared.OsvcThread):
         else:
             raise HTTP(400, "A kind must be specified.")
         return obj.kwdict.KEYS.dump()
+
+    def object_data(self, path):
+        """
+        Extract from the cluster data the structures refering to a
+        path.
+        """
+        try:
+            with shared.AGG_LOCK:
+                data = shared.AGG[path]
+            data["nodes"] = {}
+        except KeyError:
+            return
+        with shared.CLUSTER_DATA_LOCK:
+            for node, ndata in shared.CLUSTER_DATA.items():
+                try:
+                    data["nodes"][node] = {
+                        "status": ndata["services"]["status"][path],
+                        "config": ndata["services"]["config"][path],
+                    }
+                except KeyError:
+                    pass
+        return data
 
     ##########################################################################
     #

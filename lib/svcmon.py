@@ -83,9 +83,9 @@ def setup_parser(node):
                            "names are: threads,arbitrators,nodes,services.")
 
     parser.add_option(
-        "-s", "--service", default=None,
+        "-s", "--service", default="*",
         action="store", dest="parm_svcs",
-        help="A service selector expression ``[!]<expr>[<sep>[!]<expr>]`` where:\n\n"
+        help="An object selector expression ``[!]<expr>[<sep>[!]<expr>]`` where:\n\n"
              "- ``!`` is the expression negation operator\n\n"
              "- ``<sep>`` can be:\n\n"
              "  - ``,`` OR expressions\n\n"
@@ -110,15 +110,15 @@ def setup_parser(node):
              "shell history expansion")
     return parser
 
-def events(node, nodename):
+def events(node, nodename, selector):
     global PATCH_Q
-    for msg in node.daemon_events(nodename):
+    for msg in node.daemon_events(nodename, selector=selector):
         if msg.get("kind") != "patch":
             continue
         PATCH_Q.put(msg)
 
-def start_events_thread(node, nodename):
-    thr = threading.Thread(target=events, args=(node, nodename,))
+def start_events_thread(node, nodename, selector):
+    thr = threading.Thread(target=events, args=(node, nodename, selector))
     thr.daemon = True
     thr.start()
     return thr
@@ -170,17 +170,17 @@ def svcmon(node, options=None):
         "color": options.color,
     })
 
-    status_data = node._daemon_status(server=options.server)
+    status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
     if status_data is None or status_data.get("status", 0) != 0:
         status, error, info = node.parse_result(status_data)
         raise ex.excError(error)
     nodes_info = nodes_info_from_cluster_data(status_data)
-    expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
+    expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
     if not nodes:
         nodes = node.nodes_selector(options.node, data=nodes_info)
 
     if options.watch:
-        start_events_thread(node, options.server)
+        start_events_thread(node, options.server, options.parm_svcs)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
@@ -199,13 +199,14 @@ def svcmon(node, options=None):
                 patch = PATCH_Q.get(False, 0.5)
                 #for change in patch["data"]:
                 #    print(change)
-            except Exception:
+            except Exception as exc:
+                # queue empty
                 patch = None
 
             if patch:
                 if last_patch_id and patch["id"] != last_patch_id + 1:
                     try:
-                        status_data = node._daemon_status(server=options.server)
+                        status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
                         last_patch_id = patch["id"]
                     except Exception:
                         # seen on solaris under high load: decode_msg() raising on invalid json
@@ -216,7 +217,7 @@ def svcmon(node, options=None):
                         last_patch_id = patch["id"]
                     except Exception as exc:
                         try:
-                            status_data = node._daemon_status(server=options.server)
+                            status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
                             last_patch_id = patch["id"]
                         except Exception:
                             # seen on solaris under high load: decode_msg() raising on invalid json
@@ -224,12 +225,14 @@ def svcmon(node, options=None):
 
             stats_changed = options.interval and now - last_refresh >= options.interval
             if not patch and not stats_changed:
+                time.sleep(0.2)
                 continue
             if patch:
                 if status_data is None:
                     # can happen when the secret is being reset on daemon join
+                    time.sleep(0.2)
                     continue
-                expanded_svcs = node.svcs_selector(options.parm_svcs, namespace=namespace, data=status_data)
+                expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
                 nodes_info = nodes_info_from_cluster_data(status_data)
                 nodes = node.nodes_selector(options.node, data=nodes_info)
             if stats_changed:

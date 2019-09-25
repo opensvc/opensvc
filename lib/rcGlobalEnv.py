@@ -92,6 +92,7 @@ class Paths(object):
         self.crl = os.path.join(self.pathvar, "certs", "ca_crl")
         self.drp_path = os.path.join(self.pathvar, "cache")
         self.last_shutdown = os.path.join(self.pathvar, "last_shutdown")
+        self.nodes_info = os.path.join(self.pathvar, "nodes_info.json")
 
         self.daemon_pid = os.path.join(self.pathvar, "osvcd.pid")
         self.daemon_lock = os.path.join(self.pathlock, "osvcd.lock")

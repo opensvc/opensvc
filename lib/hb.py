@@ -244,8 +244,8 @@ class Hb(shared.OsvcThread):
                         self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
                                        nodename, shared.REMOTE_GEN[nodename],
                                        shared.LOCAL_GEN[nodename])
-                        if self.patch_has_labels_change(deltas[str(gen)]):
-                            self.on_labels_change()
+                        if self.patch_has_nodes_info_change(deltas[str(gen)]):
+                            self.on_nodes_info_change()
                         change = True
                     except Exception as exc:
                         self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
@@ -285,7 +285,7 @@ class Hb(shared.OsvcThread):
                 data["services"]["status"] = shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {})
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[nodename] = data
-                self.on_labels_change()
+                self.on_nodes_info_change()
                 new_gen= data.get("gen", {}).get(nodename, 0)
                 shared.LOCAL_GEN[nodename] = our_gen_on_peer
                 if new_gen == shared.REMOTE_GEN.get(nodename):

@@ -1161,7 +1161,7 @@ def wipe_rest_markup(payload):
 def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if f is None:
         return
-    f = re.sub(".conf$", "", f)
+    f = re.sub("\.conf$", "", f)
     f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
     try:
         name, _namespace, kind = split_path(f)

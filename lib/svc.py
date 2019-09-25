@@ -1078,7 +1078,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             err = 1
             self.save_exc()
         finally:
-            self.running_action = None
             if action in ACTIONS_CF_CHANGE:
                 self.unset_conf_lazy()
                 self.reset_resources()
@@ -1109,6 +1108,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     if not resource.type.startswith("sync"):
                         continue
                     resource.resunlock()
+            self.running_action = None
 
         return err
 
@@ -2185,7 +2185,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @fcache
     def get_mon_data(self):
-        data = self.node._daemon_status(silent=True)
+        selector = ",".join([self.path]+self.parents+self.children_and_slaves)
+        data = self.node._daemon_status(silent=True, selector=selector)
         if data is not None and "monitor" in data:
             return data["monitor"]
         return {}

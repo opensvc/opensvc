@@ -201,7 +201,7 @@ class DataMixin(object):
         """
         Refresh installed keys
         """
-        for path in self.node.svcs_selector("*/svc/*", namespace=self.namespace):
+        for path in self.node.svcs_selector("*/svc/*", namespace=self.namespace, local=True):
             name, _, _ = split_path(path)
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
