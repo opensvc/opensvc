@@ -159,10 +159,13 @@ class Monitor(shared.OsvcThread):
 
     def transition_count(self):
         count = 0
-        with shared.SMON_DATA_LOCK:
-            for data in shared.SMON_DATA.values():
-                if data.status and data.status != "scaling" and data.status.endswith("ing"):
-                    count += 1
+        for path in list(shared.SMON_DATA):
+            try:
+                data = shared.SMON_DATA[path]
+            except KeyError:
+                continue
+            if data.status and data.status != "scaling" and data.status.endswith("ing"):
+                count += 1
         return count
 
     def set_next(self, timeout):
@@ -2313,7 +2316,7 @@ class Monitor(shared.OsvcThread):
     #########################################################################
     def get_agg_avail(self, path):
         try:
-            instance = self.get_any_service_instance_unlocked(path)
+            instance = self.get_any_service_instance(path)
         except IndexError:
             instance = None
         if instance is None:
@@ -2367,7 +2370,7 @@ class Monitor(shared.OsvcThread):
         ostatus = 'undef'
         ostatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances_unlocked(path).values():
+        for instance in self.get_service_instances(path).values():
             if "overall" not in instance:
                 continue
             ostatus_l.append(instance["overall"])
@@ -2391,7 +2394,7 @@ class Monitor(shared.OsvcThread):
         if "stdby" in ostatus:
             ostatus = "down"
         try:
-            instance = self.get_any_service_instance_unlocked(path)
+            instance = self.get_any_service_instance(path)
         except IndexError:
             instance = Storage()
         if instance is None:
@@ -2423,7 +2426,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_frozen(self, path):
         frozen = 0
         total = 0
-        for instance in self.get_service_instances_unlocked(path).values():
+        for instance in self.get_service_instances(path).values():
             if "frozen" not in instance:
                 # deleting instance
                 continue
@@ -2460,7 +2463,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_avail_failover(self, path):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances_unlocked(path).values():
+        for instance in self.get_service_instances(path).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2484,7 +2487,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_avail_flex(self, path):
         astatus_l = []
         n_instances = 0
-        for instance in self.get_service_instances_unlocked(path).values():
+        for instance in self.get_service_instances(path).values():
             if "avail" not in instance:
                 continue
             astatus_l.append(instance["avail"])
@@ -2518,7 +2521,7 @@ class Monitor(shared.OsvcThread):
                 return "n/a"
         except KeyError:
             pass
-        instances = [instance for instance in self.get_service_instances_unlocked(path).values() \
+        instances = [instance for instance in self.get_service_instances(path).values() \
                      if not instance.get("frozen")]
         if len(instances) < 2:
             return "optimal"
@@ -2543,7 +2546,7 @@ class Monitor(shared.OsvcThread):
     def get_agg_provisioned(self, path):
         provisioned = 0
         total = 0
-        for instance in self.get_service_instances_unlocked(path).values():
+        for instance in self.get_service_instances(path).values():
             if "provisioned" not in instance:
                 continue
             total += 1
@@ -2575,7 +2578,7 @@ class Monitor(shared.OsvcThread):
 
     def get_agg_conf(self, path):
         data = Storage()
-        for inst in self.get_service_instances_unlocked(path).values():
+        for inst in self.get_service_instances(path).values():
             scale = inst.get("scale")
             if scale is not None:
                 data.scale = scale
@@ -2661,42 +2664,35 @@ class Monitor(shared.OsvcThread):
             return []
         return paths
 
-    @staticmethod
-    def get_services_configs():
+    def get_services_configs(self):
         """
         Return a hash indexed by path and nodename, containing the services
         configuration mtime and checksum.
         """
         data = {}
-        with shared.CLUSTER_DATA_LOCK:
-            for nodename, ndata in shared.CLUSTER_DATA.items():
-                try:
-                    configs = ndata["services"]["config"]
-                except (TypeError, KeyError):
-                    continue
-                for path, config in configs.items():
-                    if path not in data:
-                        data[path] = {}
-                    data[path][nodename] = Storage(config)
+        for nodename in self.cluster_nodes:
+            try:
+                configs = shared.CLUSTER_DATA[nodename]["services"]["config"]
+            except (TypeError, KeyError):
+                continue
+            for path, config in configs.items():
+                if path not in data:
+                    data[path] = {}
+                data[path][nodename] = Storage(config)
         return data
 
     def get_any_service_instance(self, path):
-        with shared.CLUSTER_DATA_LOCK:
-            return self.get_any_service_instance_unlocked(path)
-
-    @staticmethod
-    def get_any_service_instance_unlocked(path):
         """
         Return the specified service status structure on any node.
         """
-        for nodename in shared.CLUSTER_DATA:
+        for nodename in self.cluster_nodes:
             try:
-                if path in shared.CLUSTER_DATA[nodename]["services"]["status"]:
-                    if shared.CLUSTER_DATA[nodename]["services"]["status"][path] in (None, ""):
-                        continue
-                    return shared.CLUSTER_DATA[nodename]["services"]["status"][path]
+                data = shared.CLUSTER_DATA[nodename]["services"]["status"][path]
             except KeyError:
                 continue
+            if data in (None, ""):
+                continue
+            return data
 
     @staticmethod
     def get_last_svc_config(path):
@@ -2890,8 +2886,7 @@ class Monitor(shared.OsvcThread):
                 continue
 
             # update the frozen instance attribute
-            with shared.SERVICES_LOCK:
-                data[path]["frozen"] = shared.SERVICES[path].frozen()
+            data[path]["frozen"] = shared.SERVICES[path].frozen()
 
             # embed the updated smon data
             self.set_smon_l_expect_from_status(data, path)
@@ -3154,8 +3149,8 @@ class Monitor(shared.OsvcThread):
                 global_expect_updated = smon.get("global_expect_updated", 0)
                 if global_expect is not None and time.time() < global_expect_updated + 3:
                     # keep the smon around for a while
-                    self.log.info("relay foreign service %s global expect %s",
-                                  path, global_expect)
+                    #self.log.info("relay foreign service %s global expect %s",
+                    #              path, global_expect)
                     continue
                 else:
                     del shared.SMON_DATA[path]

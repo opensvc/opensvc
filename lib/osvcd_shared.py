@@ -650,20 +650,21 @@ class OsvcThread(threading.Thread, Crypt):
         """
         Return the Monitor data of a service.
         """
-        with SMON_DATA_LOCK:
-            if path not in SMON_DATA:
-                self.set_smon(path, "idle")
+        try:
             data = Storage(SMON_DATA[path])
-            data["placement"] = self.get_service_placement(path)
-            return data
+        except KeyError:
+            self.set_smon(path, "idle")
+            data = Storage(SMON_DATA[path])
+        data["placement"] = self.get_service_placement(path)
+        return data
 
     def get_service_placement(self, path):
-        with SERVICES_LOCK:
-            if path not in SERVICES:
-                return ""
+        try:
             svc = SERVICES[path]
-            if self.placement_leader(svc, silent=True):
-                return "leader"
+        except KeyError:
+            return ""
+        if self.placement_leader(svc, silent=True):
+            return "leader"
         return ""
 
     def hook_command(self, cmd, data):
@@ -862,16 +863,15 @@ class OsvcThread(threading.Thread, Crypt):
         node.
         """
         with THREADS_LOCK:
-            for thr_id, thread in THREADS.items():
-                if not thr_id.endswith(".rx"):
-                    continue
-                rx_status = thread.status()
-                try:
-                    peer_status = rx_status["peers"][nodename]["beating"]
-                except KeyError:
-                    continue
-                if peer_status:
-                    return False
+            thr_ids = [key for key in THREADS if key.endswith(".rx")]
+        for thr_id in thr_ids:
+            try:
+                rx_status = THREADS[thr_id].status()
+                peer_status = rx_status["peers"][nodename]["beating"]
+            except KeyError:
+                continue
+            if peer_status:
+                return False
         return True
 
     @staticmethod
@@ -886,29 +886,22 @@ class OsvcThread(threading.Thread, Crypt):
         except (TypeError, KeyError):
             return
 
-    def get_service_instances(self, *args, **kwargs):
-        with CLUSTER_DATA_LOCK:
-            return self.get_service_instances_unlocked(*args, **kwargs)
-
-    @staticmethod
-    def get_service_instances_unlocked(path, discard_empty=False):
+    def get_service_instances(self, path, discard_empty=False):
         """
         Return the specified service status structures on all nodes.
         """
         instances = {}
-        for nodename in CLUSTER_DATA:
+        for nodename in self.cluster_nodes:
             try:
-                if path in CLUSTER_DATA[nodename]["services"]["status"]:
-                    try:
-                        CLUSTER_DATA[nodename]["services"]["status"][path]["updated"]
-                    except (TypeError, KeyError):
-                        # foreign
-                        continue
-                    if discard_empty and not CLUSTER_DATA[nodename]["services"]["status"][path]:
-                        continue
-                    instances[nodename] = CLUSTER_DATA[nodename]["services"]["status"][path]
+                instance = CLUSTER_DATA[nodename]["services"]["status"][path]
+                # provoke a KeyError on foreign instance, to discard them
+                instance["updated"]
             except (TypeError, KeyError):
+                # foreign
                 continue
+            if discard_empty and not instance:
+                continue
+            instances[nodename] = instance
         return instances
 
     @staticmethod
@@ -947,42 +940,45 @@ class OsvcThread(threading.Thread, Crypt):
         candidates = []
         if svc is None:
             return []
-        with CLUSTER_DATA_LOCK:
-            for nodename, data in CLUSTER_DATA.items():
-                if nodename not in svc.peers:
-                    # can happen if the same service is deployed on
-                    # differrent cluster segments
-                    continue
-                if data == "unknown":
-                    continue
-                if discard_preserved and \
-                   data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
-                    continue
-                if discard_frozen and data.get("frozen"):
-                    # node frozen
-                    continue
-                instance = self.get_service_instance(svc.path, nodename)
-                if instance is None:
-                    continue
-                if discard_start_failed and \
-                   instance["monitor"].get("status") in (
-                       "start failed",
-                       "place failed"
-                   ):
-                    continue
-                if "avail" not in instance:
-                    # deleting
-                    continue
-                if discard_frozen and instance.frozen:
-                    continue
-                if discard_unprovisioned and instance.provisioned is False:
-                    continue
-                if discard_constraints_violation and \
-                   not instance.get("constraints", True):
-                    continue
-                if discard_overloaded and self.node_overloaded(nodename):
-                    continue
-                candidates.append(nodename)
+        for nodename in self.cluster_nodes:
+            try:
+                data = CLUSTER_DATA[nodename]
+            except KeyError:
+                continue
+            if nodename not in svc.peers:
+                # can happen if the same service is deployed on
+                # differrent cluster segments
+                continue
+            if data == "unknown":
+                continue
+            if discard_preserved and \
+               data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
+                continue
+            if discard_frozen and data.get("frozen"):
+                # node frozen
+                continue
+            instance = self.get_service_instance(svc.path, nodename)
+            if instance is None:
+                continue
+            if discard_start_failed and \
+               instance["monitor"].get("status") in (
+                   "start failed",
+                   "place failed"
+               ):
+                continue
+            if "avail" not in instance:
+                # deleting
+                continue
+            if discard_frozen and instance.frozen:
+                continue
+            if discard_unprovisioned and instance.provisioned is False:
+                continue
+            if discard_constraints_violation and \
+               not instance.get("constraints", True):
+                continue
+            if discard_overloaded and self.node_overloaded(nodename):
+                continue
+            candidates.append(nodename)
         return candidates
 
     def placement_ranks(self, svc, candidates=None):
@@ -1358,10 +1354,11 @@ class OsvcThread(threading.Thread, Crypt):
             getattr(self.log, level)(node_fmt.format(**fmt_data))
 
             # log to <name>.log
-            with SERVICES_LOCK:
-                svc = SERVICES.get(path)
-                if svc:
-                    getattr(svc.log, level)(fmt.format(**fmt_data))
+            try:
+                svc = SERVICES[path]
+                getattr(svc.log, level)(fmt.format(**fmt_data))
+            except KeyError:
+                pass
         else:
             # log to node.log with no prefix
             getattr(self.log, level)(fmt.format(**fmt_data))
@@ -1460,9 +1457,11 @@ class OsvcThread(threading.Thread, Crypt):
                 "nodes": self.cluster_nodes,
             }
         }
-        with THREADS_LOCK:
-            for thr_id, thread in THREADS.items():
-                data[thr_id] = thread.status()
+        for thr_id in list(THREADS):
+            try:
+                data[thr_id] = THREADS[thr_id].status()
+            except KeyError:
+                continue
         return data
 
     def update_daemon_status(self):
@@ -1487,8 +1486,7 @@ class OsvcThread(threading.Thread, Crypt):
         })
 
     def daemon_status(self):
-        with DAEMON_STATUS_LOCK:
-            return copy.deepcopy(DAEMON_STATUS)
+        return json.loads(json.dumps(LAST_DAEMON_STATUS))
 
     def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
         if selector is None:
