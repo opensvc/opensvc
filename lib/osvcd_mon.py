@@ -56,6 +56,7 @@ ABORT_STATES = (
     ("stop failed", "stopped"),
     ("stop failed", "purged"),
     ("stop failed", "unprovisioned"),
+    ("shutdown failed", "shutdown"),
     ("delete failed", "deleted"),
     ("unprovision failed", "unprovisioned"),
     ("provision failed", "provisioned"),
