@@ -1267,7 +1267,7 @@ class ClientHandler(shared.OsvcThread):
         if self.usr is False or "root" in self.usr_grants:
             return self.get_all_ns()
         else:
-            return self.usr_grants.get(role, "guest", [])
+            return self.usr_grants.get(role, [])
 
     def user_grants(self, all_ns=None):
         if self.usr is False or self.tls is False:
