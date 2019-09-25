@@ -177,7 +177,10 @@ class Sync(Res.Resource, Scheduler):
         return rcStatus.UNDEF
 
     def _status(self, **kwargs):
-        if self.paused():
+        if self.svc.running_action in ("stop", "shutdown"):
+            return rcStatus.NA
+        if not self.svc.running_action and self.paused():
+            # status eval
             return rcStatus.NA
         return self.sync_status(**kwargs)
 
@@ -191,7 +194,7 @@ class Sync(Res.Resource, Scheduler):
         if not self.pausable:
             return False
         try:
-            data = self.svc.node._daemon_status()
+            data = self.svc.node._daemon_status(selector=self.svc.path)
         except Exception:
             data = None
         try:

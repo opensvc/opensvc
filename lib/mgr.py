@@ -24,6 +24,7 @@ class Mgr(object):
         self.parser = parser
         self.node = node
         self.selector = selector
+        self.expanded_svcs = None
 
     @staticmethod
     def get_extra_argv(argv=None):
@@ -214,6 +215,7 @@ class Mgr(object):
             yield parser
         else:
             expanded_svcs = self.node.svcs_selector(selector, namespace)
+            self.expanded_svcs = expanded_svcs
         svc_by_kind = self.dispatch_svcs(expanded_svcs)
         for kind, paths in svc_by_kind.items():
             mod = __import__(kind+"mgr_parser")
@@ -276,7 +278,10 @@ class Mgr(object):
             if options.svcs:
                 options.svcs = options.svcs.split(",")
         else:
-            expanded_svcs = self.node.svcs_selector(options.svcs, options.namespace)
+            if self.expanded_svcs is None:
+                expanded_svcs = self.node.svcs_selector(options.svcs, options.namespace)
+            else:
+                expanded_svcs = self.expanded_svcs
             if options.svcs in (None, "*") and expanded_svcs == []:
                 return
             options.svcs = expanded_svcs

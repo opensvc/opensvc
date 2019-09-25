@@ -686,6 +686,9 @@ class Crypt(object):
         return conn
 
     def daemon_get(self, *args, **kwargs):
+        #print("get", args, kwargs)
+        #import traceback
+        #traceback.print_stack()
         sp = self.socket_parms(kwargs.get("server"))
         if sp.scheme == "raw" and not want_context():
             return self.raw_daemon_get(*args, sp=sp, **kwargs)

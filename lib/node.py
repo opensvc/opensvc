@@ -617,68 +617,47 @@ class Node(Crypt, ExtConfigMixin):
             return [path for path in paths if split_path(path)[1] is None]
         return [path for path in paths if split_path(path)[1] == namespace]
 
-    def svcs_selector(self, selector, namespace=None, data=None):
+    def svcs_selector(self, selector, namespace=None, local=False):
         """
         Given a selector string, return a list of service names.
         This exposed method only aggregates ORed elements.
         """
         # fully qualified name
-        path = is_service(selector, namespace, data=data, local=data is None)
+        path = is_service(selector, namespace, local=local)
         if path:
             self.options.single_service = True
             paths = self.filter_ns([path], namespace)
             return paths
 
-        if data is None or not data.get("retryable"):
+        if not local:
             try:
-                data = self._daemon_status(silent=True)["monitor"]
+                data = self._daemon_object_selector(selector, namespace)
+                if isinstance(data, list):
+                    return data
             except Exception as exc:
-                data = None
-        else:
-            data = data.get("monitor")
+                print(exc, file=sys.stderr)
+                # fallback to local lookup
+                pass
 
         # full listing and namespace full listing
         if selector is None:
             # only svc kind by default
             selector = "*"
-        if "**" in selector.split(","):
-            if data:
-                paths = [path for path in data["services"]]
-                paths = self.filter_ns(paths, namespace)
-            else:
-                paths = list_services(namespace)
-            return paths
-
-        # fully qualified name
-        if data is not None:
-            path = is_service(selector, namespace, data=data)
-            if path:
-                self.options.single_service = True
-                paths = self.filter_ns([path], namespace)
-                return paths
 
         # fnmatch on names and service config/status filtering
         try:
-            paths = self._svcs_selector(selector, data, namespace)
+            paths = self._svcs_selector(selector, namespace)
         finally:
             del self.services
             self.services = None
         paths = self.filter_ns(paths, namespace)
         return paths
 
-    def _svcs_selector(self, selector, data=None, namespace=None):
-        if data:
-            cluster_data = {"monitor": data}
-        else:
-            cluster_data = self._daemon_status()
-        if cluster_data:
-            self.build_services(paths=[s for s in cluster_data.get("monitor", {}).get("services", {})])
-        elif not want_context():
-            self.build_services()
-        if data and "services" in data:
-            paths = [path for path in data["services"]]
-        else:
-            paths = [svc.path for svc in self.svcs]
+    def _svcs_selector(self, selector, namespace=None):
+        if want_context():
+            raise ex.excError("daemon is unreachable")
+        self.build_services()
+        paths = [svc.path for svc in self.svcs]
         paths = self.filter_ns(paths, namespace)
         if "," in selector:
             ored_selectors = selector.split(",")
@@ -686,24 +665,21 @@ class Node(Crypt, ExtConfigMixin):
             ored_selectors = [selector]
         result = []
         for _selector in ored_selectors:
-            for path in self.__svcs_selector(_selector, data, paths,
-                                             namespace=namespace,
-                                             cluster_data=cluster_data):
+            for path in self.__svcs_selector(_selector, paths, namespace=namespace):
                 if path not in result:
                     result.append(path)
         if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
             raise ex.excError("object not found")
         return result
 
-    def __svcs_selector(self, selector, data, paths, namespace=None,
-                        cluster_data=None):
+    def __svcs_selector(self, selector, paths, namespace=None):
         """
         Given a selector string, return a list of service names.
         This method only intersect the ANDed elements.
         """
         if selector in (None, ""):
             return []
-        path = is_service(selector, namespace, data=data)
+        path = is_service(selector, namespace, local=True)
         if path:
             return [path]
         if "+" in selector:
@@ -715,7 +691,7 @@ class Node(Crypt, ExtConfigMixin):
         else:
             result = None
             for _selector in anded_selectors:
-                _paths = self.___svcs_selector(_selector, paths, cluster_data, namespace)
+                _paths = self.___svcs_selector(_selector, paths, namespace)
                 if result is None:
                     result = _paths
                 else:
@@ -723,7 +699,7 @@ class Node(Crypt, ExtConfigMixin):
                     result = [name for name in result if name in common]
         return result
 
-    def ___svcs_selector(self, selector, paths, cluster_data, namespace):
+    def ___svcs_selector(self, selector, paths, namespace):
         """
         Given a basic selector string (no AND nor OR), return a list of service
         names.
@@ -758,48 +734,33 @@ class Node(Crypt, ExtConfigMixin):
                 match = True
             return match
 
-        def svc_matching(svc, param, op, value, cluster_data):
-            if param.startswith("."):
-                param = "$"+param
-            param = normalize_jsonpath(param)
-            if param.startswith("$."):
-                try:
-                    jsonpath_expr = parse(param)
-                    data = self.cluster_svc_data(svc.path, cluster_data)
-                    matches = jsonpath_expr.find(data)
-                    for match in matches:
-                        current = match.value
-                        if matching(current, op, value):
-                            return True
-                except Exception as exc:
-                    current = None
-            else:
-                try:
-                    current = svc._get(param, evaluate=True)
-                except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
-                    current = None
-                if current is None:
-                    if "." in param:
-                        group, _param = param.split(".", 1)
-                    else:
-                        group = param
-                        _param = None
-                    rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
-                    if op == ":" and len(rids) > 0 and _param is None:
-                        return True
-                    elif _param:
-                        for rid in rids:
-                            try:
-                                _current = svc._get(rid+"."+_param, evaluate=True)
-                            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
-                                continue
-                            if matching(_current, op, value):
-                                return True
-                    return False
-                if current is None:
-                    return op == ":"
-                if matching(current, op, value):
+        def svc_matching(svc, param, op, value):
+            try:
+                current = svc._get(param, evaluate=True)
+            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                current = None
+            if current is None:
+                if "." in param:
+                    group, _param = param.split(".", 1)
+                else:
+                    group = param
+                    _param = None
+                rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
+                if op == ":" and len(rids) > 0 and _param is None:
                     return True
+                elif _param:
+                    for rid in rids:
+                        try:
+                            _current = svc._get(rid+"."+_param, evaluate=True)
+                        except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                            continue
+                        if matching(_current, op, value):
+                            return True
+                return False
+            if current is None:
+                return op == ":"
+            if matching(current, op, value):
+                return True
             return False
 
         if len(elts) == 1:
@@ -855,38 +816,14 @@ class Node(Crypt, ExtConfigMixin):
             except (TypeError, ValueError):
                 return []
 
-        # status data jsonpath or config keyword match
-        if cluster_data is None:
-            return []
+        # config keyword match
         result = []
         for svc in self.svcs:
-            ret = svc_matching(svc, param, op, value, cluster_data)
+            ret = svc_matching(svc, param, op, value)
             if ret ^ negate:
                 result.append(svc.path)
 
         return result
-
-    def cluster_svc_data(self, path, cluster_data):
-        """
-        Extract from the cluster data the structures refering to a
-        path.
-        """
-        if not cluster_data:
-            return
-        try:
-            data = cluster_data.get("monitor", {}).get("services", {}).get(path, {})
-            data["nodes"] = {}
-        except KeyError:
-            return
-        for node, ndata in cluster_data.get("monitor", {}).get("nodes", {}).items():
-            try:
-                data["nodes"][node] = {
-                    "status": ndata["services"]["status"][path],
-                    "config": ndata["services"]["config"][path],
-                }
-            except KeyError:
-                pass
-        return data
 
     def build_services(self, *args, **kwargs):
         """
@@ -3707,7 +3644,7 @@ class Node(Crypt, ExtConfigMixin):
                 # the config lazy
                 return sorted([node for node in data])
             elif want_context():
-                return self._daemon_status().get("cluster", {}).get("nodes", [])
+                return sorted([node for node in self.nodes_info])
             else:
                 return self.cluster_nodes
         if selector == "":
@@ -3929,6 +3866,12 @@ class Node(Crypt, ExtConfigMixin):
 
     @lazy
     def nodes_info(self):
+        if not want_context() or os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            try:
+                with open(rcEnv.paths.nodes_info, "r") as ofile:
+                    return json.load(ofile)
+            except Exception as exc:
+                pass
         try:
             return self._daemon_nodes_info(silent=True)["data"]
         except (KeyError, TypeError, socket.error):
@@ -3969,12 +3912,27 @@ class Node(Crypt, ExtConfigMixin):
             timeout=10,
         )
 
-    def _daemon_status(self, silent=False, refresh=False, server=None):
+    def _daemon_object_selector(self, selector="*", namespace=None, server=None):
+        data = self.daemon_get(
+            {
+                "action": "object_selector",
+                "options": {
+                    "selector": selector,
+                    "namespace": namespace,
+                },
+            },
+            server=server,
+            timeout=5,
+        )
+        return data
+
+    def _daemon_status(self, silent=False, refresh=False, server=None, selector=None):
         data = self.daemon_get(
             {
                 "action": "daemon_status",
                 "options": {
                     "refresh": refresh,
+                    "selector": selector,
                 },
             },
             server=server,
@@ -4812,9 +4770,12 @@ class Node(Crypt, ExtConfigMixin):
                 print_node_data(server, data)
                 return data.get("ret", 0)
 
-    def daemon_events(self, server=None):
+    def daemon_events(self, server=None, selector=None):
         req = {
             "action": "events",
+            "options": {
+                "selector": selector,
+            },
         }
         while True:
             for msg in self.daemon_stream(req, server=server):

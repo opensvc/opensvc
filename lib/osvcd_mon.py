@@ -134,6 +134,7 @@ class Monitor(shared.OsvcThread):
             self.kern_freeze()
             self.services_init_boot()
         shared.NODE.write_boot_id()
+        self.dump_nodes_info()
 
         # send a first message without service status, so the peers know
         # we are in init state.
@@ -179,6 +180,7 @@ class Monitor(shared.OsvcThread):
         """
         The node config references may have changed, update the services objects.
         """
+        self.on_nodes_info_change()
         for path in shared.SERVICES:
             try:
                 name, namespace, kind = split_path(path)
