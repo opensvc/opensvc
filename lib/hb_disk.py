@@ -304,7 +304,7 @@ class HbDiskRx(HbDisk):
                 shared.HB_TX_TICKER.wait(self.default_hb_period)
 
     def missing_peers(self):
-        return [nodename for nodename, data in self.peer_config.items() if data.slot < 0]
+        return [nodename for nodename, data in self.peer_config.items() if hasattr(data, "slot") and data.slot < 0]
 
     def do(self):
         self.janitor_procs()
