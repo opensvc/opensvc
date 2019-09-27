@@ -1256,11 +1256,14 @@ class ClientHandler(shared.OsvcThread):
     #########################################################################
     def get_all_ns(self):
         data = set()
-        for path in shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}):
-            _, ns, _ = split_path(path)
-            if ns is None:
-                ns = "root"
-            data.add(ns)
+        try:
+            for path in shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}):
+                _, ns, _ = split_path(path)
+                if ns is None:
+                    ns = "root"
+                data.add(ns)
+        except KeyError:
+            return set()
         return data
 
     def get_namespaces(self, role="guest"):
