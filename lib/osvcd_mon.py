@@ -102,16 +102,15 @@ class Monitor(shared.OsvcThread):
         self.unfreeze_when_all_nodes_joined = False
         self.node_frozen = self.freezer.node_frozen()
 
-        with shared.CLUSTER_DATA_LOCK:
-            shared.CLUSTER_DATA[rcEnv.nodename] = {
-                "compat": shared.COMPAT_VERSION,
-                "api": shared.API_VERSION,
-                "agent": shared.NODE.agent_version,
-                "monitor": dict(shared.NMON_DATA),
-                "labels": shared.NODE.labels,
-                "targets": shared.NODE.targets,
-                "services": {},
-            }
+        shared.CLUSTER_DATA[rcEnv.nodename] = {
+            "compat": shared.COMPAT_VERSION,
+            "api": shared.API_VERSION,
+            "agent": shared.NODE.agent_version,
+            "monitor": dict(shared.NMON_DATA),
+            "labels": shared.NODE.labels,
+            "targets": shared.NODE.targets,
+            "services": {},
+        }
 
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             if not self.node_frozen:
@@ -184,6 +183,8 @@ class Monitor(shared.OsvcThread):
         """
         The node config references may have changed, update the services objects.
         """
+        NODE.unset_lazy("labels")
+        CLUSTER_DATA[rcEnv.nodename]["labels"] = NODE.labels
         self.on_nodes_info_change()
         for path in shared.SERVICES:
             try:
@@ -2285,19 +2286,17 @@ class Monitor(shared.OsvcThread):
     # Cluster nodes aggregations
     #
     #########################################################################
-    @staticmethod
-    def get_clu_agg_frozen():
+    def get_clu_agg_frozen(self):
         fstatus = "undef"
         fstatus_l = []
         n_instances = 0
-        with shared.CLUSTER_DATA_LOCK:
-            for node in shared.CLUSTER_DATA.values():
-                try:
-                    fstatus_l.append(node.get("frozen"))
-                except KeyError:
-                    # sender daemon outdated
-                    continue
-                n_instances += 1
+        for nodename in self.cluster_nodes:
+            try:
+                fstatus_l.append(shared.CLUSTER_DATA[nodename].get("frozen"))
+            except KeyError:
+                # sender daemon outdated
+                continue
+            n_instances += 1
         n_frozen = len([True for froz in fstatus_l if froz])
         if n_instances == 0:
             fstatus = 'n/a'

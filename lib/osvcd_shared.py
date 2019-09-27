@@ -36,9 +36,14 @@ class DebugRLock(object):
         self.name = ""
 
     def acquire(self, *args, **kwargs):
+        from traceback import format_stack
+        print("=== %s acquire\n%s" % (self.name, "".join(format_stack()[2:-1])))
         self._lock.acquire(*args, **kwargs)
+        print("=== %s acquired\n%s" % (self.name, "".join(format_stack()[2:-1])))
 
     def release(self, *args, **kwargs):
+        from traceback import format_stack
+        print("=== %s release\n%s" % (self.name, "".join(format_stack()[2:-1])))
         self._lock.release(*args, **kwargs)
 
     def __enter__(self):
@@ -48,7 +53,7 @@ class DebugRLock(object):
     def __exit__(self, type, value, traceback):
         self._lock.release()
         d = time.time() - self.t
-        if d < 0.1:
+        if d < 1:
             return
         from traceback import format_stack
         print("=== %s held %.2fs\n%s" % (self.name, d, "".join(format_stack()[2:-1])))
@@ -150,7 +155,7 @@ LOCKS_LOCK = RLock()
 
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
-CLUSTER_DATA = {}
+CLUSTER_DATA = {rcEnv.nodename: {}}
 CLUSTER_DATA_LOCK = RLock()
 
 # thread loop conditions and helpers
@@ -1251,11 +1256,6 @@ class OsvcThread(threading.Thread, Crypt):
 
     def on_nodes_info_change(self):
         NODE.unset_lazy("nodes_info")
-        NODE.unset_lazy("labels")
-        NODE.unset_lazy("targets")
-        with CLUSTER_DATA_LOCK:
-            CLUSTER_DATA[rcEnv.nodename]["labels"] = NODE.labels
-            CLUSTER_DATA[rcEnv.nodename]["targets"] = NODE.targets
         self.dump_nodes_info()
         for svc in SERVICES.values():
             svc.unset_conf_lazy()
