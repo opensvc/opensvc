@@ -6,7 +6,7 @@ import os
 import stat
 
 from rcUtilities import justcall, qcall, which, lazy
-from rcUtilitiesSunOS import get_os_ver
+from rcUtilitiesSunOS import get_solaris_version
 import resContainer
 import rcExceptions as ex
 from rcZfs import zfs_setprop
@@ -186,7 +186,7 @@ class Zone(resContainer.Container):
             if ret != 0:
                 raise ex.excError
         options = []
-        if get_os_ver() >= 11.3:
+        if get_solaris_version() >= 11.3:
             options += ["-x", "deny-zbe-clone"]
         try:
             self.umount_fs_in_zonepath()
