@@ -172,6 +172,7 @@ class Listener(shared.OsvcThread):
         makedirs(rcEnv.paths.certs)
         if rcEnv.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
             self.certfs.start()
+            os.chmod(rcEnv.paths.certs, 0o0755)
         if not self.ca.exists():
             raise ex.excInitError("secret %s does not exist" % self.ca.path)
         data = self.ca.decode_key("certificate_chain")
@@ -194,6 +195,9 @@ class Listener(shared.OsvcThread):
             raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
         private_key = os.path.join(rcEnv.paths.certs, "private_key")
         self.log.info("write %s", private_key)
+        with open(private_key, "w+") as fo:
+            pass
+        os.chmod(private_key, 0o0600)
         with open(private_key, "w") as fo:
             fo.write(data)
         return ca_cert_chain, cert_chain, private_key, crl_path
