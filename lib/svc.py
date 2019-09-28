@@ -2185,7 +2185,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @fcache
     def get_mon_data(self):
-        selector = ",".join([self.path]+self.parents+self.children_and_slaves)
+        paths = [self.path]
+        paths += [p.split("@")[0] for p in self.parents+self.children_and_slaves]
+        selector = ",".join(paths)
         data = self.node._daemon_status(silent=True, selector=selector)
         if data is not None and "monitor" in data:
             return data["monitor"]
