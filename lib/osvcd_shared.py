@@ -1244,7 +1244,7 @@ class OsvcThread(threading.Thread, Crypt):
         if new_data == data:
             return
         try:
-            tmpf = tempfile.NamedTemporaryFile()
+            tmpf = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp)
             fpath = tmpf.name
             tmpf.close()
             with open(fpath, "w") as ofile:
