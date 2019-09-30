@@ -641,6 +641,7 @@ class Scheduler(object):
         Return the list of timerange data structure parsed from the <spec>
         definition string.
         """
+        min_tr_len = 1
 
         def parse_timerange(spec):
             if spec == "*" or spec == "":
@@ -657,7 +658,7 @@ class Scheduler(object):
             begin_m = self._time_to_minutes(begin)
             end_m = self._time_to_minutes(end)
             if begin_m == end_m:
-                end_m += 10
+                end_m += min_tr_len
                 end = "%02d:%02d" % (end_m // 60, end_m % 60)
             return {"begin": begin, "end": end}
 
@@ -681,7 +682,10 @@ class Scheduler(object):
             if ecount == 0:
                 tr_data = parse_timerange(_spec)
                 tr_data["interval"] = self._interval_from_timerange(tr_data)
-                tr_data["probabilistic"] = probabilistic
+                if tr_data["interval"] <= min_tr_len + 1:
+                    tr_data["probabilistic"] = False
+                else:
+                    tr_data["probabilistic"] = probabilistic
                 tr_list.append(tr_data)
                 continue
 
@@ -692,11 +696,14 @@ class Scheduler(object):
             if ecount > 2:
                 raise SchedSyntaxError("only one @<interval> allowed in '%s'" % _spec)
             tr_data = parse_timerange(elements[0])
-            tr_data["probabilistic"] = probabilistic
             try:
                 tr_data["interval"] = convert_duration(elements[1], _from="m", _to="m")
             except ValueError as exc:
                 raise SchedSyntaxError("interval '%s' is not a valid duration expression: %s" % (elements[1], exc))
+            tr_len = self._interval_from_timerange(tr_data)
+            if tr_len <= min_tr_len + 1 or tr_data["interval"] < tr_len:
+                probabilistic = False
+            tr_data["probabilistic"] = probabilistic
             tr_list.append(tr_data)
         return tr_list
 
