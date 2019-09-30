@@ -184,7 +184,7 @@ class Monitor(shared.OsvcThread):
         The node config references may have changed, update the services objects.
         """
         shared.NODE.unset_lazy("labels")
-        CLUSTER_DATA[rcEnv.nodename]["labels"] = shared.NODE.labels
+        shared.CLUSTER_DATA[rcEnv.nodename]["labels"] = shared.NODE.labels
         self.on_nodes_info_change()
         for path in shared.SERVICES:
             try:
