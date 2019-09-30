@@ -82,8 +82,8 @@ class Scheduler(shared.OsvcThread):
                 break
             if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
                 self.dequeue_actions()
-                if last + self.interval < self.now:
-                    last = time.time()
+                if last + self.interval <= self.now:
+                    last = self.now
                     self.run_scheduler()
             done = self.janitor_procs()
 
