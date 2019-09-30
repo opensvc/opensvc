@@ -181,7 +181,7 @@ class Scheduler(object):
             return True
         if now is None:
             now = datetime.datetime.now()
-        limit = last + datetime.timedelta(minutes=delay)
+        limit = last + datetime.timedelta(minutes=delay) - datetime.timedelta(seconds=10)
         if now < limit:
             return False
         else:

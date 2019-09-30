@@ -291,7 +291,7 @@ class Scheduler(shared.OsvcThread):
                 except ex.excAbortAction:
                     continue
                 self.queue_action(action, delay)
-        for path in list(shared.SERVICES.keys()):
+        for path in list(shared.SERVICES):
             try:
                 svc = shared.SERVICES[path]
             except KeyError:
