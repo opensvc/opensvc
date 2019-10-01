@@ -181,14 +181,8 @@ class Scheduler(object):
             return True
         if now is None:
             now = datetime.datetime.now()
-        limit = last + datetime.timedelta(minutes=delay) - datetime.timedelta(seconds=10)
-        if now < limit:
-            return False
-        else:
-            return True
-
-        # never reach here
-        return True
+        limit = last + datetime.timedelta(seconds=delay*60-10)
+        return now > limit
 
     def sched_write_timestamp(self, sopt):
         """
