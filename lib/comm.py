@@ -558,10 +558,10 @@ class Crypt(object):
         return context
 
     def socket_parms_ux(self, server):
-#        if has_ssl:
-#            return self.socket_parms_ux_h2(server)
-#        else:
-         return self.socket_parms_ux_raw(server)
+        if has_ssl:
+            return self.socket_parms_ux_h2(server)
+        else:
+            return self.socket_parms_ux_raw(server)
 
     def socket_parms_ux_h2(self, server):
         data = Storage()
