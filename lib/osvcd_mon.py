@@ -2695,11 +2695,10 @@ class Monitor(shared.OsvcThread):
 
     @staticmethod
     def get_last_svc_config(path):
-        with shared.CLUSTER_DATA_LOCK:
-            try:
-                return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][path]
-            except KeyError:
-                return
+        try:
+            return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][path]
+        except KeyError:
+            return
 
     def wait_service_config_consensus(self, path, peers, timeout=60):
         if len(peers) < 2:
@@ -3276,8 +3275,7 @@ class Monitor(shared.OsvcThread):
         Set the global expect received through heartbeats as local expect, if
         the service instance is not already in the expected status.
         """
-        with shared.CLUSTER_DATA_LOCK:
-            nodenames = list(shared.CLUSTER_DATA.keys())
+        nodenames = list(shared.CLUSTER_DATA)
         if rcEnv.nodename not in nodenames:
             return
         nodenames.remove(rcEnv.nodename)
