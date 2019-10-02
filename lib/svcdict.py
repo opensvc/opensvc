@@ -3011,6 +3011,14 @@ KEYWORDS = [
     },
     {
         "section": "task",
+        "keyword": "check",
+        "candidates": [None, "last_run"],
+        "at": True,
+        "text": "If set to 'last_run', the last run retcode is used to report a task resource status. If not set (default), the status of a task is always n/a.",
+        "example": "last_run"
+    },
+    {
+        "section": "task",
         "keyword": "user",
         "at": True,
         "text": "The user to impersonate when running the task command. The default user is root.",

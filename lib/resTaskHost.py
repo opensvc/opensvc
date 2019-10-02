@@ -51,7 +51,9 @@ class Task(resTask.Task):
             kwargs["env"].update(self.kind_environment_env("sec", self.secrets_environment))
         try:
             self.action_triggers("", "command", **kwargs)
+            self.write_last_run_retcode(0)
         except ex.excError:
+            self.write_last_run_retcode(1)
             if self.on_error:
                 kwargs["blocking"] = False
                 self.action_triggers("", "on_error", **kwargs)

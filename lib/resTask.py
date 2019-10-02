@@ -7,7 +7,7 @@ import lock
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import lcall
+from rcUtilities import lcall, lazy
 from six.moves import input
 
 class Task(Res.Resource):
@@ -24,6 +24,7 @@ class Task(Res.Resource):
                  log=True,
                  configs_environment=None,
                  secrets_environment=None,
+                 check=None,
                  **kwargs):
         Res.Resource.__init__(self, rid, type=type, **kwargs)
         self.command = command
@@ -35,6 +36,7 @@ class Task(Res.Resource):
         self.log_outputs = log
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
+        self.checker = check
 
     def __str__(self):
         return "%s command=%s user=%s" % (Res.Resource.__str__(self), self.command, str(self.user))
@@ -60,6 +62,27 @@ class Task(Res.Resource):
 
     def start(self):
         pass
+
+    @lazy
+    def last_run_retcode_f(self):
+        return os.path.join(self.var_d, "last_run_retcode")
+
+    def write_last_run_retcode(self, value):
+        with open(self.last_run_retcode_f, "w") as f:
+            f.write(str(value))
+
+    def read_last_run_retcode(self):
+        try:
+            with open(self.last_run_retcode_f, "r") as f:
+                return int(f.read())
+        except Exception:
+            return
+
+    def remove_last_run_retcode(self):
+        try:
+            os.unlink(self.last_run_retcode_f)
+        except Exception:
+            pass
 
     @staticmethod
     def alarm_handler(signum, frame):
@@ -129,7 +152,20 @@ class Task(Res.Resource):
         pass
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        if not self.checker:
+            return rcStatus.NA
+        elif self.checker == "last_run":
+            try:
+                self.check_requires("run")
+            except (ex.excError, ex.excContinueAction):
+                return rcStatus.NA
+            ret = self.read_last_run_retcode()
+            if ret is None:
+                return rcStatus.NA
+            if ret:
+                self.status_log("last run failed", "error")
+                return rcStatus.DOWN
+            return rcStatus.UP
 
     def is_provisioned(self, refresh=False):
         return True

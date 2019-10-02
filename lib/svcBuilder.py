@@ -1525,6 +1525,7 @@ def add_task_podman(svc, s):
     kwargs["snooze"] = svc.oget(s, "snooze")
     kwargs["log"] = svc.oget(s, "log")
     kwargs["confirmation"] = svc.oget(s, "confirmation")
+    kwargs["check"] = svc.oget(s, "check")
     import resTaskPodman
     r = resTaskPodman.Task(**kwargs)
     svc += r
@@ -1557,6 +1558,7 @@ def add_task_docker(svc, s):
     kwargs["snooze"] = svc.oget(s, "snooze")
     kwargs["log"] = svc.oget(s, "log")
     kwargs["confirmation"] = svc.oget(s, "confirmation")
+    kwargs["check"] = svc.oget(s, "check")
     import resTaskDocker
     r = resTaskDocker.Task(**kwargs)
     svc += r
@@ -1570,6 +1572,7 @@ def add_task_host(svc, s):
     kwargs["snooze"] = svc.oget(s, "snooze")
     kwargs["log"] = svc.oget(s, "log")
     kwargs["confirmation"] = svc.oget(s, "confirmation")
+    kwargs["check"] = svc.oget(s, "check")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
     kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     import resTaskHost
