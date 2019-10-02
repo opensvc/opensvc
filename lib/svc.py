@@ -3135,7 +3135,7 @@ class Svc(BaseSvc):
                 'sync_resync', 'sync_break',
                 'sync_update',
             ]
-        if resource.type in ("task", "task.docker", "task.podman"):
+        if resource.type in ("task.host", "task.docker", "task.podman"):
             actions += [
                 'run',
             ]
