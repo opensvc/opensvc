@@ -116,7 +116,11 @@ ADMIN_ACTIONS = (
 
 # Those actions filter data based on user grants.
 # Don't allow multiplexing to avoid filtering with escalated privs
-ACTIONS_NO_MULTIPLEX = [
+ACTIONS_ALWAYS_MULTIPLEX = [
+    "service_logs",
+    "node_logs",
+]
+ACTIONS_NEVER_MULTIPLEX = [
     "daemon_status",
     "events",
 ]
@@ -1528,6 +1532,9 @@ class ClientHandler(shared.OsvcThread):
             nodenames = [rcEnv.nodename]
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+            if path:
+                svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+                nodenames = [n for n in nodenames if n in svcnodes]
 
         if action in STREAM_ACTIONS:
             mode = "stream"
@@ -1723,7 +1730,7 @@ class ClientHandler(shared.OsvcThread):
         if action == "create":
             return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
-        if node and action not in ACTIONS_NO_MULTIPLEX:
+        if action in ACTIONS_ALWAYS_MULTIPLEX or (node and action not in ACTIONS_NEVER_MULTIPLEX):
             return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
         return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
 
@@ -2879,7 +2886,7 @@ class ClientHandler(shared.OsvcThread):
             raise HTTP(404, "%s not found" % path)
         backlog = self.backlog_from_options(options)
         logfile = os.path.join(svc.log_d, svc.name+".log")
-        ofile = self._action_logs_open(logfile, backlog, "svc")
+        ofile = self._action_logs_open(logfile, backlog, svc.path)
         return self.read_file_lines(ofile)
 
     def rbac_action_service_logs(self, nodename, stream_id=None, **kwargs):
@@ -2906,7 +2913,7 @@ class ClientHandler(shared.OsvcThread):
             content_type = "application/json"
         self.streams[stream_id]["content_type"] = content_type
         logfile = os.path.join(svc.log_d, svc.name+".log")
-        ofile = self._action_logs_open(logfile, 0, "node")
+        ofile = self._action_logs_open(logfile, 0, svc.path)
         self.streams[stream_id]["pushers"].append({
             "fn": "h2_push_logs",
             "args": [ofile, True],
