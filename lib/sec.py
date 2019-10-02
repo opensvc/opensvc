@@ -81,6 +81,9 @@ class Sec(DataMixin, BaseSvc):
         for key in ("crt", "key", "csr"):
             data[key] = self.tempfilename()
 
+        if "alt_names" in data:
+            data["cnf"] = self.tempfilename()
+
         try:
             if casec:
                 for key, kw in (("cacrt", "certificate"), ("cakey", "private_key")):
@@ -115,7 +118,7 @@ class Sec(DataMixin, BaseSvc):
                     except Exception:
                         pass
         finally:
-            for key in ("crt", "key", "cacrt", "cakey", "csr"):
+            for key in ("crt", "key", "cacrt", "cakey", "csr", "cnf"):
                 if key not in data:
                     continue
                 try:

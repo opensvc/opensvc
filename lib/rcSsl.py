@@ -1,5 +1,6 @@
 import os
 import datetime
+import shutil
 import time
 from subprocess import Popen, PIPE
 
@@ -57,7 +58,7 @@ def format_alt_names(**data):
             l.append("IP:%s" % d)
         else:
             l.append("DNS:%s" % d)
-    return ["-addext", "subjectAltName = %s" % ",".join(l)]
+    return "subjectAltName = %s" % ",".join(l)
 
 def gen_self_signed_cert(log=None, **data):
     days = data["validity"]
@@ -69,7 +70,7 @@ def gen_self_signed_cert(log=None, **data):
            "-days", str(days),
            "-subj", "%s" % data["subject"]]
     if data.get("alt_names"):
-        cmd += data.get("alt_names")
+        cmd += ["-addext", data.get("alt_names")]
     if log:
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
@@ -86,7 +87,7 @@ def gen_csr(log=None, **data):
            "-out", data["csr"],
            "-subj", "%s" % data["subject"]]
     if data.get("alt_names"):
-        cmd += data.get("alt_names")
+        cmd += ["-addext", data.get("alt_names")]
     if log:
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
@@ -105,11 +106,22 @@ def sign_csr(log=None, **data):
            "-out", data["crt"],
            "-days", str(days),
            "-sha256"]
+    if data.get("alt_names"):
+        write_openssl_cnf(data)
+        cmd += ["-extfile", data["cnf"], "-extensions", "SAN"]
     if log:
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
     if ret != 0:
         raise ex.excError(out+err)
+
+def write_openssl_cnf(data):
+    openssl_cnf = "/etc/ssl/openssl.cnf"
+    if not os.path.exists(openssl_cnf):
+        raise ex.excError("could not determine openssl.cnf location")
+    shutil.copy(openssl_cnf, data["cnf"])
+    with open(data["cnf"], "a") as f:
+        f.write("\n[SAN]\n%s\n" % data["alt_names"])
 
 def get_expire(data):
     if not data:
