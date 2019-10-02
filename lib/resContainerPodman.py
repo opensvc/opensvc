@@ -78,6 +78,8 @@ class Container(resContainerDocker.Container):
             self.container_rm()
 
     def _status(self, verbose=False):
+        if not self.detach:
+            return rcStatus.NA
         try:
             self.lib.docker_exe
         except ex.excInitError as exc:

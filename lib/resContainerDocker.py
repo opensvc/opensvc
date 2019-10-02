@@ -128,7 +128,6 @@ class Container(resContainer.Container):
         self.configs_environment = configs_environment
         if not self.detach:
             self.rm = True
-            self.tags.add("nostatus")
 
     @lazy
     def lib(self):
@@ -697,6 +696,8 @@ class Container(resContainer.Container):
             validate(attr, data)
 
     def _status(self, verbose=False):
+        if not self.detach:
+            return rcStatus.NA
         try:
             self.lib.docker_exe
         except ex.excInitError as exc:
