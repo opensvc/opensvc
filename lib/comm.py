@@ -660,7 +660,9 @@ class Crypt(object):
             # relay, arbitrator, node-to-node
             return self.socket_parms_inet_raw(server)
 
-    def h2c(self, sp=None, **kwargs):
+    def get_http2_client_context(self, sp):
+        if not sp.tls:
+            return
         try:
             cafile = sp.context["cluster"]["certificate_authority"]
         except:
@@ -671,11 +673,14 @@ class Crypt(object):
         except:
             keyfile = None
             certfile = None
-        context = get_http2_client_ssl_context(
+        return get_http2_client_ssl_context(
             cafile=cafile,
             keyfile=keyfile,
             certfile=certfile,
         )
+
+    def h2c(self, sp=None, **kwargs):
+        context = self.get_http2_client_context(sp)
         if isinstance(sp.to, tuple):
             host = sp.to[0]
             port = sp.to[1]
