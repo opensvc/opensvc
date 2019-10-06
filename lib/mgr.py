@@ -212,15 +212,17 @@ class Mgr(object):
         elif action == "ls":
             mod = __import__("svcmgr_parser")
             parser = getattr(mod, "SvcmgrOptParser")()
+            expanded_svcs = None
             yield parser
         else:
             expanded_svcs = self.node.svcs_selector(selector, namespace)
             self.expanded_svcs = expanded_svcs
-        svc_by_kind = self.dispatch_svcs(expanded_svcs)
-        for kind, paths in svc_by_kind.items():
-            mod = __import__(kind+"mgr_parser")
-            parser = getattr(mod, kind.capitalize()+"mgrOptParser")()
-            yield parser
+        if expanded_svcs is not None:
+            svc_by_kind = self.dispatch_svcs(expanded_svcs)
+            for kind, paths in svc_by_kind.items():
+                mod = __import__(kind+"mgr_parser")
+                parser = getattr(mod, kind.capitalize()+"mgrOptParser")()
+                yield parser
 
     def parse_args(self, argv):
         if self.parser:
