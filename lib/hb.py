@@ -54,6 +54,7 @@ class Hb(shared.OsvcThread):
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
+        running = data.get("state") == "running"
         data["peers"] = {}
         for nodename in self.hb_nodes:
             if nodename == rcEnv.nodename:
@@ -69,7 +70,7 @@ class Hb(shared.OsvcThread):
                 }))
             data["peers"][nodename] = {
                 "last": _data.last,
-                "beating": _data.beating,
+                "beating": _data.beating if running else False,
             }
         return data
 
