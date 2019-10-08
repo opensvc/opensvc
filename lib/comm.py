@@ -70,6 +70,7 @@ BLACKLIST_THRESHOLD = 5
 class Headers(object):
     node = "o-node"
     secret = "o-secret"
+    multiplexed = "o-multiplexed"
 
 class SockReset(Exception):
     pass
@@ -714,7 +715,7 @@ class Crypt(object):
                         cluster_name=None, secret=None, timeout=0, sp=None):
         secret = self.get_secret(sp, secret)
         path = self.h2_path_from_data(data)
-        headers = self.h2_headers(node=node, secret=secret, af=sp.af)
+        headers = self.h2_headers(node=node, secret=secret, multiplexed=data.get("multiplexed"), af=sp.af)
         body = self.h2_body_from_data(data)
         headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp)
@@ -826,7 +827,7 @@ class Crypt(object):
     def h2_path_from_data(data):
         return "/"+data.get("action", "")
 
-    def h2_headers(self, node=None, secret=None, af=None):
+    def h2_headers(self, node=None, secret=None, multiplexed=None, af=None):
         headers = HTTPHeaderMap()
         if node:
             if isinstance(node, (tuple, list, set)):
@@ -836,6 +837,8 @@ class Crypt(object):
                 headers.update({Headers.node: node})
         if secret and af != socket.AF_UNIX:
             headers.update({Headers.secret: secret})
+        if multiplexed:
+            headers.update({Headers.multiplexed: "true"})
         return headers
 
     @staticmethod
@@ -875,7 +878,7 @@ class Crypt(object):
     def h2_daemon_stream_conn(self, data, server=None, node=None, cluster_name=None, secret=None, sp=None):
         secret = self.get_secret(sp, secret)
         path = self.h2_path_from_data(data)
-        headers = self.h2_headers(node=node, secret=secret, af=sp.af)
+        headers = self.h2_headers(node=node, secret=secret, multiplexed=data.get("multiplexed"), af=sp.af)
         body = self.h2_body_from_data(data)
         headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp, enable_push=True)

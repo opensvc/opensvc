@@ -114,12 +114,12 @@ ADMIN_ACTIONS = (
     "unset",
 )
 
-# Those actions filter data based on user grants.
-# Don't allow multiplexing to avoid filtering with escalated privs
 ACTIONS_ALWAYS_MULTIPLEX = [
     "service_logs",
     "node_logs",
 ]
+# Those actions filter data based on user grants.
+# Don't allow multiplexing to avoid filtering with escalated privs
 ACTIONS_NEVER_MULTIPLEX = [
     "daemon_status",
     "events",
@@ -986,6 +986,7 @@ class ClientHandler(shared.OsvcThread):
             return self.index_js()
         elif "text/html" in accept:
             return self.index(stream_id)
+        multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
             # rebuild the selector from split o-node header
@@ -994,6 +995,7 @@ class ClientHandler(shared.OsvcThread):
         data = {
             "action": path,
             "node": node,
+            "multiplexed": multiplexed,
             "options": options,
         }
         try:
@@ -1519,6 +1521,7 @@ class ClientHandler(shared.OsvcThread):
             del data["node"]
         except Exception:
             pass
+        data["multiplexed"] = True # prevent multiplex at the peer endpoint
         result = {"nodes": {}, "status": 0}
         path = self.options_path(options, required=False)
         if node == "ANY" and path:
@@ -1641,6 +1644,7 @@ class ClientHandler(shared.OsvcThread):
                 _data = {}
                 _data.update(data)
                 _data["options"] = _options
+                _data["multiplexed"] = True # prevent multiplex at the peer endpoint
                 self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename)
                 _result = self.daemon_get(_data, server=nodename, silent=True)
                 result["nodes"][nodename] = _result
@@ -1733,7 +1737,9 @@ class ClientHandler(shared.OsvcThread):
         if action == "create":
             return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
-        if action in ACTIONS_ALWAYS_MULTIPLEX or (node and action not in ACTIONS_NEVER_MULTIPLEX):
+        if data.get("multiplexed") or action in ACTIONS_NEVER_MULTIPLEX:
+            return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+        if action in ACTIONS_ALWAYS_MULTIPLEX or node:
             return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
         return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
 
