@@ -2997,12 +2997,14 @@ class Svc(BaseSvc):
             "compliance_auto": SchedOpts(
                 "DEFAULT",
                 fname="last_comp_check",
-                schedule_option="comp_schedule"
+                schedule_option="comp_schedule",
+                req_collector=True,
             ),
             "push_resinfo": SchedOpts(
                 "DEFAULT",
                 fname="last_push_resinfo",
-                schedule_option="resinfo_schedule"
+                schedule_option="resinfo_schedule",
+                req_collector=True,
             ),
         })
         if not self.encap:

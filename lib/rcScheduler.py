@@ -91,9 +91,11 @@ class SchedOpts(object):
     """
     def __init__(self, section,
                  fname=None,
-                 schedule_option="push_schedule"):
+                 schedule_option="push_schedule",
+                 req_collector=False):
         self.section = section
         self.fname = fname
+        self.req_collector = req_collector
         if self.fname is None:
             self.fname = "last_"+section+"_push"
         self.schedule_option = schedule_option
@@ -144,9 +146,13 @@ class Scheduler(object):
         if svc:
             self.obj = svc
             self.log = svc.log
+            if node is None:
+                self.node = svc.node
         else:
             self.obj = node
             self.log = node.log
+            if node is None:
+                self.node = node
 
     def get_next_schedule(self, action, _max=14400):
         """
@@ -894,6 +900,8 @@ class Scheduler(object):
 
     def _skip_action(self, action, sopt, section=None, fname=None,
                      schedule_option=None, now=None):
+        if sopt.req_collector and not self.node.collector_env.dbopensvc:
+            return True
         if section is None:
             section = sopt.section
         if fname is None:

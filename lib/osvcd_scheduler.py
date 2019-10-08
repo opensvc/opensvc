@@ -303,7 +303,7 @@ class Scheduler(shared.OsvcThread):
                 provisioned = shared.AGG[path].provisioned
             except KeyError:
                 continue
-            for action in svc.sched.scheduler_actions:
+            for action, parms in svc.sched.scheduler_actions.items():
                 if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+path)
                     continue

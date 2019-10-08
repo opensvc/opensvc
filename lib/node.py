@@ -244,106 +244,132 @@ class Node(Crypt, ExtConfigMixin):
             node=self,
             scheduler_actions={
                 "checks": SchedOpts(
-                    "checks"
+                    "checks",
+                    req_collector=True,
                 ),
                 "dequeue_actions": SchedOpts(
                     "dequeue_actions",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushstats": SchedOpts(
-                    "stats"
+                    "stats",
+                    req_collector=True,
                 ),
                 "collect_stats": SchedOpts(
                     "stats_collection",
                     schedule_option="collect_stats_schedule"
                 ),
                 "pushpkg": SchedOpts(
-                    "packages"
+                    "packages",
+                    req_collector=True,
                 ),
                 "pushpatch": SchedOpts(
-                    "patches"
+                    "patches",
+                    req_collector=True,
                 ),
                 "pushasset": SchedOpts(
-                    "asset"
+                    "asset",
+                    req_collector=True,
                 ),
                 "pushnsr": SchedOpts(
                     "nsr",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushhp3par": SchedOpts(
                     "hp3par",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushemcvnx": SchedOpts(
                     "emcvnx",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushcentera": SchedOpts(
                     "centera",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushnetapp": SchedOpts(
                     "netapp",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushibmds": SchedOpts(
                     "ibmds",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushfreenas": SchedOpts(
                     "freenas",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushxtremio": SchedOpts(
                     "xtremio",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushgcedisks": SchedOpts(
                     "gcedisks",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushhds": SchedOpts(
                     "hds",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushnecism": SchedOpts(
                     "necism",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pusheva": SchedOpts(
                     "eva",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushibmsvc": SchedOpts(
                     "ibmsvc",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushvioserver": SchedOpts(
                     "vioserver",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushsym": SchedOpts(
                     "sym",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushbrocade": SchedOpts(
-                    "brocade", schedule_option="no_schedule"
+                    "brocade", schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "pushdisks": SchedOpts(
-                    "disks"
+                    "disks",
+                    req_collector=True,
                 ),
                 "sysreport": SchedOpts(
-                    "sysreport"
+                    "sysreport",
+                    req_collector=True,
                 ),
                 "compliance_auto": SchedOpts(
                     "compliance",
                     fname="last_comp_check",
-                    schedule_option="comp_schedule"
+                    schedule_option="comp_schedule",
+                    req_collector=True,
                 ),
                 "rotate_root_pw": SchedOpts(
                     "rotate_root_pw",
                     fname="last_rotate_root_pw",
-                    schedule_option="no_schedule"
+                    schedule_option="no_schedule",
+                    req_collector=True,
                 ),
                 "auto_reboot": SchedOpts(
                     "reboot",
