@@ -977,12 +977,15 @@ class ClientHandler(shared.OsvcThread):
             result = {"status": status, "error": "Not Authorized"}
             return status, content_type, result
         path = headers.get(":path").lstrip("/")
+        accept = headers.get("accept", "").split(",")
         if path == "favicon.ico":
             return 200, "image/x-icon", ICON
         elif path in ("", "index.html"):
             return self.index(stream_id)
         elif path == "index.js":
             return self.index_js()
+        elif "text/html" in accept:
+            return self.index(stream_id)
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
             # rebuild the selector from split o-node header
@@ -3223,8 +3226,8 @@ class ClientHandler(shared.OsvcThread):
     #
     ##########################################################################
     def index(self, stream_id):
-        data = self.load_file("index.js")
-        self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
+        #data = self.load_file("index.js")
+        #self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
         return 200, "text/html", self.load_file("index.html")
 
     def index_js(self):

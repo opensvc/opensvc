@@ -76,7 +76,7 @@ PATCH_ID = 0
 COMPAT_VERSION = 10
 
 # expose api handlers version
-API_VERSION = 3
+API_VERSION = 4
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
