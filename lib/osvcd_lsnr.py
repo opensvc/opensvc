@@ -2592,11 +2592,11 @@ class ClientHandler(shared.OsvcThread):
                 elif po.type == "integer":
                     opt += "=" + str(val)
                     cmd.append(opt)
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
+            fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
 
-        self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
+        self.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
         if sync:
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
             result = {
                 "status": 0,
@@ -2607,10 +2607,11 @@ class ClientHandler(shared.OsvcThread):
                 },
             }
         else:
-            proc = Popen(cmd, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdin=None, close_fds=True)
             self.push_proc(proc)
             result = {
                 "status": 0,
+                "info": "started node action %s" % " ".join(cmd),
             }
         return result
 
@@ -2670,6 +2671,7 @@ class ClientHandler(shared.OsvcThread):
             self.push_proc(proc)
             result = {
                 "status": 0,
+                "info": "started %s action %s" % (path, " ".join(cmd)),
             }
         if provision:
             for path in data:
@@ -2799,10 +2801,10 @@ class ClientHandler(shared.OsvcThread):
                     opt += "=" + str(val)
                     cmd.append(opt)
 
-        cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", path] + cmd
-        self.log_request("run '%s'" % " ".join(cmd), nodename, **kwargs)
+        fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", path] + cmd
+        self.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
         if sync:
-            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
             try:
                 result = json.loads(out)
@@ -2816,10 +2818,11 @@ class ClientHandler(shared.OsvcThread):
                     },
                 }
         else:
-            proc = Popen(cmd, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdin=None, close_fds=True)
             self.push_proc(proc)
             result = {
                 "status": 0,
+                "info": "started %s action %s" % (path, " ".join(cmd)),
             }
         return result
 
