@@ -5,6 +5,7 @@ import time
 
 import resDisk
 import rcExceptions as ex
+from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, qcall, which, lazy, cache
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
@@ -44,11 +45,7 @@ class Disk(resDisk.Disk):
     def presync(self):
         """ this one is exported as a service command line arg
         """
-        if not self.has_it():
-            return
-        dl = self._sub_devs()
-        with open(self.sub_devs_name, 'w') as f:
-            f.write(json.dumps(list(dl)))
+        self.update_sub_devs_cache()
 
     def has_it(self):
         """Returns True if the pool is present
@@ -163,20 +160,35 @@ class Disk(resDisk.Disk):
 
     def sub_devs(self):
         if self.is_up():
-            self.log.debug("resource up ... refresh sub devs cache")
-            self.presync()
-        elif not os.path.exists(self.sub_devs_name):
+            self.log.debug("resource up ... update sub devs cache")
+            dl = self.update_sub_devs_cache()
+            return dl
+        if not os.path.exists(self.sub_devs_name):
             self.log.debug("no sub devs cache file and service not up ... unable to evaluate sub devs")
             return set()
-        with open(self.sub_devs_name, 'r') as f:
-            buff = f.read()
-        try:
-            dl = set(json.loads(buff))
-        except:
-            self.log.error("corrupted sub devs cache file %s"%self.sub_devs_name)
-            raise ex.excError
+        dl = self.load_sub_devs_cache()
         dl = self.remap_cached_sub_devs_controller(dl)
         return dl
+
+    def update_sub_devs_cache(self):
+        if not self.has_it():
+            return set()
+        dl = self._sub_devs()
+        self.write_sub_devs_cache(dl)
+        return dl
+
+    def write_sub_devs_cache(self, dl):
+        with cmlock(timeout=5, delay=1, lockfile=self.sub_devs_name+".lock", intent="write"):
+            with open(self.sub_devs_name, 'w') as f:
+                f.write(json.dumps(list(dl)))
+
+    def load_sub_devs_cache(self):
+        with cmlock(timeout=5, delay=1, lockfile=self.sub_devs_name+".lock", intent="load"):
+            with open(self.sub_devs_name, 'r') as f:
+                try:
+                    return set(json.load(f))
+                except:
+                    raise ex.excError("corrupted sub devs cache file %s"%self.sub_devs_name)
 
     def remap_cached_sub_devs_controller(self, dl):
         if rcEnv.sysname != "SunOS":
