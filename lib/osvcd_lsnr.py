@@ -505,7 +505,7 @@ class Listener(shared.OsvcThread):
             return self.filter_event_event(event, thr)
 
     def filter_event_event(self, event, thr):
-        namespaces = self.get_namespaces()
+        namespaces = thr.get_namespaces()
 
         def valid(change):
             try:
@@ -520,7 +520,7 @@ class Listener(shared.OsvcThread):
         return None
 
     def filter_patch_event(self, event, thr):
-        namespaces = self.get_namespaces()
+        namespaces = thr.get_namespaces()
 
         def filter_change(change):
             try:
