@@ -107,7 +107,7 @@ class Node(node.Node):
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
 
-    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto"):
+    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto", **kwargs):
         if dst is None:
             return
         if tunnel == "auto":

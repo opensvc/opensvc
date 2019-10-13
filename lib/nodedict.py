@@ -1085,6 +1085,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "network",
         "rtype": "routed_bridge",
+        "keyword": "subnet",
+        "at": True,
+        "text": "The cidr subnet handled by this node. This parameter must be scoped for each node. Usually, the subnets are allocated automatically upon initial network setup, each node being attributed a subnet based on its index in the cluster.nodes list."
+    },
+    {
+        "section": "network",
+        "rtype": "routed_bridge",
         "keyword": "ips_per_node",
         "convert": "integer",
         "default": "1024",
