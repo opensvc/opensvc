@@ -690,6 +690,13 @@ class ExtConfigMixin(object):
             return False
         return True
 
+    def oget_scopes(self, *args, **kwargs):
+        data = {}
+        for node in self.cluster_nodes:
+            kwargs["impersonate"] = node
+            data[node] = self.oget(*args, **kwargs)
+        return data
+
     def oget(self, *args, **kwargs):
         """
         A wrapper around conf_get() that returns the keyword default
