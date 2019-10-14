@@ -230,11 +230,8 @@ class SysReport(object):
         try:
             with open(fpath, 'r') as f:
                 pbuff = f.read()
-        except IOError:
-            self.changed.append(fpath)
-            return
-        else:
-            self.full.append(fpath)
+        except IOError as exc:
+            pbuff = None
         if POSIX:
             diff = pbuff != buff
         else:
@@ -243,6 +240,9 @@ class SysReport(object):
             self.changed.append(fpath)
             with open(fpath, 'w') as f:
                 f.write(buff)
+            self.full.append(fpath)
+        elif pbuff is not None:
+            self.full.append(fpath)
 
     def get_exe(self, fpath):
         if not os.path.exists(fpath):
