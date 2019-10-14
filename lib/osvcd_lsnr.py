@@ -1538,6 +1538,8 @@ class ClientHandler(shared.OsvcThread):
             nodenames = [rcEnv.nodename]
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+            if not nodenames:
+                return {"info": "empty node selection", "status": 0}
             if path:
                 svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
                 nodenames = [n for n in nodenames if n in svcnodes]
