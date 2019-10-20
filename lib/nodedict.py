@@ -650,6 +650,12 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "text": """The port the daemon listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the :c-action:`dequeue actions` node action upon receive. The :kw:`listener.port` parameter is sent to the collector upon :c-action:`pushasset`. The collector uses this port to notify the node."""
     },
     {
+        "section": "listener",
+        "keyword": "openid_well_known",
+        "example": "https://keycloak.opensvc.com/auth/realms/clusters/.well-known/openid-configuration",
+        "text": "The url serving the well-known configuration of an openid provider. If set, the h2 listener will try to validate the Bearer token provided in the requests. If valid the user name is fetched from the 'preferred_username' claim (fallback on 'name'), and the user grants are fetched from the 'grant' claim. Grant can be a list, in which case a proper grant value is formatted via concatenation of the list elements."
+    },
+    {
         "section": "syslog",
         "keyword": "facility",
         "default": "daemon",

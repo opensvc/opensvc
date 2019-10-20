@@ -26,6 +26,13 @@ try:
 except Exception:
     has_ssl = False
 
+try:
+    import jwt
+    from jwt.algorithms import RSAAlgorithm
+    has_jwt = True
+except Exception:
+    has_jwt = False
+
 import six
 import osvcd_shared as shared
 import rcExceptions as ex
@@ -837,6 +844,14 @@ class ClientHandler(shared.OsvcThread):
             #self.log.warning("%s", exc)
             pass
         try:
+            self.usr = self.authenticate_client_jwt(headers)
+            self.usr_auth = "jwt"
+            self.usr_grants = self.user_grants()
+            return
+        except Exception as exc:
+            #self.log.warning("%s", exc)
+            pass
+        try:
             self.usr = self.authenticate_client_x509()
             self.usr_auth = "x509"
             self.usr_grants = self.user_grants()
@@ -847,6 +862,40 @@ class ClientHandler(shared.OsvcThread):
             #self.log.warning("%s", exc)
             pass
         raise ex.excError("refused %s auth" % str(self.addr))
+
+    @lazy
+    def jwt_provider_keys(self):
+        import requests
+        well_known_uri = shared.NODE.oget("listener", "openid_well_known")
+        well_known_data = requests.get(well_known_uri).json()
+        jwks_uri = well_known_data["jwks_uri"]
+        jwks = requests.get(jwks_uri).json()
+        keys = dict((k['kid'], RSAAlgorithm.from_jwk(json.dumps(k))) for k in jwks['keys'])
+        return keys
+
+    def authenticate_client_jwt(self, headers):
+        authorization = headers.get("authorization")
+        if not authorization:
+            raise ex.excError("no authorization header key")
+        if not authorization.startswith("Bearer "):
+            raise ex.excError("authorization header does not start with 'Bearer '")
+        if not has_jwt:
+            raise ex.excError("jwt is disabled (import error)")
+        token = authorization[7:].strip()
+        header = jwt.get_unverified_header(token)
+        key_id = header['kid']
+        algorithm = header['alg']
+        public_key = self.jwt_provider_keys[key_id]
+        decoded = jwt.decode(token, public_key, audience=self.cluster_name, algorithms=algorithm)
+        print(decoded)
+        grant = decoded.get("grant", "")
+        if isinstance(grant, list):
+            grant = " ".join(grant)
+        name = decoded.get("preferred_username")
+        if not name:
+            name = decoded.get("name", "unknown").replace(" ", "_")
+        usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log)
+        return usr
 
     def authenticate_client_secret(self, headers):
         secret = headers.get(Headers.secret)
@@ -968,14 +1017,6 @@ class ClientHandler(shared.OsvcThread):
         req = stream["request"]
         req_data = stream["data"]
         headers = dict((bdecode(a), bdecode(b)) for a, b in req.headers)
-        try:
-            self.authenticate_client(headers)
-            self.parent.stats.sessions.auth_validated += 1
-            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
-        except ex.excError:
-            status = 401
-            result = {"status": status, "error": "Not Authorized"}
-            return status, content_type, result
         path = headers.get(":path").lstrip("/")
         accept = headers.get("accept", "").split(",")
         if path == "favicon.ico":
@@ -984,8 +1025,18 @@ class ClientHandler(shared.OsvcThread):
             return self.index(stream_id)
         elif path == "index.js":
             return self.index_js()
+        elif path == "authinfo":
+            return self.authinfo()
         elif "text/html" in accept:
             return self.index(stream_id)
+        try:
+            self.authenticate_client(headers)
+            self.parent.stats.sessions.auth_validated += 1
+            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
+        except ex.excError:
+            status = 401
+            result = {"status": status, "error": "Not Authorized"}
+            return status, content_type, result
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
@@ -3243,4 +3294,13 @@ class ClientHandler(shared.OsvcThread):
 
     def index_js(self):
         return 200, "application/javascript", self.load_file("index.js")
+
+    def authinfo(self):
+        data = {}
+        well_known_uri = shared.NODE.oget("listener", "openid_well_known")
+        if well_known_uri:
+            data["openid"] = {
+                "well_known_uri": well_known_uri
+            }
+        return 200, "application/json", data
 
