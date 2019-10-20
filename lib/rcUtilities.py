@@ -1148,8 +1148,8 @@ def daemon_test_lock():
     return False
 
 def wipe_rest_markup(payload):
-    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'"+pat.group(2)+"'", payload, flags=re.MULTILINE)
-    payload = re.sub(r'``(.*?)``', lambda pat: "'"+pat.group(1)+"'", payload, flags=re.MULTILINE)
+    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'"+pat.group(2)+"'", payload, re.MULTILINE)
+    payload = re.sub(r'``(.*?)``', lambda pat: "'"+pat.group(1)+"'", payload, re.MULTILINE)
     return payload
 
 #############################################################################

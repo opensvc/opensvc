@@ -1948,6 +1948,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return 1
 
         print("registered")
+        self.options.syncrpc = True
         self.pushasset()
         self.pushdisks()
         self.pushpkg()
