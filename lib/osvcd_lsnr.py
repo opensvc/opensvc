@@ -887,7 +887,6 @@ class ClientHandler(shared.OsvcThread):
         algorithm = header['alg']
         public_key = self.jwt_provider_keys[key_id]
         decoded = jwt.decode(token, public_key, audience=self.cluster_name, algorithms=algorithm)
-        print(decoded)
         grant = decoded.get("grant", "")
         if isinstance(grant, list):
             grant = " ".join(grant)
@@ -3151,6 +3150,7 @@ class ClientHandler(shared.OsvcThread):
             "name": self.usr.name,
             "namespace": self.usr.namespace,
             "auth": self.usr_auth,
+            "raw_grant": self.usr.oget("DEFAULT", "grant"),
             "grant": dict((k, list(v) if v is not None else None) for k, v in self.usr_grants.items()),
         }
         return data
