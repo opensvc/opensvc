@@ -216,13 +216,15 @@ class HbMcastRx(HbMcast):
                 self.sock.close()
             except:
                 pass
+        err = None
         for _ in range(3):
             try:
                 self.configure_listener()
                 return
             except socket.error as exc:
                 time.sleep(1)
-        self.log.error("init error: %s", str(exc))
+                err = str(exc)
+        self.log.error("init error: %s", err)
         raise ex.excAbortAction
 
     def configure_listener(self):
