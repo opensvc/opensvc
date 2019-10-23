@@ -743,6 +743,12 @@ class Monitor(shared.OsvcThread):
         if shared.NMON_DATA.status == "init":
             return
 
+        if self.missing_beating_peer_data():
+            # just after a split+rejoin, we don't have the peers full dataset
+            # even if all hb rx are reporting beating. Avoid taking decisions
+            # during this transient period.
+            return
+
         # node
         self.node_orchestrator()
 
@@ -3627,3 +3633,22 @@ class Monitor(shared.OsvcThread):
             self.event("node_freeze", data={"reason": "kern_freeze"})
             self.freezer.node_freeze()
             self.node_frozen = self.freezer.node_frozen()
+
+    def missing_beating_peer_data(self):
+        for node in self.cluster_nodes:
+            if node == rcEnv.nodename:
+                continue
+            try:
+                shared.CLUSTER_DATA[node]["services"]
+                continue
+            except KeyError:
+                pass
+            # node dataset is empty or a brief coming from a ping
+            try:
+                if any(shared.THREADS[thr_id].is_beating(node) for thr_id in shared.THREADS if thr_id.endswith(".rx")):
+                    self.log.info("waiting for node %s dataset", node)
+                    return True
+            except Exception as exc:
+                return True
+        return False
+
