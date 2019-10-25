@@ -198,6 +198,10 @@ class Hb(shared.OsvcThread):
     def store_rx_data(self, data, nodename):
         if data is None:
             self.log.info("drop corrupted hb data from %s", nodename)
+        with shared.RX_LOCK:
+            self._store_rx_data(data, nodename)
+
+    def _store_rx_data(self, data, nodename):
         current_gen = shared.REMOTE_GEN.get(nodename, 0)
         our_gen_on_peer = data.get("gen", {}).get(rcEnv.nodename, 0)
         kind = data.get("kind", "full")
@@ -274,9 +278,12 @@ class Hb(shared.OsvcThread):
                 change = True
         else:
             data_gen = data.get("gen", {}).get(nodename)
-            if data_gen is not None and shared.REMOTE_GEN.get(nodename) == data_gen:
-                # already installed
-                self.log.debug("already installed %s gen %d dataset", nodename, data_gen)
+            if data_gen is None:
+                self.log.debug("no 'gen' in full dataset from %s: drop", nodename)
+                return
+            last_gen = shared.REMOTE_GEN.get(nodename)
+            if last_gen is not None and last_gen >= data_gen:
+                self.log.debug("already installed or beyond %s gen %d dataset: drop", nodename, data_gen)
                 return
             node_status = data.get("monitor", {}).get("status")
             if node_status in ("init", "maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
@@ -286,11 +293,9 @@ class Hb(shared.OsvcThread):
                 data["services"]["status"] = shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {})
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[nodename] = data
-                self.on_nodes_info_change()
-                new_gen= data.get("gen", {}).get(nodename, 0)
+                new_gen = data.get("gen", {}).get(nodename, 0)
                 shared.LOCAL_GEN[nodename] = our_gen_on_peer
-                if new_gen == shared.REMOTE_GEN.get(nodename):
-                    return
+                self.on_nodes_info_change()
                 shared.REMOTE_GEN[nodename] = new_gen
                 shared.CLUSTER_DATA[nodename]["gen"] = {
                     nodename: new_gen,

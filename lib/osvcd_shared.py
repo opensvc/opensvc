@@ -158,6 +158,9 @@ LOCKS_LOCK = RLock()
 CLUSTER_DATA = {rcEnv.nodename: {}}
 CLUSTER_DATA_LOCK = RLock()
 
+# The lock to serialize CLUSTER_DATA updates from rx threads
+RX_LOCK = RLock()
+
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
