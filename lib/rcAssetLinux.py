@@ -712,6 +712,18 @@ class Asset(rcAsset.Asset):
             devs.append(dev)
         return devs
                 
+    def get_boot_id(self):
+        fpath = "/proc/sys/kernel/random/boot_id"
+        if os.path.exists(fpath):
+            with open(fpath, "r") as f:
+                return f.read().strip()
+        fpath = "/proc/stat"
+        if os.path.exists(fpath):
+            with open(fpath, "r") as f:
+                for line in f.readlines():
+                    if line.startswith("btime "):
+                        return line.split()[-1]
+        return rcAsset.Asset.get_boot_id(self)
 
 if __name__ == "__main__":
     from rcGlobalEnv import rcEnv

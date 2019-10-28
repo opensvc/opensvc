@@ -1485,6 +1485,12 @@ def restart_daemon():
     flag = os.path.join(pathvar, "postinstall.restart")
     if not os.path.exists(flag):
         return
+    try:
+        # never risk triggering "boot" actions on services, for
+        # example due to a reference or format change for boot id
+        os.unlink(os.path.join(pathvar, "node", "last_boot_id"))
+    except:
+        pass
     os.unlink(flag)
     os.environ['OPENSVC_AGENT_UPGRADE'] = "1"
     cmd = "%s/nodemgr daemon start" % pathbin
