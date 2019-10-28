@@ -113,6 +113,44 @@ class SyncZfs(resSync.Sync):
         if ret != 0:
             raise ex.excError
 
+    def get_upper_fs(self, fs):
+        fsmembers = fs.split('/')
+        if len(fsmembers) > 1:
+            fsmembers = fsmembers[:len(fsmembers)-1]
+            upperfs = "/".join(fsmembers)
+        else:
+            upperfs = '/'
+        return upperfs
+
+    def fs_exists(self, fsname, node=None):
+        cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'filesystem', fsname]
+        if node is not None:
+            cmd = rcEnv.rsh.split() + [node] + cmd
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            return True
+        else:
+            return False
+
+    def create_fs(self, fs, node=None):
+        if self.fs_exists(fs, node):
+            msg = None
+            if node is not None:
+                msg = 'on node %s'%node
+            self.log.info('%s already exist %s'%(fs, msg))
+            return
+        fsmembers = fs.split('/')
+        if len(fsmembers) > 1:
+            upperfs = self.get_upper_fs(fs)
+            if not self.fs_exists(upperfs, node):
+                self.create_fs(upperfs, node)
+        cmd = [rcEnv.syspaths.zfs, 'create' , fs]
+        if node is not None:
+            cmd = rcEnv.rsh.split() + [node] + cmd
+        (ret, out, err) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
     def get_src_info(self):
         self.src_snap_sent_old = self.src_ds + "@sent"
         self.src_snap_tosend_old = self.src_ds + "@tosend"
@@ -205,7 +243,7 @@ class SyncZfs(resSync.Sync):
             self.log.info(out)
 
     def zfs_send_incremental(self, node):
-        if not self.snap_exists(self.src_snap_sent, node):
+        if not self.snap_exists(self.dst_snap_sent, node):
             return self.zfs_send_initial(node)
         if self.recursive:
             send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-I",
@@ -214,7 +252,11 @@ class SyncZfs(resSync.Sync):
             send_cmd = [rcEnv.syspaths.zfs, "send", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
 
-        receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+        if self.src_ds == self.dst_ds or ( self.src_ds == self.src_pool and self.dst_ds == self.dst_pool ):
+            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+        else:
+            fspath = self.get_upper_fs(self.dst_ds)
+            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-eF", fspath]
         if node is not None and 'local' not in self.target:
             _receive_cmd = rcEnv.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
@@ -231,7 +273,12 @@ class SyncZfs(resSync.Sync):
             send_cmd = [rcEnv.syspaths.zfs, "send", "-p",
                         self.src_snap_tosend]
 
-        receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+        if self.src_ds == self.dst_ds or ( self.src_ds == self.src_pool and self.dst_ds == self.dst_pool ):
+            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+        else:
+            fspath = self.get_upper_fs(self.dst_ds)
+            self.create_fs(fspath, node)
+            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-eF", fspath]
         if node is not None and 'local' not in self.target:
             _receive_cmd = rcEnv.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
