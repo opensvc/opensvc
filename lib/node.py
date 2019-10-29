@@ -2428,6 +2428,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Returns True if the action returns data from multiple sources (nodes
         or services) to arrange for display.
         """
+        if action in ("pg_pids"):
+            return True
         if action.startswith("print_") and options.format in ("json", "flat_json"):
             return True
         if action.startswith("json_"):

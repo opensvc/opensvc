@@ -188,6 +188,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "json_base_devs",
     "logs",
     "podman",
+    "pg_pids",
     "print_config",
     "print_devs",
     "print_exposed_devs",
@@ -905,7 +906,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
-        if action in ("status", "decode") or \
+        if action in ("status", "decode", "pg_pids") or \
            action.startswith("print_") or \
            action.startswith("collector") or \
            action.startswith("json_"):
@@ -3696,6 +3697,9 @@ class Svc(BaseSvc):
         if self.pg is None:
             return
         self.pg.remove_pg(self)
+
+    def pg_pids(self):
+        return sorted(self.pg.pids(self))
 
     @lazy
     def pg(self):

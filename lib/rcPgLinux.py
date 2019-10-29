@@ -347,24 +347,26 @@ def freeze(o):
 def thaw(o):
     return freezer(o, "THAWED")
 
-def kill(o):
-    cgp = get_cgroup_path(o, "freezer")
-    pids = set()
-    for p in glob.glob(cgp+"/tasks") + glob.glob(cgp+"/*/tasks") + glob.glob(cgp+"/*/*/tasks") + glob.glob(cgp+"/cgroup.procs") + glob.glob(cgp+"/*/cgroup.procs") + glob.glob(cgp+"/*/*/cgroup.procs"):
+def pids(o, controller="memory"):
+    cgp = get_cgroup_path(o, controller)
+    _pids = set()
+    for p in glob.glob(cgp+"/cgroup.procs") + glob.glob(cgp+"/*/cgroup.procs") + glob.glob(cgp+"/*/*/cgroup.procs") + glob.glob(cgp+"/*/*/*/cgroup.procs"):
         with open(p, "r") as f:
-            buff = f.read()
-        pids |= set(buff.split("\n"))
-    pids.remove("")
+            for pid in f.readlines():
+                _pids.add(pid.strip())
+    return list(_pids)
 
+def kill(o):
+    _pids = pids(o, controller="freezer")
     if hasattr(o, "log"):
         _o = o
     else:
         _o = o.svc
 
-    if len(pids) == 0:
+    if len(_pids) == 0:
         _o.log.info("no task to kill")
         return
-    cmd = ["kill"] + list(pids)
+    cmd = ["kill"] + list(_pids)
     _o.vcall(cmd)
 
     if hasattr(o, "path"):

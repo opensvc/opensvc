@@ -544,6 +544,13 @@ ACTIONS["Service actions"].update({
             OPT.verbose,
         ],
     },
+    "pg_pids": {
+        "msg": "Display the tasks of the service process groups or selected resources process groups.",
+        "options": [
+            OPT.filter,
+            OPT.format,
+        ],
+    },
     "pg_freeze": {
         "msg": "Freeze the tasks of a process group.",
         "options": mp.ACTION_OPTS,
