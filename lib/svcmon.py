@@ -170,7 +170,8 @@ def svcmon(node, options=None):
         "color": options.color,
     })
 
-    status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
+    selector = options.parm_svcs if options.parm_svcs else "*"
+    status_data = node._daemon_status(server=options.server, selector=selector)
     if status_data is None or status_data.get("status", 0) != 0:
         status, error, info = node.parse_result(status_data)
         raise ex.excError(error)
