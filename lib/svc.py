@@ -1224,7 +1224,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.setLevel(logging.INFO)
         self.log.addHandler(actionlogfilehandler)
         try:
-            if sys.argv[0].endswith("/svcmgr.py"):
+            if sys.argv[0].endswith("mgr.py"):
                 if len(sys.argv) > 2 and sys.argv[1] in ("-s", "--service"):
                     _begin = 3
                 else:
