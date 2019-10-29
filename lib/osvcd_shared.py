@@ -378,7 +378,10 @@ class OsvcThread(threading.Thread, Crypt):
         completion.
         """
         for data in self.procs:
-            data.proc.kill()
+            try:
+                data.proc.kill()
+            except ProcessLookupError:
+                continue
             for _ in range(self.stop_tmo):
                 data.proc.poll()
                 if data.proc.returncode is not None:
