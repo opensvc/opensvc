@@ -1779,6 +1779,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         lines = []
         if "nodes" in result:
             for logs in result["nodes"].values():
+                if logs is None:
+                    # happens when no log is present on a peer
+                    continue
                 lines += logs
         return sorted(lines)
 
