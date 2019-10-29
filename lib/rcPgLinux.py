@@ -561,6 +561,36 @@ def get_stats_tasks(o):
         count += len(get_sysfs(path+"/tasks").splitlines())
     return count
 
+def get_stats_net(o):
+    _pids = pids(o)
+    ns_done = []
+    data = {
+        "r": 0,
+        "w": 0,
+        "rb": 0,
+        "wb": 0,
+    }
+    for pid in _pids:
+        try:
+            fpath = "/proc/%s/ns/net" % pid
+            ns = os.readlink(fpath)
+            if ns in ns_done:
+                continue
+            fpath = "/proc/%s/net/dev" % pid
+            with open(fpath, "r") as f:
+                lines = f.read().split("\n")[2:]
+            for line in lines:
+                l = line.split()
+                data["r"] += int(l[2])
+                data["w"] += int(l[10])
+                data["rb"] += int(l[1])
+                data["wb"] += int(l[9])
+            ns_done.append(ns)
+        except Exception as exc:
+            #print(o, exc, line, pid)
+            continue
+    return data
+
 def get_stats_created(o):
     data = {}
     cgp = get_cgroup_path(o, "cpu", create=False)
@@ -571,6 +601,7 @@ STATS = [
     ("mem", get_stats_mem),
     ("blk", get_stats_blk),
     ("tasks", get_stats_tasks),
+    ("net", get_stats_net),
     ("created", get_stats_created),
 ]
 
