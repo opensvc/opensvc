@@ -1290,7 +1290,7 @@ class ClientHandler(shared.OsvcThread):
         if not msg:
             return
         if not self.usr or not self.addr or self.addr[0] == "local":
-            origin = "requested by %s" % nodename
+            origin = "requested by %s" % nodename if nodename else "root via unix socket"
         else:
             origin = "requested by %s@%s" % (self.usr.name, self.addr[0])
         if lvl == "error":
