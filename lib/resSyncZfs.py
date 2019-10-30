@@ -75,9 +75,9 @@ class SyncZfs(resSync.Sync):
                 continue
             r.get_info()
             if action in ['sync_update', 'sync_resync', 'sync_drp', 'sync_nodes']:
-                if action == 'sync_nodes' and self.target != ['nodes']:
+                if action == 'sync_nodes' and r.target != ['nodes']:
                     return
-                if action == 'sync_drp' and self.target != ['drpnodes']:
+                if action == 'sync_drp' and r.target != ['drpnodes']:
                     return
                 nb = 0
                 tgts = r.targets.copy()
