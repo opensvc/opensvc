@@ -3300,7 +3300,8 @@ class ClientHandler(shared.OsvcThread):
         well_known_uri = shared.NODE.oget("listener", "openid_well_known")
         if well_known_uri:
             data["openid"] = {
-                "well_known_uri": well_known_uri
+                "well_known_uri": well_known_uri,
+                "client_id": self.cluster_name,
             }
         return 200, "application/json", data
 
