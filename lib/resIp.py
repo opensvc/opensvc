@@ -67,7 +67,7 @@ class Ip(Res.Resource):
         for node in self.svc.node.dnsnodes:
             self.log.info("wait address propagation to %s dns", node)
             try:
-                self.svc.node._wait(path=path, server=node, duration=timeout)
+                self.svc.node._wait(path=self.svc.path, server=node, duration=timeout)
             except KeyboardInterrupt:
                 raise ex.excError("dns resolution not ready after %s" % print_duration(self.wait_dns))
             except Exception:
