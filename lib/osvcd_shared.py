@@ -20,6 +20,7 @@ import six
 from six.moves import queue
 
 import rcExceptions as ex
+from jsonpath_ng.ext import parse
 from rcUtilities import lazy, unset_lazy, is_string, factory, split_path, normalize_paths, normalize_jsonpath
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -1706,4 +1707,25 @@ class OsvcThread(threading.Thread, Crypt):
         expanded = or_fragment_selector(selector)
         return expanded
 
+    def object_data(self, path):
+        """
+        Extract from the cluster data the structures refering to a
+        path.
+        """
+        try:
+            with AGG_LOCK:
+                data = AGG[path]
+            data["nodes"] = {}
+        except KeyError:
+            return
+        with CLUSTER_DATA_LOCK:
+            for node, ndata in CLUSTER_DATA.items():
+                try:
+                    data["nodes"][node] = {
+                        "status": ndata["services"]["status"][path],
+                        "config": ndata["services"]["config"][path],
+                    }
+                except KeyError:
+                    pass
+        return data
 

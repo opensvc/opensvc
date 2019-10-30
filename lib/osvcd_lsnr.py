@@ -3260,28 +3260,6 @@ class ClientHandler(shared.OsvcThread):
             raise HTTP(400, "A kind must be specified.")
         return obj.kwdict.KEYS.dump()
 
-    def object_data(self, path):
-        """
-        Extract from the cluster data the structures refering to a
-        path.
-        """
-        try:
-            with shared.AGG_LOCK:
-                data = shared.AGG[path]
-            data["nodes"] = {}
-        except KeyError:
-            return
-        with shared.CLUSTER_DATA_LOCK:
-            for node, ndata in shared.CLUSTER_DATA.items():
-                try:
-                    data["nodes"][node] = {
-                        "status": ndata["services"]["status"][path],
-                        "config": ndata["services"]["config"][path],
-                    }
-                except KeyError:
-                    pass
-        return data
-
     ##########################################################################
     #
     # App
