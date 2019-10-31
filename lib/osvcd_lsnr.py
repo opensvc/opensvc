@@ -500,35 +500,32 @@ class Listener(shared.OsvcThread):
                     pass
 
     def filter_event(self, event, thr):
-        if thr.usr is False:
-            return event
         if event is None:
             return
-        if "root" in thr.usr_grants:
+        if thr.selector in (None, "**") and (thr.usr is False or "root" in thr.usr_grants):
+            # root and no selector => fast path
             return event
-        if event.get("kind") == "patch":
-            return self.filter_patch_event(event, thr)
-        else:
-            return self.filter_event_event(event, thr)
-
-    def filter_event_event(self, event, thr):
         namespaces = thr.get_namespaces()
+        paths = self.object_selector(thr.selector if thr.selector is not None else "**", namespaces=namespaces)
+        if event.get("kind") == "patch":
+            return self.filter_patch_event(event, thr, paths, namespaces)
+        else:
+            return self.filter_event_event(event, thr, paths)
 
+    def filter_event_event(self, event, thr, paths):
         def valid(change):
             try:
                 path = event["data"]["path"]
             except KeyError:
                 return True
-            if thr.selector and path not in self.object_selector(thr.selector, namespaces=namespaces):
+            if thr.selector and path not in paths:
                 return False
             return False
         if valid(event):
             return event
         return None
 
-    def filter_patch_event(self, event, thr):
-        namespaces = thr.get_namespaces()
-
+    def filter_patch_event(self, event, thr, paths, namespaces):
         def filter_change(change):
             try:
                 key, value = change
@@ -554,9 +551,9 @@ class Listener(shared.OsvcThread):
                     if key_len == 2:
                         if value is None:
                             return change
-                        value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                        value = dict((k, v) for k, v in value.items() if k in paths)
                         return [key, value]
-                    if split_path(key[2])[1] in namespaces:
+                    if key[2] in paths:
                         return change
                     else:
                         return
@@ -581,9 +578,9 @@ class Listener(shared.OsvcThread):
                             if key_len == 5:
                                 if value is None:
                                     return change
-                                value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                                value = dict((k, v) for k, v in value.items() if k in paths)
                                 return [key, value]
-                            if split_path(key[5])[1] in namespaces:
+                            if key[5] in paths:
                                 return change
                             else:
                                 return
@@ -591,9 +588,9 @@ class Listener(shared.OsvcThread):
                             if key_len == 5:
                                 if value is None:
                                     return change
-                                value = dict((k, v) for k, v in value.items() if split_path(k)[1] in namespaces)
+                                value = dict((k, v) for k, v in value.items() if k in paths)
                                 return [key, value]
-                            if split_path(key[5])[1] in namespaces:
+                            if key[5] in paths:
                                 return change
                             else:
                                 return
@@ -604,9 +601,9 @@ class Listener(shared.OsvcThread):
             filtered_change = filter_change(change)
             if filtered_change:
                 changes.append(filtered_change)
-            #    print("ACCEPT", thr.usr.name, filtered_change)
+            #    print("ACCEPT", thr.usr.name if thr.usr else "", filtered_change)
             #else:
-            #    print("DROP  ", thr.usr.name, change)
+            #    print("DROP  ", thr.usr.name if thr.usr else "", change)
         event["data"] = changes
         return event
 
