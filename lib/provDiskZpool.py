@@ -13,7 +13,7 @@ class Prov(provisioning.Prov):
 
     def unprovisioner(self):
         if not self.r.is_up():
-            ret = self.r.import_pool(verbose=False)
+            ret = self.r.import_pool(verbose=False, retries=1)
             if ret != 0:
                 self.r.log.info("already unprovisioned")
                 return

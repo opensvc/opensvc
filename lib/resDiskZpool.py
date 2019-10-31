@@ -95,7 +95,7 @@ class Disk(resDisk.Disk):
         out, err, ret = justcall(cmd)
         return cmd, ret, out, err
 
-    def import_pool(self, verbose=True):
+    def import_pool(self, verbose=True, retries=10):
         """
         Import the pool.
         1/ try using a dev list cache, which is fastest
@@ -105,7 +105,6 @@ class Disk(resDisk.Disk):
         pool available" error. Retry in this case, if we confirm the
         pool exists.
         """
-        retries = 10
         for i in range(retries):
             cmd, ret, out, err = self._import_pool()
             if "no such pool available" in err:
