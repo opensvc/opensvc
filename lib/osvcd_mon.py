@@ -3197,12 +3197,16 @@ class Monitor(shared.OsvcThread):
         now = time.time()
         data = shared.CLUSTER_DATA[rcEnv.nodename]
 
-        for key in ("updated", "gen"):
-            # exclude from the diff
-            try:
-                del data[key]
-            except KeyError:
-                pass
+        # exclude from the diff
+        try:
+            del data["gen"]
+        except KeyError:
+            pass
+        try:
+            updated = data["updated"]
+            del data["updated"]
+        except KeyError:
+            updated = now
 
         if self.last_node_data is not None:
             diff = json_delta.diff(
@@ -3218,7 +3222,7 @@ class Monitor(shared.OsvcThread):
 
         if len(diff) == 0:
             data["gen"] = self.get_gen(inc=False)
-            data["updated"] = now
+            data["updated"] = updated
             return
 
         self.last_node_data = json.loads(json.dumps(data))

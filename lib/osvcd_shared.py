@@ -592,11 +592,12 @@ class OsvcThread(threading.Thread, Crypt):
                         # orchestrator won't take an undue "stop_instance"
                         # decision.
                         reset_placement = True
-                SMON_DATA[path].status = status
-                SMON_DATA[path].status_updated = time.time()
+                    SMON_DATA[path].status = status
+                    SMON_DATA[path].status_updated = time.time()
                 if reset_placement:
                     SMON_DATA[path].placement = \
                         self.get_service_placement(path)
+                    SMON_DATA[path].status_updated = time.time()
 
             if local_expect:
                 if local_expect == "unset":
