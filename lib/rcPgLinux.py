@@ -518,6 +518,7 @@ def get_stats_blk(o):
     wb = 0
     rio = 0
     wio = 0
+    leaves = 0
 
     def get(path, filename):
         buff = get_sysfs(path+"/" + filename)
@@ -537,12 +538,15 @@ def get_stats_blk(o):
     for path, subdirs, _ in os.walk(cgp):
         if subdirs:
             continue
+        leaves += 1
         r, w = get(path, "blkio.throttle.io_serviced")
         rio += r
         wio += w
         r, w = get(path, "blkio.throttle.io_service_bytes")
         rb += r
         wb += w
+    if not leaves:
+        raise IndexError
     return {
         "r": rio,
         "w": wio,
@@ -563,6 +567,8 @@ def get_stats_tasks(o):
 
 def get_stats_net(o):
     _pids = pids(o)
+    if not _pids:
+        raise IndexError
     ns_done = []
     data = {
         "r": 0,
@@ -578,7 +584,7 @@ def get_stats_net(o):
                 continue
             fpath = "/proc/%s/net/dev" % pid
             with open(fpath, "r") as f:
-                lines = f.read().split("\n")[2:]
+                lines = f.read().split("\n")[2:-1]
             for line in lines:
                 l = line.split()
                 data["r"] += int(l[2])
@@ -587,7 +593,7 @@ def get_stats_net(o):
                 data["wb"] += int(l[9])
             ns_done.append(ns)
         except Exception as exc:
-            #print(o, exc, line, pid)
+            #print(fpath, exc, line, pid)
             continue
     return data
 
