@@ -1419,6 +1419,7 @@ class OsvcThread(threading.Thread, Crypt):
                     ("ip#0", "ipdev@"+node, ipdev),
                 ]
         svc = factory("svc")("vip", namespace="system", node=NODE)
+        existed = svc.exists()
         kws = []
         changes = []
         current = svc.print_config_data()
@@ -1443,6 +1444,8 @@ class OsvcThread(threading.Thread, Crypt):
             for k in extraneous:
                 self.log.info("unset %s: %s (undue)", svc.path, k)
             svc.unset_multi(extraneous)
+        if not existed:
+            self.set_smon(svc.path, global_expect="provisioned")
         return svc
 
     def get_node(self):
