@@ -506,26 +506,25 @@ class Listener(shared.OsvcThread):
             # root and no selector => fast path
             return event
         namespaces = thr.get_namespaces()
-        paths = self.object_selector(thr.selector if thr.selector is not None else "**", namespaces=namespaces)
         if event.get("kind") == "patch":
-            return self.filter_patch_event(event, thr, paths, namespaces)
+            return self.filter_patch_event(event, thr, namespaces)
         else:
-            return self.filter_event_event(event, thr, paths)
+            return self.filter_event_event(event, thr, namespaces)
 
-    def filter_event_event(self, event, thr, paths):
+    def filter_event_event(self, event, thr, namespaces):
         def valid(change):
             try:
                 path = event["data"]["path"]
             except KeyError:
                 return True
-            if thr.selector and path not in paths:
+            if thr.selector and not self.match_object_selector(thr.selector, namespaces=namespaces, path=path):
                 return False
             return False
         if valid(event):
             return event
         return None
 
-    def filter_patch_event(self, event, thr, paths, namespaces):
+    def filter_patch_event(self, event, thr, namespaces):
         def filter_change(change):
             try:
                 key, value = change
@@ -551,9 +550,9 @@ class Listener(shared.OsvcThread):
                     if key_len == 2:
                         if value is None:
                             return change
-                        value = dict((k, v) for k, v in value.items() if k in paths)
+                        value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                         return [key, value]
-                    if key[2] in paths:
+                    if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[2]):
                         return change
                     else:
                         return
@@ -578,9 +577,9 @@ class Listener(shared.OsvcThread):
                             if key_len == 5:
                                 if value is None:
                                     return change
-                                value = dict((k, v) for k, v in value.items() if k in paths)
+                                value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                                 return [key, value]
-                            if key[5] in paths:
+                            if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[5]):
                                 return change
                             else:
                                 return
@@ -588,9 +587,9 @@ class Listener(shared.OsvcThread):
                             if key_len == 5:
                                 if value is None:
                                     return change
-                                value = dict((k, v) for k, v in value.items() if k in paths)
+                                value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                                 return [key, value]
-                            if key[5] in paths:
+                            if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[5]):
                                 return change
                             else:
                                 return

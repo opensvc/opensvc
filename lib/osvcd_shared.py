@@ -1515,7 +1515,12 @@ class OsvcThread(threading.Thread, Crypt):
                 del data["monitor"]["services"][path]
         return data
 
-    def object_selector(self, selector=None, namespace=None, namespaces=None):
+    def match_object_selector(self, selector=None, namespace=None, namespaces=None, path=None):
+        if selector is None:
+            selector = "**"
+        return path in self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces, paths=[path])
+
+    def object_selector(self, selector=None, namespace=None, namespaces=None, paths=None):
         if not selector:
             return []
         if namespace:
@@ -1525,8 +1530,9 @@ class OsvcThread(threading.Thread, Crypt):
         if "root" in namespaces:
             namespaces.add(None)
 
-        # all objects
-        paths = [p for p in AGG if split_path(p)[1] in namespaces]
+        if paths is None:
+            # all objects
+            paths = [p for p in AGG if split_path(p)[1] in namespaces]
         if selector == "**":
             return paths
 
