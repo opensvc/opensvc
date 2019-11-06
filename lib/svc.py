@@ -566,7 +566,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
         except (AttributeError, ValueError):
-            self.ordered_nodes = []
+            self.ordered_drpnodes = []
         try:
             self.drpnode = self.oget("DEFAULT", "drpnode")
         except (AttributeError, ValueError):
