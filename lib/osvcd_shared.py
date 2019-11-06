@@ -460,6 +460,7 @@ class OsvcThread(threading.Thread, Crypt):
         unset_lazy(self, "vip")
         unset_lazy(NODE, "arbitrators")
         unset_lazy(self, "cluster_name")
+        unset_lazy(self, "cluster_names")
         unset_lazy(self, "cluster_key")
         unset_lazy(self, "cluster_id")
         unset_lazy(self, "cluster_nodes")

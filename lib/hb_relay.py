@@ -155,7 +155,9 @@ class HbRelayRx(HbRelay):
                 continue
             try:
                 updated, slot_data = self.receive(nodename)
-                _nodename, _data = self.decrypt(slot_data, sender_id=self.relay)
+                _clustername, _nodename, _data = self.decrypt(slot_data, sender_id=self.relay)
+                if _clustername != self.cluster_name:
+                    continue
                 if _nodename is None:
                     # invalid crypt
                     #self.log.warning("can't decrypt data in node %s slot",

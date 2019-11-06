@@ -1980,8 +1980,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "options": options,
             }
         }
+        display_node = node if node else server
         if action_mode:
-            self.log.info("request action '%s' on node %s", action, node)
+            self.log.info("request action '%s' on node %s", action, display_node)
         try:
             data = self.daemon_get(
                 req,
@@ -1991,8 +1992,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 node=node,
             )
         except Exception as exc:
-            self.log.error("request service action '%s' on node %s failed: %s",
-                           action, node, exc)
+            self.log.error("request action '%s' on node %s failed: %s",
+                           action, display_node, exc)
             return 1
         status, error, info = self.parse_result(data)
         if error:
@@ -2012,6 +2013,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             data = data["data"]
             return data["ret"], data.get("out", ""), data.get("err", "")
         else:
+            if data is None:
+                return 1
             if "nodes" in data:
                 if self.options.format in ("json", "flat_json"):
                     if len(data["nodes"]) == 1:

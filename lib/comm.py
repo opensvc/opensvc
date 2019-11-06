@@ -270,6 +270,14 @@ class Crypt(object):
         return name
 
     @lazy
+    def cluster_names(self):
+        node = self.get_node()
+        names = set([self.cluster_name])
+        for nodename in self.cluster_drpnodes:
+            names.add(node.oget("cluster", "name", impersonate=nodename))
+        return names
+
+    @lazy
     def cluster_key(self):
         """
         Return the key read from cluster.secret in the node configuration.
@@ -330,11 +338,9 @@ class Crypt(object):
         Validate the message meta, decrypt and return the data.
         """
         if cluster_name is None:
-            cluster_name = self.cluster_name
-        if secret is None:
-            cluster_key = self.cluster_key
+            cluster_names = self.cluster_names
         else:
-            cluster_key = secret
+            cluster_names = [cluster_name]
         message = bdecode(message).rstrip("\0\x00")
         try:
             message = json.loads(message)
@@ -346,36 +352,44 @@ class Crypt(object):
             elif message_len > 0:
                 self.log.error("misformatted encrypted message from %s",
                                sender_id)
-            return None, None
+            return None, None, None
+        msg_clustername = message.get("clustername")
+        msg_nodename = message.get("nodename")
+        if secret is None:
+            if msg_nodename in self.cluster_drpnodes:
+                cluster_key = self.get_secret(Storage(server=msg_nodename), None)
+            else:
+                cluster_key = self.cluster_key
+        else:
+            cluster_key = secret
         if cluster_name != "join" and \
-           message.get("clustername") not in (cluster_name, "join"):
+           msg_clustername not in set(["join"]) | self.cluster_names:
             self.log.warning("discard message from cluster %s, sender %s",
-                             message.get("clustername"), sender_id)
-            return None, None
+                             msg_clustername, sender_id)
+            return None, None, None
         if cluster_key is None:
-            return None, None
-        nodename = message.get("nodename")
-        if nodename is None:
-            return None, None
+            return None, None, None
+        if msg_nodename is None:
+            return None, None, None
         iv = message.get("iv")
         if iv is None:
-            return None, None
+            return None, None, None
         if self.blacklisted(sender_id):
-            return None, None
+            return None, None, None
         iv = base64.urlsafe_b64decode(to_bytes(iv))
         data = base64.urlsafe_b64decode(to_bytes(message["data"]))
         try:
             data = bdecode(self._decrypt(data, cluster_key, iv))
         except Exception as exc:
-            self.log.error("decrypt message from %s: %s", nodename, str(exc))
+            self.log.error("decrypt message from %s: %s", msg_nodename, str(exc))
             self.blacklist(sender_id)
-            return None, None
+            return None, None, None
         if sender_id:
             self.blacklist_clear(sender_id)
         try:
-            return nodename, json.loads(data)
+            return msg_clustername, msg_nodename, json.loads(data)
         except ValueError as exc:
-            return nodename, data
+            return msg_clustername, msg_nodename, data
 
     def encrypt(self, data, cluster_name=None, secret=None, encode=True):
         """
@@ -532,7 +546,7 @@ class Crypt(object):
             return
         for message in data.split(sep):
             if encrypted:
-                nodename, message = self.decrypt(
+                _, _, message = self.decrypt(
                     data, cluster_name=cluster_name, secret=secret
                 )
             else:
@@ -701,6 +715,19 @@ class Crypt(object):
         else:
             return self.h2_daemon_get(*args, sp=sp, **kwargs)
 
+    def get_cluster_name(self, sp, cluster_name):
+        if want_context():
+            return
+        if sp.context and not sp.context.get("clustername"):
+            return
+        elif cluster_name:
+            return cluster_name
+        elif sp.server in self.cluster_drpnodes:
+            node = self.get_node()
+            return node.oget("cluster", "name", impersonate=sp.server)
+        else:
+            return self.cluster_name
+
     def get_secret(self, sp, secret):
         if want_context():
             return
@@ -708,6 +735,9 @@ class Crypt(object):
             return
         elif secret:
             return bdecode(secret)
+        elif sp.server in self.cluster_drpnodes:
+            node = self.get_node()
+            return bdecode(self.prepare_key(node.oget("cluster", "secret", impersonate=sp.server)))
         else:
             return bdecode(self.cluster_key)
 
@@ -750,6 +780,8 @@ class Crypt(object):
             while True:
                 try:
                     sp = self.socket_parms(server)
+                    secret = self.get_secret(sp, secret)
+                    cluster_name = self.get_cluster_name(sp, cluster_name)
                     sock = socket.socket(sp.af, socket.SOCK_STREAM)
                     sock.settimeout(SOCK_TMO)
                     sock.connect(sp.to)
@@ -982,7 +1014,7 @@ class Crypt(object):
             return _buff
 
         if data is None:
-            return 1, "no data", ""
+            return 1, "no data in response", ""
         if not isinstance(data, dict):
             return 1, "unstructured data", ""
         status = data.get("status", 0)

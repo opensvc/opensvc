@@ -2636,7 +2636,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if os.path.exists(fpath):
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
-            nodename, data = self.decrypt(buff)
+            clustername, nodename, data = self.decrypt(buff)
             if data is None:
                 raise ex.excError("no data")
             data = data["data"]
@@ -4827,6 +4827,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
             # the node.conf might have changed (join, set, ...)
             self.unset_lazy("cluster_name")
+            self.unset_lazy("cluster_names")
             self.unset_lazy("cluster_key")
 
     def daemon_backlogs(self, server=None, node=None, backlog=None, debug=False):

@@ -323,7 +323,10 @@ class HbMcastRx(HbMcast):
         self.fragments[addr] = {}
 
     def handle_client(self, message, addr):
-        nodename, data = self.decrypt(message, sender_id=addr[0])
+        clustername, nodename, data = self.decrypt(message, sender_id=addr[0])
+        if clustername != self.cluster_name:
+            # surely from drp node
+            return
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return

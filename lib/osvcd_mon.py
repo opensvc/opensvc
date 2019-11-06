@@ -2781,7 +2781,7 @@ class Monitor(shared.OsvcThread):
                 except OSError:
                     pass
             with shared.SERVICES_LOCK:
-                scope = sorted(list(shared.SERVICES[path].nodes | shared.SERVICES[path].drpnodes))
+                scope = sorted(list(shared.SERVICES[path].nodes))
             config[path] = {
                 "updated": config_mtime,
                 "csum": csum,

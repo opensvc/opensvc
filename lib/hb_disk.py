@@ -320,7 +320,9 @@ class HbDiskRx(HbDisk):
                 continue
             try:
                 slot_data = json.loads(self.read_slot(data["slot"], fo=fo))
-                _nodename, _data = self.decrypt(slot_data["msg"])
+                _clustername, _nodename, _data = self.decrypt(slot_data["msg"])
+                if _clustername != self.cluster_name:
+                    continue
                 if _nodename is None:
                     # invalid crypt
                     #self.log.warning("can't decrypt data in node %s slot",

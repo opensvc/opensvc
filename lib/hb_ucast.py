@@ -235,7 +235,9 @@ class HbUcastRx(HbUcast):
         self.push_stats(len(data))
         del chunks
 
-        nodename, data = self.decrypt(data, sender_id=addr[0])
+        clustername, nodename, data = self.decrypt(data, sender_id=addr[0])
+        if clustername != self.cluster_name:
+            return
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return

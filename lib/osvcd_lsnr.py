@@ -1236,13 +1236,22 @@ class ClientHandler(shared.OsvcThread):
             return
 
         if self.encrypted:
-            nodename, data = self.decrypt(data, sender_id=self.addr[0])
+            clustername, nodename, data = self.decrypt(data, sender_id=self.addr[0])
+            if nodename in self.cluster_drpnodes:
+                result = {"status": 401, "error": "drp node %s is not allowed to request" % nodename}
+                self.raw_send_result(result)
+                return
+            if shared.NODE.oget("cluster", "name", impersonate=nodename) != clustername:
+                result = {"status": 401, "error": "node %s is not a cluster %s node" % (nodename, clustername)}
+                self.raw_send_result(result)
+                return
         else:
             try:
                 data = self.msg_decode(data)
             except ValueError:
                 pass
             nodename = rcEnv.nodename
+
         #self.log.info("received %s from %s", str(data), nodename)
         self.parent.stats.sessions.auth_validated += 1
         self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
@@ -1258,26 +1267,30 @@ class ClientHandler(shared.OsvcThread):
             result = {"status": exc.status, "error": exc.msg}
         except Exception as exc:
             result = {"status": 500, "error": str(exc), "traceback": traceback.format_exc()}
-        if result:
-            self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
-            self.conn.setblocking(1)
-            if self.encrypted:
-                message = self.encrypt(result)
-            else:
-                message = self.msg_encode(result)
-            for chunk in chunker(message, 64*1024):
-                try:
-                    self.conn.sendall(chunk)
-                except socket.error as exc:
-                    if exc.errno == 32:
-                        # broken pipe
-                        self.log.info(exc)
-                    else:
-                        self.log.warning(exc)
-                    break
-            message_len = len(message)
-            self.parent.stats.sessions.tx += message_len
-            self.parent.stats.sessions.clients[self.addr[0]].tx += message_len
+        self.raw_send_result(result)
+
+    def raw_send_result(self, result):
+        if result is None:
+            return
+        self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
+        self.conn.setblocking(1)
+        if self.encrypted:
+            message = self.encrypt(result)
+        else:
+            message = self.msg_encode(result)
+        for chunk in chunker(message, 64*1024):
+            try:
+                self.conn.sendall(chunk)
+            except socket.error as exc:
+                if exc.errno == 32:
+                    # broken pipe
+                    self.log.info(exc)
+                else:
+                    self.log.warning(exc)
+                break
+        message_len = len(message)
+        self.parent.stats.sessions.tx += message_len
+        self.parent.stats.sessions.clients[self.addr[0]].tx += message_len
 
     def log_request(self, msg, nodename, lvl="info", **kwargs):
         """
