@@ -3540,7 +3540,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt
             signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(convert_duration(duration))
+            signal.alarm(duration)
 
         last_patch_id = 0
         for patch in self.daemon_events(server):
