@@ -3565,6 +3565,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             elif kind == "event":
                 if match_event(patch):
                     break
+        if duration:
+            signal.alarm(0)
 
     def events(self, server=None):
         try:
