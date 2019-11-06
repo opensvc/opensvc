@@ -1241,7 +1241,7 @@ class ClientHandler(shared.OsvcThread):
                 result = {"status": 401, "error": "drp node %s is not allowed to request" % nodename}
                 self.raw_send_result(result)
                 return
-            if shared.NODE.oget("cluster", "name", impersonate=nodename) != clustername:
+            if clustername != "join" and shared.NODE.oget("cluster", "name", impersonate=nodename) != clustername:
                 result = {"status": 401, "error": "node %s is not a cluster %s node" % (nodename, clustername)}
                 self.raw_send_result(result)
                 return
