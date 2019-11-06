@@ -3515,11 +3515,21 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 return True
             return False
 
-        try:
-            cluster_data = self._daemon_status()
-            cluster_data["monitor"]
-        except KeyError:
-            raise ex.excError("could not fetch cluster data")
+        if duration is not None:
+            duration = convert_duration(duration)
+
+        while True:
+            try:
+                cluster_data = self._daemon_status()
+                cluster_data["monitor"]
+                break
+            except KeyError:
+                if duration is None or duration < 0:
+                    raise ex.excError("could not fetch cluster data")
+                duration -= 1
+                if duration < 0:
+                    raise ex.excError("could not fetch cluster data")
+                time.sleep(1)
 
         if neg ^ eval_cond(val, cluster_data):
             return
