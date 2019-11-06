@@ -920,7 +920,17 @@ class ExtConfigMixin(object):
         candidates = [
             (o+"@"+nodename, True),
         ]
-        if hasattr(self, "path"):
+        if not hasattr(self, "path"):
+            if o != "nodes":
+                candidates.append((o+"@nodes", nodename in self.cluster_nodes))
+            if o != "drpnodes":
+                candidates.append((o+"@drpnodes", nodename in self.cluster_drpnodes))
+        elif self.path == "cluster":
+            if o != "nodes":
+                candidates.append((o+"@nodes", nodename in self.node.cluster_nodes))
+            if o != "drpnodes":
+                candidates.append((o+"@drpnodes", nodename in self.node.cluster_drpnodes))
+        else:
             if o != "nodes":
                 candidates.append((o+"@nodes", nodename in self.nodes))
             if o != "drpnodes":
@@ -931,11 +941,6 @@ class ExtConfigMixin(object):
                 candidates.append((o+"@flex_primary", nodename == self.flex_primary))
             if o != "drp_flex_primary":
                 candidates.append((o+"@drp_flex_primary", nodename == self.drp_flex_primary))
-        else:
-            if o != "nodes":
-                candidates.append((o+"@nodes", nodename in self.cluster_nodes))
-            if o != "drpnodes":
-                candidates.append((o+"@drpnodes", nodename in self.cluster_drpnodes))
         candidates += [
             (o, True),
         ]
