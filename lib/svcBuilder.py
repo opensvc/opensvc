@@ -1104,6 +1104,7 @@ def add_mandatory_syncs(svc):
         kwargs["options"] += svc.conf_get(kwargs["rid"], "options")
     except ex.OptNotFound:
         pass
+    kwargs["reset_options"] = svc.oget(kwargs["rid"], "reset_options")
     kwargs["target"] = list(target)
     kwargs["internal"] = True
     kwargs["disabled"] = get_disabled(svc, kwargs["rid"])
@@ -1474,6 +1475,7 @@ def add_sync_rsync(svc, s):
 
     kwargs["dst"] = svc.oget(s, "dst")
     kwargs["options"] = svc.oget(s, "options")
+    kwargs["reset_options"] = svc.oget(s, "reset_options")
     kwargs["dstfs"] = svc.oget(s, "dstfs")
     kwargs["snap"] = svc.oget(s, "snap")
     kwargs["bwlimit"] = svc.oget(s, "bwlimit")

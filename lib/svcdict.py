@@ -1533,6 +1533,15 @@ KEYWORDS = [
     },
     {
         "section": "sync",
+        "keyword": "reset_options",
+        "convert": "boolean",
+        "default": False,
+        "at": True,
+        "rtype": "rsync",
+        "text": "Use options as-is instead of appending options to default hardcoded options. Can be used to disable --xattr or --acls for example."
+    },
+    {
+        "section": "sync",
         "keyword": "target",
         "convert": "list",
         "rtype": "rsync",

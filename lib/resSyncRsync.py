@@ -3,7 +3,7 @@ import logging
 import glob
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, cache, bdecode
+from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
 from converters import convert_speed, convert_size
 import rcExceptions as ex
 import rcStatus
@@ -414,13 +414,16 @@ class Rsync(resSync.Sync):
 
     @lazy
     def full_options(self):
-        baseopts = '-HAXpogDtrlvx'
+        if self.reset_options:
+            options = self.options
+        else:
+            options = ["-HAXpogDtrlvx", "--stats", "--delete", "--force"] + self.options
         out = self.rsync_version()
         if 'no xattrs' in out:
-            baseopts = baseopts.replace('X', '')
+            options = drop_option("-X", options)
         if 'no ACLs' in out:
-            baseopts = baseopts.replace('A', '')
-        options = [baseopts, '--stats', '--delete', '--force', '--timeout='+str(self.timeout)] + self.options
+            options = drop_option("-A", options)
+        options += ["--timeout=%s" % self.timeout]
         return options
 
     def __init__(self,
@@ -433,6 +436,7 @@ class Rsync(resSync.Sync):
                  snap=False,
                  bwlimit=None,
                  internal=False,
+                 reset_options=False,
                  **kwargs):
         resSync.Sync.__init__(self,
                               rid=rid,
@@ -459,6 +463,7 @@ class Rsync(resSync.Sync):
         self.internal = internal
         self.timeout = 3600
         self.options = options
+        self.reset_options = reset_options
 
     def add_resource_files_to_sync(self):
         if self.rid != "sync#i0":
@@ -477,6 +482,7 @@ class Rsync(resSync.Sync):
           ["timeout", str(self.timeout)],
           ["target", " ".join(sorted(self.target))],
           ["options", " ".join(self.options)],
+          ["reset_options", str(self.reset_options)],
         ]
         data += self.stats_keys()
         return data
