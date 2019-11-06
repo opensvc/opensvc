@@ -1723,19 +1723,17 @@ class OsvcThread(threading.Thread, Crypt):
         path.
         """
         try:
-            with AGG_LOCK:
-                data = AGG[path]
+            data = AGG[path]
             data["nodes"] = {}
         except KeyError:
             return
-        with CLUSTER_DATA_LOCK:
-            for node, ndata in CLUSTER_DATA.items():
-                try:
-                    data["nodes"][node] = {
-                        "status": ndata["services"]["status"][path],
-                        "config": ndata["services"]["config"][path],
-                    }
-                except KeyError:
-                    pass
+        for node in self.cluster_nodes:
+            try:
+                data["nodes"][node] = {
+                    "status": CLUSTER_DATA[node]["services"]["status"][path],
+                    "config": CLUSTER_DATA[node]["services"]["config"][path],
+                }
+            except KeyError:
+                pass
         return data
 
