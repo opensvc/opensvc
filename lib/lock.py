@@ -123,7 +123,7 @@ def lock_nowait(lockfile=None, intent=None):
         if not isinstance(prev_data, dict) or "pid" not in prev_data or "intent" not in prev_data:
             prev_data = {"pid": 0, "intent": ""}
     except Exception as exc:
-        if hasattr(exc, "errno") and exc.errno == 21:
+        if hasattr(exc, "errno") and getattr(exc, "errno") == 21:
             raise LockCreateError("lockfile points to a directory")
         prev_data = {"pid": 0, "intent": ""}
 
@@ -140,7 +140,7 @@ def lock_nowait(lockfile=None, intent=None):
             flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
-        if hasattr(exc, "errno") and exc.errno == 2:
+        if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
             os.makedirs(lockd)
             try:
                 lockfd = os.open(lockfile, flags, 0o644)
