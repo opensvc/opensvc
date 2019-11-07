@@ -1,8 +1,8 @@
 sudo: true
 language: python
 branches:
-    only:
-      - master
+  only:
+  - master
 matrix:
   include:
   - os: linux
@@ -10,10 +10,13 @@ matrix:
   - os: linux
     python: '3.6'
 install:
-  - pip install -r test-requirements.txt
+- pip install -r test-requirements.txt
 script:
-  - pylint -E lib/*py
-  - nosetests --with-coverage lib/tests/test_ci_*.py
+- pylint -E lib/*py
+- nosetests --with-coverage lib/tests/test_ci_*.py
 after_success:
-  - pip install codecov
-  - codecov
+- pip install codecov
+- codecov
+notifications:
+  slack:
+    secure: pMUKCIMIx8DPpEKfDRtJqv7S3/TCVNMRwKBOOcpbkGf6lRGlgnbBPgtUYAIL8Bi2vwY5Bj+I7B08VNYz21MJ6ZwhQ7LoeJJtxnuTuhigHlKeC6fl2Olmkk1yD/6tjOQL83uiOomY8XRmwws51X1gpUVIA4jz8nwMcr5qsE5NjdyOoUFs6C/Pza8Cz2PyL9TRIxToHm5eBldyntxgM2+fzFBGEizxLLH79+sHdvO6ApBr8zaIjtRYojpFzbrtfj5CV6flnjxTMkiKAhvSIBcIBeijKXzfeJTXRDylwX2i2UO9rUQDNjucKciFCG2s90KiiC0D1rlxkD5dii0yvCzzSwqZ8K5cRb65+T7PyOHh5sHSXIa6cOp+nsqgcJbdHCoAqc/6MDGrhkeRxT+teT0K8M35DYneCjZ5ZAxv1HBxL1HU8BWwhgqktOMNnqvU7wOoK/4Ir+Vv3mGzMSeM7hHG3ETT06vvHOXWniEImmfFOy85JenbH3As54pB6ysnOc4MJkZbCUhkb9irTH/ifwyDeYhiqfuv8IyDCdasbfKb9m5nuIt7bB1xNiFP48rKh2n7Ogr8uPrwCqTqxNFQAJ182E7Hr1wT3YkH2WxyCJyHE/qnkBTpS1dQqtQXRmpYQyD9/PGXr9EiNm/YlN8PjdJZ+uy1+7EfPg3sV4ZMbJqVopo=
