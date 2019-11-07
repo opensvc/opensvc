@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-09\-23
+.TH NODEMGR 1 2019\-11\-07
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -3707,8 +3707,11 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 Show pools status.
 
 .TP
-.B --pool=POOL
-The name of the storage pool.
+.B --name=NAME
+The name of the object.
+.TP
+.B --verbose
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'om node print schedule'.
 .TP
 .B --color=COLOR
 Colorize output. Possible values are:

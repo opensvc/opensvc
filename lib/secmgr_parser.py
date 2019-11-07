@@ -78,6 +78,12 @@ ACTIONS.update({
                 OPT.key,
             ],
         },
+        "remove": {
+            "msg": "Remove a secret key from the secret object.",
+            "options": mp.ACTION_OPTS + [
+                OPT.key,
+            ],
+        },
     },
 })
 
