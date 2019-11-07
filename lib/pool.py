@@ -68,6 +68,7 @@ class Pool(object):
         defaults = {
             "rtype": "DEFAULT",
             "pool": self.name,
+            "size": size,
             "access": access,
         }
         if access in ("rox", "rwx"):

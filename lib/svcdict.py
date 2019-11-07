@@ -258,6 +258,16 @@ KEYWORDS = [
         "text": "The name of the pool this volume was allocated from.",
     },
     {
+        "section": "DEFAULT",
+        "keyword": "size",
+        "inheritance": "head",
+        "depends": [("kind", "vol")],
+        "convert": "integer",
+        "at": True,
+        "required": False,
+        "text": "The size of the volume allocated from its pool.",
+    },
+    {
         "section": "subset",
         "keyword": "parallel",
         "at": True,

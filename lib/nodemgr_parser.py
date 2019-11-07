@@ -543,7 +543,8 @@ ACTIONS = {
         "pool_status": {
             "msg": "Show pools status.",
             "options": [
-                OPT.pool,
+                OPT.name,
+                OPT.verbose,
             ],
         },
         "pool_create_volume": {

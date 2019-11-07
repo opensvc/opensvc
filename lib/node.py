@@ -4902,6 +4902,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     @formatter
     def pool_status(self):
         data = self.pool_status_data()
+        if self.options.name:
+            try:
+                data = {self.options.name: data[self.options.name]}
+            except KeyError:
+                data = {}
         if self.options.format in ("json", "flat_json"):
             return data
         from forest import Forest
@@ -4931,23 +4936,48 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 else:
                     val = print_size(_data[key], unit="k", compact=True)
                 leaf.add_column(val)
+            if not self.options.verbose:
+                continue
+            vols_node = leaf.add_node()
+            vols_node.add_column("volume", color.BOLD)
+            vols_node.add_column("size", color.BOLD)
+            vols_node.add_column("children", color.BOLD)
+            vols_node.add_column("orphan", color.BOLD)
+            for vol in sorted(_data.get("volumes", []), key=lambda x: x["path"]):
+                vol_node = vols_node.add_node()
+                vol_node.add_column(vol["path"])
+                vol_node.add_column(print_size(vol["size"], unit="b", compact=True))
+                vol_node.add_column(",".join(vol["children"]))
+                vol_node.add_column(str(vol["orphan"]).lower())
+
         print(tree)
 
     def pools_volumes(self):
         try:
-            data = self._daemon_status(silent=True)["monitor"]["nodes"]
+            data = self._daemon_status(silent=True)["monitor"]
         except Exception as exc:
             return {}
         pools = {}
-        for nodename, ndata in data.items():
+        done = []
+        for nodename, ndata in data["nodes"].items():
             if not isinstance(ndata, dict):
                 continue
             for path, sdata in ndata.get("services", {}).get("status", {}).items():
+                if path in done:
+                    continue
+                done.append(path)
                 poolname = sdata.get("pool")
+                children = sdata.get("children", [])
+                vdata = {
+                    "path": path,
+                    "size": sdata.get("size", 0),
+                    "children": children,
+                    "orphan": not children or not any(child in data["services"] for child in children),
+                }
                 try:
-                    pools[poolname].add(path)
+                    pools[poolname].append(vdata)
                 except Exception:
-                    pools[poolname] = set([path])
+                    pools[poolname] = [vdata]
         return pools
 
     def pool_status_data(self):
@@ -4964,7 +4994,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "head": "err: " + str(exc),
                 }
             if name in volumes:
-                data[name]["volumes"] = sorted(list(volumes[name]))
+                data[name]["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
             else:
                 data[name]["volumes"] = []
         return data

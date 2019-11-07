@@ -2737,6 +2737,10 @@ class Svc(BaseSvc):
         return self.oget("DEFAULT", "pool")
 
     @lazy
+    def size(self):
+        return self.oget("DEFAULT", "size")
+
+    @lazy
     def orchestrate(self):
         if self.encap:
             return "no"
@@ -3540,6 +3544,8 @@ class Svc(BaseSvc):
             data["drp"] = True
         if self.pool:
             data["pool"] = self.pool
+        if self.size:
+            data["size"] = self.size
 
         for sid, subset in self.resourcesets_by_id.items():
             if not subset.parallel:
@@ -5559,7 +5565,7 @@ class Svc(BaseSvc):
             else:
                 return buff, None
         vol = self.get_volume(volname)
-        if vol.mount_point is None:
+        if mode == "file" and vol.mount_point is None:
             if errors == "ignore":
                 return buff, None
             raise ex.excError("referenced volume %s has no "
