@@ -50,7 +50,7 @@ class Dns(shared.OsvcThread):
             self.sock.listen(1)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("bind %s error: %s", rcEnv.paths.dnsuxsock, exc)
+            self.alert("error", "bind %s error: %s", rcEnv.paths.dnsuxsock, exc)
             return
 
         self.log.info("listening on %s", rcEnv.paths.dnsuxsock)

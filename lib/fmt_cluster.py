@@ -417,6 +417,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             state = colorize(state, color.GREEN)
         else:
             state = colorize(state, color.RED)
+        if _data.get("alerts"):
+            state += colorize("!", color.BROWN)
         cf = _data.get("config", {})
         addr = cf.get("addr", "")
         port = cf.get("port", "")

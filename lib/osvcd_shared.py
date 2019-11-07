@@ -249,6 +249,7 @@ class OsvcThread(threading.Thread, Crypt):
     def __init__(self):
         super(OsvcThread, self).__init__()
         self.log = None
+        self.alerts = []
         self._stop_event = threading.Event()
         self._node_conf_event = threading.Event()
         self.created = time.time()
@@ -269,6 +270,19 @@ class OsvcThread(threading.Thread, Crypt):
             "load avg": "placement_ranks_load_avg",
             "none": "placement_ranks_none",
         }
+
+    def alert(self, lvl, fmt, *args):
+        if lvl == "info":
+            fn = self.log.info
+        elif lvl == "warning":
+            fn = self.log.warning
+        elif lvl == "error":
+            fn = self.log.error
+        fn(fmt, *args)
+        self.alerts.append({
+            "severity": lvl,
+            "message": fmt % args,
+        })
 
     def notify_config_change(self):
         """
@@ -313,6 +327,8 @@ class OsvcThread(threading.Thread, Crypt):
             "state": state,
             "created": self.created,
         }
+        if self.alerts:
+            data["alerts"] = self.alerts
         if self.tid:
             data["tid"] = self.tid
         return data
@@ -378,6 +394,8 @@ class OsvcThread(threading.Thread, Crypt):
         Send a kill() to all procs in the queue and wait for their
         completion.
         """
+        if six.PY2:
+            ProcessLookupError = OSError
         for data in self.procs:
             try:
                 data.proc.kill()
@@ -469,6 +487,7 @@ class OsvcThread(threading.Thread, Crypt):
         unset_lazy(self, "rejoin_grace_period")
         unset_lazy(self, "ready_period")
         self.arbitrators_data = None
+        self.alerts = []
         if not hasattr(self, "reconfigure"):
             return
         try:
@@ -1260,7 +1279,7 @@ class OsvcThread(threading.Thread, Crypt):
                 json.dump(new_data, ofile)
             shutil.move(fpath, rcEnv.paths.nodes_info)
         except Exception as exc:
-            self.log.warning("failed to refresh %s: %s", rcEnv.paths.nodes_info, exc)
+            self.alert("warning", "failed to refresh %s: %s", rcEnv.paths.nodes_info, exc)
         self.log.info("%s updated", rcEnv.paths.nodes_info)
 
     def on_nodes_info_change(self):

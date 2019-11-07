@@ -74,7 +74,7 @@ class HbMcast(Hb):
             self.src_addr = self.get_ip_address(self.intf)
             self.mreq = group + socket.inet_aton(self.src_addr)
         except Exception as exc:
-            self.log.warning("fallback to any intf: %s", exc)
+            self.alert("warning", "fallback to any intf: %s", exc)
             self.intf = "any"
             self.src_addr = "0.0.0.0"
             self.mreq = struct.pack("4sl", group, socket.INADDR_ANY)

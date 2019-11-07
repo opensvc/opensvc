@@ -142,6 +142,8 @@ class Hb(shared.OsvcThread):
     def get_ip_address(ifname):
         ifconfig = rcifconfig.ifconfig()
         intf = ifconfig.interface(ifname)
+        if intf is None:
+            raise AttributeError("interface %s not found" % ifname)
         if isinstance(intf.ipaddr, list):
             addr = intf.ipaddr[0]
         else:

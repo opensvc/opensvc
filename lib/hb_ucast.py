@@ -155,9 +155,7 @@ class HbUcastRx(HbUcast):
             return
         self.config_change = False
         if self.sock:
-            self.log.debug("close socket")
             self.sock.close()
-        self.log.debug("bind socket")
         for _ in range(3):
             try:
                 self.configure_listener()

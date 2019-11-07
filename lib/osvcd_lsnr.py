@@ -643,7 +643,7 @@ class Listener(shared.OsvcThread):
             self.tls_sock.listen(128)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("bind %s:%d error: %s", self.tls_addr, self.tls_port, exc)
+            self.alert("error", "bind tls listener %s:%d error: %s", self.tls_addr, self.tls_port, exc)
             return
         except ex.excInitError as exc:
             self.log.info("skip tls listener init: %s", exc)
@@ -667,7 +667,7 @@ class Listener(shared.OsvcThread):
             self.sock.listen(128)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("bind %s:%d error: %s", self.addr, self.port, exc)
+            self.alert("error", "bind aes listener %s:%d error: %s", self.addr, self.port, exc)
             return
         self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
         self.sockmap[self.sock.fileno()] = self.sock
@@ -690,7 +690,7 @@ class Listener(shared.OsvcThread):
             self.sockuxh2.listen(1)
             self.sockuxh2.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxh2sock, exc)
+            self.alert("error", "bind http/2 listener %s error: %s", rcEnv.paths.lsnruxh2sock, exc)
             return
         self.log.info("listening on %s using http/2", rcEnv.paths.lsnruxh2sock)
         self.sockmap[self.sockuxh2.fileno()] = self.sockuxh2
@@ -713,7 +713,7 @@ class Listener(shared.OsvcThread):
             self.sockux.listen(1)
             self.sockux.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.log.error("bind %s error: %s", rcEnv.paths.lsnruxsock, exc)
+            self.alert("error", "bind raw listener %s error: %s", rcEnv.paths.lsnruxsock, exc)
             return
         self.log.info("listening on %s", rcEnv.paths.lsnruxsock)
         self.sockmap[self.sockux.fileno()] = self.sockux
