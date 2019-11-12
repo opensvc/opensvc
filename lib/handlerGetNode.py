@@ -1,0 +1,21 @@
+import handler
+import osvcd_shared as shared
+
+class Handler(handler.Handler):
+    """
+    Return the node information.
+    """
+    routes = (
+        ("GET", "node"),
+        (None, "get_node"),
+    )
+    prototype = []
+    access = {
+        "roles": "guest",
+        "namespaces": "ANY",
+    }
+
+    def action(self, nodename, thr=None, **kwargs):
+        data = shared.NODE.asset.get_asset_dict()
+        return data
+

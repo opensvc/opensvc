@@ -8,13 +8,13 @@ import sys
 import socket
 import logging
 import threading
-import codecs
 import time
 import select
 import shutil
 import traceback
 import uuid
 import fnmatch
+from six.moves.urllib.parse import urlparse, parse_qs
 from subprocess import Popen, PIPE
 
 try:
@@ -36,6 +36,7 @@ except Exception:
 import six
 import osvcd_shared as shared
 import rcExceptions as ex
+from rcExceptions import HTTP
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -48,10 +49,6 @@ from converters import convert_size, print_duration
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 
-RELAY_DATA = {}
-RELAY_LOCK = threading.RLock()
-RELAY_SLOT_MAX_AGE = 24 * 60 * 60
-RELAY_JANITOR_INTERVAL = 10 * 60
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
@@ -66,63 +63,13 @@ ROUTED_ACTIONS = {
         "backlogs": "node_backlogs",
     },
     "object": {
-        "logs": "service_logs",
-        "backlogs": "service_backlogs",
+        "logs": "object_logs",
+        "backlogs": "object_backlogs",
     },
 }
 
-GUEST_ACTIONS = (
-    "eval",
-    "get",
-    "keys",
-    "print_config_mtime",
-)
-OPERATOR_ACTIONS = (
-    "clear",
-    "disable",
-    "enable",
-    "freeze",
-    "push_status",
-    "push_resinfo",
-    "push_config",
-    "push_encap_config",
-    "presync",
-    "prstatus",
-    "resource_monitor",
-    "restart",
-    "resync",
-    "run",
-    "scale",
-    "snooze",
-    "start",
-    "startstandby",
-    "status",
-    "stop",
-    "stopstandby",
-    "thaw",
-    "unsnooze",
-)
-ADMIN_ACTIONS = (
-    "add",
-    "boot",
-    "decode",
-    "delete",
-    "gen_cert",
-    "install",
-    "pg_kill",
-    "pg_freeze",
-    "pg_thaw",
-    "provision",
-    "run",
-    "set_provisioned",
-    "set_unprovisioned",
-    "shutdown",
-    "unprovision",
-    "unset",
-)
-
 ACTIONS_ALWAYS_MULTIPLEX = [
-    "service_logs",
+    "object_logs",
     "node_logs",
 ]
 # Those actions filter data based on user grants.
@@ -132,12 +79,55 @@ ACTIONS_NEVER_MULTIPLEX = [
     "events",
 ]
 
-class HTTP(Exception):
-    def __init__(self, status, msg=""):
-        self.status = status
-        self.msg = msg
-    def __str__(self):
-        return "status %s: %s" % (self.status, self.msg)
+HANDLERS = [
+    "handlerGetApi",
+    "handlerGetBlacklistStatus",
+    "handlerGetCatalogs",
+    "handlerGetDaemonStats",
+    "handlerGetDaemonStatus",
+    "handlerGetEvents",
+    "handlerGetKey",
+    "handlerGetKeywords",
+    "handlerGetNetworks",
+    "handlerGetNode",
+    "handlerGetNodeBacklogs",
+    "handlerGetNodeConfig",
+    "handlerGetNodeLogs",
+    "handlerGetNodesInfo",
+    "handlerGetObjectBacklogs",
+    "handlerGetObjectConfig",
+    "handlerGetObjectLogs",
+    "handlerGetObjectSelector",
+    "handlerGetPools",
+    "handlerGetRelayRx",
+    "handlerGetRelayStatus",
+    "handlerGetTemplates",
+    "handlerGetTemplate",
+    "handlerGetWhoami",
+    "handlerPostAskFull",
+    "handlerPostBlacklistClear",
+    "handlerPostCollectorRPC",
+    "handlerPostDaemonShutdown",
+    "handlerPostDaemonStart",
+    "handlerPostDaemonStop",
+    "handlerPostJoin",
+    "handlerPostKey",
+    "handlerPostLeave",
+    "handlerPostLock",
+    "handlerPostNodeMonitor",
+    "handlerPostObjectClear",
+    "handlerPostObjectMonitor",
+    "handlerPostNodeAction",
+    "handlerPostObjectCreate",
+    "handlerPostObjectAction",
+    "handlerPostRunDone",
+    "handlerPostRelayTx",
+    "handlerPostUnlock",
+    "handlerPostWakeMonitor",
+]
+
+class Close(Exception):
+    pass
 
 class DontClose(Exception):
     pass
@@ -155,6 +145,7 @@ class Listener(shared.OsvcThread):
     tls_context = None
     port = -1
     addr = ""
+    handlers = {}
 
     @lazy
     def certfs(self):
@@ -307,6 +298,7 @@ class Listener(shared.OsvcThread):
             }),
         })
 
+        self.register_handlers()
         self.setup_socks()
 
         while True:
@@ -340,6 +332,21 @@ class Listener(shared.OsvcThread):
         unset_lazy(self, "cert")
         unset_lazy(self, "certfs")
         self.setup_socks()
+
+    def register_handlers(self):
+        for module in HANDLERS:
+            try:
+                mod = __import__(module)
+                handler = mod.Handler()
+                if handler.path in self.handlers:
+                    continue
+                for method, path in handler.routes:
+                    self.handlers[(method, path)] = handler
+                    if method:
+                        self.log.info("register handler %s /%s", method, path)
+            except Exception as exc:
+                self.alert("error", "error registering handler %s: %s" % (module, exc))
+                continue
 
     def do(self):
         self.reload_config()
@@ -446,15 +453,15 @@ class Listener(shared.OsvcThread):
         Purge expired relay.
         """
         now = time.time()
-        if now - self.last_relay_janitor < RELAY_JANITOR_INTERVAL:
+        if now - self.last_relay_janitor < shared.RELAY_JANITOR_INTERVAL:
             return
         self.last_relay_janitor = now
-        with RELAY_LOCK:
-            for key in [k for k in RELAY_DATA]:
-                age = now - RELAY_DATA[key]["updated"]
-                if age > RELAY_SLOT_MAX_AGE:
+        with shared.RELAY_LOCK:
+            for key in [k for k in shared.RELAY_DATA]:
+                age = now - shared.RELAY_DATA[key]["updated"]
+                if age > shared.RELAY_SLOT_MAX_AGE:
                     self.log.info("drop relay slot %s aged %s", key, print_duration(age))
-                    del RELAY_DATA[key]
+                    del shared.RELAY_DATA[key]
 
     def janitor_events(self):
         """
@@ -758,11 +765,16 @@ class ClientHandler(shared.OsvcThread):
         self.events_counter = 0
 
     def __str__(self):
-        return "client handler thread (client addr: %s, usr: %s, auth: %s, scheme: %s)" % (
+        try:
+            progress = self.parent.stats.sessions.alive[self.sid].progress
+        except Exception:
+            progress = "unknown"
+        return "client handler thread (client addr: %s, usr: %s, auth: %s, scheme: %s, progress: %s)" % (
             self.addr[0],
             self.usr.name if self.usr else self.usr,
             self.usr_auth,
-            self.scheme
+            self.scheme,
+            progress,
         )
 
     def run(self):
@@ -779,10 +791,18 @@ class ClientHandler(shared.OsvcThread):
                 self.handle_h2_client()
             else:
                 self.handle_raw_client()
+        except Close:
+            pass
         except DontClose:
             close = False
-        except Exception as exc:
+        except OSError as exc:
+            if exc.errno in (0, 104):
+                pass
+        except RuntimeError as exc:
             self.log.error("%s", exc)
+        except Exception as exc:
+            self.log.error("unexpected: %s", exc)
+            traceback.print_exc()
         finally:
             if close:
                 del self.parent.stats.sessions.alive[self.sid]
@@ -804,6 +824,10 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.tls_conn = self.tls_context.wrap_socket(self.conn, server_side=True)
         except OSError as exc:
+            if exc.errno in (0, 104):
+                # 0: client => server after daemon restart
+                # 104: server => client after daemon restart
+                raise
             raise RuntimeError("tls wrap error: %s"%exc)
 
         # Always prefer the result from ALPN to that from NPN.
@@ -955,7 +979,11 @@ class ClientHandler(shared.OsvcThread):
         self.h2conn.send_headers(stream_id, response_headers)
         if stream_id not in self.streams:
             self.streams[stream_id] = {"outbound": b''}
-        self.streams[stream_id]["outbound"] += data
+        try:
+            self.streams[stream_id]["outbound"] += data
+        except TypeError as exc:
+            print(stream_id, self.streams[stream_id], data, exc)
+            pass
         self.send_outbound(stream_id)
 
     def can_end_stream(self, stream_id):
@@ -1012,7 +1040,11 @@ class ClientHandler(shared.OsvcThread):
         req = stream["request"]
         req_data = stream["data"]
         headers = dict((bdecode(a), bdecode(b)) for a, b in req.headers)
-        path = headers.get(":path").lstrip("/")
+        path = headers.get(":path")
+        parsed_path = urlparse(path)
+        path = parsed_path.path.strip("/")
+        query = parse_qs(parsed_path.query)
+        method = headers.get(":method", "GET")
         accept = headers.get("accept", "").split(",")
         if path == "favicon.ico":
             return 200, "image/x-icon", ICON
@@ -1038,8 +1070,10 @@ class ClientHandler(shared.OsvcThread):
             # rebuild the selector from split o-node header
             node = ",".join([bdecode(x) for x in stream["request_headers"].get(Headers.node)])
         options = json.loads(bdecode(req_data))
+        options.update(dict((k, v if len(v) > 1 else v[0]) for (k, v) in query.items()))
         data = {
             "action": path,
+            "method": method,
             "node": node,
             "multiplexed": multiplexed,
             "options": options,
@@ -1154,7 +1188,13 @@ class ClientHandler(shared.OsvcThread):
         h2config = h2.config.H2Configuration(client_side=False)
         self.h2conn = h2.connection.H2Connection(config=h2config)
         self.h2conn.initiate_connection()
-        self.tls_conn.sendall(self.h2conn.data_to_send())
+        try:
+            self.tls_conn.sendall(self.h2conn.data_to_send())
+        except socket.error as exc:
+            if exc.errno == 32:
+                # broken pipe (daemon restart with connected clients)
+                return
+            raise
 
         while True:
             if self.stopped():
@@ -1170,10 +1210,11 @@ class ClientHandler(shared.OsvcThread):
                 pass
             except h2.exceptions.StreamClosedError:
                 return
+            except ConnectionResetError:
+                return
             except Exception as exc:
                 self.log.error("exit on %s %s", type(exc), exc)
-                #import traceback
-                #traceback.print_exc()
+                traceback.print_exc()
                 return
 
             # execute all registered pushers
@@ -1434,148 +1475,34 @@ class ClientHandler(shared.OsvcThread):
                 elements.append("%s:%s" % (role, ",".join(namespaces)))
         return " ".join(elements)
 
-    def rbac_create_data(self, payload=None , **kwargs):
-        if self.usr is False:
-            return
-        if not payload:
-            return
-        all_ns = self.get_all_ns()
-        grants = self.user_grants(all_ns)
-        if "root" in grants:
-            return []
-        errors = []
-        for path, cd in payload.items():
-            errors += self.rbac_create_obj(path, cd, all_ns, **kwargs)
-        return errors
-
-    def rbac_create_obj(self, path, cd, all_ns, **kwargs):
-        errors = []
-        name, namespace, kind = split_path(path)
-        grants = self.user_grants(all_ns | set([namespace]))
-        if namespace not in all_ns:
-            if namespace == "system":
-                errors.append("%s: create the new namespace system requires the root cluster role")
-                return errors
-            elif "squatter" not in grants:
-                errors.append("%s: create the new namespace %s requires the squatter cluster role" % (path, namespace))
-                return errors
-            elif namespace not in grants["admin"]:
-                self.usr.set_multi(["grant+=admin:%s" % namespace])
-                grants["admin"].add(namespace)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, **kwargs)
-        try:
-            orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)
-        except:
-            orig_obj = None
-        try:
-            obj = factory(kind)(name, namespace=namespace, volatile=True, cd=cd, node=shared.NODE)
-        except Exception as exc:
-            errors.append("%s: unbuildable config: %s" % (path, exc))
-            return errors
-        if kind == "vol":
-            errors.append("%s: volume create requires the root privilege" % path)
-        elif kind == "ccfg":
-            errors.append("%s: cluster config create requires the root privilege" % path)
-        elif kind == "svc":
-            groups = ["disk", "fs", "app", "share", "sync"]
-            for r in obj.get_resources(groups):
-                if r.rid == "sync#i0":
-                    continue
-                errors.append("%s: resource %s requires the root privilege" % (path, r.rid))
-            for r in obj.get_resources("task"):
-                if r.type not in ("task.podman", "task.docker"):
-                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-            for r in obj.get_resources("container"):
-                if r.type not in ("container.podman", "container.docker"):
-                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-            for r in obj.get_resources("ip"):
-                if r.type not in ("ip.cni"):
-                    errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
-        for section, sdata in cd.items():
-            rtype = cd[section].get("type")
-            errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj, all_ns)
-        return errors
-
-    def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj, orig_obj, all_ns):
-        errors = []
-        for key, val in sdata.items():
-            if "trigger" in key or key.startswith("pre_") or key.startswith("post_") or key.startswith("blocking_"):
-                errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, val))
-                continue
-            _key = key.split("@")[0]
-            try:
-                _val = obj.oget(section, _key)
-            except Exception as exc:
-                errors.append("%s: %s" % (path, exc))
-                continue
-            # scopable
-            for n in obj.nodes | obj.drpnodes:
-                _val = obj.oget(section, _key, impersonate=n)
-                if _key in ("container_data_dir") and _val:
-                    if _val.startswith("/"):
-                        errors.append("%s: keyword %s.%s=%s host paths require the root role" % (path, section, key, _val))
-                        continue
-                if _key in ("devices", "volume_mounts") and _val:
-                    _errors = []
-                    for __val in _val:
-                        if __val.startswith("/"):
-                            _errors.append("%s: keyword %s.%s=%s host paths require the root role" % (path, section, key, __val))
-                            continue
-                    if _errors:
-                        errors += _errors
-                        break
-                if section == "DEFAULT" and _key == "monitor_action" and _val not in ("freezestop", "switch", None):
-                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                    break
-                if section.startswith("container#") and _key == "netns" and _val == "host":
-                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                    break
-                if section.startswith("container#") and _key == "privileged" and _val not in ("false", False, None):
-                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                    break
-                if section.startswith("ip#") and _key == "netns" and _val in (None, "host"):
-                    errors.append("%s: keyword %s.%s=%s requires the root role" % (path, section, key, _val))
-                    break
-            # unscopable
-            if section == "DEFAULT" and _key == "cn":
-                errors += self.rbac_kw_cn(path, _val, orig_obj)
-            elif section == "DEFAULT" and _key == "grant":
-                errors += self.rbac_kw_grant(path, _val, user_grants, all_ns)
-        return errors
-
-    def rbac_kw_grant(self, path, val, user_grants, all_ns):
-        errors = []
-        req_grants = self.parse_grants(val, all_ns)
-        for role, namespaces in req_grants.items():
-            if namespaces is None:
-                # cluster roles
-                if role not in user_grants:
-                    errors.append("%s: keyword grant=%s requires the %s cluster role" % (path, val, role))
-            else:
-                # namespaces roles
-                delta = set(namespaces) - set(user_grants.get(role, []))
-                if delta:
-                    delta = sorted(list(delta))
-                    errors.append("%s: keyword grant=%s requires the %s:%s privilege" % (path, val, role, ",".join(delta)))
-        return errors
-
-    def rbac_kw_cn(self, path, val, orig_obj):
-        errors = []
-        try:
-            orig_cn = orig_obj.oget("DEFAULT", "cn")
-        except Exception:
-            orig_cn = None
-        if orig_cn == val:
-            return []
-        errors.append("%s: keyword cn=%s requires the root role" % (path, val))
-        return errors
-
     #########################################################################
     #
     # Routing and Multiplexing
     #
     #########################################################################
-    def multiplex(self, node, fname, options, data, original_nodename, action, stream_id=None):
+    def get_handler_action(self, method, pathname):
+        try:
+            return self.parent.handlers[(method, pathname)].action
+        except KeyError:
+            pass
+        fname = "action_" + pathname
+        if hasattr(self, fname):
+            return getattr(self, fname)
+        raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
+
+    def get_handler_rbac(self, method, pathname):
+        try:
+            return self.parent.handlers[(method, pathname)].rbac
+        except KeyError:
+            pass
+        except AttributeError:
+            return self.rbac_requires
+        fname = "rbac_action_" + pathname
+        if hasattr(self, fname):
+            return getattr(self, fname)
+        return self.rbac_requires
+
+    def multiplex(self, node, fn, options, data, original_nodename, action, stream_id=None, method="GET"):
         try:
             del data["node"]
         except Exception:
@@ -1611,7 +1538,7 @@ class ClientHandler(shared.OsvcThread):
         def do_node(nodename):
             if nodename == rcEnv.nodename:
                 try:
-                    _result = getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+                    _result = fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
                 except HTTP as exc:
                     status = exc.status
                     _result = {"status": exc.status, "error": exc.msg}
@@ -1638,7 +1565,7 @@ class ClientHandler(shared.OsvcThread):
                     })
                     _result = {}
                 else:
-                    _result = self.daemon_get(data, server=nodename, silent=True)
+                    _result = self.daemon_request(data, server=nodename, silent=True, method=method)
                 result["nodes"][nodename] = _result
                 try:
                     result["status"] += _result.get("status", 0)
@@ -1667,7 +1594,7 @@ class ClientHandler(shared.OsvcThread):
             else:
                 break
 
-    def create_multiplex(self, fname, options, data, original_nodename, action, stream_id=None):
+    def create_multiplex(self, fn, options, data, original_nodename, action, stream_id=None):
         h = {}
         template = options.get("template")
         path = options.get("path")
@@ -1698,7 +1625,7 @@ class ClientHandler(shared.OsvcThread):
             _options.update(options)
             _options["data"] = optdata
             if nodename == rcEnv.nodename:
-                _result = getattr(self, fname)(nodename, action=action, options=_options, stream_id=stream_id)
+                _result = fn(nodename, action=action, options=_options, stream_id=stream_id, thr=self)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
             else:
@@ -1707,7 +1634,7 @@ class ClientHandler(shared.OsvcThread):
                 _data["options"] = _options
                 _data["multiplexed"] = True # prevent multiplex at the peer endpoint
                 self.log_request("relay create/update %s to %s" % (",".join([p for p in optdata]), nodename), original_nodename)
-                _result = self.daemon_get(_data, server=nodename, silent=True)
+                _result = self.daemon_post(_data, server=nodename, silent=True)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
         return result
@@ -1767,6 +1694,7 @@ class ClientHandler(shared.OsvcThread):
         # url path router
         # ex: nodes/n1/logs => n1, None, node_logs
         action = data["action"]
+        method = data.get("method")
         node, path, action = self.parse_path(action)
         if action != data["action"]:
             data["action"] = action
@@ -1778,1139 +1706,37 @@ class ClientHandler(shared.OsvcThread):
             else:
                 data["options"] = {"path": path}
 
-        fname = "action_" + action
-        if not hasattr(self, fname):
-            raise HTTP(501, "handler '%s' not supported" % action)
+        action_fn = self.get_handler_action(method, action)
+        rbac_fn = self.get_handler_rbac(method, action)
+
         # prepare options, sanitized for use as keywords
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
         #print("addr:", self.addr, "tls:", self.tls, "action:", action, "options:", options)
-        self.parent.stats.sessions.alive[self.sid].progress = fname
+        self.parent.stats.sessions.alive[self.sid].progress = action
 
         # validate rbac before multiplexing, before privs escalation
         try:
-            rbac = getattr(self, "rbac_" + fname)
-            rbac(nodename, action=action, options=options, stream_id=stream_id)
+            rbac_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
         except AttributeError:
             self.rbac_requires(action=action)
 
         if action == "create":
-            return self.create_multiplex(fname, options, data, nodename, action, stream_id=stream_id)
+            return self.create_multiplex(action_fn, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
         if data.get("multiplexed") or action in ACTIONS_NEVER_MULTIPLEX:
-            return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+            return action_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
         if action in ACTIONS_ALWAYS_MULTIPLEX or node:
-            return self.multiplex(node, fname, options, data, nodename, action, stream_id=stream_id)
-        return getattr(self, fname)(nodename, action=action, options=options, stream_id=stream_id)
+            return self.multiplex(node, action_fn, options, data, nodename, action, stream_id=stream_id, method=method)
+        return action_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
 
 
     #########################################################################
     #
-    # Actions
+    # Handlers Helpers
     #
     #########################################################################
-
-    def action_run_done(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        action = options.get("action")
-        rids = options.get("rids")
-        if not rids is None:
-            rids = ",".join(sorted(rids))
-        if not action:
-            return {"status": 0}
-        sig = (action, path, rids)
-        with shared.RUN_DONE_LOCK:
-            shared.RUN_DONE.add(sig)
-        return {"status": 0}
-
-    def rbac_action_relay_tx(self, nodename, **kwargs):
-        self.rbac_requires(roles=["heartbeat"], **kwargs)
-
-    def action_relay_tx(self, nodename, **kwargs):
-        """
-        Store a relay heartbeat payload emitted by <nodename>.
-        """
-        options = kwargs.get("options", {})
-        cluster_id = options.get("cluster_id", "")
-        cluster_name = options.get("cluster_name", "")
-        key = "/".join([cluster_id, nodename])
-        with RELAY_LOCK:
-            RELAY_DATA[key] = {
-                "msg": options.get("msg"),
-                "updated": time.time(),
-                "cluster_name": cluster_name,
-                "cluster_id": cluster_id,
-                "ipaddr": options.get("addr", [""])[0],
-            }
-        return {"status": 0}
-
-    def rbac_action_relay_rx(self, nodename, **kwargs):
-        self.rbac_requires(roles=["heartbeat"], **kwargs)
-
-    def action_relay_rx(self, nodename, **kwargs):
-        """
-        Serve to <nodename> the relay heartbeat payload emitted by the node in
-        <slot>.
-        """
-        options = kwargs.get("options", {})
-        cluster_id = options.get("cluster_id", "")
-        _nodename = options.get("slot")
-        key = "/".join([cluster_id, _nodename])
-        with RELAY_LOCK:
-            if key not in RELAY_DATA:
-                return {"status": 1, "error": "no data"}
-            return {
-                "status": 0,
-                "data": RELAY_DATA[key]["msg"],
-                "updated": RELAY_DATA[key]["updated"],
-            }
-
-    def rbac_action_daemon_relay_status(self, nodename, **kwargs):
-        self.rbac_requires(roles=["heartbeat"], **kwargs)
-
-    def action_daemon_relay_status(self, nodename, **kwargs):
-        data = {}
-        with RELAY_LOCK:
-            for _nodename, _data in RELAY_DATA.items():
-                data[_nodename] = {
-                    "cluster_name": _data.get("cluster_name", ""),
-                    "updated": _data.get("updated", 0),
-                    "ipaddr": _data.get("ipaddr", ""),
-                    "size": len(_data.get("msg", "")),
-                }
-        return data
-
-    def rbac_action_daemon_blacklist_clear(self, nodename, **kwargs):
-        self.rbac_requires(roles=["blacklistadmin"], **kwargs)
-
-    def action_daemon_blacklist_clear(self, nodename, **kwargs):
-        """
-        Clear the senders blacklist.
-        """
-        self.blacklist_clear()
-        return {"status": 0}
-
-    def rbac_action_daemon_blacklist_status(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_daemon_blacklist_status(self, nodename, **kwargs):
-        """
-        Return the senders blacklist.
-        """
-        return {"status": 0, "data": self.get_blacklist()}
-
-    def rbac_action_daemon_stats(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_daemon_stats(self, nodename, **kwargs):
-        """
-        Return a hash indexed by thead id, containing the status data
-        structure of each thread.
-        """
-        data = {
-            "timestamp": time.time(),
-            "daemon": shared.DAEMON.stats(),
-            "node": {
-                "cpu": {
-                    "time": shared.NODE.cpu_time(),
-                 },
-            },
-            "services": {},
-        }
-        with shared.THREADS_LOCK:
-            for thr_id, thr in shared.THREADS.items():
-                data[thr_id] = thr.thread_stats()
-        with shared.SERVICES_LOCK:
-            for svc in shared.SERVICES.values():
-                _data = svc.pg_stats()
-                if _data:
-                    data["services"][svc.path] = _data
-        return {"status": 0, "data": data}
-
-    def rbac_action_nodes_info(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_nodes_info(self, nodename, **kwargs):
-        """
-        Return a hash indexed by nodename, containing the info
-        required by the node selector algorithm.
-        """
-        return {"status": 0, "data": self.nodes_info()}
-
-    def rbac_action_daemon_status(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_daemon_status(self, nodename, **kwargs):
-        """
-        Return a hash indexed by thead id, containing the status data
-        structure of each thread.
-        """
-        options = kwargs.get("options", {})
-        selector = options.get("selector")
-        namespace = options.get("namespace")
-        data = self.daemon_status()
-        namespaces = self.get_namespaces()
-        return self.filter_daemon_status(data, namespace=namespace, namespaces=namespaces, selector=selector)
-
-    def wait_shutdown(self):
-        def still_shutting():
-            for smon in shared.SMON_DATA.values():
-                if smon.local_expect == "shutdown":
-                    return True
-            return False
-        while still_shutting():
-            time.sleep(1)
-
-    def action_daemon_shutdown(self, nodename, **kwargs):
-        """
-        Care with locks
-        """
-        self.log_request("shutdown daemon", nodename, **kwargs)
-        with shared.THREADS_LOCK:
-            shared.THREADS["scheduler"].stop()
-            mon = shared.THREADS["monitor"]
-        if self.stopped() or shared.NMON_DATA.status == "shutting":
-            self.log.info("already shutting")
-            # wait for service shutdown to finish before releasing the dup client
-            while True:
-                if mon._shutdown:
-                    break
-                time.sleep(0.3)
-            return {"status": 0}
-        try:
-            self.set_nmon("shutting")
-            mon.kill_procs()
-            for path in shared.SMON_DATA:
-                _, _, kind = split_path(path)
-                if kind not in ("svc", "vol"):
-                    continue
-                self.set_smon(path, local_expect="shutdown")
-            self.wait_shutdown()
-
-            # send a last status to peers so they can takeover asap
-            mon.update_hb_data()
-
-            mon._shutdown = True
-            shared.wake_monitor("services shutdown done")
-        except Exception as exc:
-            self.log.exception(exc)
-
-        self.log.info("services are now shutdown")
-        while True:
-            with shared.THREADS_LOCK:
-                if not shared.THREADS["monitor"].is_alive():
-                    break
-            time.sleep(0.3)
-        shared.DAEMON_STOP.set()
-        return {"status": 0}
-
-    def action_daemon_stop(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        thr_id = options.get("thr_id")
-        if not thr_id:
-            self.log_request("stop daemon", nodename, **kwargs)
-            if options.get("upgrade"):
-                self.set_nmon(status="upgrade")
-                self.log.info("announce upgrade state")
-            else:
-                self.set_nmon(status="maintenance")
-                self.log.info("announce maintenance state")
-            time.sleep(5)
-            shared.DAEMON_STOP.set()
-            return {"status": 0}
-        elif thr_id == "tx":
-            thr_ids = [thr_id for thr_id in shared.THREADS.keys() if thr_id.endswith("tx")]
-        else:
-            thr_ids = [thr_id]
-        for thr_id in thr_ids:
-            with shared.THREADS_LOCK:
-                has_thr = thr_id in shared.THREADS
-            if not has_thr:
-                self.log_request("stop thread requested on non-existing thread", nodename, **kwargs)
-                return {"error": "thread does not exist"*50, "status": 1}
-            self.log_request("stop thread %s" % thr_id, nodename, **kwargs)
-            with shared.THREADS_LOCK:
-                shared.THREADS[thr_id].stop()
-            if thr_id == "scheduler":
-                shared.wake_scheduler()
-            elif thr_id == "monitor":
-                shared.wake_monitor("shutdown")
-            elif thr_id.endswith("tx"):
-                shared.wake_heartbeat_tx()
-            if options.get("wait", False):
-                with shared.THREADS_LOCK:
-                    shared.THREADS[thr_id].join()
-        return {"status": 0}
-
-    def action_daemon_start(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        thr_id = options.get("thr_id")
-        if not thr_id:
-            return {"error": "no thread specified", "status": 1}
-        with shared.THREADS_LOCK:
-            has_thr = thr_id in shared.THREADS
-        if not has_thr:
-            self.log_request("start thread requested on non-existing thread", nodename, **kwargs)
-            return {"error": "thread does not exist"*50, "status": 1}
-        self.log_request("start thread %s" % thr_id, nodename, **kwargs)
-        with shared.THREADS_LOCK:
-            shared.THREADS[thr_id].unstop()
-        return {"status": 0}
-
-    def action_get_node_config(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        fmt = options.get("format")
-        if fmt == "json":
-            return self._action_get_node_config_json(nodename, **kwargs)
-        else:
-            return self._action_get_node_config_file(nodename, **kwargs)
-
-    def _action_get_node_config_json(self, nodename, **kwargs):
-        try:
-            return shared.NODE.print_config_data()
-        except Exception as exc:
-            return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
-
-    def _action_get_node_config_file(self, nodename, **kwargs):
-        fpath = os.path.join(rcEnv.paths.pathetc, "node.conf")
-        if not os.path.exists(fpath):
-            return {"error": "%s does not exist" % fpath, "status": 3}
-        mtime = os.path.getmtime(fpath)
-        with codecs.open(fpath, "r", "utf8") as filep:
-            buff = filep.read()
-        self.log.info("serve node config to %s", nodename)
-        return {"status": 0, "data": buff, "mtime": mtime}
-
-    def rbac_action_get_service_config(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        name, namespace, kind = split_path(path)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-
-    def action_get_service_config(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        fmt = options.get("format")
-        path = self.options_path(options, required=True)
-        if fmt == "json":
-            return self._action_get_service_config_json(nodename, path, **kwargs)
-        else:
-            return self._action_get_service_config_file(nodename, path, **kwargs)
-
-    def _action_get_service_config_json(self, nodename, path, **kwargs):
-        options = kwargs.get("options", {})
-        evaluate = options.get("evaluate")
-        impersonate = options.get("impersonate")
-        try:
-            return shared.SERVICES[path].print_config_data(evaluate=evaluate, impersonate=impersonate)
-        except Exception as exc:
-            return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
-
-    def _action_get_service_config_file(self, nodename, path, **kwargs):
-        options = kwargs.get("options", {})
-        if shared.SMON_DATA.get(path, {}).get("status") in ("purging", "deleting") or \
-           shared.SMON_DATA.get(path, {}).get("global_expect") in ("purged", "deleted"):
-            return {"error": "delete in progress", "status": 2}
-        fpath = svc_pathcf(path)
-        if not os.path.exists(fpath):
-            return {"error": "%s does not exist" % fpath, "status": 3}
-        mtime = os.path.getmtime(fpath)
-        with codecs.open(fpath, "r", "utf8") as filep:
-            buff = filep.read()
-        self.log.info("serve service %s config to %s", path, nodename)
-        return {"status": 0, "data": buff, "mtime": mtime}
-
-    def action_get_secret_key(self, nodename, **kwargs):
-        return self.action_get_key(nodename, **kwargs)
-
-    def rbac_action_get_key(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        name, namespace, kind = split_path(path)
-        if kind == "cfg":
-            role = "guest"
-        else:
-            # sec, usr
-            role = "admin"
-        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
-
-    def action_get_key(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        key = options.get("key")
-        try:
-            return {"status": 0, "data": shared.SERVICES[path].decode_key(key)}
-        except Exception as exc:
-            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
-
-    def rbac_action_set_key(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        name, namespace, kind = split_path(path)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-
-    def action_set_key(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        key = options.get("key")
-        data = options.get("data")
-        shared.SERVICES[path].add_key(key, data)
-        try:
-            return {"status": 0}
-        except Exception as exc:
-            return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
-
-    def rbac_action_wake_monitor(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=False)
-        if path:
-            name, namespace, kind = split_path(path)
-            self.rbac_requires(roles=["operator"], namespaces=[namespace], **kwargs)
-        else:
-            self.rbac_requires(roles=["operator"], namespaces="ANY", **kwargs)
-
-    def action_wake_monitor(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=False)
-        if path:
-            shared.wake_monitor(reason="service %s notification" % path)
-        else:
-            shared.wake_monitor(reason="node notification")
-        return {"status": 0}
-
-    def rbac_action_clear(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        _, namespace, _ = split_path(path)
-        self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-
-    def action_clear(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        smon = self.get_service_monitor(path)
-        if smon.status.endswith("ing"):
-            return {"info": "skip clear on %s instance" % smon.status, "status": 0}
-        self.log_request("service %s clear" % path, nodename, **kwargs)
-        self.set_smon(path, status="idle", reset_retries=True)
-        return {"status": 0, "info": "%s instance cleared" % path}
-
-    def get_service_slaves(self, path, slaves=None):
-        """
-        Recursive lookup of service slaves.
-        """
-        if slaves is None:
-            slaves = set()
-        _, namespace, _ = split_path(path)
-
-        def set_ns(path, parent_ns):
-            name, _namespace, kind = split_path(path)
-            if _namespace:
-                return path
-            else:
-                return fmt_path(name, parent_ns, kind)
-
-        for nodename in shared.CLUSTER_DATA:
-            try:
-                data = shared.CLUSTER_DATA[nodename]["services"]["status"][path]
-            except KeyError:
-                continue
-            slaves.add(path)
-            new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
-            new_slaves = set([set_ns(slave, namespace) for slave in new_slaves])
-            new_slaves -= slaves
-            for slave in new_slaves:
-                slaves |= self.get_service_slaves(slave, slaves)
-        return slaves
-
-    def rbac_action_set_service_monitor(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        name, namespace, kind = split_path(path)
-        local_expect = options.get("local_expect")
-        global_expect = options.get("global_expect")
-        reset_retries = options.get("reset_retries", False)
-        role = "admin"
-        operator = (
-            # (local_expect, global_expect, reset_retries)
-            (None, None, True),
-            (None, "thawed", False),
-            (None, "frozen", False),
-            (None, "started", False),
-            (None, "stopped", False),
-            (None, "aborted", False),
-            (None, "placed", False),
-            (None, "shutdown", False),
-        )
-        _global_expect = global_expect.split("@")[0] if global_expect else global_expect
-        if (local_expect, _global_expect, reset_retries) in operator:
-            role = "operator"
-        self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
-
-    def action_set_service_monitor(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        status = options.get("status")
-        local_expect = options.get("local_expect")
-        global_expect = options.get("global_expect")
-        reset_retries = options.get("reset_retries", False)
-        stonith = options.get("stonith")
-        paths = set([path])
-        if global_expect != "scaled":
-            paths |= self.get_service_slaves(path)
-        errors = []
-        info = []
-        data = {"data": {}}
-        for path in paths:
-            try:
-                self.validate_global_expect(path, global_expect)
-                new_ge = self.validate_destination_node(path, global_expect)
-            except ex.excAbortAction as exc:
-                info.append(str(exc))
-            except ex.excError as exc:
-                errors.append(str(exc))
-            else:
-                if new_ge:
-                    global_expect = new_ge
-                if global_expect:
-                    data["data"]["global_expect"] = global_expect
-                info.append("service %s target state set to %s" % (path, global_expect))
-                self.set_smon(
-                    path, status=status,
-                    local_expect=local_expect,
-                    global_expect=global_expect,
-                    reset_retries=reset_retries,
-                    stonith=stonith,
-                )
-        data["status"] = len(errors)
-        if info:
-            data["info"] = info
-        if errors:
-            data["error"] = errors
-        return data
-
-    def validate_destination_node(self, path, global_expect):
-        """
-        For a placed@<dst> <global_expect> (move action) on <path>,
-
-        Raise an excError if
-        * the service <path> does not exist
-        * the service <path> topology is failover and more than 1
-          destination node was specified
-        * the specified destination is not a service candidate node
-        * no destination node specified
-        * an empty destination node is specified in a list of destination
-          nodes
-
-        Raise an excAbortAction if
-        * the avail status of the instance on the destination node is up
-        """
-        if global_expect is None:
-            return
-        try:
-            global_expect, destination_nodes = global_expect.split("@", 1)
-        except ValueError:
-            return
-        if global_expect != "placed":
-            return
-        instances = self.get_service_instances(path)
-        if not instances:
-            raise ex.excError("service does not exist")
-        if destination_nodes == "<peer>":
-            instance = list(instances.values())[0]
-            if instance.get("topology") == "flex":
-                raise ex.excError("no destination node specified")
-            else:
-                nodes = [node for node, inst in instances.items() \
-                              if inst.get("avail") not in ("up", "warn", "n/a") and \
-                              inst.get("monitor", {}).get("status") != "started"]
-                count = len(nodes)
-                if count == 0:
-                    raise ex.excError("no candidate destination node")
-                svc = self.get_service(path)
-                return "placed@%s" % self.placement_ranks(svc, nodes)[0]
-        else:
-            destination_nodes = destination_nodes.split(",")
-            count = len(destination_nodes)
-            if count == 0:
-                raise ex.excError("no destination node specified")
-            instance = list(instances.values())[0]
-            if count > 1 and instance.get("topology") == "failover":
-                raise ex.excError("only one destination node can be specified for "
-                                  "a failover service")
-            for destination_node in destination_nodes:
-                if not destination_node:
-                    raise ex.excError("empty destination node")
-                if destination_node not in instances:
-                    raise ex.excError("destination node %s has no service instance" % \
-                                      destination_node)
-                instance = instances[destination_node]
-                if instance["avail"] == "up":
-                    raise ex.excAbortAction("instance on destination node %s is "
-                                            "already up" % destination_node)
-
-    def validate_global_expect(self, path, global_expect):
-        if global_expect is None:
-            return
-        if global_expect in ("frozen", "aborted", "provisioned"):
-            # allow provision target state on just-created service
-            return
-
-        # wait for service to appear
-        for i in range(5):
-            instances = self.get_service_instances(path)
-            if instances:
-                break
-            if not is_service(path):
-                break
-            time.sleep(1)
-        if not instances:
-            raise ex.excError("service does not exist")
-
-        for nodename, _data in instances.items():
-            status = _data.get("monitor", {}).get("status", "unknown")
-            if status != "idle" and "failed" not in status and "wait" not in status:
-                raise ex.excError("%s instance on node %s in %s state"
-                                  "" % (path, nodename, status))
-
-        if global_expect not in ("started", "stopped"):
-            return
-        agg = Storage(shared.AGG.get(path, {}))
-        if global_expect == "started" and agg.avail == "up":
-            raise ex.excAbortAction("service %s is already started" % path)
-        elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
-            raise ex.excAbortAction("service %s is already stopped" % path)
-        if agg.avail in ("n/a", "undef"):
-            raise ex.excAbortAction()
-
-    def validate_cluster_global_expect(self, global_expect):
-        if global_expect is None:
-            return
-        if global_expect == "thawed" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
-            raise ex.excAbortAction("cluster is already thawed")
-        if global_expect == "frozen" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
-            raise ex.excAbortAction("cluster is already frozen")
-
-    def action_set_node_monitor(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        status = options.get("status")
-        local_expect = options.get("local_expect")
-        global_expect = options.get("global_expect")
-        info = []
-        error = []
-        data = {"data": {}}
-        try:
-            self.validate_cluster_global_expect(global_expect)
-        except ex.excAbortAction as exc:
-            info.append(str(exc))
-        except ex.excError as exc:
-            error.append(str(exc))
-        else:
-            self.set_nmon(
-                status=status,
-                local_expect=local_expect,
-                global_expect=global_expect,
-            )
-            if global_expect:
-                data["data"]["global_expect"] = global_expect
-            info.append("cluster target state set to %s" % global_expect)
-        data["status"] = len(error)
-        if info:
-            data["info"] = info
-        if error:
-            data["error"] = error
-        return data
-
-    def lock_accepted(self, name, lock_id):
-        for nodename, node in shared.CLUSTER_DATA.items():
-            lock = node.get("locks", {}).get(name)
-            if not lock:
-                return False
-            if lock.get("id") != lock_id:
-                return False
-        return True
-
-    def lock_acquire(self, nodename, name, timeout=None):
-        if timeout is None:
-            timeout = 10
-        if nodename not in self.cluster_nodes:
-            return
-        lock_id = None
-        deadline = time.time() + timeout
-        situation = 0
-        while time.time() < deadline:
-            if not lock_id:
-                lock_id = self._lock_acquire(nodename, name)
-                if not lock_id:
-                    if situation != 1:
-                        self.log.info("claim %s lock refused (already claimed)", name)
-                    situation = 1
-                    time.sleep(0.5)
-                    continue
-                self.log.info("claimed %s lock: %s", name, lock_id)
-            if shared.LOCKS.get(name, {}).get("id") != lock_id:
-                self.log.info("claim %s dropped", name)
-                lock_id = None
-                continue
-            if self.lock_accepted(name, lock_id):
-                self.log.info("locked %s", name)
-                return lock_id
-            time.sleep(0.5)
-        self.log.warning("claim timeout on %s lock", name)
-        self.lock_release(name, lock_id, silent=True)
-
-    def lock_release(self, name, lock_id, silent=False):
-        with shared.LOCKS_LOCK:
-            if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
-                return
-            del shared.LOCKS[name]
-        shared.wake_monitor(reason="unlock", immediate=True)
-        if not silent:
-            self.log.info("released %s", name)
-
-    def _lock_acquire(self, nodename, name):
-        with shared.LOCKS_LOCK:
-            if name in shared.LOCKS:
-                return
-            lock_id = str(uuid.uuid4())
-            shared.LOCKS[name] = {
-                "requested": time.time(),
-                "requester": nodename,
-                "id": lock_id,
-            }
-        shared.wake_monitor(reason="lock", immediate=True)
-        return lock_id
-
-    def action_lock(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        name = options.get("name")
-        timeout = options.get("timeout")
-        lock_id = self.lock_acquire(nodename, name, timeout)
-        if lock_id:
-            result = {
-                "data": {
-                    "id": lock_id,
-                },
-                "status": 0,
-            }
-        else:
-            result = {"status": 1}
-        return result
-
-    def action_unlock(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        name = options.get("name")
-        lock_id = options.get("id")
-        self.lock_release(name, lock_id)
-        result = {"status": 0}
-        return result
-
-    def action_leave(self, nodename, **kwargs):
-        self.log.info("node %s is leaving", nodename)
-        if nodename not in self.cluster_nodes:
-            self.log.info("node %s already left", nodename)
-            return {"status": 0}
-        try:
-            self.remove_cluster_node(nodename)
-            return {"status": 0}
-        except Exception as exc:
-            return {
-                "status": 1,
-                "error": [str(exc)],
-            }
-
-    def action_collector_xmlrpc(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        args = options.get("args", [])
-        kwargs = options.get("kwargs", {})
-        shared.COLLECTOR_XMLRPC_QUEUE.insert(0, (args, kwargs))
-        result = {
-            "status": 0,
-        }
-        return result
-
-    def action_join(self, nodename, **kwargs):
-        if nodename in self.cluster_nodes:
-            new_nodes = self.cluster_nodes
-            self.log.info("node %s rejoins", nodename)
-        else:
-            new_nodes = self.cluster_nodes + [nodename]
-            self.add_cluster_node(nodename)
-        result = {
-            "status": 0,
-            "data": {
-                "node": {
-                    "data": {
-                        "node": {},
-                        "cluster": {},
-                    },
-                },
-            },
-        }
-        config = shared.NODE.private_cd
-        node_section = config.get("node", {})
-        cluster_section = config.get("cluster", {})
-        if "env" in node_section:
-            result["data"]["node"]["data"]["node"]["env"] = shared.NODE.env
-        if "nodes" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["nodes"] = " ".join(new_nodes)
-        if "name" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["name"] = self.cluster_name
-        if "drpnodes" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["drpnodes"] = " ".join(self.cluster_drpnodes)
-        if "id" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["id"] = self.cluster_id
-        if "quorum" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["quorum"] = self.quorum
-        if "dns" in cluster_section:
-            result["data"]["node"]["data"]["cluster"]["dns"] = " ".join(shared.NODE.dns)
-        for section in config:
-            if section.startswith("hb#") or \
-               section.startswith("stonith#") or \
-               section.startswith("pool#") or \
-               section.startswith("network#") or \
-               section.startswith("arbitrator#"):
-                result["data"]["node"]["data"][section] = config[section]
-        from cluster import ClusterSvc
-        svc = ClusterSvc(volatile=True, node=shared.NODE)
-        if svc.exists():
-            result["data"]["cluster"] = {
-                "data": svc.print_config_data(),
-                "mtime": os.stat(svc.paths.cf).st_mtime,
-            }
-        return result
-
-    def action_node_action(self, nodename, **kwargs):
-        """
-        Execute a nodemgr command on behalf of a peer node.
-        kwargs:
-        * cmd: list
-        * sync: boolean
-        """
-        options = kwargs.get("options", {})
-        sync = options.get("sync", True)
-        action_mode = options.get("action_mode", True)
-        cmd = options.get("cmd")
-        action = options.get("action")
-        action_options = options.get("options", {})
-
-        if action_options is None:
-            action_options = {}
-
-        if not cmd and not action:
-            self.log_request("node action ('action' not set)", nodename, lvl="error", **kwargs)
-            return {
-                "status": 1,
-            }
-
-        for opt in ("node", "server", "daemon"):
-            if opt in action_options:
-                del action_options[opt]
-        if action_mode and action_options.get("local"):
-            if "local" in action_options:
-                del action_options["local"]
-        for opt, ropt in (("jsonpath_filter", "filter"),):
-            if opt in action_options:
-                action_options[ropt] = action_options[opt]
-                del action_options[opt]
-        action_options["local"] = True
-        pmod = __import__("nodemgr_parser")
-        popt = pmod.OPT
-
-        def find_opt(opt):
-            for k, o in popt.items():
-                if o.dest == opt:
-                    return o
-                if o.dest == "parm_" + opt:
-                    return o
-
-        if cmd:
-            cmd = drop_option("--node", cmd, drop_value=True)
-            cmd = drop_option("--server", cmd, drop_value=True)
-            cmd = drop_option("--daemon", cmd)
-            if action_mode and "--local" not in cmd:
-                cmd += ["--local"]
-        else:
-            cmd = [action]
-            for opt, val in action_options.items():
-                po = find_opt(opt)
-                if po is None:
-                    continue
-                if val == po.default:
-                    continue
-                if val is None:
-                    continue
-                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
-                if po.action == "append":
-                    cmd += [opt + "=" + str(v) for v in val]
-                elif po.action == "store_true" and val:
-                    cmd.append(opt)
-                elif po.action == "store_false" and not val:
-                    cmd.append(opt)
-                elif po.type == "string":
-                    opt += "=" + val
-                    cmd.append(opt)
-                elif po.type == "integer":
-                    opt += "=" + str(val)
-                    cmd.append(opt)
-            fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
-
-        self.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
-        if sync:
-            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
-            out, err = proc.communicate()
-            result = {
-                "status": 0,
-                "data": {
-                    "out": bdecode(out),
-                    "err": bdecode(err),
-                    "ret": proc.returncode,
-                },
-            }
-        else:
-            proc = Popen(fullcmd, stdin=None, close_fds=True)
-            self.push_proc(proc)
-            result = {
-                "status": 0,
-                "info": "started node action %s" % " ".join(cmd),
-            }
-        return result
-
-    def rbac_action_create(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        template = options.get("template")
-        namespace = options.get("namespace")
-        if template is not None:
-            self.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-            return
-        data = options.get("data")
-        if not data:
-            return
-        errors = self.rbac_create_data(data, **kwargs)
-        if errors:
-            raise HTTP(403, errors)
-
-    def action_create(self, nodename, **kwargs):
-        """
-        Execute a svcmgr create action, feeding the services definitions
-        passed in <data>.
-        """
-        options = kwargs.get("options", {})
-        data = options.get("data")
-        template = options.get("template")
-        if not data and not template:
-            return {"status": 0, "info": "no data"}
-        sync = options.get("sync", True)
-        namespace = options.get("namespace")
-        provision = options.get("provision")
-        restore = options.get("restore")
-        path = options.get("path")
-        self.log_request("create/update %s" % ",".join([p for p in data]), nodename, **kwargs)
-        if template is not None:
-            if path:
-                cmd = ["create", "-s", path, "--template=%s" % template, "--env=-"]
-            else:
-                cmd = ["create", "--template=%s" % template, "--env=-"]
-        else:
-            cmd = ["create", "--config=-"]
-        if namespace:
-            cmd.append("--namespace="+namespace)
-        if restore:
-            cmd.append("--restore")
-        proc = self.service_command(None, cmd, stdin=json.dumps(data))
-        if sync:
-            out, err = proc.communicate()
-            result = {
-                "status": proc.returncode,
-                "data": {
-                    "out": bdecode(out),
-                    "err": bdecode(err),
-                    "ret": proc.returncode,
-                },
-            }
-        else:
-            self.push_proc(proc)
-            result = {
-                "status": 0,
-                "info": "started %s action %s" % (path, " ".join(cmd)),
-            }
-        if provision:
-            for path in data:
-                self.set_smon(path, global_expect="provisioned")
-        return result
-
-    def rbac_action_service_action(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        action = options.get("action")
-        cmd = options.get("cmd")
-        path = self.options_path(options, required=True)
-        action_options = options.get("options", {})
-        name, namespace, kind = split_path(path)
-
-        if action_options is None:
-            action_options = {}
-
-        role = "root"
-        if action in GUEST_ACTIONS:
-            role = "guest"
-        elif action in OPERATOR_ACTIONS:
-            role = "operator"
-        elif action in ADMIN_ACTIONS:
-            role = "admin"
-
-        if action == "set":
-            # load current config
-            try:
-                cf = shared.SERVICES[path].print_config_data()
-            except Exception as exc:
-                cf = {}
-            # purge unwanted sections
-            try:
-                del cf["metadata"]
-            except Exception:
-                pass
-            for buff in action_options.get("kw", []):
-                k, v = buff.split("=", 1)
-                if k[-1] in ("+", "-"):
-                    k = k[:-1]
-                k = k.strip()
-                try:
-                    s, k = k.split(".", 1)
-                except Exception:
-                    s = "DEFAULT"
-                if s not in cf:
-                    cf[s] = {}
-                cf[s][k] = v
-            payload = {path: cf}
-            errors = self.rbac_create_data(payload, **kwargs)
-            if errors:
-                raise HTTP(403, errors)
-        else:
-            self.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
-
-        if cmd:
-            # compat, requires root
-            self.rbac_requires(**kwargs)
-
-    def action_service_action(self, nodename, **kwargs):
-        """
-        Execute a CRM command.
-        kwargs.options:
-        * path: str
-        * action: str
-        * options: dict
-        * sync: boolean
-        * cmd: str (deprecated)
-        """
-        options = kwargs.get("options", {})
-        action = options.get("action")
-        cmd = options.get("cmd")
-        sync = options.get("sync", True)
-        path = self.options_path(options, required=True)
-        action_options = options.get("options", {})
-        name, namespace, kind = split_path(path)
-
-        if action_options is None:
-            action_options = {}
-
-        if self.get_service(path) is None and action not in ("create", "deploy"):
-            self.log_request("service action (%s not installed)" % path, nodename, lvl="warning", **kwargs)
-            raise HTTP(404, "%s not found" % path)
-        if not action and not cmd:
-            self.log_request("service action (no action set)", nodename, lvl="error", **kwargs)
-            raise HTTP(400, "action not set")
-
-        for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
-            if opt in action_options:
-                del action_options[opt]
-        for opt, ropt in (("jsonpath_filter", "filter"),):
-            if opt in action_options:
-                action_options[ropt] = action_options[opt]
-                del action_options[opt]
-        action_options["local"] = True
-        pmod = __import__(kind + "mgr_parser")
-        popt = pmod.OPT
-
-        def find_opt(opt):
-            for k, o in popt.items():
-                if o.dest == opt:
-                    return o
-                if o.dest == "parm_" + opt:
-                    return o
-
-        if not cmd:
-            cmd = [action]
-            for opt, val in action_options.items():
-                po = find_opt(opt)
-                if po is None:
-                    continue
-                if val == po.default:
-                    continue
-                if val is None:
-                    continue
-                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
-                if po.action == "append":
-                    cmd += [opt + "=" + str(v) for v in val]
-                elif po.action == "store_true" and val:
-                    cmd.append(opt)
-                elif po.action == "store_false" and not val:
-                    cmd.append(opt)
-                elif po.type == "string":
-                    opt += "=" + val
-                    cmd.append(opt)
-                elif po.type == "integer":
-                    opt += "=" + str(val)
-                    cmd.append(opt)
-
-        fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", path] + cmd
-        self.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
-        if sync:
-            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
-            out, err = proc.communicate()
-            try:
-                result = json.loads(out)
-            except Exception:
-                result = {
-                    "status": 0,
-                    "data": {
-                        "out": bdecode(out),
-                        "err": bdecode(err),
-                        "ret": proc.returncode,
-                    },
-                }
-        else:
-            proc = Popen(fullcmd, stdin=None, close_fds=True)
-            self.push_proc(proc)
-            result = {
-                "status": 0,
-                "info": "started %s action %s" % (path, " ".join(cmd)),
-            }
-        return result
-
-    def rbac_action_events(self, nodename, stream_id=None, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_events(self, nodename, stream_id=None, **kwargs):
-        options = kwargs.get("options", {})
-        self.selector = options.get("selector")
-        if not self.event_queue:
-            self.event_queue = queue.Queue()
-        if not self in self.parent.events_clients:
-            self.parent.events_clients.append(self)
-        if not stream_id in self.events_stream_ids:
-            self.events_stream_ids.append(stream_id)
-        if self.h2conn:
-            request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
-            try:
-                content_type = bdecode(request_headers.get("accept").pop())
-            except:
-                content_type = "application/json"
-            self.streams[stream_id]["content_type"] = content_type
-            self.streams[stream_id]["pushers"].append({
-                "fn": "h2_push_action_events",
-            })
-        else:
-            self.raw_push_action_events()
 
     def h2_push_action_events(self, stream_id):
         while True:
@@ -2937,103 +1763,11 @@ class ClientHandler(shared.OsvcThread):
                 continue
             self.conn.sendall(msg)
 
-    def rbac_action_service_backlogs(self, nodename, stream_id=None, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        _, namespace, _ = split_path(path)
-        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
-
-    def action_service_backlogs(self, nodename, stream_id=None, **kwargs):
-        """
-        Send service past logs.
-        kwargs:
-        * path
-        * backlog: the number of bytes to send from the tail default is 10k.
-                   A negative value means send the whole file.
-                   The 0 value means follow the file.
-        """
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        svc = self.get_service(path)
-        if svc is None:
-            raise HTTP(404, "%s not found" % path)
-        backlog = self.backlog_from_options(options)
-        logfile = os.path.join(svc.log_d, svc.name+".log")
-        ofile = self._action_logs_open(logfile, backlog, svc.path)
-        return self.read_file_lines(ofile)
-
     def rbac_action_service_logs(self, nodename, stream_id=None, **kwargs):
         options = kwargs.get("options", {})
         path = self.options_path(options, required=True)
         _, namespace, _ = split_path(path)
         self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
-
-    def action_service_logs(self, nodename, stream_id=None, **kwargs):
-        """
-        Send service logs.
-        kwargs:
-        * path
-        """
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        svc = self.get_service(path)
-        if svc is None:
-            raise HTTP(404, "%s not found" % path)
-        request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
-        try:
-            content_type = bdecode(request_headers.get("accept").pop())
-        except:
-            content_type = "application/json"
-        self.streams[stream_id]["content_type"] = content_type
-        logfile = os.path.join(svc.log_d, svc.name+".log")
-        ofile = self._action_logs_open(logfile, 0, svc.path)
-        self.streams[stream_id]["pushers"].append({
-            "fn": "h2_push_logs",
-            "args": [ofile, True],
-        })
-
-    def action_node_backlogs(self, nodename, stream_id=None, **kwargs):
-        """
-        Send service past logs.
-        kwargs:
-        * backlog: the number of bytes to send from the tail default is 10k.
-                   A negative value means send the whole file.
-                   The 0 value means follow the file.
-        """
-        options = kwargs.get("options", {})
-        backlog = self.backlog_from_options(options)
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
-        ofile = self._action_logs_open(logfile, backlog, "node")
-        return self.read_file_lines(ofile)
-
-    def action_node_logs(self, nodename, stream_id=None, **kwargs):
-        """
-        Send node logs.
-        kwargs:
-        * backlog: the number of bytes to send from the tail default is 10k.
-                   A negative value means send the whole file.
-                   The 0 value means follow the file.
-        """
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
-        ofile = self._action_logs_open(logfile, 0, "node")
-        request_headers = HTTPHeaderMap(self.streams[stream_id]["request"].headers)
-        try:
-            content_type = bdecode(request_headers.get("accept").pop())
-        except:
-            content_type = "application/json"
-        self.streams[stream_id]["content_type"] = content_type
-        self.streams[stream_id]["pushers"].append({
-            "fn": "h2_push_logs",
-            "args": [ofile, True],
-        })
-
-    def backlog_from_options(self, options):
-        backlog = options.get("backlog")
-        if backlog is None:
-            backlog = 1024 * 10
-        else:
-            backlog = convert_size(backlog, _to='B')
-        return backlog
 
     def logskip(self, backlog, logfile):
         skip = 0
@@ -3106,168 +1840,11 @@ class ClientHandler(shared.OsvcThread):
         self.h2conn.push_stream(stream_id, promised_stream_id, request_headers)
         self.prepare_response(promised_stream_id, 200, data)
 
-    def action_ask_full(self, nodename, **kwargs):
-        """
-        Reset the gen number of the dataset of a peer node to force him
-        to resend a full.
-        """
-        options = kwargs.get("options", {})
-        peer = options.get("peer")
-        if peer is None:
-            raise ex.excError("The 'peer' option must be set")
-        if peer == rcEnv.nodename:
-            raise ex.excError("Can't ask a full from ourself")
-        if peer not in self.cluster_nodes:
-            raise ex.excError("Can't ask a full from %s: not in cluster.nodes" % peer)
-        shared.REMOTE_GEN[peer] = 0
-        result = {
-            "info": "remote %s asked for a full" % peer,
-            "status": 0,
-        }
-        return result
-
-    def rbac_action_container_exec(self, nodename, **kwargs):
-        options = Storage(kwargs.get("options", {}))
-        path = self.options_path(options, required=True)
-        _, namespace, _ = split_path(path)
-        self.rbac_requires(["operator"], namespace=namespace, **kwargs)
-
-    def action_container_exec(self, nodename, **kwargs):
-        options = Storage(kwargs.get("options", {}))
-        path = self.options_path(options, required=True)
-        interactive = options.get("interactive", False)
-        tty = options.get("tty", False)
-        command = options.get("command")
-        name, namespace, kind = split_path(path)
-        rid = options.get("rid")
-        svc = factory(kind)(name, namespace, node=shared.NODE, volatile=True)
-        resource = svc.get_resource(rid)
-        cmd = resource.exec_cmd(interactive=interactive, tty=tty, command=command)
-        #proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-
     def load_file(self, path):
         fpath = os.path.join(rcEnv.paths.pathhtml, path)
         with open(fpath, "r") as f:
             buff = f.read()
         return buff
-
-    def rbac_action_whoami(self, nodename, **kwargs):
-        pass
-
-    def action_whoami(self, nodename, **kwargs):
-        data = {
-            "name": self.usr.name,
-            "namespace": self.usr.namespace,
-            "auth": self.usr_auth,
-            "raw_grant": self.usr.oget("DEFAULT", "grant"),
-            "grant": dict((k, list(v) if v is not None else None) for k, v in self.usr_grants.items()),
-        }
-        return data
-
-    def rbac_action_get_catalogs(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_catalogs(self, nodename, **kwargs):
-        data = []
-        if shared.NODE.collector_env.dbopensvc is not None:
-            data.append({
-                "name": "collector",
-            })
-        return data
-
-    def rbac_action_get_templates(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_templates(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        catalog = options.get("catalog")
-        data = {}
-        if catalog == "collector":
-            if shared.NODE.collector_env.dbopensvc is None:
-                raise HTTP(400, "This node is not registered on a collector")
-            data = []
-            options = {
-                "limit": 0,
-                "props": "id,tpl_name,tpl_author,tpl_comment",
-                "orderby": "tpl_name",
-            }
-
-            for tpl in shared.NODE.collector_rest_get("/provisioning_templates", options)["data"]:
-                data.append({
-                    "id": tpl["id"],
-                    "name": tpl["tpl_name"],
-                    "desc": tpl["tpl_comment"],
-                    "author": tpl["tpl_author"],
-                    "catalog": "collector",
-                })
-        else:
-            raise HTTP(400, "unknown catalog %s" % catalog)
-        return data
-
-    def rbac_action_get_template(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_template(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        catalog = options.get("catalog")
-        template = options.get("template")
-        if catalog == "collector":
-            if template is None:
-                raise HTTP(400, "template is not set")
-            options = {
-                "props": "tpl_definition"
-            }
-            try:
-                data = shared.NODE.collector_rest_get("/provisioning_templates/%s" % template, options)
-                return data["data"][0]["tpl_definition"]
-            except IndexError:
-                raise HTTP(404, "template not found")
-        raise HTTP(400, "unknown catalog %s" % catalog)
-
-    def rbac_action_object_selector(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_object_selector(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        selector = options.get("selector")
-        namespace = options.get("namespace")
-        namespaces = self.get_namespaces()
-        return self.object_selector(selector, namespace, namespaces)
-
-    def rbac_action_get_node(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_node(self, nodename, **kwargs):
-        data = shared.NODE.asset.get_asset_dict()
-        return data
-
-    def rbac_action_get_pools(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_pools(self, nodename, **kwargs):
-        data = shared.NODE.pool_status_data()
-        return data
-
-    def rbac_action_get_networks(self, nodename, **kwargs):
-        self.rbac_requires(roles=["guest"], namespaces="ANY", **kwargs)
-
-    def action_get_networks(self, nodename, **kwargs):
-        data = shared.NODE.network_status_data()
-        return data
-
-    def rbac_action_get_keywords(self, nodename, **kwargs):
-        pass
-
-    def action_get_keywords(self, nodename, **kwargs):
-        options = kwargs.get("options", {})
-        kind = options.get("kind", {})
-        if kind == "node":
-            obj = shared.NODE
-        elif kind:
-            obj = factory(kind)(name="dummy", node=self, volatile=True)
-        else:
-            raise HTTP(400, "A kind must be specified.")
-        return obj.kwdict.KEYS.dump()
 
     ##########################################################################
     #

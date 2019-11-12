@@ -310,7 +310,7 @@ class Monitor(shared.OsvcThread):
         the remote node listener.
         """
         req = {
-            "action": "get_service_config",
+            "action": "object_config",
             "options": {
                 "path": path,
             },

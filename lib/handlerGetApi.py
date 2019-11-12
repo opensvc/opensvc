@@ -1,0 +1,33 @@
+import handler
+import osvcd_shared as shared
+
+class Handler(handler.Handler):
+    """
+    Return the api handlers manifest.
+    """
+    routes = (
+        ("GET", "api"),
+        (None, "get_api"),
+    )
+    prototype = []
+    access = "world"
+
+    def rbac(self, nodename, thr=None, **kwargs):
+        return
+
+    def action(self, nodename, thr=None, **kwargs):
+        sigs = []
+        data = []
+        for h in thr.parent.handlers.values():
+            sig = h.routes[0]
+            if sig in sigs:
+                continue
+            sigs.append(sig)
+            data.append({
+                "routes": [{"method": r[0], "path": r[1]} for r in h.routes],
+                "prototype": h.prototype,
+                "access": h.access,
+                "desc": h.__doc__.strip(),
+            })
+        return data
+

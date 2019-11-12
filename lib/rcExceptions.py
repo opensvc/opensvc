@@ -1,3 +1,10 @@
+class HTTP(Exception):
+    def __init__(self, status, msg=""):
+        self.status = status
+        self.msg = msg
+    def __str__(self):
+        return "status %s: %s" % (self.status, self.msg)
+
 class excEncapUnjoinable(Exception):
     pass
 

@@ -3121,7 +3121,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": env_to_merge,
                 }
             }
-            result = self.daemon_get(req)
+            result = self.daemon_post(req)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.excError(error)
@@ -3216,7 +3216,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_get(req)
+            result = self.daemon_post(req)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.excError(error)
@@ -3888,7 +3888,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     # daemon actions
     #
     def daemon_collector_xmlrpc(self, *args, **kwargs):
-        data = self.daemon_get(
+        data = self.daemon_post(
             {
                 "action": "collector_xmlrpc",
                 "options": {
@@ -3930,7 +3930,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return data
 
     def _daemon_lock(self, name, timeout=None, silent=False, on_error=None):
-        data = self.daemon_get(
+        data = self.daemon_post(
             {
                 "action": "lock",
                 "options": {"name": name, "timeout": timeout},
@@ -3944,7 +3944,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return lock_id
 
     def _daemon_unlock(self, name, lock_id, silent=False):
-        data = self.daemon_get(
+        data = self.daemon_post(
             {
                 "action": "unlock",
                 "options": {"name": name, "id": lock_id},
@@ -4036,7 +4036,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Tell the daemon to clear the senders blacklist
         """
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "daemon_blacklist_clear"},
             server=self.options.server,
             timeout=5,
@@ -4265,7 +4265,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if not self._daemon_running():
             return
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "daemon_shutdown"},
             server=self.options.server,
         )
@@ -4287,7 +4287,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             options["thr_id"] = self.options.thr_id
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             options["upgrade"] = True
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "daemon_stop", "options": options},
             server=self.options.node,
         )
@@ -4339,7 +4339,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_start_thread(self):
         options = {}
         options["thr_id"] = self.options.thr_id
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "daemon_start", "options": options},
             server=self.options.server,
             timeout=5,
@@ -4447,7 +4447,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         # leave other nodes
         options = {"thr_id": "tx", "wait": True}
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "daemon_stop", "options": options},
             server=rcEnv.nodename,
             timeout=5,
@@ -4455,7 +4455,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         errors = 0
         for nodename in cluster_nodes:
-            data = self.daemon_get(
+            data = self.daemon_post(
                 {"action": "leave"},
                 server=nodename,
                 timeout=5,
@@ -4521,7 +4521,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             self.log.info("local node is already frozen")
 
-        data = self.daemon_get(
+        data = self.daemon_post(
             {"action": "join"},
             server=joined,
             cluster_name="join",
@@ -4681,7 +4681,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for nodename in cluster_nodes.split():
             if nodename in (rcEnv.nodename, joined):
                 continue
-            data = self.daemon_get(
+            data = self.daemon_post(
                 {"action": "join"},
                 server=nodename,
                 cluster_name="join",
@@ -4710,8 +4710,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             "global_expect": global_expect,
         }
         try:
-            data = self.daemon_get(
-                {"action": "set_node_monitor", "options": options},
+            data = self.daemon_post(
+                {"action": "node_monitor", "options": options},
                 server=self.options.server,
                 silent=True,
                 timeout=5,
@@ -4748,7 +4748,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             }
         }
         try:
-            data = self.daemon_get(
+            data = self.daemon_post(
                 req,
                 server=server,
                 node=node,
@@ -4866,7 +4866,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
         options = {}
         try:
-            data = self.daemon_get(
+            data = self.daemon_post(
                 {"action": "wake_monitor", "options": options},
                 server=self.options.server,
                 silent=True,

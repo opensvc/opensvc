@@ -1768,7 +1768,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     #########################################################################
     def daemon_backlogs(self, server=None, node=None, backlog=None, debug=False):
         req = {
-            "action": "service_backlogs",
+            "action": "object_backlogs",
             "options": {
                 "path": self.path,
                 "backlog": backlog,
@@ -1787,7 +1787,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def daemon_logs(self, server=None, node=None, backlog=None, debug=None):
         req = {
-            "action": "service_logs",
+            "action": "object_logs",
             "options": {
                 "path": self.path,
                 "debug": debug,
@@ -1823,7 +1823,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "path": self.path,
             }
         }
-        data = self.daemon_get(req, timeout=5, server=server, node=node)
+        data = self.daemon_post(req, timeout=5, server=server, node=node)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
@@ -1844,7 +1844,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             }
         }
         try:
-            data = self.daemon_get(req, server=self.options.node, silent=True)
+            data = self.daemon_post(req, server=self.options.node, silent=True)
             if data and data["status"] != 0:
                 if "error" in data:
                     self.log.warning("notify scheduler action is done failed: %s", data["error"])
@@ -1866,7 +1866,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             }
         }
         try:
-            data = self.daemon_get(
+            data = self.daemon_post(
                 req,
                 server=self.options.server,
                 node=self.options.node,
@@ -1897,8 +1897,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "stonith": stonith,
         }
         try:
-            data = self.daemon_get(
-                {"action": "set_service_monitor", "options": options},
+            data = self.daemon_post(
+                {"action": "object_monitor", "options": options},
                 server=self.options.server,
                 node=self.options.node,
                 silent=True,
@@ -1937,7 +1937,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def remote_service_config(self, nodename=None):
         req = {
-            "action": "get_service_config",
+            "action": "object_config",
             "options": {
                 "path": self.path,
             }
@@ -1984,7 +1984,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if action_mode:
             self.log.info("request action '%s' on node %s", action, display_node)
         try:
-            data = self.daemon_get(
+            data = self.daemon_post(
                 req,
                 server=server,
                 silent=True,

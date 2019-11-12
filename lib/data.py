@@ -49,7 +49,7 @@ class DataMixin(object):
                 "data": data,
             }
         }
-        result = self.daemon_get(req, timeout=5)
+        result = self.daemon_post(req, timeout=5)
         status, error, info = self.parse_result(result)
         if info:
             print(info)

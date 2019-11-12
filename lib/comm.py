@@ -706,14 +706,22 @@ class Crypt(object):
         return conn
 
     def daemon_get(self, *args, **kwargs):
+        kwargs["method"] = "GET"
+        return self.daemon_request(*args, **kwargs)
+
+    def daemon_post(self, *args, **kwargs):
+        kwargs["method"] = "POST"
+        return self.daemon_request(*args, **kwargs)
+
+    def daemon_request(self, *args, **kwargs):
         #print("get", args, kwargs)
         #import traceback
         #traceback.print_stack()
         sp = self.socket_parms(kwargs.get("server"))
         if sp.scheme == "raw" and not want_context():
-            return self.raw_daemon_get(*args, sp=sp, **kwargs)
+            return self.raw_daemon_request(*args, sp=sp, **kwargs)
         else:
-            return self.h2_daemon_get(*args, sp=sp, **kwargs)
+            return self.h2_daemon_request(*args, sp=sp, **kwargs)
 
     def get_cluster_name(self, sp, cluster_name):
         if want_context():
@@ -741,15 +749,14 @@ class Crypt(object):
         else:
             return bdecode(self.cluster_key)
 
-    def h2_daemon_get(self, data, server=None, node=None, with_result=True, silent=False,
-                        cluster_name=None, secret=None, timeout=0, sp=None):
+    def h2_daemon_request(self, data, server=None, node=None, with_result=True, silent=False,
+                          cluster_name=None, secret=None, timeout=0, sp=None, method="GET"):
         secret = self.get_secret(sp, secret)
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, multiplexed=data.get("multiplexed"), af=sp.af)
         body = self.h2_body_from_data(data)
         headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp)
-        method = "GET"
         try:
             conn.request(method, path, headers=headers, body=body)
         except AssertionError as exc:
@@ -763,8 +770,8 @@ class Crypt(object):
         data = json.loads(bdecode(data))
         return data
 
-    def raw_daemon_get(self, data, server=None, node=None, with_result=True, silent=False,
-                        cluster_name=None, secret=None, timeout=0, sp=None):
+    def raw_daemon_request(self, data, server=None, node=None, with_result=True, silent=False,
+                           cluster_name=None, secret=None, timeout=0, sp=None, method="GET"):
         """
         Send a request to the daemon running on server and return the result
         fetched if with_result is set.
@@ -775,6 +782,7 @@ class Crypt(object):
             server = rcEnv.nodename
         if node:
             data["node"] = node
+        data["method"] = method
         progress = "connecting"
         try:
             while True:

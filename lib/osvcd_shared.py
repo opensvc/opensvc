@@ -77,7 +77,7 @@ PATCH_ID = 0
 COMPAT_VERSION = 10
 
 # expose api handlers version
-API_VERSION = 4
+API_VERSION = 5
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
@@ -180,6 +180,12 @@ RUN_DONE = set()
 
 # min interval between thread stats refresh
 STATS_INTERVAL = 1
+
+# Agent as a relay heartbeart server
+RELAY_DATA = {}
+RELAY_LOCK = RLock()
+RELAY_SLOT_MAX_AGE = 24 * 60 * 60
+RELAY_JANITOR_INTERVAL = 10 * 60
 
 # try to give a name to the locks, for debugging when using
 # the pure python locks (native locks don't support setattr)
