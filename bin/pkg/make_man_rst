@@ -26,11 +26,11 @@ def action_pname(prog, section_name, action_name):
 def option_pname(prog, name):
     return prog + ".option." + name
 
-def write_sections(prog, mod):
-    for name, data in mod.ACTIONS.items():
-        write_section(prog, name, data)
+def write_sections(prog, parser):
+    for name, data in parser.actions.items():
+        write_section(prog, name, data, parser)
 
-def write_section(prog, name, data):
+def write_section(prog, name, data, parser):
     pname = section_pname(prog, name)
     buff = ".. _%s:\n\n" % pname 
 
@@ -45,7 +45,7 @@ def write_section(prog, name, data):
     for action_name in sorted(data.keys()):
         action_data = data[action_name]
         buff += "   %s\n" % action_pname(prog, name, action_name)
-        write_action(prog, name, action_name, action_data)
+        write_action(prog, name, action_name, action_data, parser)
 
     buff += "\n"
 
@@ -58,7 +58,7 @@ def prog2om(prog):
     kind = prog.replace("mgr", "")
     return "om " + kind
 
-def write_action(prog, section_name, action_name, action_data):
+def write_action(prog, section_name, action_name, action_data, parser):
     pname = action_pname(prog, section_name, action_name)
     buff = ".. _%s:\n\n" % pname 
 
@@ -70,7 +70,11 @@ def write_action(prog, section_name, action_name, action_data):
 
     buff += "\n"
 
-    for option in sorted(action_data.get("options", []), key=lambda x:str(x._short_opts+x._long_opts)):
+    options = action_data.get("options", [])
+    if parser.global_options:
+        options += parser.global_options
+    for option in sorted(options, key=lambda x:str(x._short_opts+x._long_opts)):
+        if action_name == "provision": print(" ", option)
         buff += fmt_option(prog, option)
 
     buff += "\n"
@@ -86,7 +90,7 @@ def fmt_option(prog, option):
     opts = []
     for opt in option._short_opts:
         if option.action == "store":
-            opts += [opt, param]
+            opts += [opt, "VAL"]
         else:
             opts += [opt]
 
@@ -110,8 +114,8 @@ def fmt_option(prog, option):
 
     return buff
 
-def write(prog, mod):
-    write_sections(prog, mod)
+def write(prog, parser):
+    write_sections(prog, parser)
 
     buff = ""
 
@@ -132,7 +136,9 @@ def write(prog, mod):
 def do(kind):
     prog = kind+"mgr"
     mod = __import__(kind+"mgr_parser")
-    write(prog, mod)
+    classname = prog.capitalize() + "OptParser"
+    parser = getattr(mod, classname)()
+    write(prog, parser)
 
 if __name__ == "__main__":
     do("node")
