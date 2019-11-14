@@ -5182,3 +5182,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def delete(self):
         self.delete_sections(self.options.kw)
+
+    @lazy
+    def oci(self):
+        oci = self.oget("node", "oci")
+        if oci:
+            return oci
+        if which("podman"):
+            return "podman"
+        else:
+            return "docker"
+

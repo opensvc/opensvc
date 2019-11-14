@@ -200,8 +200,9 @@ class rcEnv:
     vt_cloud = ["vcloud", "openstack", "amazon"]
     vt_libvirt = ["kvm"]
     vt_vm = ["ldom", "hpvm", "kvm", "xen", "vbox", "ovm", "esx"] + vt_cloud
-    vt_container = ["zone", "lxd", "lxc", "jail", "vz", "srp", "docker", "podman"]
+    vt_container = ["zone", "lxd", "lxc", "jail", "vz", "srp", "docker", "podman", "oci"]
     vt_supported = vt_vm + vt_container
+    oci_types = ["podman", "docker"]
 
     dbopensvc = None
     dbopensvc_host = None

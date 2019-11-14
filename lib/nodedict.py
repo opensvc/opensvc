@@ -47,6 +47,11 @@ BASE_SECTIONS = [
 PRIVATE_KEYWORDS = [
     {
         "section": "node",
+        "keyword": "oci",
+        "text": "The default micro-container driver. If not set, prefer podman if installed, fallback to docker."
+    },
+    {
+        "section": "node",
         "keyword": "uuid",
         "text": "The auth token provided by the collector on :cmd:`nodemgr register`."
     },

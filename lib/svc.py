@@ -2162,6 +2162,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def unset_conf_lazy(self):
         self.init_nodes()
+        self.unset_lazy("cd")
         self.unset_lazy("nodes")
         self.unset_lazy("ordered_nodes")
         self.unset_lazy("peers")

@@ -535,6 +535,8 @@ def add_sync(svc, s):
 
 def add_container(svc, s):
     rtype = svc.oget(s, "type")
+    if rtype == "oci":
+        rtype = svc.node.oci
     try:
         globals()["add_container_"+rtype](svc, s)
     except KeyError:
@@ -1492,6 +1494,8 @@ def add_sync_rsync(svc, s):
 
 def add_task(svc, s):
     rtype = svc.oget(s, "type")
+    if rtype == "oci":
+        rtype = svc.node.oci
     if rtype == "docker":
         add_task_docker(svc, s)
     elif rtype == "podman":
