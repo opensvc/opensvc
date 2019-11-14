@@ -187,6 +187,7 @@ ACTIONS_NO_STATUS_CHANGE = [
     "json_sub_devs",
     "json_base_devs",
     "logs",
+    "oci",
     "podman",
     "pg_pids",
     "print_config",
@@ -298,6 +299,7 @@ ACTIONS_NO_LOCK = [
     "eval",
     "get",
     "logs",
+    "oci",
     "podman",
     "push_resinfo",
     "push_status",
@@ -893,6 +895,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
            'compliance' not in action and \
            'collector' not in action and \
             not options.dry_run and \
+            not action.startswith("oci") and \
             not action.startswith("docker") and \
             not action.startswith("podman"):
             #
@@ -951,6 +954,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return False
         if self.node.collector_env.dbopensvc is None or action in ACTIONS_NO_LOG or \
            action.startswith("compliance") or \
+           action.startswith("oci") or \
            action.startswith("docker") or \
            action.startswith("podman") or \
            options.dry_run:
@@ -5309,9 +5313,12 @@ class Svc(BaseSvc):
     def podman(self):
         self.container_manager_passthrough("podman")
 
+    def oci(self):
+        self.container_manager_passthrough(self.node.oci)
+
     def container_manager_passthrough(self, ctype):
         """
-        The 'docker|podman' action entry point.
+        The 'docker|podman|oci' action entry point.
         Parse the docker argv and substitute known patterns before relaying
         the argv to the docker command.
         Set the socket to point the service-private docker daemon if

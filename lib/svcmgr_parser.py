@@ -492,6 +492,25 @@ ACTIONS["Service actions"].update({
             OPT.cron,
         ],
     },
+    "oci": {
+        "msg": "Wrap the podman or docke client command, setting automatically "
+               "the namespace, cni-config-dir options and eventually "
+               "the --root and --runroot options for services configured "
+               "for private storage. The {as_service}, {images} and "
+               "{instances} words "
+               "in the wrapped command are replaced by, respectively, "
+               "the registry login username/password/email parameters to "
+               "log as a service using <path>@<nodename> as the "
+               "username and the node uuid as password (which is what "
+               "is expected when the opensvc collector is used as the "
+               "JWT manager for the registry), the set of podman "
+               "container names and images for container resources "
+               "passing the --tags, --rid and --subsets filters. This is "
+               "useful to remove all instances of a service or all "
+               "instances of resources with a tag like 'frontend'. Note "
+               "the opensvc filters must be positioned before the docker "
+               "command in the arguments list.",
+    },
     "podman": {
         "msg": "Wrap the podman client command, setting automatically "
                "the namespace, cni-config-dir options and eventually "

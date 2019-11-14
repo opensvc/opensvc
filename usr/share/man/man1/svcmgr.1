@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2019\-11\-07
+.TH SVCMGR 1 2019\-11\-14
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -4822,6 +4822,100 @@ with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr oci\fP
+.RS
+
+Wrap the podman or docke client command, setting automatically the namespace, cni-config-dir options and eventually the --root and --runroot options for services configured for private storage. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <path>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of podman container names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
+
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.

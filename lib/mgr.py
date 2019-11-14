@@ -29,12 +29,12 @@ class Mgr(object):
     @staticmethod
     def get_extra_argv(argv=None):
         """
-        Extract docker/podman/... passed-through argv from svcmgr argv.
+        Extract oci/docker/podman/... passed-through argv from svcmgr argv.
 
         svcmgr acts as a wrapper for those commands, setting the service-specific
         socket if necessary.
         """
-        commands = ["podman", "docker"]
+        commands = ["oci", "podman", "docker"]
         if argv is None:
             argv = sys.argv[1:]
         if len(argv) < 2:
