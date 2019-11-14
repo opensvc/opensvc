@@ -169,16 +169,21 @@ class DataMixin(object):
 
     def write_key(self, vpath, data):
         mtime = os.path.getmtime(self.paths.cf)
+        try:
+            data = data.encode()
+        except (AttributeError, UnicodeDecodeError, UnicodeEncodeError):
+            # already bytes
+            pass
         if os.path.exists(vpath):
             if mtime == os.path.getmtime(vpath):
                 return
-            with open(vpath, "r") as ofile:
+            with open(vpath, "rb") as ofile:
                 current = ofile.read()
             if current == data:
                 os.utime(vpath, (mtime, mtime))
                 return
         self.log.info("install %s %s", self.desc, vpath)
-        with open(vpath, "w") as ofile:
+        with open(vpath, "wb") as ofile:
             os.chmod(vpath, self.default_mode)
             ofile.write(data)
             os.utime(vpath, (mtime, mtime))

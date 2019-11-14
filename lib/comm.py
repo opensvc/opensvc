@@ -86,7 +86,7 @@ try:
         Low level encrypter.
         """
         message = pyaes.util.append_PKCS7_padding(
-            zlib.compress(message.encode())
+            zlib.compress(message)
         )
         obj = AES.new(key, AES.MODE_CBC, _iv)
         ciphertext = obj.encrypt(message)
@@ -109,7 +109,7 @@ except ImportError:
         obj = pyaes.Encrypter(
             pyaes.AESModeOfOperationCBC(to_bytes(key), iv=_iv)
         )
-        ciphertext = obj.feed(zlib.compress(message.encode()))
+        ciphertext = obj.feed(zlib.compress(message))
         ciphertext += obj.feed()
         return ciphertext
 
@@ -379,7 +379,7 @@ class Crypt(object):
         iv = base64.urlsafe_b64decode(to_bytes(iv))
         data = base64.urlsafe_b64decode(to_bytes(message["data"]))
         try:
-            data = bdecode(self._decrypt(data, cluster_key, iv))
+            data = self._decrypt(data, cluster_key, iv)
         except Exception as exc:
             self.log.error("decrypt message from %s: %s", msg_nodename, str(exc))
             self.blacklist(sender_id)
@@ -387,7 +387,7 @@ class Crypt(object):
         if sender_id:
             self.blacklist_clear(sender_id)
         try:
-            return msg_clustername, msg_nodename, json.loads(data)
+            return msg_clustername, msg_nodename, json.loads(bdecode(data))
         except ValueError as exc:
             return msg_clustername, msg_nodename, data
 
@@ -404,13 +404,18 @@ class Crypt(object):
         if cluster_key is None:
             return
         iv = self.gen_iv()
+        try:
+            data = json.dumps(data).encode()
+        except (UnicodeDecodeError, TypeError):
+            # already binary data
+            pass
         message = {
             "clustername": cluster_name,
             "nodename": rcEnv.nodename,
             "iv": bdecode(base64.urlsafe_b64encode(iv)),
             "data": bdecode(
                 base64.urlsafe_b64encode(
-                    self._encrypt(json.dumps(data), cluster_key, iv)
+                    self._encrypt(data, cluster_key, iv)
                 )
             ),
         }
