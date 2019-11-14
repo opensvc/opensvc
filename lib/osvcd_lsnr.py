@@ -44,10 +44,16 @@ from comm import Headers
 from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
-                        unset_lazy
+                        unset_lazy, bencode
 from converters import convert_size, print_duration
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
+
+class DummyException(Exception):
+    pass
+
+if six.PY2:
+    ConnectionResetError = DummyException
 
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
@@ -795,14 +801,19 @@ class ClientHandler(shared.OsvcThread):
             pass
         except DontClose:
             close = False
-        except OSError as exc:
+        except (OSError, socket.error) as exc:
             if exc.errno in (0, 104):
                 pass
         except RuntimeError as exc:
             self.log.error("%s", exc)
         except Exception as exc:
-            self.log.error("unexpected: %s", exc)
-            traceback.print_exc()
+            try:
+                ignore = exc.errno == 0
+            except AttributeError:
+                ignore = False
+            if not ignore:
+                self.log.error("unexpected: %s", exc)
+                traceback.print_exc()
         finally:
             if close:
                 del self.parent.stats.sessions.alive[self.sid]
@@ -969,7 +980,7 @@ class ClientHandler(shared.OsvcThread):
                 data = {}
             data = json.dumps(data).encode()
         elif isinstance(data, six.string_types):
-            data = data.encode()
+            data = bencode(data)
         elif data is None:
             data = "".encode()
         if data:
@@ -982,7 +993,6 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.streams[stream_id]["outbound"] += data
         except TypeError as exc:
-            print(stream_id, self.streams[stream_id], data, exc)
             pass
         self.send_outbound(stream_id)
 
@@ -1206,8 +1216,13 @@ class ClientHandler(shared.OsvcThread):
                 self.parent.stats.sessions.rx += len(data)
                 self.parent.stats.sessions.clients[self.addr[0]].rx += len(data)
                 self.h2_received(data)
+            except ssl.SSLError:
+                pass
             except socket.timeout:
                 pass
+            except socket.error as exc:
+                if exc.errno in (0, 104):
+                    continue
             except h2.exceptions.StreamClosedError:
                 return
             except ConnectionResetError:
