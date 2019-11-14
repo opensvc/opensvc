@@ -737,7 +737,7 @@ class OsvcThread(threading.Thread, Crypt):
                      close_fds=True, env=env)
         return proc
 
-    def service_command(self, path, cmd, stdin=None, local=True):
+    def service_command(self, path, cmd, stdout=None, stderr=None, stdin=None, local=True):
         """
         A generic svcmgr command Popen wrapper.
         """
@@ -754,7 +754,7 @@ class OsvcThread(threading.Thread, Crypt):
             _stdin = PIPE
         else:
             _stdin = None
-        proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=_stdin,
+        proc = Popen(_cmd+cmd, stdout=stdout, stderr=stderr, stdin=_stdin,
                      close_fds=True, env=env)
         if stdin:
             proc.stdin.write(stdin.encode())

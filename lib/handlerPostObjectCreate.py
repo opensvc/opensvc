@@ -1,6 +1,6 @@
 import json
 import os
-from subprocess import Popen, PIPE
+from subprocess import PIPE
 
 import handler
 import osvcd_shared as shared
@@ -84,19 +84,22 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
         options = self.parse_options(kwargs)
         if not options.data and not options.template:
             return {"status": 0, "info": "no data"}
-        thr.log_request("create/update %s" % ",".join([p for p in options.data]), nodename, **kwargs)
         if options.template is not None:
             if options.path:
+                paths = [options.path]
                 cmd = ["create", "-s", options.path, "--template=%s" % options.template, "--env=-"]
             else:
+                paths = [p for p in options.data]
                 cmd = ["create", "--template=%s" % options.template, "--env=-"]
         else:
+            paths = [p for p in options.data]
             cmd = ["create", "--config=-"]
         if options.namespace:
             cmd.append("--namespace="+options.namespace)
         if options.restore:
             cmd.append("--restore")
-        proc = thr.service_command(None, cmd, stdin=json.dumps(options.data))
+        thr.log_request("create/update %s" % ",".join(paths), nodename, **kwargs)
+        proc = thr.service_command(None, cmd, stdout=PIPE, stderr=PIPE, stdin=json.dumps(options.data))
         if options.sync:
             out, err = proc.communicate()
             result = {
@@ -114,7 +117,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
                 "info": "started %s action %s" % (options.path, " ".join(cmd)),
             }
         if options.provision:
-            for path in options.data:
+            for path in paths:
                 thr.set_smon(path, global_expect="provisioned")
         return result
 
