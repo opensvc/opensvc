@@ -1692,6 +1692,8 @@ class ClientHandler(shared.OsvcThread):
             action = ROUTED_ACTIONS["object"].get(action)
         elif node:
             action = ROUTED_ACTIONS["node"].get(action)
+        else:
+            action = s
 
         return node, path, action
 
