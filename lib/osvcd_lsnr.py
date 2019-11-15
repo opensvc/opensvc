@@ -147,8 +147,12 @@ class Listener(shared.OsvcThread):
     last_janitors = 0
     crl_expire = 0
     crl_mode = None
+    sockux = None
+    sockuxh2 = None
     tls_sock = None
     tls_context = None
+    tls_port = -1
+    tls_addr = ""
     port = -1
     addr = ""
     handlers = {}
@@ -640,12 +644,26 @@ class Listener(shared.OsvcThread):
         if not has_ssl:
             self.log.info("skip tls listener init: ssl module import error")
             return
-        self.tls_port = shared.NODE.oget("listener", "tls_port")
-        self.tls_addr = shared.NODE.oget("listener", "tls_addr")
-        try:
-            self.tls_sock.close()
-        except Exception:
-            pass
+        port = shared.NODE.oget("listener", "tls_port")
+        addr = shared.NODE.oget("listener", "tls_addr")
+        if self.tls_port < 0 or not self.tls_addr:
+            self.tls_port = port
+            self.tls_addr = addr
+        elif port != self.tls_port or addr != self.tls_addr:
+            try:
+                self.tls_sock.close()
+            except socket.error:
+                pass
+            try:
+                del self.sockmap[self.tls_sock.fileno()]
+            except KeyError:
+                pass
+            self.tls_port = port
+            self.tls_addr = addr
+        else:
+            self.log.info("tls listener %s:%d config unchanged", self.tls_addr, self.tls_port)
+            return
+
         try:
             addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
             self.tls_context = self.get_http2_ssl_context()
@@ -668,8 +686,25 @@ class Listener(shared.OsvcThread):
         self.sockmap[self.tls_sock.fileno()] = self.tls_sock
 
     def setup_sock(self):
-        self.port = shared.NODE.oget("listener", "port")
-        self.addr = shared.NODE.oget("listener", "addr")
+        port = shared.NODE.oget("listener", "port")
+        addr = shared.NODE.oget("listener", "addr")
+        if self.port < 0 or not self.addr:
+            self.port = port
+            self.addr = addr
+        elif port != self.port or addr != self.addr:
+            try:
+                self.sock.close()
+            except socket.error:
+                pass
+            try:
+                del self.sockmap[self.sock.fileno()]
+            except KeyError:
+                pass
+            self.port = port
+            self.addr = addr
+        else:
+            self.log.info("aes listener %s:%d config unchanged", self.addr, self.port)
+            return
 
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
@@ -687,6 +722,9 @@ class Listener(shared.OsvcThread):
 
     def setup_sockux_h2(self):
         if os.name == "nt":
+            return
+        if self.sockuxh2:
+            self.log.info("raw listener %s config unchanged", rcEnv.paths.lsnruxsock)
             return
         if not os.path.exists(rcEnv.paths.lsnruxsockd):
             os.makedirs(rcEnv.paths.lsnruxsockd)
@@ -711,6 +749,9 @@ class Listener(shared.OsvcThread):
     def setup_sockux(self):
         if os.name == "nt":
             return
+        if self.sockux:
+            self.log.info("raw listener %s config unchanged", rcEnv.paths.lsnruxsock)
+            return
         if not os.path.exists(rcEnv.paths.lsnruxsockd):
             os.makedirs(rcEnv.paths.lsnruxsockd)
         try:
@@ -732,12 +773,6 @@ class Listener(shared.OsvcThread):
         self.sockmap[self.sockux.fileno()] = self.sockux
 
     def setup_socks(self):
-        for sock in self.sockmap.values():
-            try:
-                sock.close()
-            except socket.error:
-                pass
-        self.sockmap = {}
         self.setup_socktls()
         self.setup_sock()
         self.setup_sockux()
