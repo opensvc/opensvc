@@ -57,7 +57,9 @@ class Brocades(object):
             self.node = Node()
         done = []
         for s in self.node.conf_sections(cat="switch"):
-            name = s.split("#", 1)[-1]
+            name = self.node.oget(s, "name")
+            if not name:
+                name = s.split("#", 1)[-1]
             if name in done:
                 continue
             if self.filtering and name not in self.objects:

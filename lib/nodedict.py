@@ -1158,6 +1158,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "switch",
         "rtype": "brocade",
+        "keyword": "name",
+        "example": "sansw1.my.corp",
+        "text": "The name connect to the switch (dns name or ip address). If not set, fallback to the section name suffix."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
         "keyword": "username",
         "required": True,
         "example": "admin",
@@ -1330,6 +1337,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "keyword": "jre_path",
         "example": "/opt/java",
         "text": "The path hosting the java installation to use to execute the HiCommandCLI."
+    },
+    {
+        "section": "array",
+        "rtype": "hds",
+        "keyword": "name",
+        "example": "HUSVM.1234",
+        "text": "The name of the array. If not provided, fallback to the section name suffix."
     },
     {
         "section": "array",

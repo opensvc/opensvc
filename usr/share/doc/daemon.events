@@ -16,11 +16,6 @@ Id ``max_stdby_resource_restart``
 
 max restart ({restart}) reached for standby resource {rid} ({resource.label})
 
-Id ``service_config_installed``
--------------------------------
-
-config fetched from node {from} is now installed
-
 Id ``blacklist_add``
 --------------------
 
@@ -40,6 +35,11 @@ Id ``node_config_change``
 -------------------------
 
 node config change
+
+Id ``scale_down``
+-----------------
+
+exceeds {delta} instance to reach scale target {instance.scale}
 
 Id ``max_resource_restart``
 ---------------------------
@@ -61,10 +61,10 @@ Id ``hb_stale``
 
 node {nodename} hb status beating => stale
 
-Id ``scale_down``
------------------
+Id ``scale_up``
+---------------
 
-exceeds {delta} instance to reach scale target {instance.scale}
+misses {delta} instance to reach scale target {instance.scale}
 
 Id ``resource_degraded``
 ------------------------
@@ -81,10 +81,10 @@ Id ``arbitrator_down``
 
 arbitrator {arbitrator} is no longer reachable
 
-Id ``scale_up``
----------------
+Id ``service_config_installed``
+-------------------------------
 
-misses {delta} instance to reach scale target {instance.scale}
+config fetched from node {from} is now installed
 
 Id ``crash``, Reason ``split``
 ------------------------------
