@@ -7,6 +7,7 @@ class Handler(handler.Handler):
     """
     routes = (
         ("GET", "node"),
+        ("GET", "get_node"),
         (None, "get_node"),
     )
     prototype = []
