@@ -1,7 +1,10 @@
+import time
+
 from six.moves import queue
 import handler
 import osvcd_shared as shared
 from rcUtilities import bdecode
+from rcGlobalEnv import rcEnv
 
 try:
     from hyper.common.headers import HTTPHeaderMap
@@ -21,6 +24,14 @@ class Handler(handler.Handler):
             "name": "selector",
             "required": False,
             "format": "string",
+            "desc": "An object selector to filter the events.",
+        },
+        {
+            "name": "full",
+            "required": False,
+            "default": False,
+            "format": "boolean",
+            "desc": "Send a first message containing a the full cluster data the following patch events apply to.",
         },
     ]
     access = {
@@ -33,6 +44,19 @@ class Handler(handler.Handler):
         thr.selector = options.selector
         if not thr.event_queue:
             thr.event_queue = queue.Queue()
+        if options.full:
+            data = thr.daemon_status()
+            namespaces = thr.get_namespaces()
+            thr.event_queue.put({
+                "nodename": rcEnv.nodename,
+                "ts": time.time(),
+                "kind": "full",
+                "data": thr.filter_daemon_status(
+                    data,
+                    namespaces=namespaces,
+                    selector=options.selector
+                ),
+            })
         if not thr in thr.parent.events_clients:
             thr.parent.events_clients.append(thr)
         if not stream_id in thr.events_stream_ids:

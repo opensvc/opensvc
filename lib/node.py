@@ -3518,21 +3518,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if duration is not None:
             duration = convert_duration(duration)
 
-        while True:
-            try:
-                cluster_data = self._daemon_status()
-                cluster_data["monitor"]
-                break
-            except KeyError:
-                if duration is None or duration < 0:
-                    raise ex.excError("could not fetch cluster data")
-                duration -= 1
-                if duration < 0:
-                    raise ex.excError("could not fetch cluster data")
-                time.sleep(1)
-
-        if neg ^ eval_cond(val, cluster_data):
-            return
+        cluster_data = {}
 
         if duration:
             import signal
@@ -3543,9 +3529,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             signal.alarm(duration)
 
         last_patch_id = 0
-        for patch in self.daemon_events(server):
+        for patch in self.daemon_events(server, full=True):
             kind = patch.get("kind")
-            if kind == "patch":
+            if kind == "full":
+                cluster_data = patch["data"]
+                if neg ^ eval_cond(val, cluster_data):
+                    return
+            elif kind == "patch":
                 if last_patch_id and last_patch_id+1 == patch["id"]:
                     try:
                         json_delta.patch(cluster_data, patch["data"])
@@ -4811,11 +4801,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print_node_data(server, data)
                 return data.get("ret", 0)
 
-    def daemon_events(self, server=None, selector=None):
+    def daemon_events(self, server=None, selector=None, full=False):
         req = {
             "action": "events",
             "options": {
                 "selector": selector,
+                "full": full,
             },
         }
         while True:
