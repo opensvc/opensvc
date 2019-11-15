@@ -90,7 +90,7 @@ class Sec(DataMixin, BaseSvc):
                     if kw not in casec.data_keys():
                         continue
                     data[key] = self.tempfilename()
-                    buff = casec.decode_key(kw)
+                    buff = bdecode(casec.decode_key(kw))
                     with open(data[key], "w") as ofile:
                         ofile.write(buff)
             gen_cert(log=self.log, **data)
@@ -127,7 +127,7 @@ class Sec(DataMixin, BaseSvc):
                     pass
 
     def get_cert_expire(self):
-        buff = self.decode_key("certificate")
+        buff = bdecode(self.decode_key("certificate"))
         return get_expire(buff)
 
     def pkcs12(self):
@@ -162,7 +162,7 @@ class Sec(DataMixin, BaseSvc):
         try:
             with open(tmpkey, "w") as _tmpkey:
                 os.chmod(tmpkey, 0o600)
-                _tmpkey.write(self.decode_key("private_key"))
+                _tmpkey.write(bdecode(self.decode_key("private_key")))
             with open(tmpcert, "w") as _tmpcert:
                 os.chmod(tmpcert, 0o600)
                 _tmpcert.write(self.decode_key("certificate_chain"))
@@ -185,6 +185,6 @@ class Sec(DataMixin, BaseSvc):
         required = set(["private_key", "certificate_chain"])
         if required & set(self.data_keys()) != required:
             self.gen_cert()
-        buff = self.decode_key("private_key")
-        buff += self.decode_key("certificate_chain")
+        buff = bdecode(self.decode_key("private_key"))
+        buff += bdecode(self.decode_key("certificate_chain"))
         return buff
