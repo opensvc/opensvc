@@ -3533,8 +3533,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             kind = patch.get("kind")
             if kind == "full":
                 cluster_data = patch["data"]
-                if neg ^ eval_cond(val, cluster_data):
-                    return
+                if match_patch():
+                    break
             elif kind == "patch":
                 if last_patch_id and last_patch_id+1 == patch["id"]:
                     try:
