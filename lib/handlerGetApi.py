@@ -28,6 +28,7 @@ class Handler(handler.Handler):
                 "prototype": h.prototype,
                 "access": h.access,
                 "desc": h.__doc__.strip(),
+                "stream": h.stream,
             })
         return data
 

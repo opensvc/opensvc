@@ -18,6 +18,7 @@ class Handler(handler.Handler):
         (None, "node_logs"),
     )
     prototype = []
+    stream = True
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")

@@ -13,6 +13,7 @@ class Handler(object):
         "roles": ["root"],
     }
     prototype = []
+    stream = False
 
     def rbac(self, nodename, thr=None, **kwargs):
         kwargs.update(self.access)

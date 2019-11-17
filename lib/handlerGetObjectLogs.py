@@ -31,6 +31,7 @@ class Handler(handler.Handler):
         "roles": ["guest"],
         "namespaces": "FROM:path",
     }
+    stream = True
 
     def rbac(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)

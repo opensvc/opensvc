@@ -38,6 +38,7 @@ class Handler(handler.Handler):
         "roles": ["guest"],
         "namespaces": "ANY",
     }
+    stream = True
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         options = self.parse_options(kwargs)
