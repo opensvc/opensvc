@@ -1211,7 +1211,12 @@ class ClientHandler(shared.OsvcThread):
     def h2_received(self, data):
         if not data:
             return
-        events = self.h2conn.receive_data(data)
+        try:
+            events = self.h2conn.receive_data(data)
+        except h2.exceptions.ProtocolError as exc:
+            self.log.warning("%s", exc)
+            self.stop()
+            return
         for event in events:
             if isinstance(event, h2.events.RequestReceived):
                 self.h2_request_received(event)
