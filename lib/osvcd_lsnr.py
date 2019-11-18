@@ -14,7 +14,7 @@ import shutil
 import traceback
 import uuid
 import fnmatch
-from six.moves.urllib.parse import urlparse, parse_qs
+from six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen, PIPE
 
 try:
@@ -149,6 +149,7 @@ class Listener(shared.OsvcThread):
     crl_mode = None
     sockux = None
     sockuxh2 = None
+    sock = None
     tls_sock = None
     tls_context = None
     tls_port = -1
@@ -523,9 +524,12 @@ class Listener(shared.OsvcThread):
             # root and no selector => fast path
             return event
         namespaces = thr.get_namespaces()
-        if event.get("kind") == "patch":
+        kind = event.get("kind")
+        if kind == "full":
+            return event
+        elif kind == "patch":
             return self.filter_patch_event(event, thr, namespaces)
-        else:
+        elif kind == "event":
             return self.filter_event_event(event, thr, namespaces)
 
     def filter_event_event(self, event, thr, namespaces):
