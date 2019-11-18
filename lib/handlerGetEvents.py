@@ -48,7 +48,7 @@ class Handler(handler.Handler):
         if options.full:
             data = thr.daemon_status()
             namespaces = thr.get_namespaces()
-            thr.event_queue.put({
+            fevent = {
                 "nodename": rcEnv.nodename,
                 "ts": time.time(),
                 "kind": "full",
@@ -57,7 +57,14 @@ class Handler(handler.Handler):
                     namespaces=namespaces,
                     selector=options.selector
                 ),
-            })
+            }
+            if thr.h2conn:
+                _msg = fevent
+            elif thr.encrypted:
+                _msg = thr.encrypt(fevent)
+            else:
+                _msg = thr.msg_encode(fevent)
+            thr.event_queue.put(_msg)
         if not thr in thr.parent.events_clients:
             thr.parent.events_clients.append(thr)
         if not stream_id in thr.events_stream_ids:
