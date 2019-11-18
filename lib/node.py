@@ -3533,10 +3533,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             kind = patch.get("kind")
             if kind == "full":
                 cluster_data = patch["data"]
+                last_patch_id = 0
                 if match_patch():
                     break
             elif kind == "patch":
-                if last_patch_id and last_patch_id+1 == patch["id"]:
+                if not last_patch_id or last_patch_id+1 == patch["id"]:
                     try:
                         json_delta.patch(cluster_data, patch["data"])
                         last_patch_id = patch["id"]
