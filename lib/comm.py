@@ -951,6 +951,7 @@ class Crypt(object):
         """
         if node:
             data["node"] = node
+        data["method"] = "GET"
         sp = self.socket_parms(server)
         try:
             sock = socket.socket(sp.af, socket.SOCK_STREAM)
