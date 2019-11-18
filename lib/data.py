@@ -119,9 +119,9 @@ class DataMixin(object):
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
         try:
-            sys.stdout.write(buff)
-        except Exception:
             sys.stdout.buffer.write(buff)
+        except AttributeError:
+            sys.stdout.write(buff)
 
     def keys(self):
         data = sorted(self.data_keys())
