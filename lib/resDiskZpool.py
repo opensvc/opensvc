@@ -5,6 +5,7 @@ import time
 
 import resDisk
 import rcExceptions as ex
+import rcStatus
 from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, qcall, which, lazy, cache
@@ -57,21 +58,55 @@ class Disk(resDisk.Disk):
             return True
         return False
 
-    @cache("zpool.health.{args[1]}")
-    def zpool_health(self, name):
-        cmd = ["zpool", "list", "-H", "-o", "health", name]
+    def zpool_health(self, status):
+        for line in status.splitlines():
+            line = line.strip()
+            if not line.strip().startswith("state:"):
+                continue
+            return line.split(":", 1)[-1].strip()
+        return "unknown"
+
+    def zpool_errors(self, status):
+        errors = []
+        for line in status.splitlines():
+            if not line.strip().startswith("errors:"):
+                continue
+            errors.append(line.split(":", 1)[-1].strip())
+        return errors
+
+    @cache("zpool.status.{args[1]}")
+    def zpool_status(self, name):
+        cmd = ["zpool", "status", "-v", name]
         out, err, ret = justcall(cmd)
-        return out.strip()
+        return out+err
+
+    def _status(self, verbose=False):
+        status = self.zpool_status(self.name)
+        errors = self.zpool_errors(status)
+        if errors:
+            for error in errors:
+                if "pool I/O is currently suspended" in error:
+                    self.status_log("pool I/O is currently suspended")
+                    return rcStatus.WARN
+                self.status_log(error)
+        if self.is_up():
+            return rcStatus.UP
+        else:
+            return rcStatus.DOWN
 
     def is_up(self):
         """Returns True if the pool is present and activated
         """
+        status = self.zpool_status(self.name)
+        state = self.zpool_health(status)
         if not self.has_it():
             return False
-        state = self.zpool_health(self.name)
         if state == "ONLINE":
             return True
-        elif state in ("SUSPENDED", "DEGRADED"):
+        elif state == "SUSPENDED":
+            self.status_log(state.lower())
+            return True
+        elif state == "DEGRADED":
             self.status_log(state.lower())
             return True
         return False
