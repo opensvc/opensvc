@@ -4667,23 +4667,24 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
 
 
-        # join other nodes
         errors = 0
-        for nodename in cluster_nodes.split():
-            if nodename in (rcEnv.nodename, joined):
-                continue
-            data = self.daemon_post(
-                {"action": "join"},
-                server=nodename,
-                cluster_name="join",
-                secret=secret,
-                timeout=5,
-            )
-            if data is None:
-                self.log.error("join node %s failed", nodename)
-                errors += 1
-            else:
-                self.log.info("join node %s", nodename)
+        if not cluster_config_data or not cluster_config_data.get("cluster", {}).get("nodes"):
+            # join other nodes
+            for nodename in cluster_nodes.split():
+                if nodename in (rcEnv.nodename, joined):
+                    continue
+                data = self.daemon_post(
+                    {"action": "join"},
+                    server=nodename,
+                    cluster_name="join",
+                    secret=secret,
+                    timeout=5,
+                )
+                if data is None:
+                    self.log.error("join node %s failed", nodename)
+                    errors += 1
+                else:
+                    self.log.info("join node %s", nodename)
 
         # leave node frozen if initially frozen or we failed joining all nodes
         if initially_frozen:
