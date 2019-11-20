@@ -20,7 +20,8 @@ class Handler(handler.Handler, mixinClusterLock.LockMixin):
         lock_id = self.lock_acquire(rcEnv.nodename, "join", 30, thr=thr)
         if not lock_id:
             raise HTTP(503, "Lock not acquired")
-        data = self.join(nodename, thr=thr, **kwargs)
+        with shared.JOIN_LOCK:
+            data = self.join(nodename, thr=thr, **kwargs)
         self.lock_release("join", lock_id, thr=thr)
         return data
 

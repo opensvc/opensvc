@@ -181,6 +181,9 @@ RUN_DONE = set()
 # min interval between thread stats refresh
 STATS_INTERVAL = 1
 
+# to prevent concurrent join handler execution
+JOIN_LOCK = RLock()
+
 # Agent as a relay heartbeart server
 RELAY_DATA = {}
 RELAY_LOCK = RLock()
