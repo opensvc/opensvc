@@ -442,7 +442,7 @@ class Container(resContainer.Container):
 
         args = drop_option("--hostname", args, drop_value=True)
         args = drop_option("-h", args, drop_value=True)
-        if not self.netns:
+        if not self.netns or (self.netns != "host" and not self.netns.startswith("container#"):
             # only allow hostname setting if the container has a private netns
             if self.vm_hostname:
                 args += ["--hostname", self.vm_hostname]
