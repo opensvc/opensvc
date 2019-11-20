@@ -25,10 +25,14 @@ class HbUcast(Hb):
         data = Hb.status(self, **kwargs)
         data["stats"]= self.stats
         data["config"] = {
-            "addr": self.peer_config[rcEnv.nodename]["addr"],
-            "port": self.peer_config[rcEnv.nodename]["port"],
             "timeout": self.timeout,
         }
+        try:
+            data["config"]["addr"] = self.peer_config[rcEnv.nodename]["addr"]
+            data["config"]["port"] = self.peer_config[rcEnv.nodename]["port"]
+        except (TypeError, KeyError):
+            # thread not configured yet
+            pass
         return data
 
     def configure(self):
