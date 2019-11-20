@@ -1,9 +1,12 @@
 import os
 
 import handler
+import mixinClusterLock
 import osvcd_shared as shared
+from rcExceptions import HTTP
+from rcGlobalEnv import rcEnv
 
-class Handler(handler.Handler):
+class Handler(handler.Handler, mixinClusterLock.LockMixin):
     """
     Join the cluster.
     """
@@ -14,6 +17,14 @@ class Handler(handler.Handler):
     prototype = []
 
     def action(self, nodename, thr=None, **kwargs):
+        lock_id = self.lock_acquire(rcEnv.nodename, "join", 30, thr=thr)
+        if not lock_id:
+            raise HTTP(503, "Lock not acquired")
+        data = self.join(nodename, thr=thr, **kwargs)
+        self.lock_release("join", lock_id, thr=thr)
+        return data
+
+    def join(self, nodename, thr=None, **kwargs):
         if nodename in thr.cluster_nodes:
             new_nodes = thr.cluster_nodes
             thr.log.info("node %s rejoins", nodename)

@@ -761,6 +761,9 @@ class OsvcThread(threading.Thread, Crypt):
         return proc
 
     def add_cluster_node(self, nodename):
+        NODE.unset_lazy("cd")
+        NODE.unset_lazy("private_cd")
+        unset_lazy(self, "cluster_nodes")
         if nodename in self.cluster_nodes:
             return
         nodes = self.cluster_nodes + [nodename]
@@ -773,6 +776,9 @@ class OsvcThread(threading.Thread, Crypt):
             del svc
 
     def remove_cluster_node(self, nodename):
+        NODE.unset_lazy("cd")
+        NODE.unset_lazy("private_cd")
+        unset_lazy(self, "cluster_nodes")
         if nodename not in self.cluster_nodes:
             return
         nodes = [node for node in self.cluster_nodes if node != nodename]
