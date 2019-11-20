@@ -110,6 +110,7 @@ HANDLERS = [
     "handlerGetRelayStatus",
     "handlerGetTemplates",
     "handlerGetTemplate",
+    "handlerGetWait",
     "handlerGetWhoami",
     "handlerPostAskFull",
     "handlerPostBlacklistClear",
@@ -506,12 +507,7 @@ class Listener(shared.OsvcThread):
                     if not thr.events_stream_ids:
                         to_remove.append(idx)
                         continue
-                    _msg = fevent
-                elif thr.encrypted:
-                    _msg = self.encrypt(fevent)
-                else:
-                    _msg = self.msg_encode(fevent)
-                thr.event_queue.put(_msg)
+                thr.event_queue.put(fevent)
             for idx in to_remove:
                 try:
                     del self.events_clients[idx]
@@ -1823,6 +1819,12 @@ class ClientHandler(shared.OsvcThread):
                 msg = self.event_queue.get(True, 1)
             except queue.Empty:
                 continue
+
+            if self.encrypted:
+                msg = self.encrypt(msg)
+            else:
+                msg = self.msg_encode(msg)
+
             self.conn.sendall(msg)
 
     def logskip(self, backlog, logfile):

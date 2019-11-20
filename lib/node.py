@@ -49,14 +49,12 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_path, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_path, strip_path, normalize_paths, \
-                        normalize_jsonpath, daemon_test_lock
+                        daemon_test_lock
 from contexts import want_context
 from converters import *
 from comm import Crypt
 from extconfig import ExtConfigMixin
 from lock import LOCK_EXCEPTIONS
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -3422,142 +3420,27 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Wait for a condition on the monitor thread data or
         a local event data.
         """
-        import json_delta
-
-        if not path:
-            return
-
-        if server is None:
-            server = rcEnv.nodename
-
-        ops = (">=", "<=", "=", ">", "<", "~", " in ")
-        oper = None
-        val = None
-
-        if path[0] == "!":
-            path = path[1:]
-            neg = True
-        else:
-            neg = False
-
-        for op in ops:
-            idx = path.rfind(op)
-            if idx < 0:
-                continue
-            val = path[idx+len(op):].strip()
-            path = path[:idx].strip()
-            oper = op
-            if op == "~":
-                if not val.startswith(".*") and not val.startswith("^"):
-                    val = ".*" + val
-                if not val.endswith(".*") and not val.endswith("$"):
-                    val = val + ".*"
-            break
-
-        path = normalize_jsonpath(path)
-        try:
-            jsonpath_expr = parse(path)
-        except Exception as exc:
-            raise ex.excError(exc)
-
-        def eval_cond(val, data):
-            for match in jsonpath_expr.find(data):
-                if oper is None:
-                    if match.value:
-                        return True
-                    else:
-                        continue
-                obj_class = type(match.value)
-                try:
-                    if obj_class == bool:
-                        val = convert_boolean(val)
-                    else:
-                        val = obj_class(val)
-                except Exception as exc:
-                    raise ex.excError("can not convert to a common type")
-                if oper is None:
-                    if match.value:
-                        return True
-                if oper == "=":
-                    if match.value == val:
-                        return True
-                elif oper == ">":
-                    if match.value > val:
-                        return True
-                elif oper == "<":
-                    if match.value < val:
-                        return True
-                elif oper == ">=":
-                    if match.value >= val:
-                        return True
-                elif oper == "<=":
-                    if match.value <= val:
-                        return True
-                elif is_string(match.value) and oper == "~":
-                    if re.match(val, match.value):
-                        return True
-                elif oper == " in ":
-                    try:
-                        l = json.loads(val)
-                    except:
-                        l = val.split(",")
-                    if match.value in l:
-                        return True
-            return False
-
-        def match_patch():
-            if neg ^ eval_cond(val, cluster_data):
-                return True
-            return False
-
-        def match_event(msg):
-            if neg ^ eval_cond(val, msg):
-                return True
-            return False
-
-        if duration is not None:
-            duration = convert_duration(duration)
-
-        cluster_data = {}
-
-        if duration:
-            import signal
-            def alarm_handler(signum, frame):
+        duration = convert_duration(duration)
+        timeout = time.time() + duration
+        while True:
+            left = timeout - time.time()
+            if left < 0:
                 print("timeout", file=sys.stderr)
-                raise KeyboardInterrupt
-            signal.signal(signal.SIGALRM, alarm_handler)
-            signal.alarm(duration)
-
-        last_patch_id = 0
-        for patch in self.daemon_events(server, full=True):
-            kind = patch.get("kind")
-            if kind == "full":
-                cluster_data = patch["data"]
-                last_patch_id = 0
-                if match_patch():
-                    break
-            elif kind == "patch":
-                if not last_patch_id or last_patch_id+1 == patch["id"]:
-                    try:
-                        json_delta.patch(cluster_data, patch["data"])
-                        last_patch_id = patch["id"]
-                    except Exception:
-                        cluster_data = self._daemon_status()
-                        last_patch_id = patch["id"]
-                else:
-                    cluster_data = self._daemon_status()
-                    last_patch_id = patch["id"]
-                try:
-                    cluster_data["monitor"]
-                except KeyError:
-                    continue
-                if match_patch():
-                    break
-            elif kind == "event":
-                if match_event(patch):
-                    break
-        if duration:
-            signal.alarm(0)
+                raise KeyboardInterrupt()
+            result = self.daemon_get(
+                {
+                    "action": "wait",
+                    "options": {
+                        "condition": path,
+                        "duration": left if left < 10 else 10,
+                    },
+                },
+                server=server,
+                timeout=11,
+            )
+            if result.get("data", {}).get("satisfied"):
+                break
+            time.sleep(0.2)
 
     def events(self, server=None):
         try:
