@@ -60,6 +60,7 @@ ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQ
 
 STREAM_ACTIONS = (
     "service_logs",
+    "object_logs",
     "node_logs",
     "events",
 )
@@ -1823,12 +1824,6 @@ class ClientHandler(shared.OsvcThread):
             except queue.Empty:
                 continue
             self.conn.sendall(msg)
-
-    def rbac_action_service_logs(self, nodename, stream_id=None, **kwargs):
-        options = kwargs.get("options", {})
-        path = self.options_path(options, required=True)
-        _, namespace, _ = split_path(path)
-        self.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
 
     def logskip(self, backlog, logfile):
         skip = 0
