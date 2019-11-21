@@ -120,7 +120,8 @@ class DataMixin(object):
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
         try:
             sys.stdout.buffer.write(buff)
-        except AttributeError:
+        except (TypeError, AttributeError):
+            # buff is not binary, .buffer is not supported
             sys.stdout.write(buff)
 
     def keys(self):
