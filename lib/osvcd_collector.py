@@ -230,7 +230,10 @@ class Collector(shared.OsvcThread):
                 continue
             for path in list(instances_status.keys()):
                 if path not in instances_config:
-                    # deleted service instance
+                    # deleted object instance
+                    continue
+                if path not in data["services"]:
+                    # deleted object
                     continue
                 if not instances_status[path]:
                     continue
