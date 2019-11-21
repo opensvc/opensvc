@@ -14,6 +14,7 @@ from converters import convert_boolean
 
 
 OPERATORS = (">=", "<=", "=", ">", "<", "~", " in ")
+MAX_DURATION = 30
 
 class Handler(handler.Handler):
     """
@@ -33,9 +34,10 @@ class Handler(handler.Handler):
         },
         {
             "name": "duration",
-            "required": True,
+            "required": False,
             "format": "duration",
-            "desc": "An condition expressed as <jsonpath><operator><value>. The jsonpath is looked up in the daemon status dataset. Supported operators are = > < >= <= ~.",
+            "desc": "How long to wait for the condition to become true. This duration is capped to %d seconds." % MAX_DURATION,
+            "default": MAX_DURATION,
         },
     ]
     access = {
@@ -46,22 +48,25 @@ class Handler(handler.Handler):
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         thr.selector = "**"
         options = self.parse_options(kwargs)
-        timeout = time.time() + options.duration
+        duration = options.duration if (options.duration is not None and options.duration < MAX_DURATION) else MAX_DURATION
+        timeout = time.time() + duration
         if not thr.event_queue:
             thr.event_queue = queue.Queue()
         if not thr in thr.parent.events_clients:
             thr.parent.events_clients.append(thr)
         neg, jsonpath_expr, oper, val = self.parse_condition(options.condition)
         if neg ^ self.match(jsonpath_expr, oper, val, {"kind": "patch"}):
-            return {"status": 0, "data": {"satisfied": True, "duration": options.duration, "elapsed": 0}}
+            return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": 0}}
         while True:
             left = timeout - time.time()
+            if left < 0:
+                left = 0
             try:
                 msg = thr.event_queue.get(True, left)
             except queue.Empty:
-                return {"status": 1, "data": {"satisfied": False, "duration": options.duration, "elapsed": options.duration-left}}
+                return {"status": 1, "data": {"satisfied": False, "duration": duration, "elapsed": duration-left}}
             if neg ^ self.match(jsonpath_expr, oper, val, msg):
-                return {"status": 0, "data": {"satisfied": True, "duration": options.duration, "elapsed": options.duration-left}}
+                return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": duration-left}}
 
     def parse_condition(self, condition):
         oper = None

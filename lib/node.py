@@ -3420,27 +3420,41 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Wait for a condition on the monitor thread data or
         a local event data.
         """
+        from math import ceil
         duration = convert_duration(duration)
-        timeout = time.time() + duration
+        if duration is None:
+            timeout = None
+            left = None
+        elif duration == 0:
+            timeout = 0
+            left = 0
+        else:
+            timeout = time.time() + duration
+            left = duration
         while True:
-            left = timeout - time.time()
-            if left < 0:
-                print("timeout", file=sys.stderr)
-                raise KeyboardInterrupt()
             result = self.daemon_get(
                 {
                     "action": "wait",
                     "options": {
                         "condition": path,
-                        "duration": left if left < 10 else 10,
+                        "duration": ceil(left) if left is None or left < 10 else 10,
                     },
                 },
                 server=server,
                 timeout=11,
             )
+            status, error, info = self.parse_result(result)
+            if status == 501:
+                raise ex.excError(error)
             if result.get("data", {}).get("satisfied"):
                 break
-            time.sleep(0.2)
+            if left is not None:
+                left = timeout - time.time()
+            if left is not None and left < 1:
+                print("timeout", file=sys.stderr)
+                raise KeyboardInterrupt()
+            time.sleep(0.2) # short-loop prevention
+            left = timeout - time.time()
 
     def events(self, server=None):
         try:
