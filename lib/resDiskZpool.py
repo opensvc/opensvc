@@ -71,7 +71,10 @@ class Disk(resDisk.Disk):
         for line in status.splitlines():
             if not line.strip().startswith("errors:"):
                 continue
-            errors.append(line.split(":", 1)[-1].strip())
+            entry = line.split(":", 1)[-1].strip()
+            if entry == "No known data errors":
+                continue
+            errors.append(entry)
         return errors
 
     @cache("zpool.status.{args[1]}")
