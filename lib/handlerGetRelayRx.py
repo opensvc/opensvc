@@ -5,7 +5,7 @@ import osvcd_shared as shared
 
 class Handler(handler.Handler):
     """
-    Send the last relay heartbeat payload emitted by <nodename>.
+    Return the last relay heartbeat payload emitted by <nodename>.
     """
     routes = (
         ("GET", "relay_rx"),

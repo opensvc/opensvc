@@ -10,7 +10,7 @@ from rcUtilities import svc_pathcf, split_path
 
 class Handler(handler.Handler):
     """
-    Send the last relay heartbeat payload emitted by <nodename>.
+    Return the <path> object configuration data.
     """
     routes = (
         ("GET", "object_config"),

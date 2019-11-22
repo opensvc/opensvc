@@ -7,7 +7,7 @@ from rcExceptions import HTTP
 
 class Handler(handler.Handler):
     """
-    Return the object logs back to <backlog> bytes.
+    Return the <path> object logs back to <backlog> bytes.
     """
     routes = (
         ("GET", "object_backlogs"),

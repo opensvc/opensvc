@@ -5,8 +5,7 @@ import osvcd_shared as shared
 
 class Handler(handler.Handler):
     """
-    Return a hash indexed by thead id, containing the status data
-    structure of each thread.
+    Return a system's resources usage for the daemon threads and for each service.
     """
     routes = (
         ("GET", "daemon_stats"),

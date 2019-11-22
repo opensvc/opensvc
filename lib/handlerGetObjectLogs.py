@@ -12,7 +12,7 @@ except Exception:
 
 class Handler(handler.Handler):
     """
-    Feed node logs.
+    Feed the <path> object logs.
     """
     routes = (
         ("GET", "object_logs"),

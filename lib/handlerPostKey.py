@@ -7,7 +7,7 @@ from rcUtilities import split_path
 
 class Handler(handler.Handler):
     """
-    Return the value of a usr, cfg or sec object key.
+    Add or update the value of a usr, cfg or sec object key.
     """
     routes = (
         ("POST", "key"),

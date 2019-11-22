@@ -8,6 +8,8 @@ class Handler(handler.Handler):
     """
     Stop the agent daemon, leaving objects in their current state.
     If a thr_id is specified, stop only this daemon thread.
+    A daemon stop leaves the services instances in their current state.
+    The daemon announces a maintenance period to its peers before going offline, so the peers won't takeover services until the maintenance grace period expires.
     """
     routes = (
         ("POST", "daemon_stop"),

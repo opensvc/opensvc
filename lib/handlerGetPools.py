@@ -3,7 +3,7 @@ import osvcd_shared as shared
 
 class Handler(handler.Handler):
     """
-    Return the pools information.
+    Return the cluster's storage pools information.
     """
     routes = (
         ("GET", "pools"),

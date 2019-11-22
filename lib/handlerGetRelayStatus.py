@@ -3,7 +3,7 @@ import osvcd_shared as shared
 
 class Handler(handler.Handler):
     """
-    Send the last relay heartbeat payload emitted by <nodename>.
+    Return the relay's list of clients, with their last update time, payload size, ip address and cluster id/name.
     """
     routes = (
         ("GET", "relay_status"),

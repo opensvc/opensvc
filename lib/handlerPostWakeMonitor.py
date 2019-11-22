@@ -4,7 +4,8 @@ from rcUtilities import split_path
 
 class Handler(handler.Handler):
     """
-    Clear the senders blacklist.
+    Wake the monitor thread loop as soon as possible.
+    Used by the CRM commands to signal an instance status change is ready to be processed by the daemon.
     """
     routes = (
         ("POST", "wake_monitor"),

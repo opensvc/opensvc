@@ -9,7 +9,7 @@ from rcGlobalEnv import rcEnv
 
 class Handler(handler.Handler):
     """
-    Send the last relay heartbeat payload emitted by <nodename>.
+    Return the node private configuration.
     """
     routes = (
         ("GET", "node_config"),

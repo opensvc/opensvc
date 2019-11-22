@@ -4,7 +4,7 @@ from rcExceptions import HTTP
 
 class Handler(handler.Handler):
     """
-    Return the list of catalogs trusted by the cluster.
+    Return the <template> data from the trusted <catalog>.
     """
     routes = (
         ("GET", "template"),

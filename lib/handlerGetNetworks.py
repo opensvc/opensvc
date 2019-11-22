@@ -3,7 +3,7 @@ import osvcd_shared as shared
 
 class Handler(handler.Handler):
     """
-    Return the networks information.
+    Return the cluster's network backends information.
     """
     routes = (
         ("GET", "networks"),
