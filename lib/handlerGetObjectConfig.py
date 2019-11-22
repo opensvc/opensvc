@@ -17,7 +17,7 @@ class Handler(handler.Handler):
         (None, "get_service_config"),
     )
     access = {
-        "role": ["admin"],
+        "roles": ["admin"],
         "namespace": "FROM:path",
     }
     prototype = [
