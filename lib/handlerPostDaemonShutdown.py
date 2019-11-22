@@ -7,6 +7,12 @@ from rcUtilities import split_path
 class Handler(handler.Handler):
     """
     Shutdown the agent daemon and return only when done.
+
+    Shutting the daemon shuts down all services instances running on the node.
+    Use the POST /daemon_stop handler instead to preserve the services instances.
+
+    Beware, once shutdown, you won't be able to start the daemon from the api.
+    This handler is meant to be used by the node shutdown sequence only.
     """
     routes = (
         ("POST", "daemon_shutdown"),
