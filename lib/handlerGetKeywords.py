@@ -19,10 +19,7 @@ class Handler(handler.Handler):
             "desc": "The object kind or 'node'.",
         },
     ]
-    access = "world"
-
-    def rbac(self, nodename, thr=None, **kwargs):
-        return
+    access = {}
 
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)

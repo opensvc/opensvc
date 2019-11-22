@@ -16,7 +16,9 @@ class Handler(object):
     stream = False
 
     def rbac(self, nodename, thr=None, **kwargs):
+        options = self.parse_options(kwargs)
         kwargs.update(self.access)
+        kwargs["path"] = options.path
         thr.rbac_requires(**kwargs)
 
     def parse_options(self, data):

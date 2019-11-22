@@ -90,8 +90,3 @@ class Handler(handler.Handler):
         thr.log.info("serve service %s config to %s", path, nodename)
         return {"status": 0, "data": buff, "mtime": mtime}
 
-    def rbac(self, nodename, thr=None, **kwargs):
-        options = self.parse_options(kwargs)
-        _, namespace, _ = split_path(options.path)
-        thr.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-

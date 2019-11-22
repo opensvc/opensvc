@@ -19,7 +19,7 @@ class Handler(handler.Handler):
         },
     ]
     access = {
-        "roles": "guest",
+        "roles": ["guest"],
         "namespaces": "ANY",
     }
 

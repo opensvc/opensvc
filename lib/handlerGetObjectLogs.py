@@ -33,11 +33,6 @@ class Handler(handler.Handler):
     }
     stream = True
 
-    def rbac(self, nodename, thr=None, **kwargs):
-        options = self.parse_options(kwargs)
-        _, namespace, _ = split_path(options.path)
-        thr.rbac_requires(roles=["guest"], namespaces=[namespace], **kwargs)
-
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         options = self.parse_options(kwargs)
         svc = thr.get_service(options.path)

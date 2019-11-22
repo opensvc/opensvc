@@ -14,7 +14,7 @@ class Handler(handler.Handler):
         (None, "set_key"),
     )
     access = {
-        "role": "admin",
+        "roles": ["admin"],
         "namespaces": "FROM:path",
     }
     prototype = [
@@ -47,10 +47,5 @@ class Handler(handler.Handler):
             return {"status": 1, "error": str(exc)}
         except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}
-
-    def rbac(self, nodename, thr=None, **kwargs):
-        options = self.parse_options(kwargs)
-        name, namespace, kind = split_path(options.path)
-        thr.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
 
 

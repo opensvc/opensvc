@@ -9,13 +9,7 @@ class Handler(handler.Handler):
         (None, "whoami"),
     )
     prototype = []
-    access = {
-        "roles": None,
-        "namespaces": None,
-    }
-
-    def rbac(self, nodename, thr=None, **kwargs):
-        pass
+    access = {}
 
     def action(self, nodename, thr=None, **kwargs):
         data = {

@@ -10,10 +10,7 @@ class Handler(handler.Handler):
         (None, "get_api"),
     )
     prototype = []
-    access = "world"
-
-    def rbac(self, nodename, thr=None, **kwargs):
-        return
+    access = {}
 
     def action(self, nodename, thr=None, **kwargs):
         sigs = []

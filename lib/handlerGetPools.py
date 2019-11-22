@@ -11,7 +11,7 @@ class Handler(handler.Handler):
     )
     prototype = []
     access = {
-        "roles": "guest",
+        "roles": ["guest"],
         "namespaces": "ANY",
     }
 

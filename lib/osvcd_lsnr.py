@@ -1482,18 +1482,23 @@ class ClientHandler(shared.OsvcThread):
                 data[role] = set()
         return data
 
-    def rbac_requires(self, namespaces=None, roles=None, action=None, grants=None, **kwargs):
+    def rbac_requires(self, namespaces=None, roles=None, action=None, grants=None, path=None, **kwargs):
         if self.usr is False:
             # ux and aes socket are not constrainted by rbac
             return
         if roles is None:
-            roles = ["root"]
+            # world-usable
+            return
         if grants is None:
             grants = self.usr_grants
         if "root" in grants:
             return
         if isinstance(namespaces, (list, tuple)):
             namespaces = set(namespaces)
+        elif namespaces == "FROM:path":
+            if path is None:
+                raise HTTP(400, "handler '%s' rbac access namespaces FROM:path but no path passed" % action)
+            namespaces = set([split_path(path)[1]])
         for role in roles:
             if role not in grants:
                 continue

@@ -218,6 +218,8 @@ class Keyword(object):
             data["depends"] = self.depends
         if self.convert:
             data["convert"] = self.convert
+        else:
+            data["convert"] = "string"
         if self.text:
             data["text"] = self.text
         return data

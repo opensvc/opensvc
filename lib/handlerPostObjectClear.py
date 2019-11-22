@@ -23,11 +23,6 @@ class Handler(handler.Handler):
         "namespaces": "FROM:path",
     }
 
-    def rbac(self, nodename, thr=None, **kwargs):
-        options = self.parse_options(kwargs)
-        _, namespace, _ = split_path(options.path)
-        thr.rbac_requires(roles=["admin"], namespaces=[namespace], **kwargs)
-
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         smon = thr.get_service_monitor(options.path)
