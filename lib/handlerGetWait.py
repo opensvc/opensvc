@@ -57,16 +57,21 @@ class Handler(handler.Handler):
         neg, jsonpath_expr, oper, val = self.parse_condition(options.condition)
         if neg ^ self.match(jsonpath_expr, oper, val, {"kind": "patch"}):
             return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": 0}}
+        end = False
         while True:
             left = timeout - time.time()
             if left < 0:
                 left = 0
             try:
-                msg = thr.event_queue.get(True, left)
+                msg = thr.event_queue.get(True, left if left < 3 else 3)
             except queue.Empty:
-                return {"status": 1, "data": {"satisfied": False, "duration": duration, "elapsed": duration-left}}
+                msg = {"kind": "patch"}
+                if left < 3:
+                    end = True
             if neg ^ self.match(jsonpath_expr, oper, val, msg):
                 return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": duration-left}}
+            if end:
+                return {"status": 1, "data": {"satisfied": False, "duration": duration, "elapsed": duration-left}}
 
     def parse_condition(self, condition):
         oper = None
