@@ -25,7 +25,7 @@ class Handler(handler.Handler):
         },
         {
             "name": "action_mode",
-            "desc": "If true, adds --local if not already present in <cmd> or <action_options>.",
+            "desc": "If true, adds --local if not already present in <cmd> or <options>.",
             "required": False,
             "default": True,
             "format": "boolean",
@@ -44,7 +44,7 @@ class Handler(handler.Handler):
             "format": "string",
         },
         {
-            "name": "action_options",
+            "name": "options",
             "desc": "The action options.",
             "required": False,
             "format": "dict",
@@ -62,16 +62,16 @@ class Handler(handler.Handler):
             }
 
         for opt in ("node", "server", "daemon"):
-            if opt in options.action_options:
-                del options.action_options[opt]
-        if options.action_mode and options.action_options.get("local"):
-            if "local" in options.action_options:
-                del options.action_options["local"]
+            if opt in options.options:
+                del options.options[opt]
+        if options.action_mode and options.options.get("local"):
+            if "local" in options.options:
+                del options.options["local"]
         for opt, ropt in (("jsonpath_filter", "filter"),):
-            if opt in options.action_options:
-                options.action_options[ropt] = options.action_options[opt]
-                del options.action_options[opt]
-        options.action_options["local"] = True
+            if opt in options.options:
+                options.options[ropt] = options.options[opt]
+                del options.options[opt]
+        options.options["local"] = True
         pmod = __import__("nodemgr_parser")
         popt = pmod.OPT
 
@@ -91,7 +91,7 @@ class Handler(handler.Handler):
                 cmd += ["--local"]
         else:
             cmd = [options.action]
-            for opt, val in options.action_options.items():
+            for opt, val in options.options.items():
                 po = find_opt(opt)
                 if po is None:
                     continue

@@ -99,7 +99,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
             "format": "string",
         },
         {
-            "name": "action_options",
+            "name": "options",
             "desc": "The action options.",
             "required": False,
             "format": "dict",
@@ -131,7 +131,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
                 del cf["metadata"]
             except Exception:
                 pass
-            for buff in options.action_options.get("kw", []):
+            for buff in options.options.get("kw", []):
                 k, v = buff.split("=", 1)
                 if k[-1] in ("+", "-"):
                     k = k[:-1]
@@ -152,6 +152,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
 
         if options.cmd:
             # compat, requires root
+            kwargs["roles"] = ["root"]
             thr.rbac_requires(**kwargs)
 
 
@@ -167,13 +168,13 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
             raise HTTP(400, "action not set")
 
         for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
-            if opt in options.action_options:
-                del options.action_options[opt]
+            if opt in options.options:
+                del options.options[opt]
         for opt, ropt in (("jsonpath_filter", "filter"),):
-            if opt in options.action_options:
-                options.action_options[ropt] = options.action_options[opt]
-                del options.action_options[opt]
-        options.action_options["local"] = True
+            if opt in options.options:
+                options.options[ropt] = options.options[opt]
+                del options.options[opt]
+        options.options["local"] = True
         pmod = __import__(kind + "mgr_parser")
         popt = pmod.OPT
 
@@ -188,7 +189,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
             cmd = [options.cmd]
         else:
             cmd = [options.action]
-            for opt, val in options.action_options.items():
+            for opt, val in options.options.items():
                 po = find_opt(opt)
                 if po is None:
                     continue
