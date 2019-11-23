@@ -18,7 +18,7 @@ class Handler(handler.Handler):
     )
     access = {
         "roles": ["admin"],
-        "namespace": "FROM:path",
+        "namespaces": "FROM:path",
     }
     prototype = [
         {
