@@ -9,6 +9,7 @@ from rcUtilities import split_path, fmt_path, is_service
 class Handler(handler.Handler):
     """
     Set or unset properties of an object instance monitor.
+    These properties are used by the monitor in the orchestration policies and object management by target state.
     """
     routes = (
         ("POST", "object_monitor"),
@@ -23,13 +24,18 @@ class Handler(handler.Handler):
         },
         {
             "name": "local_expect",
-            "desc": "The expected object instance state on node.",
+            "desc": "The expected object instance state on node. If 'started', the resource restart orchestration is active. A 'avail up' instance has local_expect set to 'started' automatically.",
             "required": False,
+            "candidates": [
+                "started",
+                "unset",
+            ],
             "format": "string",
+            "strict_candidates": False,
         },
         {
             "name": "global_expect",
-            "desc": "The expected object state clusterwide.",
+            "desc": "The expected object state clusterwide. This is the property used for object target state orchestration.",
             "required": False,
             "format": "string",
             "candidates": [
@@ -48,10 +54,11 @@ class Handler(handler.Handler):
                 "scaled",
                 "unset",
             ],
+            "strict_candidates": False,
         },
         {
             "name": "status",
-            "desc": "The current object instance state on node.",
+            "desc": "The current object instance monitor state on node. This is where the current running action, the last action failures are stored. The normal state is 'idle'.",
             "required": False,
             "format": "string",
         },
