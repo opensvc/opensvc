@@ -1102,14 +1102,19 @@ class ClientHandler(shared.OsvcThread):
             return self.authinfo()
         elif "text/html" in accept:
             return self.index(stream_id)
+        handler = self.get_handler(method, path)
         try:
             self.authenticate_client(headers)
             self.parent.stats.sessions.auth_validated += 1
             self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
         except ex.excError:
-            status = 401
-            result = {"status": status, "error": "Not Authorized"}
-            return status, content_type, result
+            if handler.access:
+                status = 401
+                result = {"status": status, "error": "Not Authorized"}
+                return status, content_type, result
+            else:
+                # world-usable handler
+                pass
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
@@ -1541,14 +1546,18 @@ class ClientHandler(shared.OsvcThread):
     # Routing and Multiplexing
     #
     #########################################################################
+    def get_handler(self, method, pathname):
+        try:
+            return self.parent.handlers[(method, pathname)]
+        except KeyError:
+            pass
+        raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
+
     def get_handler_action(self, method, pathname):
         try:
             return self.parent.handlers[(method, pathname)].action
         except KeyError:
             pass
-        fname = "action_" + pathname
-        if hasattr(self, fname):
-            return getattr(self, fname)
         raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
 
     def get_handler_rbac(self, method, pathname):
@@ -1558,9 +1567,6 @@ class ClientHandler(shared.OsvcThread):
             pass
         except AttributeError:
             return self.rbac_requires
-        fname = "rbac_action_" + pathname
-        if hasattr(self, fname):
-            return getattr(self, fname)
         return self.rbac_requires
 
     def multiplex(self, node, fn, options, data, original_nodename, action, stream_id=None, method="GET"):
