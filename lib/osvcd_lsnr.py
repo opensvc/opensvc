@@ -108,6 +108,7 @@ HANDLERS = [
     "handlerGetPools",
     "handlerGetRelayRx",
     "handlerGetRelayStatus",
+    "handlerGetSync",
     "handlerGetTemplates",
     "handlerGetTemplate",
     "handlerGetWait",
