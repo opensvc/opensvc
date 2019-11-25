@@ -29,6 +29,10 @@ class Handler(handler.Handler):
         "namespaces": "ANY",
     }
 
+    # This handler filters data based on user grants.
+    # Don't allow multiplexing to avoid filtering with escalated privs
+    multiplex = "never"
+
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         data = thr.daemon_status()

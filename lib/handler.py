@@ -14,6 +14,7 @@ class Handler(object):
     }
     prototype = []
     stream = False
+    multiplex = "on-demand"
 
     def rbac(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)

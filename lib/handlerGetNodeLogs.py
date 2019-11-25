@@ -19,6 +19,7 @@ class Handler(handler.Handler):
     )
     prototype = []
     stream = True
+    multiplex = "always"
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         logfile = os.path.join(rcEnv.paths.pathlog, "node.log")

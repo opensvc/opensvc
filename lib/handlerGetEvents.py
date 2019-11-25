@@ -40,6 +40,10 @@ class Handler(handler.Handler):
     }
     stream = True
 
+    # This handler filters data based on user grants.
+    # Don't allow multiplexing to avoid filtering with escalated privs
+    multiplex = "never"
+
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         options = self.parse_options(kwargs)
         thr.selector = options.selector

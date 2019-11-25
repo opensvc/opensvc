@@ -58,12 +58,6 @@ if six.PY2:
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
-STREAM_ACTIONS = (
-    "service_logs",
-    "object_logs",
-    "node_logs",
-    "events",
-)
 ROUTED_ACTIONS = {
     "node": {
         "logs": "node_logs",
@@ -74,17 +68,6 @@ ROUTED_ACTIONS = {
         "backlogs": "object_backlogs",
     },
 }
-
-ACTIONS_ALWAYS_MULTIPLEX = [
-    "object_logs",
-    "node_logs",
-]
-# Those actions filter data based on user grants.
-# Don't allow multiplexing to avoid filtering with escalated privs
-ACTIONS_NEVER_MULTIPLEX = [
-    "daemon_status",
-    "events",
-]
 
 HANDLERS = [
     "handlerGetApi",
@@ -1132,7 +1115,7 @@ class ClientHandler(shared.OsvcThread):
                 # world-usable handler
                 pass
         try:
-            result = self.router(None, data, stream_id=stream_id)
+            result = self.router(None, data, stream_id=stream_id, handler=handler)
             status = 200
         except DontClose:
             raise
@@ -1555,23 +1538,8 @@ class ClientHandler(shared.OsvcThread):
             pass
         raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
 
-    def get_handler_action(self, method, pathname):
-        try:
-            return self.parent.handlers[(method, pathname)].action
-        except KeyError:
-            pass
-        raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
-
-    def get_handler_rbac(self, method, pathname):
-        try:
-            return self.parent.handlers[(method, pathname)].rbac
-        except KeyError:
-            pass
-        except AttributeError:
-            return self.rbac_requires
-        return self.rbac_requires
-
-    def multiplex(self, node, fn, options, data, original_nodename, action, stream_id=None, method="GET"):
+    def multiplex(self, node, handler, options, data, original_nodename, action, stream_id=None):
+        method = handler.routes[0][0]
         try:
             del data["node"]
         except Exception:
@@ -1599,15 +1567,10 @@ class ClientHandler(shared.OsvcThread):
                 svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
                 nodenames = [n for n in nodenames if n in svcnodes]
 
-        if action in STREAM_ACTIONS:
-            mode = "stream"
-        else:
-            mode = "get"
-
         def do_node(nodename):
             if nodename == rcEnv.nodename:
                 try:
-                    _result = fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
+                    _result = handler.action(nodename, action=action, options=options, stream_id=stream_id, thr=self)
                 except HTTP as exc:
                     status = exc.status
                     _result = {"status": exc.status, "error": exc.msg}
@@ -1625,7 +1588,7 @@ class ClientHandler(shared.OsvcThread):
                     # result is not a dict
                     pass
             else:
-                if mode == "stream":
+                if handler.stream:
                     sp = self.socket_parms("https://"+nodename)
                     client_stream_id, conn, resp = self.h2_daemon_stream_conn(data, sp=sp)
                     self.streams[stream_id]["pushers"].append({
@@ -1648,7 +1611,7 @@ class ClientHandler(shared.OsvcThread):
             except Exception:
                 continue
 
-        if mode == "stream":
+        if handler.stream:
             return
         return result
 
@@ -1663,7 +1626,7 @@ class ClientHandler(shared.OsvcThread):
             else:
                 break
 
-    def create_multiplex(self, fn, options, data, original_nodename, action, stream_id=None):
+    def create_multiplex(self, handler, options, data, original_nodename, action, stream_id=None):
         h = {}
         template = options.get("template")
         path = options.get("path")
@@ -1694,7 +1657,7 @@ class ClientHandler(shared.OsvcThread):
             _options.update(options)
             _options["data"] = optdata
             if nodename == rcEnv.nodename:
-                _result = fn(nodename, action=action, options=_options, stream_id=stream_id, thr=self)
+                _result = handler.action(nodename, action=action, options=_options, stream_id=stream_id, thr=self)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
             else:
@@ -1767,7 +1730,7 @@ class ClientHandler(shared.OsvcThread):
                 data["options"] = {"path": path}
         return data
 
-    def router(self, nodename, data, stream_id=None):
+    def router(self, nodename, data, stream_id=None, handler=None):
         """
         For a request data, extract the requested action and options,
         translate into a method name, and execute this method with options
@@ -1778,33 +1741,35 @@ class ClientHandler(shared.OsvcThread):
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
 
-        method = data.get("method")
-        action = data["action"]
-
-        action_fn = self.get_handler_action(method, action)
-        rbac_fn = self.get_handler_rbac(method, action)
+        if handler is None:
+            method = data.get("method")
+            action = data["action"]
+            handler = self.get_handler(method, action)
+        else:
+            method = handler.routes[0][0]
+            action = handler.routes[0][1]
 
         # prepare options, sanitized for use as keywords
         options = {}
         for key, val in data.get("options", {}).items():
             options[str(key)] = val
         #print("addr:", self.addr, "tls:", self.tls, "action:", action, "options:", options)
-        self.parent.stats.sessions.alive[self.sid].progress = action
+        self.parent.stats.sessions.alive[self.sid].progress = "%s /%s" % (method, action)
 
         # validate rbac before multiplexing, before privs escalation
         try:
-            rbac_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
+            handler.rbac(nodename, action=action, options=options, stream_id=stream_id, thr=self)
         except AttributeError:
             self.rbac_requires(action=action)
 
         if action == "create":
-            return self.create_multiplex(action_fn, options, data, nodename, action, stream_id=stream_id)
+            return self.create_multiplex(handler, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
-        if data.get("multiplexed") or action in ACTIONS_NEVER_MULTIPLEX:
-            return action_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
-        if action in ACTIONS_ALWAYS_MULTIPLEX or node:
-            return self.multiplex(node, action_fn, options, data, nodename, action, stream_id=stream_id, method=method)
-        return action_fn(nodename, action=action, options=options, stream_id=stream_id, thr=self)
+        if data.get("multiplexed") or handler.multiplex == "never":
+            return handler.action(nodename, action=action, options=options, stream_id=stream_id, thr=self)
+        if handler.multiplex == "always" or node:
+            return self.multiplex(node, handler, options, data, nodename, action, stream_id=stream_id)
+        return handler.action(nodename, action=action, options=options, stream_id=stream_id, thr=self)
 
 
     #########################################################################

@@ -26,6 +26,7 @@ class Handler(handler.Handler):
                 "access": h.access,
                 "desc": h.__doc__.strip(),
                 "stream": h.stream,
+                "multiplex": h.multiplex,
             })
         return data
 
