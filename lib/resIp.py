@@ -55,26 +55,23 @@ class Ip(Res.Resource):
     def wait_dns_records(self):
         if not self.wait_dns:
             return
-        try:
-            self.svc.node.dns
-        except Exception:
-            self.log.info("skip wait_dns before this cluster has no dns configuration")
-            return
-        data = self.svc.print_status_data(refresh=False)
+        left = self.wait_dns
+        timeout = time.time() + left
         self.svc.wake_monitor()
-        t0 = time.time()
-        timeout = self.wait_dns
-        for node in self.svc.node.dnsnodes:
-            self.log.info("wait address propagation to %s dns", node)
-            try:
-                self.svc.node._wait(path=self.svc.path, server=node, duration=timeout)
-            except KeyboardInterrupt:
+        self.log.info("wait address propagation to peers")
+        path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (rcEnv.nodename, self.svc.path, self.rid)
+        try:
+            result = self.svc.node._wait(path=path, duration=left)
+        except KeyboardInterrupt:
+            raise ex.excError("dns resolution not ready after %s" % print_duration(self.wait_dns))
+        left = time.time() - timeout
+        while left:
+            result = self.svc.node.daemon_get({"action": "sync"}, timeout=left)
+            if result["status"] == 0:
+                break
+            left = time.time() - timeout
+            if left <= 0:
                 raise ex.excError("dns resolution not ready after %s" % print_duration(self.wait_dns))
-            except Exception:
-                continue
-            now = time.time()
-            timeout -= now - t0
-            t0 = now
 
     @lazy
     def dns_name_suffix(self):
