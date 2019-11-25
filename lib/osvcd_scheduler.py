@@ -93,7 +93,11 @@ class Scheduler(shared.OsvcThread):
         if self.first_available_node() != rcEnv.nodename:
             return
         self.last_janitor_certs = time.time()
-        for obj in shared.SERVICES.values():
+        for path in [p for p in shared.SERVICES]:
+            try:
+                obj = shared.SERVICES[path]
+            except KeyError:
+                continue
             if obj.kind not in ("sec", "usr"):
                 continue
             try:
