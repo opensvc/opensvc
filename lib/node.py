@@ -3432,12 +3432,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = time.time() + duration
             left = duration
         while True:
+            if left is None:
+                req_duration = 10
+            elif left > 10:
+                req_duration = 10
+            else:
+                req_duration = ceil(left)
             result = self.daemon_get(
                 {
                     "action": "wait",
                     "options": {
                         "condition": path,
-                        "duration": ceil(left) if left is None or left < 10 else 10,
+                        "duration": req_duration,
                     },
                 },
                 server=server,
@@ -3454,7 +3460,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt()
             time.sleep(0.2) # short-loop prevention
-            left = timeout - time.time()
+            if left is not None:
+                left = timeout - time.time()
 
     def events(self, server=None):
         try:
