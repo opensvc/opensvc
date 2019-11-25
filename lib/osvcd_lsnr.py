@@ -1102,19 +1102,6 @@ class ClientHandler(shared.OsvcThread):
             return self.authinfo()
         elif "text/html" in accept:
             return self.index(stream_id)
-        handler = self.get_handler(method, path)
-        try:
-            self.authenticate_client(headers)
-            self.parent.stats.sessions.auth_validated += 1
-            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
-        except ex.excError:
-            if handler.access:
-                status = 401
-                result = {"status": status, "error": "Not Authorized"}
-                return status, content_type, result
-            else:
-                # world-usable handler
-                pass
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
@@ -1129,6 +1116,20 @@ class ClientHandler(shared.OsvcThread):
             "multiplexed": multiplexed,
             "options": options,
         }
+        data = self.update_data_from_path(data)
+        handler = self.get_handler(method, data["action"])
+        try:
+            self.authenticate_client(headers)
+            self.parent.stats.sessions.auth_validated += 1
+            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
+        except ex.excError:
+            if handler.access:
+                status = 401
+                result = {"status": status, "error": "Not Authorized"}
+                return status, content_type, result
+            else:
+                # world-usable handler
+                pass
         try:
             result = self.router(None, data, stream_id=stream_id)
             status = 200
@@ -1749,6 +1750,22 @@ class ClientHandler(shared.OsvcThread):
 
         return node, path, action
 
+    def update_data_from_path(self, data):
+        action = data["action"]
+        # url path router
+        # ex: nodes/n1/logs => n1, None, node_logs
+        node, path, action = self.parse_path(action)
+        if action != data["action"]:
+            data["action"] = action
+        if node:
+            data["node"] = node
+        if path:
+            if "options" in data:
+                data["options"]["path"] = path
+            else:
+                data["options"] = {"path": path}
+        return data
+
     def router(self, nodename, data, stream_id=None):
         """
         For a request data, extract the requested action and options,
@@ -1760,20 +1777,8 @@ class ClientHandler(shared.OsvcThread):
         if "action" not in data:
             return {"error": "action not specified", "status": 1}
 
-        # url path router
-        # ex: nodes/n1/logs => n1, None, node_logs
-        action = data["action"]
         method = data.get("method")
-        node, path, action = self.parse_path(action)
-        if action != data["action"]:
-            data["action"] = action
-        if node:
-            data["node"] = node
-        if path:
-            if "options" in data:
-                data["options"]["path"] = path
-            else:
-                data["options"] = {"path": path}
+        action = data["action"]
 
         action_fn = self.get_handler_action(method, action)
         rbac_fn = self.get_handler_rbac(method, action)
