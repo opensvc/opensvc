@@ -811,6 +811,7 @@ def add_fs(svc, s):
 
     kwargs["device"] = svc.oget(s, "dev")
     kwargs["mount_point"] = svc.oget(s, "mnt")
+    kwargs["stat_timeout"] = svc.oget(s, "stat_timeout")
 
     if kwargs["mount_point"] and kwargs["mount_point"][-1] != "/" and kwargs["mount_point"][-1] == "/":
         # Remove trailing / to not risk losing rsync src trailing / upon snap

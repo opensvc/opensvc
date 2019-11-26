@@ -2611,6 +2611,14 @@ KEYWORDS = [
     },
     {
         "section": "fs",
+        "keyword": "stat_timeout",
+        "convert": "duration",
+        "default": 5,
+        "at": True,
+        "text": "The maximum wait time for a stat call to respond. When expired, the resource status is degraded is to warn, which might cause a TOC if the resource is monitored."
+    },
+    {
+        "section": "fs",
         "keyword": "type",
         "inheritance": "leaf",
         "at": True,

@@ -18,6 +18,7 @@ class Mount(Res.Resource):
                  device=None,
                  fs_type=None,
                  mount_options=None,
+                 stat_timeout=5,
                  snap_size=None,
                  **kwargs):
         Res.Resource.__init__(self,
@@ -27,6 +28,7 @@ class Mount(Res.Resource):
         self.mount_point = mount_point
         self._device = device
         self.fs_type = fs_type
+        self.stat_timeout = stat_timeout
         self.mount_options = mount_options
         self.snap_size = snap_size
         self.fsck_h = {}
@@ -158,7 +160,7 @@ class Mount(Res.Resource):
         proc = subprocess.Popen(['stat', self.device],
                                 stderr=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
-        for retry in range(50, 0, -1):
+        for retry in range(self.stat_timeout*10, 0, -1):
             if proc.poll() is None:
                 time.sleep(0.1)
             else:
