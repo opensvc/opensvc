@@ -904,6 +904,14 @@ class ClientHandler(shared.OsvcThread):
             #self.log.warning("%s", exc)
             pass
         try:
+            self.usr = self.authenticate_client_basic(headers)
+            self.usr_auth = "basic"
+            self.usr_grants = self.user_grants()
+            return
+        except Exception as exc:
+            #self.log.warning("%s", exc)
+            pass
+        try:
             self.usr = self.authenticate_client_x509()
             self.usr_auth = "x509"
             self.usr_grants = self.user_grants()
@@ -924,6 +932,24 @@ class ClientHandler(shared.OsvcThread):
         jwks = requests.get(jwks_uri).json()
         keys = dict((k['kid'], RSAAlgorithm.from_jwk(json.dumps(k))) for k in jwks['keys'])
         return keys
+
+    def authenticate_client_basic(self, headers):
+        authorization = headers.get("authorization")
+        if not authorization:
+            raise ex.excError("no authorization header key")
+        if not authorization.startswith("Basic "):
+            raise ex.excError("authorization header does not start with 'Basic '")
+        buff = authorization[6:].strip()
+        buff = base64.b64decode(buff)
+        name, password = bdecode(buff).split(":", 1)
+        usr = factory("usr")(name, namespace="system", volatile=True, log=self.log)
+        if not usr.exists():
+            raise ex.excError("user %s does not exist" % name)
+        if not usr.has_key("password"):
+            raise ex.excError("user %s has no password key" % name)
+        if password != usr.decode_key("password"):
+            raise ex.excError("user %s authentication failed: wrong password" % name)
+        return usr
 
     def authenticate_client_jwt(self, headers):
         authorization = headers.get("authorization")
