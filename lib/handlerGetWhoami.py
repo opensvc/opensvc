@@ -12,12 +12,30 @@ class Handler(handler.Handler):
     access = {}
 
     def action(self, nodename, thr=None, **kwargs):
+        if thr.usr is None:
+            name = "nobody"
+            namespace = None
+            auth = None
+            raw_grant = ""
+            grant = {}
+        elif thr.usr is False:
+            name = "root"
+            namespace = None
+            auth = thr.usr_auth
+            raw_grant = "root"
+            grant = {"root": None}
+        else:
+            name = thr.usr.name
+            namespace = thr.usr.namespace
+            auth = thr.usr_auth
+            raw_grant = thr.usr.oget("DEFAULT", "grant")
+            grant = dict((k, list(v) if v is not None else None) for k, v in thr.usr_grants.items())
         data = {
-            "name": "root" if thr.usr is False else thr.usr.name,
-            "namespace": None if thr.usr is False else thr.usr.namespace,
-            "auth": thr.usr_auth,
-            "raw_grant": "root" if thr.usr is False else thr.usr.oget("DEFAULT", "grant"),
-            "grant": dict((k, list(v) if v is not None else None) for k, v in thr.usr_grants.items()),
+            "name": name,
+            "namespace": namespace,
+            "auth": auth,
+            "raw_grant": raw_grant,
+            "grant": grant,
         }
         return data
 
