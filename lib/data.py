@@ -131,6 +131,9 @@ class DataMixin(object):
         for key in data:
             print(key)
 
+    def has_key(self, key):
+        return key in self.data_keys()
+
     def data_keys(self):
         """
         Return the list of keys in the data section.
