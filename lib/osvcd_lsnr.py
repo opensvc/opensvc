@@ -71,6 +71,7 @@ ROUTED_ACTIONS = {
 
 HANDLERS = [
     "handlerGetApi",
+    "handlerGetAuthinfo",
     "handlerGetBlacklistStatus",
     "handlerGetCatalogs",
     "handlerGetDaemonStats",
@@ -1082,8 +1083,6 @@ class ClientHandler(shared.OsvcThread):
             return self.index(stream_id)
         elif path == "index.js":
             return self.index_js()
-        elif path == "authinfo":
-            return self.authinfo()
         elif "text/html" in accept:
             return self.index(stream_id)
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
@@ -1898,14 +1897,4 @@ class ClientHandler(shared.OsvcThread):
 
     def index_js(self):
         return 200, "application/javascript", self.load_file("index.js")
-
-    def authinfo(self):
-        data = {}
-        well_known_uri = shared.NODE.oget("listener", "openid_well_known")
-        if well_known_uri:
-            data["openid"] = {
-                "well_known_uri": well_known_uri,
-                "client_id": self.cluster_name,
-            }
-        return 200, "application/json", data
 
