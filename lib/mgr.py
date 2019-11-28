@@ -206,6 +206,8 @@ class Mgr(object):
         if self.selector is None:
             yield
         namespace = get_option("--namespace", argv)
+        if namespace is None:
+            namespace = os.environ.get("OSVC_NAMESPACE")
         action = self.get_action(argv)
         if action in ("create", "deploy"):
             expanded_svcs = selector.split(",")

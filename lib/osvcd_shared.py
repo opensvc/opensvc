@@ -1648,7 +1648,7 @@ class OsvcThread(threading.Thread, Crypt):
                     else:
                         _name = norm_elts[0]
                         _kind = "svc"
-                        _namespace = "*"
+                        _namespace = namespace if namespace else "root"
                 else:
                     return []
                 _selector = "/".join((_namespace, _kind, _name))
