@@ -1127,18 +1127,17 @@ class ClientHandler(shared.OsvcThread):
         }
         data = self.update_data_from_path(data)
         handler = self.get_handler(method, data["action"])
-        try:
-            self.authenticate_client(headers)
-            self.parent.stats.sessions.auth_validated += 1
-            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
-        except ex.excError:
-            if handler.access:
+
+        if handler.access:
+            try:
+                self.authenticate_client(headers)
+                self.parent.stats.sessions.auth_validated += 1
+                self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
+            except ex.excError:
                 status = 401
                 result = {"status": status, "error": "Not Authorized"}
                 return status, content_type, result
-            else:
-                # world-usable handler
-                pass
+
         try:
             result = self.router(None, data, stream_id=stream_id, handler=handler)
             status = 200
