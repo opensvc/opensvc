@@ -3813,6 +3813,71 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except (KeyError, TypeError, socket.error):
             return
 
+    def get_ssh_pubkey(self, user="root", key_type="rsa"):
+        path = os.path.expanduser("~%s/.ssh/id_%s.pub" % (user, key_type))
+        try:
+            with open(path, "r") as f:
+                buff = f.read()
+        except OSError:
+            return
+        # strip comment
+        return self.normalize_ssh_key(buff)
+
+    def _daemon_get_ssh(self):
+        data = self.daemon_get(
+            {
+                "action": "ssh_key",
+            },
+            node="*",
+            silent=True,
+            timeout=5,
+        )
+        return data
+
+    @staticmethod
+    def normalize_ssh_key(buff):
+        return " ".join(re.split("\s+", buff.strip())[0:2])
+
+    def update_ssh_authorized_keys(self):
+        data = self._daemon_get_ssh()
+        errs = 0
+        path = os.path.expanduser("~root/.ssh/authorized_keys")
+        keys = []
+        short_keys = []
+        for node, _data in data.get("nodes", {}).items():
+            try:
+                _data = _data["data"]
+                _data["key"] = self.normalize_ssh_key(_data["key"])
+            except KeyError:
+                errs +=1
+                print("node %s key not found" % node, file=sys.stderr)
+                continue
+            _data["node"] = node
+            keys.append(_data)
+            short_keys.append(_data["key"])
+        if not keys:
+            print("no keys to install")
+            return
+        try:
+            with open(path, "r") as f:
+                current_keys = f.read().split("\n")
+                need_newline = current_keys and current_keys[-1] != ""
+                # strip comments
+                current_keys = [self.normalize_ssh_key(buff) for buff in current_keys]
+        except OSError:
+            current_keys = []
+            need_newline = False
+        keys = [k for k in keys if k["key"] not in current_keys]
+        if not keys:
+            print("all keys already installed")
+            return
+        with open(path, "a") as f:
+            if need_newline:
+                f.write("\n")
+            for key in keys:
+                f.write("%s %s@%s\n" % (key["key"], key["user"], key["node"]))
+                print("install %s@%s key" % (key["user"], key["node"]))
+
     def _daemon_nodes_info(self, silent=False, refresh=False, server=None):
         data = self.daemon_get(
             {

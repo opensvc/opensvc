@@ -83,6 +83,7 @@ HANDLERS = [
     "handlerGetNode",
     "handlerGetNodeBacklogs",
     "handlerGetNodeConfig",
+    "handlerGetSshKey",
     "handlerGetNodeLogs",
     "handlerGetNodesInfo",
     "handlerGetObjectBacklogs",

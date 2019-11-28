@@ -445,6 +445,10 @@ ACTIONS = {
                    "be available as a tarball behind the :kw:`node.repocomp` "
                    "url.",
         },
+        "update_ssh_authorized_keys": {
+            "msg": "Install the root pubkey of each node in the local root "
+                   "user authorized_keys.",
+        },
         "scanscsi": {
             "msg": "Scan the scsi hosts in search of new disks.",
             "options": [
