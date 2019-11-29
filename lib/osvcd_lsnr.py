@@ -88,6 +88,7 @@ HANDLERS = [
     "handlerGetNodesInfo",
     "handlerGetObjectBacklogs",
     "handlerGetObjectConfig",
+    "handlerGetObjectKeys",
     "handlerGetObjectLogs",
     "handlerGetObjectSelector",
     "handlerGetPools",
