@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2019\-11\-14
+.TH NODEMGR 1 2019\-11\-29
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2324,6 +2324,41 @@ A node selector expression. Embedded in requests for the daemon to route and mul
 .RS
 
 Unsnooze alerts on the node
+
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream log verbosity up to the debug level.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B -h, --help
+Show this help message and exit
+.TP
+.B --local
+Set to disable cluster-wide operations.
+.TP
+.B --server=SERVER
+The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock.
+.TP
+.B --node=NODE
+A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted.
+
+.RE
+\fBnodemgr update ssh authorized keys\fP
+.RS
+
+Install the root pubkey of each node in the local root user authorized_keys.
 
 .TP
 .B --color=COLOR
