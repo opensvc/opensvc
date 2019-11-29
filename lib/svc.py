@@ -5314,7 +5314,7 @@ class Svc(BaseSvc):
         self.container_manager_passthrough("podman")
 
     def oci(self):
-        self.container_manager_passthrough(self.node.oci)
+        self.container_manager_passthrough("oci")
 
     def container_manager_passthrough(self, ctype):
         """
@@ -5325,7 +5325,10 @@ class Svc(BaseSvc):
         the service has such a daemon.
         """
         import subprocess
-        containers = self.get_resources("container." + ctype)
+        if ctype == "oci":
+            containers = self.get_resources(["container.docker", "container.podman"])
+        else:
+            containers = self.get_resources("container." + ctype)
         if self.options.extra_argv is None:
             print("no docker command arguments supplied", file=sys.stderr)
             return 1
@@ -5362,7 +5365,7 @@ class Svc(BaseSvc):
                         argv.insert(idx, image)
             for idx, arg in enumerate(argv):
                 if arg in ("%as_service%", "{as_service}"):
-                    container = self.get_resources("container."+ctype)[0]
+                    container = containers[0]
                     del argv[idx]
                     argv[idx:idx] = container.lib.login_as_service_args()
             return argv
@@ -5371,7 +5374,7 @@ class Svc(BaseSvc):
             print("this service has no %s resource" % ctype, file=sys.stderr)
             return 1
 
-        if ctype == "docker":
+        if containers[0].type == "docker":
             containers[0].lib.docker_start(verbose=False)
         cmd = containers[0].lib.docker_cmd + subst(self.options.extra_argv)
         proc = subprocess.Popen(cmd)
