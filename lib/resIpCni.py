@@ -369,6 +369,7 @@ class Ip(Res.Ip):
             _env["CNI_CONTAINERID"] = str(self.containerid)
             _env["CNI_NETNS"] = self.netns
         else:
+            _env["CNI_CONTAINERID"] = str(self.nspid)
             _env["CNI_NETNS"] = self.nspidfile
 
         if self.expose:
