@@ -342,6 +342,14 @@ class Daemon(object):
                 del self.threads[thr_id]
                 changed = True
 
+            # clean up collector thread no longer needed
+            if shared.NODE and not shared.NODE.collector_env.dbopensvc and "collector" in self.threads:
+                self.log.info("stopping collector thread, no longer needed")
+                self.threads["collector"].stop()
+                self.threads["collector"].join()
+                del self.threads["collector"]
+                changed = True
+
         if changed:
             with shared.THREADS_LOCK:
                 shared.THREADS = self.threads

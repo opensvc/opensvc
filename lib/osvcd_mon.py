@@ -3133,7 +3133,7 @@ class Monitor(shared.OsvcThread):
         data["labels"] = shared.NODE.labels
         data["targets"] = shared.NODE.targets
         data["locks"] = shared.LOCKS
-        data["speaker"] = self.speaker()
+        data["speaker"] = self.speaker() and "collector" in shared.THREADS
         data["min_avail_mem"] = shared.NODE.min_avail_mem
         data["min_avail_swap"] = shared.NODE.min_avail_swap
         data["monitor"] = dict(shared.NMON_DATA)
