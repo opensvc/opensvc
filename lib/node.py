@@ -3870,13 +3870,22 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         keys = [k for k in keys if k["key"] not in current_keys]
         if not keys:
             print("all keys already installed")
-            return
-        with open(path, "a") as f:
-            if need_newline:
-                f.write("\n")
-            for key in keys:
-                f.write("%s %s@%s\n" % (key["key"], key["user"], key["node"]))
-                print("install %s@%s key" % (key["user"], key["node"]))
+        else:
+            with open(path, "a") as f:
+                if need_newline:
+                    f.write("\n")
+                for key in keys:
+                    f.write("%s %s@%s\n" % (key["key"], key["user"], key["node"]))
+                    print("install %s@%s key" % (key["user"], key["node"]))
+        fstat = os.stat(path)
+        current_mask = int(fstat.st_mode & 0o777)
+        mask = 0o600
+        if current_mask != mask:
+            print("chmod", oct(mask), path)
+            os.chmod(path, mask)
+        if fstat.st_uid != 0 or fstat.st_gid != 0:
+            print("chown 0:0", path)
+            os.chown(path, 0, 0)
 
     def _daemon_nodes_info(self, silent=False, refresh=False, server=None):
         data = self.daemon_get(
