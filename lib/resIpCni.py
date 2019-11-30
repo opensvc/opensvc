@@ -24,7 +24,7 @@ PORTMAP_CONF = {
     "capabilities": {
         "portMappings": True
     },
-    "externalSetMarkChain": "OSVC-MARK-MASQ"
+#    "externalSetMarkChain": "OSVC-MARK-MASQ"
 }
 
 class Ip(Res.Ip):
@@ -298,8 +298,12 @@ class Ip(Res.Ip):
         data = self.expose_data()
         _data = []
         for expose in data:
-            if "host_port" not in expose or not expose["host_port"]:
+            if "port" not in expose or not expose["port"]:
                 continue
+            if "protocol" not in expose or not expose["port"]:
+                continue
+            if "host_port" not in expose or not expose["host_port"]:
+                expose["host_port"] = expose["port"]
             exdata = {
                 "containerPort": expose["port"],
                 "protocol": expose["protocol"],
