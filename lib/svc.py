@@ -1822,7 +1822,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if not node and not self.options.local:
             node = self.ordered_nodes
         req = {
-            "action": "clear",
+            "action": "object_clear",
             "options": {
                 "path": self.path,
             }
