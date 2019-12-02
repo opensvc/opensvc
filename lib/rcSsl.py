@@ -116,8 +116,15 @@ def sign_csr(log=None, **data):
         raise ex.excError(out+err)
 
 def write_openssl_cnf(data):
-    openssl_cnf = "/etc/ssl/openssl.cnf"
-    if not os.path.exists(openssl_cnf):
+    openssl_cnf_location = [
+        '/etc/ssl/openssl.cnf',
+        '/etc/pki/tls/openssl.cnf',
+    ]
+    openssl_cnf = None
+    for loc in openssl_cnf_location:
+       if os.path.exists(loc):
+           openssl_cnf = loc
+    if not openssl_cnf:
         raise ex.excError("could not determine openssl.cnf location")
     shutil.copy(openssl_cnf, data["cnf"])
     with open(data["cnf"], "a") as f:
