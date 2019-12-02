@@ -2943,11 +2943,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         feed = ""
         for line in sys.stdin.readlines():
             feed += line
+        data = None
         if feed:
             try:
                 data = json.loads("".join(feed))
             except ValueError:
                 raise ex.excError("invalid json feed")
+        else:
+            raise ex.excError("empty feed")
         return data
 
     def svc_conf_from_selector(self, selector):
