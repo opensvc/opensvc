@@ -38,13 +38,24 @@ class Scheduler(shared.OsvcThread):
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
         data["running"] = len(self.running)
-        data["delayed"] = [{
-            "action": action,
-            "path": path,
-            "rid": rid,
-            "queued": entry["queued"],
-            "expire": entry["expire"],
-        } for (action, path, rid), entry in self.delayed.items()]
+        data["delayed"] = []
+
+        # thread-safe delayed dump
+        keys = list(self.delayed)
+        for key in keys:
+            action, path, rid = key
+            try:
+                entry = self.delayed[key]
+            except KeyError:
+                # deleted during iteration
+                continue
+            data["delayed"].append({
+                "action": action,
+                "path": path,
+                "rid": rid,
+                "queued": entry["queued"],
+                "expire": entry["expire"],
+            })
         return data
 
     def run(self):
