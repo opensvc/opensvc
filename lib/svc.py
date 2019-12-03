@@ -580,6 +580,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.drp_flex_primary = self.get_drp_flex_primary()
 
     @lazy
+    def monitor_action(self):
+        return "none"
+
+    @lazy
     def fullname(self):
         return "%s.%s.%s.%s" % (
             self.name,
