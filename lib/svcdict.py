@@ -396,6 +396,15 @@ KEYWORDS = [
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
+        "sections": ["task", "app"],
+        "keyword": "environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
         "sections": ["task", "container"],
         "keyword": "devices",
         "at": True,
