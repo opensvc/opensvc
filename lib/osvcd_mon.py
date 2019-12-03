@@ -477,6 +477,7 @@ class Monitor(shared.OsvcThread):
         )
 
     def service_toc(self, path):
+        self.set_smon(path, "tocing")
         proc = self.service_command(path, ["toc"])
         self.push_proc(
             proc=proc,
@@ -816,7 +817,8 @@ class Monitor(shared.OsvcThread):
                             "rid": rid,
                             "resource": resource,
                         })
-                        self.service_toc(svc.path)
+                        if smon.status != "tocing":
+                            self.service_toc(svc.path)
                     else:
                         self.event("resource_would_toc", {
                             "reason": "no_candidate",
