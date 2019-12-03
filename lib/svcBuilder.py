@@ -1580,6 +1580,7 @@ def add_task_host(svc, s):
     kwargs["log"] = svc.oget(s, "log")
     kwargs["confirmation"] = svc.oget(s, "confirmation")
     kwargs["check"] = svc.oget(s, "check")
+    kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
     kwargs["configs_environment"] = svc.oget(s, "configs_environment")
     import resTaskHost
@@ -1617,6 +1618,7 @@ def add_app(svc, s):
     kwargs["user"] = svc.oget(s, "user")
     kwargs["group"] = svc.oget(s, "group")
     kwargs["cwd"] = svc.oget(s, "cwd")
+    kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
     kwargs["configs_environment"] = svc.oget(s, "configs_environment")
 

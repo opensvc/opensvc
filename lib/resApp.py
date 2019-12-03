@@ -159,6 +159,7 @@ class App(Resource):
                  user=None,
                  group=None,
                  cwd=None,
+                 environment=None,
                  configs_environment=None,
                  secrets_environment=None,
                  **kwargs):
@@ -179,6 +180,7 @@ class App(Resource):
         self.check_timeout = check_timeout
         self.info_timeout = info_timeout
         self.label = self.type.split(".")[-1]
+        self.environment = environment
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
         if script:
@@ -604,6 +606,16 @@ class App(Resource):
                 kwargs["env"] = {}
             kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
             kwargs["env"].update(self.kind_environment_env("cfg", self.secrets_environment))
+        if self.environment:
+            for mapping in self.environment:
+                try:
+                    var, val = mapping.split("=", 1)
+                except Exception as exc:
+                    self.log.info("ignored environment mapping %s: %s", mapping, exc)
+                    continue
+                var = var.upper()
+                kwargs["env"][var] = val
+
         return kwargs
 
     def _run_cmd_dedicated_log(self, action, cmd):

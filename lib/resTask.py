@@ -22,6 +22,7 @@ class Task(Res.Resource):
                  snooze=0,
                  confirmation=False,
                  log=True,
+                 environment=None,
                  configs_environment=None,
                  secrets_environment=None,
                  check=None,
@@ -34,6 +35,7 @@ class Task(Res.Resource):
         self.timeout = timeout
         self.confirmation = confirmation
         self.log_outputs = log
+        self.environment = environment
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
         self.checker = check

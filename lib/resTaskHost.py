@@ -37,7 +37,6 @@ class Task(resTask.Task):
         kwargs["type"] = "task.host"
         resTask.Task.__init__(self, *args, **kwargs)
 
-
     def _run_call(self):
         kwargs = {
             'timeout': self.timeout,
@@ -49,6 +48,18 @@ class Task(resTask.Task):
                 kwargs["env"] = {}
             kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
             kwargs["env"].update(self.kind_environment_env("sec", self.secrets_environment))
+        if self.environment:
+            if "env" not in kwargs:
+                kwargs["env"] = {}
+            for mapping in self.environment:
+                try:
+                    var, val = mapping.split("=", 1)
+                except Exception as exc:
+                    self.log.info("ignored environment mapping %s: %s", mapping, exc)
+                    continue
+                var = var.upper()
+                kwargs["env"][var] = val
+
         try:
             self.action_triggers("", "command", **kwargs)
             self.write_last_run_retcode(0)
