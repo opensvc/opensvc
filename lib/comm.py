@@ -719,7 +719,7 @@ class Crypt(object):
         return self.daemon_request(*args, **kwargs)
 
     def daemon_request(self, *args, **kwargs):
-        #print("get", args, kwargs)
+        #print("req", args, kwargs)
         #import traceback
         #traceback.print_stack()
         sp = self.socket_parms(kwargs.get("server"))
@@ -762,14 +762,24 @@ class Crypt(object):
         body = self.h2_body_from_data(data)
         headers.update({"Content-Length": str(len(body))})
         conn = self.h2c(sp=sp)
-        try:
-            conn.request(method, path, headers=headers, body=body)
-        except AssertionError as exc:
-            raise ex.excError(str(exc))
-        except ConnectionResetError:
-            return {"status": 1, "error": "%s %s connection reset"%(method, path)}
-        except (ConnectionRefusedError, ssl.SSLError, socket.error) as exc:
-            return {"status": 1, "error": "%s"%exc}
+        elapsed = 0
+        while True:
+            try:
+                conn.request(method, path, headers=headers, body=body)
+                break
+            except AssertionError as exc:
+                raise ex.excError(str(exc))
+            except ConnectionResetError:
+                return {"status": 1, "error": "%s %s connection reset"%(method, path)}
+            except (ConnectionRefusedError, ssl.SSLError, socket.error) as exc:
+                if timeout == 0 or elapsed < timeout:
+                    # Resource temporarily unavailable (busy, overflow)
+                    # Retry after a delay, if the daemon is still
+                    # running and timeout is not exhausted
+                    time.sleep(PAUSE)
+                    elapsed += PAUSE
+                    continue
+                return {"status": 1, "error": "%s"%exc}
         resp = conn.get_response()
         data = resp.read()
         data = json.loads(bdecode(data))
