@@ -132,7 +132,10 @@ class Arrays(object):
             self.node = Node()
         done = []
         for s in self.node.conf_sections(cat="array"):
-            name = self.node.oget(s, "name")
+            try:
+                name = self.node.oget(s, "name")
+            except Exception:
+                pass
             if not name:
                 name = s.split("#", 1)[-1]
             if name in done:
@@ -145,6 +148,7 @@ class Arrays(object):
                 continue
             if stype != "hds":
                 continue
+            print(name)
             try:
                 bin = self.node.oget(s, 'bin')
                 jre_path = self.node.oget(s, 'jre_path')

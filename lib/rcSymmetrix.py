@@ -237,7 +237,12 @@ class Arrays(object):
         self.symms = []
         done = []
         for s in self.node.conf_sections(cat="array"):
-            name = s.split("#", 1)[-1]
+            try:
+                name = self.node.oget(s, 'name')
+            except Exception:
+                pass
+            if not name:
+                name = s.split("#", 1)[-1]
             if name in done:
                 continue
             if self.filtering and s not in self.objects:
