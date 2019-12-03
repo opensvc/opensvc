@@ -135,7 +135,7 @@ class Arrays(object):
             try:
                 name = self.node.oget(s, "name")
             except Exception:
-                pass
+                name = None
             if not name:
                 name = s.split("#", 1)[-1]
             if name in done:

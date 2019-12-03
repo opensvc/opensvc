@@ -2225,8 +2225,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if array_name is None:
             raise ex.excError("can not determine array driver (no --array)")
 
-        section = "array#" + array_name
-        if section not in self.conf_sections(cat="array"):
+        ref_section = "array#" + array_name
+        section = None
+        for s in self.conf_sections(cat="array"):
+            if s == ref_section:
+                section = s
+                break
+            try:
+                name = self.node.oget(s, "name")
+            except Exception:
+                continue
+            if name == array_name:
+                section = s
+                break
+        if section is None:
             raise ex.excError("array '%s' not found in configuration" % array_name)
 
         try:
