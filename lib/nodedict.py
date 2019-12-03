@@ -198,6 +198,13 @@ PRIVATE_KEYWORDS = [
         "text": "Schedule parameter for the :c-action:`pushxtremio` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
+        "section": "array",
+        "rtype": "xtremio",
+        "keyword": "name",
+        "example": "array1",
+        "text": "The name of the array. If not provided, fallback to the section name suffix."
+    },
+    {
         "section": "hp3par",
         "keyword": "schedule",
         "text": "Schedule parameter for the :c-action:`pushhp3par` node action. See usr/share/doc/schedule for the schedule syntax."
@@ -1223,6 +1230,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "example": "10s",
         "default": 10,
         "text": "The api request timeout."
+    },
+    {
+        "section": "array",
+        "rtype": "symmetrix",
+        "keyword": "name",
+        "example": "00012345",
+        "text": "The name of the array. If not provided, fallback to the section name suffix."
     },
     {
         "section": "array",
