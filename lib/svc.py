@@ -310,7 +310,6 @@ ACTIONS_NO_LOCK = [
     "set_provisioned",
     "set_unprovisioned",
     "thaw",
-    "toc",
     "validate_config",
 ]
 
@@ -724,6 +723,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if want_context():
             return
         suffix = None
+
+        if action == "toc" and self.monitor_action in ("reboot", "crash"):
+            return
+
         if (action not in ACTION_NO_ASYNC and self.options.node is not None and self.options.node != "") or \
            action in ACTIONS_NO_LOCK or \
            self.options.nolock or \
@@ -1880,7 +1883,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if status and data.get("errno") != 111:
                 # 111: EREFUSED (ie daemon down)
                 if error:
-                    self.log.warning(error)
+                    self.log.warning("wake monitor failed: %s", error)
                 else:
                     self.log.warning("wake monitor failed")
         except Exception as exc:
@@ -3822,7 +3825,7 @@ class Svc(BaseSvc):
             self.log.error("invalid monitor action '%s'", self.monitor_action)
             return
         self.log.info("start monitor action '%s'", self.monitor_action)
-        if self.monitor_action != "freezestop":
+        if self.monitor_action not in ("freezestop", "switch"):
             time.sleep(2)
         getattr(self, self.monitor_action)()
 
