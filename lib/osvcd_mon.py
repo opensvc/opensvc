@@ -483,7 +483,7 @@ class Monitor(shared.OsvcThread):
             proc=proc,
             on_success="generic_callback",
             on_success_args=[path],
-            on_success_kwargs={"local_expect": "unset"},
+            on_success_kwargs={"status": "idle", "local_expect": "unset"},
             on_error="generic_callback",
             on_error_args=[path],
             on_error_kwargs={"status": "toc failed"},
@@ -817,7 +817,7 @@ class Monitor(shared.OsvcThread):
                             "rid": rid,
                             "resource": resource,
                         })
-                        if smon.status != "tocing":
+                        if shared.SMON_DATA.get(path, {}).get("status") != "tocing":
                             self.service_toc(svc.path)
                     else:
                         self.event("resource_would_toc", {

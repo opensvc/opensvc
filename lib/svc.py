@@ -1104,7 +1104,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     self.log.error("start action returned 0 but instance "
                                    "avail status is %s", data.get("avail"))
                     err = 1
-            if action != "toc":
+            if action != "toc" or self.monitor_action in ("freezestop", "switch"):
                 self.clear_action(action, err, force=options.notify)
             if action not in ("sync_all", "run"):
                 # sync_all and run handle notfications at the resource level
