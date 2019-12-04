@@ -296,7 +296,7 @@ class App(Resource):
             keyvals.append([elements[0].strip(), elements[1].strip()])
         return keyvals
 
-    def get_cmd(self, action, script_arg=None):
+    def get_cmd(self, action, script_arg=None, validate=True):
         key = action + "_seq"
         val = getattr(self, key)
         if val in (None, False):
@@ -319,7 +319,8 @@ class App(Resource):
                     cmd = shlex.split(val)
                 if "|" in cmd or "||" in cmd or "&&" in cmd or any([True for w in cmd if w.endswith(";")]):
                     return val
-        cmd = self.validate_on_action(cmd)
+        if validate:
+            cmd = self.validate_on_action(cmd)
         return cmd
 
     def start(self):
