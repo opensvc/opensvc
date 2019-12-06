@@ -66,7 +66,7 @@ ACTION_ANY_NODE = (
     "gen_cert",
     "get",
     "keys",
-    "print_config",
+    "validate_config",
     "set",
     "unset",
 )
@@ -1315,10 +1315,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 del options[opt]
         return options
 
+    def is_remote_action(self, action):
+        if want_context() and (self.options.node or self.command_is_scoped() or action not in ACTION_ASYNC):
+            return True
+        if self.options.node is not None and self.options.node != "":
+            return True
+        if action in ACTION_ANY_NODE and not self.exists():
+            return True
+        return False
+
     def async_action(self, action, wait=None, timeout=None):
         if action in ACTION_NO_ASYNC:
             return
-        if (want_context() and (self.options.node or self.command_is_scoped() or action not in ACTION_ASYNC)) or (self.options.node is not None and self.options.node != ""):
+        if self.is_remote_action(action):
             options = self.prepare_async_options()
             ret = self.daemon_service_action(action=action, options=options, node=self.options.node, action_mode=False)
             if isinstance(ret, (dict, list)):
@@ -1983,7 +1992,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if options is None:
             options = {}
         req = {
-            "action": "service_action",
+            "action": "object_action",
             "options": {
                 "path": self.path,
                 "sync": sync,
@@ -1991,6 +2000,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "options": options,
             }
         }
+        if not node and action in ACTION_ANY_NODE:
+            node = "ANY"
         display_node = node if node else server
         if action_mode:
             self.log.info("request action '%s' on node %s", action, display_node)

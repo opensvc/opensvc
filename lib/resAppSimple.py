@@ -54,7 +54,7 @@ class App(resApp.App):
         return self.ps_pids_e(pids).splitlines()
 
     def get_running(self, with_children=False):
-        cmd = self.get_cmd("start")
+        cmd = self.get_cmd("start", validate=False)
         if isinstance(cmd, list):
             cmd_s = " ".join(cmd)
         else:
