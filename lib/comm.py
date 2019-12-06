@@ -772,7 +772,12 @@ class Crypt(object):
             except ConnectionResetError:
                 return {"status": 1, "error": "%s %s connection reset"%(method, path)}
             except (ConnectionRefusedError, ssl.SSLError, socket.error) as exc:
-                if timeout == 0 or elapsed < timeout:
+                try:
+                    errno = exc.errno
+                except AttributeError:
+                    errno = None
+                if errno in RETRYABLE and \
+                   (timeout == 0 or elapsed < timeout):
                     # Resource temporarily unavailable (busy, overflow)
                     # Retry after a delay, if the daemon is still
                     # running and timeout is not exhausted
