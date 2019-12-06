@@ -1106,6 +1106,8 @@ class ExtConfigMixin(object):
             if not self.has_default_section:
                 return ret
             for option in cd.get("DEFAULT", {}):
+                if option == "comment":
+                    continue
                 key = self.kwdict.KEYS.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
@@ -1151,6 +1153,8 @@ class ExtConfigMixin(object):
                     ret["warnings"] += 1
                     family, rtype = self.kwdict.DEPRECATED_SECTIONS[family]
                 for option in cd.get(section, {}):
+                    if option == "comment":
+                        continue
                     if option in cd.get("DEFAULT", {}):
                         continue
                     key = self.kwdict.KEYS.sections[family].getkey(option, rtype=rtype)
