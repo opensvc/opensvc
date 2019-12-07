@@ -8,7 +8,7 @@ import rcExceptions as ex
 import rcStatus
 from lock import cmlock
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, qcall, which, lazy, cache
+from rcUtilities import justcall, qcall, which, lazy, cache, clear_cache
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
 from converters import convert_duration
 
@@ -182,6 +182,7 @@ class Disk(resDisk.Disk):
             raise ex.excError("failed to import pool")
         self.can_rollback = True
         self.set_multihost()
+        clear_cache("zpool.status." + self.name)
 
     def do_stop(self):
         if not self.is_up():
@@ -192,6 +193,7 @@ class Disk(resDisk.Disk):
         if ret != 0:
             cmd = ["zpool", "export", "-f", self.name]
             ret, out, err = self.vcall(cmd)
+        clear_cache("zpool.status." + self.name)
         if ret != 0:
             raise ex.excError
 
