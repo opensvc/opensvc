@@ -183,7 +183,7 @@ class Listener(shared.OsvcThread):
         ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
         self.log.info("write %s", ca_cert_chain)
         with open(ca_cert_chain, "w") as fo:
-            fo.write(data)
+            fo.write(bdecode(data))
         crl_path = self.fetch_crl()
         data = self.cert.decode_key("certificate_chain")
         if data is None:
@@ -191,7 +191,7 @@ class Listener(shared.OsvcThread):
         cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
         with open(cert_chain, "w") as fo:
-            fo.write(data)
+            fo.write(bdecode(data))
         data = self.cert.decode_key("private_key")
         if data is None:
             raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
@@ -201,7 +201,7 @@ class Listener(shared.OsvcThread):
             pass
         os.chmod(private_key, 0o0600)
         with open(private_key, "w") as fo:
-            fo.write(data)
+            fo.write(bdecode(data))
         return ca_cert_chain, cert_chain, private_key, crl_path
 
     def fetch_crl(self):
@@ -220,7 +220,7 @@ class Listener(shared.OsvcThread):
             else:
                 self.log.info("write %s", crl)
                 with open(crl, "w") as fo:
-                    fo.write(buff)
+                    fo.write(bdecode(buff))
                 return crl
         self.crl_mode = "external"
         if os.path.exists(crl):

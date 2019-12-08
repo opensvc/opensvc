@@ -165,7 +165,7 @@ class Sec(DataMixin, BaseSvc):
                 _tmpkey.write(bdecode(self.decode_key("private_key")))
             with open(tmpcert, "w") as _tmpcert:
                 os.chmod(tmpcert, 0o600)
-                _tmpcert.write(self.decode_key("certificate_chain"))
+                _tmpcert.write(bdecode(self.decode_key("certificate_chain")))
             cmd = ["openssl", "pkcs12", "-export", "-in", tmpcert, "-inkey", tmpkey, "-passout", "stdin"]
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
             out, err = proc.communicate(input=pwd)
