@@ -210,6 +210,7 @@ class Collector(shared.OsvcThread):
         data = shared.THREADS["monitor"].status()
         _data = {
             "cluster_id": self.cluster_id,
+            "cluster_name": self.cluster_name,
             "nodes": {},
             "services": {},
         }
