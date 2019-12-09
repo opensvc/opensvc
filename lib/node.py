@@ -2175,8 +2175,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 return 0
             return 1
         tmpp = os.path.join(rcEnv.paths.pathtmp, 'html')
-        backp = os.path.join(rcEnv.paths.pathsvc, 'html.bck')
-        htmlp = os.path.join(rcEnv.paths.pathsvc, 'html')
+        backp = rcEnv.paths.pathhtml + '.bck'
+        htmlp = rcEnv.paths.pathhtml
         makedirs(htmlp)
         makedirs(tmpp)
 
