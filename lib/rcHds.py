@@ -148,7 +148,6 @@ class Arrays(object):
                 continue
             if stype != "hds":
                 continue
-            print(name)
             try:
                 bin = self.node.oget(s, 'bin')
                 jre_path = self.node.oget(s, 'jre_path')
