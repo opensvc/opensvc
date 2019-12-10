@@ -639,9 +639,17 @@ def find_locale():
         logit("error while trying to build locale list with command <%s>"%(cmd), stderr=True)
         return None
 
+    data = []
     try:
         f = open(localetmp, 'r')
-        data = f.readlines()
+        while True:
+            try:
+                line = f.readline()
+            except Exception:
+                break
+            if not line:
+                break
+            data.append(line)
         f.close()
     except:
         f.close()
