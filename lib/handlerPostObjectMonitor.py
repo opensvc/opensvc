@@ -119,7 +119,7 @@ class Handler(handler.Handler):
                     options.global_expect = new_ge
                 if options.global_expect:
                     data["data"]["global_expect"] = options.global_expect
-                info.append("service %s target state set to %s" % (path, options.global_expect))
+                info.append("%s target state set to %s" % (path, options.global_expect))
                 thr.set_smon(
                     path, status=options.status,
                     local_expect=options.local_expect,
@@ -136,7 +136,7 @@ class Handler(handler.Handler):
 
     def get_service_slaves(self, path, slaves=None):
         """
-        Recursive lookup of service slaves.
+        Recursive lookup of object slaves.
         """
         if slaves is None:
             slaves = set()
@@ -169,7 +169,7 @@ class Handler(handler.Handler):
             # allow provision target state on just-created service
             return
 
-        # wait for service to appear
+        # wait for object to appear
         for i in range(5):
             instances = thr.get_service_instances(path)
             if instances:
@@ -178,21 +178,30 @@ class Handler(handler.Handler):
                 break
             time.sleep(1)
         if not instances:
-            raise ex.excError("service does not exist")
+            raise ex.excError("object does not exist")
 
+        ges = set()
         for nodename, _data in instances.items():
-            status = _data.get("monitor", {}).get("status", "unknown")
+            smon = _data.get("monitor", {})
+            ge = smon.get("global_expect")
+            ges.add(ge)
+            if global_expect == ge:
+                continue
+            status = smon.get("status", "unknown")
             if status != "idle" and "failed" not in status and "wait" not in status:
                 raise ex.excError("%s instance on node %s in %s state"
                                   "" % (path, nodename, status))
+
+        if ges == set([global_expect]):
+            raise ex.excAbortAction("%s is already targeting %s" % (path, global_expect))
 
         if global_expect not in ("started", "stopped"):
             return
         agg = Storage(shared.AGG.get(path, {}))
         if global_expect == "started" and agg.avail == "up":
-            raise ex.excAbortAction("service %s is already started" % path)
+            raise ex.excAbortAction("%s is already started" % path)
         elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
-            raise ex.excAbortAction("service %s is already stopped" % path)
+            raise ex.excAbortAction("%s is already stopped" % path)
         if agg.avail in ("n/a", "undef"):
             raise ex.excAbortAction()
 
@@ -201,10 +210,10 @@ class Handler(handler.Handler):
         For a placed@<dst> <global_expect> (move action) on <path>,
 
         Raise an excError if
-        * the service <path> does not exist
-        * the service <path> topology is failover and more than 1
+        * the object <path> does not exist
+        * the object <path> topology is failover and more than 1
           destination node was specified
-        * the specified destination is not a service candidate node
+        * the specified destination is not a object candidate node
         * no destination node specified
         * an empty destination node is specified in a list of destination
           nodes
@@ -222,7 +231,7 @@ class Handler(handler.Handler):
             return
         instances = thr.get_service_instances(path)
         if not instances:
-            raise ex.excError("service does not exist")
+            raise ex.excError("object does not exist")
         if destination_nodes == "<peer>":
             instance = list(instances.values())[0]
             if instance.get("topology") == "flex":
@@ -249,8 +258,8 @@ class Handler(handler.Handler):
                 if not destination_node:
                     raise ex.excError("empty destination node")
                 if destination_node not in instances:
-                    raise ex.excError("destination node %s has no service instance" % \
-                                      destination_node)
+                    raise ex.excError("destination node %s has no %s instance" % \
+                                      (destination_node, path))
                 instance = instances[destination_node]
                 if instance["avail"] == "up":
                     raise ex.excAbortAction("instance on destination node %s is "
