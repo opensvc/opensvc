@@ -1581,7 +1581,7 @@ class ClientHandler(shared.OsvcThread):
                     nodenames = [rcEnv.nodename]
                 else:
                     nodenames = [svcnodes[0]]
-            except KeyError:
+            except IndexError:
                 return {"error": "unknown service", "status": 1}
         elif node == "ANY":
             nodenames = [rcEnv.nodename]
