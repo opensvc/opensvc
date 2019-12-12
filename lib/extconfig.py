@@ -169,11 +169,9 @@ class ExtConfigMixin(object):
             if not self.has_default_section:
                 raise ex.OptNotFound("section [%s] not found" % section)
         if evaluate:
-            if self.options.format:
-                return self.conf_get(section, option, scope=True, impersonate=impersonate)
-            else:
-                return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
-            return self.conf_get(section, option, "string", scope=True, impersonate=impersonate)
+            if self.options.format is None:
+                self.options.format = "json"
+            return self.conf_get(section, option, scope=True, impersonate=impersonate)
         else:
             try:
                 return self.cd[section][option]
@@ -525,13 +523,14 @@ class ExtConfigMixin(object):
             try:
                 val = self._handle_reference(_ref, _section, _v, scope=scope,
                                              impersonate=impersonate,
-                                             cd=cd)
+                                             cd=cd, return_length=return_length)
             except Exception:
                 val = None
 
             if val is None and _section != "DEFAULT" and n_dots == 0 and self.has_default_section:
                 val = self._handle_reference(ref, "DEFAULT", _v, scope=scope,
-                                             impersonate=impersonate, cd=cd)
+                                             impersonate=impersonate, cd=cd,
+                                             return_length=return_length)
 
             if val is None:
                 # deferred
@@ -558,7 +557,7 @@ class ExtConfigMixin(object):
         return val
 
     def _handle_reference(self, ref, _section, _v, scope=False,
-                          impersonate=None, cd=None):
+                          impersonate=None, cd=None, return_length=False):
         if cd is None:
             try:
                 cd = self.private_cd
@@ -596,7 +595,8 @@ class ExtConfigMixin(object):
                     return
 
         try:
-            return self.conf_get(_section, _v, "string", scope=scope,
+            t = None if return_length else "string"
+            return self.conf_get(_section, _v, t, scope=scope,
                                  impersonate=impersonate, cd=cd)
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)

@@ -157,6 +157,8 @@ class Mgr(object):
         if self.selector:
             opts.parm_svcs = self.selector
             opts.svcs = self.selector
+        if opts.eval and not opts.format:
+            opts.format = "json"
         return opts
 
     @staticmethod
