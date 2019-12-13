@@ -275,8 +275,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         sections = DEFAULT_SECTIONS
     out = []
     nodenames = get_nodes(data)
-    nodenames = [n for n in nodenames if n in node]
-    show_nodenames = sorted(abbrev([n for n in nodenames if n in node]))
+    nodenames = sorted([n for n in nodenames if n in node])
+    show_nodenames = abbrev([n for n in nodenames if n in node])
     services = {}
 
     def load_header(title=""):
