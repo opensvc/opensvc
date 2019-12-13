@@ -105,6 +105,7 @@ class Volume(Res.Resource):
         self.uninstall_flag()
 
     def _status(self, verbose=False):
+        self.data_status()
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
             return rcStatus.DOWN
@@ -162,10 +163,38 @@ class Volume(Res.Resource):
             })
         return data
 
+    def data_status(self):
+        self._data_status("cfg")
+        self._data_status("sec")
+
+    def _data_status(self, kind):
+        for data in self.data_data(kind):
+            name, _, kind = split_path(data["obj"])
+            obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            if not obj.exists():
+                self.status_log("referenced %s %s does not exist: "
+                                "expected data %s can not be installed in the volume" % (kind, name, data["key"]), "warn")
+                continue
+            keys = obj.resolve_key(data["key"])
+            if not keys and "*" not in data["key"] and "?" not in data["key"]:
+                self.status_log("%s %s has no key %s. "
+                                "expected data can not be installed in the volume" % (kind, name, data["key"]), "warn")
+
     def _install_data(self, kind):
         for data in self.data_data(kind):
             name, _, kind = split_path(data["obj"])
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
+            if not obj.exists():
+                self.log.warning("referenced %s %s does not exist: "
+                                 "expected data %s can not be installed in the volume",
+                                 kind, name, data["key"])
+                continue
+            keys = obj.resolve_key(data["key"])
+            if not keys and "*" not in data["key"] and "?" not in data["key"]:
+                self.log.warning("%s %s has no key %s. "
+                                 "expected data can not be installed in the volume",
+                                 kind, name, data["key"])
+                continue
             for key in obj.resolve_key(data["key"]):
                 obj._install(key, data["path"])
 
