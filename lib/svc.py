@@ -921,10 +921,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
            action.startswith("collector") or \
            action.startswith("json_"):
             return self.do_print_action(action, options)
+
         if self.published_action(action, options):
-            err = self.do_logged_action(action, options)
+            if self.node.oget("node", "dblog"):
+                err = self.do_logged_action(action, options)
+            else:
+                self.log_action_header()
+                err = self.do_action(action, options)
         else:
             err = self.do_action(action, options)
+
         return err
 
     def purge_status_caches(self):
@@ -1234,6 +1240,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
         self.log.addHandler(actionlogfilehandler)
+
+        self.log_action_header()
+        err = self.do_action(action, options)
+
+        # Push result and logs to database
+        actionlogfilehandler.close()
+        self.log.removeHandler(actionlogfilehandler)
+        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.dblogger(action, begin, end, actionlogfile)
+        return err
+
+    def log_action_header(self):
         try:
             if sys.argv[0].endswith("mgr.py"):
                 if len(sys.argv) > 2 and sys.argv[1] in ("-s", "--service"):
@@ -1248,15 +1266,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 self.log.info(runlog, {"f_stream": False})
         except IndexError:
             pass
-
-        err = self.do_action(action, options)
-
-        # Push result and logs to database
-        actionlogfilehandler.close()
-        self.log.removeHandler(actionlogfilehandler)
-        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.dblogger(action, begin, end, actionlogfile)
-        return err
 
     def prepare_options(self, action, options):
         """

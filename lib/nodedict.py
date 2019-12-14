@@ -400,6 +400,13 @@ KEYWORDS = [
     },
     {
         "section": "node",
+        "keyword": "dblog",
+        "convert": "boolean",
+        "default": True,
+        "text": "If true and dbopensvc is set, the objects action logs are reported to the collector. Set to false to disable log reporting to the collector, event if dbopensvc is set."
+    },
+    {
+        "section": "node",
         "keyword": "branch",
         "example": "1.9",
         "text": "Set the targeted opensvc agent branch. The downloaded upgrades will honor that branch. If not set, the :kw:`repopkg` imposes the target branch, which is not recommended with a public repopkg."

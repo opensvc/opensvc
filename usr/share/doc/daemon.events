@@ -1,90 +1,90 @@
 Daemon Events
 =============
 
-Id ``arbitrator_up``
---------------------
-
-arbitrator {arbitrator} is now reachable
-
-Id ``stdby_resource_restart``
------------------------------
-
-start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
-
-Id ``max_stdby_resource_restart``
----------------------------------
-
-max restart ({restart}) reached for standby resource {rid} ({resource.label})
-
-Id ``blacklist_add``
---------------------
-
-sender {sender} blacklisted
-
 Id ``monitor_started``
 ----------------------
 
 monitor started
-
-Id ``hb_beating``
------------------
-
-node {nodename} hb status stale => beating
-
-Id ``node_config_change``
--------------------------
-
-node config change
-
-Id ``scale_down``
------------------
-
-exceeds {delta} instance to reach scale target {instance.scale}
-
-Id ``max_resource_restart``
----------------------------
-
-max restart ({restart}) reached for resource {rid} ({resource.label})
-
-Id ``resource_toc``
--------------------
-
-toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
-
-Id ``node_thaw``
-----------------
-
-thaw node
 
 Id ``hb_stale``
 ---------------
 
 node {nodename} hb status beating => stale
 
+Id ``node_thaw``
+----------------
+
+thaw node
+
+Id ``service_config_installed``
+-------------------------------
+
+config fetched from node {from} is now installed
+
+Id ``scale_down``
+-----------------
+
+exceeds {delta} instance to reach scale target {instance.scale}
+
 Id ``scale_up``
 ---------------
 
 misses {delta} instance to reach scale target {instance.scale}
 
-Id ``resource_degraded``
-------------------------
+Id ``resource_toc``
+-------------------
 
-resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}
+toc for resource {rid} ({resource.label}) {resource.status} {resource.log}
 
 Id ``resource_restart``
 -----------------------
 
 restart resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
 
+Id ``arbitrator_up``
+--------------------
+
+arbitrator {arbitrator} is now reachable
+
+Id ``resource_degraded``
+------------------------
+
+resource {rid} ({resource.label}) degraded to {resource.status} {resource.log}
+
 Id ``arbitrator_down``
 ----------------------
 
 arbitrator {arbitrator} is no longer reachable
 
-Id ``service_config_installed``
--------------------------------
+Id ``node_config_change``
+-------------------------
 
-config fetched from node {from} is now installed
+node config change
+
+Id ``hb_beating``
+-----------------
+
+node {nodename} hb status stale => beating
+
+Id ``blacklist_add``
+--------------------
+
+sender {sender} blacklisted
+
+Id ``max_stdby_resource_restart``
+---------------------------------
+
+max restart ({restart}) reached for standby resource {rid} ({resource.label})
+
+Id ``max_resource_restart``
+---------------------------
+
+max restart ({restart}) reached for resource {rid} ({resource.label})
+
+Id ``stdby_resource_restart``
+-----------------------------
+
+start standby resource {rid} ({resource.label}) {resource.status} {resource.log}, try {try}/{restart}
 
 Id ``crash``, Reason ``split``
 ------------------------------
