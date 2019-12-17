@@ -1298,10 +1298,29 @@ class OsvcThread(threading.Thread, Crypt):
         self.log.info("%s updated", rcEnv.paths.nodes_info)
 
     def on_nodes_info_change(self):
+        """
+        Rewrite the on-disk nodes info cache and flush caches of all
+        information referencing labels.
+
+        Object configuration references to #nodes and nodes can change on
+        label changes, so refresh the status.json to expose those changes
+        in the cluster data.
+
+        For example:
+        nodes = mylabel=a
+        flex_target={#nodes}
+        """
         NODE.unset_lazy("nodes_info")
         self.dump_nodes_info()
         for svc in SERVICES.values():
             svc.unset_conf_lazy()
+            svc.print_status_data_eval(refresh=False, write_data=True)
+            try:
+                # trigger status.json reload by the mon thread
+                CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]["updated"] = 0
+            except KeyError:
+                pass
+        wake_monitor(reason="nodes info change")
 
     def speaker(self):
         for nodename in self.sorted_cluster_nodes:
