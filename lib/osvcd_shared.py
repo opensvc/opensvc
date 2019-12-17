@@ -1312,13 +1312,18 @@ class OsvcThread(threading.Thread, Crypt):
         """
         NODE.unset_lazy("nodes_info")
         self.dump_nodes_info()
-        for svc in SERVICES.values():
+        for path in [p for p in SERVICES]:
+            try:
+                svc = SERVICES[path]
+            except KeyError:
+                # deleted
+                continue
             svc.unset_conf_lazy()
-            if NMON_DATA.status != "init":
+            if NMON_DATA.status not in ("init", "rejoin"):
                 svc.print_status_data_eval(refresh=False, write_data=True)
                 try:
                     # trigger status.json reload by the mon thread
-                    CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]["updated"] = 0
+                    CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]["updated"] = 0
                 except KeyError:
                     pass
         wake_monitor(reason="nodes info change")
