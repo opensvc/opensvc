@@ -758,12 +758,7 @@ class Monitor(shared.OsvcThread):
         self.get_agg_services()
         for path in paths:
             self.clear_start_failed(path)
-            transitions = self.transition_count()
-            if transitions > shared.NODE.max_parallel:
-                self.duplog("info", "delay services orchestration: "
-                            "%(transitions)d/%(max)d transitions already "
-                            "in progress", transitions=transitions,
-                            max=shared.NODE.max_parallel)
+            if self.transitions_maxed():
                 break
             if self.status_older_than_cf(path):
                 #self.log.info("%s status dump is older than its config file",
@@ -774,6 +769,16 @@ class Monitor(shared.OsvcThread):
             self.resources_orchestrator(path, svc)
             self.service_orchestrator(path, svc)
         self.sync_services_conf()
+
+    def transitions_maxed(self):
+        transitions = self.transition_count()
+        if transitions <= shared.NODE.max_parallel:
+            return False
+        self.duplog("info", "delay services orchestration: "
+                    "%(transitions)d/%(max)d transitions already "
+                    "in progress", transitions=transitions,
+                    max=shared.NODE.max_parallel)
+        return True
 
     def resources_orchestrator(self, path, svc):
         if shared.NMON_DATA.status == "shutting":
