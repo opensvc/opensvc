@@ -20,6 +20,9 @@ class ExtConfigMixin(object):
         self.ref_cache = {}
         self.default_status_groups = default_status_groups
 
+    def clear_ref_cache(self):
+        self.ref_cache = {}
+
     @lazy
     def has_default_section(self):
         if hasattr(self, "path"):
@@ -1302,6 +1305,7 @@ class ExtConfigMixin(object):
                 yield section
 
     def parse_config_file(self, cf=None):
+        self.clear_ref_cache()
         if cf is None:
             cf = self.paths.cf
         try:
@@ -1407,5 +1411,5 @@ class ExtConfigMixin(object):
         except Exception as exc:
             raise ex.excError("failed to write %s: %s" % (cf, exc))
         self.unset_all_lazy()
-        self.ref_cache = {}
+        self.clear_ref_cache()
 
