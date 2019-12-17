@@ -2192,6 +2192,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         unset_lazy(self, prop)
 
     def unset_conf_lazy(self):
+        self.clear_ref_cache()
         self.init_nodes()
         self.unset_lazy("cd")
         self.unset_lazy("nodes")
@@ -2202,6 +2203,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.unset_lazy("flex_max")
 
     def unset_all_lazy(self):
+        self.clear_ref_cache()
         self.init_nodes()
         unset_all_lazy(self)
         for res in self.resources_by_id.values():
