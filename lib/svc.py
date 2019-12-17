@@ -2329,7 +2329,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         return data
 
-    def print_status_data_eval(self, refresh=False, write_data=True):
+    def print_status_data_eval(self, refresh=False, write_data=True, clear_rstatus=False):
         """
         Return a structure containing hierarchical status of
         the service.
