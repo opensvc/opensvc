@@ -3527,12 +3527,21 @@ class Svc(BaseSvc):
             print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
-    def print_status_data_eval(self, refresh=False, write_data=True):
+    def print_status_data_eval(self, refresh=False, write_data=True, clear_rstatus=False):
         """
         Return a structure containing hierarchical status of
         the service.
         """
         now = time.time()
+
+        if clear_rstatus:
+            # Clear resource status in-memory cache, so the value is loaded
+            # from on-disk cache if refresh=False.
+            # Used by the daemon which holds long lived Svc objects that can
+            # have outdated in-mem caches.
+            for res in self.get_resources():
+                res.rstatus = None
+
         group_status = self.group_status(refresh=refresh)
 
         data = {

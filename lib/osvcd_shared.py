@@ -1319,8 +1319,8 @@ class OsvcThread(threading.Thread, Crypt):
                 # deleted
                 continue
             svc.unset_conf_lazy()
-            if NMON_DATA.status not in ("init", "rejoin"):
-                svc.print_status_data_eval(refresh=False, write_data=True)
+            if NMON_DATA.status != "init":
+                svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
                 try:
                     # trigger status.json reload by the mon thread
                     CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]["updated"] = 0
