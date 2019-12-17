@@ -1314,12 +1314,13 @@ class OsvcThread(threading.Thread, Crypt):
         self.dump_nodes_info()
         for svc in SERVICES.values():
             svc.unset_conf_lazy()
-            svc.print_status_data_eval(refresh=False, write_data=True)
-            try:
-                # trigger status.json reload by the mon thread
-                CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]["updated"] = 0
-            except KeyError:
-                pass
+            if NMON_DATA.status != "init":
+                svc.print_status_data_eval(refresh=False, write_data=True)
+                try:
+                    # trigger status.json reload by the mon thread
+                    CLUSTER_DATA[rcEnv.nodename]["services"]["status"][svc.path]["updated"] = 0
+                except KeyError:
+                    pass
         wake_monitor(reason="nodes info change")
 
     def speaker(self):
