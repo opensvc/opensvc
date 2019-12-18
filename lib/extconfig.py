@@ -445,7 +445,8 @@ class ExtConfigMixin(object):
                 val = self.cluster_name
         elif _ref == "fqdn":
             if has_node:
-                val = "%s.%s.%s.%s" % (self.name, self.namespace, self.kind, self.node.cluster_name)
+                ns = "root" if self.namespace is None else self.namespace
+                val = "%s.%s.%s.%s" % (self.name, ns, self.kind, self.node.cluster_name)
         elif _ref == "domain":
             if has_node:
                 val = "%s.%s.%s" % (self.namespace, self.kind, self.node.cluster_name)
