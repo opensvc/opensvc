@@ -49,7 +49,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_path, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_path, strip_path, normalize_paths, \
-                        daemon_test_lock
+                        daemon_test_lock, validate_kind
 from contexts import want_context
 from converters import *
 from comm import Crypt
@@ -2470,7 +2470,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data = strip_path(sorted([svc.path for svc in svcs if svc.path in options.svcs]), options.namespace)
             if options.format == "json":
                 print(json.dumps(data, indent=4, sort_keys=True))
-            else:
+            elif data:
                 print("\n".join(data))
             return
 
@@ -3001,9 +3001,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         svc.postinstall()
 
     def install_service_info(self, name, namespace, kind):
+        validate_kind(kind)
+        validate_ns_name(namespace)
         validate_name(name)
-        if namespace:
-            validate_ns_name(namespace)
         data = Storage()
         data.path = fmt_path(name, namespace, kind)
         data.pathetc = svc_pathetc(data.path, namespace)

@@ -6,7 +6,7 @@ import handler
 import osvcd_shared as shared
 import rcExceptions as ex
 import mixinObjectCreate
-from rcUtilities import bdecode, drop_option, split_path
+from rcUtilities import bdecode, drop_option, split_path, validate_paths
 from rcGlobalEnv import rcEnv
 from rcExceptions import HTTP
 
@@ -94,6 +94,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
         else:
             paths = [p for p in options.data]
             cmd = ["create", "--config=-"]
+        validate_paths(paths)
         if options.namespace:
             cmd.append("--namespace="+options.namespace)
         if options.restore:

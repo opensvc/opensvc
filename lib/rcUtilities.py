@@ -1360,16 +1360,38 @@ def makedirs(path, mode=0o755):
         else:
             raise
 
+def validate_paths(paths):
+    [validate_path(p) for p in paths]
+
+def validate_path(path):
+    name, namespace, kind = split_path(path)
+    validate_kind(kind)
+    validate_ns_name(namespace)
+    validate_name(name)
+
+def validate_kind(name):
+    if name not in rcEnv.kinds:
+        raise ValueError("invalid kind '%s'. kind must be one of"
+                         " %s." % (name, ", ".join(rcEnv.kinds)))
+
 def validate_ns_name(name):
+    if name is None:
+        return
+    if name in rcEnv.kinds:
+        raise ValueError("invalid namespace name '%s'. names must not clash with kinds"
+                         " %s." % (name, ", ".join(rcEnv.kinds)))
     if re.match(VALID_NAME_RFC952_NO_DOT, name):
         return
-    raise ex.excError("invalid namespace name '%s'. names must contain only letters, "
-                      "digits and hyphens, start with a letter and end with "
-                      "a digit or letter (rfc 952)." % name)
+    raise ValueError("invalid namespace name '%s'. names must contain only letters, "
+                     "digits and hyphens, start with a letter and end with "
+                     "a digit or letter (rfc 952)." % name)
 
 def validate_name(name):
     # strip scaler slice prefix
     name = re.sub("^[0-9]+\.", "", name)
+    if name in rcEnv.kinds:
+        raise ex.excError("invalid name '%s'. names must not clash with kinds"
+                          " %s." % (name, ", ".join(rcEnv.kinds)))
     if re.match(VALID_NAME_RFC952, name):
         return
     raise ex.excError("invalid name '%s'. names must contain only dots, letters, "

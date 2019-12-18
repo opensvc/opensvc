@@ -15,7 +15,7 @@ import errno
 import rcStatus
 import rcColor
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs, split_path, get_option
+from rcUtilities import ximport, check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
 from storage import Storage
 
@@ -186,6 +186,10 @@ class Mgr(object):
                 _, _, kind = split_path(path)
             except ValueError:
                 continue
+            try:
+                validate_kind(kind)
+            except ValueError as exc:
+                raise ex.excError(str(exc))
             try:
                 data[kind].append(path)
             except KeyError:
