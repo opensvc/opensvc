@@ -171,7 +171,8 @@ def svcmon(node, options=None):
     })
 
     if options.parm_svcs is None:
-        options.parm_svcs = "*"
+        kind = os.environ.get("OSVC_KIND", "svc")
+        options.parm_svcs = "*/%s/*" % kind
     status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
     if status_data is None or status_data.get("status", 0) != 0:
         status, error, info = node.parse_result(status_data)
