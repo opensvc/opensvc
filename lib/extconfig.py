@@ -57,16 +57,13 @@ class ExtConfigMixin(object):
         internal method.
         """
         if self.options.kw:
-            kw = self.options.kw
+            kws = self.options.kw
         elif self.options.param:
-            kw = [self.options.param]
+            kws = [self.options.param]
         else:
-            kw = None
-        if kw is None:
             print("no keyword specified. set --kw <keyword>", file=sys.stderr)
             return 1
-        ret = 0
-        return self.unset_multi(kw)
+        self.unset_multi(kws)
 
     def unset_multi(self, kws):
         try:
