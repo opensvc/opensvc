@@ -82,7 +82,7 @@ MERGE_RULES = {
     encode_pair(STDBY_UP_WITH_DOWN, STDBY_UP_WITH_DOWN): STDBY_UP_WITH_DOWN,
 }
 
-def colorize_status(status, lpad=10):
+def colorize_status(status, lpad=10, agg_status=None):
     """
     Return the colorized human readable status string.
     """
@@ -96,10 +96,17 @@ def colorize_status(status, lpad=10):
         return colorize(fmt % "undef", color.LIGHTBLUE)
     elif status == "warn":
         return colorize(fmt % status, color.BROWN)
-    elif status.endswith("down") or status in ("err", "error"):
-        return colorize(fmt % status, color.RED)
-    elif status.endswith("up") or status == "ok":
+    elif status == "down" or status in ("err", "error"):
+        if agg_status == "up":
+            return colorize(fmt % status, color.LIGHTBLUE)
+        else:
+            return colorize(fmt % status, color.RED)
+    elif status == "up" or status == "ok":
         return colorize(fmt % status, color.GREEN)
+    elif status == "stdby up":
+        return colorize(fmt % status, color.LIGHTBLUE)
+    elif status == "stdby down":
+        return colorize(fmt % status, color.RED)
     elif status == "n/a":
         return colorize(fmt % status, color.LIGHTBLUE)
     else:

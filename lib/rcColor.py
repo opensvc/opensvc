@@ -22,8 +22,8 @@ use_color = "auto"
 
 unicons = {
     "frozen": "*",
-    "stdby up": "o",
-    "stdby down": "x",
+    "stdby up": "S",
+    "stdby down": "s",
     "up": "O",
     "down": "X",
     "warn": "!",
