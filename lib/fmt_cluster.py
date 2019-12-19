@@ -376,7 +376,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     if avail == "unknown":
                         avail_icon = colorize("?", color.RED)
                     else:
-                        avail_icon = colorize_status(avail, lpad=0).replace(avail, unicons[avail])
+                        avail_icon = colorize_status(avail, lpad=0, agg_status=data["avail"]).replace(avail, unicons[avail])
                 # overall status unicon
                 if data["wrapper"]:
                     overall_icon = ""

@@ -104,7 +104,10 @@ def colorize_status(status, lpad=10, agg_status=None):
     elif status == "up" or status == "ok":
         return colorize(fmt % status, color.GREEN)
     elif status == "stdby up":
-        return colorize(fmt % status, color.LIGHTBLUE)
+        if agg_status == "up":
+            return colorize(fmt % status, color.LIGHTBLUE)
+        else:
+            return colorize(fmt % status, color.RED)
     elif status == "stdby down":
         return colorize(fmt % status, color.RED)
     elif status == "n/a":
