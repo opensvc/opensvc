@@ -283,7 +283,7 @@ class Mgr(object):
             pass
         if action not in ("ls", "monitor", "create") and options.svcs is None and options.status is None:
             raise ex.excError("no service selected.")
-        if action in ("ls", "monitor") and options.svcs is None and options.status is None:
+        if action in ("ls", "monitor") and options.svcs is None:
             kind = os.environ.get("OSVC_KIND", "svc")
             options.svcs = "*/%s/*" % kind
 

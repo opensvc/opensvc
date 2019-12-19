@@ -2464,6 +2464,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 options.sections = "services"
             elif "services" not in options.sections:
                 options.sections += ",services"
+            options.parm_svcs = ",".join([o.path for o in self.svcs])
             svcmon.svcmon(self, options)
             return
         if action == "ls":
