@@ -92,7 +92,8 @@ class Resource(object):
         """
         Lazy init for the resource logger.
         """
-        return logging.getLogger(self.log_label())
+        extra = {"path": self.svc.path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid, "rid": self.rid, "subset": self.subset}
+        return logging.LoggerAdapter(logging.getLogger(self.log_label()), extra)
 
     @lazy
     def var_d(self):

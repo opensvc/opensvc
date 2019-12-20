@@ -14,6 +14,8 @@ import shutil
 import traceback
 import uuid
 import fnmatch
+import re
+import datetime
 from six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen, PIPE
 
@@ -55,6 +57,7 @@ class DummyException(Exception):
 if six.PY2:
     ConnectionResetError = DummyException
 
+RE_LOG_LINE = re.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-2][0-9]:[0-6][0-9]:[0-6][0-9],[0-9]{3} .* \| ")
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
@@ -285,7 +288,7 @@ class Listener(shared.OsvcThread):
         shared.NODE.listener = self
         self.set_tid()
         self.last_relay_janitor = 0
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener")
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.listener"), {"node": rcEnv.nodename, "component": self.name})
         self.events_clients = []
         self.stats = Storage({
             "sessions": Storage({
@@ -778,7 +781,7 @@ class ClientHandler(shared.OsvcThread):
         self.scheme = scheme
         self.tls = tls
         self.tls_context = tls_context
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.listener.%s" % addr[0])
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.listener"), {"node": rcEnv.nodename, "component": "%s/%s" % (self.parent.name, addr[0])})
         self.streams = {}
         self.h2conn = None
         self.events_stream_ids = []
@@ -1870,13 +1873,43 @@ class ClientHandler(shared.OsvcThread):
         return ofile
 
     def read_file_lines(self, ofile):
-        lines = []
+        data = []
+        buff = ""
+        def parse(_buff):
+            head, message = _buff.split(" | ", 1)
+            date_s, time_s, lvl, meta = head.split(None, 3)
+            d = {
+                "t": datetime.datetime.strptime(date_s + " " + time_s, "%Y-%m-%d %H:%M:%S,%f").timestamp(),
+                "l": lvl,
+                "m": message.rstrip().split("\n"),
+                "x": {},
+            }
+            for m in meta.split():
+                k, v = m.split(":", 1)
+                d["x"][k] = v
+            return d
+
         while True:
             line = ofile.readline()
             if not line:
-                return lines
-            lines.append(line)
-        return lines
+                break
+            if RE_LOG_LINE.match(line):
+                if buff:
+                    # new msg, push pending buff
+                    try:
+                        data.append(parse(buff))
+                    except ValueError:
+                        pass
+                buff = line
+            else:
+                buff += line
+        if buff:
+            # EOF, push pending buff
+            try:
+                data.append(parse(buff))
+            except ValueError:
+                pass
+        return data
 
     def h2_push_logs(self, stream_id, ofile, follow):
         lines = self.read_file_lines(ofile)

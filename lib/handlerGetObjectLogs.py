@@ -32,7 +32,6 @@ class Handler(handler.Handler):
         "namespaces": "FROM:path",
     }
     stream = True
-    multiplex = "always"
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         options = self.parse_options(kwargs)

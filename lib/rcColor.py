@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import os
 import sys
+import datetime
+import re
 
 import six
 import rcExceptions as ex
@@ -95,6 +97,7 @@ AUTO_COLORS = [
     color.GREEN,
     color.YELLOW,
 ]
+AUTO_COLORS_LEN = len(AUTO_COLORS)
 
 def ansi_colorize(s, c=None):
     global use_color
@@ -416,32 +419,36 @@ def colorize_log_line(line, last=None, auto=None):
     Format a log line, colorizing the log level.
     Return the line as a string buffer.
     """
-    import rcLogger
-    import re
-    line = line.rstrip("\n")
-    elements = line.split(" - ")
+    msg = os.linesep.join(line["m"])
+    extra = ""
+    for k, v in line["x"].items():
+        if k in ("n", "o") and auto:
+            try:
+                i = auto.index(v)
+                v = colorize(v, AUTO_COLORS[i%AUTO_COLORS_LEN])
+            except (ValueError, IndexError):
+                pass
+        extra += "%s:%s " % (k, v)
+    extra = extra.rstrip()
+    lvl = line["l"]
+    t = datetime.datetime.fromtimestamp(line["t"]).strftime("%Y-%m-%d %H:%M:%S,%f")
 
-    if len(elements) < 3 or elements[2] not in ("DEBUG", "INFO", "WARNING", "ERROR"):
-        return
+    if lvl == "INFO":
+        lvl = colorize("INFO   ", color.LIGHTBLUE)
+    elif lvl == "WARNING":
+        lvl = colorize("WARNING", color.BROWN)
+    elif lvl == "ERROR":
+        lvl = colorize("ERROR  ", color.RED)
+    elif lvl == "DEBUG":
+        lvl = "DEBUG  "
 
-    elements[1] = rcLogger.namefmt % elements[1]
+    if msg.startswith("do "):
+        msg = colorize(msg, color.BOLD)
+
     if auto:
-        barel_len = len(AUTO_COLORS)
         for i, word in enumerate(auto):
-            if elements[1].startswith(word+".") or elements[1].startswith(word+" "):
-                elements[1] = colorize(elements[1], AUTO_COLORS[i%barel_len])
-    #elements[1] = colorize(elements[1], color.BOLD)
-    elements[2] = "%-7s" % elements[2]
-    elements[2] = elements[2].replace("ERROR", colorize("ERROR", color.RED))
-    elements[2] = elements[2].replace("WARNING", colorize("WARNING", color.BROWN))
-    elements[2] = elements[2].replace("INFO", colorize("INFO", color.LIGHTBLUE))
-    if elements[3].startswith("do "):
-        elements[3] = colorize(elements[3], color.BOLD)
-    if auto:
-        barel_len = len(AUTO_COLORS)
-        for i, word in enumerate(auto):
-            elements[3] = re.sub("([\s,:@'\"]+)%s([\s,:@'\"]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%barel_len])+m.group(2), elements[3])
-    line = " ".join(elements)
+            msg = re.sub("([\s,:@'\"]+)%s([\s,:@'\"]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%AUTO_COLORS_LEN])+m.group(2), msg)
+    line = " ".join((t, lvl, extra, "|", msg))
     return line
 
 

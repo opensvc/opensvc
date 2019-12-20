@@ -60,7 +60,7 @@ class Scheduler(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.scheduler")
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.scheduler"), {"node": rcEnv.nodename, "component": self.name})
         self.log.info("scheduler started")
         self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
@@ -193,6 +193,18 @@ class Scheduler(shared.OsvcThread):
         cmd.append("--cron")
         return cmd
 
+    def format_log_cmd(self, action, path=None, rids=None):
+        if path is None:
+            cmd = ["om", "node", action]
+        elif isinstance(path, list):
+            cmd = ["om", ",".join(path), action, "--waitlock=5", "--parallel"]
+        else:
+            cmd = ["om", path, action, "--waitlock=5"]
+        if rids:
+            cmd += ["--rid", ",".join(sorted(list(rids)))]
+        cmd.append("--cron")
+        return cmd
+
     def promote_queued_action(self, sig, delay):
         if delay == 0 and self.delayed[sig]["delay"] > 0:
             self.log.debug("promote queued action %s from delayed to asap", sig)
@@ -284,7 +296,8 @@ class Scheduler(shared.OsvcThread):
         now = time.time()
         for task in self.get_todo():
             cmd = self.format_cmd(task["action"], task["path"], task["rids"])
-            self.log.info("run '%s' queued %s ago", " ".join(cmd), print_duration(now - task["queued"]))
+            log_cmd = self.format_log_cmd(task["action"], task["path"], task["rids"])
+            self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(now - task["queued"]))
             self.exec_action(task["sigs"], cmd)
             dequeued += task["sigs"]
         for sig in dequeued:

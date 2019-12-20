@@ -612,6 +612,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def log(self): # pylint: disable=method-hidden
+        extra = {"path": self.path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid}
+        return logging.LoggerAdapter(self.logger, extra)
+
+    @lazy
+    def logger(self): # pylint: disable=method-hidden
         if self.volatile:
             handlers = ["stream"]
         else:
@@ -1239,14 +1244,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
-        self.log.addHandler(actionlogfilehandler)
+        self.logger.addHandler(actionlogfilehandler)
 
         self.log_action_header()
         err = self.do_action(action, options)
 
         # Push result and logs to database
         actionlogfilehandler.close()
-        self.log.removeHandler(actionlogfilehandler)
+        self.logger.removeHandler(actionlogfilehandler)
         end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.dblogger(action, begin, end, actionlogfile)
         return err
@@ -1805,14 +1810,16 @@ class BaseSvc(Crypt, ExtConfigMixin):
             }
         }
         result = self.daemon_get(req, server=server, node=node)
-        lines = []
         if "nodes" in result:
+            lines = []
             for logs in result["nodes"].values():
                 if logs is None:
                     # happens when no log is present on a peer
                     continue
                 lines += logs
-        return sorted(lines)
+        else:
+            lines = result
+        return sorted(lines, key=lambda x: x.get("t", 0))
 
     def daemon_logs(self, server=None, node=None, backlog=None, debug=None):
         req = {
@@ -2096,7 +2103,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         from rcColor import colorize_log_line
         lines = []
         for line in self.daemon_backlogs(server, node, backlog, debug):
-            line = colorize_log_line(line, auto=auto)
+            try:
+                line = colorize_log_line(line, auto=auto)
+            except Exception as exc:
+                print(exc, file=sys.stderr)
             if line:
                 print(line)
                 sys.stdout.flush()
@@ -5086,6 +5096,7 @@ class Svc(BaseSvc):
         self.options.local = True
         self.stop()
         self.log.info("instance stopped, ready for restart.")
+        self.unset_all_lazy()
         self.start()
 
     def _migrate(self):

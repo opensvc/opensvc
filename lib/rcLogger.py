@@ -27,9 +27,15 @@ from rcColor import colorize, color
 DEFAULT_HANDLERS = ["file", "stream", "syslog"]
 
 def namer(name):
+    """
+    Adds a .gz suffix to the rotated file.
+    """
     return name + ".gz"
 
 def rotator(source, dest):
+    """
+    Compress file upon rotation.
+    """
     with open(source, "rb") as sf:
         data = sf.read()
         with gzip.open(dest, "wb") as df:
@@ -37,6 +43,9 @@ def rotator(source, dest):
     os.remove(source)
 
 class StreamFilter(logging.Filter):
+    """
+    Discard from StreamHander records flagged f_stream=False.
+    """
     def filter(self, record):
         try:
             if record.args["f_stream"] is False:
@@ -46,41 +55,68 @@ class StreamFilter(logging.Filter):
         except (KeyError, AttributeError, TypeError):
             return True
 
-class RedactingFormatter(object):
-    def __init__(self, orig_formatter):
-        self.orig_formatter = orig_formatter
+class OsvcFormatter(logging.Formatter):
+    """
+    Add context information embedded in the record via "extra".
+    And obfuscate obvious passwords seen in the record message.
+    If human is True, factorize the context information, trim the level and colorize.
+    """
+    def __init__(self, *args, **kwargs):
+        logging.Formatter.__init__(self, *args, **kwargs)
+        self.sid = False
+        self.human = False
+        self.last_context = None
+        self.attrs = [
+            ("sid", "sid"),
+            ("node", "n"),
+            ("component", "c"),
+            ("path", "o"),
+            ("subset", "rs"),
+            ("rid", "r"),
+        ]
 
     def format(self, record):
-        msg = self.orig_formatter.format(record)
+        record.message = record.getMessage()
+        record.context = ""
+        for xattr, key in self.attrs:
+            if xattr == "sid" and not self.sid:
+                continue
+            try:
+                val = getattr(record, xattr)
+                if val:
+                    record.context += "%s:%s " % (key, getattr(record, xattr))
+            except AttributeError:
+                pass
+        record.context = record.context.rstrip()
         for pattern in extconfig.SECRETS:
-            msg = msg.replace(pattern, "xxxx")
-        return msg
+            record.message = record.message.replace(pattern, "xxxx")
 
-    def __getattr__(self, attr):
-        return getattr(self.orig_formatter, attr)
+        if not self.human:
+            return logging.Formatter.format(self, record)
 
-class ColorStreamHandler(logging.StreamHandler):
-    def __init__(self, stream=None):
-        logging.StreamHandler.__init__(self, stream)
+        # Factorize context information, trim the level and colorize.
+        buff = ""
+        if self.last_context != record.context:
+            buff += colorize("@ " + record.context, color.LIGHTBLUE)+"\n"
+            self.last_context = record.context
+        if record.levelname == "INFO":
+            buff += "  " + record.message
+        elif record.levelname == "ERROR":
+            buff += colorize("E " + record.message, color.RED)
+        elif record.levelname == "WARNING":
+            buff += colorize("W " + record.message, color.BROWN)
+        elif record.levelname == "DEBUG":
+            buff += colorize("D " + record.message, color.LIGHTBLUE)
+        return buff
 
-    def format(self, record):
-        text = logging.StreamHandler.format(self, record)
-        def c(line):
-            l = line.rstrip("\n").split(" - ")
-            if len(l) < 3:
-                return line
-
-            l[0] = namefmt % l[0]
-            l[0] = colorize(l[0], color.BOLD)
-            l[1] = l[1].replace("ERROR", colorize("E", color.RED))
-            l[1] = l[1].replace("WARNING", colorize("W", color.BROWN))
-            l[1] = l[1].replace("DEBUG", colorize("D", color.LIGHTBLUE))
-            l[1] = l[1].replace("INFO", " ")
-            if l[2].startswith("do "):
-                l[2] = colorize(l[2], color.BOLD)
-            return " ".join(l)
-
-        return c(text)
+class OsvcFileHandler(logging.handlers.RotatingFileHandler):
+    """
+    Create the hosting directory and setup a RotatingFileHandler.
+    """
+    def __init__(self, logfile):
+        logdir = os.path.dirname(logfile)
+        makedirs(logdir)
+        logging.handlers.RotatingFileHandler.__init__(self, logfile, maxBytes=1*5242880, backupCount=1)
 
 class LoggerHandler(logging.handlers.SysLogHandler):
     def __init__(self, facility=logging.handlers.SysLogHandler.LOG_USER):
@@ -115,68 +151,39 @@ class LoggerHandler(logging.handlers.SysLogHandler):
         finally:
             syslog.closelog()
 
-def set_namelen(svcs=[], force=None):
-    global namelen
-    global namefmt
-
-    maxlen = min_name_len
-    for svc in svcs:
-        if svc.disabled:
-            continue
-        svc_len = len(svc.name)
-
-        # init with the "scheduler" length
-        max_res_len = 10
-
-        for r in svc.resources_by_id.values():
-            if r is None:
-                continue
-            if r.is_disabled():
-                continue
-            l = len(r.rid)
-            if r.subset:
-                l += len(r.subset) + 2
-            if l > max_res_len:
-                max_res_len = l
-        svc_len += max_res_len
-        if svc_len > maxlen:
-            maxlen = svc_len
-    maxlen += len(rcEnv.nodename) + 1
-    if force:
-        maxlen = force
-    namelen = maxlen
-    namefmt = "%-"+str(namelen)+"s"
-
-def initLogger(root, logfile, handlers=None):
+def initLogger(root, logfile, handlers=None, sid=True):
     if handlers is None:
         handlers = DEFAULT_HANDLERS
     log = logging.getLogger(root)
+    if log.handlers:
+        # already setup
+        return log
     log.propagate = False
     log.handlers = []
 
     if "file" in handlers:
-        logdir = os.path.dirname(logfile)
-        makedirs(logdir)
         try:
-            fileformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            filehandler = logging.handlers.RotatingFileHandler(logfile,
-                                                               maxBytes=1*5242880,
-                                                               backupCount=1)
-            filehandler.setFormatter(RedactingFormatter(fileformatter))
-            filehandler.setLevel(logging.INFO)
+            fileformatter = OsvcFormatter("%(asctime)s %(levelname)s %(context)s | %(message)s")
+            fileformatter.sid = sid
+            filehandler = OsvcFileHandler(logfile)
+            filehandler.setFormatter(fileformatter)
             filehandler.rotator = rotator
             filehandler.namer = namer
             log.addHandler(filehandler)
 
             if '--debug' in sys.argv:
                 filehandler.setLevel(logging.DEBUG)
+            else:
+                filehandler.setLevel(logging.INFO)
+
         except PermissionError:
             pass
 
     if "stream" in handlers:
-        streamformatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-        streamhandler = ColorStreamHandler()
-        streamhandler.setFormatter(RedactingFormatter(streamformatter))
+        streamformatter = OsvcFormatter("%(levelname)s %(context)s %(message)s")
+        streamformatter.human = True
+        streamhandler = logging.StreamHandler()
+        streamhandler.setFormatter(streamformatter)
         streamfilter = StreamFilter()
         streamhandler.addFilter(streamfilter)
         log.addHandler(streamhandler)
@@ -184,12 +191,6 @@ def initLogger(root, logfile, handlers=None):
         if '--debug' in sys.argv:
                 rcEnv.loglevel = logging.DEBUG
                 streamhandler.setLevel(logging.DEBUG)
-        elif '--warn' in sys.argv:
-                rcEnv.loglevel = logging.WARNING
-                streamhandler.setLevel(logging.WARNING)
-        elif '--error' in sys.argv:
-                rcEnv.loglevel = logging.ERROR
-                streamhandler.setLevel(logging.ERROR)
         else:
                 rcEnv.loglevel = logging.INFO
                 streamhandler.setLevel(logging.INFO)
@@ -231,7 +232,7 @@ def initLogger(root, logfile, handlers=None):
                 port = 514
             address = (host, port)
 
-        syslogformatter = logging.Formatter("%(name)s %(message)s")
+        syslogformatter = OsvcFormatter("%(context)s %(message)s")
         try:
             if rcEnv.sysname == "SunOS" and not isinstance(address, tuple):
                 sysloghandler = LoggerHandler(facility=facility)
@@ -241,7 +242,7 @@ def initLogger(root, logfile, handlers=None):
             sysloghandler = None
         if sysloghandler:
             sysloghandler.setLevel(lvl)
-            sysloghandler.setFormatter(RedactingFormatter(syslogformatter))
+            sysloghandler.setFormatter(syslogformatter)
             log.addHandler(sysloghandler)
 
     log.setLevel(logging.DEBUG)

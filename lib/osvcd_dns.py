@@ -33,7 +33,7 @@ class Dns(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.dns")
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.dns"), {"node": rcEnv.nodename, "component": self.name})
         self.cache = {}
         if not os.path.exists(rcEnv.paths.dnsuxsockd):
             os.makedirs(rcEnv.paths.dnsuxsockd)

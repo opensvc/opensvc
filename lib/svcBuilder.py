@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import glob
+import logging
 
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -1734,7 +1735,9 @@ def build_services(status=None, paths=None, create_instance=False,
                 log_d = rcEnv.paths.pathlog
             log_root = ".".join([rcEnv.nodename, namespace, kind, name])
             log_file = os.path.join(log_d, name+".log")
-            svclog = rcLogger.initLogger(log_root, log_file, handlers=["file", "syslog"])
+            svclogger = rcLogger.initLogger(log_root, log_file, handlers=["file", "syslog"])
+            extras = {"path": path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid}
+            svclog = logging.LoggerAdapter(svclogger, extras)
             svclog.error(str(e))
             continue
         except ex.excAbortAction:

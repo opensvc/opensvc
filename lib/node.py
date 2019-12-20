@@ -20,6 +20,7 @@ import socket
 import time
 import re
 import shlex
+import logging
 
 import six
 try:
@@ -182,7 +183,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = {}
         self.stats_updated = 0
         log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        self.log = rcLogger.initLogger(rcEnv.nodename, log_file)
+        logger = rcLogger.initLogger(rcEnv.nodename, log_file)
+        extra = {"node": rcEnv.nodename, "sid": rcEnv.session_uuid}
+        self.log = logging.LoggerAdapter(logger, extra)
 
     def get_node(self):
         """
@@ -888,8 +891,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if opt_status is not None and not svc.status() in opt_status:
                 continue
             self += svc
-
-        rcLogger.set_namelen(self.svcs)
 
     @staticmethod
     def check_build_errors(paths, svcs, errors):
@@ -4828,11 +4829,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             }
         }
         result = self.daemon_get(req, server=server, node=node)
-        lines = []
         if "nodes" in result:
+            lines = []
             for logs in result["nodes"].values():
                 lines += logs
-        return sorted(lines)
+        else:
+            lines = result
+        return sorted(lines, key=lambda x: x.get("t", 0))
 
     def daemon_logs(self, server=None, node=None, debug=False):
         req = {

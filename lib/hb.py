@@ -25,7 +25,7 @@ class Hb(shared.OsvcThread):
         shared.OsvcThread.__init__(self)
         self.name = name
         self.id = name + "." + role
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd."+self.id)
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd."+self.id), {"node": rcEnv.nodename, "component": self.id})
         self.peers = {}
         self.reset_stats()
         self.hb_nodes = self.cluster_nodes

@@ -26,7 +26,7 @@ class Collector(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.collector")
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.collector"), {"node": rcEnv.nodename, "component": self.name})
         self.log.info("collector started")
         self.reset()
 

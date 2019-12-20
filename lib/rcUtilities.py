@@ -399,7 +399,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
                     break
                 line, buff = l
                 if logger:
-                    logger.log(log_level[io], line)
+                    logger.log(log_level[io], "| " + line)
                 elif log_level[io] < logging.ERROR:
                     print(line)
                 else:
@@ -436,7 +436,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
         line = pending[io]
         if line:
             if logger:
-                logger.log(log_level[io], line)
+                logger.log(log_level[io], "| " + line)
             elif log_level[io] < logging.ERROR:
                 print(line)
             else:
@@ -530,50 +530,48 @@ def call(argv,
         if err_to_info:
             log.info('stderr:')
             for line in buff[1].split("\n"):
-                log.info(line)
+                log.info("| " + line)
         elif err_to_warn:
             log.warning('stderr:')
             for line in buff[1].split("\n"):
-                log.warning(line)
+                log.warning("| " + line)
         elif errlog:
             if ret != 0:
-                log.error('stderr:')
                 for line in buff[1].split("\n"):
-                    log.error(line)
+                    log.error("| " + line)
             elif warn_to_info:
                 log.info('command successful but stderr:')
                 for line in buff[1].split("\n"):
-                    log.info(line)
+                    log.info("| " + line)
             else:
                 log.warning('command successful but stderr:')
                 for line in buff[1].split("\n"):
-                    log.warning(line)
+                    log.warning("| " + line)
         elif errdebug:
             log.debug('stderr:')
             for line in buff[1].split("\n"):
-                log.debug(line)
+                log.debug("| " + line)
     if not empty_string(buff[0]):
         if outlog:
             if ret == 0:
-                log.info('output:')
                 for line in buff[0].split("\n"):
-                    log.info(line)
+                    log.info("| " + line)
             elif err_to_info:
                 log.info('command failed with stdout:')
                 for line in buff[0].split("\n"):
-                    log.info(line)
+                    log.info("| " + line)
             elif err_to_warn:
                 log.warning('command failed with stdout:')
                 for line in buff[0].split("\n"):
-                    log.warning(line)
+                    log.warning("| " + line)
             else:
                 log.error('command failed with stdout:')
                 for line in buff[0].split("\n"):
-                    log.error(line)
+                    log.error("| " + line)
         elif outdebug:
             log.debug('output:')
             for line in buff[0].split("\n"):
-                log.debug(line)
+                log.debug("| " + line)
 
     return (ret, buff[0], buff[1])
 
@@ -732,7 +730,13 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         if action == "command":
             raise ex.excError("command return code [%d]" % ret)
         else:
-            raise ex.excError("%s trigger %s blocking error [%d]" % (trigger, cmd, ret))
+            raise ex.excError("%s: %s blocking error [%d]" % (attr, cmd, ret))
+
+    if not blocking and ret != 0:
+        if action == "command":
+            self.log.warning("command return code [%d]" % ret)
+        else:
+            self.log.warning("%s: %s non-blocking error [%d]" % (attr, cmd, ret))
 
 
 def try_decode(string, codecs=['utf8', 'latin1']):

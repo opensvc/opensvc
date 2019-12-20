@@ -377,6 +377,11 @@ class ResourceSet(object):
 
     @lazy
     def log(self):
+        extra = {"path": self.svc.path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid, "subset": self.rid}
+        return logging.LoggerAdapter(self.logger, extra)
+
+    @lazy
+    def logger(self):
         """
         Lazy init for the resource logger.
         """

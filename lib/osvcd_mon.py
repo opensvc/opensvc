@@ -94,7 +94,7 @@ class Monitor(shared.OsvcThread):
 
     def init(self):
         self.set_tid()
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd.monitor")
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.monitor"), {"node": rcEnv.nodename, "component": self.name})
         self.event("monitor_started")
         self.startup = time.time()
         self.rejoin_grace_period_expired = False
@@ -257,13 +257,24 @@ class Monitor(shared.OsvcThread):
             for nodename, conf in data.items():
                 if rcEnv.nodename == nodename:
                     continue
-                if rcEnv.nodename not in conf.get("scope", []):
+                if new_service and rcEnv.nodename not in conf.get("scope", []):
                     # we are not a service node
                     continue
                 if conf.csum != ref_conf.csum and \
                    conf.updated > ref_conf.updated:
                     ref_conf = conf
                     ref_nodename = nodename
+            if not new_service and ref_conf.scope and rcEnv.nodename not in ref_conf.scope:
+                self.log.info("node %s has the most recent %s config, "
+                              "which no longer defines %s as a node.",
+                              ref_nodename, path, rcEnv.nodename)
+                #self.event("instance_stop", {
+                #    "reason": "relayout",
+                #    "path": svc.path,
+                #})
+                #self.service_stop(path, force=True)
+                self.service_delete(path)
+                continue
             if ref_nodename == rcEnv.nodename:
                 # we already have the most recent version
                 continue
@@ -272,8 +283,8 @@ class Monitor(shared.OsvcThread):
                    rcEnv.nodename in shared.SERVICES[path].nodes and \
                    ref_nodename in shared.SERVICES[path].drpnodes:
                     # don't fetch drp config from prd nodes
-                    return
-            self.log.info("node %s has the most recent service %s config",
+                    continue
+            self.log.info("node %s has the most recent %s config",
                           ref_nodename, path)
             self.fetch_service_config(path, ref_nodename)
             if new_service:
@@ -2799,7 +2810,7 @@ class Monitor(shared.OsvcThread):
         with shared.SERVICES_LOCK:
             for path in list(shared.SERVICES.keys()):
                 if path not in config:
-                    self.log.info("purge deleted service %s", path)
+                    self.log.info("purge deleted %s from daemon data", path)
                     del shared.SERVICES[path]
                     try:
                         del shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]

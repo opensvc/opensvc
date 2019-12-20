@@ -121,9 +121,8 @@ class Daemon(object):
         self.threads = {}
         self.last_config_mtime = None
         log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        rcLogger.initLogger(rcEnv.nodename, log_file, handlers=self.handlers)
-        rcLogger.set_namelen(force=30)
-        self.log = logging.getLogger(rcEnv.nodename+".osvcd")
+        rcLogger.initLogger(rcEnv.nodename, log_file, handlers=self.handlers, sid=False)
+        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd"), {"node": rcEnv.nodename, "component": "main"})
         self.pid = os.getpid()
         self.stats_data = None
         self.last_stats_refresh = 0
