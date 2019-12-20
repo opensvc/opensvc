@@ -7,7 +7,6 @@ class Handler(handler.Handler):
     """
     routes = (
         ("POST", "blacklist_clear"),
-        (None, "daemon_blacklist_clear"),
     )
     prototype = []
     access = {

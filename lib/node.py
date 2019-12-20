@@ -4022,7 +4022,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Tell the daemon to clear the senders blacklist
         """
         data = self.daemon_post(
-            {"action": "daemon_blacklist_clear"},
+            {"action": "blacklist_clear"},
             server=self.options.server,
             timeout=5,
         )
