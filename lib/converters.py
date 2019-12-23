@@ -80,7 +80,10 @@ def convert_integer(s):
     """
     if s is None:
         return
-    return int(float(s))
+    try:
+        return int(float(s))
+    except ValueError:
+        return
 
 def convert_list(s):
     """
