@@ -342,7 +342,7 @@ class Disk(resDisk.Disk):
             self.log.error("can not create lock file %s"%lockfile)
             raise ex.excError
         except lock.LockAcquire as e:
-            self.log.warn("another action is currently running (pid=%s)"%e.pid)
+            self.log.warning("another action is currently running (pid=%s)"%e.pid)
             raise ex.excError
         except ex.excSignal:
             self.log.error("interrupted by signal")
