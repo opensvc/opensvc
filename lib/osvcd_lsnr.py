@@ -886,46 +886,61 @@ class ClientHandler(shared.OsvcThread):
     def authenticate_client(self, headers):
         if self.usr is False:
             return
+
         if self.usr and self.usr_cf_sum == self.current_usr_cf_sum():
-            return
+            # unchanged server side
+            if self.same_auth(headers):
+                # unchanged request auth
+                return
+
         if self.addr[0] == "local":
             # only root can talk to the ux sockets
             self.usr = False
             self.usr_auth = "uxsock"
+            self.last_auth = None
+            self.same_auth = lambda h: True
             return
-        try:
-            self.usr = self.authenticate_client_secret(headers)
+
+        secret = headers.get(Headers.secret)
+        if secret:
+            self.usr = self.authenticate_client_secret(secret)
             self.usr_auth = "secret"
+            self.last_auth = secret
+            self.same_auth = lambda h: h.get(Headers.secret) == self.last_auth
             return
-        except Exception as exc:
-            #self.log.warning("%s", exc)
-            pass
-        try:
-            self.usr = self.authenticate_client_jwt(headers)
-            self.usr_auth = "jwt"
-            self.usr_grants = self.user_grants()
-            return
-        except Exception as exc:
-            #self.log.warning("%s", exc)
-            pass
-        try:
-            self.usr = self.authenticate_client_basic(headers)
-            self.usr_auth = "basic"
-            self.usr_grants = self.user_grants()
-            return
-        except Exception as exc:
-            #self.log.warning("%s", exc)
-            pass
+
+        authorization = headers.get("authorization")
+        if authorization:
+            if authorization.startswith("Bearer "):
+                self.usr = self.authenticate_client_jwt(authorization)
+                self.usr_auth = "jwt"
+                self.usr_grants = self.user_grants()
+                self.last_auth = authorization
+                self.same_auth = lambda h: h.get("authorization") == self.last_auth
+                return
+            elif authorization.startswith("Basic "):
+                self.usr = self.authenticate_client_basic(authorization)
+                self.usr_auth = "basic"
+                self.usr_grants = self.user_grants()
+                self.usr_cf_sum = self.current_usr_cf_sum()
+                self.last_auth = authorization
+                self.same_auth = lambda h: h.get("authorization") == self.last_auth
+                return
         try:
             self.usr = self.authenticate_client_x509()
             self.usr_auth = "x509"
             self.usr_grants = self.user_grants()
             self.usr_cf_sum = self.current_usr_cf_sum()
             #self.log.info("loaded grants for %s, conf %s", self.usr.path, self.usr_cf_sum)
+            self.last_auth = None
+            self.same_auth = lambda h: h.get(Headers.secret) is None and h.get("authorization") is None
             return
         except Exception as exc:
             #self.log.warning("%s", exc)
             pass
+
+        self.last_auth = None
+        self.same_auth = lambda h: False
         raise ex.excError("refused %s auth" % str(self.addr))
 
     @lazy
@@ -938,12 +953,9 @@ class ClientHandler(shared.OsvcThread):
         keys = dict((k['kid'], RSAAlgorithm.from_jwk(json.dumps(k))) for k in jwks['keys'])
         return keys
 
-    def authenticate_client_basic(self, headers):
-        authorization = headers.get("authorization")
+    def authenticate_client_basic(self, authorization=None):
         if not authorization:
             raise ex.excError("no authorization header key")
-        if not authorization.startswith("Basic "):
-            raise ex.excError("authorization header does not start with 'Basic '")
         buff = authorization[6:].strip()
         buff = base64.b64decode(buff)
         name, password = bdecode(buff).split(":", 1)
@@ -956,16 +968,16 @@ class ClientHandler(shared.OsvcThread):
             raise ex.excError("user %s authentication failed: wrong password" % name)
         return usr
 
-    def authenticate_client_jwt(self, headers):
-        authorization = headers.get("authorization")
+    def authenticate_client_jwt(self, authorization=None):
         if not authorization:
             raise ex.excError("no authorization header key")
-        if not authorization.startswith("Bearer "):
-            raise ex.excError("authorization header does not start with 'Bearer '")
         if not has_jwt:
             raise ex.excError("jwt is disabled (import error)")
         token = authorization[7:].strip()
-        header = jwt.get_unverified_header(token)
+        try:
+            header = jwt.get_unverified_header(token)
+        except Exception as exc:
+            raise ex.excError(str(exc))
         key_id = header['kid']
         algorithm = header['alg']
         public_key = self.jwt_provider_keys[key_id]
@@ -979,8 +991,7 @@ class ClientHandler(shared.OsvcThread):
         usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log)
         return usr
 
-    def authenticate_client_secret(self, headers):
-        secret = headers.get(Headers.secret)
+    def authenticate_client_secret(self, secret=None):
         if not secret:
             raise ex.excError("no secret header key")
         if self.blacklisted(self.addr[0]):
@@ -1133,12 +1144,12 @@ class ClientHandler(shared.OsvcThread):
         data = self.update_data_from_path(data)
         handler = self.get_handler(method, data["action"])
 
-        if handler.access:
-            try:
-                self.authenticate_client(headers)
-                self.parent.stats.sessions.auth_validated += 1
-                self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
-            except ex.excError:
+        try:
+            self.authenticate_client(headers)
+            self.parent.stats.sessions.auth_validated += 1
+            self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
+        except ex.excError:
+            if handler.access:
                 status = 401
                 result = {"status": status, "error": "Not Authorized"}
                 return status, content_type, result
