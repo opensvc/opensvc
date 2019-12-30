@@ -786,6 +786,7 @@ class ClientHandler(shared.OsvcThread):
         self.h2conn = None
         self.events_stream_ids = []
         self.usr_cf_sum = None
+        self.same_auth = lambda h: False
         if scheme == "raw":
             self.usr = False
             self.usr_auth = "secret"
