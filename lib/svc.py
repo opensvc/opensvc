@@ -4795,13 +4795,13 @@ class Svc(BaseSvc):
             self._push_encap_config(resource)
 
     def _push_encap_config(self, container):
-        if len(self.log.handlers) > 1:
-            self.log.handlers[1].setLevel(logging.CRITICAL)
+        if len(self.logger.handlers) > 1:
+            self.logger.handlers[1].setLevel(logging.CRITICAL)
         try:
             self.__push_encap_config(container)
         finally:
-            if len(self.log.handlers) > 1:
-                self.log.handlers[1].setLevel(rcEnv.loglevel)
+            if len(self.logger.handlers) > 1:
+                self.logger.handlers[1].setLevel(rcEnv.loglevel)
 
     def __push_encap_config(self, container):
         """

@@ -1439,7 +1439,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     array.node = node
-    node.log.handlers[1].setLevel(logging.CRITICAL)
+    node.logger.handlers[1].setLevel(logging.CRITICAL)
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
         print(json.dumps(ret, indent=4))

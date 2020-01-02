@@ -756,7 +756,7 @@ def do_action(action, array_name=None, node=None, **kwargs):
     if array is None:
         raise ex.excError("array %s not found" % array_name)
     array.node = node
-    node.log.handlers[1].setLevel(logging.CRITICAL)
+    node.logger.handlers[1].setLevel(logging.CRITICAL)
     if not hasattr(array, action):
         raise ex.excError("not implemented")
     try:
