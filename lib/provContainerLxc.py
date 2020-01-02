@@ -252,7 +252,8 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         security_mirror = self.r.oget("security_mirror")
         if security_mirror:
             env["SECURITY_MIRROR"] = security_mirror
-        ret, out, err = self.r.vcall(cmd, env=env)
+        self.r.log.info(" ".join(cmd))
+        ret = self.r.lcall(cmd, env=env)
         if ret != 0:
             raise ex.excError
 
