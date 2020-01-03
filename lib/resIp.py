@@ -536,14 +536,14 @@ class Ip(Res.Resource):
         self.log.info("dns updated")
 
     def dns_rec_name(self):
-        return "%s.%s" % (self.svc.name, self.svc.namespace.lower() if self.svc.namespace else "root")
+        return self.svc.path
 
     def stop(self):
         """
         Stop the resource.
         """
         if self.ipname is None:
-            self.log.warning("skip stop: no ipname set")
+            self.log.info("skip stop: no ipname set")
             return
         self.getaddr(cache_fallback=True)
         if self.is_up() is False:
@@ -661,6 +661,9 @@ class Ip(Res.Resource):
                 self.svc._set(self.rid, "netmask", netmask)
                 self.mask = str(netmask)
         self.log.info("ip %s allocated", self.ipname)
+        record_name = data["data"].get("record_name")
+        if record_name:
+            self.log.info("record %s created", record_name)
 
     def release(self):
         """
