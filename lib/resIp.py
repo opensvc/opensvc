@@ -526,7 +526,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/dns/services/records",
                 post_data,
-                svcname=self.dns_rec_name(),
+                path=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("dns update failed: "+str(exc))
@@ -634,7 +634,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/networks/%s/allocate" % network,
                 post_data,
-                svcname=self.dns_rec_name(),
+                path=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("ip allocation failed: "+str(exc))
@@ -690,7 +690,7 @@ class Ip(Res.Resource):
             data = self.svc.node.collector_rest_post(
                 "/networks/%s/release" % self.addr,
                 post_data,
-                svcname=self.dns_rec_name(),
+                path=self.dns_rec_name(),
             )
         except Exception as exc:
             raise ex.excError("ip release failed: "+str(exc))
