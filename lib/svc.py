@@ -2502,7 +2502,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             pass
 
     def purge_var_d(self):
+        scoped = self.command_is_scoped()
         for res in self.get_resources():
+            if scoped and res.skip:
+                continue
             res.purge_var_d()
 
     def delete_service_conf(self):
@@ -4394,8 +4397,9 @@ class Svc(BaseSvc):
     def unprovision(self):
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker", "podman"]))
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker", "podman"]))
-        self.pg_remove()
-        self.delete_service_sched()
+        if not self.command_is_scoped():
+            self.pg_remove()
+            self.delete_service_sched()
         self.purge_var_d()
 
     def provision(self):
