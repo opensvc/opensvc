@@ -265,6 +265,9 @@ class Monitor(shared.OsvcThread):
                     ref_conf = conf
                     ref_nodename = nodename
             if not new_service and ref_conf.scope and rcEnv.nodename not in ref_conf.scope:
+                smon = self.get_service_monitor(path)
+                if not smon or smon.status == "deleting":
+                    continue
                 self.log.info("node %s has the most recent %s config, "
                               "which no longer defines %s as a node.",
                               ref_nodename, path, rcEnv.nodename)
