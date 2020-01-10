@@ -1871,6 +1871,8 @@ class Monitor(shared.OsvcThread):
         smon = self.get_service_monitor(path)
         if not smon:
             return
+        if smon.global_expect is not None:
+            return
         if smon.status not in ("start failed", "place failed"):
             return
         self.log.info("clear %s %s: the service is up", path, smon.status)
