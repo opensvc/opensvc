@@ -576,7 +576,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def set_smon(self, path, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
-                 stonith=None):
+                 stonith=None, expected_status=None):
         global SMON_DATA
         instance = self.get_service_instance(path, rcEnv.nodename)
         if instance and not instance.get("resources", {}) and \
@@ -605,7 +605,7 @@ class OsvcThread(threading.Thread, Crypt):
                 })
             if status:
                 reset_placement = False
-                if status != SMON_DATA[path].status:
+                if status != SMON_DATA[path].status and (not expected_status or expected_status == SMON_DATA[path].status):
                     self.log.info(
                         "service %s monitor status change: %s => %s",
                         path,
