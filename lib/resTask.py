@@ -60,10 +60,10 @@ class Task(Res.Resource):
         return False
 
     def stop(self):
-        pass
+        self.remove_last_run_retcode()
 
     def start(self):
-        pass
+        self.remove_last_run_retcode()
 
     @lazy
     def last_run_retcode_f(self):

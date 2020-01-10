@@ -328,9 +328,11 @@ START_GROUPS = [
     "share",
     "container",
     "app",
+    "task",
 ]
 
 STOP_GROUPS = [
+    "task",
     "app",
     "container",
     "share",
