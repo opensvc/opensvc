@@ -3071,11 +3071,11 @@ class Monitor(shared.OsvcThread):
                 # have a target state to reach
                 self.set_smon(path, status="idle")
         elif smon.global_expect == "placed":
+            if frozen != "thawed":
+                return
             if shared.AGG[path].placement in ("optimal", "n/a") and \
                shared.AGG[path].avail == "up":
                 self.set_smon(path, global_expect="unset")
-                return
-            if frozen != "thawed":
                 return
             svc = self.get_service(path)
             if svc is None:
