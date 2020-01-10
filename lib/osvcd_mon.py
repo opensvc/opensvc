@@ -497,7 +497,7 @@ class Monitor(shared.OsvcThread):
             proc=proc,
             on_success="generic_callback",
             on_success_args=[path],
-            on_success_kwargs={"status": "idle", "local_expect": "unset"},
+            on_success_kwargs={"status": "idle", "local_expect": "unset", "expected_status": "tocing"},
             on_error="generic_callback",
             on_error_args=[path],
             on_error_kwargs={"status": "toc failed"},
@@ -1871,9 +1871,9 @@ class Monitor(shared.OsvcThread):
         smon = self.get_service_monitor(path)
         if not smon:
             return
-        if smon.status != "start failed":
+        if smon.status not in ("start failed", "place failed"):
             return
-        self.log.info("clear %s start failed: the service is up", path)
+        self.log.info("clear %s %s: the service is up", path, smon.status)
         self.set_smon(path, status="idle")
 
     def local_children_down(self, svc):
