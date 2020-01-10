@@ -188,7 +188,11 @@ class Handler(handler.Handler):
             if global_expect == ge:
                 continue
             status = smon.get("status", "unknown")
-            if status != "idle" and "failed" not in status and "wait" not in status:
+            if status == "tocing" and global_expect == "placed":
+                # Allow the "toc" action with the "switch" monitor_action
+                # to change status from "tocing" to "start failed".
+                pass
+            elif status != "idle" and "failed" not in status and "wait" not in status:
                 raise ex.excError("%s instance on node %s in %s state"
                                   "" % (path, nodename, status))
 
