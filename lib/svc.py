@@ -1143,6 +1143,22 @@ class BaseSvc(Crypt, ExtConfigMixin):
             progress = "syncing"
         return progress
 
+    def action_need_freeze_instance(self, action):
+        if self.orchestrate not in ("ha", "start"):
+            return False
+        if self.command_is_scoped():
+            return False
+        if action not in ("stop", "shutdown", "unprovision", "delete", "rollback"):
+            return False
+        return True
+
+    def action_need_unset_local_expect(self, action):
+        if self.command_is_scoped():
+            return False
+        if action not in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc"):
+            return False
+        return True
+
     def notify_action(self, action, force=False):
         if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             return
@@ -1150,10 +1166,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if progress is None:
             return
         local_expect = None
-        if action in ("stop", "shutdown", "unprovision", "delete", "rollback", "toc") and not self.command_is_scoped():
+        if self.action_need_unset_local_expect(action):
             local_expect = "unset"
-            if self.orchestrate in ("ha", "start"):
-                self.freezer.freeze()
+        if self.action_need_freeze_instance(action):
+            self.freezer.freeze()
         try:
             self.set_service_monitor(local_expect=local_expect, status=progress, best_effort=True)
             self.log.debug("daemon notified of action '%s' begin" % action)
@@ -1166,6 +1182,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         progress = self.action_progress(action)
         local_expect = None
         if progress is None:
+            return
+        if progress == "tocing" and self.monitor_action == "switch":
             return
         if err:
             status = action + " failed"
@@ -3864,7 +3882,7 @@ class Svc(BaseSvc):
         Call the resource monitor action.
         """
         if self.frozen():
-            self.log.info("refuse to toc from a frozen service")
+            self.log.info("refuse to toc from a frozen instance")
             return
         self.do_pre_monitor_action()
         if self.monitor_action is None:
