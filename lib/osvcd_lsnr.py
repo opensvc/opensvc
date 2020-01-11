@@ -940,7 +940,10 @@ class ClientHandler(shared.OsvcThread):
             #self.log.warning("%s", exc)
             pass
 
+        self.usr = None
+        self.usr_grants = {}
         self.last_auth = None
+        self.usr_cf_sum = None
         self.same_auth = lambda h: False
         raise ex.excError("refused %s auth" % str(self.addr))
 
