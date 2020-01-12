@@ -348,6 +348,14 @@ class Scheduler(shared.OsvcThread):
                     self.queue_action(action, delay, path, rids)
                 else:
                     for rid in rids:
+                        try:
+                            svc.get_resource(rid).check_requires(action, cluster_data=shared.CLUSTER_DATA)
+                        except (ex.excError, ex.excContinueAction) as exc:
+                            self.log.info("skip %s on %s %s: %s", action, path, rid, exc)
+                            continue
+                        except Exception as exc:
+                            self.log.error("skip %s on %s %s: %s", action, path, rid, exc)
+                            continue
                         self.queue_action(action, delay, path, rid)
 
         # log a scheduler loop digest

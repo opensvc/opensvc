@@ -918,7 +918,7 @@ class Resource(object):
             return
         self.svc.pg.create_pg(self)
 
-    def check_requires(self, action):
+    def check_requires(self, action, cluster_data=None):
         """
         Iterate the resource 'requires' definition, and validate each
         requirement.
@@ -930,9 +930,9 @@ class Resource(object):
         if len(requires) == 0:
             return
         for element in requires:
-            self._check_requires(element)
+            self._check_requires(element, cluster_data=cluster_data)
 
-    def _check_requires(self, element):
+    def _check_requires(self, element, cluster_data=None):
         """
         Validate a requires element, raising excError if the requirement is
         not met.
@@ -950,8 +950,14 @@ class Resource(object):
         if rid not in self.svc.resources_by_id:
             self.log.warning("ignore requires on %s: resource not found", rid)
             return
-        resource = self.svc.resources_by_id[rid]
-        current_state = rcStatus.Status(resource.status())
+        if cluster_data:
+            try:
+                current_state = cluster_data[rcEnv.nodename]["services"]["status"][self.svc.path]["resources"][rid]["status"]
+            except KeyError:
+                current_state = "undef"
+        else:
+            resource = self.svc.resources_by_id[rid]
+            current_state = rcStatus.Status(resource.status())
         if current_state not in states:
             msg = "requires on resource %s in state %s, current state %s" % \
                   (rid, " or ".join(states), current_state)
