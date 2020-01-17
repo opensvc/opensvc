@@ -982,8 +982,23 @@ class Resource(object):
         """
         return self.svc.conf_get(self.rid, o, **kwargs)
 
-    def status_info(self):
+    def _status_info(self):
+        """
+        Placeholder for driver implementation
+        """
         return {}
+
+    def status_info(self):
+        data = self._status_info()
+        if not self.shared:
+            return data
+        sopts = self.schedule_options()
+        if not sopts:
+            return data
+        data["sched"] = {}
+        for saction, sopt in sopts.items():
+            data["sched"][saction] = self.schedule_info(sopt)
+        return data
 
     def info(self):
         data = [
@@ -1343,4 +1358,20 @@ class Resource(object):
             env[var] = val
         return env
 
+    def schedule_info(self, sopt):
+        try:
+            last = float(self.svc.sched.get_last(sopt.fname).strftime("%s.%f"))
+        except Exception as exc:
+            return {}
+        data = {
+            "last": last,
+        }
+        return data
 
+    def schedule_options(self):
+        """
+        Placeholder for driver implementation.
+        Must return a dict of scheduler options indexed by scheduler action.
+        Used by Svc::configure_scheduler() and Resource::status_info().
+        """
+        return

@@ -12,6 +12,12 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from converters import print_duration
 
+MIN_PARALLEL = 6
+MIN_OVERLOADED_PARALLEL = 2
+DEQUEUE_INTERVAL = 2
+ENQUEUE_INTERVAL = 30
+FUTURE = 60
+MIN_DEQUEUE_INTERVAL = 0.5
 JANITOR_CERTS_INTERVAL = 3600
 ACTIONS_SKIP_ON_UNPROV = [
     "sync_all",
@@ -22,7 +28,6 @@ ACTIONS_SKIP_ON_UNPROV = [
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
-    interval = 60
     delayed = {}
     running = set()
     dropped_via_notify = set()
@@ -31,9 +36,11 @@ class Scheduler(shared.OsvcThread):
 
     def max_tasks(self):
         if self.node_overloaded():
-            return 2
-        else:
+            return MIN_OVERLOADED_PARALLEL
+        elif shared.NODE.max_parallel > MIN_PARALLEL:
             return shared.NODE.max_parallel
+        else:
+            return MIN_PARALLEL
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
@@ -80,23 +87,43 @@ class Scheduler(shared.OsvcThread):
 
     def do(self):
         self.reload_config()
-        last = time.time()
+        last = 0
         done = 0
+        init = True
         while True:
-            self.now = time.time()
-            self.janitor_run_done()
-            self.janitor_certificates()
-            if done == 0:
-                with shared.SCHED_TICKER:
-                    shared.SCHED_TICKER.wait(1)
             if self.stopped():
                 break
+            now = time.time()
+            self.now = self.run_time(now)
+            future = self.now + FUTURE
+            self.janitor_run_done()
+            self.janitor_certificates()
             if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
+                if init:
+                    init = False
+                    last = now
+                    self.run_scheduler(self.now)
+                elif now - last >= ENQUEUE_INTERVAL:
+                    last = now
+                    self.run_scheduler(future)
                 self.dequeue_actions()
-                if last + self.interval <= self.now:
-                    last = self.now
-                    self.run_scheduler()
             done = self.janitor_procs()
+            if not done:
+                self.do_wait()
+
+    def do_wait(self):
+        with shared.SCHED_TICKER:
+            shared.SCHED_TICKER.wait(self.dequeue_delay())
+
+    def dequeue_delay(self):
+        """
+        Returns DEQUEUE_INTERVAL with drift correction, to try and
+        do a loop on regular interval, whatever the loop duration.
+        """
+        delay = DEQUEUE_INTERVAL - (time.time() - self.now)
+        if delay < MIN_DEQUEUE_INTERVAL:
+            delay = MIN_DEQUEUE_INTERVAL
+        return delay
 
     def janitor_certificates(self):
         if self.now < self.last_janitor_certs + JANITOR_CERTS_INTERVAL:
@@ -166,6 +193,7 @@ class Scheduler(shared.OsvcThread):
     def exec_action(self, sigs, cmd):
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
+        env["OSVC_SCHED_TIME"] = str(self.now)
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=os.name!="nt",
                       env=env)
@@ -185,7 +213,9 @@ class Scheduler(shared.OsvcThread):
         if path is None:
             cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py"), action]
         elif isinstance(path, list):
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5", "--parallel"]
+            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5"]
+            if len(path) > 1:
+                cmd.append("--parallel")
         else:
             cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", path, action, "--waitlock=5"]
         if rids:
@@ -197,7 +227,9 @@ class Scheduler(shared.OsvcThread):
         if path is None:
             cmd = ["om", "node", action]
         elif isinstance(path, list):
-            cmd = ["om", ",".join(path), action, "--waitlock=5", "--parallel"]
+            cmd = ["om", ",".join(path), action, "--waitlock=5"]
+            if len(path) > 1:
+                cmd.append("--parallel")
         else:
             cmd = ["om", path, action, "--waitlock=5"]
         if rids:
@@ -205,32 +237,32 @@ class Scheduler(shared.OsvcThread):
         cmd.append("--cron")
         return cmd
 
-    def promote_queued_action(self, sig, delay):
-        if delay == 0 and self.delayed[sig]["delay"] > 0:
-            self.log.debug("promote queued action %s from delayed to asap", sig)
+    def promote_queued_action(self, sig, delay, now):
+        if delay == 0 and self.delayed[sig]["delay"] > 0 and self.delayed[sig]["expire"] > now:
+            self.log.debug("promote queued action '%s' to run asap", sig)
             self.delayed[sig]["delay"] = 0
-            self.delayed[sig]["expire"] = time.time()
+            self.delayed[sig]["expire"] = now
+        else:
+            self.log.debug("skip already queued action '%s'", sig)
 
-    def queue_action(self, action, delay=0, path=None, rid=None):
+    def queue_action(self, action, delay=0, path=None, rid=None, now=None):
         sig = (action, path, rid)
         if sig in self.running:
-            self.log.debug("drop already running action '%s'", sig)
+            self.log.debug("skip already running action '%s'", sig)
             return
         if sig in self.delayed:
-            self.promote_queued_action(sig, delay)
-            self.log.debug("drop already queued action %s", sig)
+            self.promote_queued_action(sig, delay, now)
             return
-        now = time.time()
         exp = now + delay
         self.delayed[sig] = {
-            "queued": now,
+            "queued": self.now,
             "expire": exp,
             "delay": delay,
         }
-        if delay > 0:
-            self.log.debug("queued action %s for run asap", sig)
+        if not delay:
+            self.log.debug("queued action '%s' for run in %s", sig, print_duration(exp-self.now))
         else:
-            self.log.debug("queued action %s delayed until %s", sig, exp)
+            self.log.debug("queued action '%s' for run in %s + %s delay", sig, print_duration(exp-self.now), print_duration(delay))
         return
 
     def get_todo(self):
@@ -242,17 +274,16 @@ class Scheduler(shared.OsvcThread):
         todo = {}
         merge = {}
         open_slots = max(self.max_tasks() - len(self.procs), 0)
-        now = time.time()
+        if not open_slots:
+            return []
+        self.janitor_delayed()
+
         for sig, task in self.delayed.items():
-            if task["expire"] > now:
+            if task["expire"] > self.now:
                 continue
             action, path, rid = sig
             merge_key = (action, path)
             if merge_key not in merge:
-                if path:
-                    _path = [path]
-                else:
-                    _path = None
                 merge[merge_key] = {"rids": set([rid]), "task": task}
             else:
                 merge[merge_key]["rids"].add(rid)
@@ -268,24 +299,44 @@ class Scheduler(shared.OsvcThread):
                 sigs = [(action, path, rid) for rid in data["rids"]]
                 merge_key = (path is None, action, tuple(sorted(list(data["rids"]))))
             if merge_key not in todo:
-                if path:
-                    _path = [path]
-                else:
-                    _path = None
                 todo[merge_key] = {
                     "action": action,
                     "rids": data["rids"],
-                    "path": _path,
+                    "path": [path] if path else None,
                     "sigs": sigs,
-                    "queued": task["queued"],
+                    "queued": data["task"]["queued"],
                 }
             else:
                 todo[merge_key]["sigs"] += sigs
                 if path:
                     todo[merge_key]["path"].append(path)
-                if task["queued"] < todo[merge_key]["queued"]:
-                    todo[merge_key]["queued"] = task["queued"]
+                if data["task"]["queued"] < todo[merge_key]["queued"]:
+                    todo[merge_key]["queued"] = data["task"]["queued"]
         return sorted(todo.values(), key=lambda task: task["queued"])[:open_slots]
+
+    def janitor_delayed(self):
+        drop = []
+        for sig, task in self.delayed.items():
+            action, path, rid = sig
+            if not path:
+                continue
+            if not rid:
+                continue
+            try:
+                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=shared.CLUSTER_DATA)
+            except KeyError:
+                # deleted during previous iterations
+                drop.append(sig)
+                continue
+            except (ex.excError, ex.excContinueAction) as exc:
+                self.log.info("drop queued %s on %s %s: %s", action, path, rid, exc)
+                drop.append(sig)
+                continue
+            except Exception as exc:
+                self.log.error("drop queued %s on %s %s: %s", action, path, rid, exc)
+                drop.append(sig)
+                continue
+        self.delete_queued(drop)
 
     def dequeue_actions(self):
         """
@@ -293,32 +344,68 @@ class Scheduler(shared.OsvcThread):
         delayed hash.
         """
         dequeued = []
-        now = time.time()
         for task in self.get_todo():
             cmd = self.format_cmd(task["action"], task["path"], task["rids"])
             log_cmd = self.format_log_cmd(task["action"], task["path"], task["rids"])
-            self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(now - task["queued"]))
+            self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(self.now - task["queued"]))
             self.exec_action(task["sigs"], cmd)
             dequeued += task["sigs"]
-        for sig in dequeued:
+        self.delete_queued(dequeued)
+
+    def delete_queued(self, sigs):
+        if not isinstance(sigs, list):
+            sigs = [sigs]
+        for sig in sigs:
             try:
                 del self.delayed[sig]
             except KeyError:
                 #print(sig, self.delayed)
                 pass
 
-    def run_scheduler(self):
-        #self.log.info("run schedulers")
+    def get_lasts(self, svc):
+        data = {}
+        for nodename in svc.peers:
+            instance = self.get_service_instance(svc.path, nodename)
+            if not instance:
+                continue
+            for rid, rdata in instance.get("resources", {}).items():
+                try:
+                    sdata = rdata["info"]["sched"]
+                except KeyError:
+                    continue
+                if not sdata:
+                    continue
+                if rid not in data:
+                    data[rid] = sdata
+                else:
+                    for action, adata in sdata.items():
+                        if "last" not in adata:
+                            continue
+                        if action not in data[rid]:
+                            data[rid][action] = adata
+                            continue
+                        try:
+                            if data[rid][action]["last"] < adata["last"]:
+                                data[rid][action] = adata
+                        except KeyError:
+                            pass
+        return data
+
+    def run_time(self, now):
+        return int(now // 60 * 60)
+
+    def run_scheduler(self, now):
+        #self.log.info("run scheduler")
         nonprov = []
 
         if shared.NODE:
             shared.NODE.options.cron = True
             for action in shared.NODE.sched.scheduler_actions:
                 try:
-                    delay = shared.NODE.sched.validate_action(action)
+                    delay = shared.NODE.sched.validate_action(action, now=now)
                 except ex.excAbortAction:
                     continue
-                self.queue_action(action, delay)
+                self.queue_action(action, delay, now=now)
         for path in list(shared.SERVICES):
             try:
                 svc = shared.SERVICES[path]
@@ -331,13 +418,15 @@ class Scheduler(shared.OsvcThread):
                 provisioned = shared.AGG[path].provisioned
             except KeyError:
                 continue
+            lasts = self.get_lasts(svc)
             for action, parms in svc.sched.scheduler_actions.items():
                 if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+path)
                     continue
                 try:
-                    data = svc.sched.validate_action(action)
-                except ex.excAbortAction:
+                    data = svc.sched.validate_action(action, lasts=lasts, now=now)
+                except ex.excAbortAction as exc:
+                    self.log.debug("skip %s on %s: validation", action, path)
                     continue
                 try:
                     rids, delay = data
@@ -345,18 +434,10 @@ class Scheduler(shared.OsvcThread):
                     delay = data
                     rids = None
                 if rids is None:
-                    self.queue_action(action, delay, path, rids)
+                    self.queue_action(action, delay, path, rids, now=now)
                 else:
                     for rid in rids:
-                        try:
-                            svc.get_resource(rid).check_requires(action, cluster_data=shared.CLUSTER_DATA)
-                        except (ex.excError, ex.excContinueAction) as exc:
-                            self.log.info("skip %s on %s %s: %s", action, path, rid, exc)
-                            continue
-                        except Exception as exc:
-                            self.log.error("skip %s on %s %s: %s", action, path, rid, exc)
-                            continue
-                        self.queue_action(action, delay, path, rid)
+                        self.queue_action(action, delay, path, rid, now=now)
 
         # log a scheduler loop digest
         msg = []

@@ -7,7 +7,7 @@ class Data(Resource):
         Resource.__init__(self, rid, type=type)
         self.options = Storage(kwargs)
 
-    def status_info(self):
+    def _status_info(self):
         data = {}
         for key, val in self.section_kwargs().items():
             if val not in (None, []):

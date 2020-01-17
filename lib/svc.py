@@ -3098,28 +3098,19 @@ class Svc(BaseSvc):
                     schedule_option="monitor_schedule"
                 )
 
-        syncs = []
-        for resource in self.get_resources("sync"):
-            schedule_option = "sync_schedule" if resource.rid != "sync#i0" \
-                              else "sync#i0_schedule"
-            syncs += [SchedOpts(
-                resource.rid,
-                fname="last_syncall_"+resource.rid,
-                schedule_option=schedule_option
-            )]
-        if len(syncs) > 0:
-            self.sched.scheduler_actions["sync_all"] = syncs
-
-        tasks = []
-        for resource in self.get_resources("task"):
-            tasks += [SchedOpts(
-                resource.rid,
-                fname="last_"+resource.rid,
-                schedule_option="no_schedule"
-            )]
-        if len(tasks) > 0:
-            self.sched.scheduler_actions["run"] = tasks
-
+        resource_schedules = {}
+        for resource in self.get_resources():
+            if resource.is_disabled():
+                continue
+            sopts = resource.schedule_options()
+            if not sopts:
+                continue
+            for saction, sopt in sopts.items():
+                if saction not in resource_schedules:
+                    resource_schedules[saction] = [sopt]
+                else:
+                    resource_schedules[saction] += [sopt]
+        self.sched.scheduler_actions.update(resource_schedules)
 
     def get_subset_parallel(self, rtype):
         """
@@ -3733,7 +3724,7 @@ class Svc(BaseSvc):
         diff = json_delta.diff(data1, data2, verbose=False, array_align=False, compare_lengths=False)
         significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
         if significant_changes:
-            self.log.info("changes detected in monitored resources")
+            self.log.debug("changes detected in monitored resources: %s", significant_changes)
             self.write_status_data(data2)
 
     def reboot(self):

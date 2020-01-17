@@ -187,32 +187,27 @@ class Scheduler(object):
             return True
         if now is None:
             now = datetime.datetime.now()
-        limit = last + datetime.timedelta(seconds=delay*60-10)
-        return now > limit
+        ds = delay * 60
+        limit = last + datetime.timedelta(seconds=ds)
+        return now >= limit
 
-    def sched_write_timestamp(self, sopt):
-        """
-        Iterate the scheduled tasks to update the last run timestamp.
-        """
-        if not isinstance(sopt, list):
-            sopt = [sopt]
-        for _sopt in sopt:
-            self._timestamp(_sopt.fname)
-
-    def _timestamp(self, timestamp_f):
+    def _timestamp(self, timestamp_f, last=None):
         """
         Update the timestamp file <timestamp_f>.
         If <timestamp_f> if is not a fullpath, consider it parented to
         <pathvar>.
         Create missing parent directories if needed.
         """
+        if last is None:
+            last = datetime.datetime.now()
         if not timestamp_f.startswith(os.sep):
             timestamp_f = self.get_timestamp_f(timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
         with open(timestamp_f, 'w') as ofile:
-            ofile.write(str(datetime.datetime.now())+os.linesep)
+            buff = last.strftime("%Y-%m-%d %H:%M:%S.%f")
+            ofile.write(buff+os.linesep)
         return True
 
     def _skip_action_interval(self, last, interval, now=None):
@@ -357,8 +352,6 @@ class Scheduler(object):
         """
         if timerange["interval"] == 0:
             raise SchedNotAllowed("interval set to 0")
-        if fname and last is None:
-            last = self.get_last(fname)
         if last is None:
             return
         if self._skip_action_interval(last, timerange["interval"], now=now):
@@ -816,23 +809,25 @@ class Scheduler(object):
             fpath += ".success"
         return fpath
 
-    def validate_action(self, action):
+    def validate_action(self, action, now=None, lasts=None):
         """
         Decide if the scheduler task can run, and return the concerned rids
         for multi-resources actions.
 
         The callers are responsible for catching excAbortAction.
         """
+        if isinstance(now, (int, float)):
+            now = datetime.datetime.fromtimestamp(now)
         if not self._is_croned():
             return
         if action not in self.scheduler_actions:
             return
         if not isinstance(self.scheduler_actions[action], list):
-            skip = self.skip_action(action)
+            skip = self.skip_action(action, now=now, lasts=lasts)
             if skip is True:
                 raise ex.excAbortAction
             return skip
-        data = self.skip_action(action)
+        data = self.skip_action(action, now=now, lasts=lasts)
         sched_options = data["keep"]
         if len(sched_options) == 0:
             raise ex.excAbortAction
@@ -856,8 +851,13 @@ class Scheduler(object):
         if len(tsfiles) == 0:
             return
 
+        try:
+            last = datetime.datetime.fromtimestamp(float(os.environ["OSVC_SCHED_TIME"]))
+        except Exception as exc:
+            last = datetime.datetime.now()
+
         for tsfile in tsfiles:
-            self._timestamp(tsfile)
+            self._timestamp(tsfile, last=last)
 
     def _is_croned(self):
         """
@@ -866,7 +866,7 @@ class Scheduler(object):
         return self.options.cron
 
     def skip_action(self, action, section=None, fname=None,
-                    schedule_option=None, now=None):
+                    schedule_option=None, now=None, lasts=None):
         if action not in self.scheduler_actions:
             if not self._is_croned():
                 return False
@@ -879,7 +879,8 @@ class Scheduler(object):
                 skip = self._skip_action(
                     action, sopt,
                     section=section, fname=fname, schedule_option=schedule_option,
-                    now=now
+                    now=now,
+                    lasts=lasts,
                 )
                 if skip is True:
                     data["skip"].append(sopt)
@@ -895,11 +896,12 @@ class Scheduler(object):
             return self._skip_action(
                 action, sopt,
                 section=section, fname=fname, schedule_option=schedule_option,
-                now=now
+                now=now,
+                lasts=lasts,
             )
 
     def _skip_action(self, action, sopt, section=None, fname=None,
-                     schedule_option=None, now=None):
+                     schedule_option=None, now=None, lasts=None):
         if sopt.req_collector and not self.node.collector_env.dbopensvc:
             return True
         if section is None:
@@ -909,13 +911,32 @@ class Scheduler(object):
         if schedule_option is None:
             schedule_option = sopt.schedule_option
 
+        last = self.get_last(fname)
+        if fname:
+            if lasts:
+                try:
+                    cluster_last = lasts[sopt.section][action]["last"]
+                except (KeyError, ValueError):
+                    cluster_last = 0
+            else:
+                cluster_last = 0
+            if cluster_last:
+                # Another node reports a more recent run (for a shared
+                # resource, like a task).
+                # Update our last run cache file, so avoid running the action
+                # too soon after a takeover.
+                cluster_last = datetime.datetime.fromtimestamp(cluster_last)
+                if not last or cluster_last > last:
+                    self._timestamp(sopt.fname, last=cluster_last)
+                    last = cluster_last
+
         if not self._is_croned():
             # don't update the timestamp file
             return False
 
         # check if we are in allowed scheduling period
         try:
-            delay = self.allow_action_schedule(section, schedule_option, fname=fname, now=now)
+            delay = self.allow_action_schedule(section, schedule_option, fname=fname, now=now, last=last)
         except Exception as exc:
             return True
 

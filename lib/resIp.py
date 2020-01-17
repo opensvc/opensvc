@@ -98,7 +98,7 @@ class Ip(Res.Resource):
         if self.ipname != addr:
             self.label += " " + self.ipname
 
-    def status_info(self):
+    def _status_info(self):
         """
         Contribute resource key/val pairs to the resource info.
         """

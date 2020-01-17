@@ -6,6 +6,7 @@ import resources as Res
 import lock
 import rcStatus
 import rcExceptions as ex
+from rcScheduler import SchedOpts
 from rcGlobalEnv import rcEnv
 from rcUtilities import lcall, lazy
 from six.moves import input
@@ -171,3 +172,12 @@ class Task(Res.Resource):
 
     def is_provisioned(self, refresh=False):
         return True
+
+    def schedule_options(self):
+        return {
+            "run": SchedOpts(
+                self.rid,
+                fname="last_"+self.rid,
+                schedule_option="no_schedule"
+            )
+        }

@@ -68,8 +68,8 @@ class Ip(Res.Ip):
         return label
 
 
-    def status_info(self):
-        data = Res.Ip.status_info(self)
+    def _status_info(self):
+        data = Res.Ip._status_info(self)
         intf = self.get_ipdev()
         if intf and len(intf.ipaddr) > 0:
             data["ipaddr"] = intf.ipaddr[0]

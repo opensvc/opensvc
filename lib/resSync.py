@@ -8,7 +8,7 @@ import datetime
 import time
 import rcStatus
 from rcGlobalEnv import rcEnv
-from rcScheduler import *
+from rcScheduler import SchedOpts
 from rcUtilities import lazy, bdecode
 from converters import convert_speed, print_size
 
@@ -24,7 +24,7 @@ def notify(func):
             self.notify_done()
     return _func
 
-class Sync(Res.Resource, Scheduler):
+class Sync(Res.Resource):
     default_optional = True
 
     def __init__(self,
@@ -274,3 +274,11 @@ class Sync(Res.Resource, Scheduler):
     def notify_done(self):
         self.svc.notify_done("sync_all", rids=[self.rid])
 
+    def schedule_options(self):
+        return {
+            "sync_all": SchedOpts(
+                self.rid,
+                fname="last_syncall_"+self.rid,
+                schedule_option="sync_schedule" if self.rid != "sync#i0" else "sync#i0_schedule"
+            )
+        }
