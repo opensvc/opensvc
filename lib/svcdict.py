@@ -1132,6 +1132,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "script",
+        "rtype": ["forking", "simple"],
         "at": True,
         "required": False,
         "text": "Full path to the app launcher script. Or its basename if the file is hosted in the ``<pathetc>/<namespace>/<kind>/<name>.d/`` path. This script must accept as arg0 the activated actions word: ``start`` for start, ``stop`` for stop, ``status`` for check, ``info`` for info."
@@ -1139,6 +1140,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "status_log",
+        "rtype": ["forking", "simple"],
         "at": True,
         "required": False,
         "default": False,
@@ -1148,6 +1150,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "timeout",
+        "rtype": ["forking", "simple", "winservice"],
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance action when an app launcher did not return.",
@@ -1156,6 +1159,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "start_timeout",
+        "rtype": ["forking", "simple", "winservice"],
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the app launcher start action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`start_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance start when an app launcher did not return.",
@@ -1164,6 +1168,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "stop_timeout",
+        "rtype": ["forking", "simple", "winservice"],
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the app launcher stop action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`stop_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance stop when an app launcher did not return.",
@@ -1172,6 +1177,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "check_timeout",
+        "rtype": ["forking", "simple"],
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the app launcher check action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`check_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance check when an app launcher did not return.",
@@ -1180,6 +1186,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "info_timeout",
+        "rtype": ["forking", "simple"],
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the app launcher info action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`info_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance info when an app launcher did not return.",
@@ -1188,6 +1195,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "start",
+        "rtype": ["forking", "simple"],
         "at": True,
         "default": False,
         "text": "``true`` execute :cmd:`<script> start` on start action. ``false`` do nothing on start action. ``<shlex expression>`` execute the command on start.",
@@ -1195,6 +1203,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "stop",
+        "rtype": ["forking", "simple"],
         "at": True,
         "default": False,
         "text": "``true`` execute :cmd:`<script> stop` on stop action. ``false`` do nothing on stop action. ``<shlex expression>`` execute the command on stop action.",
@@ -1202,6 +1211,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "check",
+        "rtype": ["forking", "simple"],
         "at": True,
         "default": False,
         "text": "``true`` execute :cmd:`<script> status` on status evaluation. ``false`` do nothing on status evaluation. ``<shlex expression>`` execute the command on status evaluation.",
@@ -1209,6 +1219,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "info",
+        "rtype": ["forking", "simple"],
         "at": True,
         "default": False,
         "text": "``true`` execute :cmd:`<script> info` on info action. ``false`` do nothing on info action. ``<shlex expression>`` execute the command on info action.",
@@ -1216,6 +1227,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_as",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1223,6 +1235,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_cpu",
+        "rtype": ["forking", "simple"],
         "convert": "duration",
         "at": True,
         "text": ""
@@ -1230,6 +1243,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_core",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1237,6 +1251,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_data",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1244,6 +1259,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_fsize",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1251,6 +1267,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_memlock",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1258,6 +1275,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_nofile",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1265,6 +1283,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_nproc",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1272,6 +1291,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_rss",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1279,6 +1299,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_stack",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1286,6 +1307,7 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "limit_vmem",
+        "rtype": ["forking", "simple"],
         "convert": "size",
         "at": True,
         "text": ""
@@ -1293,18 +1315,21 @@ KEYWORDS = [
     {
         "section": "app",
         "keyword": "user",
+        "rtype": ["forking", "simple"],
         "at": True,
         "text": "If the binary is owned by the root user, run it as the specified user instead of root."
     },
     {
         "section": "app",
         "keyword": "group",
+        "rtype": ["forking", "simple"],
         "at": True,
         "text": "If the binary is owned by the root user, run it as the specified group instead of root."
     },
     {
         "section": "app",
         "keyword": "cwd",
+        "rtype": ["forking", "simple"],
         "at": True,
         "text": "Change the working directory to the specified location instead of the default ``<pathtmp>``."
     },
@@ -2639,7 +2664,7 @@ KEYWORDS = [
         "at": True,
         "required": True,
         "strict_candidates": False,
-        "candidates": ["directory", "zfs", "docker"]+rcEnv.fs_non_pooling,
+        "candidates": ["flag", "directory", "zfs", "docker"]+rcEnv.fs_non_pooling,
         "text": "The filesystem type or 'directory'. Used to determine the fsck command to use."
     },
     {

@@ -750,6 +750,12 @@ def add_share_nfs(svc, s):
     r = m.Share(**kwargs)
     svc += r
 
+def add_fs_flag(svc, s):
+    kwargs = init_kwargs(svc, s)
+    mod = mimport("res", "fs", "flag")
+    r = mod.Fs(**kwargs)
+    svc += r
+
 def add_fs_docker(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["driver"] = svc.oget(s, "driver")
@@ -808,6 +814,10 @@ def add_fs(svc, s):
 
     if kwargs["fs_type"] == "docker":
         add_fs_docker(svc, s)
+        return
+
+    if kwargs["fs_type"] == "flag":
+        add_fs_flag(svc, s)
         return
 
     kwargs["device"] = svc.oget(s, "dev")
