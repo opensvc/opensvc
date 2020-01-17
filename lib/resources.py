@@ -1374,4 +1374,4 @@ class Resource(object):
         Must return a dict of scheduler options indexed by scheduler action.
         Used by Svc::configure_scheduler() and Resource::status_info().
         """
-        return
+        return {}
