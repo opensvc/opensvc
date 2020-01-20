@@ -13,8 +13,7 @@ import rcContainer
 import rcExceptions as ex
 import rcStatus
 from rcUtilitiesLinux import check_ping
-from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options, factory
-from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from converters import print_duration
 
 ATTR_MAP = {
@@ -35,9 +34,9 @@ ATTR_MAP = {
     "tty": {
         "path": ["Config", "Tty"],
     },
-#    "rm": {
-#        "path": ["HostConfig", "AutoRemove"],
-#    },
+    #    "rm": {
+    #        "path": ["HostConfig", "AutoRemove"],
+    #    },
     "netns": {
         "path": ["HostConfig", "NetworkMode"],
         "cmp": "cmp_ns",
@@ -60,8 +59,10 @@ ATTR_MAP = {
     },
 }
 
+
 def alarm_handler(signum, frame):
     raise KeyboardInterrupt
+
 
 class Container(resContainer.Container):
     """
@@ -166,10 +167,10 @@ class Container(resContainer.Container):
         if self.user_defined_name:
             return self.user_defined_name
         if self.svc.namespace:
-            container_name = self.svc.namespace+".."
+            container_name = self.svc.namespace + ".."
         else:
             container_name = ""
-        container_name += self.svc.name+'.'+self.rid
+        container_name += self.svc.name + '.' + self.rid
         return container_name.replace('#', '.')
 
     @lazy
@@ -180,7 +181,7 @@ class Container(resContainer.Container):
         return "com.opensvc.id=%s.%s" % (self.svc.id, self.rid)
 
     @lazy
-    def name(self): # pylint: disable=method-hidden
+    def name(self):  # pylint: disable=method-hidden
         return self.container_name
 
     @lazy
@@ -188,7 +189,7 @@ class Container(resContainer.Container):
         return self.lib.get_container_id(self)
 
     @lazy
-    def label(self): # pylint: disable=method-hidden
+    def label(self):  # pylint: disable=method-hidden
         return "docker " + self.lib.image_userfriendly_name(self)
 
     def __str__(self):
@@ -202,20 +203,20 @@ class Container(resContainer.Container):
         """
         Copy <src> from the container's rootfs to <dst> in the host's fs.
         """
-        cmd = self.lib.docker_cmd + ["cp", self.container_name+":"+src, dst]
+        cmd = self.lib.docker_cmd + ["cp", self.container_name + ":" + src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s" % (" ".join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
         """
         Copy <src> from the host's fs to the container's rootfs.
         """
-        cmd = self.lib.docker_cmd + ["cp", src, self.container_name+":"+dst]
+        cmd = self.lib.docker_cmd + ["cp", src, self.container_name + ":" + dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
+            raise ex.excError("'%s' execution error:\n%s" % (" ".join(cmd), err))
         return out, err, ret
 
     def files_to_sync(self):
@@ -252,6 +253,7 @@ class Container(resContainer.Container):
             if self.container_id:
                 return False
             return True
+
         self.wait_for_fn(removed, 10, 1, errmsg="waited too long for container removal")
 
     def container_rm(self):
@@ -363,7 +365,7 @@ class Container(resContainer.Container):
             elif not os.path.exists(elements[0]):
                 # host path
                 raise ex.excError("source dir of mapping %s does not "
-                                  "exist" % (arg))
+                                  "exist" % arg)
             else:
                 devices.append(arg)
         return devices
@@ -400,7 +402,7 @@ class Container(resContainer.Container):
             elif not os.path.exists(elements[0]):
                 # host path
                 raise ex.excError("source dir of mapping %s does not "
-                                  "exist" % (volarg))
+                                  "exist" % volarg)
             else:
                 volumes.append(volarg)
         return volumes
@@ -440,8 +442,8 @@ class Container(resContainer.Container):
         # drop user specified --name. we set ours already
         args = drop_option("--name", args, drop_value=True)
         args = drop_option("-n", args, drop_value=True)
-        args += ['--name='+self.container_name]
-        args += ['--label='+self.container_label_id]
+        args += ['--name=' + self.container_name]
+        args += ['--label=' + self.container_label_id]
 
         args = drop_option("--hostname", args, drop_value=True)
         args = drop_option("-h", args, drop_value=True)
@@ -468,11 +470,11 @@ class Container(resContainer.Container):
             if self.netns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
                 if res is not None:
-                    args += ["--net=container:"+res.container_name]
+                    args += ["--net=container:" + res.container_name]
                 elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
             else:
-                args += ["--net="+self.netns]
+                args += ["--net=" + self.netns]
         elif not has_option("--net", args):
             args += ["--net=" + self.default_net]
 
@@ -481,22 +483,22 @@ class Container(resContainer.Container):
             if self.pidns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
                 if res is not None:
-                    args += ["--pid=container:"+res.container_name]
+                    args += ["--pid=container:" + res.container_name]
                 elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.pidns, does not exist" % (self.pidns, self.rid))
             else:
-                args += ["--pid="+self.pidns]
+                args += ["--pid=" + self.pidns]
 
         if self.ipcns:
             args = drop_option("--ipc", args, drop_value=True)
             if self.ipcns.startswith("container#"):
                 res = self.svc.get_resource(self.netns)
                 if res is not None:
-                    args += ["--ipc=container:"+res.container_name]
+                    args += ["--ipc=container:" + res.container_name]
                 elif errors == "raise":
                     raise ex.excError("resource %s, referenced in %s.ipcns, does not exist" % (self.ipcns, self.rid))
             else:
-                args += ["--ipc="+self.ipcns]
+                args += ["--ipc=" + self.ipcns]
 
         if self.utsns == "host":
             args = drop_option("--uts", args, drop_value=True)
@@ -529,11 +531,11 @@ class Container(resContainer.Container):
         drop_option("-v", args, drop_value=True)
         drop_option("--volume", args, drop_value=True)
         for vol in self.volume_options(errors=errors):
-             args.append("--volume=%s" % vol)
+            args.append("--volume=%s" % vol)
 
         drop_option("--device", args, drop_value=True)
         for dev in self.device_options(errors=errors):
-             args.append("--device=%s" % dev)
+            args.append("--device=%s" % dev)
 
         args += self.cgroup_options()
 
@@ -558,7 +560,7 @@ class Container(resContainer.Container):
 
     @lazy
     def cgroup_dir(self):
-        return os.sep+self.svc.pg.get_cgroup_relpath(self)
+        return os.sep + self.svc.pg.get_cgroup_relpath(self)
 
     def image_pull(self):
         self.lib.image_pull(self.image)
@@ -638,7 +640,7 @@ class Container(resContainer.Container):
             self.status_log("image '%s' is not pulled yet." % self.image)
         elif image_id != running_image_id:
             self.status_log("the current container is based on image '%s' "
-                            "instead of '%s'"%(running_image_id, image_id))
+                            "instead of '%s'" % (running_image_id, image_id))
 
     def cmp_entrypoint(self, current, target, data):
         try:
@@ -647,20 +649,20 @@ class Container(resContainer.Container):
                 return
             self.status_log("%s=%s, but %s=%s" % \
                             (".".join(data["path"]), current, data["attr"], target))
-        except Exception as exc:
+        except Exception:
             pass
 
     def cmp_ns(self, current, target, data):
         try:
             res = self.svc.get_resource(self.netns)
-            target = "container:"+res.container_name
+            target = "container:" + res.container_name
             if current == target:
                 return
-            target = "container:"+res.container_id
+            target = "container:" + res.container_id
             if current != target:
                 self.status_log("%s=%s, but %s=%s" % \
                                 (".".join(data["path"]), current, data["attr"], target))
-        except Exception as exc:
+        except Exception:
             pass
 
     def _status_inspect(self):
@@ -732,7 +734,7 @@ class Container(resContainer.Container):
 
     def is_up(self):
         if self.lib.docker_daemon_private and \
-           self.lib.container_data_dir is None:
+                self.lib.container_data_dir is None:
             self.status_log("DEFAULT.container_data_dir must be defined")
 
         if not self.lib.docker_running():
