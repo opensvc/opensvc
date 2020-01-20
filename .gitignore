@@ -11,6 +11,7 @@ python/
 var/
 test/
 tmp/
+out/
 bin/python
 lib/version.py
 bin/pkg/release_*
@@ -28,3 +29,4 @@ bin/init/opensvc.init
 .coverage
 *.example
 *.exe
+.idea

@@ -14,6 +14,7 @@ install:
 script:
 - pylint -E lib/*py
 - nosetests --with-coverage lib/tests/test_ci_*.py
+- pytest -m ci
 after_success:
 - pip install codecov
 - codecov

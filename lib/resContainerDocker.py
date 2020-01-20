@@ -380,15 +380,18 @@ class Container(resContainer.Container):
                 continue
             if not elements[0].startswith(os.sep):
                 # vol service
+                wants_ro = False
                 elements[0], vol = self.replace_volname(elements[0], strict=False, errors=errors)
                 try:
                     options = elements[2].split(",")
+                    if 'ro' in options:
+                        wants_ro = True
                     options = drop_option("ro", options)
                     options = drop_option("rw", options)
                     del elements[2]
                 except Exception:
                     options = []
-                if vol and vol.volsvc.access.startswith("ro"):
+                if wants_ro or (vol and vol.volsvc.access.startswith("ro")):
                     options.insert(0, "ro")
                 else:
                     options.insert(0, "rw")
