@@ -1,6 +1,7 @@
 import os
 import resources
-from rcUtilities import lazy, makedirs
+from rcUtilities import lazy, makedirs, justcall
+from rcGlobalEnv import rcEnv
 import rcStatus
 
 class Fs(resources.Resource):
@@ -40,3 +41,22 @@ class Fs(resources.Resource):
 
     def is_provisionned(self):
         return True
+
+    def abort_start(self):
+        if self.svc.topology != "failover":
+            return
+        if self.standby:
+            return
+        try:
+            for node in self.svc.nodes:
+                if node == rcEnv.nodename:
+                    continue
+                cmd = rcEnv.rsh.split() + [node, "test", "-f", self.flag_f]
+                out, err, ret = justcall(cmd)
+                if ret == 0:
+                    self.log.error("already up on %s", node)
+                    return True
+            return False
+        except Exception as exc:
+            self.log.exception(exc)
+            return True
