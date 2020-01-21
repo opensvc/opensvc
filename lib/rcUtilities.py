@@ -1482,3 +1482,19 @@ def normalize_jsonpath(path):
     return path
 
 
+def abbrev(l):
+    if len(l) < 1:
+        return l
+    paths = [n.split(".")[::-1] for n in l]
+    trimable = [n for n in paths if len(n) > 1]
+    if len(trimable) <= 1:
+        return [n[-1]+".." if n in trimable else n[0] for n in paths]
+    for i in range(10):
+        try:
+            if len(set([t[i] for t in trimable])) > 1:
+                break
+        except IndexError:
+            break
+    if i == 0:
+        return l
+    return [".".join(n[:i-1:-1])+".." if n in trimable else n[0] for n in paths]

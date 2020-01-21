@@ -6,8 +6,8 @@ import re
 from converters import print_duration, print_size
 from rcColor import colorize, color, unicons
 from rcGlobalEnv import rcEnv
-from rcStatus import Status, colorize_status
-from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, term_width
+from rcStatus import colorize_status
+from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, abbrev
 from storage import Storage
 
 DEFAULT_SECTIONS = [
@@ -250,22 +250,6 @@ def print_section(data):
         return ""
     return list_print(data)
 
-def abbrev(l):
-    if len(l) < 1:
-        return l
-    paths = [n.split(".")[::-1] for n in l]
-    trimable = [n for n in paths if len(n) > 1]
-    if len(trimable) <= 1:
-        return [n[-1]+".." if n in trimable else n[0] for n in paths]
-    for i in range(10):
-        try:
-            if len(set([t[i] for t in trimable])) > 1:
-                break
-        except IndexError:
-            break
-    if i == 0:
-        return l
-    return [".".join(n[:i-1:-1])+".." if n in trimable else n[0] for n in paths]
 
 def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                    stats_data=None, sections=None, selector=None, namespace=None):
