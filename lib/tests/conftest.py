@@ -9,9 +9,10 @@ import pytest
 
 @pytest.fixture(scope='function')
 def osvc_path_tests(tmpdir):
-    rcGlobalEnv.rcEnv.paths.pathetc = os.path.join(tmpdir, 'etc')
-    rcGlobalEnv.rcEnv.paths.pathetcns = os.path.join(tmpdir, 'etc', 'namespaces')
-    rcGlobalEnv.rcEnv.paths.pathlog = os.path.join(tmpdir, 'log')
-    rcGlobalEnv.rcEnv.paths.pathtmpv = os.path.join(tmpdir, 'tmp')
-    rcGlobalEnv.rcEnv.paths.pathvar = os.path.join(tmpdir, 'var')
-    rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(tmpdir, 'lock')
+    test_dir = str(tmpdir)
+    rcGlobalEnv.rcEnv.paths.pathetc = os.path.join(test_dir, 'etc')
+    rcGlobalEnv.rcEnv.paths.pathetcns = os.path.join(test_dir, 'etc', 'namespaces')
+    rcGlobalEnv.rcEnv.paths.pathlog = os.path.join(test_dir, 'log')
+    rcGlobalEnv.rcEnv.paths.pathtmpv = os.path.join(test_dir, 'tmp')
+    rcGlobalEnv.rcEnv.paths.pathvar = os.path.join(test_dir, 'var')
+    rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
