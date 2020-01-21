@@ -344,8 +344,10 @@ KEYWORDS = [
         "rtype": ["oci", "docker", "podman"],
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of ``<volume name>:<containerized mount path>:<mount options>``.",
-        "example": "myvol1:/vol1 myvol2:/vol2"
+        "text": "The whitespace separated list of ``<volume name|local dir>:<containerized mount path>:<mount options>``. "
+                "When the source is a local dir, the default <mount option> is rw. "
+                "When the source is a volume name, the default <mount option> is taken from volume access.",
+        "example": "myvol1:/vol1 myvol2:/vol2:rw /localdir:/data:ro"
     },
     {
         "sections": ["task", "container"],
