@@ -307,10 +307,15 @@ class ExtConfigMixin(object):
             self.set_multi_cache[keyword] = _value
         elif op == "add":
             _value = list_value(keyword)
-            if value in _value:
-                return
-            index = index if index is not None else len(_value)
-            _value.insert(index, value)
+            for v in value.split():
+                if v in _value:
+                    continue
+                if index is None:
+                    i = len(_value)
+                else:
+                    i = index
+                    index += 1
+                _value.insert(i, v)
             _value = " ".join(_value)
             self.set_multi_cache[keyword] = _value
         else:
