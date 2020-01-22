@@ -586,8 +586,6 @@ class Mount(Res.Mount):
         if self.is_up() is False:
             self.log.info("%s is already umounted", self.label)
             return
-        if not os.path.exists(self.mount_point):
-            raise ex.excError('mount point %s does not exist' % self.mount_point)
         try:
             os.stat(self.mount_point)
         except OSError as exc:
