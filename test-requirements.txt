@@ -12,3 +12,4 @@ astroid==1.6.6; python_version=='2.7'
 astroid==2.1.0; python_version>'2.7'
 pytest
 pytest-mock
+pytest-cov

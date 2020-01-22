@@ -376,6 +376,7 @@ class Container(resContainer.Container):
         else:
             args = [] + self.run_args
         volumes = []
+        dsts = []
         for volarg in chain(get_options("-v", args), get_options("--volume", args), iter(self.volume_mounts)):
             elements = volarg.split(":")
             if not elements or len(elements) not in (2, 3):
@@ -398,7 +399,10 @@ class Container(resContainer.Container):
                 else:
                     options.insert(0, "rw")
                 elements.append(",".join(options))
+                if elements[1] in dsts:
+                    raise ex.excError("different volume mounts use the same destination mount point: %s" % elements[1])
                 volumes.append(":".join(elements))
+                dsts.append(elements[1])
             elif not os.path.exists(elements[0]):
                 # host path
                 raise ex.excError("source dir of mapping %s does not "

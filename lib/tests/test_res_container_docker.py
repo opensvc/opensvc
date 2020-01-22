@@ -8,6 +8,7 @@ from poolDirectory import Pool
 from rcUtilities import factory
 from resVolume import Volume
 from resContainerDocker import Container
+import rcExceptions as ex
 import pytest
 
 
@@ -62,3 +63,21 @@ class TestVolumeOptionsFromSrcVol:
         svc1 += container
 
         assert container.volume_options() == [vol.mount_point + '/src:/dst:' + expected_options]
+
+
+    @staticmethod
+    def test_raise_error_on_duplicated_dest(mocker, osvc_path_tests):
+        mocker.patch.object(Volume, 'status', return_value=rcStatus.UP)
+
+        svc1 = svc.Svc('svc1')
+        pool = Pool(name="dir1", node=Node())
+        for vol_name in ['vol1', 'vol2']:
+            pool.configure_volume(factory("vol")(name=vol_name))
+            svc1 += Volume(rid="#" + vol_name, name=vol_name)
+
+        container = Container(rid='#dck1', volume_mounts=['vol1/src:/dst:ro',
+                                                          'vol2/src:/dst:rw'])
+        svc1 += container
+
+        with pytest.raises(ex.excError, match=r' destination mount point'):
+            container.volume_options()
