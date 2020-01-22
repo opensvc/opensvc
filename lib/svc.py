@@ -5648,7 +5648,7 @@ class Svc(BaseSvc):
         volstatus = vol.status()
         if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
             if errors != "ignore":
-                raise ex.excError("volume %s is %s" % (volname, volstatus))
+                raise ex.excError("volume %s is %s" % (volname, rcStatus.Status(volstatus)))
         if mode == "blk":
             l[0] = vol.device
         else:
