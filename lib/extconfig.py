@@ -210,8 +210,11 @@ class ExtConfigMixin(object):
             if keyword[-1] == "-":
                 op = "remove"
                 keyword = keyword[:-1]
-            elif keyword[-1] == "+":
+            elif keyword[-1] == "|":
                 op = "add"
+                keyword = keyword[:-1]
+            elif keyword[-1] == "+":
+                op = "insert"
                 keyword = keyword[:-1]
             else:
                 op = "set"
@@ -303,6 +306,15 @@ class ExtConfigMixin(object):
             if value not in _value:
                 return
             _value.remove(value)
+            _value = " ".join(_value)
+            self.set_multi_cache[keyword] = _value
+        elif op == "insert":
+            _value = list_value(keyword)
+            if index is None:
+                i = len(_value)
+            else:
+                i = index
+            _value.insert(i, value)
             _value = " ".join(_value)
             self.set_multi_cache[keyword] = _value
         elif op == "add":
