@@ -216,6 +216,8 @@ class rcEnv:
         umount="/bin/umount",
         zfs="/sbin/zfs",
         zpool="/sbin/zpool",
+        true="/bin/true",
+        false="/bin/false",
     )
     if sysname == "Linux":
         syspaths.ps = "/bin/ps"
@@ -245,6 +247,9 @@ class rcEnv:
         syspaths.df = "/usr/sbin/df"
         syspaths.mount = "/usr/sbin/mount"
         syspaths.umount = "/usr/sbin/umount"
+    elif sysname == "Darwin":
+        syspaths.true = "/usr/bin/true"
+        syspaths.false = "/usr/bin/false"
 
     if "LD_PRELOAD" in os.environ:
         ld_preload = os.environ["LD_PRELOAD"]

@@ -330,12 +330,14 @@ def which(program):
 
     return
 
-def justcall(argv=['/bin/false'], stdin=None, input=None):
+def justcall(argv=None, stdin=None, input=None):
     """
     Call subprocess' Popen(argv, stdout=PIPE, stderr=PIPE, stdin=stdin)
     The 'close_fds' value is autodectected (true on unix, false on windows).
     Returns (stdout, stderr, returncode)
     """
+    if argv is None:
+        argv = [rcEnv.syspaths.false]
     if input:
         stdin = PIPE
         input = bencode(input)
@@ -575,12 +577,12 @@ def call(argv,
 
     return (ret, buff[0], buff[1])
 
-def qcall(argv=['/bin/false']):
+def qcall(argv=None):
     """
     Execute command using Popen with no additional args, disgarding stdout and stderr.
     """
-    if not argv:
-        return 0
+    if argv is None:
+        argv = [rcEnv.syspaths.false]
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode

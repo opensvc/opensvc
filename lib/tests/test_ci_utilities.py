@@ -204,10 +204,10 @@ class TestUtilities:
         ret = qcall(["ls", "/foo"])
         assert ret > 0
         ret = qcall(None)
-        assert ret == 0
+        assert ret == 1
         ret = qcall()
         assert ret == 1
-        ret = qcall(["/bin/true"])
+        ret = qcall(rcEnv.syspaths.true)
         assert ret == 0
 
     def test_vcall(self):
@@ -272,7 +272,7 @@ class TestUtilities:
         """
         getmount()
         """
-        assert getmount("/proc") == "/proc"
+        assert getmount("/dev") == "/dev"
         assert getmount("/bin") == "/"
         assert getmount("/") == "/"
 
@@ -283,11 +283,19 @@ class TestUtilities:
         assert protected_mount("/bin") == True
         assert protected_mount("/bin/") == True
         assert protected_mount("/mysvc") == True
-        call("mkdir -p /tmp/foo && sudo mount -t tmpfs none /tmp/foo", shell=True)
-        assert protected_mount("/tmp/foo") == False
-        assert protected_mount("/tmp/foo/") == False
-        assert protected_mount("/tmp/foo/a") == False
-        call("sudo umount /tmp/foo && rmdir /tmp/foo", shell=True)
+        if rcEnv.sysname == 'Darwin':
+            location = "/Volumes/RAMDiskOpensvc"
+            create_mount = 'diskutil erasevolume HFS+ "RAMDiskOpensvc" `hdiutil attach -nomount ram://524288`'
+            delete_mount = "diskutil eject RAMDiskOpensvc"
+        else:
+            location = "/tmp/food"
+            create_mount = "mkdir -p %s && sudo mount -t tmpfs none /tmp/food" % location
+            delete_mount = "sudo umount %s && rmdir %s" % (location, location)
+        call(create_mount, shell=True)
+        assert protected_mount("%s" % location) is False
+        assert protected_mount("%s/" % location) is False
+        assert protected_mount("%s/a" % location) is False
+        call(delete_mount, shell=True)
 
     def test_protected_dir(self):
         """
