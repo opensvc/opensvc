@@ -8,10 +8,19 @@ exclude_lines =
 
 omit =
     /usr/local/lib/*
-    */tests/*
-    */pyaes/*
-    */tabulate.py
-    */wmi.py
-    */ipaddress.py
-    */objgraph.py
-
+    lib/tests/*
+    lib/aenum/*
+    lib/colorama/*
+    lib/h2/*
+    lib/hpack/*
+    lib/hyper/*
+    lib/hyperframe/*
+    lib/json_delta/*
+    lib/jsonpath_ng/*
+    lib/jwt/*
+    lib/ply/*
+    lib/pyaes/*
+    lib/rfc3986/*
+    lib/tabulate.py
+    lib/wmi.py
+    lib/ipaddress.py
