@@ -381,6 +381,9 @@ class Container(resContainer.Container):
             elements = volarg.split(":")
             if not elements or len(elements) not in (2, 3):
                 continue
+            if elements[1] in dsts:
+                raise ex.excError("different volume mounts use the same destination "
+                                  "mount point: %s" % elements[1])
             if not elements[0].startswith(os.sep):
                 # vol service
                 wants_ro = False
@@ -399,16 +402,14 @@ class Container(resContainer.Container):
                 else:
                     options.insert(0, "rw")
                 elements.append(",".join(options))
-                if elements[1] in dsts:
-                    raise ex.excError("different volume mounts use the same destination mount point: %s" % elements[1])
                 volumes.append(":".join(elements))
-                dsts.append(elements[1])
             elif not os.path.exists(elements[0]):
                 # host path
                 raise ex.excError("source dir of mapping %s does not "
                                   "exist" % volarg)
             else:
                 volumes.append(volarg)
+            dsts.append(elements[1])
         return volumes
 
     def environment_options(self):

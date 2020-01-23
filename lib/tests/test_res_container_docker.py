@@ -13,7 +13,7 @@ import pytest
 
 
 @pytest.mark.ci
-class TestVolumeOptionsFromSrcDir:
+class TestVolumeOptions:
     @staticmethod
     @pytest.mark.parametrize('options, expected_options',
                              (('ro', 'ro'),
@@ -30,9 +30,6 @@ class TestVolumeOptionsFromSrcDir:
         res = container.volume_options()
         assert res == [str(tmpdir) + ':/dst:' + expected_options]
 
-
-@pytest.mark.ci
-class TestVolumeOptionsFromSrcVol:
     @staticmethod
     @pytest.mark.parametrize('vol_options, container_options, expected_options',
                              (('rwo', 'ro', 'ro'),
@@ -64,9 +61,12 @@ class TestVolumeOptionsFromSrcVol:
 
         assert container.volume_options() == [vol.mount_point + '/src:/dst:' + expected_options]
 
-
     @staticmethod
-    def test_raise_error_on_duplicated_dest(mocker, osvc_path_tests):
+    @pytest.mark.parametrize('volume_mounts', [
+        ['vol1/src:/dst:ro', 'vol2/src:/dst:rw'],
+        ['vol1/src:/dst:ro', '/tmp:/dst:rw'],
+    ])
+    def test_raises_on_dup_destinations(mocker, osvc_path_tests, volume_mounts):
         mocker.patch.object(Volume, 'status', return_value=rcStatus.UP)
 
         svc1 = svc.Svc('svc1')
@@ -75,9 +75,8 @@ class TestVolumeOptionsFromSrcVol:
             pool.configure_volume(factory("vol")(name=vol_name))
             svc1 += Volume(rid="#" + vol_name, name=vol_name)
 
-        container = Container(rid='#dck1', volume_mounts=['vol1/src:/dst:ro',
-                                                          'vol2/src:/dst:rw'])
+        container = Container(rid='#dck1', volume_mounts=volume_mounts)
         svc1 += container
 
-        with pytest.raises(ex.excError, match=r' destination mount point'):
+        with pytest.raises(ex.excError, match=r'same destination mount point'):
             container.volume_options()
