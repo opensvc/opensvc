@@ -267,10 +267,10 @@ class rcEnv:
     if ld_preload:
         python_cmd.append("LD_PRELOAD="+ld_preload)
     if os.name == "nt":
-        python_cmd.append(sys.executable.replace("lib\site-packages\win32\PythonService.exe", "Python.exe"))
+        python_cmd.append(sys.executable.replace(
+            os.path.join('lib', 'site-packages', 'win32', 'PythonService.exe'),
+            "Python.exe"))
     else:
         python_cmd.append(sys.executable)
     if pyargs:
         python_cmd += pyargs
-
-
