@@ -60,12 +60,14 @@ operators = {
     ast.In: op.contains,
 }
 
+
 def eval_expr(expr):
     """ arithmetic expressions evaluator
     """
+
     def eval_(node):
         _safe_names = {'None': None, 'True': True, 'False': False}
-        if isinstance(node, ast.Num): # <number>
+        if isinstance(node, ast.Num):  # <number>
             return node.n
         elif isinstance(node, ast.Str):
             return node.s
@@ -75,9 +77,9 @@ def eval_expr(expr):
             return node.id
         elif isinstance(node, ast.Tuple):
             return tuple(node.elts)
-        elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
             return operators[type(node.op)](eval_(node.left), eval_(node.right))
-        elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
             return operators[type(node.op)](eval_(node.operand))
         elif isinstance(node, ast.BoolOp):  # Boolean operator: either "and" or "or" with two or more values
             if type(node.op) == ast.And:
@@ -110,6 +112,7 @@ def eval_expr(expr):
             return node.value
         else:
             raise TypeError("unsupported node type %s" % type(node))
+
     return eval_(ast.parse(expr, mode='eval').body)
 
 
@@ -146,11 +149,14 @@ def fcache(fn):
     A decorator for caching the result of a function
     """
     attr_name = '_fcache_' + fn.__name__
+
     def _fcache(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
+
     return _fcache
+
 
 def fcache_initialized(self, attr):
     """
@@ -161,6 +167,7 @@ def fcache_initialized(self, attr):
         return True
     return False
 
+
 def unset_fcache(self, attr):
     """
     Unset <attr> function cache
@@ -168,6 +175,7 @@ def unset_fcache(self, attr):
     attr_name = '_fcache_' + attr
     if hasattr(self, attr_name):
         delattr(self, attr_name)
+
 
 #############################################################################
 #
@@ -179,12 +187,15 @@ def lazy(fn):
     A decorator for on-demand initialization of a property
     """
     attr_name = '_lazy_' + fn.__name__
+
     @property
     def _lazyprop(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
+
     return _lazyprop
+
 
 def lazy_initialized(self, attr):
     """
@@ -195,12 +206,14 @@ def lazy_initialized(self, attr):
         return True
     return False
 
+
 def set_lazy(self, attr, value):
     """
     Set a <value> as the <self> object lazy property hidden property value
     """
     attr_name = '_lazy_' + attr
     setattr(self, attr_name, value)
+
 
 def unset_all_lazy(self):
     """
@@ -210,6 +223,7 @@ def unset_all_lazy(self):
         if attr.startswith("_lazy_"):
             delattr(self, attr)
 
+
 def unset_lazy(self, attr):
     """
     Unset <attr> lazy property hidden property, iow flush the cache
@@ -217,6 +231,7 @@ def unset_lazy(self, attr):
     attr_name = '_lazy_' + attr
     if hasattr(self, attr_name):
         delattr(self, attr_name)
+
 
 def bencode(buff):
     """
@@ -226,6 +241,7 @@ def bencode(buff):
         return bytes(buff, "utf-8")
     except TypeError:
         return buff
+
 
 def bdecode(buff):
     """
@@ -239,6 +255,7 @@ def bdecode(buff):
         return buff
     return buff.decode("utf-8", errors="ignore")
 
+
 def is_string(s):
     """
     python[23] compatible string-type test
@@ -247,10 +264,11 @@ def is_string(s):
         return True
     return False
 
+
 def mimport(*args, **kwargs):
     def fmt(s):
         if len(s) >= 1:
-            return s[0].upper()+s[1:].lower()
+            return s[0].upper() + s[1:].lower()
         else:
             return ""
 
@@ -262,7 +280,7 @@ def mimport(*args, **kwargs):
             mod += fmt(e)
 
     try:
-        return __import__(mod+rcEnv.sysname)
+        return __import__(mod + rcEnv.sysname)
     except ImportError:
         pass
 
@@ -277,13 +295,15 @@ def mimport(*args, **kwargs):
     else:
         raise ImportError("no module found: %s" % args)
 
+
 def ximport(base):
     mod = base + rcEnv.sysname
-    fpath = os.path.join(rcEnv.paths.pathlib, mod+".py")
+    fpath = os.path.join(rcEnv.paths.pathlib, mod + ".py")
     if not os.path.exists(fpath):
         return __import__(base)
     m = __import__(mod)
     return m
+
 
 def check_privs():
     if "OSVC_CONTEXT" in os.environ or "OSVC_CLUSTER" in os.environ:
@@ -295,10 +315,12 @@ def check_privs():
     print("Insufficient privileges", file=sys.stderr)
     sys.exit(1)
 
+
 def banner(text, ch='=', length=78):
     spaced_text = ' %s ' % text
     banner = spaced_text.center(length, ch)
     return banner
+
 
 def is_exe(fpath, realpath=False):
     """Returns True if file path is executable, False otherwize
@@ -309,9 +331,11 @@ def is_exe(fpath, realpath=False):
         return False
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
+
 def which(program):
     if program is None:
         return
+
     def ext_candidates(fpath):
         yield fpath
         for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
@@ -329,6 +353,7 @@ def which(program):
                     return candidate
 
     return
+
 
 def justcall(argv=None, stdin=None, input=None):
     """
@@ -351,11 +376,13 @@ def justcall(argv=None, stdin=None, input=None):
             return "", "", 1
         raise
 
+
 def empty_string(buff):
     b = buff.strip(' ').strip('\n')
     if len(b) == 0:
         return True
     return False
+
 
 def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, **kwargs):
     """
@@ -421,7 +448,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
                     print("execution timeout (%.1f seconds). send SIGTERM." % timeout, file=sys.stderr)
                 proc.terminate()
                 terminated = True
-            elif not killed and ellapsed > timeout*2:
+            elif not killed and ellapsed > timeout * 2:
                 if logger:
                     logger.error("SIGTERM handling timeout (%.1f seconds). send SIGKILL." % timeout)
                 else:
@@ -495,7 +522,7 @@ def call(argv,
         cmd = ' '.join(argv)
 
     if not shell and which(argv[0]) is None:
-        log.error("%s does not exist or not in path or is not executable"%
+        log.error("%s does not exist or not in path or is not executable" %
                   argv[0])
         return (1, '', '')
 
@@ -508,24 +535,25 @@ def call(argv,
         rcEnv.call_cache = {}
 
     if cache and cmd not in rcEnv.call_cache:
-        log.debug("cache miss for '%s'"%cmd)
+        log.debug("cache miss for '%s'" % cmd)
 
     if not cache or cmd not in rcEnv.call_cache:
-        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell, preexec_fn=preexec_fn, cwd=cwd, env=env)
+        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell,
+                        preexec_fn=preexec_fn, cwd=cwd, env=env)
         buff = process.communicate()
         buff = tuple(map(lambda x: bdecode(x).strip(), buff))
         ret = process.returncode
         if ret == 0:
             if cache:
-                log.debug("store '%s' output in cache"%cmd)
+                log.debug("store '%s' output in cache" % cmd)
                 rcEnv.call_cache[cmd] = buff
         elif cmd in rcEnv.call_cache:
-            log.debug("discard '%s' output from cache because ret!=0"%cmd)
+            log.debug("discard '%s' output from cache because ret!=0" % cmd)
             del rcEnv.call_cache[cmd]
         elif cache:
-            log.debug("skip store '%s' output in cache because ret!=0"%cmd)
+            log.debug("skip store '%s' output in cache because ret!=0" % cmd)
     else:
-        log.debug("serve '%s' output from cache"%cmd)
+        log.debug("serve '%s' output from cache" % cmd)
         buff = rcEnv.call_cache[cmd]
         ret = 0
     if not empty_string(buff[1]):
@@ -577,6 +605,7 @@ def call(argv,
 
     return (ret, buff[0], buff[1])
 
+
 def qcall(argv=None):
     """
     Execute command using Popen with no additional args, disgarding stdout and stderr.
@@ -587,10 +616,12 @@ def qcall(argv=None):
     process.wait()
     return process.returncode
 
+
 def vcall(args, **kwargs):
     kwargs["info"] = True
     kwargs["outlog"] = True
     return call(args, **kwargs)
+
 
 def getmount(path):
     path = os.path.abspath(path)
@@ -600,17 +631,20 @@ def getmount(path):
         path = os.path.abspath(os.path.join(path, os.pardir))
     return path
 
+
 def protected_dir(path):
     path = path.rstrip("/")
     if path in PROTECTED_DIRS:
         return True
     return False
 
+
 def protected_mount(path):
     mount = getmount(path)
     if mount in PROTECTED_DIRS:
         return True
     return False
+
 
 def action_triggers(self, trigger="", action=None, **kwargs):
     """
@@ -631,7 +665,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'sync_update',
         'sync_restore',
         'run',
-        'command', # tasks use that as an action
+        'command',  # tasks use that as an action
     ]
 
     compat_triggers = [
@@ -678,7 +712,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
     if trigger == "":
         attr = action
     else:
-        attr = trigger+"_"+action
+        attr = trigger + "_" + action
 
     # translate deprecated actions
     if attr in compat_triggers:
@@ -749,6 +783,7 @@ def try_decode(string, codecs=['utf8', 'latin1']):
             pass
     return string
 
+
 def getaddr_cache_set(name, addr):
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
     makedirs(cache_d)
@@ -756,6 +791,7 @@ def getaddr_cache_set(name, addr):
     with open(cache_f, 'w') as f:
         f.write(addr)
     return addr
+
 
 def getaddr_cache_get(name):
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
@@ -773,11 +809,13 @@ def getaddr_cache_get(name):
         raise Exception("addrinfo cache corrupted for name %s: %s" % (name, addr))
     return addr
 
+
 def getaddr(name, cache_fallback, log=None):
     if cache_fallback:
         return getaddr_caching(name, log=log)
     else:
         return getaddr_non_caching(name)
+
 
 def getaddr_non_caching(name, log=None):
     a = socket.getaddrinfo(name, None)
@@ -788,8 +826,9 @@ def getaddr_non_caching(name, log=None):
         getaddr_cache_set(name, addr)
     except Exception as e:
         if log:
-            log.warning("failed to cache name addr %s, %s: %s"  %(name, addr, str(e)))
+            log.warning("failed to cache name addr %s, %s: %s" % (name, addr, str(e)))
     return addr
+
 
 def getaddr_caching(name, log=None):
     try:
@@ -802,19 +841,21 @@ def getaddr_caching(name, log=None):
         log.info("fetched %s address for name %s from cache" % (addr, name))
     return addr
 
+
 def cidr_to_dotted(s):
     i = int(s)
     _in = ""
     _out = ""
     for i in range(i):
         _in += "1"
-    for i in range(32-i):
+    for i in range(32 - i):
         _in += "0"
-    _out += str(int(_in[0:8], 2))+'.'
-    _out += str(int(_in[8:16], 2))+'.'
-    _out += str(int(_in[16:24], 2))+'.'
+    _out += str(int(_in[0:8], 2)) + '.'
+    _out += str(int(_in[8:16], 2)) + '.'
+    _out += str(int(_in[16:24], 2)) + '.'
     _out += str(int(_in[24:32], 2))
     return _out
+
 
 def to_dotted(s):
     s = str(s)
@@ -822,10 +863,12 @@ def to_dotted(s):
         return s
     return cidr_to_dotted(s)
 
+
 def hexmask_to_dotted(mask):
     mask = mask.replace('0x', '')
-    s = [str(int(mask[i:i+2], 16)) for i in range(0, len(mask), 2)]
+    s = [str(int(mask[i:i + 2], 16)) for i in range(0, len(mask), 2)]
     return '.'.join(s)
+
 
 def dotted_to_cidr(mask):
     if mask is None:
@@ -837,6 +880,7 @@ def dotted_to_cidr(mask):
         cnt += str(bin(a)).count("1")
     return str(cnt)
 
+
 def to_cidr(s):
     if s is None:
         return s
@@ -847,6 +891,7 @@ def to_cidr(s):
         s = hexmask_to_dotted(s)
         return dotted_to_cidr(s)
     return s
+
 
 def term_width():
     default = int(os.environ.get("COLUMNS", 78))
@@ -865,8 +910,10 @@ def term_width():
         return int(m.group('columns'))
     return default
 
+
 def get_cache_d():
     return os.path.join(rcEnv.paths.pathvar, "cache", rcEnv.session_uuid)
+
 
 def cache(sig):
     def wrapper(fn):
@@ -885,7 +932,7 @@ def cache(sig):
             fpath = cache_fpath(_sig)
 
             try:
-                lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock', intent="cache")
+                lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock', intent="cache")
             except Exception as e:
                 if log:
                     log.warning("cache locking error: %s. run command uncached." % str(e))
@@ -899,8 +946,11 @@ def cache(sig):
                 cache_put(fpath, data, log=log)
             lock.unlock(lfd)
             return data
+
         return decorator
+
     return wrapper
+
 
 def cache_fpath(sig):
     cache_d = get_cache_d()
@@ -908,6 +958,7 @@ def cache_fpath(sig):
     sig = sig.replace("/", "(slash)")
     fpath = os.path.join(cache_d, sig)
     return fpath
+
 
 def cache_put(fpath, data, log=None):
     if log:
@@ -922,6 +973,7 @@ def cache_put(fpath, data, log=None):
             pass
     return data
 
+
 def cache_get(fpath, log=None):
     if not os.path.exists(fpath):
         raise Exception("cache MISS: %s" % fpath)
@@ -934,6 +986,7 @@ def cache_get(fpath, log=None):
         raise ex.excError("cache read error: %s" % str(e))
     return data
 
+
 def clear_cache(sig, o=None):
     if o and hasattr(o, "cache_sig_prefix"):
         sig = o.cache_sig_prefix + sig
@@ -942,12 +995,13 @@ def clear_cache(sig, o=None):
         return
     if o and hasattr(o, "log"):
         o.log.debug("cache CLEAR: %s" % fpath)
-    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath+'.lock')
+    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock')
     try:
         os.unlink(fpath)
     except:
         pass
     lock.unlock(lfd)
+
 
 def purge_cache():
     import shutil
@@ -957,6 +1011,7 @@ def purge_cache():
     except:
         pass
 
+
 def purge_cache_expired():
     import time
     import shutil
@@ -965,13 +1020,14 @@ def purge_cache_expired():
         return
     for d in os.listdir(cache_d):
         d = os.path.join(cache_d, d)
-        if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time()-(21600):
+        if not os.path.isdir(d) or not os.stat(d).st_ctime < time.time() - (21600):
             # session more recent than 6 hours
             continue
         try:
             shutil.rmtree(d)
         except:
             pass
+
 
 def read_cf(fpaths, defaults=None):
     """
@@ -1003,6 +1059,7 @@ def read_cf(fpaths, defaults=None):
             except AttributeError:
                 raise
     return config
+
 
 def read_cf_comments(fpath):
     data = {}
@@ -1038,6 +1095,7 @@ def read_cf_comments(fpath):
         current = []
     return data
 
+
 def has_option(option, cmd):
     """
     Return True if <option> is set in the <cmd> shlex list.
@@ -1045,9 +1103,10 @@ def has_option(option, cmd):
     for word in cmd:
         if word == option:
             return True
-        if word.startswith(option+"="):
+        if word.startswith(option + "="):
             return True
     return False
+
 
 def get_options(option, cmd):
     """
@@ -1055,9 +1114,10 @@ def get_options(option, cmd):
     """
     for i, word in enumerate(cmd):
         if word == option:
-            yield cmd[i+1]
-        if word.startswith(option+"="):
+            yield cmd[i + 1]
+        if word.startswith(option + "="):
             yield word.split("=", 1)[-1]
+
 
 def get_option(option, cmd, boolean=False):
     """
@@ -1070,10 +1130,11 @@ def get_option(option, cmd, boolean=False):
             if boolean:
                 return True
             else:
-                return cmd[i+1]
-        if word.startswith(option+"="):
+                return cmd[i + 1]
+        if word.startswith(option + "="):
             return word.split("=", 1)[-1]
     return
+
 
 def drop_option(option, cmd, drop_value=False):
     """
@@ -1083,22 +1144,23 @@ def drop_option(option, cmd, drop_value=False):
     for i, word in enumerate(cmd):
         if word == option:
             if drop_value is True:
-                to_drop += [i, i+1]
+                to_drop += [i, i + 1]
             elif is_string(drop_value):
-                if cmd[i+1].startswith(drop_value):
-                    to_drop += [i, i+1]
+                if cmd[i + 1].startswith(drop_value):
+                    to_drop += [i, i + 1]
                 else:
                     # do not drop option
                     pass
             else:
                 to_drop += [i]
             continue
-        if word.startswith(option+"="):
+        if word.startswith(option + "="):
             to_drop += [i]
             continue
     for idx in sorted(to_drop, reverse=True):
         del cmd[idx]
     return cmd
+
 
 def fsum(fpath):
     """
@@ -1111,12 +1173,14 @@ def fsum(fpath):
     cksum = hashlib.md5(buff.encode("utf-8"))
     return cksum.hexdigest()
 
+
 def chunker(buff, n):
     """
     Yield successive n-sized chunks from buff
     """
     for i in range(0, len(buff), n):
-        yield buff[i:i+n]
+        yield buff[i:i + n]
+
 
 def init_locale():
     try:
@@ -1138,10 +1202,11 @@ def init_locale():
         os.environ["LC_TIME"] = "C"
         if locale.getlocale()[1] == "UTF-8":
             return
-    #raise ex.excError("can not set a C lang with utf8 encoding")
+    # raise ex.excError("can not set a C lang with utf8 encoding")
     os.environ["LANG"] = "C"
     os.environ["LC_NUMERIC"] = "C"
     os.environ["LC_TIME"] = "C"
+
 
 def daemon_test_lock():
     lockfd = None
@@ -1153,10 +1218,12 @@ def daemon_test_lock():
         lock.unlock(lockfd)
     return False
 
+
 def wipe_rest_markup(payload):
-    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'"+pat.group(2)+"'", payload, re.MULTILINE)
-    payload = re.sub(r'``(.*?)``', lambda pat: "'"+pat.group(1)+"'", payload, re.MULTILINE)
+    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'" + pat.group(2) + "'", payload, re.MULTILINE)
+    payload = re.sub(r'``(.*?)``', lambda pat: "'" + pat.group(1) + "'", payload, re.MULTILINE)
     return payload
+
 
 #############################################################################
 #
@@ -1168,7 +1235,7 @@ def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if f is None:
         return
     f = re.sub("\.conf$", "", f)
-    f = f.replace(rcEnv.paths.pathetcns+os.sep, "").replace(rcEnv.paths.pathetc+os.sep, "")
+    f = f.replace(rcEnv.paths.pathetcns + os.sep, "").replace(rcEnv.paths.pathetc + os.sep, "")
     try:
         name, _namespace, kind = split_path(f)
     except ValueError:
@@ -1189,6 +1256,7 @@ def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if not os.path.exists(cf):
         return
     return path
+
 
 def list_services(namespace=None, kinds=None):
     l = []
@@ -1216,6 +1284,7 @@ def list_services(namespace=None, kinds=None):
         l.append(path)
     return l
 
+
 def glob_root_config():
     return chain(
         glob.iglob(GLOB_ROOT_SVC_CONF),
@@ -1225,14 +1294,17 @@ def glob_root_config():
         glob.iglob(GLOB_ROOT_USR_CONF),
     )
 
+
 def glob_ns_config(namespace=None):
     if namespace is None:
         return glob.iglob(GLOB_CONF_NS)
     else:
         return glob.iglob(GLOB_CONF_NS_ONE % namespace)
 
+
 def glob_services_config():
     return chain(glob_root_config(), glob_ns_config())
+
 
 def split_path(path):
     path = path.strip("/")
@@ -1260,19 +1332,22 @@ def split_path(path):
             kind = "ccfg"
     return name, namespace, kind
 
+
 def svc_pathcf(path, namespace=None):
     name, _namespace, kind = split_path(path)
     if namespace:
-        return os.path.join(rcEnv.paths.pathetcns, namespace, kind, name+".conf")
+        return os.path.join(rcEnv.paths.pathetcns, namespace, kind, name + ".conf")
     elif _namespace:
-        return os.path.join(rcEnv.paths.pathetcns, _namespace, kind, name+".conf")
+        return os.path.join(rcEnv.paths.pathetcns, _namespace, kind, name + ".conf")
     elif kind in ("svc", "ccfg"):
-        return os.path.join(rcEnv.paths.pathetc, name+".conf")
+        return os.path.join(rcEnv.paths.pathetc, name + ".conf")
     else:
-        return os.path.join(rcEnv.paths.pathetc, kind, name+".conf")
+        return os.path.join(rcEnv.paths.pathetc, kind, name + ".conf")
+
 
 def svc_pathetc(path, namespace=None):
     return os.path.dirname(svc_pathcf(path, namespace=namespace))
+
 
 def svc_pathtmp(path):
     name, namespace, kind = split_path(path)
@@ -1283,6 +1358,7 @@ def svc_pathtmp(path):
     else:
         return os.path.join(rcEnv.paths.pathtmp, kind)
 
+
 def svc_pathlog(path):
     name, namespace, kind = split_path(path)
     if namespace:
@@ -1291,6 +1367,7 @@ def svc_pathlog(path):
         return os.path.join(rcEnv.paths.pathlog)
     else:
         return os.path.join(rcEnv.paths.pathlog, kind)
+
 
 def svc_pathvar(path, relpath=""):
     name, namespace, kind = split_path(path)
@@ -1302,6 +1379,7 @@ def svc_pathvar(path, relpath=""):
         l.append(relpath)
     return os.path.join(*l)
 
+
 def fmt_path(name, namespace, kind):
     if namespace:
         return "/".join((namespace.strip("/"), kind, name))
@@ -1310,9 +1388,11 @@ def fmt_path(name, namespace, kind):
     else:
         return name
 
+
 def split_fullname(fullname, clustername):
-    fullname = fullname[:-(len(clustername)+1)]
+    fullname = fullname[:-(len(clustername) + 1)]
     return fullname.rsplit(".", 2)
+
 
 def svc_fullname(name, namespace, kind, clustername):
     return "%s.%s.%s.%s" % (
@@ -1322,6 +1402,7 @@ def svc_fullname(name, namespace, kind, clustername):
         clustername
     )
 
+
 def strip_path(paths, namespace):
     if not namespace:
         return paths
@@ -1329,7 +1410,8 @@ def strip_path(paths, namespace):
         return [strip_path(path, namespace) for path in paths]
     else:
         path = re.sub("^%s/" % namespace, "", paths)  # strip current ns
-        return re.sub("^svc/", "", path) # strip default kind
+        return re.sub("^svc/", "", path)  # strip default kind
+
 
 def normalize_path(path):
     name, namespace, kind = split_path(path)
@@ -1337,9 +1419,11 @@ def normalize_path(path):
         namespace = "root"
     return fmt_path(name, namespace, kind)
 
+
 def normalize_paths(paths):
     for path in paths:
         yield normalize_path(path)
+
 
 def resolve_path(path, namespace=None):
     """
@@ -1352,6 +1436,7 @@ def resolve_path(path, namespace=None):
     if _namespace is "root":
         _namespace = None
     return fmt_path(name, _namespace, kind)
+
 
 def makedirs(path, mode=0o755):
     """
@@ -1366,8 +1451,10 @@ def makedirs(path, mode=0o755):
         else:
             raise
 
+
 def validate_paths(paths):
     [validate_path(p) for p in paths]
+
 
 def validate_path(path):
     name, namespace, kind = split_path(path)
@@ -1375,10 +1462,12 @@ def validate_path(path):
     validate_ns_name(namespace)
     validate_name(name)
 
+
 def validate_kind(name):
     if name not in rcEnv.kinds:
         raise ValueError("invalid kind '%s'. kind must be one of"
                          " %s." % (name, ", ".join(rcEnv.kinds)))
+
 
 def validate_ns_name(name):
     if name is None:
@@ -1392,6 +1481,7 @@ def validate_ns_name(name):
                      "digits and hyphens, start with a letter and end with "
                      "a digit or letter (rfc 952)." % name)
 
+
 def validate_name(name):
     # strip scaler slice prefix
     name = re.sub("^[0-9]+\.", "", name)
@@ -1403,6 +1493,7 @@ def validate_name(name):
     raise ex.excError("invalid name '%s'. names must contain only dots, letters, "
                       "digits and hyphens, start with a letter and end with "
                       "a digit or letter (rfc 952)." % name)
+
 
 def factory(kind):
     """
@@ -1420,6 +1511,7 @@ def factory(kind):
     except Exception:
         pass
     raise ValueError("unknown kind: %s" % kind)
+
 
 def parse_path_selector(selector, namespace=None):
     if selector is None:
@@ -1471,12 +1563,14 @@ def parse_path_selector(selector, namespace=None):
         raise ValueError("invalid path selector %s" % selector)
     return _name, _namespace, _kind
 
+
 def format_path_selector(selector, namespace=None):
     try:
         _name, _namespace, _kind = parse_path_selector(selector, namespace)
     except ValueError:
         return selector
     return "%s/%s/%s" % (_namespace, _kind, _name)
+
 
 def normalize_jsonpath(path):
     if path and path[0] == ".":
@@ -1490,7 +1584,7 @@ def abbrev(l):
     paths = [n.split(".")[::-1] for n in l]
     trimable = [n for n in paths if len(n) > 1]
     if len(trimable) <= 1:
-        return [n[-1]+".." if n in trimable else n[0] for n in paths]
+        return [n[-1] + ".." if n in trimable else n[0] for n in paths]
     for i in range(10):
         try:
             if len(set([t[i] for t in trimable])) > 1:
@@ -1499,4 +1593,4 @@ def abbrev(l):
             break
     if i == 0:
         return l
-    return [".".join(n[:i-1:-1])+".." if n in trimable else n[0] for n in paths]
+    return [".".join(n[:i - 1:-1]) + ".." if n in trimable else n[0] for n in paths]
