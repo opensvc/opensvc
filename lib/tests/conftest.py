@@ -1,7 +1,7 @@
 import sys
 import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__),
+                                                 "..")))
 
 import rcGlobalEnv
 import pytest
@@ -16,3 +16,8 @@ def osvc_path_tests(tmpdir):
     rcGlobalEnv.rcEnv.paths.pathtmpv = os.path.join(test_dir, 'tmp')
     rcGlobalEnv.rcEnv.paths.pathvar = os.path.join(test_dir, 'var')
     rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
+
+
+@pytest.fixture(scope='function')
+def non_existing_file(tmp_path):
+    return os.path.join(str(tmp_path), 'foo')
