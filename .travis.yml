@@ -13,8 +13,8 @@ install:
 - pip install -r test-requirements.txt
 script:
 - pylint -E lib/*py
-- nosetests --with-coverage lib/tests/test_ci_*.py
-- pytest -m ci
+- nosetests lib/tests/test_ci_*.py
+- pytest --cov -m ci
 after_success:
 - pip install codecov
 - codecov
