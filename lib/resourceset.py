@@ -326,18 +326,18 @@ class ResourceSet(object):
                     resource.action(action)
                 except ex.excAbortAction as exc:
                     msg = str(exc)
-                    if msg is not "":
+                    if msg != "":
                         resource.log.warning(msg)
                     resource.log.warning("abort action on resource set")
                     break
                 except ex.excContinueAction as exc:
                     msg = str(exc)
-                    if msg is not "":
+                    if msg != "":
                         resource.log.info(msg)
                     resource.log.info("continue action on resource set")
                 except ex.excError as exc:
                     msg = str(exc)
-                    if msg is not "":
+                    if msg != "":
                         resource.log.error(msg)
                         # prevent re-logging
                         exc.value = ""

@@ -409,7 +409,7 @@ class Array(object):
     def resize_disk(self, volume=None, size=None, **kwargs):
         if volume is None:
             raise ex.excError("--volume is mandatory")
-        if volume is "":
+        if volume == "":
             raise ex.excError("--volume can not be empty")
         if size == 0 or size is None:
             raise ex.excError("--size is mandatory")

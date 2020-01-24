@@ -1436,7 +1436,7 @@ def resolve_path(path, namespace=None):
     name, _namespace, kind = split_path(path)
     if namespace and not _namespace:
         _namespace = namespace
-    if _namespace is "root":
+    if _namespace == "root":
         _namespace = None
     return fmt_path(name, _namespace, kind)
 

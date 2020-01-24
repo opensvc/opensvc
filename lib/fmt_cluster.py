@@ -803,7 +803,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         for nodename in nodenames:
             agent = data["monitor"]["nodes"].get(nodename, {}).get("agent", "")
             line.append(str(agent))
-            if agent is not '':
+            if agent != "":
                 versions.append(str(agent))
         if len(set(versions)) > 1:
             out.append(line)

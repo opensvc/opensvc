@@ -296,7 +296,7 @@ class Disk(resDisk.Disk):
             # don't care
             return
         current = zpool_getprop(self.name, "multihost")
-        if current is "":
+        if current == "":
             # not multihost capable (pre-0.7) or not imported
             return
         ret = 0

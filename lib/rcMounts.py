@@ -4,9 +4,9 @@ from rcUtilities import bdecode
 
 class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
-        self.dev = dev.rstrip('/')
-        self.mnt = mnt.rstrip('/')
-        if mnt is '/':
+        self.dev = dev.rstrip("/")
+        self.mnt = mnt.rstrip("/")
+        if mnt == "/":
             self.mnt = mnt
         self.type = type
         self.mnt_opt = mnt_opt

@@ -256,7 +256,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                 info[i] = f.read().strip()
         if '6900' in info['device/vendor']:
             info['device/vendor'] = 'Red Hat'
-            if info['device/model'] is '':
+            if info['device/model'] == '':
                 info['device/model'] = 'VirtIO'
         info['hbtl'] = os.path.basename(os.path.realpath(os.path.join(disk, "device")))
         print(self.print_diskinfo_fmt%(
