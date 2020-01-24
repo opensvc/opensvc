@@ -24,8 +24,10 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from contexts import want_context
 
-VALID_NAME_RFC952_NO_DOT = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9]))*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
-VALID_NAME_RFC952 = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
+VALID_NAME_RFC952_NO_DOT = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]))*"
+                            r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
+VALID_NAME_RFC952 = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*"
+                     r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
 GLOB_ROOT_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
 GLOB_ROOT_VOL_CONF = os.path.join(rcEnv.paths.pathetc, "vol", "*.conf")
 GLOB_ROOT_CFG_CONF = os.path.join(rcEnv.paths.pathetc, "cfg", "*.conf")
@@ -34,8 +36,8 @@ GLOB_ROOT_USR_CONF = os.path.join(rcEnv.paths.pathetc, "usr", "*.conf")
 GLOB_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*", "*.conf")
 GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
 
-ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]", re.UNICODE)
-ANSI_ESCAPE_B = re.compile(b"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[m|H|J|K|G]")
+ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]", re.UNICODE)
+ANSI_ESCAPE_B = re.compile(br"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]")
 
 # supported operators in arithmetic expressions
 operators = {
@@ -906,7 +908,7 @@ def term_width():
     if which("stty") is None:
         return default
     out, err, ret = justcall(['stty', '-a'])
-    m = re.search('columns\s+(?P<columns>\d+);', out)
+    m = re.search(r'columns\s+(?P<columns>\d+);', out)
     if m:
         return int(m.group('columns'))
     return default
@@ -1079,7 +1081,7 @@ def read_cf_comments(fpath):
         line = line.strip()
         if not line:
             continue
-        if re.match("\[.+\]", line):
+        if re.match(r"\[.+\]", line):
             if current:
                 data[section] = current
                 current = []
@@ -1087,7 +1089,7 @@ def read_cf_comments(fpath):
             continue
         if line[0] in (";", "#"):
             stripped = line.lstrip("#;").strip()
-            if re.match("\[.+\]", stripped):
+            if re.match(r"\[.+\]", stripped):
                 # add an empty line before a commented section
                 current.append("")
             current.append(stripped)
@@ -1235,7 +1237,7 @@ def wipe_rest_markup(payload):
 def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if f is None:
         return
-    f = re.sub("\.conf$", "", f)
+    f = re.sub(r"\.conf$", '', f)
     f = f.replace(rcEnv.paths.pathetcns + os.sep, "").replace(rcEnv.paths.pathetc + os.sep, "")
     try:
         name, _namespace, kind = split_path(f)
@@ -1485,7 +1487,7 @@ def validate_ns_name(name):
 
 def validate_name(name):
     # strip scaler slice prefix
-    name = re.sub("^[0-9]+\.", "", name)
+    name = re.sub(r"^[0-9]+\.", "", name)
     if name in rcEnv.kinds:
         raise ex.excError("invalid name '%s'. names must not clash with kinds"
                           " %s." % (name, ", ".join(rcEnv.kinds)))

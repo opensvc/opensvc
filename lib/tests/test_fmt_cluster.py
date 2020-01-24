@@ -1,21 +1,26 @@
 import pytest
 
-from rcUtilities import abbrev
+from fmt_cluster import *
 
 
 @pytest.mark.ci
-@pytest.mark.parametrize(
-    'input_nodes,expected_nodes', [
-        [[], []],
-        [['n1'], ['n1']],
-        [['n1', 'n2'], ['n1', 'n2']],
-        [['n1.org', 'n2'], ['n1..', 'n2']],
-        [['n1.org', 'n1'], ['n1..', 'n1']],
-        [['n1.org.com', 'n2.org.com'], ['n1..', 'n2..']],
-        [['n1.org1.com', 'n2.org2.com'], ['n1.org1..', 'n2.org2..']],
-        [['n1.org1.com', 'n2'], ['n1..', 'n2']],
-        [['n1.org1.com', 'n1'], ['n1..', 'n1']],
-    ]
-)
-def test_it_correctly_trim_nodes(input_nodes, expected_nodes):
-    assert abbrev(input_nodes) == expected_nodes
+class TestBarLen:
+    @staticmethod
+    @pytest.mark.parametrize('input,result_len',[
+        (b'abc', 3),
+        (b'', 0),
+        (b'\x1b[1dABC', 7),
+        (b'\x1b[1mABC', 3),
+        (b'\x1b[32mABC', 3),
+        (b'\x1b[32HABC', 3),
+        (b'\x1b[32JABC', 3),
+        (b'\x1b[32KABC', 3),
+        (b'\x1b[32GABC', 3),
+        (b'\x1b[32mABC\x1b[32mDE', 5),
+        (b'\x1b[12mABC', 3),
+        (b'\x1b[123mABC', 3),
+        (b'\x1b[32;12mABC', 3),
+        (b'\x1b[32;123mABC', 3),
+    ])
+    def test_len_is_correct(input, result_len):
+        assert bare_len(input) == result_len

@@ -1,13 +1,5 @@
 # coding: utf-8
 
-from __future__ import print_function
-
-import sys
-import os
-import datetime
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 from rcUtilities import *
 import pytest
 
@@ -19,6 +11,7 @@ class TestUtilities:
         """
         eval_expr()
         """
+        # noinspection PyUnusedLocal
         foo = 1
         assert eval_expr("0 & 1") == 0
         assert eval_expr("0 | 1") == 1
@@ -450,3 +443,113 @@ class TestUtilities:
         purge_cache_expired()
         """
         purge_cache_expired()
+
+
+@pytest.mark.ci
+class TestValidateNsName:
+    @staticmethod
+    @pytest.mark.parametrize('namespace,exception',
+                             [('svc', ValueError),
+                              ('vol', ValueError),
+                              ('cfg', ValueError),
+                              ('sec', ValueError),
+                              ('usr', ValueError),
+                              ('ccfg', ValueError),
+                              ('foo.bar', ValueError),
+                              ('f.b', ValueError),
+                              ('1a', ValueError),
+                              ('foo_bar', ValueError),
+                              ('f', None),
+                              ('foo', None),
+                              ('Foo', None),
+                              ('fooBar', None),
+                              ('foo', None),
+                              ('foo1', None),
+                              ('foo1bar', None),
+                              ('foo1-bar2', None),
+                              ('foo-bar', None),
+                              ('foo-bar1', None),
+                              (None, None),
+                              ])
+    def test_validate_ns_name(namespace, exception):
+        if exception is None:
+            validate_ns_name(namespace)
+        else:
+            with pytest.raises(exception):
+                validate_ns_name(namespace)
+
+
+@pytest.mark.ci
+class TestValidateName:
+    @staticmethod
+    @pytest.mark.parametrize('name,exception', [
+        # names must not clash with kinds
+        ('svc', ex.excError),
+        ('vol', ex.excError),
+        ('cfg', ex.excError),
+        ('sec', ex.excError),
+        ('usr', ex.excError),
+        ('ccfg', ex.excError),
+        # other invalid names
+        ('', ex.excError),
+        ('1a', ex.excError),
+        ('foo_bar', ex.excError),
+        ('foo.', ex.excError),
+        ('foo1.', ex.excError),
+        ('1a', ex.excError),
+        ('foo,bar', ex.excError),
+        ('foo;bar', ex.excError),
+        (';foo', ex.excError),
+        ('foo()', ex.excError),
+        # valid scaler names
+        ('1.foo', None),
+        ('123.foo', None),
+        ('1.foo.bar', None),
+        ('123.FOO.bar', None),
+        # other valid names
+        ('f', None),
+        ('f.b', None),
+        ('foo.bar', None),
+        ('foo.bar123', None),
+        ('foo.bar1', None),
+        ('foo1.bar1', None),
+        ('foo1foo.bar1', None),
+        ('foo1foo.bar1foo', None),
+        ('foo', None),
+        ('Foo', None),
+        ('fooBar', None),
+        ('FOO.BAR', None),
+        ('Foo.Bar', None),
+        ('foo1', None),
+        ('foo1bar', None),
+        ('foo1-bar2', None),
+        ('foo-bar', None),
+        ('foo-bar.foo', None),
+        ('foo-bar1', None),
+    ])
+    def test_validate_name(name, exception):
+        if exception is None:
+            validate_name(name)
+        else:
+            with pytest.raises(exception):
+                validate_name(name)
+
+
+@pytest.mark.ci
+class TestAbbrev:
+    @staticmethod
+    @pytest.mark.parametrize(
+        'input_nodes,expected_nodes', [
+            [[], []],
+            [['n1'], ['n1']],
+            [['n1', 'n2'], ['n1', 'n2']],
+            [['n1.org', 'n2'], ['n1..', 'n2']],
+            [['n1.org', 'n1'], ['n1..', 'n1']],
+            [['n1.org.com', 'n2.org.com'], ['n1..', 'n2..']],
+            [['n1.org1.com', 'n2.org2.com'], ['n1.org1..', 'n2.org2..']],
+            [['n1.org1.com', 'n2'], ['n1..', 'n2']],
+            [['n1.org1.com', 'n1'], ['n1..', 'n1']],
+        ]
+    )
+    def test_it_correctly_trim_nodes(input_nodes, expected_nodes):
+        assert abbrev(input_nodes) == expected_nodes
