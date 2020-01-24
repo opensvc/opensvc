@@ -775,7 +775,8 @@ def action_triggers(self, trigger="", action=None, **kwargs):
             self.log.warning("%s: %s non-blocking error [%d]" % (attr, cmd, ret))
 
 
-def try_decode(string, codecs=['utf8', 'latin1']):
+def try_decode(string, codecs=None):
+    codecs = codecs or ['utf8', 'latin1']
     for i in codecs:
         try:
             return string.decode(i)
