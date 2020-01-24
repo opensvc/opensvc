@@ -1407,6 +1407,8 @@ class ExtConfigMixin(object):
         for section_name, section in cd.items():
             lines.append("[%s]" % section_name)
             for key, value in section.items():
+                if value is None:
+                    continue
                 if key != "comment":
                     lines.append("%s = %s" % (key, value.replace("\n", "\n\t")))
                 else:
