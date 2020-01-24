@@ -235,7 +235,7 @@ class NetworksMixin(object):
             try:
                 for result in socket.getaddrinfo(rcEnv.nodename, None):
                     addr = result[4][0]
-                    if ":" in addr or addr == "127.0.0.1":
+                    if ":" in addr or addr in ("127.0.0.1", "127.0.1.1"):
                         # discard ipv6 and loopback address
                         continue
                     local_ip = addr
