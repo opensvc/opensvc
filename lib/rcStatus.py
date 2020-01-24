@@ -37,11 +37,13 @@ STATUS_STR = {
     STDBY_UP_WITH_DOWN: 'stdby up',
 }
 
+
 def encode_pair(status1, status2):
     """
     Return a hashable code unique for the set([status1, status2]).
     """
     return (1 << status1) | (1 << status2)
+
 
 MERGE_RULES = {
     encode_pair(UP, UP): UP,
@@ -82,6 +84,7 @@ MERGE_RULES = {
     encode_pair(STDBY_UP_WITH_DOWN, STDBY_UP_WITH_DOWN): STDBY_UP_WITH_DOWN,
 }
 
+
 def colorize_status(status, lpad=10, agg_status=None):
     """
     Return the colorized human readable status string.
@@ -115,6 +118,7 @@ def colorize_status(status, lpad=10, agg_status=None):
     else:
         return colorize(fmt % status, color.LIGHTBLUE)
 
+
 def status_value(status):
     """
     Return the machine readable status integer code.
@@ -123,6 +127,7 @@ def status_value(status):
         return
     return STATUS_VALUE[status.lower()]
 
+
 def status_str(val):
     """
     Return the human readable status string.
@@ -130,6 +135,7 @@ def status_str(val):
     if val not in STATUS_STR:
         return
     return STATUS_STR[val]
+
 
 class Status(object):
     """
@@ -152,7 +158,7 @@ class Status(object):
 
         setstate = encode_pair(status1, status2)
         if setstate not in MERGE_RULES:
-            raise Exception("some member has unsupported value: %s , %s " % \
+            raise Exception("some member has unsupported value: %s , %s " %
                             (str(status1), str(status2)))
         return MERGE_RULES[setstate]
 

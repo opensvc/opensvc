@@ -1,17 +1,14 @@
-from __future__ import print_function
-
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 from rcStatus import Status, colorize_status, status_value, status_str, UP
 import rcColor
+import pytest
 
 rcColor.use_color = "no"
 
+
+@pytest.mark.ci
 class TestStatus:
-    def test_colorize_status(self):
+    @staticmethod
+    def test_colorize_status():
         """
         Status, colorization
         """
@@ -39,40 +36,46 @@ class TestStatus:
         ret = colorize_status(sta1, lpad=0)
         assert ret == "unsupported"
 
-    def test_status_value(self):
+    @staticmethod
+    def test_status_value():
         """
         Status, invalid status numeric value
         """
         ret = status_value("foo")
         assert ret is None
 
-    def test_status_str(self):
+    @staticmethod
+    def test_status_str():
         """
         Status, invalid status string
         """
         ret = status_str(40)
         assert ret is None
 
-    def test_status_class(self):
+    @staticmethod
+    def test_status_class():
         """
         Status, invalid init args
         """
         try:
-            sta1 = Status("foo", "up")
+            # noinspection PyArgumentList
+            Status("foo", "up")
         except Exception:
             return
         assert False
 
-    def test_status_hash(self):
+    @staticmethod
+    def test_status_hash():
         """
         Status, use as hash key
         """
         data = {}
         sta1 = Status()
         data[sta1] = True
-        assert data[sta1] == True
+        assert data[sta1] is True
 
-    def test_status_ops(self):
+    @staticmethod
+    def test_status_ops():
         """
         Status, ops
         """
