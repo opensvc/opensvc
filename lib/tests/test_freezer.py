@@ -1,81 +1,51 @@
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
+import pytest
 
-import uuid
 from freezer import Freezer
 
-SVCNAME = "unittest-" + str(uuid.uuid4())
 
-class TestFreezer:
+@pytest.fixture(scope='function')
+def freezer(osvc_path_tests):  # auto inject osvc_path_tests, when freezer fixture is used
+    return Freezer('test-svc')
 
-    @classmethod
-    def setup_class(cls):
-        cls.freezer = Freezer(SVCNAME)
 
-    @classmethod
-    def teardown_class(cls):
-        cls.freezer.node_thaw()
-        cls.freezer.thaw()
+@pytest.mark.ci
+def test_frozen_node_become_not_node_frozen_after_node_thaw(freezer):
+    freezer.node_freeze()
+    assert freezer.node_frozen()
+    freezer.node_thaw()
+    assert not freezer.node_frozen()
 
-    def test_00(self):
-        """
-        Freezer, node
-        """
-        self.freezer.node_thaw()
-        ret = self.freezer.node_frozen()
-        assert not ret
 
-        self.freezer.node_freeze()
-        ret = self.freezer.node_frozen()
-        assert ret
+@pytest.mark.ci
+def test_node_frozen_after_node_freeze(freezer):
+    assert not freezer.node_frozen()
+    freezer.node_freeze()
+    assert freezer.node_frozen()
 
-    def test_01(self):
-        """
-        Freezer, svc, not strict
-        """
-        self.freezer.node_thaw()
-        self.freezer.thaw()
-        ret = self.freezer.frozen()
-        assert not ret
 
-        self.freezer.node_thaw()
-        self.freezer.freeze()
-        ret = self.freezer.frozen()
-        assert ret
+@pytest.mark.ci
+@pytest.mark.parametrize('node_freeze,svc_freeze,strict,frozen_result', [
+    (True, True, False, True),
+    (True, False, False, True),
+    (False, True, False, True),
+    (True, True, True, True),
+    (True, False, True, False),
+    (False, True, True, True),
+])
+def test_frozen_value_based_on_node_frozen_state_and_service_frozen_state_and_strict_value(
+        freezer,
+        node_freeze, svc_freeze, strict, frozen_result):
+    if node_freeze:
+        freezer.node_freeze()
+    else:
+        freezer.node_thaw()
+    if svc_freeze:
+        freezer.freeze()
+    else:
+        freezer.thaw()
 
-        self.freezer.node_freeze()
-        self.freezer.thaw()
-        ret = self.freezer.frozen()
-        assert ret
-
-        self.freezer.node_freeze()
-        self.freezer.freeze()
-        ret = self.freezer.frozen()
-        assert ret
-
-    def test_02(self):
-        """
-        Freezer, svc, strict
-        """
-        self.freezer.node_thaw()
-        self.freezer.thaw()
-        ret = self.freezer.frozen(strict=True)
-        assert not ret
-
-        self.freezer.node_freeze()
-        self.freezer.thaw()
-        ret = self.freezer.frozen(strict=True)
-        assert not ret
-
-        self.freezer.node_thaw()
-        self.freezer.freeze()
-        ret = self.freezer.frozen(strict=True)
-        assert ret
-
-        self.freezer.node_freeze()
-        self.freezer.freeze()
-        ret = self.freezer.frozen(strict=True)
-        assert ret
-
+    frozen = freezer.frozen(strict=strict)
+    if frozen_result:
+        assert frozen
+    else:
+        assert not frozen
