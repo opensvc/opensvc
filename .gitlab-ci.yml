@@ -13,7 +13,6 @@ stages:
     - python -V
     - pip install -r test-requirements.txt codecov
     - pylint -E lib/*py
-    - sudo nosetests lib/tests/test_ci_*.py
     - pytest --cov -m ci
     - codecov
 
