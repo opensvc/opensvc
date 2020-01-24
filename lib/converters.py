@@ -12,6 +12,7 @@ try:
 except NameError:
     NUMERIC_TYPES = (int, float)
 
+
 def convert_datetime(s):
     if s is None:
         return
@@ -28,17 +29,19 @@ def convert_datetime(s):
         s = s + mask[length:]
     except IndexError:
         raise ValueError("unsupported datetime format %s. expect YYYY-MM-DD "
-	                 "HH:MM:SS, or right trimmed substring of")
-    s = re.sub("\s+", ".", s)
+                         "HH:MM:SS, or right trimmed substring of")
+    s = re.sub(r"\s+", ".", s)
     s = s.replace(":", ".")
     s = s.replace("-", ".")
     return datetime.datetime.strptime(s, "%Y.%m.%d.%H.%M.%S")
+
 
 def convert_json(s):
     try:
         return json.loads(s)
     except Exception:
         return
+
 
 def convert_shlex(s):
     if s is None:
@@ -49,6 +52,7 @@ def convert_shlex(s):
         return shlex.split(s.encode("utf-8"))
     else:
         return shlex.split(s)
+
 
 def convert_expanded_shlex(s):
     """
@@ -61,10 +65,11 @@ def convert_expanded_shlex(s):
     for arg in args:
         if arg and len(arg) > 2 and "=" not in arg and arg[0] == "-" and arg[1] != "-":
             for flag in arg[1:]:
-                new_args.append("-"+flag)
+                new_args.append("-" + flag)
         else:
             new_args.append(arg)
     return new_args
+
 
 def convert_lower(s):
     """
@@ -73,6 +78,7 @@ def convert_lower(s):
     if s is None:
         return
     return s.lower()
+
 
 def convert_integer(s):
     """
@@ -85,6 +91,7 @@ def convert_integer(s):
     except ValueError:
         return
 
+
 def convert_list(s):
     """
     Return a list object from the <s>.
@@ -96,6 +103,7 @@ def convert_list(s):
         return s
     return s.split()
 
+
 def convert_list_lower(s):
     """
     Return convert_list with members converted to lowercase.
@@ -106,6 +114,7 @@ def convert_list_lower(s):
         return [member.lower() for member in s]
     return [member.lower() for member in convert_list(s)]
 
+
 def convert_list_comma(s):
     """
     Return a list object from the <s>.
@@ -115,7 +124,8 @@ def convert_list_comma(s):
         return []
     if isinstance(s, list):
         return s
-    return [word for word in re.split("\s*,\s*", s.strip()) if word != ""]
+    return [word for word in re.split(r"\s*,\s*", s.strip()) if word != ""]
+
 
 def convert_set(s):
     """
@@ -127,6 +137,7 @@ def convert_set(s):
         return s
     return set(convert_list(s))
 
+
 def convert_set_comma(s):
     """
     Return convert_list_comma result cast to a set.
@@ -136,6 +147,7 @@ def convert_set_comma(s):
     if isinstance(s, set):
         return s
     return set(convert_list_comma(s))
+
 
 def convert_boolean(s):
     """
@@ -167,6 +179,7 @@ def convert_boolean(s):
         return False
     raise ValueError('convert boolean error: ' + s)
 
+
 def convert_tristate(s):
     """
     A tri-state returns None for None, True for true values,
@@ -176,11 +189,14 @@ def convert_tristate(s):
         return
     return convert_boolean(s)
 
+
 def convert_duration_minute(s):
     return convert_duration(s, _from="m")
 
+
 def convert_duration_to_day(s):
     return convert_duration(s, _to="d")
+
 
 def convert_duration(s, _to="s", _from="s"):
     """
@@ -236,6 +252,7 @@ def convert_duration(s, _to="s", _from="s"):
         prev = idx + 1
 
     return duration // units[_to]
+
 
 def convert_size(s, _to='', _round=1, default_unit=''):
     """
@@ -307,6 +324,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
         size = (size // _round) * _round
     return size
 
+
 def print_size(size, unit="MB", compact=False, precision=3):
     unit = unit.upper()
     if unit.endswith("B"):
@@ -322,7 +340,7 @@ def print_size(size, unit="MB", compact=False, precision=3):
         metric = ""
         mult = 1024
     units = ['', 'K', 'M', 'G', 'T', 'E', 'Z', 'Y']
-    units_index = {'':0, 'K':1, 'M':2, 'G':3, 'T':4, 'E':5, 'Z':6, 'Y': 7}
+    units_index = {'': 0, 'K': 1, 'M': 2, 'G': 3, 'T': 4, 'E': 5, 'Z': 6, 'Y': 7}
     size = float(size)
     if unit not in units:
         raise ValueError("unsupported unit: %s" % unit)
@@ -337,15 +355,16 @@ def print_size(size, unit="MB", compact=False, precision=3):
         if size < mult:
             done = True
             break
-        size = size/mult
+        size = size / mult
     if not done:
         size *= mult
     ufmt = "%d"
     for exp in range(0, precision - 1):
-        if size < 10**(exp+1):
+        if size < 10 ** (exp + 1):
             ufmt = "%." + str(precision - 1 - exp) + "f"
             break
-    return (ufmt+'%s%s%s%s') % (size, sep, u, metric, suffix)
+    return (ufmt + '%s%s%s%s') % (size, sep, u, metric, suffix)
+
 
 def convert_speed(s, _to='', _round=1, default_unit=''):
     try:
@@ -355,8 +374,10 @@ def convert_speed(s, _to='', _round=1, default_unit=''):
     size = convert_size(s, _to=_to, _round=_round, default_unit=default_unit)
     return size
 
+
 def convert_speed_kps(s, _round=1):
     return convert_speed(s, _to="KB", _round=_round, default_unit='K')
+
 
 def print_duration(secs, _round=2):
     buff = ""
@@ -395,9 +416,9 @@ def print_duration(secs, _round=2):
         return buff
     return "-"
 
+
 if __name__ == "__main__":
     print(print_duration(92000))
     print(print_duration(86400))
     print(print_duration(9200))
     print(print_duration(1))
-

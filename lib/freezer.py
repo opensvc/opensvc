@@ -1,5 +1,5 @@
 """
-Define the Freezer class, instanciated as a Svc lazy attribute,
+Define the Freezer class, instantiated as a Svc lazy attribute,
 providing the methods to freeze, thaw a service and to test if
 a service is frozen.
 """
@@ -7,9 +7,10 @@ import os
 from rcGlobalEnv import rcEnv
 from rcUtilities import split_path
 
+
 class Freezer(object):
     """
-    The freezer class, instanciated as a Svc lazy attribute.
+    The freezer class, instantiated as a Svc lazy attribute.
     Provides methods to freeze, thaw a service and to test if
     the service is frozen.
     """

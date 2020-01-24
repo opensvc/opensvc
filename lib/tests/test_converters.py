@@ -1,24 +1,23 @@
 # coding: utf-8
 
-from __future__ import print_function
-
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 from converters import *
+import pytest
 
+
+@pytest.mark.ci
 class TestConverters:
-    def test_convert_shlex(self):
+    @staticmethod
+    def test_convert_shlex():
         """
         Converter, shlex
         """
-        assert convert_shlex("/bin/true arg0 arg1 --flag --kwarg1=bar --kwargs2 foo") == ["/bin/true", "arg0", "arg1", "--flag", "--kwarg1=bar", "--kwargs2", "foo"]
-        assert convert_shlex(None) == None
+        assert convert_shlex("/bin/true arg0 arg1 --flag --kwarg1=bar --kwargs2 foo") == \
+               ["/bin/true", "arg0", "arg1", "--flag", "--kwarg1=bar", "--kwargs2", "foo"]
+        assert convert_shlex(None) is None
         assert convert_shlex(["foo"]) == ["foo"]
 
-    def test_convert_set(self):
+    @staticmethod
+    def test_convert_set():
         """
         Converter, set, whitespace separated
         """
@@ -31,7 +30,8 @@ class TestConverters:
         assert convert_set(None) == set([])
         assert convert_set("") == set([])
 
-    def test_convert_set_comma(self):
+    @staticmethod
+    def test_convert_set_comma():
         """
         Converter, set, comma separated
         """
@@ -44,7 +44,8 @@ class TestConverters:
         assert convert_set_comma(None) == set([])
         assert convert_set_comma("") == set([])
 
-    def test_convert_list(self):
+    @staticmethod
+    def test_convert_list():
         """
         Converter, list, whitespace separated
         """
@@ -55,7 +56,8 @@ class TestConverters:
         assert convert_list(None) == []
         assert convert_list("") == []
 
-    def test_convert_comma(self):
+    @staticmethod
+    def test_convert_comma():
         """
         Converter, list, comma separated
         """
@@ -66,7 +68,8 @@ class TestConverters:
         assert convert_list_comma(None) == []
         assert convert_list_comma("") == []
 
-    def test_convert_list_lower(self):
+    @staticmethod
+    def test_convert_list_lower():
         """
         Converter, list, whitespace separated, lower-cased
         """
@@ -74,7 +77,8 @@ class TestConverters:
         assert convert_list_lower(["1,2", "A"]) == ["1,2", "a"]
         assert convert_list_lower("1 2 A") == ["1", "2", "a"]
 
-    def test_convert_integer(self):
+    @staticmethod
+    def test_convert_integer():
         """
         Converter, integer
         """
@@ -85,9 +89,10 @@ class TestConverters:
         assert convert_integer(1.1) == 1
         assert convert_integer(1.9) == 1
         assert convert_integer("1.9") == 1
-        assert convert_integer(None) == None
+        assert convert_integer(None) is None
 
-    def test_convert_boolean(self):
+    @staticmethod
+    def test_convert_boolean():
         """
         Converter, boolean
         """
@@ -109,7 +114,8 @@ class TestConverters:
         except Exception:
             assert False
 
-    def test_convert_size(self):
+    @staticmethod
+    def test_convert_size():
         """
         Converter, size
         """
@@ -144,7 +150,8 @@ class TestConverters:
         except Exception:
             assert False
 
-    def test_print_size(self):
+    @staticmethod
+    def test_print_size():
         """
         Converter, size
         """
@@ -174,14 +181,16 @@ class TestConverters:
         except Exception:
             assert False
 
-    def test_print_speed(self):
+    @staticmethod
+    def test_print_speed():
         """
         Converter, speed
         """
         assert convert_speed("1 kb/s") == 1024
         assert convert_speed_kps("1 kb/s") == 1
 
-    def test_convert_duration(self):
+    @staticmethod
+    def test_convert_duration():
         """
         Converter, duration
         """

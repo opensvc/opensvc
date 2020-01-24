@@ -1,14 +1,13 @@
-from __future__ import print_function
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
+import pytest
 
 from forest import Forest, forest
 from rcColor import color
 
+
+@pytest.mark.ci
 class TestForest:
-    def test_forest_class(self):
+    @staticmethod
+    def test_forest_class():
         """
         Forest class
         """
@@ -38,10 +37,10 @@ class TestForest:
         node = overall_node.add_node()
         node.load([{"text": "loaded list"}])
         buff = str(tree)
-        print(buff)
         assert "loaded" in buff
 
-    def test_forest_function(self):
+    @staticmethod
+    def test_forest_function():
         """
         Forest function
         """
@@ -111,12 +110,6 @@ class TestForest:
         ]
 
         buff = forest(data, columns=4, widths=widths, force_width=20)
-        print(buff)
         assert "blah" in buff
-        try:
+        with pytest.raises(IndexError):
             forest(data, columns=3, widths=[1])
-            assert False
-        except IndexError:
-            pass
-        except Exception:
-            assert False

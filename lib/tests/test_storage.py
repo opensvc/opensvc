@@ -1,16 +1,12 @@
-# coding: utf-8
-
-from __future__ import print_function
-
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
+import pytest
 
 from storage import Storage
 
+
+@pytest.mark.ci
 class TestStorage:
-    def test_storage(self):
+    @staticmethod
+    def test_storage():
         """
         Storage
         """
