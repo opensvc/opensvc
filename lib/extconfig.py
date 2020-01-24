@@ -1410,7 +1410,7 @@ class ExtConfigMixin(object):
                 if value is None:
                     continue
                 if key != "comment":
-                    lines.append("%s = %s" % (key, value.replace("\n", "\n\t")))
+                    lines.append("%s = %s" % (key, str(value).replace("\n", "\n\t")))
                 else:
                     lines += map(lambda x: "# "+x if x else "", value.split("\n"))
             lines.append("")
