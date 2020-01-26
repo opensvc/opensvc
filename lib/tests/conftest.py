@@ -15,6 +15,9 @@ def osvc_path_tests(tmpdir):
     rcGlobalEnv.rcEnv.paths.pathtmpv = os.path.join(test_dir, 'tmp')
     rcGlobalEnv.rcEnv.paths.pathvar = os.path.join(test_dir, 'var')
     rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
+    rcGlobalEnv.rcEnv.paths.nodeconf = os.path.join(rcGlobalEnv.rcEnv.paths.pathetc, 'node.conf')
+    rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(rcGlobalEnv.rcEnv.paths.pathetc, 'cluster.conf')
+    return tmpdir
 
 
 @pytest.fixture(scope='function')
