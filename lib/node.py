@@ -183,9 +183,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = {}
         self.stats_updated = 0
         log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        logger = rcLogger.initLogger(rcEnv.nodename, log_file)
+        self.logger = rcLogger.initLogger(rcEnv.nodename, log_file)
         extra = {"node": rcEnv.nodename, "sid": rcEnv.session_uuid}
-        self.log = logging.LoggerAdapter(logger, extra)
+        self.log = logging.LoggerAdapter(self.logger, extra)
 
     def get_node(self):
         """
