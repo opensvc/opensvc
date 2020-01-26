@@ -10,7 +10,10 @@ class Fs(resources.Resource):
 
     @lazy
     def flag_f(self):
-        return os.path.join(os.sep, "dev", "shm", "opensvc", self.svc.namespace, self.svc.kind, self.svc.name, self.rid+".flag")
+        if self.svc.namespace:
+            return os.path.join(os.sep, "dev", "shm", "opensvc", self.svc.namespace, self.svc.kind, self.svc.name, self.rid+".flag")
+        else:
+            return os.path.join(os.sep, "dev", "shm", "opensvc", self.svc.kind, self.svc.name, self.rid+".flag")
 
     @lazy
     def flag_d(self):
