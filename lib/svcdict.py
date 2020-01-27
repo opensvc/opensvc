@@ -1823,7 +1823,7 @@ KEYWORDS = [
         "example": "True"
     },
     {
-        "section": "disk",
+        "sections": ["disk", "fs"],
         "keyword": "prkey",
         "at": True,
         "text": "Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
