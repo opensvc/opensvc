@@ -268,7 +268,7 @@ class Zone(resContainer.Container):
         """ Need wait poststat after returning to installed state on ipkg
             example : /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
         """
-        if self.state in [ 'installed', 'configured'] :
+        if self.state in ["installed", "configured", "unavailable"] :
             self.log.info("zone container %s already stopped" % self.name)
             return 0
         if self.state == 'running':
