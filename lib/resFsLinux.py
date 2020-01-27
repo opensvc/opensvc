@@ -589,7 +589,7 @@ class Mount(Res.Mount):
         try:
             os.stat(self.mount_point)
         except OSError as exc:
-            if exc.errno == (5, 13):
+            if exc.errno in (5, 13):
                 self.log.warning("I/O error on mount point. try to umount anyway")
                 self.kill_users()
             else:
