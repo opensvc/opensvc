@@ -117,6 +117,7 @@ class Sec(DataMixin, BaseSvc):
                         os.unlink(chain)
                     except Exception:
                         pass
+            self.add_key("fullpem", self._fullpem())
         finally:
             for key in ("crt", "key", "cacrt", "cakey", "csr", "cnf"):
                 if key not in data:
