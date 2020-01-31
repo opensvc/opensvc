@@ -55,14 +55,6 @@ class Sec(DataMixin, BaseSvc):
             data = data[6:]
             return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")))[2]
 
-    @staticmethod
-    def tempfilename():
-        tmpf = tempfile.NamedTemporaryFile()
-        try:
-            return tmpf.name
-        finally:
-            tmpf.close()
-
     def gen_cert(self):
         data = {}
         for key in ("cn", "c", "st", "l", "o", "ou", "email", "alt_names", "bits", "validity", "ca"):

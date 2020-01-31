@@ -5,9 +5,10 @@ import re
 import fnmatch
 import shutil
 import glob
+import tempfile
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context, bencode
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context, bencode, which
 from svc import BaseSvc
 from converters import print_size
 import rcExceptions as ex
@@ -113,6 +114,42 @@ class DataMixin(object):
                     recurse(key, fpath)
         recurse(key, path)
 
+    @staticmethod
+    def tempfilename():
+        tmpf = tempfile.NamedTemporaryFile()
+        try:
+            return tmpf.name
+        finally:
+            tmpf.close()
+
+    def edit(self):
+        buff = self.decode_key(self.options.key)
+        if buff is None:
+            raise ex.excError("could not decode the secret key '%s'" % self.options.key)
+        if "EDITOR" in os.environ:
+            editor = os.environ["EDITOR"]
+        elif os.name == "nt":
+            editor = "notepad"
+        else:
+            editor = "vi"
+        if not which(editor):
+            raise ex.excError("%s not found" % editor)
+        fpath = self.tempfilename()
+        try:
+            with open(fpath, "wb") as f:
+                f.write(buff)
+        except TypeError as exc:
+            with open(fpath, "w") as f:
+                f.write(buff)
+        try:
+            os.system(' '.join((editor, fpath)))
+            with open(fpath, "r") as f:
+                edited = f.read()
+            if buff == edited:
+                return
+            self.add_key(self.options.key, edited)
+        finally:
+            os.unlink(fpath)
 
     def decode(self):
         buff = self.decode_key(self.options.key)
