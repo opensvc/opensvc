@@ -210,8 +210,11 @@ class ContainerLib(object):
         Lookup the image data by name
         """
         try:
-            image_name, image_tag = name.split(":")
+            image_name, image_tag = name.rsplit(":", 1)
         except ValueError:
+            image_name = name
+            image_tag = "latest"
+        if "/" in image_tag:
             image_name = name
             image_tag = "latest"
 
