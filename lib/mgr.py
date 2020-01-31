@@ -10,7 +10,6 @@ from __future__ import absolute_import
 
 import sys
 import os
-import errno
 
 import rcStatus
 import rcColor
@@ -18,6 +17,7 @@ import rcExceptions as ex
 from rcUtilities import ximport, check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
 from storage import Storage
+
 
 class Mgr(object):
     def __init__(self, parser=None, node=None, selector=None):
@@ -42,8 +42,8 @@ class Mgr(object):
         for command in commands:
             try:
                 pos = argv.index(command)
-                extra_argv = argv[pos+1:]
-                argv = argv[:pos+1]
+                extra_argv = argv[pos + 1:]
+                argv = argv[:pos + 1]
                 return argv, extra_argv
             except Exception:
                 extra_argv = []
@@ -93,7 +93,7 @@ class Mgr(object):
                 prog = os.path.join(prog, "mgr.py")
                 executable = [sys.executable, prog, self.selector]
             else:
-                prog = os.path.join(prog, self.optparser.prog+".py")
+                prog = os.path.join(prog, self.optparser.prog + ".py")
                 executable = [sys.executable, prog]
 
             proc = subprocess.Popen(executable + argv,
@@ -123,10 +123,9 @@ class Mgr(object):
         ret = 0
 
         if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon" and \
-           os.environ.get("OSVC_DETACHED") != "1" and ( \
-            action in ("stop", "shutdown", "unprovision") or \
-            (action == "delete" and options.unprovision == True)
-           ):
+                os.environ.get("OSVC_DETACHED") != "1" and \
+                (action in ("stop", "shutdown", "unprovision") or
+                 (action == "delete" and options.unprovision is True)):
             ret = self.do_svcs_action_detached(argv)
         else:
             try:
@@ -165,7 +164,7 @@ class Mgr(object):
     def split_env(arg):
         idx = arg.index("=")
         option = arg[:idx]
-        value = arg[idx+1:]
+        value = arg[idx + 1:]
         return option, value
 
     def export_env_from_options(self, options):
@@ -228,8 +227,8 @@ class Mgr(object):
         if expanded_svcs is not None:
             svc_by_kind = self.dispatch_svcs(expanded_svcs)
             for kind, paths in svc_by_kind.items():
-                mod = __import__(kind+"mgr_parser")
-                parser = getattr(mod, kind.capitalize()+"mgrOptParser")()
+                mod = __import__(kind + "mgr_parser")
+                parser = getattr(mod, kind.capitalize() + "mgrOptParser")()
                 yield parser
 
     def parse_args(self, argv):
@@ -299,7 +298,6 @@ class Mgr(object):
                 return
             options.svcs = expanded_svcs
 
-
         self.node.set_rlimit()
         build_kwargs = self.get_build_kwargs(options, action)
 
@@ -364,8 +362,8 @@ class Mgr(object):
 
         return ret
 
+
 if __name__ == "__main__":
     selector = sys.argv[1]
     del sys.argv[1]
     sys.exit(Mgr(selector=selector)())
-
