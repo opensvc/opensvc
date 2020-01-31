@@ -1433,8 +1433,21 @@ class OsvcThread(threading.Thread, Crypt):
 
     @lazy
     def vip(self):
-        default_cidr = NODE.oget("cluster", "vip")
-        if not default_cidr:
+
+        def parse_vip(s):
+            try:
+                addr, netmask = s.split("/", 1)
+                netmask, ipdev = netmask.split("@", 1)
+                return addr, netmask, ipdev
+            except Exception as exc:
+                return
+
+        default_vip = NODE.oget("cluster", "vip")
+        if not default_vip:
+            return
+        try:
+            default_addr, default_netmask, default_ipdev = parse_vip(default_vip)
+        except Exception as exc:
             return
         template = [
             ("sync#i0", "disable", "true"),
@@ -1445,22 +1458,14 @@ class OsvcThread(threading.Thread, Crypt):
             ("ip#0", "monitor", "true"),
             ("ip#0", "restart", "1"),
         ]
-        self.log.info("cluster vip %s" % default_cidr)
+        self.log.info("cluster vip %s" % default_vip)
         for node in self.cluster_nodes:
-            priv_cidr = NODE.oget("cluster", "vip", impersonate=node)
-            if priv_cidr is None and default_cidr is None:
-                if default_cidr is None:
-                    self.log.info("cluster vip not set")
-                else:
-                    self.log.info("cluster vip not set for node %s", node)
+            vip = NODE.oget("cluster", "vip", impersonate=node)
+            if vip is None:
+                self.log.info("cluster vip not set for node %s", node)
                 continue
-            if priv_cidr != default_cidr:
-                cidr = default_cidr
-            else:
-                cidr = priv_cidr
             try:
-                addr, netmask = cidr.split("/", 1)
-                netmask, ipdev = netmask.split("@", 1)
+                addr, netmask, ipdev = parse_vip(vip)
             except Exception as exc:
                 self.log.info("cluster vip not set or malformed: %s", exc)
                 return
@@ -1470,7 +1475,7 @@ class OsvcThread(threading.Thread, Crypt):
             t = ("ip#0", "netmask", netmask)
             if t not in template:
                 template.append(t)
-            if priv_cidr == default_cidr:
+            if ipdev == default_ipdev:
                 t = ("ip#0", "ipdev", ipdev)
                 if t not in template:
                     template.append(t)
