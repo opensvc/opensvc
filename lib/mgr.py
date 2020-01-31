@@ -216,14 +216,14 @@ class Mgr(object):
             namespace = os.environ.get("OSVC_NAMESPACE")
         action = self.get_action(argv)
         if action in ("create", "deploy"):
-            expanded_svcs = selector.split(",")
+            expanded_svcs = self.selector.split(",")
         elif action == "ls":
             mod = __import__("svcmgr_parser")
             parser = getattr(mod, "SvcmgrOptParser")()
             expanded_svcs = None
             yield parser
         else:
-            expanded_svcs = self.node.svcs_selector(selector, namespace)
+            expanded_svcs = self.node.svcs_selector(self.selector, namespace)
             self.expanded_svcs = expanded_svcs
         if expanded_svcs is not None:
             svc_by_kind = self.dispatch_svcs(expanded_svcs)
