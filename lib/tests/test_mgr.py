@@ -7,8 +7,8 @@ import pytest
 
 from node import Node
 
-OS_LIST = ['Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1']
-OS_LIST_WITH_FS_FLAG = ['Linux']
+OS_LIST = set(['Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'])
+OS_LIST_WITH_FS_FLAG = set(['Linux', 'SunOS'])
 
 
 @pytest.fixture(scope='function')
@@ -101,14 +101,17 @@ class TestServiceActionWithPriv:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests', 'has_privs')
-@pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
-class TestServiceActionFsFlagWithPriv:
+class TestServiceActionFsFlag:
     @staticmethod
+    @pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
     def test_create_service_with_fs_flag_then_verify_config(
             mock_argv, tmp_file, capture_stdout, mock_sysname, sysname):
-        mock_argv(['mgr', "create", '--kw', 'fs#1.type=flag'])
         mock_sysname(sysname)
 
+        mock_argv(['mgr', 'create', '--kw', 'fs#1.type=flag'])
+        assert Mgr(selector=sysname)() == 0
+
+        mock_argv(['mgr', 'set', '--kw', 'fs#2.type=flag'])
         assert Mgr(selector=sysname)() == 0
 
         mock_argv(['om', 'print', 'config', '--format', 'json'])
@@ -117,3 +120,13 @@ class TestServiceActionFsFlagWithPriv:
         with open(tmp_file) as config_file:
             config = json.load(config_file)
         assert config["fs#1"] == {'type': 'flag'}
+        assert config["fs#2"] == {'type': 'flag'}
+
+    @staticmethod
+    @pytest.mark.parametrize('sysname', OS_LIST ^ OS_LIST_WITH_FS_FLAG)
+    def test_set_fs_flag_not_added_when_not_supported_on_os(
+            fake_svc, mock_argv, tmp_file, capture_stdout, mock_sysname, sysname):
+        mock_argv(['mgr', 'set', '--kw', 'fs#1.type=flag'])
+        mock_sysname(sysname)
+
+        assert Mgr(selector='fake-svc')() == 1
