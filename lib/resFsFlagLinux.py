@@ -36,6 +36,7 @@ class Fs(resources.Resource):
             self.log.info("create flag %s", self.flag_f)
             makedirs(self.flag_d, mode=0o700)
             self.touch(self.flag_f)
+            self.can_rollback = True
 
     def stop(self):
         if self.has_it():
