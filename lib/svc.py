@@ -3042,6 +3042,9 @@ class Svc(BaseSvc):
     def resource_handling_dir(self, path):
         mntpts = {}
         for res in self.get_resources(["fs", "volume"]):
+            if not hasattr(res, "mount_point"):
+                # fs.flag for ex. has no mount_point
+                continue
             mntpts[res.mount_point] = res
         while True:
             if path in mntpts.keys():
