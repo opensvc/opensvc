@@ -3,16 +3,9 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
 import json
 import logging
 import pytest
-
-try:
-    # noinspection PyCompatibility
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import nodemgr
 
@@ -73,23 +66,16 @@ class TestNodemgr:
         assert ret == 0
 
     @staticmethod
-    def test_print_schedule_json():
+    def test_print_schedule_json(tmp_file, capture_stdout):
         """
         Print node schedules (json format)
         """
-        _stdout = sys.stdout
-
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["print", "schedule", "--format", "json", "--color", "no"])
-            output = out.getvalue().strip()
-        finally:
-            sys.stdout = _stdout
-
-        schedules = json.loads(output)
 
         assert ret == 0
+        with open(tmp_file) as json_file:
+            schedules = json.load(json_file)
         assert isinstance(schedules, list)
         assert len(schedules) > 0
 
@@ -101,51 +87,41 @@ class TestNodemgr:
         assert ret == 0
 
     @staticmethod
-    def test_print_config_json():
+    def test_print_config_json(tmp_file, capture_stdout):
         """
         Print node config (json format)
         """
-        _stdout = sys.stdout
-
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["print", "config", "--format", "json", "--color", "no"])
-            output = out.getvalue().strip()
-        finally:
-            sys.stdout = _stdout
 
-        config = json.loads(output)
+        with open(tmp_file) as json_file:
+            config = json.load(json_file)
 
         assert ret == 0
         assert isinstance(config, dict)
 
     @staticmethod
     @pytest.mark.parametrize('get_set_arg', ['--param', '--kw'])
-    def test_set_get_unset_some_env_value(get_set_arg):
+    def test_set_get_unset_some_env_value(tmp_file, capture_stdout, get_set_arg):
         ret = nodemgr.main(argv=["set", "--param", "env.this_is_test", "--value", "true"])
         assert ret == 0
 
-        _stdout = sys.stdout
-
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["get", get_set_arg, "env.this_is_test"])
             assert ret == 0
-            from rcUtilities import try_decode
-            output = out.getvalue().strip()
-            assert try_decode(output) == "true"
+        from rcUtilities import try_decode
+        with open(tmp_file) as output_file:
+            assert try_decode(output_file.read()).strip() == "true"
 
-            ret = nodemgr.main(argv=["unset", get_set_arg, "env.this_is_test"])
-            assert ret == 0
-            out = StringIO()
-            sys.stdout = out
+        ret = nodemgr.main(argv=["unset", get_set_arg, "env.this_is_test"])
+        assert ret == 0
+
+        tmp_file_1 = tmp_file + '-1'
+        with capture_stdout(tmp_file_1):
             ret = nodemgr.main(argv=["get", get_set_arg, "env.this_is_test"])
             assert ret == 0
-            assert out.getvalue().strip() == "None"
-        finally:
-            sys.stdout = _stdout
+        with open(tmp_file_1) as output_file:
+            assert output_file.read().strip() == "None"
 
     @staticmethod
     def test_set_env_comment():
@@ -155,26 +131,21 @@ class TestNodemgr:
         ret = nodemgr.main(argv=["set", "--param", "env.comment", "--value", UNICODE_STRING])
         assert ret == 0
 
+    @staticmethod
     @pytest.mark.skip
-    def test_get_env_comment(self):
+    def test_get_env_comment(tmp_file, capture_stdout):
         """
         Get node env.comment
         """
-        _stdout = sys.stdout
 
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["get", "--param", "env.comment"])
-            output = out.getvalue().strip()
-        finally:
-            sys.stdout = _stdout
-
-        from rcUtilities import try_decode
-        print(output)
 
         assert ret == 0
-        assert try_decode(output) == UNICODE_STRING
+        from rcUtilities import try_decode
+        with open(tmp_file) as output_file:
+            assert try_decode(output_file.read()) == UNICODE_STRING
+            # assert try_decode(output_file.read()).strip() == UNICODE_STRING
 
     @staticmethod
     def test_043_unset():
@@ -189,16 +160,7 @@ class TestNodemgr:
         """
         Get an unset keyword
         """
-        _stderr = sys.stdout
-
-        try:
-            err = StringIO()
-            sys.stderr = err
-            ret = nodemgr.main(argv=["get", "--param", "env.comment"])
-        finally:
-            sys.stderr = _stderr
-
-        assert ret == 1
+        assert nodemgr.main(argv=["get", "--param", "env.comment"]) == 1
 
     @staticmethod
     def test_checks_return_0():
@@ -309,22 +271,18 @@ class TestNodemgr:
         assert ret == 0
 
     @staticmethod
-    def test_network_ls_json():
+    def test_network_ls_json(tmp_file, capture_stdout):
         """
         List node networks (json format)
         """
-        _stdout = sys.stdout
+
         nodemgr.main(argv=["network", "ls", "--format", "json", "--color", "no"])
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["network", "ls", "--format", "json", "--color", "no"])
-            output = out.getvalue().strip()
-        finally:
-            sys.stdout = _stdout
 
         assert ret == 0
-        assert isinstance(json.loads(output), dict)
+        with open(tmp_file) as std_out:
+            assert isinstance(json.load(std_out), dict)
 
     @staticmethod
     @pytest.mark.skip
@@ -336,28 +294,20 @@ class TestNodemgr:
         assert ret == 0
 
     @staticmethod
-    def test_prkey_create_initial_value_when_absent():
-        _stdout = sys.stdout
-        try:
-            out = StringIO()
-            sys.stdout = out
+    def test_prkey_create_initial_value_when_absent(tmp_file, capture_stdout):
+        with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["prkey"])
-            assert ret == 0
-            assert out.getvalue().startswith('0x')
-        finally:
-            sys.stdout = _stdout
+        assert ret == 0
+        with open(tmp_file) as std_out:
+            assert std_out.read().startswith('0x')
 
     @staticmethod
-    def test_prkey_show_existing_prkey():
-        _stdout = sys.stdout
+    def test_prkey_show_existing_prkey(tmp_file, capture_stdout):
         nodemgr.main(argv=['set', '--kw', 'node.prkey=0x8796759710111'])
-        try:
-            out = StringIO()
-            sys.stdout = out
+        with capture_stdout(tmp_file):
             assert nodemgr.main(argv=["prkey"]) == 0
-            assert out.getvalue().strip() == '0x8796759710111'
-        finally:
-            sys.stdout = _stdout
+        with open(tmp_file) as output_file:
+            assert output_file.read().strip() == '0x8796759710111'
 
     @staticmethod
     @pytest.mark.skip

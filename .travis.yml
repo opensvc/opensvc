@@ -12,8 +12,8 @@ matrix:
 install:
 - pip install -r test-requirements.txt
 script:
-- pylint -E lib/*py
 - pytest --cov -m ci
+- pylint -E lib/*py
 after_success:
 - pip install codecov
 - codecov

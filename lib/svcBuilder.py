@@ -753,6 +753,9 @@ def add_share_nfs(svc, s):
 def add_fs_flag(svc, s):
     kwargs = init_kwargs(svc, s)
     mod = mimport("res", "fs", "flag")
+    if not hasattr(mod, 'Fs'):
+        svc.log.error("type 'flag' in section fs is not implemented on %s" % rcEnv.sysname)
+        raise ex.excError
     r = mod.Fs(**kwargs)
     svc += r
 

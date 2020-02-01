@@ -12,8 +12,8 @@ stages:
     - apk add build-base sudo git
     - python -V
     - pip install -r test-requirements.txt codecov
-    - pylint -E lib/*py
     - pytest --cov -m ci
+    - pylint -E lib/*py
     - codecov
 
 test-2.7:

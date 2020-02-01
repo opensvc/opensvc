@@ -1,5 +1,7 @@
 import sys
 import os
+from contextlib import contextmanager
+
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                  "..")))
 import rcGlobalEnv
@@ -23,3 +25,28 @@ def osvc_path_tests(tmpdir):
 @pytest.fixture(scope='function')
 def non_existing_file(tmp_path):
     return os.path.join(str(tmp_path), 'foo')
+
+
+@pytest.fixture(scope='function')
+def tmp_file(tmp_path):
+    return os.path.join(str(tmp_path), 'tmp-file')
+
+
+@pytest.fixture(scope='function')
+def capture_stdout():
+    try:
+        # noinspection PyCompatibility
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+    @contextmanager
+    def func(filename):
+        _stdout = sys.stdout
+        try:
+            with open(filename, 'w') as output_file:
+                sys.stdout = output_file
+                yield
+        finally:
+            sys.stdout = _stdout
+    return func
