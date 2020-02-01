@@ -103,16 +103,11 @@ class DataMixin(object):
         if key is None:
             key = ""
         plen = len(os.path.dirname(path)) + 1
-        def recurse(key, path):
-            for root, dirs, files in os.walk(path):
-                for fname in files:
-                    fpath = os.path.join(path, fname)
-                    _key = os.path.join(key, fpath[plen:])
-                    self.add_file(_key, fpath, append=append)
-                for fname in dirs:
-                    fpath = os.path.join(path, fname)
-                    recurse(key, fpath)
-        recurse(key, path)
+        for root, dirs, files in os.walk(path):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                _key = os.path.join(key, fpath[plen:])
+                self.add_file(_key, fpath, append=append)
 
     @staticmethod
     def tempfilename():
