@@ -110,15 +110,15 @@ def setup_parser(node):
              "shell history expansion")
     return parser
 
-def events(node, nodename, selector):
+def events(node, nodename, selector, namespace):
     global PATCH_Q
-    for msg in node.daemon_events(nodename, selector=selector):
+    for msg in node.daemon_events(nodename, selector=selector, namespace=namespace):
         if msg.get("kind") != "patch":
             continue
         PATCH_Q.put(msg)
 
-def start_events_thread(node, nodename, selector):
-    thr = threading.Thread(target=events, args=(node, nodename, selector))
+def start_events_thread(node, nodename, selector, namespace):
+    thr = threading.Thread(target=events, args=(node, nodename, selector, namespace))
     thr.daemon = True
     thr.start()
     return thr
@@ -173,7 +173,7 @@ def svcmon(node, options=None):
     if options.parm_svcs is None:
         kind = os.environ.get("OSVC_KIND", "svc")
         options.parm_svcs = "*/%s/*" % kind
-    status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
+    status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
     if status_data is None or status_data.get("status", 0) != 0:
         status, error, info = node.parse_result(status_data)
         raise ex.excError(error)
@@ -183,7 +183,7 @@ def svcmon(node, options=None):
         nodes = node.nodes_selector(options.node, data=nodes_info)
 
     if options.watch:
-        start_events_thread(node, options.server, options.parm_svcs)
+        start_events_thread(node, options.server, options.parm_svcs, namespace)
         preamble = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         stats_data = get_stats(options, node, expanded_svcs)
         prev_stats_data = None
@@ -209,7 +209,7 @@ def svcmon(node, options=None):
             if patch:
                 if last_patch_id and patch["id"] != last_patch_id + 1:
                     try:
-                        status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
+                        status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
                         last_patch_id = patch["id"]
                     except Exception:
                         # seen on solaris under high load: decode_msg() raising on invalid json
@@ -220,7 +220,7 @@ def svcmon(node, options=None):
                         last_patch_id = patch["id"]
                     except Exception as exc:
                         try:
-                            status_data = node._daemon_status(server=options.server, selector=options.parm_svcs)
+                            status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
                             last_patch_id = patch["id"]
                         except Exception:
                             # seen on solaris under high load: decode_msg() raising on invalid json
