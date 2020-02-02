@@ -3953,13 +3953,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         return data
 
-    def _daemon_status(self, silent=False, refresh=False, server=None, selector=None):
+    def _daemon_status(self, silent=False, refresh=False, server=None, selector=None, namespace=None):
         data = self.daemon_get(
             {
                 "action": "daemon_status",
                 "options": {
                     "refresh": refresh,
                     "selector": selector,
+                    "namespace": namespace,
                 },
             },
             server=server,
@@ -4798,11 +4799,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print_node_data(server, data)
                 return data.get("ret", 0)
 
-    def daemon_events(self, server=None, selector=None, full=False):
+    def daemon_events(self, server=None, selector=None, full=False, namespace=None):
         req = {
             "action": "events",
             "options": {
                 "selector": selector,
+                "namespace": namespace,
                 "full": full,
             },
         }
