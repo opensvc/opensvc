@@ -228,11 +228,10 @@ def add_parents(node, idata, mon_data, namespace):
 
 def add_parent(path, node, mon_data, namespace):
     node_parent = node.add_node()
-    node_parent.add_column(path, color.BOLD)
-    node_parent.add_column()
     try:
         path, nodename = path.split("@")
         path = resolve_path(path, namespace)
+        node_parent.add_column(strip_path(path, os.environ.get("OSVC_NAMESPACE")) + "@" + nodename, color.BOLD)
         try:
             avail = mon_data["nodes"][nodename]["services"]["status"][path].get("avail", "n/a")
         except KeyError:
@@ -240,10 +239,12 @@ def add_parent(path, node, mon_data, namespace):
     except ValueError:
         nodename = None
         path = resolve_path(path, namespace)
+        node_parent.add_column(strip_path(path, os.environ.get("OSVC_NAMESPACE")), color.BOLD)
         try:
             avail = mon_data["services"][path].get("avail", "n/a")
         except KeyError:
             avail = "undef"
+    node_parent.add_column()
     node_parent.add_column(avail, STATUS_COLOR[avail])
 
 def add_children(node, idata, mon_data, namespace):
@@ -275,7 +276,7 @@ def add_scaler_slaves(node, idata, mon_data, namespace):
 
 def add_child(path, node, mon_data, namespace):
     node_child = node.add_node()
-    node_child.add_column(path, color.BOLD)
+    node_child.add_column(strip_path(path, os.environ.get("OSVC_NAMESPACE")), color.BOLD)
     node_child.add_column()
     path = resolve_path(path, namespace)
     try:
