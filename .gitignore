@@ -30,3 +30,4 @@ bin/init/opensvc.init
 *.example
 *.exe
 .idea
+opensvc.iml
