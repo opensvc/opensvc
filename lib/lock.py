@@ -1,14 +1,14 @@
 """
-Implement a node-wide locking mecanism.
-File-based, lock with fnctl exclusive open when available.
+Implement a node-wide locking mechanism.
+File-based, lock with fcntl exclusive open when available.
 """
 
 from __future__ import print_function
-import os
-import sys
-import time
-import json
+
 import contextlib
+import json
+import os
+import time
 
 import six
 
@@ -78,7 +78,6 @@ def bdecode(buff):
             return str(buff, "utf-8")
         except:
             return str(buff, "ascii")
-    return buff
 
 
 @contextlib.contextmanager
@@ -127,7 +126,7 @@ def lock_nowait(lockfile=None, intent=None):
         raise LockNoLockFile
 
     data = {"pid": os.getpid(), "intent": intent}
-    lockd = os.path.dirname(lockfile)
+    lock_dir = os.path.dirname(lockfile)
 
     try:
         with open(lockfile, 'r') as ofile:
@@ -143,21 +142,23 @@ def lock_nowait(lockfile=None, intent=None):
     if prev_data["pid"] == os.getpid():
         return
 
+    flags = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+    if os.name == 'nt':
+        flags |= os.O_TRUNC
+    else:
+        flags |= os.O_SYNC
+
     try:
-        flags = os.O_RDWR | os.O_CREAT | os.O_TRUNC
-        if os.name == 'nt':
-            flags |= os.O_TRUNC
-        else:
-            flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
         if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
-            os.makedirs(lockd)
+            os.makedirs(lock_dir)
             try:
                 lockfd = os.open(lockfile, flags, 0o644)
             except Exception as exc:
                 raise LockCreateError(str(exc))
-        raise LockCreateError(str(exc))
+        else:
+            raise LockCreateError(str(exc))
 
     try:
         # FD_CLOEXEC makes sure the lock is the held by processes
@@ -172,6 +173,7 @@ def lock_nowait(lockfile=None, intent=None):
             fcntl.fcntl(lockfd, fcntl.F_SETFD, flags)
         elif os.name == 'nt':
             try:
+                # noinspection PyUnresolvedReferences
                 import msvcrt
             except ImportError:
                 raise
@@ -217,7 +219,7 @@ def progress(lockfd, data):
             ofile.seek(0)
             try:
                 lock_data = json.load(ofile)
-            except ValueError as exc:
+            except ValueError:
                 return
             lock_data["progress"] = data
             ofile.truncate(0)
@@ -225,7 +227,7 @@ def progress(lockfd, data):
             json.dump(lock_data, ofile)
             os.fsync(_lockfd)
         os.close(_lockfd)
-    except Exception as exc:
+    except Exception:
         return
 
 

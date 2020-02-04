@@ -51,6 +51,13 @@ class TestLockUnlock:
 
 
 @pytest.mark.ci
+class TestCmlockWhenNoLockDir:
+    @staticmethod
+    def test_create_lock_dir_if_absent(tmp_path):
+        assert lock.lock(lockfile=os.path.join(str(tmp_path), 'lockdir', 'lockfile')) > 0
+
+
+@pytest.mark.ci
 @pytest.mark.usefixtures('sleep')
 @pytest.mark.parametrize('timeout', range(10))
 class TestCmlock:
