@@ -118,6 +118,9 @@ class DataMixin(object):
             tmpf.close()
 
     def edit(self):
+        if self.options.key is None:
+            self.edit_config()
+            return
         buff = self.decode_key(self.options.key)
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
