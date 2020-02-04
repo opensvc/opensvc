@@ -1,42 +1,49 @@
 """
-Implement a node-wide locking mecanism.
-File-based, lock with fnctl exclusive open when available.
+Implement a node-wide locking mechanism.
+File-based, lock with fcntl exclusive open when available.
 """
 
 from __future__ import print_function
-import os
-import sys
-import time
-import json
+
 import contextlib
+import json
+import os
+import time
 
 import six
+
 
 class LockNoLockFile(Exception):
     """ no lockfile specified
     """
 
+
 class LockCreateError(Exception):
     """ could not create lockfile
     """
 
+
 class LockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
+
     def __init__(self, intent="", pid=0, progress=None):
         Exception.__init__(self)
         self.intent = intent
         self.pid = pid
         self.progress = progress
+
     def __str__(self):
         s = "holder pid %(pid)d, holder intent '%(intent)s'" % dict(pid=self.pid, intent=self.intent)
         if self.progress:
             s += ", progress '%s'" % str(self.progress)
         return s
 
+
 class LockTimeout(LockAcquire):
     """ acquire lock timed out
     """
+
 
 LOCK_EXCEPTIONS = (
     LockTimeout,
@@ -44,6 +51,7 @@ LOCK_EXCEPTIONS = (
     LockCreateError,
     LockAcquire,
 )
+
 
 def bencode(buff):
     """
@@ -53,6 +61,7 @@ def bencode(buff):
         return bytes(buff, "utf-8")
     except TypeError:
         return buff
+
 
 def bdecode(buff):
     """
@@ -69,7 +78,7 @@ def bdecode(buff):
             return str(buff, "utf-8")
         except:
             return str(buff, "ascii")
-    return buff
+
 
 @contextlib.contextmanager
 def cmlock(*args, **kwargs):
@@ -84,6 +93,7 @@ def cmlock(*args, **kwargs):
     finally:
         unlock(lockfd)
 
+
 def lock(timeout=30, delay=1, lockfile=None, intent=None):
     """
     The lock acquire function.
@@ -91,7 +101,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
         ticks = [0]
     else:
-        ticks = range(int(float(timeout)/float(delay)))
+        ticks = range(int(float(timeout) / float(delay)))
     if len(ticks) == 0:
         ticks = [0]
     err = {}
@@ -107,6 +117,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
             raise
     raise LockTimeout(**err)
 
+
 def lock_nowait(lockfile=None, intent=None):
     """
     A lock acquire function variant without timeout not delay.
@@ -115,7 +126,7 @@ def lock_nowait(lockfile=None, intent=None):
         raise LockNoLockFile
 
     data = {"pid": os.getpid(), "intent": intent}
-    lockd = os.path.dirname(lockfile)
+    lock_dir = os.path.dirname(lockfile)
 
     try:
         with open(lockfile, 'r') as ofile:
@@ -131,29 +142,30 @@ def lock_nowait(lockfile=None, intent=None):
     if prev_data["pid"] == os.getpid():
         return
 
+    flags = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+    if os.name == 'nt':
+        flags |= os.O_TRUNC
+    else:
+        flags |= os.O_SYNC
 
     try:
-        flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
-        if os.name == 'nt':
-            flags |= os.O_TRUNC
-        else:
-            flags |= os.O_SYNC
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
         if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
-            os.makedirs(lockd)
+            os.makedirs(lock_dir)
             try:
                 lockfd = os.open(lockfile, flags, 0o644)
             except Exception as exc:
                 raise LockCreateError(str(exc))
-        raise LockCreateError(str(exc))
+        else:
+            raise LockCreateError(str(exc))
 
     try:
         # FD_CLOEXEC makes sure the lock is the held by processes
         # we fork from this process
         if os.name == 'posix':
             import fcntl
-            fcntl.flock(lockfd, fcntl.LOCK_EX|fcntl.LOCK_NB)
+            fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             flags = fcntl.fcntl(lockfd, fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
 
@@ -161,6 +173,7 @@ def lock_nowait(lockfile=None, intent=None):
             fcntl.fcntl(lockfd, fcntl.F_SETFD, flags)
         elif os.name == 'nt':
             try:
+                # noinspection PyUnresolvedReferences
                 import msvcrt
             except ImportError:
                 raise
@@ -183,6 +196,7 @@ def lock_nowait(lockfile=None, intent=None):
         os.close(lockfd)
         raise
 
+
 def unlock(lockfd):
     """
     The lock release function.
@@ -195,6 +209,7 @@ def unlock(lockfd):
         # already released by a parent process ?
         pass
 
+
 def progress(lockfd, data):
     if lockfd is None:
         return
@@ -204,7 +219,7 @@ def progress(lockfd, data):
             ofile.seek(0)
             try:
                 lock_data = json.load(ofile)
-            except ValueError as exc:
+            except ValueError:
                 return
             lock_data["progress"] = data
             ofile.truncate(0)
@@ -212,8 +227,9 @@ def progress(lockfd, data):
             json.dump(lock_data, ofile)
             os.fsync(_lockfd)
         os.close(_lockfd)
-    except Exception as exc:
+    except Exception:
         return
+
 
 def main():
     """
@@ -244,6 +260,8 @@ def main():
         print(exc, file=sys.stderr)
         return 1
 
+
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())
