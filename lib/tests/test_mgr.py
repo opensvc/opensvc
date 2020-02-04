@@ -1,27 +1,19 @@
 import json
 import sys
 
-from mgr import Mgr, rcEnv
+from mgr import Mgr
 
 import pytest
 
 from node import Node
 
-OS_LIST = set(['Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'])
-OS_LIST_WITH_FS_FLAG = set(['Linux', 'SunOS'])
+OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'}
+OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS'}
 
 
 @pytest.fixture(scope='function')
 def has_privs(mocker):
     mocker.patch('mgr.check_privs', return_value=None)
-
-
-@pytest.fixture(scope='function')
-def mock_sysname(mocker):
-    def func(sysname):
-        mocker.patch.object(rcEnv, 'sysname', sysname)
-
-    return func
 
 
 @pytest.fixture(scope='function')
