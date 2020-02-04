@@ -12,31 +12,38 @@ import contextlib
 
 import six
 
+
 class LockNoLockFile(Exception):
     """ no lockfile specified
     """
+
 
 class LockCreateError(Exception):
     """ could not create lockfile
     """
 
+
 class LockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
+
     def __init__(self, intent="", pid=0, progress=None):
         Exception.__init__(self)
         self.intent = intent
         self.pid = pid
         self.progress = progress
+
     def __str__(self):
         s = "holder pid %(pid)d, holder intent '%(intent)s'" % dict(pid=self.pid, intent=self.intent)
         if self.progress:
             s += ", progress '%s'" % str(self.progress)
         return s
 
+
 class LockTimeout(LockAcquire):
     """ acquire lock timed out
     """
+
 
 LOCK_EXCEPTIONS = (
     LockTimeout,
@@ -44,6 +51,7 @@ LOCK_EXCEPTIONS = (
     LockCreateError,
     LockAcquire,
 )
+
 
 def bencode(buff):
     """
@@ -53,6 +61,7 @@ def bencode(buff):
         return bytes(buff, "utf-8")
     except TypeError:
         return buff
+
 
 def bdecode(buff):
     """
@@ -71,6 +80,7 @@ def bdecode(buff):
             return str(buff, "ascii")
     return buff
 
+
 @contextlib.contextmanager
 def cmlock(*args, **kwargs):
     """
@@ -84,6 +94,7 @@ def cmlock(*args, **kwargs):
     finally:
         unlock(lockfd)
 
+
 def lock(timeout=30, delay=1, lockfile=None, intent=None):
     """
     The lock acquire function.
@@ -91,7 +102,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
     if timeout == 0 or delay == 0:
         ticks = [0]
     else:
-        ticks = range(int(float(timeout)/float(delay)))
+        ticks = range(int(float(timeout) / float(delay)))
     if len(ticks) == 0:
         ticks = [0]
     err = {}
@@ -106,6 +117,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
         except Exception:
             raise
     raise LockTimeout(**err)
+
 
 def lock_nowait(lockfile=None, intent=None):
     """
@@ -131,9 +143,8 @@ def lock_nowait(lockfile=None, intent=None):
     if prev_data["pid"] == os.getpid():
         return
 
-
     try:
-        flags = os.O_RDWR|os.O_CREAT|os.O_TRUNC
+        flags = os.O_RDWR | os.O_CREAT | os.O_TRUNC
         if os.name == 'nt':
             flags |= os.O_TRUNC
         else:
@@ -153,7 +164,7 @@ def lock_nowait(lockfile=None, intent=None):
         # we fork from this process
         if os.name == 'posix':
             import fcntl
-            fcntl.flock(lockfd, fcntl.LOCK_EX|fcntl.LOCK_NB)
+            fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             flags = fcntl.fcntl(lockfd, fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
 
@@ -183,6 +194,7 @@ def lock_nowait(lockfile=None, intent=None):
         os.close(lockfd)
         raise
 
+
 def unlock(lockfd):
     """
     The lock release function.
@@ -194,6 +206,7 @@ def unlock(lockfd):
     except Exception:
         # already released by a parent process ?
         pass
+
 
 def progress(lockfd, data):
     if lockfd is None:
@@ -214,6 +227,7 @@ def progress(lockfd, data):
         os.close(_lockfd)
     except Exception as exc:
         return
+
 
 def main():
     """
@@ -244,6 +258,8 @@ def main():
         print(exc, file=sys.stderr)
         return 1
 
+
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())
