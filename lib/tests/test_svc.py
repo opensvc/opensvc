@@ -44,3 +44,13 @@ class TestSvcWithDiskLvm:
     @staticmethod
     def test_disk_pr_set_optional_from_config(svc):
         assert svc.get_resource('disk#scsireserv-optionalpr').is_optional() is True
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_service_with_fs_flag')
+class TestSvcFsFlag:
+    @staticmethod
+    def test_has_fs_flag_resource(mock_sysname, svc):
+        mock_sysname('Linux')
+        flag_resource = svc.get_resource('fs#flag1')
+        assert flag_resource.type == 'fs.flag'
