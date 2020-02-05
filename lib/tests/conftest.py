@@ -85,3 +85,18 @@ scsireserv = true
 optional = true
 """
         svc_file.write(config_txt)
+
+
+@pytest.fixture(scope='function')
+def has_service_with_fs_flag(osvc_path_tests):
+    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    os.mkdir(pathetc)
+    with open(os.path.join(pathetc, 'svc.conf'), mode='w+') as svc_file:
+        config_txt = """
+[DEFAULT]
+id = abcd
+
+[fs#flag1]
+type = flag
+"""
+        svc_file.write(config_txt)
