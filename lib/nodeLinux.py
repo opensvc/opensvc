@@ -193,8 +193,10 @@ class Node(node.Node):
         if not src:
             src = data.get("cni", {}).get("data", {}).get("network")
         self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, indev="obr_"+name, act="ACCEPT", comment=comment)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, outdev="obr_"+name, act="ACCEPT", comment=comment)
 
-    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail"):
+    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail", indev=None, outdev=None):
         if nat:
             nat = ["-t", "nat"]
         else:
@@ -205,6 +207,10 @@ class Node(node.Node):
             where = "-A"
         cmd1 = ["iptables"] + nat
         cmd2 = [chain]
+        if indev:
+            cmd2 += ["-i", indev]
+        if outdev:
+            cmd2 += ["-o", outdev]
         if src:
             if src[0] == "!":
                 cmd2 += ["!"]
