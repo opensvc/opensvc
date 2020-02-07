@@ -2703,7 +2703,12 @@ class Monitor(shared.OsvcThread):
                 configs = shared.CLUSTER_DATA[nodename]["services"]["config"]
             except (TypeError, KeyError):
                 continue
-            for path, config in configs.items():
+            for path in [p for p in configs]:
+                try:
+                    config = configs[path]
+                except KeyError:
+                    # happens on object delete
+                    continue
                 if path not in data:
                     data[path] = {}
                 data[path][nodename] = Storage(config)
