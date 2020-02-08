@@ -294,6 +294,7 @@ ACTIONS_NO_LOCK = [
     "clear",
     "docker",
     "edit_config",
+    "enter",
     "freeze",
     "frozen",
     "eval",
