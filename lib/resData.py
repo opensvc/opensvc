@@ -2,6 +2,7 @@ import rcStatus
 from resources import Resource
 from storage import Storage
 
+
 class Data(Resource):
     def __init__(self, rid, type="data", **kwargs):
         Resource.__init__(self, rid, type=type)
@@ -16,4 +17,3 @@ class Data(Resource):
         
     def _status(self, verbose=False):
         return rcStatus.NA
-
