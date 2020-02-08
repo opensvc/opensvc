@@ -199,6 +199,31 @@ class Container(resContainer.Container):
         cmd = self.lib.docker_cmd + ['exec', '-t', self.container_name] + cmd
         return justcall(cmd)
 
+    def enter(self):
+        for cmd in [["/bin/bash"], ["/bin/sh"]]:
+            try:
+                self.execute(interactive=True, tty=True, cmd=cmd)
+                return
+            except ValueError:
+                continue
+            else:
+                return
+
+    def execute(self, interactive=False, tty=False, cmd=None):
+        import subprocess
+        xcmd = self.lib.docker_cmd + ["exec"]
+        if interactive:
+            xcmd.append("-i")
+        if tty:
+            xcmd.append("-t")
+        xcmd.append(self.container_name)
+        xcmd += cmd
+        proc = subprocess.Popen(xcmd)
+        proc.communicate()
+        if proc.returncode in [126, 127]:
+            # executable not found
+            raise ValueError
+
     def rcp_from(self, src, dst):
         """
         Copy <src> from the container's rootfs to <dst> in the host's fs.
