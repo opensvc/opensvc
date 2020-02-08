@@ -146,6 +146,13 @@ ACTIONS["Service actions"].update({
                "domain>``.",
         "options": mp.ACTION_OPTS,
     },
+    "enter": {
+        "msg": "Enter the container specified by --rid <rid>, executing "
+               "a shell.",
+        "options": [
+            OPT.rid,
+        ],
+    },
     "boot": {
         "msg": "Clean up actions executed before the daemon starts. For "
                "example scsi reservation release and vg tags removal. "

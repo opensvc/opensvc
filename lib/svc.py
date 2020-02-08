@@ -5374,6 +5374,17 @@ class Svc(BaseSvc):
         else:
             self.delete_resources()
 
+    def enter(self):
+        self._enter(self.options.rid)
+
+    def _enter(self, rid):
+        res = self.get_resource(rid)
+        if res is None:
+            raise ex.excError("rid %s not found" % rid)
+        if not hasattr(res, "enter"):
+            raise ex.excError("rid %s does not support enter" % rid)
+        res.enter()
+
     def docker(self):
         self.container_manager_passthrough("docker")
 

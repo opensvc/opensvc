@@ -92,6 +92,7 @@ HANDLERS = [
     "handlerGetObjectBacklogs",
     "handlerGetObjectConfig",
     "handlerGetObjectKeys",
+    "handlerGetObjectEnter",
     "handlerGetObjectLogs",
     "handlerGetObjectSelector",
     "handlerGetPools",
