@@ -12,6 +12,12 @@ class Task(resContainerDocker.Container, resTask.Task):
 
     _info = resContainerDocker.Container._info
 
+    def start(self):
+        resTask.Task.start(self)
+
+    def stop(self):
+        resTask.Task.stop(self)
+
     def _run_call(self):
         try:
             resContainerDocker.Container.start(self)
