@@ -12,6 +12,8 @@ import zlib
 import time
 import select
 import sys
+from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY
+
 
 class DummyException(Exception):
     pass
@@ -48,12 +50,12 @@ else:
     ConnectionResetError = DummyException
     ConnectionRefusedError = DummyException
 
-# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, ECONNREFUSED, EHOSTUNREACH, EPIPE ?
+# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, EHOSTUNREACH ?
 RETRYABLE = (
-    11,		# EBUSY
-    32,		# EPIPE
-    146,	# EREFUSED
-    149,	# EALREADY
+    EBUSY,
+    EPIPE,
+    ECONNREFUSED,
+    EALREADY,
 )
 SOCK_TMO = 1.0
 PAUSE = 0.2
