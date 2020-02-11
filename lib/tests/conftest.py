@@ -19,11 +19,13 @@ def osvc_path_tests_fixture(tmpdir):
     rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
     rcGlobalEnv.rcEnv.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
     rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
+    rcGlobalEnv.rcEnv.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
     return tmpdir
 
 
 @pytest.fixture(scope='function')
 def non_existing_file(tmp_path):
+    assert os.path.exists(str(tmp_path))
     return os.path.join(str(tmp_path), 'foo')
 
 

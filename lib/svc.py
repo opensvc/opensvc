@@ -11,6 +11,8 @@ import logging
 import datetime
 import itertools
 import time
+from errno import ECONNREFUSED
+
 import lock
 import json
 import re
@@ -1930,8 +1932,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 silent=True,
             )
             status, error, info = self.parse_result(data)
-            if status and data.get("errno") != 111:
-                # 111: EREFUSED (ie daemon down)
+            if status and data.get("errno") != ECONNREFUSED:
+                # ECONNREFUSED (ie daemon down)
                 if error:
                     self.log.warning("wake monitor failed: %s", error)
                 else:
@@ -1966,8 +1968,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 for line in error.splitlines():
                     self.log.info(line)
             if status:
-                # 111: EREFUSED (ie daemon down)
-                if error and data.get("errno") != 111:
+                # ECONNREFUSED (ie daemon down)
+                if error and data.get("errno") != ECONNREFUSED:
                     for line in error.splitlines():
                         log(line)
                 if not best_effort:

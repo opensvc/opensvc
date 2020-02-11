@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 
 from mgr import Mgr
@@ -122,3 +123,53 @@ class TestServiceActionFsFlag:
         mock_sysname(sysname)
 
         assert Mgr(selector='fake-svc')() == 1
+
+    @staticmethod
+    @pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
+    def test_create_then_start_then_verify_flag_file_exists(tmp_path,
+                                                            mocker,
+                                                            mock_argv,
+                                                            mock_sysname,
+                                                            sysname):
+        mock_sysname(sysname)
+        base_flag_d = str(tmp_path)
+        mocker.patch('resFsFlag' + sysname + '.Fs.base_flag_d',
+                     new_callable=mocker.PropertyMock(return_value=base_flag_d))
+
+        expected_flag_file = os.path.join(base_flag_d, 'svc', sysname, 'fs#1.flag')
+
+        assert not os.path.exists(expected_flag_file)
+
+        mock_argv(['mgr', 'create', '--kw', 'fs#1.type=flag', '--debug'])
+        Mgr(selector=sysname)()
+
+        assert not os.path.exists(expected_flag_file)
+
+        mock_argv(['mgr', 'start', '--debug', '--local'])
+        assert Mgr(selector=sysname)() == 0
+
+        assert os.path.exists(expected_flag_file)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_privs')
+class TestServiceActionWhenNoDaemonListen:
+    @staticmethod
+    @pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
+    def test_no_hang(osvc_path_tests, mock_argv, mock_sysname, sysname):
+        import socket
+
+        h2_sock = os.path.join(str(osvc_path_tests), 'var', 'lsnr', 'h2.sock')
+        assert not os.path.exists(h2_sock)
+        os.makedirs(os.path.dirname(h2_sock))
+
+        sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sockuxh2.bind(h2_sock)
+        sockuxh2.close()
+        assert os.path.exists(h2_sock)
+
+        mock_argv(['mgr', 'create', '--debug'])
+        Mgr(selector=sysname)()
+
+        mock_argv(['mgr', 'start', '--debug', '--local'])
+        assert Mgr(selector=sysname)() == 0
