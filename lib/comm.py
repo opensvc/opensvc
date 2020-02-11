@@ -50,11 +50,10 @@ else:
     ConnectionResetError = DummyException
     ConnectionRefusedError = DummyException
 
-# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, EHOSTUNREACH ?
+# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, EHOSTUNREACH, ECONNREFUSED, ?
 RETRYABLE = (
     EBUSY,
     EPIPE,
-    ECONNREFUSED,
     EALREADY,
 )
 SOCK_TMO = 1.0
@@ -786,7 +785,7 @@ class Crypt(object):
                     time.sleep(PAUSE)
                     elapsed += PAUSE
                     continue
-                return {"status": 1, "error": "%s"%exc}
+                return {"status": 1, "error": "%s"%exc, "errno": errno}
         resp = conn.get_response()
         data = resp.read()
         data = json.loads(bdecode(data))
@@ -924,8 +923,7 @@ class Crypt(object):
             except hyper.common.exceptions.ConnectionResetError:
                 time.sleep(PAUSE)
             except socket.error as exc:
-                if exc.errno == 111:
-                    # conn refused
+                if exc.errno == ECONNREFUSED:
                     time.sleep(PAUSE)
                 else:
                     raise
