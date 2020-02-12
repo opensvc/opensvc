@@ -205,7 +205,7 @@ class ExtConfigMixin(object):
             if "=" not in kw:
                 raise ex.excError("malformed kw expression: %s: no '='" % kw)
             keyword, value = kw.split("=", 1)
-            if 'DEFAULT' not in keyword:
+            if 'DEFAULT' not in keyword and not keyword.startswith("data."):
                 keyword = keyword.lower()
             if keyword[-1] == "-":
                 op = "remove"
