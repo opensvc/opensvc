@@ -125,10 +125,12 @@ class FsDir(Res.Resource):
 
     def __lt__(self, other):
         """
-        Order so that deepest mountpoint can be umount first
+        Order so that deepest mountpoint can be umount first.
+        If no ordering constraint, honor the rid order.
         """
-        return self.mount_point < other.mount_point
-
-
-
-
+        try:
+            smnt = os.path.dirname(self.mount_point)
+            omnt = os.path.dirname(other.mount_point)
+        except AttributeError:
+            return self.rid < other.rid
+        return (smnt, self.rid) < (omnt, other.rid)
