@@ -5612,7 +5612,11 @@ class Svc(BaseSvc):
         candidates = [res for res in self.get_resources("fs")]
         if not candidates:
             return
-        return sorted(candidates)[0].mount_point
+        for candidate in sorted(candidates):
+            if not hasattr(candidate, "mount_point"):
+                continue
+            return candidate.mount_point
+        raise IndexError
 
     def device(self):
         """
