@@ -155,8 +155,8 @@ class Daemon(object):
 
     def lock(self):
         try:
-            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=0,
-                               delay=0)
+            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=1,
+                               delay=0.1)
         except Exception:
             self.log.error("a daemon is already running, and holding the "
                            "daemon lock")
