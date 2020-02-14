@@ -142,7 +142,7 @@ def lock_nowait(lockfile=None, intent=None):
     if prev_data["pid"] == os.getpid():
         return
 
-    flags = os.O_RDWR | os.O_CREAT | os.O_TRUNC
+    flags = os.O_RDWR | os.O_CREAT
     if os.name == 'nt':
         flags |= os.O_TRUNC
     else:
@@ -186,7 +186,6 @@ def lock_nowait(lockfile=None, intent=None):
             os.write(lockfd, bencode(json.dumps(data)))
             os.fsync(lockfd)
         except Exception as exc:
-            print(exc)
             pass
         return lockfd
     except IOError:
