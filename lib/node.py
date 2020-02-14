@@ -21,6 +21,7 @@ import time
 import re
 import shlex
 import logging
+from errno import ECONNREFUSED, EPIPE
 
 import six
 try:
@@ -3428,8 +3429,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except KeyboardInterrupt:
             return 1
         except (OSError, IOError) as exc:
-            if exc.errno == 32:
-                # broken pipe
+            if exc.errno == EPIPE:
                 return 1
 
     def _wait(self, server=None, path=None, duration=None):
@@ -3486,8 +3486,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except ex.excSignal:
             return
         except (OSError, IOError) as exc:
-            if exc.errno == 32:
-                # broken pipe
+            if exc.errno == EPIPE:
                 return
 
     def _events(self, server=None):
@@ -3536,8 +3535,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except ex.excSignal:
             return
         except (OSError, IOError) as exc:
-            if exc.errno == 32:
-                # broken pipe
+            if exc.errno == EPIPE:
                 return
 
     def _backlogs(self, server=None, node=None, backlog=None, debug=False, auto=None):
@@ -4707,7 +4705,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if data is None:
                 raise ex.excError("the daemon is not running")
             if data and data["status"] != 0:
-                raise ex.excError("set monitor status failed")
+                if data.get("error"):
+                    raise ex.excError("set monitor status failed: %s" % data.get("error"))
+                else:
+                    raise ex.excError("set monitor status failed")
+        except ex.excError:
+            raise
         except Exception as exc:
             raise ex.excError("set monitor status failed: %s" % str(exc))
         return data
@@ -4865,10 +4868,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 timeout=2,
             )
             status, error, info = self.parse_result(data)
-            if error:
-                self.log.warning("wake monitor failed")
-                for line in error.splitlines():
-                    self.log.warning(line)
+            if status and data.get("errno") != ECONNREFUSED:
+                if error:
+                    self.log.warning("wake monitor failed: %s", error)
+                else:
+                    self.log.warning("wake monitor failed")
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 

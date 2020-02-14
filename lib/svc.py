@@ -31,7 +31,7 @@ from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, daemon_test_lock
+                        svc_pathcf
 from contexts import want_context
 from converters import *
 import rcExceptions as ex
@@ -1914,9 +1914,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def wake_monitor(self):
         if self.options.no_daemon:
-            return
-        if not daemon_test_lock():
-            # no need to wake to monitor when the daemon is not running
             return
         req = {
             "action": "wake_monitor",
