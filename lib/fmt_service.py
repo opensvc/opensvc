@@ -1,7 +1,8 @@
 import re
 import os
 
-from rcUtilities import split_path, strip_path, resolve_path
+from rcGlobalEnv import rcEnv
+from rcUtilities import split_path, strip_path, resolve_path, is_service
 from rcColor import color, colorize, STATUS_COLOR
 from forest import Forest
 from storage import Storage
@@ -326,6 +327,8 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
 
 def service_nodes(path, mon_data):
     nodes = set()
+    if not mon_data and is_service(path, local=True):
+        return set([rcEnv.nodename])
     for nodename, data in mon_data.get("nodes", {}).items():
         _nodes = set(data.get("services", {}).get("config", {}).get(path, {}).get("scope", []))
         nodes |= _nodes
