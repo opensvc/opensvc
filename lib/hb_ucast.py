@@ -23,7 +23,7 @@ class HbUcast(Hb):
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
-        data["stats"]= self.stats
+        data["stats"] = self.stats
         data["config"] = {
             "timeout": self.timeout,
         }
@@ -139,7 +139,7 @@ class HbUcastTx(HbUcast):
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
-                               config["addr"], config["port"], str(exc))
+                                 config["addr"], config["port"], str(exc))
             self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
@@ -160,13 +160,15 @@ class HbUcastRx(HbUcast):
         self.config_change = False
         if self.sock:
             self.sock.close()
+        lexc = None
         for _ in range(3):
             try:
                 self.configure_listener()
                 return
             except socket.error as exc:
+                lexc = exc
                 time.sleep(1)
-        self.log.error("init error: %s", str(exc))
+        self.log.error("init error: %s", str(lexc))
         raise ex.excAbortAction
 
     def configure_listener(self):
@@ -243,7 +245,7 @@ class HbUcastRx(HbUcast):
         if nodename is None or nodename == rcEnv.nodename:
             # ignore hb data we sent ourself
             return
-        elif nodename not in self.hb_nodes:
+        if nodename not in self.hb_nodes:
             return
         if data is None:
             self.push_stats()
@@ -258,6 +260,3 @@ class HbUcastRx(HbUcast):
             self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
-
-
-

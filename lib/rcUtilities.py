@@ -1048,6 +1048,7 @@ def read_cf(fpaths, defaults=None):
     if defaults is None:
         defaults = {}
     config = RawConfigParser(defaults)
+    config.optionxform = str
     if not isinstance(fpaths, (list, tuple)):
         fpaths = [fpaths]
     for fpath in fpaths:
