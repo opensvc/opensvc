@@ -1644,22 +1644,6 @@ def add_app(svc, s):
     svc += r
 
 
-def setup_logging(paths):
-    """Setup logging to stream + logfile, and logfile rotation
-    class Logger instance name: 'log'
-    """
-    max_path_len = 0
-
-    # compute max path length to align logging stream output
-    for path in paths:
-        n = len(path)
-        if n > max_path_len:
-            max_path_len = n
-
-    rcLogger.max_path_len = max_path_len
-    log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-    rcLogger.initLogger(rcEnv.nodename, log_file)
-
 def add_resources(svc):
     """
     Instanciate resource objects and add them to the service.
@@ -1733,25 +1717,13 @@ def build_services(status=None, paths=None, create_instance=False,
                 services[m] = factory(kind)(name, namespace, node=node, volatile=True)
         paths = list(set(paths) & set(local_paths))
 
-    setup_logging(paths)
-
     for path in paths:
         name, namespace, kind = split_path(path)
         try:
             svc = factory(kind)(name, namespace, node=node)
         except (ex.excError, ex.excInitError, ValueError, rcConfigParser.Error) as e:
             errors.append("%s: %s" % (path, str(e)))
-            if namespace:
-                log_d = os.path.join(rcEnv.paths.pathlog, namespace, kind)
-                makedirs(log_d)
-            else:
-                log_d = rcEnv.paths.pathlog
-            log_root = ".".join([rcEnv.nodename, namespace, kind, name])
-            log_file = os.path.join(log_d, name+".log")
-            svclogger = rcLogger.initLogger(log_root, log_file, handlers=["file", "syslog"])
-            extras = {"path": path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid}
-            svclog = logging.LoggerAdapter(svclogger, extras)
-            svclog.error(str(e))
+            node.log.error(str(e))
             continue
         except ex.excAbortAction:
             continue
