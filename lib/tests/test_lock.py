@@ -27,13 +27,6 @@ class TestLockUnlock:
             assert lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") is None
 
     @staticmethod
-    def test_lock_raise_lock_timeout_if_held_by_another_pid(mocker, tmp_file, timeout):
-        assert lock.lock(lockfile=tmp_file, timeout=timeout, intent="foo") > 0
-        mocker.patch('lock.os.getpid', return_value=-1)
-        with pytest.raises(lock.LockTimeout, match="holder pid .*, holder intent "):
-            lock.lock(lockfile=tmp_file, timeout=timeout, intent="test")
-
-    @staticmethod
     def test_lock_raise_lock_timeout_if_held_by_another_pid_real_multiprocess(tmp_file, timeout):
         def worker():
             import sys
