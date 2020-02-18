@@ -179,7 +179,7 @@ class TestUtilities:
         """
         which()
         """
-        assert which("ls") in ("/bin/ls", "/usr/bin/ls")
+        assert which("ls") in ("/bin/ls", "/usr/bin/ls", "/usr/xpg4/bin/ls", "/usr/gnu/bin/ls")
         assert which("/bin/ls") in ("/bin/ls", "/usr/bin/ls")
         assert which(non_existing_file) is None
         assert which(None) is None
@@ -215,9 +215,9 @@ class TestUtilities:
         ret = qcall(["ls", non_existing_file])
         assert ret > 0
         ret = qcall(None)
-        assert ret == 1
+        assert ret > 0
         ret = qcall()
-        assert ret == 1
+        assert ret > 0
         ret = qcall(rcEnv.syspaths.true)
         assert ret == 0
 
@@ -307,6 +307,13 @@ class TestUtilities:
             location = "/Volumes/RAMDiskOpensvcTest"
             create_mount = 'diskutil erasevolume HFS+ "RAMDiskOpensvcTest" `hdiutil attach -nomount ram://524288`'
             delete_mount = "diskutil eject RAMDiskOpensvcTest"
+        elif rcEnv.sysname == 'SunOS':
+            if os.geteuid() != 0:
+                # Only tries mount when geteuid is 0
+                return
+            location = str(tmpdir)
+            create_mount = "sudo mount -F tmpfs swap %s" % location
+            delete_mount = "sudo umount %s && rmdir %s" % (location, location)
         else:
             location = str(tmpdir)
             create_mount = "sudo mount -t tmpfs none %s" % location

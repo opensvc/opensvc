@@ -39,6 +39,9 @@ GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(br"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]")
 
+# Os where os.access is invalid
+OS_WITHOUT_OS_ACCESS = ['SunOS']
+
 # supported operators in arithmetic expressions
 operators = {
     ast.Add: op.add,
@@ -329,9 +332,18 @@ def is_exe(fpath, realpath=False):
     """
     if realpath:
         fpath = os.path.realpath(fpath)
-    if os.path.isdir(fpath):
+    if os.path.isdir(fpath) or not os.path.exists(fpath):
         return False
-    return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+    if rcEnv.sysname not in OS_WITHOUT_OS_ACCESS:
+        return os.access(fpath, os.X_OK)
+    else:
+        return os_access_owner_ixusr(fpath)
+
+
+def os_access_owner_ixusr(path):
+    "alternative for os where root user os.access(path, os.X_OK) returns True"
+    s_ixusr = 0o0100
+    return bool(os.stat(path).st_mode & s_ixusr)
 
 
 def which(program):
