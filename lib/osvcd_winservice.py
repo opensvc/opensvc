@@ -14,6 +14,8 @@
  C:\>python aservice.py  --username <username> --password <PASSWORD> --startup auto install
 
 """
+from lock import lock, unlock
+from rcGlobalEnv import rcEnv
 
 try:
     import win32service
@@ -41,6 +43,20 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
+    def lock(self):
+        try:
+            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=1,
+                               delay=0.1)
+        except Exception:
+            self.log.error("a daemon is already running, and holding the "
+                           "daemon lock")
+            sys.exit(1)
+
+    def unlock(self):
+        if self.lockfd:
+            unlock(self.lockfd)
+        self.set_last_shutdown()
+
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         sys.stop_agent = True
@@ -55,11 +71,11 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
         os.chdir(os.path.join(os.path.dirname(__file__), ".."))
         self.daemon = Daemon()
         self.daemon.init()
-        self.daemon.lock()
+        self.lock()
         try:
             self.loop_forever()
         finally:
-            self.daemon.unlock()
+            self.unlock()
 
     def loop_forever(self):
         while True:
@@ -84,4 +100,3 @@ def ctrlHandler(ctrlType):
 if __name__ == '__main__':
     win32api.SetConsoleCtrlHandler(ctrlHandler, True)
     win32serviceutil.HandleCommandLine(OsvcAgent)
-
