@@ -27,6 +27,7 @@ class LockAcquire(Exception):
     """ could not acquire lock on lockfile
     """
 
+    # noinspection PyShadowingNames
     def __init__(self, intent="", pid=0, progress=None):
         Exception.__init__(self)
         self.intent = intent
@@ -106,8 +107,6 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
         ticks = [0]
     err = {}
     for tick in ticks:
-        if tick > 0:
-            time.sleep(delay)
         try:
             return lock_nowait(lockfile, intent)
         except LockAcquire as exc:
@@ -115,6 +114,8 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
             err["pid"] = exc.pid
         except Exception:
             raise
+        if tick > 0:
+            time.sleep(delay)
     raise LockTimeout(**err)
 
 
@@ -185,7 +186,7 @@ def lock_nowait(lockfile=None, intent=None):
                 os.ftruncate(lockfd, 0)
             os.write(lockfd, bencode(json.dumps(data)))
             os.fsync(lockfd)
-        except Exception as exc:
+        except Exception:
             pass
         return lockfd
     except IOError:

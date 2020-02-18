@@ -51,7 +51,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_path, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_path, strip_path, normalize_paths, \
-                        daemon_test_lock, validate_kind
+                        daemon_process_running, validate_kind
 from contexts import want_context
 from converters import *
 from comm import Crypt
@@ -4345,7 +4345,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if self.options.thr_id not in data:
                 return False
             return data[self.options.thr_id].get("state") == "running"
-        return daemon_test_lock()
+        return daemon_process_running()
 
     def daemon_start_systemd(self):
         """
@@ -4856,7 +4856,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 yield line
 
     def wake_monitor(self):
-        if not daemon_test_lock():
+        if not daemon_process_running():
             # no need to wake to monitor when the daemon is not running
             return
         options = {}

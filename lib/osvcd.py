@@ -16,8 +16,8 @@ import rcExceptions as ex
 import rcLogger
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, unset_lazy, ximport
-from lock import lock, unlock
+from rcUtilities import lazy, unset_lazy, ximport, daemon_process_running
+from lock import LockTimeout, cmlock
 
 from osvcd_mon import Monitor
 from osvcd_lsnr import Listener
@@ -153,35 +153,27 @@ class Daemon(object):
         self.pid = os.getpid()
         self._run()
 
-    def lock(self):
-        try:
-            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=1,
-                               delay=0.1)
-        except Exception:
-            self.log.error("a daemon is already running, and holding the "
-                           "daemon lock")
-            sys.exit(1)
-
     def set_last_shutdown(self):
         with open(rcEnv.paths.last_shutdown, "w") as filep:
             filep.write("")
-
-    def unlock(self):
-        if self.lockfd:
-            unlock(self.lockfd)
-        self.set_last_shutdown()
 
     def _run(self):
         """
         Acquire the osvcd lock, write the pid in a system-compatible pidfile,
         and start the daemon loop.
         """
-        self.lock()
+
         try:
-            self.write_pid()
-            self.loop_forever()
-        finally:
-            self.unlock()
+            with cmlock(lockfile=rcEnv.paths.daemon_lock, timeout=1, delay=1):
+                if daemon_process_running():
+                    self.log.error("a daemon process is already running")
+                    sys.exit(1)
+                self.write_pid()
+        except LockTimeout:
+            self.log.error("a daemon is already running, and holding the "
+                           "daemon lock")
+            sys.exit(1)
+        self.loop_forever()
 
     def write_pid(self):
         pid = str(self.pid)+"\n"

@@ -21,6 +21,7 @@ def osvc_path_tests_fixture(tmpdir):
     rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
     rcGlobalEnv.rcEnv.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
     os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'lsnr'))
+    os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'node'))
     os.makedirs(rcGlobalEnv.rcEnv.paths.pathtmpv)
     return tmpdir
 

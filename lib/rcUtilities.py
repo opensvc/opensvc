@@ -1224,17 +1224,6 @@ def init_locale():
     os.environ["LC_TIME"] = "C"
 
 
-def daemon_test_lock():
-    lockfd = None
-    try:
-        lockfd = lock.lock(lockfile=rcEnv.paths.daemon_lock, timeout=0, delay=0)
-    except:
-        return True
-    finally:
-        lock.unlock(lockfd)
-    return False
-
-
 def wipe_rest_markup(payload):
     payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'" + pat.group(2) + "'", payload, re.MULTILINE)
     payload = re.sub(r'``(.*?)``', lambda pat: "'" + pat.group(1) + "'", payload, re.MULTILINE)
@@ -1610,3 +1599,23 @@ def abbrev(l):
     if i == 0:
         return l
     return [".".join(n[:i - 1:-1]) + ".." if n in trimable else n[0] for n in paths]
+
+
+def process_info(pid, search_args=None):
+    cmd_args = ['/bin/ps', '-p', str(pid), '-o', 'args=']
+    ret, stdout, stderr = call(cmd_args)
+    if ret != 0:
+        return False
+    if search_args:
+        return search_args in stdout
+    else:
+        return True
+
+
+def daemon_process_running():
+    try:
+        with open(rcEnv.paths.daemon_pid, 'r') as daemon_pid_file:
+            pid = int(daemon_pid_file.read())
+        return process_info(pid, 'opensvc')
+    except:
+        return False
