@@ -18,14 +18,6 @@ def has_privs(mocker):
 
 
 @pytest.fixture(scope='function')
-def mock_argv(mocker):
-    def func(argv):
-        mocker.patch.object(sys, 'argv', argv)
-
-    return func
-
-
-@pytest.fixture(scope='function')
 def fake_svc(osvc_path_tests, has_privs, mocker):
     mocker.patch.object(sys, 'argv', ['mgr', "create", '--debug'])
     Mgr(selector='fake-svc')()
@@ -161,7 +153,6 @@ class TestServiceActionWhenNoDaemonListen:
 
         h2_sock = os.path.join(str(osvc_path_tests), 'var', 'lsnr', 'h2.sock')
         assert not os.path.exists(h2_sock)
-        os.makedirs(os.path.dirname(h2_sock))
 
         sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sockuxh2.bind(h2_sock)

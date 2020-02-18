@@ -20,8 +20,17 @@ def osvc_path_tests_fixture(tmpdir):
     rcGlobalEnv.rcEnv.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
     rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
     rcGlobalEnv.rcEnv.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
+    os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'lsnr'))
     os.makedirs(rcGlobalEnv.rcEnv.paths.pathtmpv)
     return tmpdir
+
+
+@pytest.fixture(scope='function')
+def mock_argv(mocker):
+    def func(argv):
+        mocker.patch.object(sys, 'argv', argv)
+
+    return func
 
 
 @pytest.fixture(scope='function')
