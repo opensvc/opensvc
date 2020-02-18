@@ -12,7 +12,7 @@ stages:
     - apk add build-base sudo git
     - python -V
     - pip install -r test-requirements.txt codecov
-    - pytest --cov -m ci -m "not slow"
+    - pytest --cov -m "ci and not slow"
     - pylint -E lib/*py
     - codecov
 
