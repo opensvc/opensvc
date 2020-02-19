@@ -16,7 +16,7 @@ import rcExceptions as ex
 import rcLogger
 import osvcd_shared as shared
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, unset_lazy, ximport, daemon_process_running
+from rcUtilities import lazy, unset_lazy, ximport, daemon_process_running, process_args
 from lock import LockTimeout, cmlock
 
 from osvcd_mon import Monitor
@@ -179,6 +179,9 @@ class Daemon(object):
         pid = str(self.pid)+"\n"
         with open(rcEnv.paths.daemon_pid, "w") as ofile:
             ofile.write(pid)
+        _, pid_args = process_args(self.pid)
+        with open(rcEnv.paths.daemon_pid_args, "w") as ofile:
+            ofile.write(pid_args)
 
     def init(self):
         shared.NODE = node_mod.Node()

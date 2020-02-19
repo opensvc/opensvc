@@ -19,10 +19,14 @@ def osvc_path_tests_fixture(tmpdir):
     rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
     rcGlobalEnv.rcEnv.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
     rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
+    rcGlobalEnv.rcEnv.paths.lsnruxsock = os.path.join(test_dir, 'var', 'lsnr', 'lsnr.sock')
     rcGlobalEnv.rcEnv.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
+    rcGlobalEnv.rcEnv.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
+    rcGlobalEnv.rcEnv.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
     os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'lsnr'))
     os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'node'))
     os.makedirs(rcGlobalEnv.rcEnv.paths.pathtmpv)
+    os.makedirs(rcGlobalEnv.rcEnv.paths.pathlog)
     return tmpdir
 
 
@@ -65,6 +69,25 @@ def mock_sysname_fixture(mocker):
         mocker.patch.object(rcGlobalEnv.rcEnv, 'sysname', sysname)
 
     return func
+
+
+@pytest.fixture(scope='function')
+def has_node_config(osvc_path_tests):
+
+    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    os.mkdir(pathetc)
+    with open(os.path.join(pathetc, 'node.conf'), mode='w+') as node_config_file:
+        """This fixture set non default port and tls_port for listener.
+        This avoid port conflict with live daemon.
+        """
+        config_txt = """[DEFAULT]
+id = nodeuuid
+
+[listener]
+port = 1224
+tls_port = 1225
+"""
+        node_config_file.write(config_txt)
 
 
 @pytest.fixture(scope='function')

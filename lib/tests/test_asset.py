@@ -1,17 +1,18 @@
 from __future__ import print_function
-
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 import json
 import rcAsset
 from node import Node
-node = Node()
+import pytest
+
+
+@pytest.fixture(scope='function')
+def node():
+    return Node()
+
 
 class TestAsset:
-    def test_011_get_connect_to(self):
+    @staticmethod
+    def test_011_get_connect_to(node):
         """
         asset connect_to on GCE, valid data
         """
@@ -35,7 +36,8 @@ class TestAsset:
         ret = asset._parse_connect_to(data_s)
         assert ret == "23.251.137.71"
 
-    def test_012_get_connect_to(self):
+    @staticmethod
+    def test_012_get_connect_to(node):
         """
         asset connect_to on GCE, empty data
         """
@@ -47,7 +49,8 @@ class TestAsset:
         ret = asset._parse_connect_to(data_s)
         assert ret is None
 
-    def test_013_get_connect_to(self):
+    @staticmethod
+    def test_013_get_connect_to(node):
         """
         asset connect_to on GCE, corrupt data
         """
@@ -55,4 +58,3 @@ class TestAsset:
         asset = rcAsset.Asset(node)
         ret = asset._parse_connect_to(data_s)
         assert ret is None
-
