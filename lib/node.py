@@ -4099,7 +4099,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     relay = self.conf_get(section, "relay")
                 except (ValueError, ex.OptNotFound):
                     continue
-                if relay != self.options.node:
+                if relay not in self.options.server:
                     continue
                 try:
                     secret = self.conf_get(section, "secret")
