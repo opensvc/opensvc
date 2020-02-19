@@ -2,6 +2,7 @@
 # only cache local items.
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP: "15"
 
 stages:
   - "test"
@@ -9,10 +10,10 @@ stages:
 .test:
   script:
     - id
-    - apk add build-base sudo git
+    - apk add build-base sudo git procps
     - python -V
     - pip install -r test-requirements.txt codecov
-    - pytest --cov -m "ci and not slow"
+    - pytest -vvv --cov -m "ci"
     - pylint -E lib/*py
     - codecov
 

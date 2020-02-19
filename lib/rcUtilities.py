@@ -1601,21 +1601,29 @@ def abbrev(l):
     return [".".join(n[:i - 1:-1]) + ".." if n in trimable else n[0] for n in paths]
 
 
-def process_info(pid, search_args=None):
+def process_args(pid):
     cmd_args = ['/bin/ps', '-p', str(pid), '-o', 'args=']
     ret, stdout, stderr = call(cmd_args)
     if ret != 0:
-        return False
-    if search_args:
-        return search_args in stdout
+        return False, ''
     else:
-        return True
+        return True, stdout
+
+
+def process_match_args(pid, search_args=None):
+    running, args = process_args(pid)
+    if running:
+        return search_args in args
+    else:
+        return False
 
 
 def daemon_process_running():
     try:
-        with open(rcEnv.paths.daemon_pid, 'r') as daemon_pid_file:
-            pid = int(daemon_pid_file.read())
-        return process_info(pid, 'opensvc')
+        with open(rcEnv.paths.daemon_pid, 'r') as pid_file:
+            pid = int(pid_file.read())
+        with open(rcEnv.paths.daemon_pid_args, 'r') as pid_args_file:
+            search_args = pid_args_file.read()
+        return process_match_args(pid, search_args=search_args)
     except:
         return False

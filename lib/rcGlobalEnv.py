@@ -95,6 +95,7 @@ class Paths(object):
         self.nodes_info = os.path.join(self.pathvar, "nodes_info.json")
 
         self.daemon_pid = os.path.join(self.pathvar, "osvcd.pid")
+        self.daemon_pid_args = os.path.join(self.pathvar, "osvcd.pid.args")
         self.daemon_lock = os.path.join(self.pathlock, "osvcd.lock")
 
         self.tmp_prepared = False
