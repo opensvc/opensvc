@@ -1,15 +1,9 @@
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 import rcScheduler
-import node
-node = node.Node()
-node.options.cron = True
+
 
 class TestSchedules:
-    def test_schedules(self):
+    @staticmethod
+    def test_schedules():
         """
         Schedule definitions
         """
@@ -79,6 +73,3 @@ class TestSchedules:
         sched = rcScheduler.Scheduler()
         for test in tests:
             assert sched.test_schedule(*test)
-
-
-
