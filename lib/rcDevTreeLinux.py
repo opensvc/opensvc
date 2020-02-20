@@ -294,7 +294,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     def set_udev_symlink(self, d, name):
         if not which("udevadm"):
             return
-        cmd = ["/sbin/udevadm", "info", "-q", "symlink", "--name", name]
+        cmd = ["udevadm", "info", "-q", "symlink", "--name", name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
