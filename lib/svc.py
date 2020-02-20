@@ -1919,6 +1919,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "action": "wake_monitor",
             "options": {
                 "path": self.path,
+                "immediate": True,
             }
         }
         try:
