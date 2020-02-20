@@ -18,6 +18,18 @@ class Handler(handler.Handler):
             "required": False,
             "format": "object_path",
         },
+        {
+            "name": "reason",
+            "desc": "The reason why the caller wants the monitor thread woken.",
+            "required": False,
+        },
+        {
+            "name": "immediate",
+            "desc": "Should the monitor thread be woken immediately. If False, the monitor thread will be woken on next short-loop.",
+            "required": False,
+            "default": False,
+            "format": "boolean",
+        },
     ]
     access = "custom"
 
@@ -32,8 +44,10 @@ class Handler(handler.Handler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         if options.path:
-            shared.wake_monitor(reason="service %s notification" % options.path)
+            reason = options.reason or "service %s notification" % options.path
+            shared.wake_monitor(reason=reason, immediate=options.immediate)
         else:
-            shared.wake_monitor(reason="node notification")
+            reason = options.reason or "node notification"
+            shared.wake_monitor(reason=reason, immediate=options.immediate)
         return {"status": 0}
 

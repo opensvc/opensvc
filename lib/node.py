@@ -4859,10 +4859,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if not daemon_process_running():
             # no need to wake to monitor when the daemon is not running
             return
-        options = {}
+        options = {
+            "immediate": True,
+        }
         try:
             data = self.daemon_post(
-                {"action": "wake_monitor", "options": options},
+                {
+                    "action": "wake_monitor",
+                    "options": options
+                },
                 server=self.options.server,
                 silent=True,
                 timeout=2,
