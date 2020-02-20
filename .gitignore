@@ -31,3 +31,4 @@ bin/init/opensvc.init
 *.exe
 .idea
 opensvc.iml
+.tox/
