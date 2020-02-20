@@ -17,8 +17,6 @@ before_install:
 install:
 - pip install -r test-requirements.txt
 script:
-- which pytest
-- ls -l $(which pytest)
 - sudo $(which pytest) -vvv --cov -m "ci"
 - pylint -E lib/*py
 after_success:
