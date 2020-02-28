@@ -2370,20 +2370,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         self._scanscsi(self.options.hba, self.options.target, self.options.lun)
 
-    def _scanscsi(self, hba=None, target=None, lun=None):
+    def _scanscsi(self, hba=None, target=None, lun=None, log=None):
+        log = log if log else self.log
         try:
             mod = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
-            print("scanscsi is not supported on", rcEnv.sysname, file=sys.stderr)
-            return 1
+            raise ex.excError("scanscsi is not supported on %s" % rcEnv.sysname)
         diskinfo = mod.diskInfo()
         if not hasattr(diskinfo, 'scanscsi'):
-            print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
-            return 1
+            raise ex.excError("scanscsi is not implemented on %s" % rcEnv.sysname)
         return diskinfo.scanscsi(
             hba=hba,
             target=target,
             lun=lun,
+            log=log,
         )
 
     def cloud_get(self, section):

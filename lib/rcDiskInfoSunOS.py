@@ -173,5 +173,5 @@ class diskInfo(rcDiskInfo.diskInfo):
     def disk_size(self, dev):
         return self.get(dev, 'size')
 
-    def scanscsi(self, hba=None, target=None, lun=None):
+    def scanscsi(self, hba=None, target=None, lun=None, log=None):
         os.system("cfgadm -al")

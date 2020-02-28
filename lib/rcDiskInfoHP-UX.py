@@ -132,19 +132,22 @@ class diskInfo(rcDiskInfo.diskInfo):
             size = 0
         return size
 
-    def print_diskinfo(self, info):
+    def diskinfo_str(self, info):
         info['size'] = self.disk_size(info['devname'])
         info['hbtl'] = "#:#:#:#"
-        print(self.print_diskinfo_fmt%(
+        return self.print_diskinfo_fmt%(
           info['hbtl'],
           os.path.basename(info['devname']),
           info['size'],
           info['dev'],
           info['vendor'],
           '',
-        ))
+        )
 
-    def scanscsi(self, hba=None, target=None, lun=None):
+    def print_diskinfo(self, info):
+        print(self.diskinfo_str(info))
+
+    def scanscsi(self, hba=None, target=None, lun=None, log=None):
         ioscan_before = self.load_ioscan()
         disks_before = map(lambda x: x['devname'], ioscan_before)
 
@@ -157,11 +160,13 @@ class diskInfo(rcDiskInfo.diskInfo):
         disks_after = map(lambda x: x['devname'], ioscan_after)
         new_disks = set(disks_after) - set(disks_before)
 
-        self.print_diskinfo_header()
+        if log:
+            log.info(self.diskinfo_header())
         for info in ioscan_after:
             if info['devname'] not in new_disks:
                 continue
-            self.print_diskinfo(info)
+            if log:
+                log.info(self.diskinfo_str(info))
 
         return 0
 
