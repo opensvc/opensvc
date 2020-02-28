@@ -5056,13 +5056,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return mod.Pool(node=self, name=poolname, log=self.log)
 
     def pool_create_volume(self):
-        nodes = self.nodes_selector(self.options.node)
         self._pool_create_volume(poolname=self.options.pool,
                                  name=self.options.name,
                                  namespace=self.options.namespace,
                                  size=self.options.size,
                                  access=self.options.access,
-                                 nodes=nodes,
+                                 nodes=self.options.nodes,
                                  shared=self.options.shared)
 
     def _pool_create_volume(self, poolname=None, **kwargs):
