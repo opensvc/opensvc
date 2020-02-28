@@ -3931,11 +3931,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {
                 "action": "unlock",
-                "options": {"name": name, "id": lock_id},
+                "options": {"name": name, "lock_id": lock_id},
             },
             silent=silent,
             timeout=10,
         )
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        return status
 
     def _daemon_object_selector(self, selector="*", namespace=None, server=None):
         data = self.daemon_get(
