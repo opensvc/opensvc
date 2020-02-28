@@ -99,7 +99,7 @@ class Pool(object):
         self.log.info("delete volume %s", volume.path)
         volume.action("delete", options={"wait": True, "unprovision": True, "time": "5m"})
         
-    def create_volume(self, name, namespace=None, size=None, access="rwo", fmt=False, nodes=None, shared=False):
+    def create_volume(self, name, namespace=None, size=None, access="rwo", fmt=True, nodes=None, shared=False):
         volume = factory("vol")(name=name, namespace=namespace, node=self.node)
         if volume.exists():
             self.log.info("volume %s already exists", name)
