@@ -2234,8 +2234,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 section = s
                 break
             try:
-                name = self.node.oget(s, "name")
-            except Exception:
+                name = self.oget(s, "name")
+            except Exception as exc:
                 continue
             if name == array_name:
                 section = s
