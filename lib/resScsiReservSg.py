@@ -39,6 +39,9 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             ret = p.returncode
             if "unsupported service action" in err:
                 raise ex.excScsiPrNotsupported("disk %s does not support persistent reservation" % d)
+            if "Not ready" in err:
+                # huawei dorado hypermetropair paused member set that.
+                raise ex.excScsiPrNotsupported("disk %s Not Ready" % d)
             if "error opening file" in err:
                 return 0
             if "Unit Attention" in out or ret != 0:
@@ -51,15 +54,49 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
             return 1
         return 0
 
-    def disk_registered(self, disk):
+    def read_path_registrations(self, disk):
+        if not os.path.exists(disk):
+            return 1, "", ""
         self.set_read_only(1)
-        cmd = [ 'sg_persist', '-n', '-k', disk ]
-        (ret, out, err) = self.call(cmd)
+        cmd = ["sg_persist", "-n", "-k", disk]
+        ret, out, err = self.call(cmd)
+        return ret, out, err
+
+    def read_registrations(self):
+        for dev in self.devs:
+            ret, out, err = self.read_path_registrations(dev)
+            if ret != 0:
+                continue
+            return out
+        raise ""
+
+    def check_all_paths_registered(self):
+        out = self.read_registrations()
+        n_registered = out.count(self.hostid)
+        n_devs = len(self.devs)
+        if n_registered == n_devs:
+            return
+        if n_registered == 0:
+            return
+        if n_registered > n_devs:
+            raise ex.excSignal("%d/%d paths registered" % (n_registered, n_devs))
+        raise ex.excError("%d/%d paths registered" % (n_registered, n_devs))
+
+    def disk_registered(self, disk):
+        ret, out, err = self.read_path_registrations(disk)
         if ret != 0:
             self.log.error("failed to read registrations for disk %s" % disk)
         if self.hostid in out:
             return True
         return False
+
+    def mpath_register(self, disk):
+        self.set_read_only(0)
+        cmd = [ 'mpathpersist', '--out', '--register-ignore', '--param-sark='+self.hostid, disk ]
+        (ret, out, err) = self.vcall(cmd)
+        if ret != 0:
+            self.log.error("failed to register key %s with disk %s" % (self.hostid, disk))
+        return ret
 
     def disk_register(self, disk):
         self.set_read_only(0)

@@ -133,7 +133,7 @@ class ScsiReserv(Res.Resource):
                 r += self.ack_unit_attention(d)
                 r += self.disk_register(d)
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r
 
@@ -148,7 +148,7 @@ class ScsiReserv(Res.Resource):
                     continue
                 r += self.disk_unregister(d)
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r
 
@@ -178,7 +178,7 @@ class ScsiReserv(Res.Resource):
                     r += self.disk_preempt_reservation(d, key)
                     r += self.disk_wait_reservation(d)
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r
 
@@ -193,7 +193,7 @@ class ScsiReserv(Res.Resource):
                     continue
                 r += self.disk_release(d)
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r
 
@@ -208,7 +208,7 @@ class ScsiReserv(Res.Resource):
                     continue
                 r += getattr(self, "disk_clear_reservation")(d)
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r
 
@@ -230,7 +230,7 @@ class ScsiReserv(Res.Resource):
                     self.log.debug("disk %s is correctly reserved" % d)
                     r += rcStatus.UP
             except ex.excScsiPrNotsupported as exc:
-                self.log.error(str(exc))
+                self.log.warning(str(exc))
                 continue
         return r.status
 
@@ -255,11 +255,10 @@ class ScsiReserv(Res.Resource):
             r += self.unregister()
         return r
 
-    def scsicheckreserv(self):
-        self.get_hostid()
-        if not self.scsireserv_supported():
-            return
-        return self.checkreserv()
+
+    def check_all_paths_registered(self):
+        pass
+
 
     def _status(self, verbose=False):
         self.set_label()
@@ -271,6 +270,13 @@ class ScsiReserv(Res.Resource):
         if not self.scsireserv_supported():
             self.status_log("scsi reservation is not supported")
             return rcStatus.NA
+        try:
+            self.check_all_paths_registered()
+        except ex.excSignal as exc:
+            self.status_log(str(exc))
+        except ex.excError as exc:
+            self.status_log(str(exc))
+            return rcStatus.WARN
         return self.checkreserv()
 
     def start(self):
