@@ -164,3 +164,23 @@ class TestServiceActionWhenNoDaemonListen:
 
         mock_argv(['mgr', 'start', '--debug', '--local'])
         assert Mgr(selector=sysname)() == 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests', 'has_privs')
+class TestCreateAddDecode:
+    @staticmethod
+    @pytest.mark.parametrize('key', ['lowercase', 'camelCase', 'UPPERCASE'])
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_decoded_value_is_correct(mock_argv, capture_stdout, tmp_file, obj, key):
+        def run_command(args):
+            mock_argv(args)
+            return Mgr(selector=obj)()
+
+        assert run_command(['mgr', 'create']) == 0
+        assert run_command(['mgr', 'add', '--key', key, '--value', 'john']) == 0
+        with capture_stdout(tmp_file):
+            assert run_command(['mgr', 'decode', '--key', key]) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == 'john'
