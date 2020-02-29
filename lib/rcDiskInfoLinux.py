@@ -5,11 +5,13 @@ import re
 import json
 import math
 import glob
+import time
 
 from rcUtilities import justcall, which, lazy
 from rcUtilitiesLinux import udevadm_settle
 import rcDiskInfo
 from rcGlobalEnv import rcEnv
+from rcExceptions import excError
 import rcDevTreeVeritas
 
 class diskInfo(rcDiskInfo.diskInfo):
@@ -360,7 +362,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             if os.path.exists(dev):
                 return
             time.sleep(1)
-        raise ex.excError("time out waiting for %s to appear" % dev)
+        raise excError("time out waiting for %s to appear" % dev)
 
 if __name__ == "__main__":
     diskinfo = diskInfo()

@@ -535,7 +535,15 @@ class Dorado(object):
             return
 
 
-    def get_storagepool(self, name=None):
+    def get_storagepool_by_id(self, oid=None):
+        data = self.get("/storagepool?filter=ID::%s" % oid)
+        try:
+            return data["data"][0]
+        except KeyError:
+            return
+
+
+    def get_storagepool_by_name(self, name=None):
         data = self.get("/storagepool?filter=NAME::%s" % name)
         try:
             return data["data"][0]
@@ -544,7 +552,7 @@ class Dorado(object):
 
 
     def get_storagepool_id(self, name=None):
-        return self.get_storagepool(name=name)["ID"]
+        return self.get_storagepool_by_name(name=name)["ID"]
 
 
     def get_lun(self, oid=None, name=None, naa=None):
@@ -741,7 +749,7 @@ class Dorado(object):
         lun_data = self.get_lun(oid=id, name=name, naa=naa)
         if lun_data is None:
             raise ex.excError("extent not found")
-        storagepool = self.lun_storagepool(lun_data["ID"])
+        storagepool = self.get_storagepool_by_id(lun_data["PARENTID"])
         if storagepool is None:
             raise ex.excError("storagepool not found")
         if size.startswith("+"):
@@ -1068,7 +1076,7 @@ class Dorado(object):
 
 
     def show_storagepool(self, **kwargs):
-        return self.get_storagepool(kwargs["name"])
+        return self.get_storagepool_by_name(kwargs["name"])
 
 
     def list_storagepool(self, **kwargs):
