@@ -1404,6 +1404,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         self.collector.call('push_vioserver', self.options.objects)
 
+    def pushdorado(self):
+        """
+        The pushdorado action entrypoint.
+        Inventories Huawei Dorado storage arrays.
+        """
+        self.collector.call('push_dorado', self.options.objects)
+
     def pushsym(self):
         """
         The pushsym action entrypoint.
@@ -2234,8 +2241,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 section = s
                 break
             try:
-                name = self.node.oget(s, "name")
-            except Exception:
+                name = self.oget(s, "name")
+            except Exception as exc:
                 continue
             if name == array_name:
                 section = s
@@ -2370,20 +2377,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         self._scanscsi(self.options.hba, self.options.target, self.options.lun)
 
-    def _scanscsi(self, hba=None, target=None, lun=None):
+    def _scanscsi(self, hba=None, target=None, lun=None, log=None):
+        log = log if log else self.log
         try:
             mod = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
-            print("scanscsi is not supported on", rcEnv.sysname, file=sys.stderr)
-            return 1
+            raise ex.excError("scanscsi is not supported on %s" % rcEnv.sysname)
         diskinfo = mod.diskInfo()
         if not hasattr(diskinfo, 'scanscsi'):
-            print("scanscsi is not implemented on", rcEnv.sysname, file=sys.stderr)
-            return 1
+            raise ex.excError("scanscsi is not implemented on %s" % rcEnv.sysname)
         return diskinfo.scanscsi(
             hba=hba,
             target=target,
             lun=lun,
+            log=log,
         )
 
     def cloud_get(self, section):
@@ -3931,11 +3938,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {
                 "action": "unlock",
-                "options": {"name": name, "id": lock_id},
+                "options": {"name": name, "lock_id": lock_id},
             },
             silent=silent,
             timeout=10,
         )
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        return status
 
     def _daemon_object_selector(self, selector="*", namespace=None, server=None):
         data = self.daemon_get(
@@ -5052,13 +5063,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return mod.Pool(node=self, name=poolname, log=self.log)
 
     def pool_create_volume(self):
-        nodes = self.nodes_selector(self.options.node)
         self._pool_create_volume(poolname=self.options.pool,
                                  name=self.options.name,
                                  namespace=self.options.namespace,
                                  size=self.options.size,
                                  access=self.options.access,
-                                 nodes=nodes,
+                                 nodes=self.options.nodes,
                                  shared=self.options.shared)
 
     def _pool_create_volume(self, poolname=None, **kwargs):

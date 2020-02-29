@@ -5,11 +5,13 @@ import re
 import json
 import math
 import glob
+import time
 
 from rcUtilities import justcall, which, lazy
 from rcUtilitiesLinux import udevadm_settle
 import rcDiskInfo
 from rcGlobalEnv import rcEnv
+from rcExceptions import excError
 import rcDevTreeVeritas
 
 class diskInfo(rcDiskInfo.diskInfo):
@@ -240,7 +242,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             f.close()
         return int(math.ceil(1.*int(size)/2048))
 
-    def print_diskinfo(self, disk):
+    def diskinfo_str(self, disk):
         name = os.path.basename(disk)
         info = {
           'dev': '',
@@ -259,14 +261,17 @@ class diskInfo(rcDiskInfo.diskInfo):
             if info['device/model'] == '':
                 info['device/model'] = 'VirtIO'
         info['hbtl'] = os.path.basename(os.path.realpath(os.path.join(disk, "device")))
-        print(self.print_diskinfo_fmt%(
+        return self.print_diskinfo_fmt%(
           info['hbtl'],
           name,
           int(float(info['size'])/2//1024),
           info['dev'],
           info['device/vendor'],
           info['device/model'],
-        ))
+        )
+
+    def print_diskinfo(self, disk):
+        print(self.diskinfo_str(disk))
 
     def hba_num(self, hba=None):
         if hba is None:
@@ -303,7 +308,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                 if content == target or "0x"+content == target:
                     return os.path.basename(path).split(":")[-1]
 
-    def scanscsi(self, hba=None, target=None, lun=None):
+    def scanscsi(self, hba=None, target=None, lun=None, log=None):
         if not os.path.exists('/sys') or not os.path.ismount('/sys'):
             print("scanscsi is not supported without /sys mounted", file=sys.stderr)
             return 1
@@ -329,7 +334,8 @@ class diskInfo(rcDiskInfo.diskInfo):
             scan_f = host+'/scan'
             if not os.path.exists(scan_f):
                 continue
-            print("scan", os.path.basename(host), "target"+target_num, "lun"+lun)
+            if log:
+                log.info("scan %s target%s lun%s", os.path.basename(host), target_num, lun)
             os.system('echo - ' + target_num + ' ' + lun + ' >' + scan_f)
 
         udevadm_settle()
@@ -338,15 +344,25 @@ class diskInfo(rcDiskInfo.diskInfo):
         new_disks = set(disks_after) - set(disks_before)
 
         if len(new_disks) == 0:
-            print("no new disk found")
+            if log:
+                log.info("scsi scan found no new disk")
             return 0
 
-        self.print_diskinfo_header()
-        #for disk in disks_before:
+        if log:
+            log.info(self.diskinfo_header())
         for disk in new_disks:
-            self.print_diskinfo(disk)
+            if log:
+                log.info(self.diskinfo_str(disk))
+            self.wait_devpath("/dev/"+disk.replace("/sys/block/", ""))
 
         return 0
+
+    def wait_devpath(self, dev, tmo=10):
+        for retry in range(tmo):
+            if os.path.exists(dev):
+                return
+            time.sleep(1)
+        raise excError("time out waiting for %s to appear" % dev)
 
 if __name__ == "__main__":
     diskinfo = diskInfo()

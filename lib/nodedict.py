@@ -220,6 +220,11 @@ PRIVATE_KEYWORDS = [
         "text": "Schedule parameter for the :c-action:`pushfreenas` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
+        "section": "dorado",
+        "keyword": "schedule",
+        "text": "Schedule parameter for the :c-action:`pushdorado` node action. See usr/share/doc/schedule for the schedule syntax."
+    },
+    {
         "section": "gcedisks",
         "keyword": "schedule",
         "text": "Schedule parameter for the :c-action:`pushgcedisks` node action. See usr/share/doc/schedule for the schedule syntax."
@@ -931,7 +936,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual", "dorado"],
         "text": "The pool type."
     },
     {
@@ -942,7 +947,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
-        "rtype": ["freenas", "symmetrix"],
+        "rtype": ["freenas", "symmetrix", "dorado"],
         "keyword": "array",
         "at": True,
         "required": True,
@@ -978,7 +983,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
-        "rtype": "freenas",
+        "rtype": ["freenas", "dorado"],
         "keyword": "diskgroup",
         "required": True,
         "text": "The name of the array disk group to allocate volumes from."
@@ -1201,13 +1206,37 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "array",
         "keyword": "type",
-        "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio"],
+        "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio", "dorado"],
         "required": True,
         "text": "The storage array driver name."
     },
     {
+        "section": "pool",
+        "rtype": "dorado",
+        "keyword": "compression",
+        "convert": "boolean",
+        "default": True,
+        "text": "Activate compression on created luns.",
+    },
+    {
+        "section": "pool",
+        "rtype": "dorado",
+        "keyword": "dedup",
+        "convert": "boolean",
+        "default": True,
+        "text": "Activate data deduplcation on created luns.",
+    },
+    {
+        "section": "pool",
+        "rtype": "dorado",
+        "keyword": "hypermetrodomain",
+        "required": False,
+        "example": "HyperMetroDomain_000",
+        "text": "Create LUN as HyperMetro replicated pairs, using this domain."
+    },
+    {
         "section": "array",
-        "rtype": ["freenas", "xtremio"],
+        "rtype": ["freenas", "xtremio", "dorado"],
         "keyword": "api",
         "required": True,
         "example": "https://array.opensvc.com/api/v1.0",
@@ -1215,7 +1244,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "array",
-        "rtype": ["centera", "eva", "hds", "ibmds", "ibmsvc", "freenas", "netapp", "nexenta", "vioserver", "xtremio"],
+        "rtype": ["centera", "eva", "hds", "ibmds", "ibmsvc", "freenas", "netapp", "nexenta", "vioserver", "xtremio", "dorado"],
         "keyword": "username",
         "required": True,
         "example": "root",
@@ -1223,7 +1252,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "array",
-        "rtype": ["centera", "eva", "hds", "freenas", "nexenta", "xtremio"],
+        "rtype": ["centera", "eva", "hds", "freenas", "nexenta", "xtremio", "dorado"],
         "keyword": "password",
         "example": "system/sec/array1",
         "required": True,
@@ -1231,12 +1260,19 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "array",
-        "rtype": "freenas",
+        "rtype": ["freenas", "dorado"],
         "keyword": "timeout",
         "convert": "duration",
         "example": "10s",
         "default": 10,
         "text": "The api request timeout."
+    },
+    {
+        "section": "array",
+        "rtype": "dorado",
+        "keyword": "name",
+        "example": "a09",
+        "text": "The name of the array. If not provided, fallback to the section name suffix."
     },
     {
         "section": "array",

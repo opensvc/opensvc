@@ -64,17 +64,17 @@ class Disk(resDiskDisk.Disk):
                 dev_delete(path, log=self.log)
         self.svc.node.unset_lazy("devtree")
 
-    def configure(self):
+    def configure(self, force=False):
         self.unset_lazy("disk_id")
         self.unset_lazy("anypath")
         self.unset_lazy("devpath")
-        if self.exposed_devs():
+        if not force and self.exposed_devs():
             self.log.info("disk already configured: exposed devs %s", self.exposed_devs())
             return
         self.log.info("configure disk %s", self.disk_id)
         if not self.disk_id:
             raise ex.excError("disk_id is not set. should be at this point")
-        self.svc.node._scanscsi()
+        self.svc.node._scanscsi(log=self.log)
         self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
         if self.devpath and which(rcEnv.syspaths.multipath):

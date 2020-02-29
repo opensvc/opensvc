@@ -218,6 +218,10 @@ OPT = Storage({
         "--node", default="",
         action="store", dest="node",
         help="A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted."),
+    "nodes": Option(
+        "--nodes", default="",
+        action="store", dest="nodes",
+        help="A node selector expression. Used as the created volume nodes."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
@@ -560,6 +564,7 @@ ACTIONS = {
                 OPT.pool,
                 OPT.shared,
                 OPT.size,
+                OPT.nodes,
             ],
         },
     },
@@ -750,6 +755,13 @@ ACTIONS = {
             "msg": "Push patch/version list to the collector.",
             "options": [
                 OPT.cron,
+            ],
+        },
+        "pushdorado": {
+            "msg": "Push dorado configurations to the collector.",
+            "options": [
+                OPT.cron,
+                OPT.opt_object,
             ],
         },
         "pushsym": {

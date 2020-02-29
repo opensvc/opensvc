@@ -94,7 +94,7 @@ class Pool(pool.Pool):
             self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
         result = {
             "r1": r1_result,
-            "r2": r1_result,
+            "r2": r2_result,
             "disk_ids": {}
         }
         for node in r1_nodes:
@@ -127,7 +127,7 @@ class Pool(pool.Pool):
              if node == rcEnv.nodename:
                  continue
              an = self.oget("array", impersonate=node)
-             if an:
+             if an and an != self.array_name:
                  return an
 
     @lazy

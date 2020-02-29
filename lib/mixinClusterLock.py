@@ -3,6 +3,7 @@ import uuid
 
 import osvcd_shared as shared
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
 
 class LockMixin(object):
     """
@@ -11,7 +12,9 @@ class LockMixin(object):
     def lock_acquire(self, nodename, name, timeout=None, thr=None):
         if timeout is None:
             timeout = 10
-        if nodename not in thr.cluster_nodes:
+        if not nodename:
+            nodename = rcEnv.nodename
+        elif nodename not in thr.cluster_nodes:
             return
         lock_id = None
         deadline = time.time() + timeout
