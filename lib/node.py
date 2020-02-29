@@ -1404,6 +1404,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         self.collector.call('push_vioserver', self.options.objects)
 
+    def pushdorado(self):
+        """
+        The pushdorado action entrypoint.
+        Inventories Huawei Dorado storage arrays.
+        """
+        self.collector.call('push_dorado', self.options.objects)
+
     def pushsym(self):
         """
         The pushsym action entrypoint.

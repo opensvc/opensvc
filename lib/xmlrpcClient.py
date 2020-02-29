@@ -1021,6 +1021,46 @@ class Collector(object):
             args += [(self.node.collector_env.uuid, rcEnv.nodename)]
             self.proxy.update_eva_xml(*args)
 
+    def push_dorado(self, objects=[], sync=True):
+        import json
+        m = __import__('rcDorado')
+        try:
+            arrays = m.Dorados(objects)
+        except Exception as e:
+            print(e)
+            return 1
+        r = 0
+        try:
+            for array in arrays:
+                # can be too big for a single rpc
+                print(array.name)
+                for key in array.keys:
+                    print(" extract", key)
+                    vars = [key]
+                    try:
+                        data = getattr(array, 'get_'+key)()
+                        vals = [json.dumps(data)]
+                    except Exception as e:
+                        print(e)
+                        continue
+                    args = [array.name, vars, vals]
+                    args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+                    try:
+                        print(" send   ", key)
+                        self.proxy.update_dorado_xml(*args)
+                    except Exception as e:
+                        print(array.name, key, ":", e)
+                        r = 1
+                        continue
+                # signal all files are received
+                args = [array.name, [], []]
+                args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+                self.proxy.update_dorado_xml(*args)
+        finally:
+            for array in arrays:
+                array.close_session()
+        return r
+
     def push_sym(self, objects=[], sync=True):
         import zlib
         if 'update_sym_xml' not in self.proxy_methods:

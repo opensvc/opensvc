@@ -757,6 +757,13 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "pushdorado": {
+            "msg": "Push dorado configurations to the collector.",
+            "options": [
+                OPT.cron,
+                OPT.opt_object,
+            ],
+        },
         "pushsym": {
             "msg": "Push symmetrix configurations to the collector.",
             "options": [
