@@ -17,9 +17,10 @@ class Prov(provisioning.Prov):
     def provisioner(self):
         if self.r.disk_id:
             self.r.log.info("skip disk creation: the disk_id keyword is already set")
+            self.r.configure()
         else:
             self.create_disk()
-        self.r.configure()
+            self.r.configure(force=True)
 
     def create_disk(self):
         poolname = self.r.oget("pool")
