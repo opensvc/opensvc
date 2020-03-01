@@ -63,17 +63,21 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
         return ret, out, err
 
     def read_registrations(self):
-        for dev in self.devs:
-            ret, out, err = self.read_path_registrations(dev)
-            if ret != 0:
-                continue
-            return out
-        raise ""
+        n_devs = 0
+        n_registered = 0
+        for sub_dev in self.peer_sub_devs:
+            devs = self.mangle_devs(sub_dev)
+            for dev in devs:
+                ret, out, err = self.read_path_registrations(dev)
+                if ret != 0:
+                    continue
+                n_devs += len(devs)
+                n_registered = out.count(self.hostid)
+                break
+        return n_devs, n_registered
 
     def check_all_paths_registered(self):
-        out = self.read_registrations()
-        n_registered = out.count(self.hostid)
-        n_devs = len(self.devs)
+        n_devs, n_registered = self.read_registrations()
         if n_registered == n_devs:
             return
         if n_registered == 0:
