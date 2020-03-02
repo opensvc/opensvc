@@ -21,6 +21,7 @@ class Container(resContainerDocker.Container):
     Docker container resource driver.
     """
     default_net = "lo"
+    dns_option_option = "--dns-opt"
 
     def __init__(self, *args, **kwargs):
         kwargs["type"] = "container.podman"

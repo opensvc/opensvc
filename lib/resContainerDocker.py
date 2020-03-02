@@ -70,6 +70,7 @@ class Container(resContainer.Container):
     """
     default_start_timeout = 2
     default_net = "none"
+    dns_option_option = "--dns-option"
 
     def __init__(self,
                  rid,
@@ -582,10 +583,10 @@ class Container(resContainer.Container):
                 l += ["--dns", dns]
             for search in self.dns_search():
                 l += ["--dns-search", search]
-            dns_options = [o for o in get_options("--dns-option", args)]
-            args = drop_option("--dns-option", args, drop_value=True)
+            dns_options = [o for o in get_options(self.dns_option_option, args)]
+            args = drop_option(self.dns_option_option, args, drop_value=True)
             for o in self.dns_options(dns_options):
-                l += ["--dns-option", o]
+                l += [self.dns_option_option, o]
             return l
 
         args += dns_opts(args)
