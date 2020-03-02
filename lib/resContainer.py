@@ -306,3 +306,24 @@ class Container(Res.Resource):
         )
         return elems
 
+
+    def dns_options(self, options):
+        ndots_done = False
+        edns0_done = False
+        for co, i in enumerate(options):
+            try:
+                if co.startswith("ndots:"):
+                    ndots = int(co.replace("ndots:", ""), "")
+                    if ndots < 2:
+                        options[i] = "ndots:2"
+                    ndots_done = True
+            except Exception:
+                pass
+            if co == "edns0":
+                edns0_done = True
+        if not ndots_done:
+            options.append("ndots:2")
+        if not edns0_done:
+            options.append("edns0")
+        return options
+
