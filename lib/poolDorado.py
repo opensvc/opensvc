@@ -147,7 +147,6 @@ class Pool(pool.Pool):
         data.append(disk)
         if fmt:
             data += self.add_fs(name, shared)
-        data += self.add_sync_internal(data)
         return data
 
 

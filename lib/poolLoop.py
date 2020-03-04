@@ -25,7 +25,6 @@ class Pool(pool.Pool):
         ]
         if fmt:
             data += self.add_fs(name, shared)
-        data += self.add_sync_internal(data)
         return data
 
     def pool_status(self):
