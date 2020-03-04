@@ -7,13 +7,14 @@ from rcUtilities import lazy, justcall
 import node
 
 class Node(node.Node):
-    def still_alive(self):
+    def still_alive(self, action):
         try:
             with open("/proc/sys/kernel/sysrq", "r") as ofile:
                 buff = ofile.read()
         except Exception:
             buff = "<unknown>"
-        self.log.error("still alive ... maybe crashing is ignored by kernel.sysrq=%s (check dmesg)" % buff)
+        self.log.error("still alive ... maybe %s is ignored by kernel.sysrq=%s "
+                       "(check dmesg)" % (action, buff.strip()))
         time.sleep(1)
         self.freeze()
 
@@ -23,9 +24,7 @@ class Node(node.Node):
             time.sleep(delay)
         with open("/proc/sysrq-trigger", "w") as ofile:
             ofile.write("b")
-        self.still_alive()
-        time.sleep(1)
-        self.freeze()
+        self.still_alive("reboot")
 
     def sys_crash(self, delay=0):
         if delay:
@@ -33,7 +32,7 @@ class Node(node.Node):
             time.sleep(delay)
         with open("/proc/sysrq-trigger", "w") as ofile:
             ofile.write("c")
-        self.still_alive()
+        self.still_alive("crash")
 
     def shutdown(self):
         cmd = ["shutdown", "-h", "now"]
