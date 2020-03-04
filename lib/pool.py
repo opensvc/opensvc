@@ -78,6 +78,7 @@ class Pool(object):
             defaults["nodes"] = nodes
         data.append(defaults)
         volume._update(data)
+        self.disable_sync_internal(volume)
 
     def pool_status(self):
         pass
@@ -138,13 +139,16 @@ class Pool(object):
         self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), ",".join(data))
         return data
 
-    def add_sync_internal(self, data):
+    def disable_sync_internal(self, volume):
         """
-        Disable sync#i0 if the volume has only disk.disk and fs.directory resources.
+        Disable sync#i0 if the volume has no resource contributing files to sync.
         """
-        if len([res for res in data if ".".join((res.get("rtype", ""), res.get("type",""))) not in ("disk.disk", "disk.scsireserv", "fs.directory", "fs.shmfs", "fs.tmpfs")]) > 0:
+        tosync = []
+        for res in volume.get_resources():
+            tosync += res.files_to_sync()
+        if len(tosync):
             return []
-        return [{"rid": "sync#i0", "disable": True}]
+        volume._update([{"rid": "sync#i0", "disable": True}])
 
     def add_fs(self, name, shared=False):
         data = []

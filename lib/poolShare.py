@@ -24,7 +24,6 @@ class Pool(pool.Pool):
                 "size": size,
             }
         ]
-        data += self.add_sync_internal(data)
         return data
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
