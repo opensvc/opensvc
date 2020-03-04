@@ -37,6 +37,7 @@ class TestDaemonRun:
         with pytest.raises(SystemExit) as error:
             osvcd.main()
         proc.terminate()
+        proc.join(timeout=1)
         assert loop_forever.call_count == 0
         assert error.value.code == 1
 
