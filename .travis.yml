@@ -2,6 +2,7 @@ env:
   - OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP=20
 sudo: true
 language: python
+cache: pip
 branches:
   only:
   - master
