@@ -76,7 +76,7 @@ class HbDisk(Hb):
         if rcEnv.sysname == "Linux":
             if stat.S_ISBLK(statinfo.st_mode):
                 self.log.info("using directio")
-                new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC
+                new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC  # (Darwin, SunOS) pylint: disable=no-member
             else:
                 raise ex.excAbortAction("%s must be a block device" % new_dev)
         else:

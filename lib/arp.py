@@ -17,7 +17,7 @@ def send_arp(ifname, address):
     """Send out a gratuitous ARP on interface C{ifname}."""
     # Try to get hold of a socket:
     try:
-        ether_socket = socket.socket(socket.AF_PACKET,
+        ether_socket = socket.socket(socket.AF_PACKET,  # Darwin pylint: disable=no-member
             socket.SOCK_RAW)
         ether_socket.bind((ifname, ETH_TYPE_ARP))
         ether_addr = ether_socket.getsockname()[4]

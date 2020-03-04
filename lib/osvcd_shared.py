@@ -1,12 +1,9 @@
 """
 A module to share variables used by osvcd threads.
 """
-import copy
 import os
-import sys
 import threading
 import time
-import codecs
 import fnmatch
 import hashlib
 import json
@@ -17,15 +14,15 @@ import shutil
 from subprocess import Popen, PIPE
 
 import six
+# noinspection PyUnresolvedReferences
 from six.moves import queue
 
 import rcExceptions as ex
 from jsonpath_ng.ext import parse
-from rcUtilities import lazy, unset_lazy, is_string, factory, split_path, normalize_paths, normalize_jsonpath
+from rcUtilities import lazy, unset_lazy, factory, split_path, normalize_paths
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from freezer import Freezer
-from converters import convert_duration, convert_boolean
 from comm import Crypt
 from osvcd_events import EVENTS
 
@@ -45,7 +42,7 @@ class DebugRLock(object):
     def release(self, *args, **kwargs):
         from traceback import format_stack
         print("=== %s release\n%s" % (self.name, "".join(format_stack()[2:-1])))
-        self._lock.release(*args, **kwargs)
+        self._lock.release()
 
     def __enter__(self):
         self.t = time.time()
@@ -60,7 +57,7 @@ class DebugRLock(object):
         print("=== %s held %.2fs\n%s" % (self.name, d, "".join(format_stack()[2:-1])))
 
 
-#RLock = DebugRLock
+# RLock = DebugRLock
 RLock = threading.RLock
 
 # a global to store the Daemon() instance
@@ -208,6 +205,7 @@ try:
 except AttributeError:
     pass
 
+
 def wake_heartbeat_tx():
     """
     Notify the heartbeat tx thread to do they periodic job immediatly
@@ -267,6 +265,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.tid = None
         self.stats_data = None
         self.last_stats_refresh = 0
+        self.arbitrators_data = None
 
         # hash for log dups avoiding
         self.duplog_data = {}
@@ -286,6 +285,9 @@ class OsvcThread(threading.Thread, Crypt):
         elif lvl == "warning":
             fn = self.log.warning
         elif lvl == "error":
+            fn = self.log.error
+        else:
+            self.log.error('alert called with invalid lvl %s', lvl)
             fn = self.log.error
         fn(fmt, *args)
         self.alerts.append({
@@ -350,11 +352,11 @@ class OsvcThread(threading.Thread, Crypt):
             return self.stats_data
         try:
             tid_cpu_time = NODE.tid_cpu_time(self.tid)
-        except Exception as exc:
+        except Exception:
             tid_cpu_time = 0.0
         try:
             tid_mem_total = NODE.tid_mem_total(self.tid)
-        except Exception as exc:
+        except Exception:
             tid_mem_total = 0
         self.stats_data = {
             "threads": len(self.threads),
@@ -404,11 +406,13 @@ class OsvcThread(threading.Thread, Crypt):
         completion.
         """
         if six.PY2:
+            # noinspection PyShadowingBuiltins
             ProcessLookupError = OSError
         for data in self.procs:
+            # noinspection PyUnboundLocalVariable
             try:
                 data.proc.kill()
-            except ProcessLookupError:
+            except ProcessLookupError:  # pylint: disable=undefined-variable
                 continue
             for _ in range(self.stop_tmo):
                 data.proc.poll()
@@ -605,7 +609,8 @@ class OsvcThread(threading.Thread, Crypt):
                 })
             if status:
                 reset_placement = False
-                if status != SMON_DATA[path].status and (not expected_status or expected_status == SMON_DATA[path].status):
+                if status != SMON_DATA[path].status \
+                        and (not expected_status or expected_status == SMON_DATA[path].status):
                     self.log.info(
                         "service %s monitor status change: %s => %s",
                         path,
@@ -943,6 +948,7 @@ class OsvcThread(threading.Thread, Crypt):
             try:
                 instance = CLUSTER_DATA[nodename]["services"]["status"][path]
                 # provoke a KeyError on foreign instance, to discard them
+                # noinspection PyStatementEffect
                 instance["updated"]
             except (TypeError, KeyError):
                 # foreign
@@ -1188,7 +1194,8 @@ class OsvcThread(threading.Thread, Crypt):
     def first_available_node(self):
         for n in self.cluster_nodes:
             try:
-                status = CLUSTER_DATA[n]["monitor"]["status"]
+                # noinspection PyStatementEffect
+                CLUSTER_DATA[n]["monitor"]["status"]
                 return n
             except KeyError:
                 continue
@@ -1329,6 +1336,7 @@ class OsvcThread(threading.Thread, Crypt):
         wake_monitor(reason="nodes info change")
 
     def speaker(self):
+        nodename = None
         for nodename in self.sorted_cluster_nodes:
             if nodename in CLUSTER_DATA and \
                CLUSTER_DATA[nodename] != "unknown":
@@ -1439,7 +1447,7 @@ class OsvcThread(threading.Thread, Crypt):
                 addr, netmask = s.split("/", 1)
                 netmask, ipdev = netmask.split("@", 1)
                 return addr, netmask, ipdev
-            except Exception as exc:
+            except Exception:
                 return
 
         default_vip = NODE.oget("cluster", "vip")
@@ -1447,7 +1455,7 @@ class OsvcThread(threading.Thread, Crypt):
             return
         try:
             default_addr, default_netmask, default_ipdev = parse_vip(default_vip)
-        except Exception as exc:
+        except Exception:
             return
         template = [
             ("sync#i0", "disable", "true"),
@@ -1491,7 +1499,7 @@ class OsvcThread(threading.Thread, Crypt):
         for section, keyword, value in template:
             kws.append("%s.%s" % (section, keyword))
             try:
-                val = svc._get("%s.%s" %(section, keyword))
+                val = svc._get("%s.%s" % (section, keyword))
             except (ex.OptNotFound, ex.RequiredOptNotFound):
                 val = None
             if val != value:
@@ -1591,6 +1599,7 @@ class OsvcThread(threading.Thread, Crypt):
         if namespace:
             if namespaces is not None and namespace not in namespaces:
                 return []
+            # noinspection PySetFunctionToLiteral
             namespaces = set([namespace])
         if "root" in namespaces:
             namespaces.add(None)
@@ -1682,7 +1691,7 @@ class OsvcThread(threading.Thread, Crypt):
                 else:
                     return []
                 _selector = "/".join((_namespace, _kind, _name))
-                filtered_paths = [path  for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
+                filtered_paths = [path for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
                 return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
             elif len(elts) != 3:
                 return []
@@ -1733,6 +1742,9 @@ class OsvcThread(threading.Thread, Crypt):
                 match = current <= value
             elif op == ":":
                 match = True
+            else:
+                # unknown op value
+                match = False
             return match
 
         def svc_matching(path, param, op, value, jsonpath_expr):
@@ -1744,8 +1756,8 @@ class OsvcThread(threading.Thread, Crypt):
                         current = match.value
                         if matching(current, op, value):
                             return True
-                except Exception as exc:
-                    current = None
+                except Exception:
+                    pass
             else:
                 try:
                     svc = SERVICES[path]
