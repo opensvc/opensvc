@@ -208,9 +208,9 @@ class DataMixin(object):
             self.log.info("remove %s key %s file at parent location %s", self.desc, key, vdir)
             os.unlink(vdir)
         makedirs(vdir)
-        self.write_key(vpath, data)
+        self.write_key(vpath, data, key=key)
 
-    def write_key(self, vpath, data):
+    def write_key(self, vpath, data, key=None):
         mtime = os.path.getmtime(self.paths.cf)
         try:
             data = data.encode()
@@ -225,7 +225,7 @@ class DataMixin(object):
             if current == data:
                 os.utime(vpath, (mtime, mtime))
                 return
-        self.log.info("install %s %s", self.desc, vpath)
+        self.log.info("install %s/%s in %s", self.name, key, vpath)
         with open(vpath, "wb") as ofile:
             os.chmod(vpath, self.default_mode)
             ofile.write(data)
