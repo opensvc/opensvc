@@ -122,6 +122,7 @@ class DataMixin(object):
             self.edit_config()
             return
         buff = self.decode_key(self.options.key)
+        no_newline = buff.count(os.linesep) == 0
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
         if "EDITOR" in os.environ:
@@ -143,6 +144,9 @@ class DataMixin(object):
             os.system(' '.join((editor, fpath)))
             with open(fpath, "r") as f:
                 edited = f.read()
+            if no_newline and edited.count(os.linesep) == 1 and edited.endswith(os.linesep):
+                self.log.debug("striping trailing newline from edited key value")
+                edited = edited.rstrip(os.linesep)
             if buff == edited:
                 return
             self.add_key(self.options.key, edited)
