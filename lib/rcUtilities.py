@@ -1637,3 +1637,9 @@ def daemon_process_running():
         return process_match_args(pid, search_args=search_args)
     except:
         return False
+
+
+def is_glob(text):
+    if len(set(text) & set("?*[")) > 0:
+        return True
+    return False

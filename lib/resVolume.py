@@ -6,7 +6,7 @@ import os
 import resources as Res
 import rcExceptions as ex
 import rcStatus
-from rcUtilities import lazy, factory, fmt_path, split_path, makedirs
+from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob
 
 class Volume(Res.Resource):
     """
@@ -176,7 +176,7 @@ class Volume(Res.Resource):
                                 "expected data %s can not be installed in the volume" % (kind, name, data["key"]), "warn")
                 continue
             keys = obj.resolve_key(data["key"])
-            if not keys and "*" not in data["key"] and "?" not in data["key"]:
+            if not keys and not is_glob(data["key"]):
                 self.status_log("%s %s has no key %s. "
                                 "expected data can not be installed in the volume" % (kind, name, data["key"]), "warn")
 
@@ -190,7 +190,7 @@ class Volume(Res.Resource):
                                  kind, name, data["key"])
                 continue
             keys = obj.resolve_key(data["key"])
-            if not keys and "*" not in data["key"] and "?" not in data["key"] and "[" not in data["key"]:
+            if not keys and not is_glob(data["key"]):
                 self.log.warning("%s %s has no key %s. "
                                  "expected data can not be installed in the volume",
                                  kind, name, data["key"])
