@@ -196,7 +196,7 @@ class Volume(Res.Resource):
                                  kind, name, data["key"])
                 continue
             for key in keys:
-                obj._install(key, data["path"])
+                obj.install_key(key, data["path"])
 
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):
