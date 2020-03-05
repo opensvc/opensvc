@@ -195,7 +195,7 @@ class Volume(Res.Resource):
                                  "expected data can not be installed in the volume",
                                  kind, name, data["key"])
                 continue
-            for key in obj.resolve_key(data["key"]):
+            for key in keys:
                 obj._install(key, data["path"])
 
     def has_data(self, kind, name, key=None):
