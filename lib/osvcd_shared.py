@@ -583,21 +583,16 @@ class OsvcThread(threading.Thread, Crypt):
                  stonith=None, expected_status=None):
         global SMON_DATA
         instance = self.get_service_instance(path, rcEnv.nodename)
-        if instance and not instance.get("resources", {}) and \
-           not status and \
-           (
-               global_expect not in (
-                   "frozen",
-                   "thawed",
-                   "aborted",
-                   "unset",
-                   "deleted",
-                   "purged"
-               ) or (
-                   global_expect is None and local_expect is None and
-                   status == "idle"
-               )
-           ):
+        if instance and not instance.get("resources", {}) \
+                and not status \
+                and ((global_expect is None and local_expect is None and status == "idle")  # TODO refactor this
+                     or global_expect not in (
+                             "frozen",
+                             "thawed",
+                             "aborted",
+                             "unset",
+                             "deleted",
+                             "purged")):
             # skip slavers, wrappers, scalers
             return
         with SMON_DATA_LOCK:
@@ -618,9 +613,9 @@ class OsvcThread(threading.Thread, Crypt):
                         SMON_DATA[path].status else "none",
                         status
                     )
-                    if SMON_DATA[path].status is not None and \
-                       "failed" in SMON_DATA[path].status and \
-                       (status is None or "failed" not in status):
+                    if SMON_DATA[path].status is not None \
+                            and "failed" in SMON_DATA[path].status \
+                            and "failed" not in status:
                         # the placement might become "leader" after transition
                         # from "failed" to "not-failed". recompute asap so the
                         # orchestrator won't take an undue "stop_instance"
@@ -644,7 +639,7 @@ class OsvcThread(threading.Thread, Crypt):
                         SMON_DATA[path].local_expect else "none",
                         local_expect
                     )
-                SMON_DATA[path].local_expect = local_expect
+                    SMON_DATA[path].local_expect = local_expect
 
             if global_expect:
                 if global_expect == "unset":
@@ -657,7 +652,7 @@ class OsvcThread(threading.Thread, Crypt):
                         SMON_DATA[path].global_expect else "none",
                         global_expect
                     )
-                SMON_DATA[path].global_expect = global_expect
+                    SMON_DATA[path].global_expect = global_expect
                 SMON_DATA[path].global_expect_updated = time.time()
 
             if reset_retries and "restart" in SMON_DATA[path]:
@@ -676,7 +671,7 @@ class OsvcThread(threading.Thread, Crypt):
                         SMON_DATA[path].stonith else "none",
                         stonith
                     )
-                SMON_DATA[path].stonith = stonith
+                    SMON_DATA[path].stonith = stonith
         wake_monitor(reason="service %s mon change" % path)
 
     def get_node_monitor(self, nodename=None):
@@ -1704,7 +1699,7 @@ class OsvcThread(threading.Thread, Crypt):
                     return []
 
             expanded = []
-            
+
             if param.startswith("."):
                 param = "$"+param
             if param.startswith("$."):
@@ -1813,4 +1808,3 @@ class OsvcThread(threading.Thread, Crypt):
             except KeyError:
                 pass
         return data
-
