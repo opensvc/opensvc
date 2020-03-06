@@ -195,6 +195,7 @@ class Volume(Res.Resource):
                                  "expected data can not be installed in the volume",
                                  kind, name, data["key"])
                 continue
+            self.log.debug("install ./%s/%s/%s in %s", kind, name, data["key"], data["path"])
             for key in keys:
                 obj.install_key(key, data["path"])
 
