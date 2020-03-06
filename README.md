@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/opensvc/opensvc.svg?branch=master)](https://travis-ci.org/opensvc/opensvc)
+[![Build Status](https://travis-ci.com/opensvc/opensvc.svg?branch=master)](https://travis-ci.com/opensvc/opensvc)
 
 A cluster orchestrator with a distinctive feature set
 =====================================================
