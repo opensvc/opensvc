@@ -26,7 +26,7 @@ from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from six.moves import input
 from storage import Storage
-from rcUtilities import bdecode
+from rcUtilities import bdecode, is_glob
 from rcColor import formatter
 
 try:
@@ -406,7 +406,7 @@ class Cmd(object):
             relpath = ""
             raw_req_path = copy.copy(path)
             shell_pattern = p
-        elif self.is_glob(p[p.rindex("/"):]):
+        elif is_glob(p[p.rindex("/"):]):
             v = p.split("/")
             raw_req_path = "/".join(v[:-1])
             shell_pattern = v[-1]
@@ -480,11 +480,6 @@ class Cmd(object):
                 else:
                     all_handlers[h["path"]]["actions"].append(action)
         return [all_handlers[p] for p in sorted(all_handlers.keys())]
-
-    def is_glob(self, s):
-        if len(set(s) & set("?*[")) > 0:
-            return True
-        return False
 
     def set_parser_options(self, _path):
         if not _path.startswith("/"):
