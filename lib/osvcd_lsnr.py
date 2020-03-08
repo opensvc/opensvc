@@ -51,11 +51,13 @@ from converters import convert_size, print_duration
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 
-class DummyException(Exception):
-    pass
-
 if six.PY2:
-    ConnectionResetError = DummyException
+    class _ConnectionResetError(Exception):
+        pass
+    class _ConnectionAbortedError(Exception):
+        pass
+    ConnectionResetError = _ConnectionResetError
+    ConnectionAbortedError = _ConnectionAbortedError
 
 RE_LOG_LINE = re.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-2][0-9]:[0-6][0-9]:[0-6][0-9],[0-9]{3} .* \| ")
 JANITORS_INTERVAL = 0.5
@@ -402,7 +404,7 @@ class Listener(shared.OsvcThread):
                     })
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
-            except socket.timeout:
+            except (socket.timeout, ConnectionAbortedError):
                 continue
             except Exception as exc:
                 self.log.exception(exc)
@@ -1129,11 +1131,11 @@ class ClientHandler(shared.OsvcThread):
         if path == "favicon.ico":
             return 200, "image/x-icon", ICON
         elif path in ("", "index.html"):
-            return self.index(stream_id)
+            return self.index()
         elif path == "index.js":
             return self.index_js()
         elif "text/html" in accept:
-            return self.index(stream_id)
+            return self.index()
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
@@ -1301,6 +1303,8 @@ class ClientHandler(shared.OsvcThread):
             except socket.error as exc:
                 if exc.errno in (0, 104):
                     continue
+                self.log.error("%s", exc)
+                return
             except h2.exceptions.StreamClosedError:
                 return
             except ConnectionResetError:
@@ -1968,11 +1972,17 @@ class ClientHandler(shared.OsvcThread):
     # App
     #
     ##########################################################################
-    def index(self, stream_id):
+    def serve_file(self, rpath, content_type):
+        try:
+            return 200, content_type, self.load_file(rpath)
+        except OSError:
+            return 404, content_type, "The webapp is not installed."
+
+    def index(self):
         #data = self.load_file("index.js")
         #self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
-        return 200, "text/html", self.load_file("index.html")
+        return self.serve_file("index.html", "text/html")
 
     def index_js(self):
-        return 200, "application/javascript", self.load_file("index.js")
+        return self.serve_file("index.js", "application/javascript")
 
