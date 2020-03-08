@@ -1129,7 +1129,7 @@ class ClientHandler(shared.OsvcThread):
         if path == "favicon.ico":
             return 200, "image/x-icon", ICON
         elif path in ("", "index.html"):
-            return self.index(stream_id)
+            return self.index()
         elif path == "index.js":
             return self.index_js()
         elif "text/html" in accept:
@@ -1301,6 +1301,8 @@ class ClientHandler(shared.OsvcThread):
             except socket.error as exc:
                 if exc.errno in (0, 104):
                     continue
+                self.log.error("%s", exc)
+                return
             except h2.exceptions.StreamClosedError:
                 return
             except ConnectionResetError:
@@ -1968,11 +1970,17 @@ class ClientHandler(shared.OsvcThread):
     # App
     #
     ##########################################################################
-    def index(self, stream_id):
+    def serve_file(self, rpath, content_type):
+        try:
+            return 200, content_type, self.load_file(rpath)
+        except OSError:
+            return 404, content_type, "The webapp is not installed."
+
+    def index(self):
         #data = self.load_file("index.js")
         #self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
-        return 200, "text/html", self.load_file("index.html")
+        return self.serve_file("index.html", "text/html")
 
     def index_js(self):
-        return 200, "application/javascript", self.load_file("index.js")
+        return self.serve_file("index.js", "application/javascript")
 
