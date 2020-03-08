@@ -51,11 +51,13 @@ from converters import convert_size, print_duration
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 
-class DummyException(Exception):
-    pass
-
 if six.PY2:
-    ConnectionResetError = DummyException
+    class _ConnectionResetError(Exception):
+        pass
+    class _ConnectionAbortedError(Exception):
+        pass
+    ConnectionResetError = _ConnectionResetError
+    ConnectionAbortedError = _ConnectionAbortedError
 
 RE_LOG_LINE = re.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-2][0-9]:[0-6][0-9]:[0-6][0-9],[0-9]{3} .* \| ")
 JANITORS_INTERVAL = 0.5
@@ -402,7 +404,7 @@ class Listener(shared.OsvcThread):
                     })
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
-            except socket.timeout:
+            except (socket.timeout, ConnectionAbortedError):
                 continue
             except Exception as exc:
                 self.log.exception(exc)
