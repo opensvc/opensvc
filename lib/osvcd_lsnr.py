@@ -1135,7 +1135,7 @@ class ClientHandler(shared.OsvcThread):
         elif path == "index.js":
             return self.index_js()
         elif "text/html" in accept:
-            return self.index(stream_id)
+            return self.index()
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
         if node is not None:
