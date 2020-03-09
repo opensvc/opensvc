@@ -207,7 +207,7 @@ class DataMixin(object):
             path = key
             while True:
                 path = os.path.dirname(path)
-                if not path:
+                if not path or path == '/':
                     break
                 if path in keys:
                     continue
