@@ -29,7 +29,7 @@ class Cfg(DataMixin, BaseSvc):
     def _add_key(self, key, data):
         if not key:
             raise ex.excError("configuration key name can not be empty")
-        if not data:
+        if data is None:
             raise ex.excError("configuration value can not be empty")
         if not is_string(data):
             data = "base64:"+bdecode(base64.urlsafe_b64encode(data))
