@@ -5069,7 +5069,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                                  size=self.options.size,
                                  access=self.options.access,
                                  nodes=self.options.nodes,
-                                 shared=self.options.shared)
+                                 shared=self.options.shared,
+                                 fmt=not self.options.blk)
 
     def _pool_create_volume(self, poolname=None, **kwargs):
         try:
