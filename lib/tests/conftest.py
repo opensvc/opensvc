@@ -136,3 +136,58 @@ id = abcd
 type = flag
 """
         svc_file.write(config_txt)
+
+
+@pytest.fixture(scope='function')
+def has_service_with_vol_and_cfg(osvc_path_tests):
+    """
+    Add config with a cfg object and a service that uses this config on a volume
+    """
+    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    os.mkdir(pathetc)
+    with open(os.path.join(pathetc, 'svc.conf'), mode='w+') as svc_file:
+        config_txt = """
+[DEFAULT]
+id = abcd
+nodes = *
+
+[volume#0]
+type = directory
+name = vol-test
+pool = default
+access = roo
+size = 1m
+configs =
+    cfg/cfg1/simple:simple_dest
+    cfg/cfg1//simpleb:simple_b
+    cfg/cfg1/a/*:star-to-dir/
+    cfg/cfg1/**/only-one:double-star-to-only-one
+    cfg/cfg1/a:recursive-dir
+    cfg/cfg1/a:/recursive-dir-with-os-sep
+    cfg/cfg1/a:/recursive-dir-with-os-sep_2/
+    cfg/cfg1//e:os-sep-d
+    cfg/cfg1/*:all-cfg1/
+    cfg/cfg1/camelCase/Foo/baR:baR
+"""
+        svc_file.write(config_txt)
+
+    os.mkdir(os.path.join(pathetc, 'cfg'))
+    with open(os.path.join(pathetc, 'cfg', 'cfg1.conf'), mode='w+') as svc_file:
+        config_txt = """
+[DEFAULT]
+id = abcde
+
+[data]
+simple = literal:cfg content of key simple
+/simpleb = literal:cfg content of key /simpleb
+a/b/c = literal:cfg content of key a/b/c
+a/e/f1 = literal:cfg content of key a/e/f1
+a/e/f2 = literal:cfg content of key a/e/f2
+a/g = literal:cfg content of key a/g
+/e/f = literal:cfg content of key /e/f
+i/j/k/only-one = literal:cfg content of key i/j/k/only-one
+camelCase/Foo/baR = literal:cfg content of key camelCase/Foo/baR
+"""
+        svc_file.write(config_txt)
+
+    return osvc_path_tests

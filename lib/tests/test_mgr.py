@@ -145,6 +145,58 @@ class TestServiceActionFsFlag:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_privs')
+class TestServiceActionWithVolume:
+    @staticmethod
+    def test_provision_service_with_config(has_service_with_vol_and_cfg, mock_argv):
+        expected_voldir = os.path.join(
+            str(has_service_with_vol_and_cfg),
+            'var',
+            'pool',
+            'directory',
+            'vol-test.root.vol.default')
+
+        mock_argv(['mgr', 'provision', '--local', '--leader', '--debug'])
+        assert Mgr(selector='svc')() == 0
+
+        def assert_file_contain(file, expected_value):
+            with open(os.path.join(expected_voldir, file)) as file:
+                assert file.read() == expected_value
+
+        assert_file_contain('simple_dest', 'cfg content of key simple')
+        assert_file_contain('simple_b', 'cfg content of key /simpleb')
+        assert_file_contain('baR', 'cfg content of key camelCase/Foo/baR')
+        assert_file_contain('double-star-to-only-one', 'cfg content of key i/j/k/only-one')
+
+        assert_file_contain(os.path.join('star-to-dir', 'b', 'c'), 'cfg content of key a/b/c')
+        assert_file_contain(os.path.join('star-to-dir', 'e', 'f1'), 'cfg content of key a/e/f1')
+        assert_file_contain(os.path.join('star-to-dir', 'e', 'f2'), 'cfg content of key a/e/f2')
+        assert_file_contain(os.path.join('star-to-dir', 'g'), 'cfg content of key a/g')
+
+        assert_file_contain(os.path.join('recursive-dir', 'b', 'c'), 'cfg content of key a/b/c')
+        assert_file_contain(os.path.join('recursive-dir', 'e', 'f1'), 'cfg content of key a/e/f1')
+        assert_file_contain(os.path.join('recursive-dir', 'e', 'f2'), 'cfg content of key a/e/f2')
+        assert_file_contain(os.path.join('recursive-dir', 'g'), 'cfg content of key a/g')
+
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep', 'b', 'c'), 'cfg content of key a/b/c')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep', 'e', 'f1'), 'cfg content of key a/e/f1')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep', 'e', 'f2'), 'cfg content of key a/e/f2')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep', 'g'), 'cfg content of key a/g')
+
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep_2', 'a', 'b', 'c'), 'cfg content of key a/b/c')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep_2', 'a', 'e', 'f1'), 'cfg content of key a/e/f1')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep_2', 'a', 'e', 'f2'), 'cfg content of key a/e/f2')
+        assert_file_contain(os.path.join('recursive-dir-with-os-sep_2', 'a', 'g'), 'cfg content of key a/g')
+
+        assert_file_contain(os.path.join('os-sep-d', 'f'), 'cfg content of key /e/f')
+
+        assert_file_contain(os.path.join('all-cfg1', 'simple'), 'cfg content of key simple')
+        assert_file_contain(os.path.join('all-cfg1', 'simpleb'), 'cfg content of key /simpleb')
+        assert_file_contain(os.path.join('all-cfg1', 'a', 'g'), 'cfg content of key a/g')
+        assert_file_contain(os.path.join('all-cfg1', 'e', 'f'), 'cfg content of key /e/f')
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_privs')
 class TestServiceActionWhenNoDaemonListen:
     @staticmethod
     @pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
