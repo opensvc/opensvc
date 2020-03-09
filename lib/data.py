@@ -69,7 +69,7 @@ class DataMixin(object):
     def _add(self, key=None, value_from=None, append=False):
         if key and sys.stdin and value_from in ("-", "/dev/stdin"):
             self.add_stdin(key, append=append)
-        elif key and self.options.value:
+        elif key and self.options.value is not None:
             self.add_key(key, self.options.value, append=append)
         elif value_from and os.path.isdir(value_from):
             self.add_directory(key, value_from, append=append)
