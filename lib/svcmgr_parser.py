@@ -24,11 +24,6 @@ OPT.update({
         "--author", default=None,
         action="store", dest="author",
         help="The acker name to log when acknowledging action log errors"),
-    "backlog": Option(
-        "--backlog", default=None,
-        action="store", dest="backlog",
-        help="A size expression limiting the volume of data fetched "
-             "from the log file tail. Default is 10k."),
     "begin": Option(
         "--begin", default=None,
         action="store", dest="begin",
@@ -56,10 +51,6 @@ OPT.update({
         action="store", dest="end",
         help="A end date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
              "timerange the action applies to."),
-    "follow": Option(
-        "--follow", default=False,
-        action="store_true", dest="follow",
-        help="Follow the logs as they come. Use crtl-c to interrupt."),
     "id": Option(
         "--id", default=0,
         action="store", dest="id", type="int",
@@ -588,14 +579,6 @@ ACTIONS["Service actions"].update({
     "pg_kill": {
         "msg": "Kill the tasks of a process group.",
         "options": mp.ACTION_OPTS,
-    },
-    "logs": {
-        "msg": "Display the service logs. All service instances logs are aggregated.",
-        "options": [
-            OPT.backlog,
-            OPT.follow,
-            OPT.nopager,
-        ]
     },
 })
 ACTIONS.update({

@@ -46,6 +46,10 @@ OPT = Storage({
         action="store", dest="begin",
         help="A begin date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
              "timerange the action applies to."),
+    "blk": Option(
+        "--blk", default=False,
+        action="store_true", dest="blk",
+        help="Create a block volume instead of a formatted volume."),
     "broadcast": Option(
         "--broadcast", default=None,
         action="store", dest="broadcast",
@@ -559,6 +563,7 @@ ACTIONS = {
             "msg": "Create a volume in the pool.",
             "options": [
                 OPT.access,
+                OPT.blk,
                 OPT.name,
                 OPT.namespace,
                 OPT.pool,

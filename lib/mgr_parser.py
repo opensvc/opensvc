@@ -9,6 +9,11 @@ OPT = Storage({
         help="A list member to add to the value pointed by :opt:`--param`. "
              "If :opt:`--index` is set, insert the new element at the "
              "specified position in the list."),
+    "backlog": Option(
+        "--backlog", default=None,
+        action="store", dest="backlog",
+        help="A size expression limiting the volume of data fetched "
+             "from the log file tail. Default is 10k."),
     "color": Option(
         "--color", default="auto",
         action="store", dest="color",
@@ -66,6 +71,10 @@ OPT = Storage({
         "--filter", default="",
         action="store", dest="jsonpath_filter",
         help="A JSONPath expression to filter a JSON output."),
+    "follow": Option(
+        "--follow", default=False,
+        action="store_true", dest="follow",
+        help="Follow the logs as they come. Use crtl-c to interrupt."),
     "force": Option(
         "-f", "--force", default=False,
         action="store_true", dest="force",
@@ -367,6 +376,14 @@ ACTIONS = {
                 OPT.restore,
                 OPT.template,
             ],
+        },
+        "logs": {
+            "msg": "Display the service logs. All service instances logs are aggregated.",
+            "options": [
+                OPT.backlog,
+                OPT.follow,
+                OPT.nopager,
+            ]
         },
         "ls": {
             "msg": "List the service names with a local instance. Most useful to test "

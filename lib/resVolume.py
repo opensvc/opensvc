@@ -137,12 +137,13 @@ class Volume(Res.Resource):
                 datapath, path = ref.split(":", 1)
             except Exception:
                 continue
+            datapath = datapath.lstrip("/")
             if datapath.startswith("usr/"):
                 kind = "usr"
                 datapath = datapath[4:]
-            if datapath.startswith("sec/"):
+            elif datapath.startswith("sec/"):
                 datapath = datapath[4:]
-            if datapath.startswith("cfg/"):
+            elif datapath.startswith("cfg/"):
                 datapath = datapath[4:]
             try:
                 datapath, key = datapath.split("/", 1)
