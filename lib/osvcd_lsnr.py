@@ -404,7 +404,11 @@ class Listener(shared.OsvcThread):
                     })
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
-            except (socket.timeout, ConnectionAbortedError):
+            except socket.timeout:
+                continue
+            except ConnectionAbortedError:
+                if conn:
+                    conn.close()
                 continue
             except Exception as exc:
                 self.log.exception(exc)
