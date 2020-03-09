@@ -5001,6 +5001,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 data[name] = pool.pool_status()
             except Exception as exc:
                 data[name] = {
+                    "name": name,
                     "type": "unknown",
                     "capabilities": [],
                     "head": "err: " + str(exc),

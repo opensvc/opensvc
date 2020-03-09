@@ -79,6 +79,23 @@ class TestNodemgr:
         assert isinstance(schedules, list)
         assert len(schedules) > 0
 
+    @staticmethod
+    @pytest.mark.parametrize('argv',
+                             (['pool', 'ls', '--debug'],
+                              ['pool', 'status', '--debug'],
+                              ['pool', 'status', '--verbose', '--debug']),
+                             ids=['ls', 'status', 'status --verbose'])
+    def test_pool_action(argv):
+        assert nodemgr.main(argv=argv) == 0
+
+    @staticmethod
+    def test_node_has_a_pool(tmp_file, capture_stdout):
+        with capture_stdout(tmp_file):
+            assert nodemgr.main(argv=['pool', 'status', '--format', 'json']) == 0
+        with open(tmp_file) as json_file:
+            pools = json.load(json_file).values()
+            assert len([pool for pool in pools if pool['type'] != 'unknown']) > 0
+
     def test_print_config(self):
         """
         Print node config
