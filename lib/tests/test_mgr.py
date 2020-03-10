@@ -23,6 +23,15 @@ def fake_svc(osvc_path_tests, has_privs, mocker):
     Mgr(selector='fake-svc')()
 
 
+@pytest.fixture(scope='function')
+def mgr_cmd(mock_argv):
+    def func(argv, **kwargs):
+        mock_argv(argv)
+        return Mgr(**kwargs)()
+
+    return func
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.parametrize('sysname', OS_LIST)
@@ -236,3 +245,26 @@ class TestCreateAddDecode:
 
         with open(tmp_file) as output_file:
             assert output_file.read() == 'john'
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_accept_empty_values(mgr_cmd, capture_stdout, tmp_file, obj):
+        assert mgr_cmd(['mgr', 'create'], selector=obj) == 0
+        assert mgr_cmd(['mgr', 'add', '--key', 'empty', '--value', ''], selector=obj) == 0
+        with capture_stdout(tmp_file):
+            assert mgr_cmd(['mgr', 'decode', '--key', 'empty'], selector=obj) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == ''
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_accept_from_empty_files(mgr_cmd, capture_stdout, tmp_file, obj):
+        open(tmp_file, 'w+').close()
+        assert mgr_cmd(['mgr', 'create'], selector=obj) == 0
+        assert mgr_cmd(['mgr', 'add', '--key', 'empty', '--from', tmp_file], selector=obj) == 0
+        with capture_stdout(tmp_file):
+            assert mgr_cmd(['mgr', 'decode', '--key', 'empty'], selector=obj) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == ''
