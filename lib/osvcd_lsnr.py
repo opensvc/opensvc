@@ -18,6 +18,7 @@ import re
 import datetime
 from six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen, PIPE
+from errno import EADDRINUSE, ECONNRESET, EPIPE
 
 try:
     import ssl
@@ -404,7 +405,11 @@ class Listener(shared.OsvcThread):
                     })
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
-            except (socket.timeout, ConnectionAbortedError):
+            except socket.timeout:
+                continue
+            except ConnectionAbortedError:
+                if conn:
+                    conn.close()
                 continue
             except Exception as exc:
                 self.log.exception(exc)
@@ -630,7 +635,7 @@ class Listener(shared.OsvcThread):
                 sock.bind((addr, port))
                 break
             except socket.error as exc:
-                if exc.errno == 98:
+                if exc.errno == EADDRINUSE:
                     time.sleep(0.5)
                     continue
                 raise
@@ -834,7 +839,7 @@ class ClientHandler(shared.OsvcThread):
         except DontClose:
             close = False
         except (OSError, socket.error) as exc:
-            if exc.errno in (0, 104):
+            if exc.errno in (0, ECONNRESET):
                 pass
         except RuntimeError as exc:
             self.log.error("%s", exc)
@@ -867,9 +872,9 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.tls_conn = self.tls_context.wrap_socket(self.conn, server_side=True)
         except OSError as exc:
-            if exc.errno in (0, 104):
+            if exc.errno in (0, ECONNRESET):
                 # 0: client => server after daemon restart
-                # 104: server => client after daemon restart
+                # ECONNRESET: server => client after daemon restart
                 raise
             raise RuntimeError("tls wrap error: %s"%exc)
 
@@ -1281,8 +1286,8 @@ class ClientHandler(shared.OsvcThread):
         try:
             self.tls_conn.sendall(self.h2conn.data_to_send())
         except socket.error as exc:
-            if exc.errno == 32:
-                # broken pipe (daemon restart with connected clients)
+            if exc.errno == EPIPE:
+                # daemon restart with connected clients
                 return
             raise
 
@@ -1301,7 +1306,7 @@ class ClientHandler(shared.OsvcThread):
             except socket.timeout:
                 pass
             except socket.error as exc:
-                if exc.errno in (0, 104):
+                if exc.errno in (0, ECONNRESET):
                     continue
                 self.log.error("%s", exc)
                 return
@@ -1420,8 +1425,7 @@ class ClientHandler(shared.OsvcThread):
             try:
                 self.conn.sendall(chunk)
             except socket.error as exc:
-                if exc.errno == 32:
-                    # broken pipe
+                if exc.errno == EPIPE:
                     self.log.info(exc)
                 else:
                     self.log.warning(exc)
