@@ -5,7 +5,7 @@ import shutil
 import glob
 import tempfile
 
-from rcUtilities import makedirs, split_path, factory, want_context, bencode, find_editor
+from rcUtilities import bencode, create_protected_file, factory, find_editor, makedirs, split_path, want_context
 import rcExceptions as ex
 import rcStatus
 
@@ -124,11 +124,9 @@ class DataMixin(object):
         editor = find_editor()
         fpath = self.tempfilename()
         try:
-            with open(fpath, "wb") as f:
-                f.write(buff)
+            create_protected_file(fpath, buff, "wb")
         except TypeError:
-            with open(fpath, "w") as f:
-                f.write(buff)
+            create_protected_file(fpath, buff, "w")
         try:
             os.system(' '.join((editor, fpath)))
             with open(fpath, "r") as f:

@@ -1655,3 +1655,10 @@ def find_editor():
     if not which(editor):
         raise ex.excError("%s not found" % editor)
     return editor
+
+
+def create_protected_file(filepath, buff, mode):
+    with open(filepath, mode) as f:
+        if os.name == 'posix':
+            os.chmod(filepath, 0o0600)
+        f.write(buff)
