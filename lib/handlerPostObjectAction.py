@@ -112,13 +112,14 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
         options = self.parse_options(kwargs)
         name, namespace, kind = split_path(options.path)
 
-        role = "root"
         if options.action in GUEST_ACTIONS:
             role = "guest"
         elif options.action in OPERATOR_ACTIONS:
             role = "operator"
         elif options.action in ADMIN_ACTIONS:
             role = "admin"
+        else:
+            role = "root"
 
         if options.action == "set":
             # load current config
@@ -126,11 +127,14 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
                 cf = shared.SERVICES[options.path].print_config_data()
             except Exception as exc:
                 cf = {}
+
             # purge unwanted sections
             try:
                 del cf["metadata"]
             except Exception:
                 pass
+
+            # merge changes in current config
             for buff in options.options.get("kw", []):
                 k, v = buff.split("=", 1)
                 if k[-1] in ("+", "-"):
@@ -143,8 +147,10 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
                 if s not in cf:
                     cf[s] = {}
                 cf[s][k] = v
+
+            # apply object create rbac to the amended config
             payload = {options.path: cf}
-            errors = self.rbac_create_data(payload, **kwargs)
+            errors = self.rbac_create_data(payload, thr=thr, **kwargs)
             if errors:
                 raise HTTP(403, errors)
         else:

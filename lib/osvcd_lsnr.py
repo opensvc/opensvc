@@ -1812,9 +1812,9 @@ class ClientHandler(shared.OsvcThread):
         self.parent.stats.sessions.alive[self.sid].progress = "%s /%s" % (method, action)
 
         # validate rbac before multiplexing, before privs escalation
-        try:
+        if hasattr(handler, "rbac"):
             handler.rbac(nodename, action=action, options=options, stream_id=stream_id, thr=self)
-        except AttributeError:
+        else:
             self.rbac_requires(action=action)
 
         if action == "create":
