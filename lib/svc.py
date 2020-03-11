@@ -1279,14 +1279,32 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.dblogger(action, begin, end, actionlogfile)
         return err
 
-    def log_action_header(self):
+    def log_action_obfuscate_secret(self, argv):
+        if self.kind not in ("usr", "sec"):
+            return argv
         try:
-            if sys.argv[0].endswith("mgr.py"):
-                if len(sys.argv) > 2 and sys.argv[1] in ("-s", "--service"):
+            idx = argv.index("--value")
+        except ValueError:
+            return argv
+        try:
+            argv[idx+1]
+        except IndexError:
+            return argv
+        if argv[idx+1].startswith("-"):
+            return argv
+        argv[idx+1] = "xxx"
+        return argv
+
+    def log_action_header(self):
+        argv = [] + sys.argv
+        try:
+            if argv[0].endswith("mgr.py"):
+                if len(argv) > 2 and argv[1] in ("-s", "--service"):
                     _begin = 3
                 else:
                     _begin = 1
-                runlog = "do "+" ".join(sys.argv[_begin:])
+                argv = self.log_action_obfuscate_secret(argv)
+                runlog = "do "+" ".join(argv[_begin:])
                 if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
                     runlog += " (daemon origin)"
                 else:
