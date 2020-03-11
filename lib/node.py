@@ -1023,19 +1023,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                   "--discard to restart from the live config")
         return results["errors"] + results["warnings"]
 
-    @staticmethod
-    def edit_cf(fpath):
-        """
-        Choose an editor, setup the LANG, and exec the editor on the
-        file passed as argument.
-        """
-        try:
-            editor = find_editor()
-        except ex.excError as error:
-            print(error, file=sys.stderr)
-            return 1
-        return os.system(' '.join((editor, fpath)))
-
     def purge_status_last(self):
         """
         Purge the cached status of each and every services and resources.
