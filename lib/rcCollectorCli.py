@@ -26,7 +26,7 @@ from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from six.moves import input
 from storage import Storage
-from rcUtilities import bdecode, is_glob
+from rcUtilities import bdecode, is_glob, find_editor
 from rcColor import formatter
 
 try:
@@ -1695,7 +1695,7 @@ class CmdVariable(Cmd):
         with open(fname, "w") as f:
             f.write(json.dumps(text_data, indent=4))
 
-        os.system(os.environ.get("EDITOR", "vi")+" "+fname)
+        os.system(find_editor()+" "+fname)
         with open(fname, "r") as f:
             buff = f.read()
         new_text_data = json.loads(buff)

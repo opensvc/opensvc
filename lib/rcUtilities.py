@@ -1643,3 +1643,15 @@ def is_glob(text):
     if len(set(text) & set("?*[")) > 0:
         return True
     return False
+
+
+def find_editor():
+    if "EDITOR" in os.environ:
+        editor = os.environ["EDITOR"]
+    elif os.name == "nt":
+        editor = "notepad"
+    else:
+        editor = "vi"
+    if not which(editor):
+        raise ex.excError("%s not found" % editor)
+    return editor

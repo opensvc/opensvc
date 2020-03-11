@@ -31,7 +31,7 @@ from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf
+                        svc_pathcf, find_editor
 from contexts import want_context
 from converters import *
 import rcExceptions as ex
@@ -1791,17 +1791,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         user the --recover or --discard choices for its next edit
         config action.
         """
-        if "EDITOR" in os.environ:
-            editor = os.environ["EDITOR"]
-        elif os.name == "nt":
-            editor = "notepad"
-        else:
-            editor = "vi"
-        from rcUtilities import which, fsum
-        import shutil
-        if not which(editor):
-            print("%s not found" % editor, file=sys.stderr)
+        try:
+            editor = find_editor()
+        except ex.excError as error:
+            print(error, file=sys.stderr)
             return 1
+        from rcUtilities import fsum
+        import shutil
         if want_context() or not os.path.exists(self.paths.cf):
             refcf = self.remote_service_config_fetch()
             need_send = True

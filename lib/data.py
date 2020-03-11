@@ -5,7 +5,7 @@ import shutil
 import glob
 import tempfile
 
-from rcUtilities import makedirs, split_path, factory, want_context, bencode, which
+from rcUtilities import makedirs, split_path, factory, want_context, bencode, find_editor
 import rcExceptions as ex
 import rcStatus
 
@@ -121,14 +121,7 @@ class DataMixin(object):
         no_newline = buff.count(os.linesep) == 0
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
-        if "EDITOR" in os.environ:
-            editor = os.environ["EDITOR"]
-        elif os.name == "nt":
-            editor = "notepad"
-        else:
-            editor = "vi"
-        if not which(editor):
-            raise ex.excError("%s not found" % editor)
+        editor = find_editor()
         fpath = self.tempfilename()
         try:
             with open(fpath, "wb") as f:
