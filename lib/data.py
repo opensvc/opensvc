@@ -1,16 +1,11 @@
 import os
 import sys
-import base64
-import re
 import fnmatch
 import shutil
 import glob
 import tempfile
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, want_context, bencode, which
-from svc import BaseSvc
-from converters import print_size
+from rcUtilities import makedirs, split_path, factory, want_context, bencode, which
 import rcExceptions as ex
 import rcStatus
 
