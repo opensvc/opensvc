@@ -133,7 +133,7 @@ class DataMixin(object):
         try:
             with open(fpath, "wb") as f:
                 f.write(buff)
-        except TypeError as exc:
+        except TypeError:
             with open(fpath, "w") as f:
                 f.write(buff)
         try:
@@ -190,12 +190,11 @@ class DataMixin(object):
                 dirs.add(path)
         return sorted(list(dirs))
 
-    def resolve_key(self, key):
-        if key is None:
+    def resolve_key(self, key_to_resolve):
+        if key_to_resolve is None:
             return []
         keys = self.data_keys()
         dirs = self.data_dirs()
-        done = set()
 
         def recurse(key, done):
             data = []
@@ -221,7 +220,7 @@ class DataMixin(object):
                 })
             return data, done
 
-        return recurse(key, done)[0]
+        return recurse(key_to_resolve, set())[0]
 
     def install_key(self, key, path):
         if key["type"] == "file":
@@ -238,7 +237,6 @@ class DataMixin(object):
             dirname = os.path.basename(data["path"])
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
         else:
-            dirname = os.path.basename(path)
             dirpath = path + "/"
         makedirs(dirpath)
         for key in data["keys"]:
@@ -264,7 +262,8 @@ class DataMixin(object):
         makedirs(vdir)
         self.write_key(vpath, data, key=key)
 
-    def key_path(self, key, path):
+    @staticmethod
+    def key_path(key, path):
         """
         The full path to host's volatile storage file containing the key decoded data.
         """
