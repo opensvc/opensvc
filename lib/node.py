@@ -51,7 +51,7 @@ from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         glob_services_config, split_path, validate_name, \
                         validate_ns_name, unset_all_lazy, \
                         factory, resolve_path, strip_path, normalize_paths, \
-                        daemon_process_running, validate_kind
+                        daemon_process_running, validate_kind, find_editor
 from contexts import want_context
 from converters import *
 from comm import Crypt
@@ -1000,16 +1000,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         user the --recover or --discard choices for its next edit
         config action.
         """
-        if "EDITOR" in os.environ:
-            editor = os.environ["EDITOR"]
-        elif os.name == "nt":
-            editor = "notepad"
-        else:
-            editor = "vi"
-        from rcUtilities import which, fsum
-        if not which(editor):
-            print("%s not found" % editor, file=sys.stderr)
+        try:
+            editor = find_editor()
+        except ex.excError as err:
+            print(err, file=sys.stderr)
             return 1
+        from rcUtilities import fsum
         path = self.make_temp_config()
         os.system(' '.join((editor, path)))
         if fsum(path) == fsum(rcEnv.paths.nodeconf):
@@ -1026,23 +1022,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                   "with --recover to try to fix your changes or with "
                   "--discard to restart from the live config")
         return results["errors"] + results["warnings"]
-
-    @staticmethod
-    def edit_cf(fpath):
-        """
-        Choose an editor, setup the LANG, and exec the editor on the
-        file passed as argument.
-        """
-        if "EDITOR" in os.environ:
-            editor = os.environ["EDITOR"]
-        elif os.name == "nt":
-            editor = "notepad"
-        else:
-            editor = "vi"
-        if not which(editor):
-            print("%s not found" % editor, file=sys.stderr)
-            return 1
-        return os.system(' '.join((editor, fpath)))
 
     def purge_status_last(self):
         """
