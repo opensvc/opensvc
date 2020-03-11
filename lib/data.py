@@ -9,30 +9,24 @@ from rcUtilities import makedirs, split_path, factory, want_context, bencode, wh
 import rcExceptions as ex
 import rcStatus
 
+
 class DataMixin(object):
-
-
     def add(self):
         self._add(self.options.key, self.options.value_from)
-
 
     def remove(self):
         return self._remove(self.options.key)
 
-
     def append(self):
         self._add(self.options.key, self.options.value_from, append=True)
-
 
     def _remove(self, key):
         if key not in self.data_keys():
             return
-        return self.unset_multi(["data."+key])
-
+        return self.unset_multi(["data." + key])
 
     def _add_key(self, key, data):
         pass
-
 
     def add_key(self, key, data, append=False):
         if append:
@@ -41,7 +35,6 @@ class DataMixin(object):
             self.remote_add_key(key, data)
         else:
             self._add_key(key, data)
-
 
     def remote_add_key(self, key, data):
         req = {
@@ -60,7 +53,6 @@ class DataMixin(object):
         if status:
             raise ex.excError(error)
 
-
     def _add(self, key=None, value_from=None, append=False):
         if key and sys.stdin and value_from in ("-", "/dev/stdin"):
             self.add_stdin(key, append=append)
@@ -75,7 +67,6 @@ class DataMixin(object):
         else:
             raise ex.excError("missing arguments")
 
-
     def add_stdin(self, key, append=False):
         if append:
             data = self.decode_key(key)
@@ -84,7 +75,6 @@ class DataMixin(object):
         for line in sys.stdin.readlines():
             data += line
         self.add_key(key, data)
-
 
     def add_file(self, key, path, append=None):
         if key is None:
@@ -97,7 +87,6 @@ class DataMixin(object):
             data += ofile.read()
         self.add_key(key, data)
 
-
     def add_glob(self, key, path, append=False):
         if key is None:
             key = ""
@@ -105,7 +94,6 @@ class DataMixin(object):
         for path in fpaths:
             _key = os.path.join(key, os.path.basename(path))
             self.add_file(_key, path, append=append)
-
 
     def add_directory(self, key, path, append=False):
         if key is None:
@@ -117,7 +105,6 @@ class DataMixin(object):
                 _key = os.path.join(key, fpath[plen:])
                 self.add_file(_key, fpath, append=append)
 
-
     @staticmethod
     def tempfilename():
         tmpf = tempfile.NamedTemporaryFile()
@@ -125,7 +112,6 @@ class DataMixin(object):
             return tmpf.name
         finally:
             tmpf.close()
-
 
     def edit(self):
         if self.options.key is None:
@@ -163,7 +149,6 @@ class DataMixin(object):
         finally:
             os.unlink(fpath)
 
-
     def decode(self):
         buff = self.decode_key(self.options.key)
         if buff is None:
@@ -174,7 +159,6 @@ class DataMixin(object):
             # buff is not binary, .buffer is not supported
             sys.stdout.write(buff)
 
-
     def keys(self):
         data = sorted(self.data_keys())
         if self.options.format in ("json", "flat_json"):
@@ -182,10 +166,8 @@ class DataMixin(object):
         for key in data:
             print(key)
 
-
     def has_key(self, key):
         return key in self.data_keys()
-
 
     def data_keys(self):
         """
@@ -193,7 +175,6 @@ class DataMixin(object):
         """
         config = self.print_config_data()
         return [key for key in config.get("data", {}).keys()]
-
 
     def data_dirs(self):
         dirs = set()
@@ -209,7 +190,6 @@ class DataMixin(object):
                 dirs.add(path)
         return sorted(list(dirs))
 
-
     def resolve_key(self, key):
         if key is None:
             return []
@@ -222,7 +202,7 @@ class DataMixin(object):
             for path in dirs:
                 if path != key and not fnmatch.fnmatch(path, key):
                     continue
-                rkeys, rdone = recurse(path+"/*", done)
+                rkeys, rdone = recurse(path + "/*", done)
                 done |= rdone
                 data.append({
                     "type": "dir",
@@ -243,14 +223,12 @@ class DataMixin(object):
 
         return recurse(key, done)[0]
 
-
     def install_key(self, key, path):
         if key["type"] == "file":
             vpath = self.key_path(key, path)
             self.install_file_key(key["path"], vpath)
         elif key["type"] == "dir":
             self.install_dir_key(key, path)
-
 
     def install_dir_key(self, data, path):
         """
@@ -265,7 +243,6 @@ class DataMixin(object):
         makedirs(dirpath)
         for key in data["keys"]:
             self.install_key(key, dirpath)
-
 
     def install_file_key(self, key, vpath):
         """
@@ -287,7 +264,6 @@ class DataMixin(object):
         makedirs(vdir)
         self.write_key(vpath, data, key=key)
 
-
     def key_path(self, key, path):
         """
         The full path to host's volatile storage file containing the key decoded data.
@@ -298,7 +274,6 @@ class DataMixin(object):
         else:
             npath = path
         return npath
-
 
     def write_key(self, vpath, data, key=None):
         mtime = os.path.getmtime(self.paths.cf)
@@ -321,7 +296,6 @@ class DataMixin(object):
             ofile.write(data)
             os.utime(vpath, (mtime, mtime))
 
-
     def _install(self, key, path):
         """
         Install the <key> decoded data in the host's volatile storage.
@@ -332,10 +306,8 @@ class DataMixin(object):
         for _key in keys:
             self.install_key(_key, path)
 
-
     def install(self):
         self.postinstall(self.options.key)
-
 
     def postinstall(self, key=None):
         """
@@ -347,4 +319,3 @@ class DataMixin(object):
             for vol in svc.get_resources("volume"):
                 if vol.has_data(self.kind, self.path, key) and vol._status() == rcStatus.UP:
                     vol._install_data(self.kind)
-
