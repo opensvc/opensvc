@@ -3,7 +3,7 @@ import traceback
 import handler
 import osvcd_shared as shared
 import rcExceptions as ex
-from rcUtilities import split_path
+from rcUtilities import split_path, bdecode
 
 class Handler(handler.Handler):
     """
@@ -33,7 +33,7 @@ class Handler(handler.Handler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         try:
-            return {"status": 0, "data": shared.SERVICES[options.path].decode_key(options.key)}
+            return {"status": 0, "data": bdecode(shared.SERVICES[options.path].decode_key(options.key))}
         except ex.excError as exc:
             return {"status": 1, "error": str(exc)}
         except Exception as exc:
