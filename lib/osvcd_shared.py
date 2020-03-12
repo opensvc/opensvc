@@ -595,6 +595,8 @@ class OsvcThread(threading.Thread, Crypt):
                              "purged")):
             # skip slavers, wrappers, scalers
             return
+        # will set changed to True if an update occur, this will avoid wake_monitor calls
+        changed = False
         with SMON_DATA_LOCK:
             if path not in SMON_DATA:
                 SMON_DATA[path] = Storage({
@@ -602,6 +604,7 @@ class OsvcThread(threading.Thread, Crypt):
                     "status_updated": time.time(),
                     "global_expect_updated": time.time(),
                 })
+                changed = True
             if status:
                 reset_placement = False
                 if status != SMON_DATA[path].status \
@@ -623,10 +626,12 @@ class OsvcThread(threading.Thread, Crypt):
                         reset_placement = True
                     SMON_DATA[path].status = status
                     SMON_DATA[path].status_updated = time.time()
+                    changed = True
                 if reset_placement:
                     SMON_DATA[path].placement = \
                         self.get_service_placement(path)
                     SMON_DATA[path].status_updated = time.time()
+                    changed = True
 
             if local_expect:
                 if local_expect == "unset":
@@ -640,6 +645,7 @@ class OsvcThread(threading.Thread, Crypt):
                         local_expect
                     )
                     SMON_DATA[path].local_expect = local_expect
+                    changed = True
 
             if global_expect:
                 if global_expect == "unset":
@@ -653,12 +659,13 @@ class OsvcThread(threading.Thread, Crypt):
                         global_expect
                     )
                     SMON_DATA[path].global_expect = global_expect
-                SMON_DATA[path].global_expect_updated = time.time()
-
+                    SMON_DATA[path].global_expect_updated = time.time()
+                    changed = True
             if reset_retries and "restart" in SMON_DATA[path]:
                 self.log.info("service %s monitor resources restart count "
                               "reset", path)
                 del SMON_DATA[path]["restart"]
+                changed = True
 
             if stonith:
                 if stonith == "unset":
@@ -672,7 +679,9 @@ class OsvcThread(threading.Thread, Crypt):
                         stonith
                     )
                     SMON_DATA[path].stonith = stonith
-        wake_monitor(reason="service %s mon change" % path)
+                    changed = True
+        if changed:
+            wake_monitor(reason="service %s mon change" % path)
 
     def get_node_monitor(self, nodename=None):
         """
