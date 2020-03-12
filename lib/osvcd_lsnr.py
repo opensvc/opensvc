@@ -1539,7 +1539,7 @@ class ClientHandler(shared.OsvcThread):
         if "root" in grants:
             return
         if isinstance(namespaces, (list, tuple)):
-            namespaces = set(namespaces)
+            namespaces = set([ns if ns is not None else "root" for ns in namespaces])
         elif namespaces == "FROM:path":
             if path is None:
                 raise HTTP(400, "handler '%s' rbac access namespaces FROM:path but no path passed" % action)
@@ -1578,7 +1578,7 @@ class ClientHandler(shared.OsvcThread):
             elif not namespaces:
                 pass
             else:
-                elements.append("%s:%s" % (role, ",".join(namespaces)))
+                elements.append("%s:%s" % (role, ",".join([ns if ns is not None else "root" for ns in namespaces])))
         return " ".join(elements)
 
     #########################################################################
