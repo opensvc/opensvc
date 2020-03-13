@@ -617,7 +617,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def log(self): # pylint: disable=method-hidden
-        extra = {"path": self.path, "node": rcEnv.nodename, "sid": rcEnv.session_uuid}
+        extra = {
+            "path": self.path,
+            "node": rcEnv.nodename,
+            "sid": rcEnv.session_uuid,
+            "cron": self.options.cron,
+        }
         return logging.LoggerAdapter(self.logger, extra)
 
     @lazy
