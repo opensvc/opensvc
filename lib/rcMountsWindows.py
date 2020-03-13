@@ -12,11 +12,11 @@ class Mounts(rcMounts.Mounts):
             return True
         return False
 
-    def __init__(self, wmi=None):
+    def parse_mounts(self, wmi=None):
         if wmi is None:
             import wmi
             wmi = wmi.WMI()
-        self.mounts = []
+        mounts = []
         for volume in wmi.Win32_Volume():
             dev = volume.DeviceID
             mnt = volume.Name
@@ -25,7 +25,8 @@ class Mounts(rcMounts.Mounts):
             type = volume.FileSystem
             mnt_opt = "NULL"    # quoi mettre d autre...
             m = rcMounts.Mount(dev, mnt, type, mnt_opt)
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 if __name__ == "__main__" :
     #help(Mounts)

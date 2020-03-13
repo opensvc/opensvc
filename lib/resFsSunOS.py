@@ -22,7 +22,6 @@ class Mount(Res.Mount):
                  snap_size=None,
                  **kwargs):
         self.rdevice = device.replace('/dsk/', '/rdsk/', 1)
-        self.Mounts = rcMounts.Mounts()
         Res.Mount.__init__(self,
                            rid=rid,
                            mount_point=mount_point,
@@ -49,11 +48,10 @@ class Mount(Res.Mount):
         }
 
     def is_up(self):
-        self.Mounts = rcMounts.Mounts()
-        return self.Mounts.has_mount(self.device, self.mount_point)
+        mounts = rcMounts.Mounts()
+        return mounts.has_mount(self.device, self.mount_point)
 
     def start(self):
-        self.Mounts = None
         Res.Mount.start(self)
         m = re.match("<(\w+)>", self.mount_point)
         if m:
@@ -92,7 +90,6 @@ class Mount(Res.Mount):
             if not zfs_setprop(self.device, 'mountpoint', self.mount_point, log=self.log):
                 raise ex.excError
 
-        self.Mounts = None
         if self.is_up() is True:
             return
 
@@ -128,7 +125,6 @@ class Mount(Res.Mount):
                 break
             time.sleep(1)
 
-        self.Mounts = None
 
         if ret != 0:
             raise ex.excError
@@ -177,7 +173,6 @@ class Mount(Res.Mount):
         raise ex.excError
 
     def stop(self):
-        self.Mounts = None
         if self.is_up() is False:
             self.log.info("%s is already umounted" % self.label)
             return
@@ -185,10 +180,8 @@ class Mount(Res.Mount):
         try:
             self.try_umount()
         except:
-            self.Mounts = None
             self.log.error("failed")
             raise ex.excError
-        self.Mounts = None
 
 if __name__ == "__main__":
     for c in (Mount,):

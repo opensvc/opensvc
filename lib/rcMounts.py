@@ -1,6 +1,7 @@
 import os
-from subprocess import *
+from subprocess import Popen, PIPE, STDOUT
 from rcUtilities import bdecode
+from rcExceptions import excError
 
 class Mount:
     def __init__(self, dev, mnt, type, mnt_opt):
@@ -20,36 +21,44 @@ class Mounts:
     df_one_cmd = []
 
     def __init__(self):
-        """ OS dependent """
-        self.mounts = []
+        try:
+            self.mounts = self.parse_mounts()
+        except Exception as exc:
+            self.mounts = None
 
     def __iter__(self):
-        return iter(self.mounts)
+        return iter(self.mounts or [])
 
     def match_mount(self, *args, **kwargs):
         """ OS dependent """
         pass
 
     def mount(self, dev, mnt):
-        for i in self.mounts:
+        for i in self.mounts or []:
             if self.match_mount(i, dev, mnt):
                 return i
         return None
 
+    def parse_mounts(self):
+        raise excError("parse_mounts is not implemented")
+        return []
+
     def has_mount(self, dev, mnt):
+        if self.mounts is None:
+            raise excError("unable to parse mounts")
         for i in self.mounts:
             if self.match_mount(i, dev, mnt):
                 return True
         return False
 
     def has_param(self, param, value):
-        for i in self.mounts:
+        for i in self.mounts or []:
             if getattr(i, param) == value:
                 return i
         return None
 
     def sort(self, key='mnt', reverse=False):
-        if len(self.mounts) == 0:
+        if len(self.mounts or []) == 0:
             return
         if key not in ('mnt', 'dev', 'type'):
             return
@@ -86,6 +95,6 @@ class Mounts:
 
     def __str__(self):
         output="%s" % (self.__class__.__name__)
-        for m in self.mounts:
+        for m in self.mounts or []:
             output+="\n  %s" % m.__str__()
         return output
