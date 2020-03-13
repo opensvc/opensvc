@@ -73,6 +73,7 @@ class OsvcFormatter(logging.Formatter):
             ("path", "o"),
             ("subset", "rs"),
             ("rid", "r"),
+            ("cron", "sc"),
         ]
 
     def format(self, record):
@@ -83,8 +84,13 @@ class OsvcFormatter(logging.Formatter):
                 continue
             try:
                 val = getattr(record, xattr)
-                if val:
-                    record.context += "%s:%s " % (key, getattr(record, xattr))
+                if val in (None, ""):
+                    continue
+                if val is True:
+                    val = "y"
+                elif val is False:
+                    val = "n"
+                record.context += "%s:%s " % (key, val)
             except AttributeError:
                 pass
         record.context = record.context.rstrip()
