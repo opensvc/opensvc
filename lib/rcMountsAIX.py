@@ -1,6 +1,8 @@
+import os
+
 import rcMounts
 #import resLoopAIX as Res
-from rcUtilities import *
+from rcUtilities import justcall
 
 class Mounts(rcMounts.Mounts):
     df_one_cmd = ['df']
@@ -26,9 +28,9 @@ class Mounts(rcMounts.Mounts):
             return True
         return False
 
-    def __init__(self):
-        self.mounts = []
-        (ret, out, err) = call(['mount'])
+    def parse_mounts(self):
+        mounts = []
+        out, err, ret = justcall(['mount'])
         lines = out.split('\n')
         if len(lines) < 3:
             return
@@ -50,7 +52,8 @@ class Mounts(rcMounts.Mounts):
                 else:
                     continue
             m = rcMounts.Mount(dev, mnt, type, mnt_opt)
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 """
   node       mounted        mounted over    vfs       date        options

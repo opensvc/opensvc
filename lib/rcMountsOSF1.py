@@ -15,16 +15,17 @@ class Mounts(rcMounts.Mounts):
             return True
         return False
 
-    def __init__(self):
-        self.mounts = []
+    def parse_mounts(self):
+        mounts = []
         out, err, ret = justcall(['mount'])
         for l in out.split('\n'):
             l = l.replace(', ', ',')
             if len(l.split()) != 6:
-                return
+                break
             dev, null, mnt, null, type, mnt_opt = l.split()
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 if __name__ == "__main__" :
     help(Mounts)

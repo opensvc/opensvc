@@ -1,5 +1,7 @@
+import os
+
 import rcMounts
-from rcUtilities import *
+from rcUtilities import justcall
 
 class Mounts(rcMounts.Mounts):
     df_one_cmd = ['df', '-l']
@@ -23,15 +25,16 @@ class Mounts(rcMounts.Mounts):
             return True
         return False
 
-    def __init__(self):
-        self.mounts = []
+    def parse_mounts(self):
+        mounts = []
         out, err, ret = justcall(['mount', '-v'])
         for l in out.split('\n'):
             if len(l.split()) != 12:
-                return
+                break
             dev, null, mnt, null, type, mnt_opt, null, null, null, null, null, null = l.split()
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 if __name__ == "__main__" :
     help(Mounts)

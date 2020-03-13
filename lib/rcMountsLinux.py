@@ -1,7 +1,9 @@
+import os
+
 from rcGlobalEnv import rcEnv
 import rcMounts
 from rcLoopLinux import file_to_loop
-from rcUtilities import *
+from rcUtilities import justcall
 
 class Mounts(rcMounts.Mounts):
     df_one_cmd = [rcEnv.syspaths.df, '-l']
@@ -25,16 +27,17 @@ class Mounts(rcMounts.Mounts):
                 return True
         return False
 
-    def __init__(self):
-        self.mounts = []
-        (ret, out, err) = call([rcEnv.syspaths.mount])
+    def parse_mounts(self):
+        out, err, ret = justcall([rcEnv.syspaths.mount])
         out = out.replace(" (deleted)", "")
+        mounts = []
         for l in out.split('\n'):
             if len(l.split()) != 6:
-                return
+                break
             dev, null, mnt, null, type, mnt_opt = l.split()
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 if __name__ == "__main__" :
     for m in Mounts():

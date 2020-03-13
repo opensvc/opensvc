@@ -1,5 +1,5 @@
 import rcMounts
-from rcUtilities import *
+from rcUtilities import justcall
 
 class Mounts(rcMounts.Mounts):
     df_one_cmd = ["df", "-l"]
@@ -15,9 +15,9 @@ class Mounts(rcMounts.Mounts):
             return True
         return False
 
-    def __init__(self):
-        self.mounts = []
-        (ret, out, err) = call(['mount','-p'], outdebug=False)
+    def parse_mounts(self):
+        mounts = []
+        out, err, ret = justcall(['mount','-p'])
         for line in out.split('\n'):
             words=line.split()
             if len(words) < 6 :
@@ -29,7 +29,8 @@ class Mounts(rcMounts.Mounts):
                 words.append('-')
             dev, null, mnt, type, null, null, mnt_opt = words
             m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
-            self.mounts.append(m)
+            mounts.append(m)
+        return mounts
 
 if __name__ == "__main__" :
     help(Mounts)
