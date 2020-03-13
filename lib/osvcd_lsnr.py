@@ -1543,7 +1543,7 @@ class ClientHandler(shared.OsvcThread):
         elif namespaces == "FROM:path":
             if path is None:
                 raise HTTP(400, "handler '%s' rbac access namespaces FROM:path but no path passed" % action)
-            namespaces = set([split_path(path)[1]])
+            namespaces = set([split_path(path)[1] or "root"])
         for role in roles:
             if role not in grants:
                 continue
