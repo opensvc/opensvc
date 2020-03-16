@@ -5,6 +5,16 @@ import resDisk
 from subprocess import *
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["dsf"] = svc.oget(s, "dsf")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,

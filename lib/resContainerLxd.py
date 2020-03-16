@@ -5,11 +5,20 @@ import resources as Res
 from rcUtilities import which, justcall, lazy
 from rcGlobalEnv import rcEnv
 from storage import Storage
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 import rcExceptions as ex
 
 lxc = "/usr/bin/lxc"
 lxd = "/usr/bin/lxd"
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Container(**kwargs)
+    svc += r
+
 
 class Container(resContainer.Container):
     refresh_provisioned_on_unprovision = True

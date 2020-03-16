@@ -3,7 +3,13 @@ import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
+
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+
+
+def adder(svc, s):
+    Res.adder(svc, s, drv=Ip)
+
 
 class Ip(Res.Ip):
     def __init__(self,

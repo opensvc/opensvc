@@ -6,7 +6,21 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
 from rcUtilitiesLinux import check_ping
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["key_name"] = svc.oget(s, "key_name")
+
+    # provisioning keywords
+    kwargs["image_id"] = svc.oget(s, "image_id")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["subnet"] = svc.oget(s, "subnet")
+    r = CloudVm(**kwargs)
+    svc += r
 
 class CloudVm(resContainer.Container):
     save_timeout = 240

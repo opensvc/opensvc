@@ -1,10 +1,21 @@
 import os
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, cache, clear_cache
 import rcStatus
 import rcExceptions as ex
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which, cache, clear_cache
 from resources import Resource
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["opts"] = svc.oget(s, "opts")
+    r = Share(**kwargs)
+    svc += r
+
 
 class Share(Resource):
 

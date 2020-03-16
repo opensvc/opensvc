@@ -7,7 +7,14 @@ import shutil
 
 from rcGlobalEnv import rcEnv
 from subprocess import *
+from svcBuilder import init_kwargs
 
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    r = Disk(**kwargs)
+    svc += r
 
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 

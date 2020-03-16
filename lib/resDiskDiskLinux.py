@@ -6,10 +6,19 @@ import time
 
 import rcExceptions as ex
 import resDiskDisk
+import rcStatus
+
 from rcUtilities import lazy, which, justcall
 from rcUtilitiesLinux import multipath_flush, dev_delete, dev_to_paths
 from rcGlobalEnv import rcEnv
-import rcStatus
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDiskDisk.Disk):
     @lazy

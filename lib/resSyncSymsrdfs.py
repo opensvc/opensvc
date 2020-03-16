@@ -1,22 +1,33 @@
-import os
-import logging
+import datetime
 import json
+import os
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, lazy
 from rcSymmetrix import set_sym_env
+from rcUtilities import which, lazy
 from xml.etree.ElementTree import ElementTree, XML
 
 import rcExceptions as ex
 import rcStatus
-import time
-import datetime
 import resSync
+
+from svcBuilder import sync_kwargs
 
 os.environ['PATH'] += ":/usr/symcli/bin"
 set_sym_env()
 
-class syncSymSrdfS(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["symdg"] = svc.oget(s, "symdg")
+    kwargs["rdfg"] = svc.oget(s, "rdfg")
+    kwargs["symid"] = svc.oget(s, "symid")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncSymsrdfs(**kwargs)
+    svc += r
+
+
+class SyncSymsrdfs(resSync.Sync):
 
     def list_pd(self):
         """

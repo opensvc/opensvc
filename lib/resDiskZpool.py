@@ -1,16 +1,30 @@
-import os
-import glob
 import json
+import glob
+import os
 import time
 
 import resDisk
 import rcExceptions as ex
 import rcStatus
+
 from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, qcall, which, lazy, cache, clear_cache
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
 from converters import convert_duration
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["multihost"] = svc.oget(s, "multihost")
+    zone = svc.oget(s, "zone")
+    r = Disk(**kwargs)
+    if zone is not None:
+        r.tags.add("zone")
+        r.tags.add(zone)
+    svc += r
 
 
 class Disk(resDisk.Disk):

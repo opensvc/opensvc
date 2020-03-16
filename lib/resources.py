@@ -26,7 +26,7 @@ ALLOW_ACTION_WITH_NOACTION = [
 
 LOCKER_TYPES = [
     "disk.scsireserv",
-    "disk.lock",
+    "disk.radoslock",
 ]
 
 class Resource(object):

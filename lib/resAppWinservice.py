@@ -11,6 +11,7 @@ import resApp
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
 
 DEFAULT_TIMEOUT = 300
 
@@ -31,6 +32,17 @@ STATUS_STR = {
     6: "PAUSE_PENDING",
     7: "PAUSED",
 }
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["timeout"] = svc.oget(s, "timeout")
+    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
+    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
+    r = App(**kwargs)
+    svc += r
+
 
 class App(resApp.App):
     """

@@ -3,6 +3,15 @@ import rcExceptions as ex
 import resDisk
 from rcUtilities import lazy
 from rcZfs import dataset_exists, zpool_devs
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,
