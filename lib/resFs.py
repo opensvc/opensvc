@@ -7,6 +7,66 @@ import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, mimport, lazy
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s, drv=None):
+    """
+    Add a fs resource to the object.
+    """
+    drv = drv or Mount
+    kwargs = init_kwargs(svc, s)
+
+    try:
+        kwargs["fs_type"] = svc.conf_get(s, "type")
+    except ex.OptNotFound as exc:
+        kwargs["fs_type"] = ""
+
+    kwargs["device"] = svc.oget(s, "dev")
+    kwargs["mount_point"] = svc.oget(s, "mnt")
+    kwargs["stat_timeout"] = svc.oget(s, "stat_timeout")
+
+    if kwargs["mount_point"] and kwargs["mount_point"][-1] != "/" and kwargs["mount_point"][-1] == "/":
+        # Remove trailing / to not risk losing rsync src trailing / upon snap
+        # mountpoint substitution.
+        kwargs["mount_point"] = kwargs["mount_point"][0:-1]
+
+    try:
+        kwargs["mount_options"] = svc.conf_get(s, "mnt_opt")
+    except ex.OptNotFound as exc:
+        kwargs["mount_options"] = ""
+
+    try:
+        kwargs["snap_size"] = svc.conf_get(s, "snap_size")
+    except ex.OptNotFound as exc:
+        pass
+
+    zone = svc.oget(s, "zone")
+
+    if zone is not None:
+        zp = None
+        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
+            if r.name == zone:
+                try:
+                    zp = r.zonepath
+                except:
+                    zp = "<%s>" % zone
+                break
+        if zp is None:
+            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
+            raise ex.excError()
+        kwargs["mount_point"] = zp+"/root"+kwargs["mount_point"]
+        if "<%s>" % zone != zp:
+            kwargs["mount_point"] = os.path.realpath(kwargs["mount_point"])
+
+    r = drv(**kwargs)
+
+    if zone is not None:
+        r.tags.add(zone)
+        r.tags.add("zone")
+
+    svc += r
+
 
 class Mount(Res.Resource):
     """Define a mount resource

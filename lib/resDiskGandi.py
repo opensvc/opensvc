@@ -1,13 +1,29 @@
-import resDisk
-import os
-import rcStatus
-import re
-import pwd
 import grp
+import os
+import pwd
+import re
 import stat
+
+import resDisk
+import rcStatus
+import rcExceptions as ex
+
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string, lazy
-import rcExceptions as ex
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["node"] = svc.oget(s, "node")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,

@@ -1,5 +1,15 @@
 import resources as Res
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s, drv=None):
+    drv = drv or Disk
+    kwargs = init_kwargs(svc, s)
+    kwargs["loopFile"] = svc.oget(s, "file")
+    r = drv(**kwargs)
+    svc += r
+
 
 class Disk(Res.Resource):
     """

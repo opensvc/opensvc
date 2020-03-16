@@ -5,8 +5,24 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from rcAmazon import AmazonMixin
 from rcUtilities import getaddr
+from svcBuilder import init_kwargs
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+
+
+def adder(svc, s):
+    """
+    Add a resource instance to the object, parsing parameters
+    from a configuration section dictionnary.
+    """
+    kwargs = init_kwargs(svc, s)
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["eip"] = svc.oget(s, "eip")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
+    r = Ip(**kwargs)
+    svc += r
+
 
 class Ip(resIp.Ip, AmazonMixin):
     def __init__(self,

@@ -7,6 +7,9 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from stat import *
 
+def adder(svc, s):
+    Res.adder(svc, s, drv=Mount)
+
 def try_umount(self):
     cmd = ['umount', self.mount_point]
     (ret, out, err) = self.vcall(cmd, err_to_info=True)

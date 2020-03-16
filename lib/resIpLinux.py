@@ -4,6 +4,9 @@ from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, to_cidr, to_dotted
 
+def adder(svc, s):
+    Res.adder(svc, s, drv=Ip)
+
 class Ip(Res.Ip):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)

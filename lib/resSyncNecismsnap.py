@@ -1,15 +1,26 @@
+import datetime
 import os
-import logging
+import time
+
+import rcExceptions as ex
+import rcNecIsm
+import rcStatus
+import resSync
 
 from rcGlobalEnv import rcEnv
-import rcExceptions as ex
-import rcStatus
-import time
-import datetime
-import resSync
-import rcNecIsm
+from svcBuilder import sync_kwargs
 
-class syncNecIsmSnap(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["array"] = svc.oget(s, "array")
+    kwargs["devs"] = svc.oget(s, "devs")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncNecismsnap(**kwargs)
+    svc += r
+
+
+class SyncNecismsnap(resSync.Sync):
     def __init__(self,
                  rid=None,
                  array_name=None,

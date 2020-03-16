@@ -6,8 +6,20 @@ import rcStatus
 import resources as Res
 from rcUtilitiesFreeBSD import check_ping
 from rcUtilities import qcall
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 import rcExceptions as ex
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["jailroot"] = svc.oget(s, "jailroot")
+    kwargs["ips"] = svc.oget(s, "ips")
+    kwargs["ip6s"] = svc.oget(s, "ip6s")
+    r = Jail(**kwargs)
+    svc += r
+
 
 class Jail(resContainer.Container):
     """ jail -c name=jail1

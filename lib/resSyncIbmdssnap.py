@@ -1,17 +1,29 @@
+import datetime
 import os
-import logging
 
+import rcExceptions as ex
+import rcIbmDs
+import rcStatus
+import resSync
+
+from converters import print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-from converters import print_duration
-import rcExceptions as ex
-import rcStatus
-import time
-import datetime
-import resSync
-import rcIbmDs
+from svcBuilder import sync_kwargs
 
-class syncIbmdsSnap(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["array"] = svc.oget(s, "array")
+    kwargs["bgcopy"] = svc.oget(s, "bgcopy")
+    kwargs["recording"] = svc.oget(s, "recording")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncIbmdssnap(**kwargs)
+    svc += r
+
+
+class SyncIbmdssnap(resSync.Sync):
     def resyncflash(self):
         if self.array is None:
             self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)

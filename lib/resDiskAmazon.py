@@ -1,11 +1,22 @@
-import resDisk
 import os
 import glob
 import time
+
+import resDisk
 import rcStatus
 import rcExceptions as ex
+
 from rcGlobalEnv import *
 from rcAmazon import AmazonMixin
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["volumes"] = svc.oget(s, "volumes")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk, AmazonMixin):
     def __init__(self,

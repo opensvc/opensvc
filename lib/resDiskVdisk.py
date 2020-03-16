@@ -5,6 +5,25 @@ import resources as Res
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    devpath = {}
+
+    for attr, val in svc.cd[s].items():
+        if "path@" in attr:
+            devpath[attr.replace("path@", "")] = val
+
+    if len(devpath) == 0:
+        svc.log.error("path@node must be set in section %s"%s)
+        return
+
+    kwargs["devpath"] = devpath
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(Res.Resource):
 

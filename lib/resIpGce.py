@@ -6,8 +6,25 @@ import rcExceptions as ex
 from rcUtilities import getaddr, justcall
 import json
 import rcGce
+from svcBuilder import init_kwargs
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+
+
+def adder(svc, s):
+    """
+    Add a resource instance to the object, parsing parameters
+    from a configuration section dictionnary.
+    """
+    kwargs = init_kwargs(svc, s)
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["routename"] = svc.oget(s, "routename")
+    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
+    r = Ip(**kwargs)
+    svc += r
+
 
 class Ip(resIp.Ip, rcGce.GceMixin):
     def __init__(self,

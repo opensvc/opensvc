@@ -4,9 +4,44 @@ import rcExceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string, lazy
+from svcBuilder import init_kwargs
 import pwd
 import grp
 import stat
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    zone = svc.oget(s, "zone")
+
+    if zone is not None:
+        zp = None
+        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
+            if r.name == zone:
+                try:
+                    zp = r.zonepath
+                except:
+                    zp = "<%s>" % zone
+                break
+        if zp is None:
+            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
+            raise ex.excError()
+        kwargs["path"] = zp+"/root"+kwargs["path"]
+        if "<%s>" % zone != zp:
+            kwargs["path"] = os.path.realpath(kwargs["path"])
+
+    r = FsDir(**kwargs)
+
+    if zone is not None:
+        r.tags.add(zone)
+        r.tags.add("zone")
+
+    svc += r
+
 
 class FsDir(Res.Resource):
     """Define a mount resource
