@@ -1,17 +1,41 @@
+import datetime
 import os
-import logging
 
+from subprocess import *
+
+import rcExceptions as ex
+import rcStatus
+import resSync
+
+from converters import print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from rcUtilitiesLinux import lv_info
-from subprocess import *
-from converters import print_duration
-import rcExceptions as ex
-import rcStatus
-import datetime
-import resSync
+from svcBuilder import sync_kwargs
 
-class syncDds(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["target"] = svc.oget(s, "target")
+
+    dsts = {}
+    for node in svc.nodes | svc.drpnodes:
+        dst = svc.oget(s, "dst", impersonate=node)
+        dsts[node] = dst
+
+    if len(dsts) == 0:
+        for node in svc.nodes | svc.drpnodes:
+            dsts[node] = kwargs["src"]
+
+    kwargs["dsts"] = dsts
+    kwargs["snap_size"] = svc.oget(s, "snap_size")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncDds(**kwargs)
+    svc += r
+
+
+class SyncDds(resSync.Sync):
     def pre_action(self, action):
         resources = [r for r in self.rset.resources if \
                      not r.skip and not r.is_disabled() and \

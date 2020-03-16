@@ -1,15 +1,28 @@
+import datetime
 import os
+import time
 
-from rcGlobalEnv import rcEnv
+import rcBtrfs
 import rcExceptions as ex
 import rcStatus
-import time
-import datetime
 import resSync
-import rcBtrfs
-from rcUtilities import justcall
 
-class syncBtrfsSnap(resSync.Sync):
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["keep"] = svc.oget(s, "keep")
+    kwargs["subvol"] = svc.oget(s, "subvol")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncBtrfssnap(**kwargs)
+    svc += r
+
+
+class SyncBtrfssnap(resSync.Sync):
     def __init__(self,
                  rid=None,
                  name=None,

@@ -3,8 +3,18 @@ import rcExceptions as ex
 import resources
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
+from svcBuilder import init_kwargs
 import rcContainer
 import rcStatus
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["driver"] = svc.oget(s, "driver")
+    kwargs["options"] = svc.oget(s, "options")
+    r = Fs(**kwargs)
+    svc += r
+
 
 class Fs(resources.Resource):
     def __init__(self,

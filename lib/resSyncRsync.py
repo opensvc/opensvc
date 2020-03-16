@@ -2,13 +2,40 @@ import os
 import logging
 import glob
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
-from converters import convert_speed, convert_size
 import rcExceptions as ex
 import rcStatus
 import datetime
 import resSync
+
+from converters import convert_speed, convert_size
+from rcGlobalEnv import rcEnv
+from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    if s.startswith("sync#i"):
+        # internal syncs have their own dedicated add function
+        return
+
+    kwargs = {}
+    kwargs["src"] = []
+    _s = svc.oget(s, "src")
+    for src in _s:
+        kwargs["src"] += glob.glob(src)
+
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["options"] = svc.oget(s, "options")
+    kwargs["reset_options"] = svc.oget(s, "reset_options")
+    kwargs["dstfs"] = svc.oget(s, "dstfs")
+    kwargs["snap"] = svc.oget(s, "snap")
+    kwargs["bwlimit"] = svc.oget(s, "bwlimit")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs.update(sync_kwargs(svc, s))
+
+    r = Rsync(**kwargs)
+    svc += r
+
 
 def lookup_snap_mod():
     if rcEnv.sysname == 'Linux':

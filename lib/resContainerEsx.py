@@ -3,8 +3,17 @@ import os
 import rcExceptions as ex
 import resContainer
 from rcUtilities import which
+from svcBuilder import init_kwargs, container_kwargs
 
 rcU = __import__("rcUtilities" + os.uname()[0])
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Esx(**kwargs)
+    svc += r
+
 
 class Esx(resContainer.Container):
     def __init__(self,

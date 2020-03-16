@@ -1,12 +1,24 @@
 import os
+
 from subprocess import Popen, PIPE
 
 import rcStatus
-from rcUtilities import justcall, lazy
-from rcGlobalEnv import rcEnv
 import resSync
 import rcExceptions as ex
 import rcContainer
+
+from rcUtilities import justcall, lazy
+from rcGlobalEnv import rcEnv
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncDocker(**kwargs)
+    svc += r
+
 
 class SyncDocker(resSync.Sync):
     def __init__(self,

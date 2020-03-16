@@ -7,6 +7,11 @@ import rcStatus
 import resDiskLoop as Res
 import rcExceptions as ex
 
+
+def adder(svc, s):
+    Res.adder(svc, s, drv=Disk)
+
+
 def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,
     /path/to/file => /dev/loop0

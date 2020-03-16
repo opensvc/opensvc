@@ -6,6 +6,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import qcall, lazy
 from rcUtilitiesLinux import check_ping
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 
 try:
@@ -17,6 +18,16 @@ except ImportError:
     urlparse = None
     def get_url_path(url):
         return
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
+    kwargs["vapp"] = svc.oget(s, "vapp")
+    kwargs["key_name"] = svc.oget(s, "key_name")
+    r = CloudVm(**kwargs)
+    svc += r
+
 
 class CloudVm(resContainer.Container):
     save_timeout = 240

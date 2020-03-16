@@ -6,6 +6,35 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr, lazy
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    """
+    Add a resource instance to the object, parsing parameters
+    from a configuration section dictionnary.
+    """
+    kwargs = init_kwargs(svc, s)
+    kwargs["expose"] = svc.oget(s, "expose")
+    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
+    kwargs["alias"] = svc.oget(s, "alias")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["mask"] = svc.oget(s, "netmask")
+    kwargs["gateway"] = svc.oget(s, "gateway")
+    kwargs["netns"] = svc.oget(s, "netns")
+    kwargs["nsdev"] = svc.oget(s, "nsdev")
+    kwargs["mode"] = svc.oget(s, "mode")
+    kwargs["network"] = svc.oget(s, "network")
+    kwargs["macaddr"] = svc.oget(s, "macaddr")
+    kwargs["del_net_route"] = svc.oget(s, "del_net_route")
+    if kwargs["mode"] == "ovs":
+        kwargs["vlan_tag"] = svc.oget(s, "vlan_tag")
+        kwargs["vlan_mode"] = svc.oget(s, "vlan_mode")
+    r = Ip(**kwargs)
+    svc += r
+
 
 class Ip(Res.Ip):
     def __init__(self,

@@ -7,6 +7,9 @@ rcMounts = __import__('rcMounts'+rcEnv.sysname)
 import resFs as Res
 import rcExceptions as ex
 
+def adder(svc, s):
+    Res.adder(svc, s, drv=Mount)
+
 def diskpartfile_name(self):
     return os.path.join(self.var_d, 'diskpart')
 

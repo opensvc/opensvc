@@ -6,6 +6,11 @@ import re
 import rcStatus
 import resDiskRaw
 
+
+def adder(svc, s):
+    resDiskRaw.adder(svc, s, drv=Disk)
+
+
 class Disk(resDiskRaw.Disk):
     def sub_disks(self):
         devs = self.sub_devs()

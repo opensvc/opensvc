@@ -16,6 +16,11 @@ from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get
 from rcGlobalEnv import rcEnv
 import resContainerDocker
 
+
+def adder(svc, s):
+    resContainerDocker.adder(svc, s, drv=Container)
+
+
 class Container(resContainerDocker.Container):
     """
     Docker container resource driver.

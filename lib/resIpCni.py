@@ -14,6 +14,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from rcColor import format_str_flat_json
+from svcBuilder import init_kwargs
 
 CNI_VERSION = "0.3.0"
 PORTMAP_CONF = {
@@ -26,6 +27,23 @@ PORTMAP_CONF = {
     },
 #    "externalSetMarkChain": "OSVC-MARK-MASQ"
 }
+
+def adder(svc, s):
+    """
+    Add a resource instance to the object, parsing parameters
+    from a configuration section dictionnary.
+    """
+    kwargs = init_kwargs(svc, s)
+    kwargs["expose"] = svc.oget(s, "expose")
+    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
+    kwargs["alias"] = svc.oget(s, "alias")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
+    kwargs["network"] = svc.oget(s, "network")
+    kwargs["netns"] = svc.oget(s, "netns")
+    r = Ip(**kwargs)
+    svc += r
+
 
 class Ip(Res.Ip):
     def __init__(self,
