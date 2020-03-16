@@ -8,6 +8,14 @@ import rcExceptions as ex
 import resDisk
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    r = Disk(**kwargs)
+    svc += r
 
 class Disk(resDisk.Disk):
     def __init__(self,

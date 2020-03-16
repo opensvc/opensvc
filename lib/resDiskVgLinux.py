@@ -6,6 +6,15 @@ from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks, udevadm_settle
 from rcUtilities import which, justcall, cache, lazy
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,

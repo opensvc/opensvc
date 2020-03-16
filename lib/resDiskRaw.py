@@ -9,6 +9,29 @@ import sys
 import glob
 import rcExceptions as ex
 from rcUtilities import which, is_string, lazy
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s, drv=None):
+    drv = drv or Disk
+    kwargs = init_kwargs(svc, s)
+    kwargs["devs"] = svc.oget(s, "devs")
+    zone = svc.oget(s, "zone")
+
+    if zone is not None:
+        kwargs["devs"] = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs["devs"]])
+
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    kwargs["create_char_devices"] = svc.oget(s, "create_char_devices")
+
+    r = drv(**kwargs)
+    if zone is not None:
+        r.tags.add("zone")
+        r.tags.add(zone)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,

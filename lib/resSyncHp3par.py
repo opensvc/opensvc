@@ -1,14 +1,39 @@
+import datetime
 import os
 
-from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-import rcStatus
-import time
-import resSync
-import datetime
 import rcHp3par as rc
+import rcStatus
+import resSync
 
-class syncHp3par(resSync.Sync):
+from rcGlobalEnv import rcEnv
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+
+    kwargs["mode"] = svc.oget(s, "mode")
+    kwargs["array"] = svc.oget(s, "array")
+
+    rcg_names = {}
+    for node in svc.nodes | svc.drpnodes:
+        array = svc.oget(s, "array", impersonate=node)
+        rcg = svc.oget(s, "rcg", impersonate=node)
+        rcg_names[array] = rcg
+
+    if len(rcg_names) == 0:
+        svc.log.error("config file section %s must have rcg set" % s)
+        return
+
+    kwargs["rcg_names"] = rcg_names
+
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncHp3par(**kwargs)
+    svc += r
+
+
+class SyncHp3par(resSync.Sync):
     def __init__(self,
                  rid=None,
                  array=None,

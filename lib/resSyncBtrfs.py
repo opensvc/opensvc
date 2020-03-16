@@ -1,13 +1,29 @@
 import os
-from rcGlobalEnv import rcEnv
 import datetime
+
 from subprocess import *
+
+import rcBtrfs
 import rcExceptions as ex
 import rcStatus
 import resSync
+
+from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from converters import print_duration
-import rcBtrfs
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs["recursive"] = svc.oget(s, "recursive")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncBtrfs(**kwargs)
+    svc += r
+
 
 class SyncBtrfs(resSync.Sync):
     """define btrfs sync resource to be btrfs send/btrfs receive between nodes

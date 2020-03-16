@@ -4,8 +4,17 @@ from rcGlobalEnv import rcEnv
 import rcStatus
 import resources as Res
 from rcUtilities import which, qcall, justcall, lazy
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 import rcExceptions as ex
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Srp(**kwargs)
+    svc += r
+
 
 class Srp(resContainer.Container):
     def files_to_sync(self):

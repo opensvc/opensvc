@@ -5,6 +5,15 @@ from rcGlobalEnv import rcEnv
 
 import rcExceptions as ex
 from rcUtilities import qcall, which, justcall
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     """ basic Veritas Volume group resource

@@ -11,6 +11,7 @@ from rcUtilities import justcall, qcall, which, lazy
 from rcUtilitiesSunOS import get_solaris_version
 from rcZfs import zfs_setprop
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs, container_kwargs
 
 ZONECFG = "/usr/sbin/zonecfg"
 ZONEADM = "/usr/sbin/zoneadm"
@@ -29,6 +30,14 @@ VALID_ACTIONS = [
     "install",
     "clone"
 ]
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["delete_on_stop"] = svc.oget(s, "delete_on_stop")
+    r = Zone(**kwargs)
+    svc += r
 
 
 class Zone(resContainer.Container):

@@ -4,8 +4,18 @@ import rcExceptions as ex
 import resContainer
 from rcGlobalEnv import rcEnv
 from rcUtilities import fcache
+from svcBuilder import init_kwargs, container_kwargs
 
 rcU = __import__("rcUtilities" + os.uname()[0])
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["uuid"] = svc.oget(s, "uuid")
+    r = Ovm(**kwargs)
+    svc += r
+
 
 class Ovm(resContainer.Container):
     def __init__(self,

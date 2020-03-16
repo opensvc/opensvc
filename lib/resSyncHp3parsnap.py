@@ -1,14 +1,34 @@
+import datetime
 import os
 
-from rcGlobalEnv import rcEnv
 import rcExceptions as ex
-import rcStatus
-from rcUtilities import justcall
-import resSync
-import datetime
 import rcHp3par as rc
+import rcStatus
+import resSync
 
-class syncHp3parSnap(resSync.Sync):
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+
+    kwargs["array"] = svc.oget(s, "array")
+    vv_names = svc.oget(s, "vv_names")
+
+    if len(vv_names) == 0:
+        svc.log.error("config file section %s must have at least one vv_name set" % s)
+        return
+
+    kwargs["vv_names"] = vv_names
+
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncHp3parsnap(**kwargs)
+    svc += r
+
+
+class SyncHp3parsnap(resSync.Sync):
     def __init__(self,
                  rid=None,
                  array=None,

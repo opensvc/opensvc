@@ -1,10 +1,19 @@
-from rcGlobalEnv import rcEnv
-import resources as Res
 import os
+
 import rcExceptions as ex
+import resources as Res
 import resContainer
 
+from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs, container_kwargs
+
 rcU = __import__("rcUtilities" + os.uname()[0])
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Xen(**kwargs)
+    svc += r
 
 class Xen(resContainer.Container):
     def __init__(self,

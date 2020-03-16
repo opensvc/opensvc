@@ -1,16 +1,47 @@
 import os
-import logging
+import time
+
+import rcExceptions as ex
+import resSyncSymclone
 
 from rcGlobalEnv import rcEnv
-import rcExceptions as ex
-import rcStatus
-import resources as Res
-import time
-import datetime
-import resSyncSymclone as symclone
 from rcUtilities import which
+from svcBuilder import sync_kwargs
 
-class syncSymclone(symclone.syncSymclone):
+
+def adder(svc, s, drv=None, t="sync.symclone"):
+    drv = drv or SyncSymclone
+    kwargs = {}
+    kwargs["type"] = t
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["symid"] = svc.oget(s, "symid")
+    kwargs["recreate_timeout"] = svc.oget(s, "recreate_timeout")
+    kwargs["restore_timeout"] = svc.oget(s, "restore_timeout")
+    kwargs["consistent"] = svc.oget(s, "consistent")
+    kwargs["precopy"] = svc.oget(s, "precopy")
+    kwargs.update(sync_kwargs(svc, s))
+    r = drv(**kwargs)
+    svc += r
+
+
+class SyncSymclone(resSyncSymclone.SyncSymclone):
+    def __init__(self,
+                 rid=None,
+                 type="sync.symclone",
+                 symid=None,
+                 pairs=[],
+                 precopy=True,
+                 consistent=True,
+                 **kwargs):
+        resSyncSymclone.SyncSymclone.__init__(self,
+                                       rid=rid,
+                                       type=type,
+                                       symid=symid,
+                                       pairs=pairs,
+                                       precopy=precopy,
+                                       consistent=consistent,
+                                       **kwargs)
+
     def dev_rescan(self, dev):
         dev = dev.replace('/dev/', '')
         sysdev = "/sys/block/%s/device/rescan"%dev
@@ -55,20 +86,4 @@ class syncSymclone(symclone.syncSymclone):
             self.wait_for_dev_ready(dev)
             self.refresh_multipath(dev)
 
-    def __init__(self,
-                 rid=None,
-                 type="sync.symclone",
-                 symid=None,
-                 pairs=[],
-                 precopy=True,
-                 consistent=True,
-                 **kwargs):
-        symclone.syncSymclone.__init__(self,
-                                       rid=rid,
-                                       type=type,
-                                       symid=symid,
-                                       pairs=pairs,
-                                       precopy=precopy,
-                                       consistent=consistent,
-                                       **kwargs)
 

@@ -1,17 +1,39 @@
+import datetime
+import json
 import os
-import logging
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+
+import rcExceptions as ex
+import rcStatus
+import resSync
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-import rcExceptions as ex
-import rcStatus
-import time
-import datetime
-import xml.etree.ElementTree as ET
-import subprocess
-import resSync
+from svcBuilder import sync_kwargs
 
-class syncEvasnap(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["eva_name"] = svc.oget(s, "eva_name")
+    kwargs["snap_name"] = svc.oget(s, "snap_name")
+    try:
+        pairs = json.loads(svc.oget(s, "pairs"))
+    except:
+        pairs = None
+    if not pairs:
+        svc.log.error("config file section %s must have pairs set" % s)
+        return
+    else:
+        kwargs["pairs"] = pairs
+
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncEvasnap(**kwargs)
+    svc += r
+
+
+class SyncEvasnap(resSync.Sync):
     def wait_for_devs_ready(self):
         pass
 

@@ -12,6 +12,11 @@ import rcExceptions as ex
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 
+
+def adder(svc, s):
+    resAppSimple.adder(svc, s, drv=App)
+
+
 class App(resAppSimple.App):
     """
     The simple App resource driver class.

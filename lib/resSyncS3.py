@@ -1,17 +1,33 @@
-import os
-import time
 import datetime
 import glob
-from subprocess import *
+import os
+import time
+
 from six.moves import configparser as ConfigParser
+from subprocess import *
+
+import rcExceptions as ex
+import rcStatus
+import resSync
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
-import resSync
-import rcExceptions as ex
-import rcStatus
+from svcBuilder import sync_kwargs
 
-class syncS3(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["full_schedule"] = svc.oget(s, "full_schedule")
+    kwargs["options"] = svc.oget(s, "options")
+    kwargs["snar"] = svc.oget(s, "snar")
+    kwargs["bucket"] = svc.oget(s, "bucket")
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncS3(**kwargs)
+    svc += r
+
+
+class SyncS3(resSync.Sync):
     def __init__(self,
                  rid=None,
                  src=[],

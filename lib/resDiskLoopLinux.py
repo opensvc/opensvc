@@ -10,6 +10,11 @@ import rcExceptions as ex
 from rcLoopLinux import file_to_loop
 from lock import cmlock
 
+
+def adder(svc, s):
+    Res.adder(svc, s, drv=Disk)
+
+
 class Disk(Res.Disk):
     def is_up(self):
         """Returns True if the loop group is present and activated
