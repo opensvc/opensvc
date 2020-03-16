@@ -4,7 +4,33 @@ import rcExceptions as ex
 from subprocess import *
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, to_cidr, justcall
+from svcBuilder import init_kwargs
+
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+
+
+def adder(svc, s):
+    """
+    Add a resource instance to the object, parsing parameters
+    from a configuration section dictionnary.
+    """
+    zone = svc.oget(s, "zone")
+    if zone is not None:
+        svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s" % s)
+        return
+    kwargs = init_kwargs(svc, s)
+    kwargs["expose"] = svc.oget(s, "expose")
+    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
+    kwargs["alias"] = svc.oget(s, "alias")
+    kwargs["ipdev"] = svc.oget(s, "ipdev")
+    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
+    kwargs["ipdevExt"] = svc.oget(s, "ipdevext")
+    kwargs["ipname"] = svc.oget(s, "ipname")
+    kwargs["mask"] = svc.oget(s, "netmask")
+    kwargs["gateway"] = svc.oget(s, "gateway")
+    r = Ip(**kwargs)
+    svc += r
+
 
 class Ip(Res.Ip):
     def __init__(self,

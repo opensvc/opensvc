@@ -9,6 +9,9 @@ from rcZfs import zfs_getprop, zfs_setprop
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 
+def adder(svc, s):
+    Res.adder(svc, s, drv=Mount)
+
 class Mount(Res.Mount):
     """
     SunOS fs resource driver.

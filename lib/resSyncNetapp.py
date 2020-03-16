@@ -1,15 +1,30 @@
+import datetime
 import os
-import logging
+import time
+
+import rcExceptions as ex
+import rcStatus
+import resSync
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
-import rcExceptions as ex
-import rcStatus
-import time
-import resSync
-import datetime
+from svcBuilder import sync_kwargs
 
-class syncNetapp(resSync.Sync):
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["user"] = svc.oget(s, "user")
+    filers = {}
+    for n in svc.nodes | svc.drpnodes:
+        filers[n] = svc.oget(s, "filer", impersonate=n)
+    kwargs["filers"] = filers
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncNetapp(**kwargs)
+    svc += r
+
+
+class SyncNetapp(resSync.Sync):
     def master(self):
         s = self.local_snapmirror_status()
         return s['master']
@@ -127,7 +142,6 @@ class syncNetapp(resSync.Sync):
         if len(snap) == 0:
             self.log.error("can not determine base snapshot name to remove on %s"%slave)
             raise ex.excError
-        import time
         time.sleep(5)
         (ret, buff, err) = self._cmd(['snap', 'delete', self.path_short, snap], slave, info=True)
         if ret != 0:

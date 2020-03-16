@@ -6,6 +6,13 @@ from rcUtilities import which, qcall, justcall
 import resContainer
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs, container_kwargs
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Vz(**kwargs)
+    svc += r
 
 class Vz(resContainer.Container):
     def files_to_sync(self):

@@ -1,11 +1,23 @@
-import resDisk
 import os
 import json
+
+import resDisk
 import rcStatus
 import rcExceptions as ex
+import rcGce
+
 from rcGlobalEnv import *
 from rcUtilities import justcall
-import rcGce
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["names"] = svc.oget(s, "names")
+    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk, rcGce.GceMixin):
     def __init__(self,

@@ -10,6 +10,15 @@ from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              dev_to_paths
 from rcUtilities import which, justcall, lazy, fcache
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["uuid"] = svc.oget(s, "uuid")
+    r = Disk(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     startup_timeout = 10

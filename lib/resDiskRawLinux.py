@@ -7,6 +7,11 @@ from rcGlobalEnv import *
 from rcUtilities import justcall, cache, lazy
 from rcUtilitiesLinux import devs_to_disks
 
+
+def adder(svc, s):
+    resDiskRaw.adder(svc, s, drv=Disk)
+
+
 class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,

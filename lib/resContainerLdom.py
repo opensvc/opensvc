@@ -1,10 +1,21 @@
+import os
+
 import resources as Res
+import resContainer
 import rcExceptions as ex
+
+from rcGlobalEnv import rcEnv
 from rcUtilities import qcall
 from rcUtilitiesSunOS import check_ping
-import resContainer
-from rcGlobalEnv import rcEnv
-import os
+from svcBuilder import init_kwargs, container_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Ldom(**kwargs)
+    svc += r
+
 
 class Ldom(resContainer.Container):
     def __init__(self,

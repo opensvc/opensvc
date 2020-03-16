@@ -13,6 +13,9 @@ from rcLoopLinux import file_to_loop, loop_to_file
 import rcExceptions as ex
 from rcZfs import zfs_getprop, zfs_setprop
 
+def adder(svc, s):
+    Res.adder(svc, s, drv=Mount)
+
 class Mount(Res.Mount):
     """
     Linux Fs resource driver

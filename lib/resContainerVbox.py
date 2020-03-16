@@ -1,9 +1,19 @@
-import resources as Res
-import rcExceptions as ex
-from rcUtilities import qcall
-import resContainer
-from rcGlobalEnv import rcEnv
 import os
+
+import rcExceptions as ex
+import resources as Res
+import resContainer
+
+from rcUtilities import qcall
+from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs, container_kwargs
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["headless"] = svc.oget(s, "headless")
+    r = Vbox(**kwargs)
+    svc += r
 
 utilities = __import__('rcUtilities'+rcEnv.sysname)
 
