@@ -3,6 +3,25 @@ import rcExceptions as ex
 import os
 
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["command"] = svc.oget(s, "command")
+    kwargs["on_error"] = svc.oget(s, "on_error")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["timeout"] = svc.oget(s, "timeout")
+    kwargs["snooze"] = svc.oget(s, "snooze")
+    kwargs["log"] = svc.oget(s, "log")
+    kwargs["confirmation"] = svc.oget(s, "confirmation")
+    kwargs["check"] = svc.oget(s, "check")
+    kwargs["environment"] = svc.oget(s, "environment")
+    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
+    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
+    r = Task(**kwargs)
+    svc += r
+
 
 def run_as_popen_kwargs(user):
     if rcEnv.sysname == "Windows":

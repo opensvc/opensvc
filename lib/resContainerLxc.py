@@ -8,6 +8,7 @@ import resources as Res
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, lazy, makedirs
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs, container_kwargs, get_rcmd
 import resContainer
 import rcExceptions as ex
 import rcStatus
@@ -15,6 +16,17 @@ import rcStatus
 CAPABILITIES = {
     "cgroup_dir": "2.1",
 }
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    kwargs["rcmd"] = get_rcmd(svc, s)
+    kwargs["cf"] = svc.oget(s, "cf")
+    kwargs["container_data_dir"] = svc.oget(s, "container_data_dir")
+    r = Lxc(**kwargs)
+    svc += r
+
 
 class Lxc(resContainer.Container):
     """

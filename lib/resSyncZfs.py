@@ -1,15 +1,30 @@
-import os
 import datetime
+import os
+
 from subprocess import *
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
 import rcExceptions as ex
 import rcStatus
 import resSync
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 from rcZfs import a2pool_dataset, Dataset
 from rcUtilities import bdecode, lazy
 from converters import print_duration
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["src"] = svc.oget(s, "src")
+    kwargs["dst"] = svc.oget(s, "dst")
+    kwargs["target"] = svc.oget(s, "target")
+    kwargs["recursive"] = svc.oget(s, "recursive")
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncZfs(**kwargs)
+    svc += r
+
 
 class SyncZfs(resSync.Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes

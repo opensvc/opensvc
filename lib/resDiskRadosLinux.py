@@ -5,6 +5,30 @@ import rcExceptions as ex
 import json
 from rcGlobalEnv import *
 from rcUtilities import justcall
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["images"] = svc.oget(s, "images")
+    kwargs["keyring"] = svc.oget(s, "keyring")
+    kwargs["client_id"] = svc.oget(s, "client_id")
+
+    r = Disk(**kwargs)
+    svc += r
+
+    # rados locking resource
+    lock_shared_tag = svc.oget(s, "lock_shared_tag")
+    lock = svc.oget(s, "lock")
+    if not lock:
+        return
+
+    kwargs["rid"] = kwargs["rid"]+"lock"
+    kwargs["lock"] = lock
+    kwargs["lock_shared_tag"] = lock_shared_tag
+    r = DiskLock(**kwargs)
+    svc += r
+
 
 class Disk(resDisk.Disk):
     def __init__(self,
@@ -15,7 +39,7 @@ class Disk(resDisk.Disk):
                  **kwargs):
         resDisk.Disk.__init__(self,
                           rid=rid,
-                          type="disk.vg",
+                          type="disk.rados",
                           **kwargs)
         self.images = images
         self.keyring = keyring
@@ -174,19 +198,13 @@ class Disk(resDisk.Disk):
 class DiskLock(Disk):
     def __init__(self,
                  rid=None,
-                 type="disk.lock",
+                 type="disk.radoslock",
                  images=set(),
                  client_id=None,
                  keyring=None,
                  lock=None,
                  lock_shared_tag=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set(),
-                 standby=False,
-                 monitor=False,
-                 restart=0,
-                 subset=None):
+                 **kwargs):
 
         self.lock = lock
         self.lock_shared_tag = lock_shared_tag
@@ -197,14 +215,7 @@ class DiskLock(Disk):
                     images=images,
                     client_id=client_id,
                     keyring=keyring,
-                    optional=optional,
-                    disabled=disabled,
-                    tags=tags,
-                    standby=standby,
-                    monitor=monitor,
-                    restart=restart,
-                    subset=subset)
-
+                    **kwargs)
         self.label = self.fmt_label()
         self.unlocked = []
 

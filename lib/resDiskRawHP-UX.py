@@ -4,6 +4,11 @@ import rcStatus
 import re
 from rcUtilities import justcall
 
+
+def adder(svc, s):
+    resDiskRaw.adder(svc, s, drv=Disk)
+
+
 class Disk(resDiskRaw.Disk):
     def __init__(self,
                  rid=None,

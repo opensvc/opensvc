@@ -4,6 +4,15 @@ import rcStatus
 import rcExceptions as ex
 from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["res"] = svc.oget(s, "res")
+    r = Drbd(**kwargs)
+    svc += r
+
 
 class Drbd(Res.Resource):
     """ Drbd device resource

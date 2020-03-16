@@ -7,6 +7,25 @@ import resources as Res
 import rcExceptions as ex
 import rcStatus
 from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["pool"] = svc.oget(s, "pool")
+    kwargs["format"] = svc.oget(s, "format")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["access"] = svc.oget(s, "access")
+    kwargs["configs"] = svc.oget(s, "configs")
+    try:
+        kwargs["secrets"] = svc.oget(s, "secrets")
+    except ValueError:
+        # only supported on type=shm volumes
+        pass
+    r = Volume(**kwargs)
+    svc += r
+
 
 class Volume(Res.Resource):
     """

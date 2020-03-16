@@ -1,13 +1,25 @@
-import rcStatus
-import resources as Res
-import time
 import os
+import time
+
+import rcStatus
 import rcExceptions as ex
+import resources as Res
+import resContainer
+import resDiskHpVm
+
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
-import resContainer
+from svcBuilder import init_kwargs, container_kwargs
+
 u = __import__('rcUtilitiesHP-UX')
-import resDiskHpVm
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = HpVm(**kwargs)
+    svc += r
+
 
 class HpVm(resContainer.Container):
     def __init__(self,

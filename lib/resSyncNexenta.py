@@ -1,14 +1,30 @@
+import datetime
 import os
-import logging
 
-from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 import rcStatus
 import resSync
-import datetime
-from rcNexenta import Nexenta
 
-class syncNexenta(resSync.Sync):
+from rcGlobalEnv import rcEnv
+from rcNexenta import Nexenta
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s):
+    kwargs = {}
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["path"] = svc.oget(s, "path")
+    kwargs["reversible"] = svc.oget(s, "reversible")
+    filers = {}
+    for n in svc.nodes | svc.drpnodes:
+        filers[n] = svc.oget(s, "filer", impersonate=n)
+    kwargs["filers"] = filers
+    kwargs.update(sync_kwargs(svc, s))
+    r = SyncNexenta(**kwargs)
+    svc += r
+
+
+class SyncNexenta(resSync.Sync):
     def can_sync(self, target=None):
         try:
             self.get_endpoints()

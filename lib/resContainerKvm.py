@@ -6,11 +6,20 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, cache, clear_cache, lazy, which
 from rcUtilitiesLinux import check_ping
+from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 
 CAPABILITIES = {
     "partitions": "1.0.1",
 }
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs.update(container_kwargs(svc, s))
+    r = Kvm(**kwargs)
+    svc += r
+
 
 class Kvm(resContainer.Container):
     def __init__(self,

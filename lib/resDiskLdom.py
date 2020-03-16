@@ -1,11 +1,36 @@
 import os
-import rcExceptions as ex
-import rcStatus
-m = __import__("resDisk")
-from subprocess import *
 import re
 
-class Disk(m.Disk):
+import rcExceptions as ex
+import rcStatus
+import resDisk
+
+from subprocess import *
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["container_id"] = svc.oget(s, "container_id")
+
+    if not kwargs["container_id"] in svc.cd:
+        svc.log.error("%s.container_id points to an invalid section"%kwargs["container_id"])
+        return
+
+    try:
+        container_type = svc.conf_get(kwargs["container_id"], "type")
+    except ex.OptNotFound as exc:
+        svc.log.error("type must be set in section %s"%kwargs["container_id"])
+        return
+
+    if container_type != "ldom":
+        return
+
+    r = Disk(**kwargs)
+    svc += r
+
+
+class Disk(resDisk.Disk):
     def __init__(self,
                  rid=None,
                  name=None,
@@ -13,7 +38,7 @@ class Disk(m.Disk):
                  **kwargs):
         self.label = "vmdg "+str(name)
         self.container_id = container_id
-        m.Disk.__init__(self,
+        resDisk.Disk.__init__(self,
                           rid=rid,
                           name=name,
                           type='disk.vg',

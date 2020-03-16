@@ -1,7 +1,15 @@
 import os
 
-from rcUtilities import lazy
 import resFsFlagAbstract
+
+from rcUtilities import lazy
+from svcBuilder import init_kwargs
+
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    r = Fs(**kwargs)
+    svc += r
 
 
 class Fs(resFsFlagAbstract.Fs):

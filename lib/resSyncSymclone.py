@@ -1,17 +1,34 @@
-import os
-import logging
-
-from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy
-from converters import print_duration
-import rcExceptions as ex
-import rcStatus
-import time
 import datetime
-import resSync
+import os
+import time
 import xml.etree.ElementTree as ElementTree
 
-class syncSymclone(resSync.Sync):
+import rcExceptions as ex
+import rcStatus
+import resSync
+
+from converters import print_duration
+from rcGlobalEnv import rcEnv
+from rcUtilities import which, justcall, lazy
+from svcBuilder import sync_kwargs
+
+
+def adder(svc, s, drv=None, t="sync.symclone"):
+    drv = drv or SyncSymclone
+    kwargs = {}
+    kwargs["type"] = t
+    kwargs["pairs"] = svc.oget(s, "pairs")
+    kwargs["symid"] = svc.oget(s, "symid")
+    kwargs["recreate_timeout"] = svc.oget(s, "recreate_timeout")
+    kwargs["restore_timeout"] = svc.oget(s, "restore_timeout")
+    kwargs["consistent"] = svc.oget(s, "consistent")
+    kwargs["precopy"] = svc.oget(s, "precopy")
+    kwargs.update(sync_kwargs(svc, s))
+    r = drv(**kwargs)
+    svc += r
+
+
+class SyncSymclone(resSync.Sync):
     def wait_for_devs_ready(self):
         pass
 
