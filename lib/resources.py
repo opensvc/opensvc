@@ -1145,7 +1145,7 @@ class Resource(object):
     def format_driver_basename(self):
         try:
             return self.type.split(".", 1)[1]
-        except (ValueError, IndexError):
+        except (ValueError, IndexError, AttributeError):
             return ""
 
     def format_rset_id(self):
