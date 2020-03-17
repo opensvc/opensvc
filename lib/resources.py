@@ -87,6 +87,13 @@ class Resource(object):
         self.rollback_even_if_standby = False
         self.skip_triggers = set()
 
+    def on_add(self):
+        """
+        Placeholder for a method run when adding the Resource to a BaseSvc,
+        after the Resource::svc attribute is set.
+        """
+        pass
+
     @lazy
     def log(self):
         """

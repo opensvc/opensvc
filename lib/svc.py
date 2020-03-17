@@ -3252,48 +3252,59 @@ class Svc(BaseSvc):
         Svc += Resource
         """
         if hasattr(other, 'resources'):
-            if other.rid in self.resourcesets_by_id:
-                self.resourcesets_by_id[other.rid] += other
-            else:
-                # new ResourceSet or ResourceSet-derived class
-                self.resourcesets_by_id[other.rid] = other
-                other.svc = self
+            return self.__iadd_resourceset__(other)
+        elif isinstance(other, Resource):
+            return self.__iadd_resource__(other)
+        else:
             return self
 
+    def resource_rset_id(self, res):
         try:
-            base_type = other.type.split(".")[0]
+            base_type = res.type.split(".")[0]
         except AttributeError as exc:
             base_type = ""
-        if other.subset is not None:
-            # the resource wants to be added to a specific resourceset
-            # for action grouping, parallel execution or sub-resource
-            # triggers
-            rset_id = "%s:%s" % (base_type, other.subset)
+        if res.subset is not None:
+            rset_id = "%s:%s" % (base_type, res.subset)
         else:
             rset_id = base_type
+        return rset_id
 
+    def __iadd_resourceset__(self, other):
+        """
+        Svc += ResourceSet
+        """
+        other.svc = self
+        if other.rid in self.resourcesets_by_id:
+            self.resourcesets_by_id[other.rid] += other
+        else:
+            self.resourcesets_by_id[other.rid] = other
+        return self
+
+    def __iadd_resource__(self, other):
+        """
+        Svc += Resource
+        """
+        if not other.rid or "#" not in other.rid:
+            self.log.error("__iadd_resource__ unexpected rid: %s", other)
+            return self
+        rset_id = self.resource_rset_id(other)
         if rset_id in self.resourcesets_by_id:
             # the resource set already exists. add resource or resourceset.
             self.resourcesets_by_id[rset_id] += other
-        elif isinstance(other, Resource):
+        else:
             parallel = self.get_subset_parallel(rset_id)
             rset = ResourceSet(rset_id, resources=[other], parallel=parallel)
             rset.svc = self
             rset.pg_settings = self.get_pg_settings("subset#"+rset_id)
-            self.__iadd__(rset)
-        else:
-            self.log.debug("unexpected object addition to the service: %s",
-                           str(other))
+            self += rset
 
         other.svc = self
+        other.pg_settings = self.get_pg_settings(other.rid)
+        self.add_scsireserv(other)
+        self.add_requires(other)
+        self.resources_by_id[other.rid] = other
 
-        if isinstance(other, Resource) and other.rid and "#" in other.rid:
-            other.pg_settings = self.get_pg_settings(other.rid)
-            self.add_scsireserv(other)
-            self.add_requires(other)
-            self.resources_by_id[other.rid] = other
-
-        if not other.is_disabled() and hasattr(other, "on_add"):
+        if not other.is_disabled():
             other.on_add()
 
         return self
