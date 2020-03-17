@@ -2746,8 +2746,8 @@ class Svc(BaseSvc):
     kind = "svc"
 
     @lazy
-    def kwdict(self):
-        return __import__("svcdict")
+    def kwstore(self):
+        return __import__("svcdict").KEYS
 
     @lazy
     def ha(self):

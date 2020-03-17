@@ -374,12 +374,14 @@ class Section(object):
 
 class KeywordStore(dict):
     def __init__(self, provision=False, keywords=[], deprecated_keywords={},
+                 reverse_deprecated_keywords={},
                  deprecated_sections={}, template_prefix="template.",
                  base_sections=[], has_default_section=True):
         dict.__init__(self)
         self.sections = {}
         self.deprecated_sections = deprecated_sections
         self.deprecated_keywords = deprecated_keywords
+        self.reverse_deprecated_keywords = reverse_deprecated_keywords
         self.template_prefix = template_prefix
         self.base_sections = base_sections
         self.provision = provision

@@ -40,8 +40,8 @@ class Usr(Sec, BaseSvc):
     desc = "user"
 
     @lazy
-    def kwdict(self):
-        return __import__("usrdict")
+    def kwstore(self):
+        return __import__("usrdict").KEYS
 
     def on_create(self):
         changes = []

@@ -735,7 +735,7 @@ class ExtConfigMixin(object):
         except Exception as exc:
             pass
         try:
-            return self.kwdict.KEYS[section].getkey("type").default
+            return self.kwstore[section].getkey("type").default
         except AttributeError:
             pass
 
@@ -749,8 +749,8 @@ class ExtConfigMixin(object):
         section = s.split("#")[0]
         if rtype:
             pass
-        elif section in self.kwdict.DEPRECATED_SECTIONS:
-            section, rtype = self.kwdict.DEPRECATED_SECTIONS[section]
+        elif section in self.kwstore.deprecated_sections:
+            section, rtype = self.kwstore.deprecated_sections[section]
         else:
             rtype = self.get_rtype(s, section, cd)
 
@@ -759,7 +759,7 @@ class ExtConfigMixin(object):
         else:
             fkey = ".".join((section, o))
 
-        deprecated_keywords = self.kwdict.REVERSE_DEPRECATED_KEYWORDS.get(fkey)
+        deprecated_keywords = self.kwstore.reverse_deprecated_keywords.get(fkey)
         if deprecated_keywords is not None and not isinstance(deprecated_keywords, list):
             deprecated_keywords = [deprecated_keywords]
 
@@ -807,7 +807,7 @@ class ExtConfigMixin(object):
             "cd": cd,
         }
         if s not in ("labels", "env", "data"):
-            key = self.kwdict.KEYS[section].getkey(o, rtype)
+            key = self.kwstore[section].getkey(o, rtype)
             if key is None:
                 if scope is None and t is None:
                     raise ValueError("%s.%s not found in the "
@@ -1126,7 +1126,7 @@ class ExtConfigMixin(object):
             for option in cd.get("DEFAULT", {}):
                 if option == "comment":
                     continue
-                key = self.kwdict.KEYS.sections["DEFAULT"].getkey(option)
+                key = self.kwstore.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
                     # the option can be set in the DEFAULT section for the
@@ -1134,13 +1134,13 @@ class ExtConfigMixin(object):
                     for section in cd:
                         family = section.split("#")[0]
                         rtype = self.get_rtype(section, family, cd)
-                        if family not in list(self.kwdict.KEYS.sections.keys()) + \
-                           list(self.kwdict.DEPRECATED_SECTIONS.keys()):
+                        if family not in list(self.kwstore.sections.keys()) + \
+                           list(self.kwstore.deprecated_sections.keys()):
                             continue
-                        if family in self.kwdict.DEPRECATED_SECTIONS:
-                            results = self.kwdict.DEPRECATED_SECTIONS[family]
+                        if family in self.kwstore.deprecated_sections:
+                            results = self.kwstore.deprecated_sections[family]
                             family = results[0]
-                        if self.kwdict.KEYS.sections[family].getkey(option, rtype) is not None:
+                        if self.kwstore.sections[family].getkey(option, rtype) is not None:
                             found = True
                             break
                     if not found:
@@ -1158,26 +1158,26 @@ class ExtConfigMixin(object):
             for section in cd:
                 if section in ("labels", "env", "data"):
                     # the "env" section is not handled by a resource driver, and is
-                    # unknown to the self.kwdict. Just ignore it.
+                    # unknown to the kwstore. Just ignore it.
                     continue
                 family = section.split("#")[0]
                 rtype = self.get_rtype(section, family, cd)
-                if family not in list(self.kwdict.KEYS.sections.keys()) + list(self.kwdict.DEPRECATED_SECTIONS.keys()):
+                if family not in list(self.kwstore.sections.keys()) + list(self.kwstore.deprecated_sections.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
                     continue
-                if family in self.kwdict.DEPRECATED_SECTIONS:
+                if family in self.kwstore.deprecated_sections:
                     self.log.warning("deprecated section prefix %s", family)
                     ret["warnings"] += 1
-                    family, rtype = self.kwdict.DEPRECATED_SECTIONS[family]
+                    family, rtype = self.kwstore.deprecated_sections[family]
                 for option in cd.get(section, {}):
                     if option == "comment":
                         continue
                     if option in cd.get("DEFAULT", {}):
                         continue
-                    key = self.kwdict.KEYS.sections[family].getkey(option, rtype=rtype)
+                    key = self.kwstore.sections[family].getkey(option, rtype=rtype)
                     if key is None:
-                        key = self.kwdict.KEYS.sections[family].getkey(option)
+                        key = self.kwstore.sections[family].getkey(option)
                     if key is None:
                         self.log.warning("ignored option %s.%s%s", section,
                                          option, ", driver %s" % rtype if rtype else "")
@@ -1303,7 +1303,7 @@ class ExtConfigMixin(object):
             cat = section.split("#")[0]
         except ValueError:
             return kwargs
-        for keyword in self.kwdict.KEYS.all_keys(cat, rtype):
+        for keyword in self.kwstore.all_keys(cat, rtype):
             try:
                 kwargs[keyword.keyword] = self.conf_get(section, keyword.keyword, rtype=rtype)
             except ex.RequiredOptNotFound:
