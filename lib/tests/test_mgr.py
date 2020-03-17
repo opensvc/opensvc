@@ -238,3 +238,92 @@ class TestCreateAddDecode:
 
         with open(tmp_file) as output_file:
             assert output_file.read() == ''
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
+class TestCreateAddDecodeFrom:
+    @staticmethod
+    @pytest.mark.parametrize(
+        'scenario, expected_key_values',
+        [
+            ['/src', {'src/f1': 'f1--', 'src/.f2': '.f2--', 'src/sub/f3': 'sub/f3--'}],
+            ['./src', {'src/f1': 'f1--', 'src/.f2': '.f2--', 'src/sub/f3': 'sub/f3--'}],
+            ['src', {'src/f1': 'f1--', 'src/.f2': '.f2--', 'src/sub/f3': 'sub/f3--'}],
+
+            ['/src/', {'f1': 'f1--', '.f2': '.f2--', 'sub/f3': 'sub/f3--'}],
+            ['./src/', {'f1': 'f1--', '.f2': '.f2--', 'sub/f3': 'sub/f3--'}],
+            ['src/', {'f1': 'f1--', '.f2': '.f2--', 'sub/f3': 'sub/f3--'}],
+
+            ['/src/*', {'f1': 'f1--', 'sub/f3': 'sub/f3--'}],
+            ['./src/*', {'f1': 'f1--', 'sub/f3': 'sub/f3--'}],
+            ['src/*', {'f1': 'f1--', 'sub/f3': 'sub/f3--'}],
+
+            ['/src --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+            ['./src --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+            ['src --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+
+            ['/src/ --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+            ['./src/ --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+            ['src/ --key foo', {'foo/f1': 'f1--', 'foo/.f2': '.f2--', 'foo/sub/f3': 'sub/f3--'}],
+
+            ['/src/* --key foo', {'foo/f1': 'f1--', 'foo/sub/f3': 'sub/f3--'}],
+            ['./src/* --key foo', {'foo/f1': 'f1--', 'foo/sub/f3': 'sub/f3--'}],
+            ['src/* --key foo', {'foo/f1': 'f1--', 'foo/sub/f3': 'sub/f3--'}],
+
+            ['src/f1', {'f1': 'f1--'}],
+            ['src/f1 --key foo', {'foo': 'f1--'}],
+        ]
+    )
+    def test_add_from(capture_stdout, tmp_file, tmp_path, scenario, expected_key_values):
+        config_dir = str(os.path.join(str(tmp_path), 'src'))
+        os.makedirs(config_dir)
+        for file_name in ['f1', '.f2']:
+            path = os.path.join(config_dir, file_name)
+            with open(path, 'w+') as new_file:
+                new_file.write(file_name + '--')
+        sub_dir = os.path.join(config_dir, 'sub')
+        os.makedirs(sub_dir)
+        sub_path_file = os.path.join(sub_dir, 'f3')
+        with open(sub_path_file, 'w+') as new_file:
+            new_file.write('sub/f3--')
+
+        def assert_decode(cfg_object, key, value):
+            with capture_stdout(tmp_file):
+                assert Mgr(selector=cfg_object)(['decode', '--key', key]) == 0
+            with open(tmp_file) as result_file:
+                assert result_file.read() == value
+
+        def assert_keys(cfg_object, keys):
+            with capture_stdout(tmp_file):
+                assert Mgr(selector=cfg_object)(['keys']) == 0
+            with open(tmp_file) as result_file:
+                read_keys = result_file.read().split()
+            for key in keys:
+                assert key in read_keys
+
+        if scenario.startswith('/'):
+            from_dir = config_dir
+        else:
+            os.chdir(str(tmp_path))
+            if scenario.startswith('.'):
+                from_dir = os.path.join('.', 'src')
+            else:
+                from_dir = 'src'
+
+        if scenario.split()[0].endswith('/*'):
+            from_dir += '/*'
+        elif scenario.split()[0].endswith('/'):
+            from_dir += '/'
+        elif scenario.split()[0].endswith('/f1'):
+            from_dir += '/f1'
+
+        obj = 'cfg/cfg1'
+        if '--key foo' in scenario:
+            args = ['add', '--key', 'foo', '--from', from_dir, '--debug']
+        else:
+            args = ['add', '--from', from_dir, '--debug']
+        assert Mgr(selector=obj)(args) == 0
+        assert_keys(obj, expected_key_values.keys())
+        for key_name, decoded_value in expected_key_values.items():
+            assert_decode(obj, key_name, decoded_value)
