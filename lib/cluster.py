@@ -16,7 +16,7 @@ class ClusterSvc(BaseSvc):
         BaseSvc.__init__(self, name="cluster", namespace=None, **kwargs)
 
     @lazy
-    def kwdict(self):
-        return __import__("clusterdict")
+    def kwstore(self):
+        return __import__("clusterdict").KEYS
 
 
