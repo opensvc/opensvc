@@ -2,8 +2,6 @@
 Volume resource driver module.
 """
 import os
-import pwd
-import grp
 
 import resources as Res
 import rcExceptions as ex
@@ -41,11 +39,8 @@ class Volume(Res.Resource):
     """
 
     def __init__(self, rid=None, name=None, pool=None, size=None, format=True,
-                 access="rwo", secrets=None, configs=None,
-                 user=None, group=None, perm=None, dirperm=None,
-                 **kwargs):
-        Res.Resource.__init__(self, rid, **kwargs)
-        self.type = "volume"
+                 access="rwo", secrets=None, configs=None, **kwargs):
+        Res.Resource.__init__(self, rid, type="volume", **kwargs)
         self.access = access
         self.name = name
         self.pool = pool
@@ -55,10 +50,6 @@ class Volume(Res.Resource):
         self.configs = configs
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
-        self.user = user
-        self.group = group
-        self.perm = perm
-        self.dirperm = dirperm
 
     def __str__(self):
         return "%s name=%s" % (Res.Resource.__str__(self), self.volname)
@@ -88,15 +79,6 @@ class Volume(Res.Resource):
     def device(self):
         return self.volsvc.device()
 
-    def chown(self):
-        if self.mount_point is None:
-            return
-        uid = self.uid if self.uid is not None else -1
-        gid = self.gid if self.gid is not None else -1
-        os.chown(self.mount_point, uid, gid)
-        if self.octal_dirmode:
-            os.chmod(self.mount_point, self.octal_dirmode)
-
     def stop(self):
         self.uninstall_flag()
         if not self.volsvc.exists():
@@ -113,7 +95,6 @@ class Volume(Res.Resource):
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.excError
         self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
-        self.chown()
         self.install_flag()
         self.install_secrets()
         self.install_configs()
@@ -218,49 +199,6 @@ class Volume(Res.Resource):
                 self.status_log("%s %s has no key %s. "
                                 "expected data can not be installed in the volume" % (kind, name, data["key"]), "warn")
 
-    @lazy
-    def octal_mode(self):
-        try:
-            return int(self.perm, 8)
-        except TypeError:
-            return None
-
-    @lazy
-    def octal_dirmode(self):
-        try:
-            return int(self.dirperm, 8)
-        except TypeError:
-            return None
-
-    @lazy
-    def uid(self):
-        if self.user is None:
-            return
-        try:
-            return int(self.user)
-        except ValueError:
-            pass
-        try:
-            info = pwd.getpwnam(self.user)
-            return info.pw_uid
-        except Exception:
-            pass
-
-    @lazy
-    def gid(self):
-        if self.group is None:
-            return
-        try:
-            return int(self.group)
-        except ValueError:
-            pass
-        try:
-            info = grp.getgrnam(self.group)
-            gid = info.gr_gid
-        except Exception:
-            pass
-        return gid
-
     def _install_data(self, kind):
         for data in self.data_data(kind):
             name, _, kind = split_path(data["obj"])
@@ -278,7 +216,7 @@ class Volume(Res.Resource):
                 continue
             self.log.debug("install ./%s/%s/%s in %s", kind, name, data["key"], data["path"])
             for key in keys:
-                obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode, dirmode=self.octal_dirmode)
+                obj.install_key(key, data["path"])
 
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):
