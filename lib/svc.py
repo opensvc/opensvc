@@ -3258,17 +3258,6 @@ class Svc(BaseSvc):
         else:
             return self
 
-    def resource_rset_id(self, res):
-        try:
-            base_type = res.type.split(".")[0]
-        except AttributeError as exc:
-            base_type = ""
-        if res.subset is not None:
-            rset_id = "%s:%s" % (base_type, res.subset)
-        else:
-            rset_id = base_type
-        return rset_id
-
     def __iadd_resourceset__(self, other):
         """
         Svc += ResourceSet
@@ -3287,15 +3276,14 @@ class Svc(BaseSvc):
         if not other.rid or "#" not in other.rid:
             self.log.error("__iadd_resource__ unexpected rid: %s", other)
             return self
-        rset_id = self.resource_rset_id(other)
-        if rset_id in self.resourcesets_by_id:
+        if other.rset_id in self.resourcesets_by_id:
             # the resource set already exists. add resource or resourceset.
-            self.resourcesets_by_id[rset_id] += other
+            self.resourcesets_by_id[other.rset_id] += other
         else:
-            parallel = self.get_subset_parallel(rset_id)
-            rset = ResourceSet(rset_id, resources=[other], parallel=parallel)
+            parallel = self.get_subset_parallel(other.rset_id)
+            rset = ResourceSet(other.rset_id, resources=[other], parallel=parallel)
             rset.svc = self
-            rset.pg_settings = self.get_pg_settings("subset#"+rset_id)
+            rset.pg_settings = self.get_pg_settings("subset#"+other.rset_id)
             self += rset
 
         other.svc = self
@@ -3373,7 +3361,7 @@ class Svc(BaseSvc):
                 continue
             for t in _types:
                 if "." in t and resource.type == t or \
-                   "." not in t and t == resource.type.split(".")[0]:
+                   "." not in t and t == resource.driver_group:
                     resources.append(resource)
         return resources
 
@@ -3509,7 +3497,7 @@ class Svc(BaseSvc):
         last = None
         for rset in rsets:
             # upto / downto break
-            current = rset.rid.split(":")[0]
+            current = rset.driver_group
             if last and current != last and (self.options.upto == last or self.options.downto == last):
                 if self.options.upto:
                     barrier = "up to %s" % self.options.upto
@@ -4152,7 +4140,7 @@ class Svc(BaseSvc):
                 else:
                     group_status[group] = 'n/a'
             for resource in self.get_resources(groups):
-                group = resource.type.split('.')[0]
+                group = resource.driver_group
                 if group not in groups:
                     continue
                 if not self.encap and resource.encap:
@@ -4162,7 +4150,7 @@ class Svc(BaseSvc):
             for group in groups:
                 group_status[group] = 'n/a'
             for resource in self.get_resources(groups):
-                group = resource.type.split('.')[0]
+                group = resource.driver_group
                 if group not in groups:
                     continue
                 if not self.encap and resource.encap:
