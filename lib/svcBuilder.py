@@ -183,6 +183,10 @@ def add_resource(svc, restype, s):
             rtype = svc.node.oci
         elif restype == "ip" and rtype == "docker":
             rtype = "netns"
+        elif restype == "disk" and rtype == "lvm":
+            rtype = "vg"
+        elif restype == "disk" and rtype == "veritas":
+            rtype = "vxdg"
         mod = mimport("res", restype, rtype)
         adder = mod.adder
     except Exception:
