@@ -1488,6 +1488,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
 KEYS = KeywordStore(
     keywords=PRIVATE_KEYWORDS+KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
     template_prefix="template.node.",
     base_sections=BASE_SECTIONS,
