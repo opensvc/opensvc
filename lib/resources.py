@@ -86,6 +86,9 @@ class Resource(object):
         self.can_rollback = False
         self.rollback_even_if_standby = False
         self.skip_triggers = set()
+        self.driver_group = self.format_driver_group()
+        self.driver_basename = self.format_driver_basename()
+        self.rset_id = self.format_rset_id()
 
     def on_add(self):
         """
@@ -172,7 +175,7 @@ class Resource(object):
             return label
 
         ridx = elements[1]
-        label += "%s:%s#%s" % (self.type.split(".")[0], self.subset, ridx)
+        label += "%s:%s#%s" % (self.driver_group, self.subset, ridx)
         return label
 
     def __str__(self):
@@ -1131,25 +1134,33 @@ class Resource(object):
         self.log.info("set provisioned")
         self.write_is_provisioned_flag(True)
 
+    def format_driver_group(self):
+        try:
+            return self.type.split(".", 1)[0]
+        except ValueError:
+            return self.type
+        except AttributeError as exc:
+            return ""
+
+    def format_driver_basename(self):
+        try:
+            return self.type.split(".", 1)[1]
+        except (ValueError, IndexError):
+            return ""
+
+    def format_rset_id(self):
+        if self.subset is not None:
+            return "%s:%s" % (self.driver_group, self.subset)
+        else:
+            return self.driver_group
+
     @lazy
     def prov(self):
         """
         Find the provisioning module, import it and instanciate a Prov object.
         """
-        driver_translations = {
-            "disk.veritas": "disk.vxdg",
-        }
-        if self.type in driver_translations:
-            translated_type = driver_translations[self.type]
-        else:
-            translated_type = self.type
         try:
-            driver_group, driver = translated_type.split(".", 1)
-        except ValueError:
-            driver_group = translated_type
-            driver = ""
-        try:
-            mod = mimport("prov", driver_group, driver, fallback=True)
+            mod = mimport("prov", self.driver_group, self.driver_basename, fallback=True)
         except ImportError as exc:
             mod = __import__("provisioning")
         if not hasattr(mod, "Prov"):
@@ -1332,8 +1343,8 @@ class Resource(object):
         self.lockfd = None
 
     def section_kwargs(self):
-        rtype = self.type.split(".")[-1]
-        return self.svc.section_kwargs(self.rid, rtype)
+        stype = self.driver_basename if self.driver_basename else self.driver_group
+        return self.svc.section_kwargs(self.rid, stype)
 
     def replace_volname(self, *args, **kwargs):
         path, vol = self.svc.replace_volname(*args, **kwargs)
