@@ -23,8 +23,8 @@ class Cfg(DataMixin, BaseSvc):
     default_mode = 0o0644
 
     @lazy
-    def kwdict(self):
-        return __import__("cfgdict")
+    def kwstore(self):
+        return __import__("cfgdict").KEYS
 
     def _add_key(self, key, data):
         if not key:

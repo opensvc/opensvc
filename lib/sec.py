@@ -27,8 +27,8 @@ class Sec(DataMixin, BaseSvc):
     default_mode = 0o0600
 
     @lazy
-    def kwdict(self):
-        return __import__("secdict")
+    def kwstore(self):
+        return __import__("secdict").KEYS
 
     def on_create(self):
         if self.oget("DEFAULT", "cn") and "certificate" not in self.data_keys():

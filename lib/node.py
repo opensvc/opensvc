@@ -209,8 +209,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return self.parse_config_file(self.paths.cf)
 
     @lazy
-    def kwdict(self):
-        return __import__("nodedict")
+    def kwstore(self):
+        return __import__("nodedict").KEYS
 
     @lazy
     def devnull(self):
@@ -3332,9 +3332,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         obj = factory(kind)("dummy", namespace="dummy", volatile=True, node=self)
         from keywords import MissKeyNoDefault, KeyInvalidValue
         try:
-            defaults.update(obj.kwdict.KEYS.update("DEFAULT", defaults))
+            defaults.update(obj.kwstore.update("DEFAULT", defaults))
             for section, d in sections.items():
-                sections[section].update(obj.kwdict.KEYS.update(section, d))
+                sections[section].update(obj.kwstore.update(section, d))
         except (MissKeyNoDefault, KeyInvalidValue):
             raise ex.excError
         del obj
