@@ -1,5 +1,4 @@
 import provisioning
-import os
 
 import rcExceptions as ex
 from rcUtilities import factory, is_string
@@ -102,9 +101,14 @@ class Prov(provisioning.Prov):
                 raise ex.excError("pool %s not found on this node" % volume.pool)
             if self.r.svc.options.leader and volume.topology == "failover" and \
                (self.owned() or not self.claimed(volume)) and \
-               data["avail"] != "up" and data["cluster"]["avail"] == "up":
-                self.r.log.info("volume %s is up on peer, we are leader: take it over", self.r.volname)
-                volume.action("takeover", options={"wait": True, "time": 60})
+               data["avail"] != "up":
+                cluster_avail = data["cluster"].get("avail")
+                if cluster_avail is None:
+                    self.r.log.info("no take over decision, we are leader but unknown cluster avail for volume %s",
+                                    self.r.volname)
+                elif cluster_avail == "up":
+                    self.r.log.info("volume %s is up on, peer, we are leader: take it over", self.r.volname)
+                    volume.action("takeover", options={"wait": True, "time": 60})
             return volume
         elif not self.r.svc.options.leader:
             self.r.log.info("volume %s does not exist, we are not leader: wait its propagation", self.r.volname)
