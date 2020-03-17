@@ -56,9 +56,8 @@ class FsDir(Res.Resource):
                  **kwargs):
         Res.Resource.__init__(self,
                               rid=rid,
-                              type="fs",
+                              type="fs.dir",
                               **kwargs)
-        self.type = "fs.dir"
         self.path = path
         self.mount_point = path # for fs ordering
         self.user = user
