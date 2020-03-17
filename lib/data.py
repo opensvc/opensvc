@@ -92,18 +92,25 @@ class DataMixin(object):
             key = ""
         fpaths = glob.glob(path)
         for path in fpaths:
-            _key = os.path.join(key, os.path.basename(path))
-            self.add_file(_key, path, append=append)
+            if os.path.isfile(path):
+                _key = os.path.join(key, os.path.basename(path))
+                self.add_file(_key, path, append=append)
+            elif os.path.isdir(path):
+                dir_key = os.path.join(key, os.path.basename(path))
+                self.add_directory(dir_key, path, append=append)
 
     def add_directory(self, key, path, append=False):
-        if key is None:
-            key = ""
-        plen = len(os.path.dirname(path)) + 1
+        if key:
+            sub_key_position = len(path)
+            key_prefix = key
+        else:
+            key_prefix = ''
+            sub_key_position = len(os.path.dirname(path))
         for root, dirs, files in os.walk(path):
             for fname in files:
                 fpath = os.path.join(root, fname)
-                _key = os.path.join(key, fpath[plen:])
-                self.add_file(_key, fpath, append=append)
+                file_key = os.path.join(key_prefix, fpath[sub_key_position:].lstrip(os.sep))
+                self.add_file(file_key, fpath, append=append)
 
     @staticmethod
     def tempfilename():

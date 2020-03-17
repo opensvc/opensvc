@@ -191,3 +191,18 @@ camelCase/Foo/baR = literal:cfg content of key camelCase/Foo/baR
         svc_file.write(config_txt)
 
     return osvc_path_tests
+
+
+@pytest.fixture(scope='function')
+def has_service_with_cfg(osvc_path_tests):
+    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    os.mkdir(pathetc)
+    os.mkdir(os.path.join(pathetc, 'cfg'))
+    with open(os.path.join(pathetc, 'cfg', 'cfg1.conf'), mode='w+') as svc_file:
+        config_txt = """
+[DEFAULT]
+id = abcde
+"""
+        svc_file.write(config_txt)
+
+    return osvc_path_tests
