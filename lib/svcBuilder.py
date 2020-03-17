@@ -178,24 +178,19 @@ def add_resource(svc, restype, s):
     except KeyError:
         pass
 
+    if restype in ("container", "task") and rtype == "oci":
+        rtype = svc.node.oci
+    elif restype == "ip" and rtype == "docker":
+        rtype = "netns"
+    elif restype == "disk" and rtype == "lvm":
+        rtype = "vg"
+    elif restype == "disk" and rtype == "veritas":
+        rtype = "vxdg"
+
     try:
-        if restype in ("container", "task") and rtype == "oci":
-            rtype = svc.node.oci
-        elif restype == "ip" and rtype == "docker":
-            rtype = "netns"
-        elif restype == "disk" and rtype == "lvm":
-            rtype = "vg"
-        elif restype == "disk" and rtype == "veritas":
-            rtype = "vxdg"
         mod = mimport("res", restype, rtype)
-        adder = mod.adder
     except Exception:
-        # deprecated: adders are best defined in the driver module,
-        # to support out-of-tree drivers.
-        try:
-            adder = globals()["add_"+restype]
-        except KeyError:
-            return
+        return
 
     tags = get_tags(svc, s)
     encap = get_encap(svc, s)
@@ -224,7 +219,7 @@ def add_resource(svc, restype, s):
     if s in svc.resources_by_id:
         return
 
-    adder(svc, s)
+    mod.adder(svc, s)
 
 def add_mandatory_syncs(svc):
     """
