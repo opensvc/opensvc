@@ -40,8 +40,7 @@ class Volume(Res.Resource):
 
     def __init__(self, rid=None, name=None, pool=None, size=None, format=True,
                  access="rwo", secrets=None, configs=None, **kwargs):
-        Res.Resource.__init__(self, rid, **kwargs)
-        self.type = "volume"
+        Res.Resource.__init__(self, rid, type="volume", **kwargs)
         self.access = access
         self.name = name
         self.pool = pool
