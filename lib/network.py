@@ -7,7 +7,7 @@ import socket
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import mimport, lazy, makedirs
+from rcUtilities import lazy, makedirs
 from ipaddress import ip_network, ip_address, summarize_address_range
 from rcColor import formatter
 
