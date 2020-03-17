@@ -183,6 +183,7 @@ KEYWORDS = [
 KEYS = KeywordStore(
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
     template_prefix="template.usr.",
     base_sections=BASE_SECTIONS,

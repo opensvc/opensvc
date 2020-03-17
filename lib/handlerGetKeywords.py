@@ -29,5 +29,5 @@ class Handler(handler.Handler):
             obj = factory(options.kind)(name="dummy", node=shared.NODE, volatile=True)
         else:
             raise HTTP(400, "A kind must be specified.")
-        return obj.kwdict.KEYS.dump()
+        return obj.kwstore.dump()
 
