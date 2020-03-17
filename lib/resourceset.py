@@ -35,6 +35,10 @@ class ResourceSet(object):
         if resources is not None:
             for resource in resources:
                 self += resource
+        try:
+            self.driver_group = self.rid.split(":")[0]
+        except ValueError:
+            self.driver_group = ""
 
     def __lt__(self, other):
         return self.rid < other.rid
