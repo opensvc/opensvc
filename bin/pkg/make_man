@@ -12,7 +12,7 @@ pathman = os.path.join(pathsvc, "usr", "share", "man", "man1")
 
 sys.path = [pathlib] + sys.path
 
-from rcUtilities import wipe_rest_markup
+from rcUtilities import wipe_rest_markup, makedirs
 
 class ManPageFormatter(optparse.HelpFormatter):
     def __init__(self, indent_increment=2, max_help_position=24,
@@ -130,6 +130,7 @@ def do_svcmgr():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
@@ -152,6 +153,7 @@ def do_nodemgr():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
@@ -173,6 +175,7 @@ def do_svcmon():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
