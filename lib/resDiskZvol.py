@@ -5,6 +5,35 @@ from rcUtilities import lazy
 from rcZfs import dataset_exists, zpool_devs
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "zvol"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "name",
+        "required": True,
+        "at": True,
+        "text": "The full name of the zfs volume in the ``<pool>/<name>`` form.",
+        "example": "tank/zvol1"
+    },
+    {
+        "keyword": "size",
+        "provisioning": True,
+        "convert": "size",
+        "at": True,
+        "text": "The size of the zfs volume to create.",
+        "example": "1g"
+    },
+    {
+        "keyword": "create_options",
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "at": True,
+        "text": "The :cmd:`zfs create -V <name>` extra options.",
+        "example": "-o dedup=on"
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

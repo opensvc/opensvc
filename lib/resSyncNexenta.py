@@ -9,6 +9,36 @@ from rcGlobalEnv import rcEnv
 from rcNexenta import Nexenta
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "nexenta"
+KEYWORDS = [
+    {
+        "keyword": "name",
+        "at": True,
+        "required": True,
+        "text": "The name of the Nexenta autosync configuration."
+    },
+    {
+        "keyword": "filer",
+        "at": True,
+        "required": True,
+        "text": "The name of the Nexenta local head. Must be set for each node using the scoping syntax."
+    },
+    {
+        "keyword": "path",
+        "at": True,
+        "required": True,
+        "text": "The path of the zfs to synchronize, as seen by the Nexenta heads."
+    },
+    {
+        "keyword": "reversible",
+        "at": True,
+        "candidates": [True, False],
+        "required": True,
+        "text": "Defines if the replication link can be reversed. Set to ``false`` for prd to drp replications to protect production data."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

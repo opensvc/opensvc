@@ -1,10 +1,24 @@
 import os
 import resources as Res
+import resDisk
 import rcStatus
 import rcExceptions as ex
 from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "drbd"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "res",
+        "required": True,
+        "text": "The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in ``/etc/drbd.d/resname.res``. The :c-res:`sync#i0` resource will take care of replicating this file to remote nodes."
+    },
+]
+DEPRECATED_SECTIONS = {
+    "drbd": ["disk", "drbd"],
+}
 
 
 def adder(svc, s):

@@ -190,10 +190,15 @@ KEYS = KeywordStore(
     has_default_section=False,
  )
 
+def full_kwstore():
+    kwstore = KEYS
+    return kwstore
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         fmt = sys.argv[1]
     else:
         fmt = "text"
-
-    KEYS.write_templates(fmt=fmt)
+    kwstore = full_kwstore()
+    kwstore.write_templates(fmt=fmt)

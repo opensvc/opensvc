@@ -10,6 +10,19 @@ from rcGlobalEnv import *
 from rcAmazon import AmazonMixin
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "amazon"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "volumes",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "text": "A whitespace separated list of amazon volumes. Any member of the list can be set to a special <key=value,key=value> value. In this case the provisioner will allocate a new volume with the specified characteristics and replace this member with the allocated volume id. The supported keys are the same as those supported by the awscli ec2 create-volume command: size, iops, availability-zone, snapshot, type and encrypted.",
+        "example": "vol-123456 vol-654321"
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

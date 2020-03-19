@@ -7,6 +7,27 @@ import rcExceptions as ex
 from rcUtilities import qcall, which, justcall
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "vxdg"
+DRIVER_BASENAME_ALIASES = ["veritas"]
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "name",
+        "at": True,
+        "required": True,
+        "text": "The name of the volume group"
+    },
+    {
+        "keyword": "pvs",
+        "required": True,
+        "text": "The list of paths to the physical volumes of the volume group.",
+        "provisioning": True
+    },
+]
+DEPRECATED_SECTIONS = {
+    "disk.veritas": ["disk", "vxdg"],
+}
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

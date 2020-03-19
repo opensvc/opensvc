@@ -8,6 +8,42 @@ import rcStatus
 import rcExceptions as exc
 from rcGlobalEnv import rcEnv
 
+KW_PRKEY = {
+    "keyword": "prkey",
+    "at": True,
+    "text": "Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
+}
+KW_PROMOTE_RW = {
+    "keyword": "promote_rw",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
+}
+KW_NO_PREEMPT_ABORT = {
+    "keyword": "no_preempt_abort",
+    "at": True,
+    "candidates": (True, False),
+    "default": False,
+    "convert": "boolean",
+    "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
+}
+KW_SCSIRESERV = {
+    "keyword": "scsireserv",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
+}
+
+KEYWORDS = [
+    KW_PRKEY,
+    KW_PROMOTE_RW,
+    KW_NO_PREEMPT_ABORT,
+    KW_SCSIRESERV,
+]
+
+
 class Disk(Res.Resource):
     """
     Base disk resource driver, derived for LVM, Veritas, ZFS, ...

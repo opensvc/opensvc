@@ -3,10 +3,84 @@ import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 import rcStatus
+from resIp import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr, lazy
 from svcBuilder import init_kwargs
+
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "netns"
+DRIVER_BASENAME_ALIASES = ["docker"]
+KEYWORDS = [
+    KW_IPNAME,
+    KW_IPDEV,
+    KW_NETMASK,
+    KW_GATEWAY,
+    {
+        "keyword": "netns",
+        "at": True,
+        "required": True,
+        "text": "The resource id of the container to plumb the ip into.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "vlan_tag",
+        "depends": [("mode", "ovs")],
+        "at": True,
+        "required": False,
+        "text": "The VLAN tag the switch port will relay.",
+        "example": "44 45"
+    },
+    {
+        "keyword": "vlan_mode",
+        "candidates": ["access", "native-tagged", "native-untagged"],
+        "depends": [("mode", "ovs")],
+        "at": True,
+        "required": False,
+        "default": "native-untagged",
+        "text": "The VLAN port mode.",
+        "example": "access"
+    },
+    {
+        "keyword": "mode",
+        "at": True,
+        "required": False,
+        "candidates": ["bridge", "dedicated", "macvlan", "ipvlan-l2", "ipvlan-l3", "ovs"],
+        "text": "The ip link mode. If ipdev is set to a bridge interface the mode defaults to bridge, else defaults to macvlan. ipvlan requires a 4.2+ kernel.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "nsdev",
+        "at": True,
+        "required": False,
+        "text": "If specified, use this interface name in the netns. If not specified the first free ``eth<n>`` is chosen."
+    },
+    {
+        "keyword": "macaddr",
+        "at": True,
+        "required": False,
+        "text": "If specified, use this mac address in the netns."
+    },
+    {
+        "keyword": "del_net_route",
+        "at": True,
+        "default": False,
+        "example": "true",
+        "text": "Some docker ip configuration requires dropping the network route autoconfigured when installing the ip address. In this case set this parameter to true, and also set the network parameter."
+    },
+] + COMMON_KEYWORDS
+DEPRECATED_KEYWORDS = {
+    "ip.docker.container_rid": "netns",
+    "ip.netns.container_rid": "netns",
+}
+REVERSE_DEPRECATED_KEYWORDS = {
+    "ip.docker.netns": "container_rid",
+    "ip.netns.netns": "container_rid",
+}
+DEPRECATED_SECTIONS = {
+    "ip.docker": ["ip", "netns"],
+}
 
 
 def adder(svc, s):

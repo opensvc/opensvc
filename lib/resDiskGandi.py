@@ -12,6 +12,35 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import is_string, lazy
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "gandi"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "node",
+        "at": True,
+        "default_text": "The local node name.",
+        "text": "The node name from the Gandi api point of view.",
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "example": "root",
+        "text": "The user that should be owner of the device. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "group",
+        "at": True,
+        "example": "sys",
+        "text": "The group that should be owner of the device. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "perm",
+        "at": True,
+        "example": "600",
+        "text": "The permissions the device should have. A string representing the octal permissions."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
