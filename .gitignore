@@ -32,3 +32,6 @@ bin/init/opensvc.init
 .idea
 opensvc.iml
 .tox/
+usr/share/doc/template.*.*.conf
+usr/share/doc/template.*.*.example
+usr/share/doc/daemon.events
