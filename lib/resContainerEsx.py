@@ -7,6 +7,22 @@ from svcBuilder import init_kwargs, container_kwargs
 
 rcU = __import__("rcUtilities" + os.uname()[0])
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "esx"
+KEYWORDS = [
+    resContainer.KW_SNAP,
+    resContainer.KW_SNAPOF,
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

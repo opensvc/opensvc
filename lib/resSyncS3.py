@@ -14,6 +14,45 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "s3"
+KEYWORDS = [
+    {
+        "keyword": "snar",
+        "at": True,
+        "example": "/srv/mysvc/var/sync.1.snar",
+        "text": "The GNU tar snar file full path. The snar file stored the GNU tar metadata needed to do an incremental tarball. If the service fails over shared disks the snar file should be stored there, so the failover node can continue the incremental cycle."
+    },
+    {
+        "keyword": "src",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "example": "/srv/mysvc/tools /srv/mysvc/apps*",
+        "text": "Source globs as passed as paths to archive to a tar command."
+    },
+    {
+        "keyword": "options",
+        "convert": "shlex",
+        "at": True,
+        "example": "--exclude *.pyc",
+        "text": "Options passed to GNU tar for archiving."
+    },
+    {
+        "keyword": "bucket",
+        "at": True,
+        "required": True,
+        "example": "opensvc-myapp",
+        "text": "The name of the S3 bucket to upload the backup to."
+    },
+    {
+        "keyword": "full_schedule",
+        "at": True,
+        "example": "@1441 sun",
+        "text": "The schedule of full backups. :c-action:`sync_update` actions are triggered according to the resource :kw:`schedule` parameter, and do a full backup if the current date matches the :kw:`full_schedule` parameter or an incremental backup otherwise."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

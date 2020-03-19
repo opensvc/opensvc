@@ -12,6 +12,37 @@ import rcExceptions as ex
 lxc = "/usr/bin/lxc"
 lxd = "/usr/bin/lxd"
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "lxd"
+KEYWORDS = [
+    {
+        "keyword": "launch_image",
+        "at": True,
+        "required": True,
+        "provisioning": True,
+        "text": "The lxd image to instantiate on provision.",
+        "example": "ubuntu:16.04"
+    },
+    {
+        "keyword": "launch_options",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "default_text": "",
+        "text": "The :cmd:`lxc launch <image> ... <name>` options set on provision.",
+        "example": "-p default"
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

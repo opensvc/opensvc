@@ -11,6 +11,100 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import lcall, lazy
 from six.moves import input
 
+KEYWORDS = [
+    {
+        "keyword": "timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the task run action a failure. If no timeout is set, the agent waits indefinitely for the task command to exit.",
+        "example": "5m"
+    },
+    {
+        "keyword": "snooze",
+        "at": True,
+        "default": 0,
+        "convert": "duration",
+        "text": "Snooze the service before running the task, so if the command is known to cause a service status degradation the user can decide to snooze alarms for the duration set as value.",
+        "example": "10m"
+    },
+    {
+        "keyword": "log",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Log the task outputs in the service log.",
+    },
+    {
+        "keyword": "confirmation",
+        "at": True,
+        "default": False,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "If set to True, ask for an interactive confirmation to run the task. This flag can be used for dangerous tasks like data-restore.",
+    },
+    {
+        "keyword": "on_error",
+        "at": True,
+        "text": "A command to execute on :c-action:`run` action if :kw:`command` returned an error.",
+        "example": "/srv/{name}/data/scripts/task_on_error.sh"
+    },
+    {
+        "keyword": "check",
+        "candidates": [None, "last_run"],
+        "at": True,
+        "text": "If set to 'last_run', the last run retcode is used to report a task resource status. If not set (default), the status of a task is always n/a.",
+        "example": "last_run"
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "text": "The user to impersonate when running the task command. The default user is root.",
+        "example": "admin"
+    },
+    {
+        "keyword": "schedule",
+        "at": True,
+        "text": "Set the this task run schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
+        "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
+    },
+    {
+        "keyword": "pre_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors do not interrupt the action."
+    },
+    {
+        "keyword": "post_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors do not interrupt the action."
+    },
+    {
+        "keyword": "blocking_pre_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors interrupt the action."
+    },
+    {
+        "keyword": "blocking_post_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors interrupt the action."
+    },
+    {
+        "prefixes": ["run"],
+        "keyword": "_requires",
+        "generic": True,
+        "at": True,
+        "example": "ip#0 fs#0(down,stdby down)",
+        "default": "",
+        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
+    },
+]
+DEPRECATED_KEYWORDS = {}
+REVERSE_DEPRECATED_KEYWORDS = {}
+
+
 class Task(Res.Resource):
     default_optional = True
     def __init__(self,

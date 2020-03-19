@@ -7,6 +7,24 @@ from svcBuilder import init_kwargs
 import rcContainer
 import rcStatus
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = "docker"
+KEYWORDS = [
+    {
+        "keyword": "driver",
+        "default": "local",
+        "at": True,
+        "text": "The docker volume driver to use for the resource.",
+        "example": "tmpfs"
+    },
+    {
+        "keyword": "options",
+        "at": True,
+        "convert": "shlex",
+        "text": "The docker volume create options to use for the resource. :opt:`--label` and :opt:`--opt`",
+        "example": "--opt o=size=100m,uid=1000 --opt type=tmpfs --opt device=tmpfs"
+    },
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

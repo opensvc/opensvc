@@ -3,6 +3,10 @@ import rcExceptions as ex
 from rcUtilitiesOSF1 import check_ping
 from rcUtilities import to_cidr, to_dotted
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = Res.KEYWORDS
+
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)
 

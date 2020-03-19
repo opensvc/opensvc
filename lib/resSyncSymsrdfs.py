@@ -16,6 +16,29 @@ from svcBuilder import sync_kwargs
 os.environ['PATH'] += ":/usr/symcli/bin"
 set_sym_env()
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "symsrdfs"
+KEYWORDS = [
+    {
+        "keyword": "symid",
+        "at": True,
+        "required": True,
+        "text": "Id of the local symmetrix array hosting the symdg. This parameter is usually scoped to define different array ids for different nodes."
+    },
+    {
+        "keyword": "symdg",
+        "at": False,
+        "required": True,
+        "text": "Name of the symmetrix device group where the source and target devices are grouped."
+    },
+    {
+        "keyword": "rdfg",
+        "at": False,
+        "convert": "integer",
+        "required": True,
+        "text": "Name of the RDF group pairing the source and target devices."
+    },
+]
 
 def adder(svc, s):
     kwargs = {}

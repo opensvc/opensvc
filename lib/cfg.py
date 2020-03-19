@@ -26,6 +26,10 @@ class Cfg(DataMixin, BaseSvc):
     def kwstore(self):
         return __import__("cfgdict").KEYS
 
+    @lazy
+    def full_kwstore(self):
+        return __import__("cfgdict").full_kwstore()
+
     def _add_key(self, key, data):
         if not key:
             raise ex.excError("configuration key name can not be empty")

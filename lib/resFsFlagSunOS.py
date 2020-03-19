@@ -5,6 +5,9 @@ import resFsFlagAbstract
 from rcUtilities import lazy
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = "flag"
+KEYWORDS = []
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

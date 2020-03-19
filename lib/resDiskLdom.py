@@ -8,6 +8,19 @@ import resDisk
 from subprocess import *
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "ldom"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "container_id",
+        "required": True,
+        "at": True,
+        "text": "The id of the container whose configuration to extract the disk mapping from."
+    },
+]
+DEPRECATED_SECTIONS = {
+    "vmdg": ["disk", "ldom"],
+}
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

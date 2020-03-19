@@ -8,6 +8,17 @@ import resSync
 from rcUtilities import which, justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "radossnap"
+KEYWORDS = [
+    {
+        "keyword": "images",
+        "convert": "list",
+        "required": True,
+        "text": "The rados image names handled by this sync resource. whitespace separated."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

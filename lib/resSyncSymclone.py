@@ -12,6 +12,51 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "symclone"
+KEYWORDS = [
+    {
+        "keyword": "precopy",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Use :opt:`-precopy` on recreate."
+    },
+    {
+        "keyword": "recreate_timeout",
+        "at": True,
+        "default": 300,
+        "convert": "duration",
+        "text": "Maximum wait time for the clone to reach the created state."
+    },
+    {
+        "keyword": "restore_timeout",
+        "at": True,
+        "default": 300,
+        "convert": "duration",
+        "text": "Maximum wait time for the clone to reach the restored state."
+    },
+    {
+        "keyword": "symid",
+        "required": True,
+        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by :kw:`pairs`."
+    },
+    {
+        "keyword": "pairs",
+        "convert": "list",
+        "required": True,
+        "at": True,
+        "text": "Whitespace-separated list of devices ``<src>:<dst>`` devid pairs to drive with this resource.",
+        "example": "00B60:00B61 00B62:00B63",
+    },
+    {
+        "keyword": "consistent",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Use :opt:`-consistent` in symclone commands.",
+    },
+]
 
 def adder(svc, s, drv=None, t="sync.symclone"):
     drv = drv or SyncSymclone

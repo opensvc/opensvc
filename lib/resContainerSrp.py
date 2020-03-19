@@ -8,6 +8,38 @@ from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 import rcExceptions as ex
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "srp"
+KEYWORDS = [
+    {
+        "keyword": "prm_cores",
+        "default": 1,
+        "convert": "integer",
+        "provisioning": True,
+        "text": "The number of core to bind the SRP container to."
+    },
+    {
+        "keyword": "ip",
+        "at": True,
+        "provisioning": True,
+        "text": "The ip name or addr used to create the SRP container."
+    },
+    {
+        "keyword": "rootpath",
+        "at": True,
+        "provisioning": True,
+        "text": "The path of the SRP container root filesystem."
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

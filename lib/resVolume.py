@@ -9,6 +9,74 @@ import rcStatus
 from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "volume"
+DRIVER_BASENAME = None
+KEYWORDS = [
+    {
+        "keyword": "name",
+        "at": True,
+        "required": False,
+        "text": "The volume service name. A service can only reference volumes in the same namespace."
+    },
+    {
+        "keyword": "type",
+        "provisioning": True,
+        "at": True,
+        "required": False,
+        "text": "The type of the pool to allocate from. The selected pool will be the one matching type and capabilities and with the maximum available space."
+    },
+    {
+        "keyword": "access",
+        "default": "rwo",
+        "candidates": ["rwo", "roo", "rwx", "rox"],
+        "provisioning": True,
+        "at": True,
+        "required": False,
+        "text": "The access mode of the volume. ``rwo`` is Read Write Once, ``roo`` is Read Only Once, ``rwx`` is Read Write Many, ``rox`` is Read Only Many. ``rox`` and ``rwx`` modes are served by flex volume services.",
+    },
+    {
+        "keyword": "size",
+        "at": True,
+        "convert": "size",
+        "provisioning": True,
+        "required": True,
+        "text": "The size to allocate in the pool."
+    },
+    {
+        "keyword": "pool",
+        "at": True,
+        "provisioning": True,
+        "text": "The name of the pool to allocate from."
+    },
+    {
+        "keyword": "format",
+        "at": True,
+        "provisioning": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "If true the volume translator will also produce a fs resource layered over the disk allocated in the pool."
+    },
+    {
+        "keyword": "configs",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<config name>/<key>:<volume relative path>:<options>``.",
+        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,mode=0640 conf/sysctl:/etc/sysctl.d/01-db.conf"
+    },
+    {
+        "keyword": "secrets",
+        "at": True,
+        "rtype": ["shm"],
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<secret name>/<key>:<volume relative path>:<options>``.",
+        "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
+    },
+]
+DEPRECATED_KEYWORDS = {}
+REVERSE_DEPRECATED_KEYWORDS = {}
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

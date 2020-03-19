@@ -13,6 +13,33 @@ from rcUtilities import which
 from rcUtilitiesLinux import lv_info
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "dds"
+KEYWORDS = [
+    {
+        "keyword": "src",
+        "required": True,
+        "text": "Points the origin of the snapshots to replicate from."
+    },
+    {
+        "keyword": "dst",
+        "at": True,
+        "required": True,
+        "text": "Target file or block device. Optional. Defaults to src. Points the media to replay the binary-delta received from source node to. This media must have a size superior or equal to source."
+    },
+    {
+        "keyword": "target",
+        "convert": "list",
+        "required": True,
+        "candidates": ['nodes', 'drpnodes'],
+        "text": "Accepted values are ``drpnodes``, ``nodes`` or both, whitespace-separated. Points the target nodes to replay the binary-deltas on. Be warned that starting the service on a target node without a stop-sync_update-start cycle, will break the synchronization, so this mode is usually restricted to drpnodes sync, and should not be used to replicate data between nodes with automated services failover."
+    },
+    {
+        "keyword": "snap_size",
+        "text": "Default to 10% of origin. In MB, rounded to physical extent boundaries by lvm tools. Size of the snapshots created by OpenSVC to extract binary deltas from. Opensvc creates at most 2 snapshots : one short-lived to gather changed data from, and one long-lived to gather changed chunks list from. Volume groups should have the necessary space always available."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

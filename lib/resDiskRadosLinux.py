@@ -7,6 +7,47 @@ from rcGlobalEnv import *
 from rcUtilities import justcall
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "rados"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "client_id",
+        "text": "Client id to use for authentication with the rados servers."
+    },
+    {
+        "keyword": "keyring",
+        "text": "keyring to look for the client id secret for authentication with the rados servers."
+    },
+    {
+        "keyword": "lock",
+        "candidates": ["exclusive", "shared", "None"],
+        "text": "Locking mode for the rados images"
+    },
+    {
+        "keyword": "lock_shared_tag",
+        "depends": [('lock', ['shared'])],
+        "text": "The tag to use upon rados image locking in shared mode"
+    },
+    {
+        "keyword": "image_format",
+        "provisioning": True,
+        "default": "2",
+        "text": "The rados image format"
+    },
+    {
+        "keyword": "size",
+        "convert": "size",
+        "provisioning": True,
+        "text": "The block device size in size expression format."
+    },
+    {
+        "keyword": "images",
+        "convert": "list",
+        "required": True,
+        "text": "The rados image names handled by this vg resource. whitespace separated."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

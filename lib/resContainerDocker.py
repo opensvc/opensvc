@@ -17,6 +17,214 @@ from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get
 from converters import print_duration
 from svcBuilder import init_kwargs, container_kwargs
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "docker"
+DRIVER_BASENAME_ALIASES = ["oci"]
+KEYWORDS = [
+    {
+        "keyword": "hostname",
+        "at": True,
+        "text": "Set the container hostname. If not set, a unique id is used."
+    },
+    {
+        "keyword": "detach",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Run container in background. Set to ``false`` only for init containers, alongside :kw:`start_timeout` and the :c-tag:`nostatus` tag.",
+    },
+    {
+        "keyword": "entrypoint",
+        "at": True,
+        "text": "The script or binary executed in the container. Args must be set in :kw:`command`.",
+        "example": "/bin/sh"
+    },
+    {
+        "keyword": "rm",
+        "at": True,
+        "default": False,
+        "convert": "boolean",
+        "text": "If set to ``true``, add :opt:`--rm` to the docker run args and make sure the instance is removed on resource stop.",
+        "example": False
+    },
+    {
+        "keyword": "volume_mounts",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<volume name|local dir>:<containerized mount path>:<mount options>``. "
+                "When the source is a local dir, the default <mount option> is rw. "
+                "When the source is a volume name, the default <mount option> is taken from volume access.",
+        "example": "myvol1:/vol1 myvol2:/vol2:rw /localdir:/data:ro"
+    },
+    {
+        "keyword": "environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<value>``. A shell expression spliter is applied, so double quotes can be around values only or whole ``<var>=<value>``. Variables are uppercased.",
+        "example": """AA="a a" "BB=c c" CC=d """
+    },
+    {
+        "keyword": "secrets_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "configs_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "devices",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<host devpath>:<containerized devpath>``, specifying the host devices the container should have access to.",
+        "example": "myvol1:/dev/xvda myvol2:/dev/xvdb"
+    },
+    {
+        "keyword": "netns",
+        "at": True,
+        "text": "Sets the :cmd:`docker run --net` argument. The default is ``none`` if :opt:`--net` is not specified in :kw:`run_args`, meaning the container will have a private netns other containers can share. A :c-res:`ip.netns` or :c-res:`ip.cni` resource can configure an ip address in this container. A container with ``netns=container#0`` will share the container#0 netns. In this case agent format a :opt:`--net=container:<name of container#0 docker instance>`. ``netns=host`` shares the host netns.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "userns",
+        "at": True,
+        "candidates": ("host", None),
+        "text": "Sets the :cmd:`docker run --userns` argument. If not set, the container will have a private userns other containers can share. A container with ``userns=host`` will share the host's userns.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "pidns",
+        "at": True,
+        "text": "Sets the :cmd:`docker run --pid` argument. If not set, the container will have a private pidns other containers can share. Usually a pidns sharer will run a google/pause image to reap zombies. A container with ``pidns=container#0`` will share the container#0 pidns. In this case agent format a :opt:`--pid=container:<name of container#0 docker instance>`. Use ``pidns=host`` to share the host's pidns.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "ipcns",
+        "at": True,
+        "text": "Sets the :cmd:`docker run --ipc` argument. If not set, the docker daemon's default value is used. ``ipcns=none`` does not mount /dev/shm. ``ipcns=private`` creates a ipcns other containers can not share. ``ipcns=shareable`` creates a netns other containers can share. ``ipcns=container#0`` will share the container#0 ipcns.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "utsns",
+        "at": True,
+        "candidates": (None, "host"),
+        "text": "Sets the :cmd:`docker run --uts` argument. If not set, the container will have a private utsns. A container with ``utsns=host`` will share the host's hostname.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "privileged",
+        "at": True,
+        "convert": "tristate",
+        "text": "Give extended privileges to the container.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "interactive",
+        "at": True,
+        "convert": "tristate",
+        "text": "Keep stdin open even if not attached. To use if the container entrypoint is a shell.",
+    },
+    {
+        "keyword": "tty",
+        "at": True,
+        "convert": "tristate",
+        "text": "Allocate a pseudo-tty.",
+    },
+    {
+        "keyword": "name",
+        "at": True,
+        "default_text": "<autogenerated>",
+        "text": "The name to assign to the container on docker run. If none is specified a ``<namespace>..<name>.container.<rid idx>`` name is automatically assigned.",
+        "example": "osvcprd..rundeck.container.db"
+    },
+    {
+        "keyword": "image",
+        "at": True,
+        "required": True,
+        "text": "The docker image pull, and run the container with.",
+        "example": "83f2a3dd2980 or ubuntu:latest"
+    },
+    {
+        "keyword": "image_pull_policy",
+        "at": True,
+        "required": False,
+        "default": "once",
+        "candidates": ["once", "always"],
+        "text": "The docker image pull policy. ``always`` pull upon each container start, ``once`` pull if not already pulled (default).",
+        "example": "once"
+    },
+    {
+        "keyword": "command",
+        "at": True,
+        "convert": "shlex",
+        "text": "The command to execute in the docker container on run.",
+        "example": "/opt/tomcat/bin/catalina.sh"
+    },
+    {
+        "keyword": "run_args",
+        "at": True,
+        "convert": "expanded_shlex",
+        "text": "Extra arguments to pass to the docker run command, like volume and port mappings.",
+        "example": "-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
+    },
+    {
+        "keyword": "start_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the container action a failure.",
+        "default": "2",
+        "example": "5"
+    },
+    {
+        "keyword": "stop_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the container action a failure.",
+        "default": "120",
+        "example": "180"
+    },
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+DEPRECATED_KEYWORDS = {
+    "container.docker.run_image": "image",
+    "container.docker.run_command": "command",
+    "container.docker.net": "netns",
+    "container.oci.run_image": "image",
+    "container.oci.run_command": "command",
+    "container.oci.net": "netns",
+}
+REVERSE_DEPRECATED_KEYWORDS = {
+    "container.docker.image": "run_image",
+    "container.docker.command": "run_command",
+    "container.docker.netns": "net",
+    "container.oci.image": "run_image",
+    "container.oci.command": "run_command",
+    "container.oci.netns": "net",
+}
+
+
 ATTR_MAP = {
     "hostname": {
         "attr": "vm_hostname",

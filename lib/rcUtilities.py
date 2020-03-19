@@ -271,7 +271,7 @@ def is_string(s):
 
 
 def mimport(*args, **kwargs):
-    def fmt(s):
+    def fmt_element(s):
         if s is None:
             return ""
         if len(s) >= 1:
@@ -279,22 +279,31 @@ def mimport(*args, **kwargs):
         else:
             return ""
 
-    mod = ""
-    for i, e in enumerate(args):
-        if e in ("res", "prov", "check", "pool") and i == 0:
-            mod += e
-        else:
-            mod += fmt(e)
+    def fmt_modname(args):
+        modname = ""
+        for i, e in enumerate(args):
+            if e in ("res", "prov", "check", "pool") and i == 0:
+                modname += e
+            else:
+                modname += fmt_element(e)
+        return modname
 
-    try:
-        return __import__(mod + rcEnv.sysname)
-    except ImportError:
-        pass
+    def import_mod(modname):
+        for mn in (modname + rcEnv.sysname, modname):
+            try:
+                return mn, __import__(mn)
+            except ImportError:
+                pass
+        return None, None
 
-    try:
-        return __import__(mod)
-    except ImportError as exc:
-        pass
+    modname = fmt_modname(args)
+    modname, mod = import_mod(modname)
+
+    if mod:
+        kwstore = kwargs.get("kwstore")
+        if kwstore is not None:
+            kwstore += modname
+        return mod
 
     if kwargs.get("fallback", True) and len(args) > 1:
         args = args[:-1]
@@ -1664,3 +1673,20 @@ def create_protected_file(filepath, buff, mode):
         if os.name == 'posix':
             os.chmod(filepath, 0o0600)
         f.write(buff)
+
+
+def list_drivers(groups=None):
+    groups = groups or [""]
+    dirpath = os.path.dirname(__file__)
+    for group in groups:
+        if group:
+            group = group.capitalize()
+        pattern = os.path.join(dirpath, "res" + group + "*.py")
+        for f in glob.glob(pattern):
+            if not os.path.isfile(f):
+                continue
+            b = os.path.basename(f)[:-3]
+            if b in ("__init__", "resources", "resourcesets"):
+                continue
+            yield b
+
