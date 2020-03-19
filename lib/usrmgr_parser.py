@@ -5,10 +5,12 @@ import svc
 import mgr_parser as mp
 from rcOptParser import OptParser
 from optparse import Option
+from storage import Storage
 
 PROG = "usrmgr"
 
-OPT = mp.OPT
+OPT = Storage()
+OPT.update(mp.OPT)
 OPT.update({
     "key": Option(
         "--key", default=None,

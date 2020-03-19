@@ -5,10 +5,12 @@ import svc
 import mgr_parser as mp
 from rcOptParser import OptParser
 from optparse import Option
+from storage import Storage
 
 PROG = "cfgmgr"
 
-OPT = mp.OPT
+OPT = Storage()
+OPT.update(mp.OPT)
 OPT.update({
     "key": Option(
         "--key", default=None,
@@ -28,7 +30,8 @@ OPT.update({
         help="The configuration key value."),
 })
 
-ACTIONS = mp.ACTIONS
+ACTIONS = Storage()
+ACTIONS.update(mp.ACTIONS)
 ACTIONS.update({
     "Configuration actions": {
         "add": {

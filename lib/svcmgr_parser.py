@@ -3,13 +3,14 @@ svcmgr command line actions and options
 """
 import svc
 import mgr_parser as mp
-from storage import Storage
 from rcOptParser import OptParser
 from optparse import Option
+from storage import Storage
 
 PROG = "svcmgr"
 
-OPT = mp.OPT
+OPT = Storage()
+OPT.update(mp.OPT)
 OPT.update({
     "account": Option(
         "--account", default=False,
@@ -115,7 +116,8 @@ START_ACTION_OPTS = [
     OPT.disable_rollback,
 ]
 
-ACTIONS = mp.ACTIONS
+ACTIONS = Storage()
+ACTIONS.update(mp.ACTIONS)
 ACTIONS["Service actions"].update({
     "abort": {
         "msg": "Abort the action asynchronously done by the cluster daemons.",

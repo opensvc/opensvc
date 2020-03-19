@@ -70,11 +70,10 @@ def write_action(prog, section_name, action_name, action_data, parser):
 
     buff += "\n"
 
-    options = action_data.get("options", [])
+    options = list(action_data.get("options", []))
     if parser.global_options:
         options += parser.global_options
     for option in sorted(options, key=lambda x:str(x._short_opts+x._long_opts)):
-        if action_name == "provision": print(" ", option)
         buff += fmt_option(prog, option)
 
     buff += "\n"
