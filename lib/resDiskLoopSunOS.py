@@ -10,6 +10,13 @@ import rcExceptions as ex
 from rcLoopSunOS import file_to_loop
 from lock import cmlock
 
+DRIVER_GROUP = Res.DRIVER_GROUP
+DRIVER_BASENAME = Res.DRIVER_BASENAME
+KEYWORDS = Res.KEYWORDS
+DEPRECATED_KEYWORDS = Res.DEPRECATED_KEYWORDS
+REVERSE_DEPRECATED_KEYWORDS = Res.REVERSE_DEPRECATED_KEYWORDS
+DEPRECATED_SECTIONS = Res.DEPRECATED_SECTIONS
+
 
 def adder(svc, s):
     Res.adder(svc, s, drv=Disk)

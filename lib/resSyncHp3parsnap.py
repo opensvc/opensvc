@@ -10,6 +10,24 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "hp3parsnap"
+KEYWORDS = [
+    {
+        "keyword": "array",
+        "required": True,
+        "at": True,
+        "text": "Name of the HP 3par array to send commands to."
+    },
+    {
+        "keyword": "vv_names",
+        "convert": "list",
+        "required": True,
+        "at": True,
+        "text": "The names of snapshot VV or sets of VV to update."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

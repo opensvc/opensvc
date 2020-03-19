@@ -43,6 +43,10 @@ class Usr(Sec, BaseSvc):
     def kwstore(self):
         return __import__("usrdict").KEYS
 
+    @lazy
+    def full_kwstore(self):
+        return __import__("usrdict").full_kwstore()
+
     def on_create(self):
         changes = []
         has_ca = False

@@ -20,6 +20,122 @@ from svcBuilder import init_kwargs
 
 IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
 
+KW_IPNAME = {
+    "keyword": "ipname",
+    "required": False,
+    "at": True,
+    "text": "The DNS name or IP address of the ip resource. Can be different from one node to the other, in which case ``@nodename`` can be specified. This is most useful to specify a different ip when the service starts in DRP mode, where subnets are likely to be different than those of the production datacenter. With the amazon driver, the special ``<allocate>`` value tells the provisioner to assign a new private address."
+}
+KW_IPDEV = {
+    "keyword": "ipdev",
+    "at": True,
+    "required": True,
+    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified."
+}
+KW_NETMASK = {
+    "keyword": "netmask",
+    "at": True,
+    "text": "If an ip is already plumbed on the root interface (in which case the netmask is deduced from this ip). Mandatory if the interface is dedicated to the service (dummy interface are likely to be in this case). The format is either dotted or octal for IPv4, ex: 255.255.252.0 or 22, and octal for IPv6, ex: 64.",
+    "example": "255.255.255.0"
+}
+KW_GATEWAY = {
+    "keyword": "gateway",
+    "at": True,
+    "text": "A zone ip provisioning parameter used in the sysidcfg formatting. The format is decimal for IPv4, ex: 255.255.252.0, and octal for IPv6, ex: 64.",
+    "provisioning": True
+}
+KW_DNS_NAME_SUFFIX = {
+    "keyword": "dns_name_suffix",
+    "at": True,
+    "text": "Add the value as a suffix to the DNS record name. The record created is thus formatted as ``<name>-<dns_name_suffix>.<app>.<managed zone>``."
+}
+KW_PROVISIONER = {
+    "keyword": "provisioner",
+    "provisioning": True,
+    "candidates": ("collector", None),
+    "at": True,
+    "example": "collector",
+    "text": "The IPAM driver to use to provision the ip.",
+}
+KW_NETWORK = {
+    "keyword": "network",
+    "at": True,
+    "example": "10.0.0.0",
+    "text": "The network, in dotted notation, from where the ip provisioner allocates. Also used by the docker ip driver to delete the network route if :kw:`del_net_route` is set to ``true``.",
+}
+KW_DNS_UPDATE = {
+    "keyword": "dns_update",
+    "at": True,
+    "default": False,
+    "convert": "boolean",
+    "candidates": [True, False],
+    "text": "Setting this parameter triggers a DNS update. The record created is formatted as ``<name>.<app>.<managed zone>``, unless dns_record_name is specified."
+}
+KW_WAIT_DNS = {
+    "section": "ip",
+    "keyword": "wait_dns",
+    "at": True,
+    "convert": "duration",
+    "default": 0,
+    "example": "10s",
+    "text": "Wait for the cluster DNS records associated to the resource to appear after a resource start and before the next resource can be started. This can be used for apps or containers that require the ip or ip name to be resolvable to provision or execute properly."
+}
+KW_ZONE = {
+    "keyword": "zone",
+    "at": True,
+    "text": "The zone name the ip resource is linked to. If set, the ip is plumbed from the global in the zone context.",
+    "example": "zone1"
+}
+KW_CHECK_CARRIER = {
+    "keyword": "check_carrier",
+    "at": True,
+    "required": False,
+    "default": True,
+    "convert": "boolean",
+    "text": "Activate the link carrier check. Set to false if ipdev is a backend "
+            "bridge or switch",
+}
+KW_ALIAS = {
+    "keyword": "alias",
+    "at": True,
+    "required": False,
+    "default": True,
+    "convert": "boolean",
+    "text": "Use ip aliasing. Modern ip stack support multiple ip/mask per interface, so :kw:`alias` should be set to false when possible.",
+}
+KW_EXPOSE = {
+    "keyword": "expose",
+    "at": True,
+    "required": False,
+    "default": [],
+    "convert": "list",
+    "text": "A whitespace-separated list of ``<port>/<protocol>[:<host port>]`` "
+                   "describing socket services that mandate a SRV exposition. With "
+                   "<host_port> set, the ip.cni driver configures port mappings too.",
+    "example": "443/tcp:8443 53/udp"
+}
+
+COMMON_KEYWORDS = [
+    KW_WAIT_DNS,
+    KW_DNS_NAME_SUFFIX,
+    KW_PROVISIONER,
+    KW_NETWORK,
+    KW_DNS_UPDATE,
+    KW_CHECK_CARRIER,
+    KW_ALIAS,
+    KW_EXPOSE,
+]
+
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = [
+    KW_IPNAME,
+    KW_IPDEV,
+    KW_NETMASK,
+    KW_GATEWAY,
+    KW_ZONE,
+] + COMMON_KEYWORDS
+
 
 def adder(svc, s, drv=None):
     """

@@ -1,6 +1,32 @@
 import resources as Res
+import resDisk
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "loop"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "size",
+        "at": True,
+        "required": True,
+        "default": "100m",
+        "convert": "size",
+        "text": "The size of the loop file to provision.",
+        "provisioning": True
+    },
+    {
+        "keyword": "file",
+        "at": True,
+        "required": True,
+        "text": "The loopback device backing file full path."
+    },
+]
+DEPRECATED_KEYWORDS = {}
+REVERSE_DEPRECATED_KEYWORDS = {}
+DEPRECATED_SECTIONS = {
+    "loop": ["disk", "loop"],
+}
 
 
 def adder(svc, s, drv=None):

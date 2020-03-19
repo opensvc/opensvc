@@ -3,6 +3,10 @@ u = __import__('rcUtilitiesHP-UX')
 from rcUtilities import to_cidr, to_dotted
 import rcExceptions as ex
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = Res.KEYWORDS
+
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)
 

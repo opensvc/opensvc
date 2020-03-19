@@ -13,6 +13,32 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "evasnap"
+KEYWORDS = [
+    {
+        "section": "sync",
+        "keyword": "eva_name",
+        "rtype": "evasnap",
+        "required": True,
+        "text": "Name of the HP EVA array hosting the source and snapshot devices."
+    },
+    {
+        "section": "sync",
+        "keyword": "snap_name",
+        "rtype": "evasnap",
+        "required": True,
+        "text": "Name of the snapshot objectname as seen in sssu."
+    },
+    {
+        "section": "sync",
+        "keyword": "pairs",
+        "rtype": "evasnap",
+        "required": True,
+        "text": "A json-formatted list of dictionaries representing the device pairs. Each dict must have the ``src``, ``dst`` and ``mask`` keys. The ``mask`` key value is a list of ``\\<hostpath>\\<lunid>`` strings."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

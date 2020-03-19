@@ -9,6 +9,24 @@ from rcUtilitiesLinux import check_ping
 from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "amazon"
+KEYWORDS = [
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_SHARED_IP_GROUP,
+    resContainer.KW_SIZE,
+    resContainer.KW_KEY_NAME,
+    resContainer.KW_CLOUD_ID,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))

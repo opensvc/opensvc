@@ -4,9 +4,64 @@ import json
 import time
 
 import resources as Res
+import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 import rcExceptions as ex
+
+
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "disk"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "size",
+        "provisioning": True,
+        "at": True,
+        "convert": "size",
+        "text": "A size expression for the disk allocation.",
+        "example": "20g"
+    },
+    {
+        "keyword": "pool",
+        "provisioning": True,
+        "at": True,
+        "text": "The name of the pool this volume was allocated from.",
+    },
+    {
+        "keyword": "name",
+        "provisioning": True,
+        "at": True,
+        "text": "The name of the disk.",
+    },
+    {
+        "keyword": "disk_id",
+        "at": True,
+        "text": "The wwn of the disk.",
+        "example": "6589cfc00000097484f0728d8b2118a6"
+    },
+    {
+        "keyword": "array",
+        "at": True,
+        "provisioning": True,
+        "text": "The array to provision the disk from.",
+        "example": "xtremio-prod1"
+    },
+    {
+        "keyword": "diskgroup",
+        "at": True,
+        "provisioning": True,
+        "text": "The array disk group to provision the disk from.",
+        "example": "default"
+    },
+    {
+        "keyword": "slo",
+        "at": True,
+        "provisioning": True,
+        "text": "The provisioned disk service level objective. This keyword is honored on arrays supporting this (ex: EMC VMAX)",
+        "example": "Optimized"
+    },
+]
+
 
 class Disk(Res.Resource):
     """

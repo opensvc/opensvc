@@ -10,6 +10,37 @@ from svcBuilder import init_kwargs, container_kwargs
 import resContainer
 import rcExceptions as ex
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "jail"
+KEYWORDS = [
+    {
+        "keyword": "jailroot",
+        "text": "Sets the root fs directory of the container",
+        "required": True,
+    },
+    {
+        "keyword": "ips",
+        "convert": "list",
+        "at": True,
+        "text": "The ipv4 addresses of the jail."
+    },
+    {
+        "keyword": "ip6s",
+        "convert": "list",
+        "at": True,
+        "text": "The ipv6 addresses of the jail."
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

@@ -7,6 +7,10 @@ from rcGlobalEnv import *
 from rcUtilities import justcall, cache, lazy
 from rcUtilitiesLinux import devs_to_disks
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "raw"
+KEYWORDS = resDiskRaw.KEYWORDS
+
 
 def adder(svc, s):
     resDiskRaw.adder(svc, s, drv=Disk)
