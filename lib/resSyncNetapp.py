@@ -10,6 +10,27 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "netapp"
+KEYWORDS = [
+    {
+        "keyword": "filer",
+        "required": True,
+        "at": True,
+        "text": "The Netapp filer resolvable host name used by the node.  Different filers can be set up for each node using the ``filer@nodename`` syntax."
+    },
+    {
+        "keyword": "path",
+        "required": True,
+        "text": "Specifies the volume or qtree to drive snapmirror on."
+    },
+    {
+        "keyword": "user",
+        "required": True,
+        "default": "nasadm",
+        "text": "Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
+    },
+]
 
 def adder(svc, s):
     kwargs = {}

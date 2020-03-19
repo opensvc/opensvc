@@ -9,6 +9,34 @@ import pwd
 import grp
 import stat
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = "directory"
+KEYWORDS = [
+    {
+        "keyword": "path",
+        "at": True, 
+        "required": True,
+        "text": "The fullpath of the directory to create."
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "example": "root",
+        "text": "The user that should be owner of the directory. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "group",
+        "at": True,
+        "example": "sys",
+        "text": "The group that should be owner of the directory. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "perm",
+        "at": True,
+        "example": "1777",
+        "text": "The permissions the directory should have. A string representing the octal permissions."
+    },
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

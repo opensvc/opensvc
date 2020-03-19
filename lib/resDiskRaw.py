@@ -11,6 +11,51 @@ import rcExceptions as ex
 from rcUtilities import which, is_string, lazy
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "raw"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "devs",
+        "convert": "set",
+        "at": True,
+        "required": True,
+        "text": "a list of device paths or <src>:<dst> device paths mappings, whitespace separated. Those devices are owned by the service and scsi reservation policy is applied to them.",
+        "example": "/dev/mapper/svc.d0:/dev/oracle/redo001 /dev/mapper/svc.d1"
+    },
+    {
+        "keyword": "zone",
+        "at": True,
+        "text": "The zone name the raw resource is linked to. If set, the raw files are configured from the global reparented to the zonepath.",
+        "example": "zone1"
+    },
+    {
+        "keyword": "create_char_devices",
+        "at": True,
+        "default": False,
+        "convert": "boolean",
+        "text": "On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
+        "example": "false"
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "example": "root",
+        "text": "The user that should be owner of the device. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "group",
+        "at": True,
+        "example": "sys",
+        "text": "The group that should be owner of the device. Either in numeric or symbolic form."
+    },
+    {
+        "keyword": "perm",
+        "at": True,
+        "example": "600",
+        "text": "The permissions the device should have. A string representing the octal permissions."
+    },
+]
+
 
 def adder(svc, s, drv=None):
     drv = drv or Disk

@@ -10,6 +10,69 @@ from rcGlobalEnv import *
 from rcUtilities import justcall
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "gce"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "names",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "text": "Set the gce disk names",
+        "example": "svc1-disk1"
+    },
+    {
+        "keyword": "gce_zone",
+        "at": True,
+        "required": True,
+        "text": "Set the gce zone",
+        "example": "europe-west1-b"
+    },
+    {
+        "keyword": "description",
+        "provisioning": True,
+        "at": True,
+        "text": "An optional, textual description for the disks being created.",
+        "example": "foo"
+    },
+    {
+        "keyword": "image",
+        "provisioning": True,
+        "at": True,
+        "text": "An image to apply to the disks being created. When using this option, the size of the disks must be at least as large as the image size.",
+        "example": "centos-7"
+    },
+    {
+        "keyword": "image_project",
+        "provisioning": True,
+        "at": True,
+        "text": "The project against which all image references will be resolved.",
+        "example": "myprj"
+    },
+    {
+        "keyword": "size",
+        "provisioning": True,
+        "at": True,
+        "convert": "size",
+        "text": "A size expression for the disk allocation.",
+        "example": "20g"
+    },
+    {
+        "keyword": "source_snapshot",
+        "provisioning": True,
+        "at": True,
+        "text": "A source snapshot used to create the disks. It is safe to delete a snapshot after a disk has been created from the snapshot. In such cases, the disks will no longer reference the deleted snapshot. When using this option, the size of the disks must be at least as large as the snapshot size.",
+        "example": "mysrcsnap"
+    },
+    {
+        "keyword": "disk_type",
+        "provisioning": True,
+        "at": True,
+        "text": "Specifies the type of disk to create. To get a list of available disk types, run :cmd:`gcloud compute disk-types list`. The default disk type is ``pd-standard``.",
+        "example": "pd-standard"
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

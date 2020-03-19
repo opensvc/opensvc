@@ -8,6 +8,10 @@ import resIp as Res
 import rcExceptions as ex
 from rcUtilitiesWindows import check_ping
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = Res.KEYWORDS
+
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)
 

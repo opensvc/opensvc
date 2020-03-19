@@ -9,6 +9,18 @@ import resSyncRadossnap
 from rcUtilities import which, justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "radosclone"
+KEYWORDS = [
+    {
+        "keyword": "pairs",
+        "convert": "list",
+        "required": True,
+        "at": True,
+        "text": "The rados clone device pairs."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

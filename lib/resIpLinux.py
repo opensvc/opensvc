@@ -4,6 +4,10 @@ from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, to_cidr, to_dotted
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = Res.KEYWORDS
+
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)
 

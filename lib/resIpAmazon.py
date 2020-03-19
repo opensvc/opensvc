@@ -2,6 +2,7 @@ import resIp
 import os
 import rcStatus
 from rcGlobalEnv import rcEnv
+from resIp import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 import rcExceptions as ex
 from rcAmazon import AmazonMixin
 from rcUtilities import getaddr
@@ -9,6 +10,38 @@ from svcBuilder import init_kwargs
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "amazon"
+KEYWORDS = [
+    KW_IPNAME,
+    KW_IPDEV,
+    KW_NETMASK,
+    KW_GATEWAY,
+    {
+        "keyword": "eip",
+        "at": True,
+        "text": "The public elastic ip to associate to :kw:`ipname`. The special ``allocate`` value tells the provisioner to assign a new public address.",
+        "example": "52.27.90.63"
+    },
+    {
+        "keyword": "cascade_allocation",
+        "convert": "list",
+        "default": [],
+        "provisioning": True,
+        "at": True,
+        "text": "Set new allocated ip as value to other ip resources :kw:`ipname` parameter. The syntax is a whitespace separated list of ``<rid>.ipname[@<scope>]``.",
+        "example": "ip#1.ipname ip#1.ipname@nodes"
+    },
+    {
+        "keyword": "docker_daemon_ip",
+        "provisioning": True,
+        "at": False,
+        "candidates": [True, False],
+        "text": "Set new allocated ip as value as a :opt:`--ip <addr>` argument in the :kw:`DEFAULT.docker_daemon_args` parameter.",
+        "example": "True"
+    },
+
+] + COMMON_KEYWORDS
 
 def adder(svc, s):
     """

@@ -12,6 +12,75 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "rsync"
+KEYWORDS = [
+    {
+        "keyword": "src",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "text": "Source of the sync. Can be a whitespace-separated list of files or dirs passed as-is to rsync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
+    },
+    {
+        "keyword": "dst",
+        "required": True,
+        "text": "Destination of the sync. Beware of the meaningful ending '/'. Refer to the rsync man page for details."
+    },
+    {
+        "keyword": "tags",
+        "convert": "set",
+        "default": set(),
+        "default_text": "",
+        "example": "delay_snap",
+        "at": True,
+        "text": "The sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the rsync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
+    },
+    {
+        "keyword": "options",
+        "convert": "shlex",
+        "default": [],
+        "default_text": "",
+        "example": "--acls --xattrs --exclude foo/bar",
+        "at": True,
+        "text": "A whitespace-separated list of params passed unchanged to rsync. Typical usage is ACL preservation activation."
+    },
+    {
+        "keyword": "reset_options",
+        "convert": "boolean",
+        "default": False,
+        "at": True,
+        "text": "Use options as-is instead of appending options to default hardcoded options. Can be used to disable --xattr or --acls for example."
+    },
+    {
+        "keyword": "target",
+        "convert": "list",
+        "required": True,
+        "candidates": ['nodes', 'drpnodes'],
+        "text": "Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+    },
+    {
+        "keyword": "snap",
+        "at": True,
+        "candidates": (True, False),
+        "default": False,
+        "convert": "boolean",
+        "text": "If set to ``true``, OpenSVC will try to snapshot the first snapshottable parent of the source of the sync and try to sync from the snap."
+    },
+    {
+        "keyword": "dstfs",
+        "text": "If set to a remote mount point, OpenSVC will verify that the specified mount point is really hosting a mounted FS. This can be used as a safety net to not overflow the parent FS (may be root)."
+    },
+    {
+        "keyword": "bwlimit",
+        "convert": "integer",
+        "text": "Bandwidth limit in KB applied to this rsync transfer. Leave empty to enforce no limit. Takes precedence over :kw:`bwlimit` set in [DEFAULT]."
+    },
+]
+DEPRECATED_KEYWORDS = {
+    "sync.rsync.exclude": None,
+}
+
 
 def adder(svc, s):
     if s.startswith("sync#i"):

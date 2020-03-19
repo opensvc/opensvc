@@ -4,6 +4,29 @@ import resContainerPodman
 import rcExceptions as ex
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "task"
+DRIVER_BASENAME = "podman"
+DRIVER_BASENAME_ALIASES = ["oci"]
+KEYWORDS = resTask.KEYWORDS + resContainerPodman.KEYWORDS
+DEPRECATED_KEYWORDS = {
+    "task.podman.run_image": "image",
+    "task.podman.run_command": "command",
+    "task.podman.net": "netns",
+    "task.oci.run_image": "image",
+    "task.oci.run_command": "command",
+    "task.oci.net": "netns",
+}
+DEPRECATED_KEYWORDS.update(resTask.DEPRECATED_KEYWORDS)
+REVERSE_DEPRECATED_KEYWORDS = {
+    "task.podman.image": "run_image",
+    "task.podman.command": "run_command",
+    "task.podman.netns": "net",
+    "task.oci.image": "run_image",
+    "task.oci.command": "run_command",
+    "task.oci.netns": "net",
+}
+REVERSE_DEPRECATED_KEYWORDS.update(resTask.REVERSE_DEPRECATED_KEYWORDS)
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

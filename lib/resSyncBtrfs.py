@@ -13,6 +13,40 @@ from rcUtilities import justcall
 from converters import print_duration
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "btrfs"
+KEYWORDS = [
+    {
+        "keyword": "src",
+        "convert": "list",
+        "at": True, 
+        "required": True,
+        "text": "Source subvolume of the sync."
+    },
+    {
+        "keyword": "dst",
+        "at": True,
+        "required": True,
+        "text": "Destination subvolume of the sync."
+    },
+    {
+        "keyword": "target",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "candidates": ["nodes", "drpnodes"],
+        "text": "Destination nodes of the sync."
+    },
+    {
+        "keyword": "recursive",
+        "at": True,
+        "default": False,
+        "convert": "boolean",
+        "candidates": [True, False],
+        "text": "Also replicate subvolumes in the src tree."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

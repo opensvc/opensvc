@@ -13,6 +13,10 @@ from rcUtilitiesLinux import multipath_flush, dev_delete, dev_to_paths
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "disk"
+KEYWORDS = resDiskDisk.KEYWORDS
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

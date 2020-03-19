@@ -9,6 +9,42 @@ from rcGlobalEnv import rcEnv
 from subprocess import *
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "vg"
+DRIVER_BASENAME_ALIASES = ["lvm"]
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "name",
+        "at": True,
+        "required": True,
+        "text": "The name of the volume group"
+    },
+    {
+        "keyword": "options",
+        "default": "",
+        "at": True,
+        "provisioning": True,
+        "text": "The vgcreate options to use upon vg provisioning."
+    },
+    {
+        "keyword": "pvs",
+        "required": True,
+        "text": "The list of paths to the physical volumes of the volume group.",
+        "provisioning": True
+    },
+]
+DEPRECATED_KEYWORDS = {
+    "disk.lvm.vgname": "name",
+    "disk.vg.vgname": "name",
+}
+REVERSE_DEPRECATED_KEYWORDS = {
+    "disk.lvm.name": "vgname",
+    "disk.vg.name": "vgname",
+}
+DEPRECATED_SECTIONS = {
+    "vg": ["disk", "vg"],
+}
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

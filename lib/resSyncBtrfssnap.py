@@ -11,6 +11,33 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "btrfssnap"
+KEYWORDS = [
+    {
+        "keyword": "name",
+        "at": True,
+        "example": "weekly",
+        "text": "A name included in the snapshot name to avoid retention conflicts between multiple btrfs snapshot resources. A full snapshot name is formatted as ``<subvol>.<name>.snap.<datetime>``. Example: data.weekly.snap.2016-03-09.10:09:52"
+    },
+    {
+        "keyword": "subvol",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "example": "svc1fs:data svc1fs:log",
+        "text": "A whitespace separated list of ``<label>:<subvol>`` to snapshot."
+    },
+    {
+        "keyword": "keep",
+        "at": True,
+        "default": 3,
+        "convert": "integer",
+        "example": "3",
+        "text": "The maximum number of snapshots to retain."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

@@ -159,36 +159,39 @@ def standby_from_always_on(svc, section):
         return True
     return False
 
-def add_resource(svc, restype, s):
-    if restype == "pool":
-        restype = "zpool"
+def add_resource(svc, driver_group, s):
+    if driver_group == "pool":
+        driver_group = "zpool"
         match = "[z]{0,1}pool#"
     else:
-        match = restype+"#"
+        match = driver_group+"#"
 
-    if restype in ("disk", "vg", "zpool") and re.match(match+".+pr$", s, re.I) is not None:
+    if driver_group in ("disk", "vg", "zpool") and re.match(match+".+pr$", s, re.I) is not None:
         # persistent reserv resource are declared by their peer resource:
         # don't add them from here
         return
 
-    rtype = svc.oget(s, "type")
+    try:
+        driver_basename = svc.oget(s, "type")
+    except Exception:
+        driver_basename = ""
 
     try:
-        restype, rtype = DRV_GRP_XLATE[restype]
+        driver_group, driver_basename = DRV_GRP_XLATE[driver_group]
     except KeyError:
         pass
 
-    if restype in ("container", "task") and rtype == "oci":
-        rtype = svc.node.oci
-    elif restype == "ip" and rtype == "docker":
-        rtype = "netns"
-    elif restype == "disk" and rtype == "lvm":
-        rtype = "vg"
-    elif restype == "disk" and rtype == "veritas":
-        rtype = "vxdg"
+    if driver_group in ("container", "task") and driver_basename == "oci":
+        driver_basename = svc.node.oci
+    elif driver_group == "ip" and driver_basename == "docker":
+        driver_basename = "netns"
+    elif driver_group == "disk" and driver_basename == "lvm":
+        driver_basename = "vg"
+    elif driver_group == "disk" and driver_basename == "veritas":
+        driver_basename = "vxdg"
 
     try:
-        mod = mimport("res", restype, rtype)
+        mod = svc.load_driver(driver_group, driver_basename)
     except Exception:
         return
 
