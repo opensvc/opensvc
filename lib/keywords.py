@@ -235,6 +235,7 @@ class Section(object):
         self.section = section
         self.top = top
         self.keywords = []
+        self.sigs = []
 
     def __repr__(self):
         return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
@@ -245,7 +246,11 @@ class Section(object):
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
             return self
+        sig = (o.rtype, o.keyword)
+        if sig in self.sigs:
+            return self
         self.keywords.append(o)
+        self.sigs.append(sig)
         return self
 
     def dump(self):
