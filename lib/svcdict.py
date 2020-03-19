@@ -15,6 +15,9 @@ SECTIONS = [
     "app",
     "task",
     "volume",
+]
+
+DATA_SECTIONS = [
     "certificate",
     "expose",
     "hashpolicy",
@@ -1368,7 +1371,7 @@ KEYS = KeywordStore(
 
 def full_kwstore():
     kwstore = KEYS
-    for modname in list_drivers(SECTIONS):
+    for modname in list_drivers(SECTIONS + DATA_SECTIONS):
         kwstore += modname
     return kwstore
 
