@@ -2,11 +2,16 @@ import os
 
 import rcStatus
 import rcExceptions as ex
+import resShareNfs
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which, cache, clear_cache
 from resources import Resource
 from svcBuilder import init_kwargs
+
+DRIVER_GROUP = "share"
+DRIVER_BASENAME = "nfs"
+KEYWORDS = resShareNfs.KEYWORDS
 
 
 def adder(svc, s):

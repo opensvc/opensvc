@@ -8,6 +8,41 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
 from rcUtilities import which, justcall, cache
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "lv"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "name",
+        "required": True,
+        "at": True,
+        "text": "The name of the logical volume.",
+        "example": "lv1"
+    },
+    {
+        "keyword": "vg",
+        "at": True,
+        "text": "The name of the volume group hosting the logical volume.",
+        "example": "vg1"
+    },
+    {
+        "keyword": "size",
+        "convert": "size",
+        "at": True,
+        "provisioning": True,
+        "text": "The size of the logical volume to provision. A size expression or <n>%{FREE|PVS|VG}.",
+        "example": "10m"
+    },
+    {
+        "keyword": "create_options",
+        "convert": "shlex",
+        "default": [],
+        "at": True,
+        "provisioning": True,
+        "text": "Additional options to pass to the logical volume create command (:cmd:`lvcreate` or :cmd:`vxassist`, depending on the driver). Size and name are alread set.",
+        "example": "--contiguous y"
+    },
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

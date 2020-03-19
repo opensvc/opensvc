@@ -7,6 +7,7 @@ import json
 import socket
 from subprocess import Popen, PIPE
 
+from resIp import COMMON_KEYWORDS
 import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
@@ -28,6 +29,46 @@ PORTMAP_CONF = {
     },
 #    "externalSetMarkChain": "OSVC-MARK-MASQ"
 }
+
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "cni"
+KEYWORDS = [
+    {
+        "keyword": "ipname",
+        "required": False,
+        "at": True,
+        "text": "Not used by the cni driver."
+    },
+    {
+        "keyword": "network",
+        "at": True,
+        "required": False,
+        "default": "default",
+        "text": "The name of the CNI network to plug into. The default network is created using the host-local bridge plugin if no existing configuration already exists.",
+        "example": "my-weave-net",
+    },
+    {
+        "keyword": "netns",
+        "at": True,
+        "required": False,
+        "text": "The resource id of the container to plug into the CNI network.",
+        "example": "container#0"
+    },
+    {
+        "keyword": "ipdev",
+        "default": "eth12",
+        "at": True,
+        "required": False,
+        "text": "The interface name in the container namespace."
+    },
+] + COMMON_KEYWORDS
+DEPRECATED_KEYWORDS = {
+    "ip.cni.container_rid": "netns",
+}
+REVERSE_DEPRECATED_KEYWORDS = {
+    "ip.cni.netns": "container_rid",
+}
+
 
 def adder(svc, s):
     """

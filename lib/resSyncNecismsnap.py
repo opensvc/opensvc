@@ -10,6 +10,21 @@ import resSync
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "necismsnap"
+KEYWORDS = [
+    {
+        "keyword": "array",
+        "required": True,
+        "text": "Name of the NEC ISM array to send commands to."
+    },
+    {
+        "keyword": "devs",
+        "required": True,
+        "text": "A whitespace-separated list of ``SV:LD``."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

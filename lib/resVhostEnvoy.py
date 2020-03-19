@@ -1,5 +1,25 @@
 from resData import Data
 
+DRIVER_GROUP = "vhost"
+DRIVER_BASENAME = "envoy"
+KEYWORDS = [
+    {
+        "keyword": "domains",
+        "convert": "list",
+        "at": True,
+        "text": "The list of http domains in this expose.",
+        "default": "{name}",
+        "example": "{name}"
+    },
+    {
+        "keyword": "routes",
+        "convert": "list",
+        "at": True,
+        "default": [],
+        "text": "The list of route resource identifiers for this vhost."
+    },
+]
+
 def adder(svc, s):
     kwargs = {"rid": s}
     kwargs.update(svc.section_kwargs(s, "envoy"))

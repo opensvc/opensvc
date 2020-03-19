@@ -17,6 +17,54 @@ import rcStatus
 import rcExceptions as ex
 import lock
 
+KEYWORDS = [
+    {
+        "keyword": "timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance action when an app launcher did not return.",
+        "example": "180"
+    },
+    {
+        "keyword": "start_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the app launcher start action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`start_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance start when an app launcher did not return.",
+        "example": "180"
+    },
+    {
+        "keyword": "stop_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the app launcher stop action a failure. Takes precedence over :kw:`timeout`. If neither :kw:`timeout` nor :kw:`stop_timeout` is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance stop when an app launcher did not return.",
+        "example": "180"
+    },
+    {
+        "keyword": "secrets_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "configs_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+]
+
 def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
     """
     Setup the Popen keyword args to execute <fpath> with the

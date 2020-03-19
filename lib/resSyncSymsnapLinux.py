@@ -1,4 +1,9 @@
 import resSyncSymcloneLinux
+import resSyncSymsnap
+
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "symsnap"
+KEYWORDS = resSyncSymsnap.KEYWORDS
 
 
 def adder(svc, s):

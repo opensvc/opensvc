@@ -19,4 +19,7 @@ class ClusterSvc(BaseSvc):
     def kwstore(self):
         return __import__("clusterdict").KEYS
 
+    @lazy
+    def full_kwstore(self):
+        return __import__("clusterdict").full_kwstore()
 

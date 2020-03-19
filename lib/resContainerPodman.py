@@ -16,6 +16,27 @@ from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get
 from rcGlobalEnv import rcEnv
 import resContainerDocker
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "podman"
+DRIVER_BASENAME_ALIASES = ["oci"]
+KEYWORDS = resContainerDocker.KEYWORDS
+DEPRECATED_KEYWORDS = {
+    "container.podman.run_image": "image",
+    "container.podman.run_command": "command",
+    "container.podman.net": "netns",
+    "container.oci.run_image": "image",
+    "container.oci.run_command": "command",
+    "container.oci.net": "netns",
+}
+REVERSE_DEPRECATED_KEYWORDS = {
+    "container.podman.image": "run_image",
+    "container.podman.command": "run_command",
+    "container.podman.netns": "net",
+    "container.oci.image": "run_image",
+    "container.oci.command": "run_command",
+    "container.oci.netns": "net",
+}
+
 
 def adder(svc, s):
     resContainerDocker.adder(svc, s, drv=Container)

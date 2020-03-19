@@ -271,7 +271,7 @@ def is_string(s):
 
 
 def mimport(*args, **kwargs):
-    def fmt(s):
+    def fmt_element(s):
         if s is None:
             return ""
         if len(s) >= 1:
@@ -279,22 +279,31 @@ def mimport(*args, **kwargs):
         else:
             return ""
 
-    mod = ""
-    for i, e in enumerate(args):
-        if e in ("res", "prov", "check", "pool") and i == 0:
-            mod += e
-        else:
-            mod += fmt(e)
+    def fmt_modname(args):
+        modname = ""
+        for i, e in enumerate(args):
+            if e in ("res", "prov", "check", "pool") and i == 0:
+                modname += e
+            else:
+                modname += fmt_element(e)
+        return modname
 
-    try:
-        return __import__(mod + rcEnv.sysname)
-    except ImportError:
-        pass
+    def import_mod(modname):
+        for mn in (modname + rcEnv.sysname, modname):
+            try:
+                return mn, __import__(mn)
+            except ImportError:
+                pass
+        return None, None
 
-    try:
-        return __import__(mod)
-    except ImportError as exc:
-        pass
+    modname = fmt_modname(args)
+    modname, mod = import_mod(modname)
+
+    if mod:
+        kwstore = kwargs.get("kwstore")
+        if kwstore is not None:
+            kwstore += modname
+        return mod
 
     if kwargs.get("fallback", True) and len(args) > 1:
         args = args[:-1]
@@ -681,7 +690,6 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'sync_update',
         'sync_restore',
         'run',
-        'on_error', # tasks use that as an action
         'command',  # tasks use that as an action
     ]
 
@@ -1456,22 +1464,18 @@ def resolve_path(path, namespace=None):
     return fmt_path(name, _namespace, kind)
 
 
-def makedirs(path, mode=None, uid=None, gid=None):
+def makedirs(path, mode=0o755):
     """
     Wraps os.makedirs with a more restrictive 755 mode and ignore
     already exists errors.
     """
     try:
-        mode = mode or 0o755
         os.makedirs(path, mode)
     except OSError as exc:
         if exc.errno == 17:
             pass
         else:
             raise
-    uid = uid if uid is not None else -1
-    gid = gid if gid is not None else -1
-    os.chown(path, uid, gid)
 
 
 def validate_paths(paths):
@@ -1664,31 +1668,25 @@ def find_editor():
     return editor
 
 
-def create_protected_file(filepath, buff):
-    def onfile(f):
+def create_protected_file(filepath, buff, mode):
+    with open(filepath, mode) as f:
         if os.name == 'posix':
             os.chmod(filepath, 0o0600)
         f.write(buff)
 
-    if six.PY2:
-        if isinstance(buff, six.text_type):
-            import codecs
-            with codecs.open(filepath, "w", "utf-8") as f:
-                onfile(f)
-        else:
-            with open(filepath, "w") as f:
-                onfile(f)
-    else:
-        with open(filepath, "w") as f:
-            onfile(f)
 
-
-def read_unicode_file(filepath):
-    if six.PY2:
-        import codecs
-        with codecs.open(filepath, "r", "utf-8") as f:
-            return f.read()
-    else:
-        with open(filepath, "r") as f:
-            return f.read()
+def list_drivers(groups=None):
+    groups = groups or [""]
+    dirpath = os.path.dirname(__file__)
+    for group in groups:
+        if group:
+            group = group.capitalize()
+        pattern = os.path.join(dirpath, "res" + group + "*.py")
+        for f in glob.glob(pattern):
+            if not os.path.isfile(f):
+                continue
+            b = os.path.basename(f)[:-3]
+            if b in ("__init__", "resources", "resourcesets"):
+                continue
+            yield b
 

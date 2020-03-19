@@ -66,6 +66,12 @@ class Keyword(object):
         if self.default_text is None:
             self.default_text = self.default
 
+    def __repr__(self):
+        return "<Keyword %s>" % self.keyword
+
+    def __str__(self):
+        return "<Keyword %s>" % self.keyword
+
     def __lt__(self, o):
         return self.section + self.keyword < o.section + o.keyword
 
@@ -230,6 +236,12 @@ class Section(object):
         self.top = top
         self.keywords = []
 
+    def __repr__(self):
+        return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
+
+    def __str__(self):
+        return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
+
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
             return self
@@ -386,6 +398,7 @@ class KeywordStore(dict):
         self.base_sections = base_sections
         self.provision = provision
         self.has_default_section = has_default_section
+        self.modules = set()
 
         for keyword in keywords:
             sections = keyword.get("sections", [keyword.get("section")])
@@ -393,16 +406,108 @@ class KeywordStore(dict):
             for section in sections:
                 for prefix in prefixes:
                     data = dict((key, val) for (key, val) in keyword.items() if key not in ("sections", "prefixes"))
-                    data.update({
-                        "section": section,
-                        "keyword": prefix+keyword["keyword"],
-                        "text": keyword["text"].replace("{prefix}", prefix),
-                    })
-                    self += Keyword(**data)
+                    try:
+                        data.update({
+                            "section": section,
+                            "keyword": prefix+keyword["keyword"],
+                            "text": keyword["text"].replace("{prefix}", prefix),
+                        })
+                        self += Keyword(**data)
+                    except KeyError as exc:
+                        raise ex.excError("misformatted keyword definition: %s: %s" % (exc, data))
+
+    def __str__(self):
+        return "<KeywordStore sections:%d keywords:%d>" % (len(self.sections), self.keywords_count())
+
+    def keywords_count(self):
+        n = 0
+        for section in self.sections.values():
+            n += len(section.keywords)
+        return n
+
+    def driver_kwstore(self, modname):
+        try:
+            mod = __import__(modname)
+        except Exception:
+            return
+        kwargs = {
+            "provision": True,
+            "base_sections": ["env", "DEFAULT"],
+            "template_prefix": "template.service.",
+        }
+        # mandatory attributes:
+        # - DRIVER_GROUP
+        # - DRIVER_BASENAME
+        # - KEYWORDS
+        try:
+            kwargs["keywords"] = [
+                dict(k, section=mod.DRIVER_GROUP, rtype=mod.DRIVER_BASENAME)
+                for k in getattr(mod, "KEYWORDS")
+            ]
+        except AttributeError:
+            return
+
+        # optional attributes:
+        # - DEPRECATED_SECTIONS
+        # - DEPRECATED_KEYWORDS
+        # - REVERSE_DEPRECATED_KEYWORDS
+        # - DRIVER_BASENAME_ALIASES
+        for kwarg in ("deprecated_sections", "deprecated_keywords", "reverse_deprecated_keywords"):
+            try:
+                kwargs[kwarg] = getattr(mod, kwarg.upper())
+            except:
+                pass
+        try:
+            aliases = getattr(mod, "DRIVER_BASENAME_ALIASES")
+        except AttributeError:
+            aliases = []
+        for alias in aliases:
+            kwargs["keywords"] += [
+                dict(k, section=mod.DRIVER_GROUP, rtype=alias)
+                for k in getattr(mod, "KEYWORDS")
+            ]
+
+        kwstore = KeywordStore(**kwargs)
+        return kwstore
 
     def __iadd__(self, o):
-        if not isinstance(o, Keyword):
+        if o is None:
             return self
+        if isinstance(o, Keyword):
+            return self.__iadd_keyword__(o)
+        if isinstance(o, KeywordStore):
+            return self.__iadd_keyword_store__(o)
+        if isinstance(o, str):
+            return self.__iadd_driver__(o)
+        return self
+
+    def __iadd_driver__(self, other):
+        if other in self.modules:
+            # already merged
+            return self
+        self += self.driver_kwstore(other)
+        self.modules.add(other)
+        return self
+
+    def __iadd_keyword_store__(self, other):
+        for section_name, section in other.sections.items():
+            if section_name not in self.sections:
+                self.sections[section_name] = Section(section_name, top=self)
+            rtype_key = self[section_name].getkey("type")
+            for kw in section.keywords:
+                self.sections[section_name] += kw
+                if rtype_key \
+                   and isinstance(rtype_key.candidates, list):
+                    rtypes = kw.rtype if kw.rtype is not None else [None]
+                    for rtype in rtypes:
+                        if rtype not in rtype_key.candidates:
+                            rtype_key.candidates.append(rtype)
+        self.deprecated_sections.update(other.deprecated_sections)
+        self.deprecated_keywords.update(other.deprecated_keywords)
+        self.reverse_deprecated_keywords.update(other.reverse_deprecated_keywords)
+        return self
+
+    def __iadd_keyword__(self, o):
         o.top = self
         if o.section not in self.sections:
             self.sections[o.section] = Section(o.section, top=self)

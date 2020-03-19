@@ -11,6 +11,20 @@ from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "docker"
+DRIVER_BASENAME_ALIASES = ["oci"]
+KEYWORDS = [
+    {
+        "keyword": "target",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "candidates": ["nodes", "drpnodes"],
+        "text": "Destination nodes of the sync."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

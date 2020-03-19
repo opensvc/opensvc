@@ -17,6 +17,67 @@ CAPABILITIES = {
     "cgroup_dir": "2.1",
 }
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "lxc"
+KEYWORDS = [
+    {
+        "keyword": "container_data_dir",
+        "at": True,
+        "text": "If this keyword is set, the service configures a resource-private container data store. This setup is allows stateful service relocalization.",
+        "example": "/srv/svc1/data/containers"
+    },
+    {
+        "keyword": "cf",
+        "text": "Defines a lxc configuration file in a non-standard location.",
+        "provisioning": True,
+        "example": "/srv/mycontainer/config"
+    },
+    {
+        "keyword": "rootfs",
+        "text": "Sets the root fs directory of the container",
+        "required": False,
+        "provisioning": True
+    },
+    {
+        "keyword": "template",
+        "text": "Sets the url of the template unpacked into the container root fs or the name of the template passed to :cmd:`lxc-create`.",
+        "required": True,
+        "provisioning": True
+    },
+    {   
+        "keyword": "template_options",
+        "text": "The arguments to pass through :cmd:`lxc-create` to the per-template script.",
+        "convert": "shlex",
+        "default": [],
+        "provisioning": True
+    },
+    {
+        "keyword": "mirror",
+        "text": "Sets the ``MIRROR`` environment variable for :cmd:`lxc-create`, pointing the distribution server to use.",
+        "provisioning": True
+    },
+    {
+        "keyword": "security_mirror",
+        "text": "Sets the ``SECURITY_MIRROR`` environment variable for :cmd:`lxc-create`, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
+        "provisioning": True
+    },
+    {
+        "keyword": "rcmd",
+        "convert": "shlex",
+        "at": True,
+        "example": "lxc-attach -e -n osvtavnprov01 -- ",
+        "text": "An container remote command override the agent default"
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

@@ -12,6 +12,59 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
 from rcUtilities import which, justcall, lazy, fcache
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "md"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "uuid",
+        "required": False,
+        "at": True,
+        "text": "The md uuid to use with mdadm assemble commands"
+    },
+    {
+        "keyword": "devs",
+        "required": True,
+        "at": True,
+        "convert": "list",
+        "provisioning": True,
+        "example": "/dev/rbd0 /dev/rbd1",
+        "text": "The md member devices to use with mdadm create command"
+    },
+    {
+        "keyword": "level",
+        "required": True,
+        "at": True,
+        "provisioning": True,
+        "required": True,
+        "example": "raid1",
+        "text": "The md raid level to use with mdadm create command (see mdadm man for values)"
+    },
+    {
+        "keyword": "layout",
+        "at": True,
+        "provisioning": True,
+        "text": "The md raid layout to use with mdadm create command (see mdadm man for values)"
+    },
+    {
+        "keyword": "chunk",
+        "at": True,
+        "provisioning": True,
+        "example": "128k",
+        "text": "The md chunk size to use with mdadm create command. Values are converted to kb and rounded to 4."
+    },
+    {
+        "keyword": "spares",
+        "at": True,
+        "provisioning": True,
+        "convert": "integer",
+        "example": "0",
+        "default": 0,
+        "text": "The md number of spare devices to use with mdadm create command"
+    },
+]
+DEPRECATED_KEYWORDS = {}
+REVERSE_DEPRECATED_KEYWORDS = {}
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

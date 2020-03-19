@@ -19,6 +19,31 @@ except ImportError:
     def get_url_path(url):
         return
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "vcloud"
+KEYWORDS = [
+    {
+        "keyword": "vapp",
+        "required": True,
+        "at": True,
+        "example": "MyVapp",
+        "text": "The Vcloud Virtual App hosting the VM."
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_SHARED_IP_GROUP,
+    resContainer.KW_SIZE,
+    resContainer.KW_KEY_NAME,
+    resContainer.KW_CLOUD_ID,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
