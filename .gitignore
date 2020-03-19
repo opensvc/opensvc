@@ -35,3 +35,4 @@ opensvc.iml
 usr/share/doc/template.*.*.conf
 usr/share/doc/template.*.*.example
 usr/share/doc/daemon.events
+usr/share/man/man?/*.?
