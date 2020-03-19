@@ -5,6 +5,44 @@ import os
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "task"
+DRIVER_BASENAME = "host"
+KEYWORDS = resTask.KEYWORDS + [
+    {
+        "keyword": "command",
+        "at": True, 
+        "required": True,
+        "text": "The command to execute on 'run' action and at scheduled interval. The default schedule for tasks is ``@0``.",
+        "example": "/srv/{name}/data/scripts/backup.sh"
+    },
+    { 
+        "keyword": "secrets_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "configs_environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "environment",
+        "at": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+]
+DEPRECATED_KEYWORDS = {}
+REVERSE_DEPRECATED_KEYWORDS = {}
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

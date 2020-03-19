@@ -11,6 +11,42 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "ibmdssnap"
+KEYWORDS = [
+    {
+        "keyword": "pairs",
+        "convert": "list",
+        "at": True,
+        "required": True,
+        "text": "Whitespace-separated list of device pairs.",
+        "example": "0065:0073 0066:0074"
+    },
+    {
+        "keyword": "array",
+        "at": True,
+        "required": True,
+        "text": "The name of the array holding the source devices and their paired devices.",
+        "example": "IBM.2243-12ABC00"
+    },
+    {
+        "keyword": "bgcopy",
+        "at": True,
+        "candidates": [True, False],
+        "required": True,
+        "convert": "boolean",
+        "text": "Initiate a background copy of the source data block to the paired devices upon resync."
+    },
+    {
+        "keyword": "recording",
+        "at": True,
+        "candidates": [True, False],
+        "required": True,
+        "convert": "boolean",
+        "text": "Track only changed data blocks instead of copying the whole source data to the paired devices."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

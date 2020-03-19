@@ -5,6 +5,112 @@ import rcExceptions as ex
 from rcUtilities import justcall, getaddr, lazy
 from rcGlobalEnv import rcEnv
 
+KW_START_TIMEOUT = {   
+    "keyword": "start_timeout",
+    "convert": "duration",
+    "at": True,
+    "text": "Wait for <duration> before declaring the container action a failure.",
+    "default": "240",
+    "example": "180"
+}
+KW_STOP_TIMEOUT = {   
+    "keyword": "stop_timeout",
+    "convert": "duration",
+    "at": True,
+    "text": "Wait for <duration> before declaring the container action a failure.",
+    "default": "120",
+    "example": "180"
+}
+KW_SNAP = {
+    "keyword": "snap",
+    "text": "The target snapshot/clone full path containing the new container disk files.",
+    "required": False,
+    "provisioning": True
+}
+KW_SNAPOF = {
+    "keyword": "snapof",
+    "text": "The snapshot origin full path containing the reference container disk files.",
+    "required": False,
+    "provisioning": True
+}
+KW_VIRTINST = {
+    "keyword": "virtinst",
+    "text": "The :cmd:`virt-install` command to use to create the container.",
+    "convert": "shlex",
+    "required": True,
+    "provisioning": True
+}
+KW_NO_PREEMPT_ABORT = {
+    "keyword": "no_preempt_abort",
+    "at": True,
+    "candidates": (True, False),
+    "default": False,
+    "convert": "boolean",
+    "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
+}
+KW_NAME = {
+    "keyword": "name",
+    "at": True,
+    "default_text": "The container name.",
+    "text": "Set if the container hostname is different from the container name."
+}
+KW_HOSTNAME = {
+    "keyword": "hostname",
+    "at": True,
+    "text": "This need to be set if the virtual machine hostname is different from the machine name."
+}
+KW_OSVC_ROOT_PATH = {
+    "keyword": "osvc_root_path",
+    "at": True,
+    "example": "/opt/opensvc",
+    "text": "If the OpenSVC agent is installed via package in the container, this parameter must not be set. Else the value can be set to the fullpath hosting the agent installed from sources."
+}
+KW_GUESTOS = {
+    "keyword": "guestos",
+    "at": True,
+    "candidates": ["unix", "windows"],
+    "text": "The operating system in the virtual machine."
+}
+KW_SHARED_IP_GROUP = {
+    "keyword": "shared_ip_group",
+    "at": True,
+    "text": "The cloud shared ip group name to allocate a public ip from."
+}
+KW_SIZE = {
+    "keyword": "size",
+    "at": True,
+    "text": "The cloud vm size, as known to the cloud manager.",
+    "example": "tiny"
+}
+KW_KEY_NAME = {
+    "keyword": "key_name",
+    "at": True,
+    "required": True,
+    "text": "The key name, as known to the cloud manager, to trust in the provisioned vm."
+}
+KW_CLOUD_ID = {
+    "keyword": "cloud_id",
+    "required": True,
+    "at": True,
+    "text": "The cloud id as configured in ``node.conf``.",
+    "example": "cloud#1"
+}
+KW_PROMOTE_RW = {
+    "keyword": "promote_rw",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
+}
+KW_SCSIRESERV = {
+    "keyword": "scsireserv",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
+}
+
+
 class Container(Res.Resource):
     """
     The container base class.

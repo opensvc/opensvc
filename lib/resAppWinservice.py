@@ -5,7 +5,7 @@ The module defining the app.simple resource class.
 try:
     import win32serviceutil
 except ImportError:
-    raise
+    pass
 
 import resApp
 import rcStatus
@@ -33,6 +33,15 @@ STATUS_STR = {
     7: "PAUSED",
 }
 
+DRIVER_GROUP = "app"
+DRIVER_BASENAME = "winservice"
+KEYWORDS = resApp.KEYWORDS + [
+    {
+        "keyword": "name",
+        "at": True,
+        "text": "The name of the Windows service."
+    },
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

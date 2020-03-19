@@ -6,6 +6,10 @@ import re
 import rcStatus
 import resDiskRaw
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "raw"
+KEYWORDS = resDiskRaw.KEYWORDS
+
 
 def adder(svc, s):
     resDiskRaw.adder(svc, s, drv=Disk)

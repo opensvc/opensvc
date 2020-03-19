@@ -31,7 +31,7 @@ from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, find_editor
+                        svc_pathcf, find_editor, mimport
 from contexts import want_context
 from converters import *
 import rcExceptions as ex
@@ -2748,6 +2748,13 @@ class Svc(BaseSvc):
     @lazy
     def kwstore(self):
         return __import__("svcdict").KEYS
+
+    @lazy
+    def full_kwstore(self):
+        return __import__("svcdict").full_kwstore()
+
+    def load_driver(self, driver_group, driver_basename):
+        return mimport("res", driver_group, driver_basename, kwstore=self.kwstore)
 
     @lazy
     def ha(self):

@@ -14,6 +14,47 @@ from rcUtilities import bdecode, lazy
 from converters import print_duration
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "zfs"
+KEYWORDS = [
+    {
+        "keyword": "src",
+        "at": True,
+        "required": True,
+        "text": "Source dataset of the sync."
+    },
+    {
+        "keyword": "dst",
+        "at": True,
+        "required": True,
+        "text": "Destination dataset of the sync."
+    },
+    {
+        "keyword": "target",
+        "convert": "list",
+        "required": True,
+        "candidates": ['nodes', 'drpnodes', 'local'],
+        "text": "Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+    },
+    {
+        "keyword": "recursive",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+    },
+    {
+        "keyword": "tags",
+        "convert": "set",
+        "default": set(),
+        "default_text": "",
+        "example": "delay_snap",
+        "at": True,
+        "text": "The zfs sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the sync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

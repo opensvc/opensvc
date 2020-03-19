@@ -9,6 +9,36 @@ import resSync
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "hp3par"
+KEYWORDS = [
+    {
+        "keyword": "array",
+        "required": True,
+        "at": True,
+        "text": "Name of the HP 3par array to send commands to."
+    },
+    {
+        "keyword": "mode",
+        "required": True,
+        "candidates": ["async", "sync"],
+        "text": "Replication mode: Synchronous or Asynchronous"
+    },
+    {
+        "keyword": "method",
+        "candidates": ["ssh", "cli"],
+        "default": "ssh",
+        "at": True,
+        "text": "The method to use to submit commands to the arrays."
+    },
+    {
+        "keyword": "rcg",
+        "required": True,
+        "at": True,
+        "text": "Name of the HP 3par remote copy group. The scoping syntax must be used to fully describe the replication topology."
+    },
+]
+
 
 def adder(svc, s):
     kwargs = {}

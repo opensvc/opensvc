@@ -5,7 +5,7 @@ import rcStatus
 import rcExceptions as ex
 import resources as Res
 import resContainer
-import resDiskHpVm
+import resDiskHpvm
 
 from rcUtilities import qcall
 from rcGlobalEnv import rcEnv
@@ -13,15 +13,29 @@ from svcBuilder import init_kwargs, container_kwargs
 
 u = __import__('rcUtilitiesHP-UX')
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "hpvm"
+KEYWORDS = [
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
-    r = HpVm(**kwargs)
+    r = Hpvm(**kwargs)
     svc += r
 
 
-class HpVm(resContainer.Container):
+class Hpvm(resContainer.Container):
     def __init__(self,
                  rid,
                  name,
@@ -35,7 +49,7 @@ class HpVm(resContainer.Container):
                                         guestos=guestos,
                                         osvc_root_path=osvc_root_path,
                                         **kwargs)
-        self.vg = resDiskHpVm.Disk(
+        self.vg = resDiskHpvm.Disk(
             rid = 'vmdg#'+self.rid,
             name = 'vmdg_'+self.name,
             container_name = self.name

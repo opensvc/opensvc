@@ -8,6 +8,10 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which
 from svcBuilder import sync_kwargs
 
+DRIVER_GROUP = "sync"
+DRIVER_BASENAME = "symclone"
+KEYWORDS = resSyncSymclone.KEYWORDS
+
 
 def adder(svc, s, drv=None, t="sync.symclone"):
     drv = drv or SyncSymclone

@@ -2,12 +2,28 @@ import time
 import resIpSunOS as Res
 import rcExceptions as ex
 from subprocess import *
+from resIp import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, to_cidr, justcall
 from svcBuilder import init_kwargs
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "crossbow"
+KEYWORDS = [
+    KW_IPNAME,
+    KW_IPDEV,
+    {
+        "keyword": "ipdevext",
+        "at": True,
+        "example": "v4",
+        "default": "v4",
+        "text": "The interface name extension for crossbow ipadm configuration."
+    },
+    KW_NETMASK,
+    KW_GATEWAY,
+] + COMMON_KEYWORDS
 
 def adder(svc, s):
     """

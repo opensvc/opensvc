@@ -31,6 +31,52 @@ VALID_ACTIONS = [
     "clone"
 ]
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "zone"
+KEYWORDS = [
+    {
+        "keyword": "delete_on_stop",
+        "at": True,
+        "candidates": (True, False),
+        "text": "If set to ``true``, the zone configuration is deleted after a resource stop. The agent maintains an export of the configuration for the next start. This export is replicated to the other nodes and drp nodes so they can take over the zone even if it is completely hosted on a shared disk.",
+        "default": False,
+        "convert": "boolean",
+    },
+    {
+        "keyword": "zonepath",
+        "at": True,
+        "text": "The zone path used to provision the container.",
+        "provisioning": True,
+    },
+    {
+        "keyword": "container_origin",
+        "text": "The origin container having the reference container disk files.",
+        "provisioning": True
+    },
+    {
+        "keyword": "rootfs",
+        "text": "Sets the root fs directory of the container",
+        "required": False,
+        "provisioning": True
+    },
+    {
+        "keyword": "template",
+        "text": "Sets the url of the template unpacked into the container root fs.",
+        "required": True,
+        "provisioning": True
+    },
+    resContainer.KW_SNAP,
+    resContainer.KW_SNAPOF,
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

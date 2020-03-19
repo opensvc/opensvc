@@ -2,10 +2,25 @@
 """
 
 import resources as Res
+import resDisk
 import rcStatus
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "vdisk"
+KEYWORDS = resDisk.KEYWORDS + [
+    {
+        "keyword": "path",
+        "required": True,
+        "at": True,
+        "text": "Path of the device or file used as a virtual machine disk. The path@nodename can be used to to set up different path on each node."
+    },
+]
+DEPRECATED_SECTIONS = {
+    "vdisk": ["disk", "vdisk"],
+}
 
 
 def adder(svc, s):

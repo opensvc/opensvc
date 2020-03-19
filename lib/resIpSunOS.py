@@ -4,6 +4,10 @@ from rcUtilitiesSunOS import check_ping
 import rcExceptions as ex
 from svcBuilder import init_kwargs
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = None
+KEYWORDS = Res.KEYWORDS
+
 
 def adder(svc, s, drv=None):
     """

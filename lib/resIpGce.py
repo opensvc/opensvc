@@ -7,9 +7,30 @@ from rcUtilities import getaddr, justcall
 import json
 import rcGce
 from svcBuilder import init_kwargs
+from resIp import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "gce"
+KEYWORDS = [
+    KW_IPNAME,
+    KW_IPDEV,
+    KW_NETMASK,
+    KW_GATEWAY,
+    {
+        "keyword": "routename",
+        "at": True,
+        "text": "Set the gce route name",
+        "example": "rt-ip1"
+    },
+    {
+        "keyword": "gce_zone",
+        "at": True,
+        "text": "Set the gce ip route next hop zone",
+        "example": "europe-west1-b"
+    },
+] + COMMON_KEYWORDS
 
 def adder(svc, s):
     """

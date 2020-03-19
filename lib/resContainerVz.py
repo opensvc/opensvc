@@ -8,6 +8,32 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs, container_kwargs
 
+DRIVER_GROUP = "container"
+DRIVER_BASENAME = "vz"
+KEYWORDS = [
+    {
+        "keyword": "rootfs",
+        "text": "Sets the root fs directory of the container",
+        "required": False,
+        "provisioning": True
+    },
+    {
+        "keyword": "template",
+        "text": "Sets the url of the template unpacked into the container root fs.",
+        "required": True,
+        "provisioning": True
+    },
+    resContainer.KW_START_TIMEOUT,
+    resContainer.KW_STOP_TIMEOUT,
+    resContainer.KW_NO_PREEMPT_ABORT,
+    resContainer.KW_NAME,
+    resContainer.KW_HOSTNAME,
+    resContainer.KW_OSVC_ROOT_PATH,
+    resContainer.KW_GUESTOS,
+    resContainer.KW_PROMOTE_RW,
+    resContainer.KW_SCSIRESERV,
+]
+
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs.update(container_kwargs(svc, s))
