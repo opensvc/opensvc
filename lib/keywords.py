@@ -367,6 +367,7 @@ class Section(object):
                 keyword = self.top.deprecated_keywords[fkey]
                 if keyword is None:
                     return
+            fallback = None
             for k in self.keywords:
                 if k.keyword != keyword:
                     continue
@@ -375,7 +376,9 @@ class Section(object):
                 if rtype == k.rtype:
                     return k
                 if k.rtype is None:
-                    return k
+                    fallback = k
+            if fallback:
+                return fallback
         else:
             fkey = ".".join((self.section, keyword))
             if self.top is not None and fkey in self.top.deprecated_keywords:
