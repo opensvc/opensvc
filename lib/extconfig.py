@@ -1162,13 +1162,16 @@ class ExtConfigMixin(object):
                     continue
                 family = section.split("#")[0]
                 rtype = self.get_rtype(section, family, cd)
-                if family not in ("DEFAULT", "env", "data"):
+                if family not in ("DEFAULT", "labels", "env", "data", "subset"):
                     try:
                         loader = self.load_driver
                     except AttributeError:
                         pass
                     else:
-                        loader(family, rtype)
+                        try:
+                            loader(family, rtype)
+                        except Exception:
+                            pass
                 if family not in list(self.kwstore.sections.keys()) + list(self.kwstore.deprecated_sections.keys()):
                     self.log.warning("ignored section %s", section)
                     ret["warnings"] += 1
