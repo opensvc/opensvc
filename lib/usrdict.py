@@ -181,6 +181,7 @@ KEYWORDS = [
 
 
 KEYS = KeywordStore(
+    name="usr",
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
