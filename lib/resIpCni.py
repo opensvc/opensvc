@@ -7,7 +7,15 @@ import json
 import socket
 from subprocess import Popen, PIPE
 
-from resIp import COMMON_KEYWORDS
+from resIp import \
+    KW_WAIT_DNS, \
+    KW_DNS_NAME_SUFFIX, \
+    KW_PROVISIONER, \
+    KW_NETWORK, \
+    KW_DNS_UPDATE, \
+    KW_CHECK_CARRIER, \
+    KW_ALIAS, \
+    KW_EXPOSE
 import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
@@ -60,7 +68,14 @@ KEYWORDS = [
         "required": False,
         "text": "The interface name in the container namespace."
     },
-] + COMMON_KEYWORDS
+    KW_WAIT_DNS,
+    KW_DNS_NAME_SUFFIX,
+    KW_PROVISIONER,
+    KW_DNS_UPDATE,
+    KW_CHECK_CARRIER,
+    KW_ALIAS,
+    KW_EXPOSE,
+]
 DEPRECATED_KEYWORDS = {
     "ip.cni.container_rid": "netns",
 }
