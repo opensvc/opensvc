@@ -13,21 +13,6 @@ import rcConfigParser
 from rcUtilities import mimport, list_services, \
                         svc_pathetc, split_path, makedirs, factory
 
-DRV_GRP_XLATE = {
-    "drbd": ["disk", "drbd"],
-    "vdisk": ["disk", "vdisk"],
-    "vmdg": ["disk", "ldom"],
-    "pool": ["disk", "zpool"],
-    "zpool": ["disk", "zpool"],
-    "loop": ["disk", "loop"],
-    "md": ["disk", "md"],
-    "zvol": ["disk", "zvol"],
-    "lv": ["disk", "lv"],
-    "raw": ["disk", "raw"],
-    "vxdg": ["disk", "vxdg"],
-    "vxvol": ["disk", "vxvol"],
-}
-
 def get_tags(svc, section):
     try:
         s = svc.oget(section, "tags")
@@ -175,20 +160,6 @@ def add_resource(svc, driver_group, s):
         driver_basename = svc.oget(s, "type")
     except Exception:
         driver_basename = ""
-
-    try:
-        driver_group, driver_basename = DRV_GRP_XLATE[driver_group]
-    except KeyError:
-        pass
-
-    if driver_group in ("container", "task") and driver_basename == "oci":
-        driver_basename = svc.node.oci
-    elif driver_group == "ip" and driver_basename == "docker":
-        driver_basename = "netns"
-    elif driver_group == "disk" and driver_basename == "lvm":
-        driver_basename = "vg"
-    elif driver_group == "disk" and driver_basename == "veritas":
-        driver_basename = "vxdg"
 
     try:
         mod = svc.load_driver(driver_group, driver_basename)

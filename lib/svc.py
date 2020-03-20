@@ -383,6 +383,21 @@ TOPOLOGIES = [
     "span",
 ]
 
+DRV_GRP_XLATE = {
+    "drbd": ["disk", "drbd"],
+    "vdisk": ["disk", "vdisk"],
+    "vmdg": ["disk", "ldom"],
+    "pool": ["disk", "zpool"],
+    "zpool": ["disk", "zpool"],
+    "loop": ["disk", "loop"],
+    "md": ["disk", "md"],
+    "zvol": ["disk", "zvol"],
+    "lv": ["disk", "lv"],
+    "raw": ["disk", "raw"],
+    "vxdg": ["disk", "vxdg"],
+    "vxvol": ["disk", "vxvol"],
+}
+
 STATS_INTERVAL = 1
 
 init_locale()
@@ -2754,6 +2769,18 @@ class Svc(BaseSvc):
         return __import__("svcdict").full_kwstore()
 
     def load_driver(self, driver_group, driver_basename):
+        try:
+            driver_group, driver_basename = DRV_GRP_XLATE[driver_group]
+        except KeyError:
+            pass
+        if driver_group in ("container", "task") and driver_basename == "oci":
+            driver_basename = self.node.oci
+        elif driver_group == "ip" and driver_basename == "docker":
+            driver_basename = "netns"
+        elif driver_group == "disk" and driver_basename == "lvm":
+            driver_basename = "vg"
+        elif driver_group == "disk" and driver_basename == "veritas":
+            driver_basename = "vxdg"
         return mimport("res", driver_group, driver_basename)
 
     @lazy
