@@ -1,4 +1,5 @@
 from resData import Data
+from svcdict import KEYS
 
 DRIVER_GROUP = "hashpolicy"
 DRIVER_BASENAME = "envoy"
@@ -30,6 +31,13 @@ KEYWORDS = [
         "text": "Shortcircuits the hash computing. This field provides a fallback style of configuration: if a terminal policy doesn't work, fallback to rest of the policy list. It saves time when the terminal policy works.",
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {"rid": s}

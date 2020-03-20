@@ -12,6 +12,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from converters import print_duration
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "btrfs"
@@ -47,6 +48,12 @@ KEYWORDS = [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {}

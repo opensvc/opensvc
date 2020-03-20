@@ -2,6 +2,7 @@ import resources as Res
 import resDisk
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "loop"
@@ -22,12 +23,17 @@ KEYWORDS = resDisk.KEYWORDS + [
         "text": "The loopback device backing file full path."
     },
 ]
-DEPRECATED_KEYWORDS = {}
-REVERSE_DEPRECATED_KEYWORDS = {}
 DEPRECATED_SECTIONS = {
     "loop": ["disk", "loop"],
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+)
 
 def adder(svc, s, drv=None):
     drv = drv or Disk

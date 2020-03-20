@@ -7,6 +7,7 @@ import resDisk
 
 from subprocess import *
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "ldom"
@@ -21,6 +22,14 @@ KEYWORDS = resDisk.KEYWORDS + [
 DEPRECATED_SECTIONS = {
     "vmdg": ["disk", "ldom"],
 }
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

@@ -6,6 +6,7 @@ import rcExceptions as ex
 from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "drbd"
@@ -20,6 +21,13 @@ DEPRECATED_SECTIONS = {
     "drbd": ["disk", "drbd"],
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

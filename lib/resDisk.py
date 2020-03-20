@@ -43,7 +43,6 @@ KEYWORDS = [
     KW_SCSIRESERV,
 ]
 
-
 class Disk(Res.Resource):
     """
     Base disk resource driver, derived for LVM, Veritas, ZFS, ...

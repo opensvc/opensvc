@@ -1,5 +1,7 @@
 import resSyncSymclone
 
+from svcdict import KEYS
+
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symsnap"
 KEYWORDS = [
@@ -38,6 +40,13 @@ KEYWORDS = [
         "text": "Use :opt:`-consistent` in symclone commands.",
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     resSyncSymclone.adder(svc, s, drv=SyncSymsnap, t="sync.symsnap")

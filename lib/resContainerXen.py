@@ -6,6 +6,7 @@ import resContainer
 
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 
 rcU = __import__("rcUtilities" + os.uname()[0])
 
@@ -26,6 +27,12 @@ KEYWORDS = [
     resContainer.KW_SCSIRESERV,
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

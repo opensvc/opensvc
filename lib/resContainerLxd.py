@@ -6,6 +6,7 @@ from rcUtilities import which, justcall, lazy
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 import resContainer
 import rcExceptions as ex
 
@@ -43,6 +44,13 @@ KEYWORDS = [
     resContainer.KW_PROMOTE_RW,
     resContainer.KW_SCSIRESERV,
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

@@ -8,6 +8,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr, lazy
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "netns"
@@ -82,6 +83,16 @@ DEPRECATED_SECTIONS = {
     "ip.docker": ["ip", "netns"],
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+)
 
 def adder(svc, s):
     """

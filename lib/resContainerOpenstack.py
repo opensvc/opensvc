@@ -7,6 +7,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
 from rcUtilitiesLinux import check_ping
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 import resContainer
 
 DRIVER_GROUP = "container"
@@ -27,6 +28,12 @@ KEYWORDS = [
     resContainer.KW_SCSIRESERV,
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

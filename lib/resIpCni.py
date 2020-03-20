@@ -24,6 +24,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from rcColor import format_str_flat_json
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 CNI_VERSION = "0.3.0"
 PORTMAP_CONF = {
@@ -83,6 +84,14 @@ REVERSE_DEPRECATED_KEYWORDS = {
     "ip.cni.netns": "container_rid",
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
+)
 
 def adder(svc, s):
     """

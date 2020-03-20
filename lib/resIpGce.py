@@ -8,6 +8,7 @@ import json
 import rcGce
 from svcBuilder import init_kwargs
 from resIp import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
+from svcdict import KEYS
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
@@ -31,6 +32,13 @@ KEYWORDS = [
         "example": "europe-west1-b"
     },
 ] + COMMON_KEYWORDS
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     """
