@@ -3,10 +3,18 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilitiesLinux import check_ping
 from rcUtilities import which, to_cidr, to_dotted
+from svcdict import KEYS
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = None
 KEYWORDS = Res.KEYWORDS
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)

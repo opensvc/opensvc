@@ -2754,7 +2754,7 @@ class Svc(BaseSvc):
         return __import__("svcdict").full_kwstore()
 
     def load_driver(self, driver_group, driver_basename):
-        return mimport("res", driver_group, driver_basename, kwstore=self.kwstore)
+        return mimport("res", driver_group, driver_basename)
 
     @lazy
     def ha(self):

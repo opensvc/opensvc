@@ -7,11 +7,12 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              devs_to_disks, udevadm_settle
 from rcUtilities import which, justcall, cache, lazy
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"
 DRIVER_BASENAME_ALIASES = ["lvm"]
-KEYWORDS = resDisk.KEYWORDS + [
+KEYWORDS = [
     {
         "keyword": "name",
         "at": True,
@@ -31,7 +32,7 @@ KEYWORDS = resDisk.KEYWORDS + [
         "text": "The list of paths to the physical volumes of the volume group.",
         "provisioning": True
     },
-]
+] + resDisk.KEYWORDS
 DEPRECATED_KEYWORDS = {
     "disk.lvm.vgname": "name",
     "disk.vg.vgname": "name",
@@ -44,6 +45,16 @@ DEPRECATED_SECTIONS = {
     "vg": ["disk", "vg"],
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

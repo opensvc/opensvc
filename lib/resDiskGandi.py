@@ -11,6 +11,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string, lazy
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "gandi"
@@ -41,6 +42,12 @@ KEYWORDS = resDisk.KEYWORDS + [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

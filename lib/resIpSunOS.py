@@ -3,11 +3,18 @@ from subprocess import *
 from rcUtilitiesSunOS import check_ping
 import rcExceptions as ex
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = None
 KEYWORDS = Res.KEYWORDS
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s, drv=None):
     """

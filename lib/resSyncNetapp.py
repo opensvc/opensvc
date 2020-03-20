@@ -9,6 +9,7 @@ import resSync
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "netapp"
@@ -31,6 +32,13 @@ KEYWORDS = [
         "text": "Specifies the user used to ssh connect the filers. Nodes should be trusted by keys to access the filer with this user."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {}
