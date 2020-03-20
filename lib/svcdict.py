@@ -1370,10 +1370,10 @@ KEYS = KeywordStore(
 )
 
 def full_kwstore():
-    kwstore = KEYS
+    global KEYS
     for modname in list_drivers(SECTIONS + DATA_SECTIONS):
-        kwstore += modname
-    return kwstore
+        KEYS += modname
+    return KEYS
 
 
 if __name__ == "__main__":
