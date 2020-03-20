@@ -300,12 +300,13 @@ def mimport(*args, **kwargs):
 
     if mod:
         return mod
-
+    if not kwargs.get("head"):
+        kwargs["head"] = modname
     if kwargs.get("fallback", True) and len(args) > 1:
         args = args[:-1]
         return mimport(*args, **kwargs)
     else:
-        raise ImportError("no module found: %s" % args)
+        raise ImportError("no module found: %s" % kwargs["head"])
 
 
 def ximport(base):
