@@ -1,4 +1,5 @@
 from resData import Data
+from svcdict import KEYS
 
 DRIVER_GROUP = "route"
 DRIVER_BASENAME = "envoy"
@@ -87,6 +88,13 @@ KEYWORDS = [
         "text": "The list of hash policy resource ids for the route. Honored if lb_policy is set to ring_hash or maglev.",
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {"rid": s}

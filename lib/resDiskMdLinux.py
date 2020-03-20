@@ -11,6 +11,7 @@ from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              dev_to_paths
 from rcUtilities import which, justcall, lazy, fcache
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "md"
@@ -62,9 +63,13 @@ KEYWORDS = resDisk.KEYWORDS + [
         "text": "The md number of spare devices to use with mdadm create command"
     },
 ]
-DEPRECATED_KEYWORDS = {}
-REVERSE_DEPRECATED_KEYWORDS = {}
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

@@ -12,6 +12,7 @@ from rcUtilities import lazy, which, justcall
 from rcUtilitiesLinux import multipath_flush, dev_delete, dev_to_paths
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"
@@ -23,6 +24,12 @@ def adder(svc, s):
     r = Disk(**kwargs)
     svc += r
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 class Disk(resDiskDisk.Disk):
     @lazy

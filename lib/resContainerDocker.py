@@ -16,6 +16,7 @@ from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from converters import print_duration
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "docker"
@@ -216,6 +217,16 @@ REVERSE_DEPRECATED_KEYWORDS = {
     "container.oci.netns": "net",
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+)
+
 
 ATTR_MAP = {
     "hostname": {
@@ -259,7 +270,6 @@ ATTR_MAP = {
         "cmp": "cmp_ns",
     },
 }
-
 
 def adder(svc, s, drv=None):
     drv = drv or Container

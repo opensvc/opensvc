@@ -12,6 +12,7 @@ import rcStatus
 import resSync
 
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 os.environ['PATH'] += ":/usr/symcli/bin"
 set_sym_env()
@@ -39,6 +40,13 @@ KEYWORDS = [
         "text": "Name of the RDF group pairing the source and target devices."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {}

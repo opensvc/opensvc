@@ -7,6 +7,7 @@ import rcExceptions as ex
 from rcAmazon import AmazonMixin
 from rcUtilities import getaddr
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
@@ -42,6 +43,13 @@ KEYWORDS = [
     },
 
 ] + COMMON_KEYWORDS
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     """

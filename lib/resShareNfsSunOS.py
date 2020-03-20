@@ -8,11 +8,18 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which
 from resources import Resource
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"
 KEYWORDS = resShareNfs.KEYWORDS
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s) 
