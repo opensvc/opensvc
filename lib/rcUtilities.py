@@ -291,18 +291,14 @@ def mimport(*args, **kwargs):
     def import_mod(modname):
         for mn in (modname + rcEnv.sysname, modname):
             try:
-                return mn, __import__(mn)
+                return __import__(mn)
             except ImportError:
                 pass
-        return None, None
 
     modname = fmt_modname(args)
-    modname, mod = import_mod(modname)
+    mod = import_mod(modname)
 
     if mod:
-        kwstore = kwargs.get("kwstore")
-        if kwstore is not None:
-            kwstore += modname
         return mod
 
     if kwargs.get("fallback", True) and len(args) > 1:

@@ -5,6 +5,7 @@ import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_string, lazy
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 import pwd
 import grp
 import stat
@@ -37,6 +38,13 @@ KEYWORDS = [
         "text": "The permissions the directory should have. A string representing the octal permissions."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

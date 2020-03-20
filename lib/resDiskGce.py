@@ -9,6 +9,7 @@ import rcGce
 from rcGlobalEnv import *
 from rcUtilities import justcall
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "gce"
@@ -73,6 +74,12 @@ KEYWORDS = resDisk.KEYWORDS + [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

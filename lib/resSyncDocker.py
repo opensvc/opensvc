@@ -10,6 +10,7 @@ import rcContainer
 from rcUtilities import justcall, lazy
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "docker"
@@ -25,6 +26,13 @@ KEYWORDS = [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+)
 
 def adder(svc, s):
     kwargs = {}

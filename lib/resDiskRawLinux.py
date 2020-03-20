@@ -6,11 +6,18 @@ import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import justcall, cache, lazy
 from rcUtilitiesLinux import devs_to_disks
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"
 KEYWORDS = resDiskRaw.KEYWORDS
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     resDiskRaw.adder(svc, s, drv=Disk)

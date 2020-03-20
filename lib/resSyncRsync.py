@@ -11,6 +11,7 @@ from converters import convert_speed, convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "rsync"
@@ -81,6 +82,13 @@ DEPRECATED_KEYWORDS = {
     "sync.rsync.exclude": None,
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+)
 
 def adder(svc, s):
     if s.startswith("sync#i"):

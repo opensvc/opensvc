@@ -7,6 +7,7 @@ import resources as Res
 from rcUtilitiesFreeBSD import check_ping
 from rcUtilities import qcall
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 import resContainer
 import rcExceptions as ex
 
@@ -41,6 +42,12 @@ KEYWORDS = [
     resContainer.KW_SCSIRESERV,
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

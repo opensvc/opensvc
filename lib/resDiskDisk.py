@@ -7,8 +7,8 @@ import resources as Res
 import resDisk
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
+from svcdict import KEYS
 import rcExceptions as ex
-
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"
@@ -62,6 +62,12 @@ KEYWORDS = resDisk.KEYWORDS + [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 class Disk(Res.Resource):
     """

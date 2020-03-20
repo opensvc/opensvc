@@ -6,6 +6,7 @@ from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 from rcUtilities import qcall, which, justcall
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vxdg"
@@ -28,6 +29,14 @@ DEPRECATED_SECTIONS = {
     "disk.veritas": ["disk", "vxdg"],
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    deprecated_sections=DEPRECATED_SECTIONS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

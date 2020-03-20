@@ -1,4 +1,5 @@
 from resData import Data
+from svcdict import KEYS
 
 DRIVER_GROUP = "vhost"
 DRIVER_BASENAME = "envoy"
@@ -19,6 +20,13 @@ KEYWORDS = [
         "text": "The list of route resource identifiers for this vhost."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {"rid": s}

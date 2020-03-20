@@ -1,4 +1,5 @@
 from resData import Data
+from svcdict import KEYS
 
 DRIVER_GROUP = "expose"
 DRIVER_BASENAME = "envoy"
@@ -84,6 +85,13 @@ KEYWORDS = [
         "text": "Local filesystem data source of the TLS private key used to communicate with cluster endpoints."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = {"rid": s}

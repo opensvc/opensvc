@@ -11,6 +11,7 @@ from converters import print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy
 from svcBuilder import sync_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symclone"
@@ -57,6 +58,13 @@ KEYWORDS = [
         "text": "Use :opt:`-consistent` in symclone commands.",
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s, drv=None, t="sync.symclone"):
     drv = drv or SyncSymclone

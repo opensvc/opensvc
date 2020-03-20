@@ -101,8 +101,6 @@ KEYWORDS = [
         "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
 ]
-DEPRECATED_KEYWORDS = {}
-REVERSE_DEPRECATED_KEYWORDS = {}
 
 
 class Task(Res.Resource):
