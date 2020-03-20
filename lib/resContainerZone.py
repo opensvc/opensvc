@@ -12,6 +12,7 @@ from rcUtilitiesSunOS import get_solaris_version
 from rcZfs import zfs_setprop
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
 
 ZONECFG = "/usr/sbin/zonecfg"
 ZONEADM = "/usr/sbin/zoneadm"
@@ -77,6 +78,13 @@ KEYWORDS = [
     resContainer.KW_PROMOTE_RW,
     resContainer.KW_SCSIRESERV,
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

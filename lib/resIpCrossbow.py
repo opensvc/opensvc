@@ -6,6 +6,7 @@ from resIp import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, to_cidr, justcall
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
@@ -24,6 +25,13 @@ KEYWORDS = [
     KW_NETMASK,
     KW_GATEWAY,
 ] + COMMON_KEYWORDS
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     """

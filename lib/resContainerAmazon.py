@@ -1,13 +1,17 @@
-import rcStatus
-import resources as Res
-import time
 import os
+import time
+
 import rcExceptions as ex
+import rcStatus
+import resContainer
+import resources as Res
+
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
 from rcUtilitiesLinux import check_ping
+from svcdict import KEYS
 from svcBuilder import init_kwargs, container_kwargs
-import resContainer
+
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "amazon"
@@ -26,6 +30,13 @@ KEYWORDS = [
     resContainer.KW_PROMOTE_RW,
     resContainer.KW_SCSIRESERV,
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)

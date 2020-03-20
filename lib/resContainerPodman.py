@@ -14,6 +14,7 @@ import rcStatus
 from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get_options
 from rcGlobalEnv import rcEnv
+from svcdict import KEYS
 import resContainerDocker
 
 DRIVER_GROUP = "container"
@@ -37,6 +38,15 @@ REVERSE_DEPRECATED_KEYWORDS = {
     "container.oci.netns": "net",
 }
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
+    deprecated_keywords=DEPRECATED_KEYWORDS,
+    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
+)
 
 def adder(svc, s):
     resContainerDocker.adder(svc, s, drv=Container)

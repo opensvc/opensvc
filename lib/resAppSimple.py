@@ -14,6 +14,7 @@ import rcExceptions as ex
 from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "app"
 DRIVER_BASENAME = "simple"
@@ -159,6 +160,13 @@ KEYWORDS = resApp.KEYWORDS + [
         "text": "Change the working directory to the specified location instead of the default ``<pathtmp>``."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 
 def adder(svc, s, drv=None):

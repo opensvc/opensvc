@@ -4,6 +4,7 @@ import os
 
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "host"
@@ -40,9 +41,13 @@ KEYWORDS = resTask.KEYWORDS + [
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
 ]
-DEPRECATED_KEYWORDS = {}
-REVERSE_DEPRECATED_KEYWORDS = {}
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
