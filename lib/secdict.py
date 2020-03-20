@@ -175,6 +175,7 @@ KEYWORDS = [
 
 
 KEYS = KeywordStore(
+    name="sec",
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
