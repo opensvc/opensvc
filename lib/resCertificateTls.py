@@ -1,4 +1,5 @@
 from resData import Data
+from svcdict import KEYS
 
 DRIVER_GROUP = "certificate"
 DRIVER_BASENAME = "tls"
@@ -34,6 +35,13 @@ KEYWORDS = [
         "text": "String inlined filesystem data source of the TLS private key. A reference to a secret for example."
     },
 ]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     rtype = svc.oget(s, "type")

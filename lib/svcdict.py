@@ -2,7 +2,7 @@ import sys
 
 from keywords import KeywordStore
 from rcGlobalEnv import rcEnv
-from rcUtilities import list_drivers
+from rcUtilities import list_drivers, mimport
 
 SECTIONS = [
     "DEFAULT",

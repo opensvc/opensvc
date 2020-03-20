@@ -17,6 +17,7 @@ from rcUtilities import qcall, which, getaddr, lazy, to_cidr
 from converters import convert_duration, print_duration
 from arp import send_arp
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
 
@@ -136,6 +137,12 @@ KEYWORDS = [
     KW_ZONE,
 ] + COMMON_KEYWORDS
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s, drv=None):
     """

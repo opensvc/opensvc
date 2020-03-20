@@ -299,13 +299,19 @@ class Section(object):
             s += "[%s]\n" % self.section
         else:
             s += "[%s#rindex]\n" % self.section
+        done = []
         if rtype is not None:
             s += ";type = " + rtype + "\n\n"
             for keyword in sorted(self.getkeys(rtype)):
                 s += keyword.template(fmt="text")
+                done.append(keyword.keyword)
         for keyword in sorted(self.getprovkeys(rtype)):
+            if keyword.keyword in done:
+                continue
             s += keyword.template(fmt="text")
         for keyword in sorted(self.getkeys()):
+            if keyword.keyword in done:
+                continue
             if keyword.keyword == "type":
                 continue
             s += keyword.template(fmt="text")
@@ -434,11 +440,36 @@ class KeywordStore(dict):
             n += len(section.keywords)
         return n
 
-    def driver_kwstore(self, modname):
-        try:
-            mod = __import__(modname)
-        except Exception:
-            return
+    def register_driver(self, driver_group, driver_basename, keywords=None, driver_basename_aliases=None, **kwargs):
+        keywords = [
+            dict(k, section=driver_group, rtype=driver_basename) for k in keywords
+        ]
+        self += KeywordStore(
+            keywords=keywords,
+            **kwargs
+        )
+        driver_basename_aliases = driver_basename_aliases or []
+        for alias in driver_basename_aliases:
+            keywords = [
+                dict(k, section=driver_group, rtype=alias) for k in keywords
+            ]
+            self += KeywordStore(
+                keywords=keywords,
+                **kwargs
+            )
+
+    def driver_kwstore(self, mod=None, modname=None):
+        if mod is None:
+            try:
+                mod = __import__(modname)
+            except Exception:
+                return
+        if modname is None:
+            modname = mod.__name__
+        if modname in self.modules:
+            # already merged
+            return self
+        self.modules.add(modname)
         kwargs = {
             "name": modname,
             "provision": True,
@@ -490,16 +521,17 @@ class KeywordStore(dict):
         if isinstance(o, KeywordStore):
             return self.__iadd_keyword_store__(o)
         if isinstance(o, str):
+            return self.__iadd_drivername__(o)
+        if hasattr(o, "KEYWORDS"):
             return self.__iadd_driver__(o)
         return self
 
     def __iadd_driver__(self, other):
-        if other in self.modules:
-            # already merged
-            return self
-        #print(" ", other)
-        self += self.driver_kwstore(other)
-        self.modules.add(other)
+        self += self.driver_kwstore(mod=other)
+        return self
+
+    def __iadd_drivername__(self, other):
+        self += self.driver_kwstore(modname=other)
         return self
 
     def __iadd_keyword_store__(self, other):

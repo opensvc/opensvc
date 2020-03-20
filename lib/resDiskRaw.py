@@ -10,6 +10,7 @@ import glob
 import rcExceptions as ex
 from rcUtilities import which, is_string, lazy
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"
@@ -56,6 +57,12 @@ KEYWORDS = resDisk.KEYWORDS + [
     },
 ]
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s, drv=None):
     drv = drv or Disk

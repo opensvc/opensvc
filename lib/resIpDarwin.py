@@ -2,10 +2,18 @@ import resIp as Res
 import rcExceptions as ex
 from rcUtilitiesFreeBSD import check_ping
 from rcUtilities import to_cidr
+from svcdict import KEYS
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = None
 KEYWORDS = Res.KEYWORDS
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     Res.adder(svc, s, drv=Ip)

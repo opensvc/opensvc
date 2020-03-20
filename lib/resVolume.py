@@ -8,6 +8,7 @@ import rcExceptions as ex
 import rcStatus
 from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob
 from svcBuilder import init_kwargs
+from svcdict import KEYS
 
 DRIVER_GROUP = "volume"
 DRIVER_BASENAME = None
@@ -74,9 +75,13 @@ KEYWORDS = [
         "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
     },
 ]
-DEPRECATED_KEYWORDS = {}
-REVERSE_DEPRECATED_KEYWORDS = {}
 
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
