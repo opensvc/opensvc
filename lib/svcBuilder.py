@@ -247,6 +247,7 @@ def add_mandatory_syncs(svc):
     if len(target) == 0:
         return
 
+    mod = svc.load_driver("sync", "rsync")
     kwargs = {}
     src = []
     src = add_file(src, svc.paths.cf)
@@ -268,7 +269,6 @@ def add_mandatory_syncs(svc):
     kwargs["disabled"] = get_disabled(svc, kwargs["rid"])
     kwargs["optional"] = get_optional(svc, kwargs["rid"])
     kwargs.update(sync_kwargs(svc, kwargs["rid"]))
-    mod = __import__("resSyncRsync")
     r = mod.Rsync(**kwargs)
     svc += r
 
