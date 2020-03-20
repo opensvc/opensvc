@@ -483,6 +483,8 @@ class KeywordStore(dict):
             return self
         if isinstance(o, Keyword):
             return self.__iadd_keyword__(o)
+        if isinstance(o, Section):
+            return self.__iadd_section__(o)
         if isinstance(o, KeywordStore):
             return self.__iadd_keyword_store__(o)
         if isinstance(o, str):
@@ -498,21 +500,27 @@ class KeywordStore(dict):
         return self
 
     def __iadd_keyword_store__(self, other):
-        for section_name, section in other.sections.items():
-            if section_name not in self.sections:
-                self.sections[section_name] = Section(section_name, top=self)
-            rtype_key = self[section_name].getkey("type")
-            for kw in section.keywords:
-                self.sections[section_name] += kw
-                if rtype_key \
-                   and isinstance(rtype_key.candidates, list):
-                    rtypes = kw.rtype if kw.rtype is not None else [None]
-                    for rtype in rtypes:
-                        if rtype not in rtype_key.candidates:
-                            rtype_key.candidates.append(rtype)
+        for section in other.sections.values():
+            self += section
         self.deprecated_sections.update(other.deprecated_sections)
         self.deprecated_keywords.update(other.deprecated_keywords)
         self.reverse_deprecated_keywords.update(other.reverse_deprecated_keywords)
+        return self
+
+    def __iadd_section__(self, section):
+        #print("   ", section.section)
+        if section.section not in self.sections:
+            self.sections[section.section] = Section(section.section, top=self)
+        rtype_key = self[section.section].getkey("type")
+        for kw in section.keywords:
+            #print("    ", kw.keyword)
+            self.sections[section.section] += kw
+            if rtype_key \
+               and isinstance(rtype_key.candidates, list):
+                rtypes = kw.rtype if kw.rtype is not None else [None]
+                for rtype in rtypes:
+                    if rtype not in rtype_key.candidates:
+                        rtype_key.candidates.append(rtype)
         return self
 
     def __iadd_keyword__(self, o):
