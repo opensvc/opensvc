@@ -246,7 +246,7 @@ class Section(object):
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
             return self
-        sig = (o.rtype, o.keyword)
+        sig = (o.section, o.rtype, o.keyword)
         if sig in self.sigs:
             return self
         self.keywords.append(o)
