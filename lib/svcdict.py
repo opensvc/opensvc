@@ -1360,6 +1360,7 @@ KEYWORDS = [
 
 
 KEYS = KeywordStore(
+    name="svc",
     provision=True,
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,

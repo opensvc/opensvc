@@ -83,6 +83,7 @@ KEYWORDS = [
 
 
 KEYS = KeywordStore(
+    name="cfg",
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,

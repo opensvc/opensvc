@@ -393,11 +393,12 @@ class Section(object):
         return
 
 class KeywordStore(dict):
-    def __init__(self, provision=False, keywords=[], deprecated_keywords={},
+    def __init__(self, name=None, provision=False, keywords=[], deprecated_keywords={},
                  reverse_deprecated_keywords={},
                  deprecated_sections={}, template_prefix="template.",
                  base_sections=[], has_default_section=True):
         dict.__init__(self)
+        self.name = name
         self.sections = {}
         self.deprecated_sections = deprecated_sections
         self.deprecated_keywords = deprecated_keywords
@@ -425,7 +426,7 @@ class KeywordStore(dict):
                         raise ex.excError("misformatted keyword definition: %s: %s" % (exc, data))
 
     def __str__(self):
-        return "<KeywordStore sections:%d keywords:%d>" % (len(self.sections), self.keywords_count())
+        return "<KeywordStore name:%s sections:%d keywords:%d>" % (self.name, len(self.sections), self.keywords_count())
 
     def keywords_count(self):
         n = 0
@@ -439,6 +440,7 @@ class KeywordStore(dict):
         except Exception:
             return
         kwargs = {
+            "name": modname,
             "provision": True,
             "base_sections": ["env", "DEFAULT"],
             "template_prefix": "template.service.",
@@ -495,6 +497,7 @@ class KeywordStore(dict):
         if other in self.modules:
             # already merged
             return self
+        #print(" ", other)
         self += self.driver_kwstore(other)
         self.modules.add(other)
         return self
