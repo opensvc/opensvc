@@ -420,12 +420,6 @@ class SyncBtrfs(resSync.Sync):
             self.push_statefile(n)
         self.write_stats()
 
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
     def can_sync(self, target=None):
         try:
             ls = self.get_local_state()
