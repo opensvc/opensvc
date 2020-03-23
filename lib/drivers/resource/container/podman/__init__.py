@@ -6,7 +6,6 @@ import shlex
 import signal
 from itertools import chain
 
-import resources
 import rcContainer
 import rcExceptions as ex
 import rcStatus
