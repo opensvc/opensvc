@@ -1,0 +1,278 @@
+import os
+import pwd
+import sys
+
+import lock
+import rcStatus
+import rcExceptions as ex
+from resources import Resource
+from rcScheduler import SchedOpts
+from rcGlobalEnv import rcEnv
+from rcUtilities import lcall, lazy
+from six.moves import input
+
+KEYWORDS = [
+    {
+        "keyword": "timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the task run action a failure. If no timeout is set, the agent waits indefinitely for the task command to exit.",
+        "example": "5m"
+    },
+    {
+        "keyword": "snooze",
+        "at": True,
+        "default": 0,
+        "convert": "duration",
+        "text": "Snooze the service before running the task, so if the command is known to cause a service status degradation the user can decide to snooze alarms for the duration set as value.",
+        "example": "10m"
+    },
+    {
+        "keyword": "log",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "text": "Log the task outputs in the service log.",
+    },
+    {
+        "keyword": "confirmation",
+        "at": True,
+        "default": False,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "If set to True, ask for an interactive confirmation to run the task. This flag can be used for dangerous tasks like data-restore.",
+    },
+    {
+        "keyword": "on_error",
+        "at": True,
+        "text": "A command to execute on :c-action:`run` action if :kw:`command` returned an error.",
+        "example": "/srv/{name}/data/scripts/task_on_error.sh"
+    },
+    {
+        "keyword": "check",
+        "candidates": [None, "last_run"],
+        "at": True,
+        "text": "If set to 'last_run', the last run retcode is used to report a task resource status. If not set (default), the status of a task is always n/a.",
+        "example": "last_run"
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "text": "The user to impersonate when running the task command. The default user is root.",
+        "example": "admin"
+    },
+    {
+        "keyword": "schedule",
+        "at": True,
+        "text": "Set the this task run schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
+        "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
+    },
+    {
+        "keyword": "pre_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors do not interrupt the action."
+    },
+    {
+        "keyword": "post_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors do not interrupt the action."
+    },
+    {
+        "keyword": "blocking_pre_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`run` action. Errors interrupt the action."
+    },
+    {
+        "keyword": "blocking_post_run",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`run` action. Errors interrupt the action."
+    },
+    {
+        "prefixes": ["run"],
+        "keyword": "_requires",
+        "generic": True,
+        "at": True,
+        "example": "ip#0 fs#0(down,stdby down)",
+        "default": "",
+        "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
+    },
+]
+
+
+class BaseTask(Resource):
+    default_optional = True
+    def __init__(self,
+                 rid=None,
+                 type="task",
+                 command=None,
+                 user=None,
+                 on_error=None,
+                 timeout=0,
+                 snooze=0,
+                 confirmation=False,
+                 log=True,
+                 environment=None,
+                 configs_environment=None,
+                 secrets_environment=None,
+                 check=None,
+                 **kwargs):
+        super().__init__(rid, type=type, **kwargs)
+        self.command = command
+        self.on_error = on_error
+        self.user = user
+        self.snooze = snooze
+        self.timeout = timeout
+        self.confirmation = confirmation
+        self.log_outputs = log
+        self.environment = environment
+        self.configs_environment = configs_environment
+        self.secrets_environment = secrets_environment
+        self.checker = check
+
+    def __str__(self):
+        return "%s command=%s user=%s" % (super().__str__(), self.command, str(self.user))
+
+    def _info(self):
+        data = [
+          ["command", self.command],
+        ]
+        if self.on_error:
+            data.append(["on_error", self.on_error])
+        if self.user:
+            data.append(["user", self.user])
+        return data
+
+    def has_it(self):
+        return False
+
+    def is_up(self):
+        return False
+
+    def stop(self):
+        self.remove_last_run_retcode()
+
+    def start(self):
+        self.remove_last_run_retcode()
+
+    @lazy
+    def last_run_retcode_f(self):
+        return os.path.join(self.var_d, "last_run_retcode")
+
+    def write_last_run_retcode(self, value):
+        with open(self.last_run_retcode_f, "w") as f:
+            f.write(str(value))
+
+    def read_last_run_retcode(self):
+        try:
+            with open(self.last_run_retcode_f, "r") as f:
+                return int(f.read())
+        except Exception:
+            return
+
+    def remove_last_run_retcode(self):
+        try:
+            os.unlink(self.last_run_retcode_f)
+        except Exception:
+            pass
+
+    @staticmethod
+    def alarm_handler(signum, frame):
+        raise ex.excSignal
+
+    def lcall(self, *args, **kwargs):
+        """
+        Wrap lcall, setting the resource logger
+        """
+        if self.log_outputs:
+            kwargs["logger"] = self.log
+        else:
+            kwargs["logger"] = None
+        return lcall(*args, **kwargs)
+
+    def confirm(self):
+        """
+        Ask for an interactive confirmation. Raise if the user aborts or
+        if no input is given before timeout.
+        """
+        if not self.confirmation:
+            return
+        if self.svc.options.confirm:
+            self.log.info("confirmed by command line option")
+            return
+        import signal
+        signal.signal(signal.SIGALRM, self.alarm_handler)
+        signal.alarm(30)
+
+        print("This task run requires confirmation.\nPlease make sure you fully "
+              "understand its role and effects before confirming the run.")
+        try:
+            buff = input("Do you really want to run %s (yes/no) > " % self.rid)
+        except ex.excSignal:
+            raise ex.excError("timeout waiting for confirmation")
+
+        if buff == "yes":
+            signal.alarm(0)
+            self.log.info("run confirmed")
+        else:
+            raise ex.excError("run aborted")
+
+    def run(self):
+        try:
+            with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
+                self._run()
+        except lock.LOCK_EXCEPTIONS:
+            raise ex.excError("task is already running (maybe too long for the schedule)")
+        finally:
+            self.svc.notify_done("run", rids=[self.rid])
+
+    def _run(self):
+        self.create_pg()
+        if self.snooze:
+            try:
+                data = self.svc._snooze(self.snooze)
+                self.log.info(data.get("info", ""))
+            except Exception as exc:
+                self.log.warning(exc)
+        self._run_call()
+        if self.snooze:
+            try:
+                data = self.svc._unsnooze()
+                self.log.info(data.get("info", ""))
+            except Exception as exc:
+                self.log.warning(exc)
+
+
+    def _run_call(self):
+        pass
+
+    def _status(self, verbose=False):
+        if not self.checker:
+            return rcStatus.NA
+        elif self.checker == "last_run":
+            try:
+                self.check_requires("run")
+            except (ex.excError, ex.excContinueAction):
+                return rcStatus.NA
+            ret = self.read_last_run_retcode()
+            if ret is None:
+                return rcStatus.NA
+            if ret:
+                self.status_log("last run failed", "error")
+                return rcStatus.DOWN
+            return rcStatus.UP
+
+    def is_provisioned(self, refresh=False):
+        return True
+
+    def schedule_options(self):
+        return {
+            "run": SchedOpts(
+                self.rid,
+                fname="last_"+self.rid,
+                schedule_option="no_schedule"
+            )
+        }
