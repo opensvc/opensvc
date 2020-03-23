@@ -1,7 +1,6 @@
 import rcStatus
-
-from .sg import DiskScsireservSg
 from rcUtilitiesLinux import dev_to_paths, dev_is_ro
+from .sg import DiskScsireservSg
 
 
 class DiskScsireserv(DiskScsireservSg):
