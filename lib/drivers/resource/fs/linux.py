@@ -644,3 +644,25 @@ class Fs(BaseFs):
                 if ret != 0:
                     break
 
+    def lv_name(self):
+        dev = self.oget("dev")
+
+        if dev.startswith("LABEL=") or dev.startswith("UUID="):
+            try:
+                _dev = label_to_dev(dev, tree=self.svc.node.devtree)
+            except ex.excError as exc:
+                _dev = None
+            if _dev is None:
+                self.log.info("unable to find device identified by %s", dev)
+                return
+            dev = _dev
+
+        vg = self.oget("vg")
+
+        if dev.startswith('/dev/mapper/'):
+            dev = dev.replace(vg.replace('-', '--')+'-', '')
+            dev = dev.replace('--', '-')
+            return "/dev/"+vg+"/"+os.path.basename(dev)
+        if "/"+vg+"/" in dev:
+            return dev
+

@@ -29,6 +29,20 @@ def adder(svc, s):
 
 
 class NfsShare(Resource):
+    def __init__(self, rid, path, opts, **kwargs):
+        Resource.__init__(self, rid, type="share.nfs", **kwargs)
+        if not which("exportfs"):
+            raise ex.excInitError("exportfs is not installed")
+        self.label = "nfs:"+path
+        self.path = path
+        l = opts.replace('\\', '').split()
+        self.opts = {}
+        for e in l:
+            try:
+                client, opts = self.parse_entry(e)
+            except ex.excError as e:
+                raise ex.excInitError(str(e))
+            self.opts[client] = opts
 
     @cache("showmount.e")
     def get_showmount(self):
@@ -169,19 +183,7 @@ class NfsShare(Resource):
         opts = _l[1].strip(')')
         return client, set(opts.split(','))
 
-    def __init__(self, rid, path, opts, **kwargs):
-        Resource.__init__(self, rid, type="share.nfs", **kwargs)
-        if not which("exportfs"):
-            raise ex.excInitError("exportfs is not installed")
-        self.label = "nfs:"+path
-        self.path = path
-        l = opts.replace('\\', '').split()
-        self.opts = {}
-        for e in l:
-            try:
-                client, opts = self.parse_entry(e)
-            except ex.excError as e:
-                raise ex.excInitError(str(e))
-            self.opts[client] = opts
+    def post_provision_start(self):
+        pass
 
 

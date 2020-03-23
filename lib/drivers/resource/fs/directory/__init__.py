@@ -1,13 +1,14 @@
 import grp
 import os
 import pwd
+import shutil
 import stat
 
 import rcExceptions as ex
 import rcStatus
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_string, lazy
+from rcUtilities import is_string, lazy, protected_dir
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
@@ -203,3 +204,18 @@ class FsDirectory(Resource):
         except AttributeError:
             return self.rid < other.rid
         return (smnt, self.rid) < (omnt, other.rid)
+
+    def provisioned(self):
+        return os.path.exists(self.path)
+
+    def provisioner(self):
+        pass
+
+    def unprovisioner(self):
+        if not os.path.exists(self.path):
+            return
+        if protected_dir(self.path):
+            self.log.warning("cowardly refuse to purge %s", self.path)
+        self.log.info("purge %s", self.path)
+        shutil.rmtree(self.path)
+

@@ -1,4 +1,5 @@
 import os
+import sys
 
 import rcContainer
 import rcExceptions as ex
@@ -125,4 +126,33 @@ class FsDocker(Resource):
 
     def stop(self):
         pass
+
+    def provisioned(self):
+        return self.has_it()
+
+    def provisioner(self):
+        self.lib.docker_start()
+        self.create_vol()
+        self.populate()
+
+    def populate(self):
+        modulesets = self.oget("populate")
+        if not modulesets:
+            return
+        try:
+            os.environ["OPENSVC_VOL_PATH"] = self.vol_path
+            self.svc.compliance.options.moduleset = ",".join(modulesets)
+            ret = self.svc.compliance.do_run("fix")
+        finally:
+            del os.environ["OPENSVC_VOL_PATH"]
+        if ret:
+            raise ex.excError
+
+    def unprovisioner(self):
+        if not self.has_it():
+            return
+        cmd = self.lib.docker_cmd + ["volume", "rm", "-f", self.volname]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 

@@ -1,3 +1,4 @@
+
 import glob
 import json
 import os
@@ -8,8 +9,9 @@ import rcExceptions as ex
 import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS
+from converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, fcache
+from rcUtilities import which, justcall, lazy, fcache, bdecode
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
                              dev_to_paths
 from svcBuilder import init_kwargs
@@ -20,14 +22,13 @@ DRIVER_BASENAME = "md"
 KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "uuid",
-        "required": False,
         "at": True,
         "text": "The md uuid to use with mdadm assemble commands"
     },
     {
         "keyword": "devs",
-        "required": True,
         "at": True,
+        "default": [],
         "convert": "list",
         "provisioning": True,
         "example": "/dev/rbd0 /dev/rbd1",
@@ -35,10 +36,8 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "level",
-        "required": True,
         "at": True,
         "provisioning": True,
-        "required": True,
         "example": "raid1",
         "text": "The md raid level to use with mdadm create command (see mdadm man for values)"
     },
@@ -76,6 +75,11 @@ KEYS.register_driver(
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["uuid"] = svc.oget(s, "uuid")
+    kwargs["level"] = svc.oget(s, "level")
+    kwargs["devs"] = svc.oget(s, "devs")
+    kwargs["spares"] = svc.oget(s, "spares")
+    kwargs["chunk"] = svc.oget(s, "chunk")
+    kwargs["layout"] = svc.oget(s, "layout")
     r = DiskMd(**kwargs)
     svc += r
 
@@ -86,8 +90,18 @@ class DiskMd(BaseDisk):
     def __init__(self,
                  rid=None,
                  uuid=None,
+                 level=None,
+                 devs=None,
+                 spares=None,
+                 chunk=None,
+                 layout=None,
                  **kwargs):
         self.uuid = uuid
+        self.level = level
+        self.devs = devs or []
+        self.spares = spares
+        self.chunk = chunk
+        self.layout = layout
         self.mdadm = "/sbin/mdadm"
         super().__init__(rid=rid,
                          name=uuid,
@@ -340,10 +354,11 @@ class DiskMd(BaseDisk):
             # try to get the info from the config so pr co-resource can reserv
             # during provision
             try:
-                devs = self.conf_get("devs")
+                self.devs = self.oget("devs")
+                devs = self.devs
                 if devs is None:
                     return set()
-                return set([os.path.realpath(dev) for dev in devs.split()])
+                return set([os.path.realpath(dev) for dev in devs])
             except ex.OptNotFound:
                 return set()
         try:
@@ -440,4 +455,83 @@ class DiskMd(BaseDisk):
         if removed > added:
             self.log.error("no faulty device found to re-add to %s remaining "
                            "%d removed legs"% (devpath, removed - added))
+
+
+
+    def provisioned(self):
+        if which("mdadm") is None:
+            return
+        return self.has_it()
+
+    def provisioner(self):
+        if which("mdadm") is None:
+            raise ex.excError("mdadm is not installed")
+
+        level = self.level
+        devs = self.devs or self.oget("devs")
+        spares = self.spares
+        chunk = self.chunk
+        layout = self.layout
+
+        if len(devs) == 0:
+            raise ex.excError("at least 2 devices must be set in the 'devs' provisioning parameter")
+
+        # long md names cause a buffer overflow in mdadm
+        name = self.devname()
+        cmd = [self.mdadm, '--create', name, '--force', '--quiet',
+               '--metadata=default']
+        cmd += ['-n', str(len(devs)-spares)]
+        if level:
+            cmd += ["-l", level]
+        if spares:
+            cmd += ["-x", str(spares)]
+        if chunk:
+            cmd += ["-c", str(convert_size(chunk, _to="k", _round=4))]
+        if layout:
+            cmd += ["-p", layout]
+        cmd += devs
+        self.log.info(" ".join(cmd))
+        from subprocess import Popen, PIPE
+        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        out, err = proc.communicate(input=b'no\n')
+        out, err = bdecode(out).strip(), bdecode(err).strip()
+        self.log.info(out)
+        if proc.returncode != 0:
+            raise ex.excError(err)
+        self.can_rollback = True
+        if len(out) > 0:
+            self.log.info(out)
+        if len(err) > 0:
+            self.log.error(err)
+        self.uuid = os.path.basename(name)
+        uuid = self.get_real_uuid(name)
+        self.uuid = uuid
+        if self.shared:
+            self.log.info("set %s.uuid = %s", self.rid, uuid)
+            self.svc._set(self.rid, "uuid", uuid)
+        else:
+            self.log.info("set %s.uuid@%s = %s", self.rid, rcEnv.nodename, uuid)
+            self.svc._set(self.rid, "uuid@"+rcEnv.nodename, uuid)
+        self.svc.node.unset_lazy("devtree")
+
+    def get_real_uuid(self, name):
+        buff = self.detail()
+        for line in buff.split("\n"):
+            line = line.strip()
+            if line.startswith("UUID :"):
+                return line.split(" : ")[-1]
+        raise ex.excError("unable to determine md uuid")
+
+    def unprovisioner(self):
+        if self.uuid == "" or self.uuid is None:
+            return
+        for dev in self.sub_devs():
+            self.vcall([self.mdadm, "--brief", "--zero-superblock", dev])
+        if self.shared:
+            self.log.info("reset %s.uuid", self.rid)
+            self.svc._set(self.rid, "uuid", "")
+        else:
+            self.log.info("reset %s.uuid@%s", self.rid, rcEnv.nodename)
+            self.svc._set(self.rid, "uuid@"+rcEnv.nodename, "")
+        self.svc.node.unset_lazy("devtree")
 

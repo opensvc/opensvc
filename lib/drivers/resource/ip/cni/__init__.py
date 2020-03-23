@@ -517,3 +517,6 @@ class IpCni(Ip):
             return False
         return True
 
+    def provisioned(self):
+        return True
+
