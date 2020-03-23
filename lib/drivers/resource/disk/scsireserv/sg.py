@@ -7,13 +7,13 @@ from subprocess import *
 
 import rcExceptions as ex
 import rcStatus
-import resScsiReserv
 
+from . import BaseDiskScsireserv
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, bdecode, lazy
 
 
-class ScsiReserv(resScsiReserv.ScsiReserv):
+class DiskScsireservSg(BaseDiskScsireserv):
     def scsireserv_supported(self):
         if which("sg_persist") is None and which("mpathpersist") is None:
             self.status_log("sg_persist or mpathpersist must be installed to use scsi-3 reservations")

@@ -1,8 +1,9 @@
-import resScsiReservSg
 import rcStatus
+
+from .sg import DiskScsireservSg
 from rcUtilitiesLinux import dev_to_paths, dev_is_ro
 
-class ScsiReserv(resScsiReservSg.ScsiReserv):
+class Scsireserv(DiskScsireservSg):
 
 
     def mangle_devs(self, devs):
@@ -10,7 +11,7 @@ class ScsiReserv(resScsiReservSg.ScsiReserv):
 
 
     def _status(self, verbose=False):
-        ret = resScsiReservSg.ScsiReserv._status(self, verbose=verbose)
+        ret = super()._status(verbose=verbose)
         if ret != rcStatus.UP:
             return ret
         self.get_devs()
