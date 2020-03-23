@@ -7,15 +7,16 @@ import os
 import re
 import time
 
-import resources as Res
 import ipaddress
 import lock
 import rcStatus
 import rcExceptions as ex
+
+from arp import send_arp
+from converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import qcall, which, getaddr, lazy, to_cidr
-from converters import convert_duration, print_duration
-from arp import send_arp
+from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
@@ -163,7 +164,7 @@ def adder(svc, s, drv=None):
     svc += r
 
 
-class Ip(Res.Resource):
+class Ip(Resource):
     """
     Base ip resource driver.
     """
@@ -180,7 +181,7 @@ class Ip(Res.Resource):
                  alias=True,
                  wait_dns=0,
                  **kwargs):
-        Res.Resource.__init__(self, rid, type=type, **kwargs)
+        super().__init__(rid, type=type, **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
         self.mask = mask
@@ -304,8 +305,9 @@ class Ip(Res.Resource):
                 raise ex.excError("could not resolve name %s: %s" % (self.ipname, str(exc)))
 
     def __str__(self):
-        return "%s ipdev=%s ipname=%s" % (Res.Resource.__str__(self),\
+        return "%s ipdev=%s ipname=%s" % (super().__str__(), \
                                          self.ipdev, self.ipname)
+
     def setup_environ(self):
         """
         Set the main resource properties as environment variables, so they
@@ -890,6 +892,3 @@ class Ip(Res.Resource):
             raise ex.excError("invalid expose protocol %s. expected tcp or udp" % words[1])
         data["protocol"] = words[1]
         return data
-
-
-

@@ -1,16 +1,17 @@
-import os
-import logging
+import datetime
 import json
+import logging
+import os
+import time
 
 import rcExceptions as ex
-import datetime
-import time
 import rcStatus
-from resources import Resource
+
+from converters import convert_speed, print_size
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts
 from rcUtilities import lazy, bdecode
-from converters import convert_speed, print_size
+from resources import Resource
 
 def notify(func):
     """

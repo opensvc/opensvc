@@ -1,14 +1,16 @@
 import os
-import resources as Res
 import uuid
 import re
 import time
-import rcStatus
-import rcExceptions as ex
-from rcUtilities import which, bdecode, lazy
+
 from subprocess import *
+
+import rcExceptions as ex
+import rcStatus
 import resScsiReserv
+
 from rcGlobalEnv import rcEnv
+from rcUtilities import which, bdecode, lazy
 
 
 class ScsiReserv(resScsiReserv.ScsiReserv):
