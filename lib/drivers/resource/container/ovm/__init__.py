@@ -1,6 +1,7 @@
-import resources as Res
 import os
+
 import rcExceptions as ex
+
 from .. import \
     BaseContainer, \
     KW_SNAP, \
@@ -17,6 +18,7 @@ from .. import \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
 from rcUtilities import fcache
+from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
 
@@ -79,7 +81,7 @@ class ContainerOvm(BaseContainer):
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')
 
     def __str__(self):
-        return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+        return "%s name=%s" % (Resource.__str__(self), self.name)
 
     def list_conffiles(self):
         cf = os.path.join(self.xen_d, self.uuid)

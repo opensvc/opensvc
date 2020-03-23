@@ -1,13 +1,15 @@
 import os
-import resources
-from rcUtilities import lazy, makedirs, justcall
-from rcGlobalEnv import rcEnv
+
 import rcStatus
 
+from resources import Resource
+from rcGlobalEnv import rcEnv
+from rcUtilities import lazy, makedirs, justcall
 
-class BaseFsFlag(resources.Resource):
+
+class BaseFsFlag(Resource):
     def __init__(self, **kwargs):
-        resources.Resource.__init__(self, type="fs.flag", **kwargs)
+        super().__init__(type="fs.flag", **kwargs)
 
     @lazy
     def base_flag_d(self):

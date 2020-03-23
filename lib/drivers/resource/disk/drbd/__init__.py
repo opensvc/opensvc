@@ -4,9 +4,9 @@ import rcExceptions as ex
 import rcStatus
 
 from .. import BASE_KEYWORDS
-from resources import Resource
 from rcUtilities import which, justcall
 from rcGlobalEnv import rcEnv
+from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 

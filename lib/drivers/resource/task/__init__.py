@@ -3,12 +3,13 @@ import pwd
 import sys
 
 import lock
-import rcStatus
 import rcExceptions as ex
-from resources import Resource
+import rcStatus
+
 from rcScheduler import SchedOpts
 from rcGlobalEnv import rcEnv
 from rcUtilities import lcall, lazy
+from resources import Resource
 from six.moves import input
 
 KEYWORDS = [
