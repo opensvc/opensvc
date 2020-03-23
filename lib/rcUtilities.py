@@ -294,7 +294,7 @@ def driver_import(*args, **kwargs):
         return ".".join(l)
 
     def import_mod(modname):
-        for mn in (modname + "." + rcEnv.sysname.lower(), modname):
+        for mn in (modname + "." + fmt_element(rcEnv.sysname), modname):
             try:
                 m = importlib.import_module(mn)
                 return m
