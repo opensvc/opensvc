@@ -1,6 +1,8 @@
 import os
-import resources as Res
+
 import rcExceptions as ex
+
+from resources import Resource
 
 
 def find_mount(rs, dir):
@@ -27,13 +29,13 @@ def find_mounts(self, mounts_h):
         mounts_h[src] = m
     return mounts_h
 
-class Snap(Res.Resource):
+class Snap(Resource):
     """Defines a snap object
     """
     def __init__(self, rid, optional=False, disabled=False, tags=set()):
         self.snaps = {}
-        Res.Resource.__init__(self, rid, "sync.snap", optional=optional,\
-                            disabled=disabled, tags=tags)
+        super().__init__(rid, "sync.snap", optional=optional, \
+                         disabled=disabled, tags=tags)
 
     def try_snap(self, rset, action, rid=None):
         if action == "nodes":

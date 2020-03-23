@@ -5,9 +5,13 @@ import os
 import re
 import shlex
 import signal
+
 from itertools import chain
 
-import resources
+import rcContainer
+import rcExceptions as ex
+import rcStatus
+
 from .. import \
     KW_NO_PREEMPT_ABORT, \
     KW_OSVC_ROOT_PATH, \
@@ -15,11 +19,9 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV, \
     BaseContainer
-import rcContainer
-import rcExceptions as ex
-import rcStatus
 from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
+from resources import Resource
 from converters import print_duration
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
@@ -438,7 +440,7 @@ class ContainerDocker(BaseContainer):
         return "docker " + self.lib.image_userfriendly_name(self)
 
     def __str__(self):
-        return "%s name=%s" % (resources.Resource.__str__(self), self.name)
+        return "%s name=%s" % (Resource.__str__(self), self.name)
 
     def rcmd(self, cmd):
         cmd = self.lib.docker_cmd + ['exec', '-t', self.container_name] + cmd

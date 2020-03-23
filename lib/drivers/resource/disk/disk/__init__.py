@@ -4,9 +4,9 @@ import time
 import rcExceptions as ex
 
 from .. import BASE_KEYWORDS
-from resources import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
+from resources import Resource
 from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
