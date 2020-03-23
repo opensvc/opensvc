@@ -240,7 +240,7 @@ def add_mandatory_syncs(svc):
     kwargs["disabled"] = get_disabled(svc, kwargs["rid"])
     kwargs["optional"] = get_optional(svc, kwargs["rid"])
     kwargs.update(sync_kwargs(svc, kwargs["rid"]))
-    r = mod.Rsync(**kwargs)
+    r = mod.SyncRsync(**kwargs)
     svc += r
 
 def add_resources(svc):
