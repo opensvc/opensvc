@@ -35,7 +35,7 @@ def mpath_to_path(disks):
             l.append(d.replace("/dev/dsk", "/dev/rdsk"))
     return l
 
-class Scsireserv(BaseDiskScsireserv):
+class DiskScsireserv(BaseDiskScsireserv):
     def __init__(self,
                  rid=None,
                  peer_resource=None,

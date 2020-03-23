@@ -1,4 +1,5 @@
 from .sg import DiskScsireservSg
 
-class Scsireserv(DiskScsireservSg):
+
+class DiskScsireserv(DiskScsireservSg):
     pass
