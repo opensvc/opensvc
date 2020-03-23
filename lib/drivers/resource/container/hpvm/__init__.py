@@ -3,7 +3,6 @@ import time
 
 import rcStatus
 import rcExceptions as ex
-import resources as Res
 
 from .. import \
     BaseContainer, \

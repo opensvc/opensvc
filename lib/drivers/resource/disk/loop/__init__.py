@@ -1,6 +1,6 @@
 from .. import BaseDisk, BASE_KEYWORDS
-from resources import Resource
 from rcGlobalEnv import rcEnv
+from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 

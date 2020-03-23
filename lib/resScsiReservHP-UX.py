@@ -1,13 +1,15 @@
-import resources as Res
-import uuid
-import re
 import os
+import re
 import time
-import rcStatus
-import rcExceptions as ex
-from rcUtilities import which
+import uuid
+
 from subprocess import *
+
+import rcExceptions as ex
+import rcStatus
 import resScsiReserv
+
+from rcUtilities import which
 
 def mpath_to_path(disks):
     l = []
