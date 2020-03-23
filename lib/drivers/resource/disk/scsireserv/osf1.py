@@ -1,17 +1,12 @@
 import os
-import re
-import time
-import uuid
-
 from subprocess import *
 
 import rcExceptions as ex
-import rcStatus
-
-from . import BaseDiskScsireserv
 from rcUtilities import which
+from . import BaseDiskScsireserv
 
-class Scsireserv(BaseDiskScsireserv):
+
+class DiskScsireserv(BaseDiskScsireserv):
     def __init__(self,
                  rid=None,
                  peer_resource=None,
@@ -45,7 +40,7 @@ class Scsireserv(BaseDiskScsireserv):
     def get_disk_ids(self):
         if len(self.disk_id) > 0:
             return
-        cmd = [ 'hwmgr', 'show', 'scsi' ]
+        cmd = ['hwmgr', 'show', 'scsi']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.excError(err)
@@ -57,7 +52,7 @@ class Scsireserv(BaseDiskScsireserv):
                 continue
             if not v[7].startswith("dsk"):
                 continue
-            self.disk_id[v[7]+'c'] = v[0].strip(":")
+            self.disk_id[v[7] + 'c'] = v[0].strip(":")
 
     def get_itns(self):
         if len(self.itn) > 0:
@@ -73,7 +68,7 @@ class Scsireserv(BaseDiskScsireserv):
         if disk not in self.disk_id:
             return
         id = self.disk_id[disk]
-        cmd = [ 'hwmgr', 'show', 'scsi', '-id', id, '-full' ]
+        cmd = ['hwmgr', 'show', 'scsi', '-id', id, '-full']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             return
@@ -97,7 +92,7 @@ class Scsireserv(BaseDiskScsireserv):
         self.log.info(cmd + ' | scu')
         p = Popen(['scu'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate(input=cmd)
-        #if len(out) > 0:
+        # if len(out) > 0:
         #    self.log.info(out)
         if len(err) > 0:
             self.log.error(out)
@@ -105,7 +100,7 @@ class Scsireserv(BaseDiskScsireserv):
             raise ex.excError
 
     def disk_registered(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'keys' ]
+        cmd = ['scu', '-f', disk, 'show', 'keys']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read registrations for disk %s" % disk)
@@ -117,7 +112,7 @@ class Scsireserv(BaseDiskScsireserv):
         self.get_itns()
         basedisk = os.path.basename(disk)
         if basedisk not in self.itn:
-            self.log.error("no nexus information for disk %s"%disk)
+            self.log.error("no nexus information for disk %s" % disk)
             return 1
         r = 0
         for itn in self.itn[basedisk]:
@@ -139,7 +134,7 @@ class Scsireserv(BaseDiskScsireserv):
         self.get_itns()
         basedisk = os.path.basename(disk)
         if basedisk not in self.itn:
-            self.log.error("no nexus information for disk %s"%disk)
+            self.log.error("no nexus information for disk %s" % disk)
             return 1
         r = 0
         for itn in self.itn[basedisk]:
@@ -149,7 +144,7 @@ class Scsireserv(BaseDiskScsireserv):
         return r
 
     def __disk_unregister(self, itn):
-        cmd = self.set_nexus(itn) +  'preserve register skey 0 key ' + self.hostid
+        cmd = self.set_nexus(itn) + 'preserve register skey 0 key ' + self.hostid
         try:
             self.pipe_scu(cmd)
         except ex.excError as e:
@@ -158,7 +153,7 @@ class Scsireserv(BaseDiskScsireserv):
         return 0
 
     def get_reservation_key(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'reservation' ]
+        cmd = ['scu', '-f', disk, 'show', 'reservation']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to list reservation for disk %s" % disk)
@@ -170,7 +165,7 @@ class Scsireserv(BaseDiskScsireserv):
         raise Exception()
 
     def disk_reserved(self, disk):
-        cmd = [ 'scu', '-f', disk, 'show', 'reservation' ]
+        cmd = ['scu', '-f', disk, 'show', 'reservation']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("failed to read reservation for disk %s" % disk)
@@ -179,23 +174,22 @@ class Scsireserv(BaseDiskScsireserv):
         return False
 
     def disk_release(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'release', 'key', self.hostid, 'type', self.prtype ]
+        cmd = ['scu', '-f', disk, 'preserve', 'release', 'key', self.hostid, 'type', self.prtype]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to release disk %s" % disk)
         return ret
 
     def disk_reserve(self, disk):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'reserve', 'key', self.hostid, 'type', self.prtype ]
+        cmd = ['scu', '-f', disk, 'preserve', 'reserve', 'key', self.hostid, 'type', self.prtype]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
     def _disk_preempt_reservation(self, disk, oldkey):
-        cmd = [ 'scu', '-f', disk, 'preserve', 'preempt', 'key', self.hostid, 'skey', oldkey, 'type', self.prtype ]
+        cmd = ['scu', '-f', disk, 'preserve', 'preempt', 'key', self.hostid, 'skey', oldkey, 'type', self.prtype]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to preempt reservation for disk %s" % disk)
         return ret
-
