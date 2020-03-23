@@ -113,7 +113,7 @@ class TestServiceActionFsFlag:
                                                             sysname):
         mock_sysname(sysname)
         base_flag_d = str(tmp_path)
-        mocker.patch('resFsFlag' + sysname + '.Fs.base_flag_d',
+        mocker.patch('drivers.resource.fs.flag.' + sysname.lower() + '.FsFlag.base_flag_d',
                      new_callable=mocker.PropertyMock(return_value=base_flag_d))
 
         expected_flag_file = os.path.join(base_flag_d, 'svc', sysname, 'fs#1.flag')

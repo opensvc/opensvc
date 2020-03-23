@@ -1,7 +1,6 @@
 from svc import Svc
-from resFsFlagLinux import Fs as FsFlagLinux
-from resFsFlagSunOS import Fs as FsFlagSunOS
-
+from drivers.resource.fs.flag.linux import FsFlag as FsFlagLinux
+from drivers.resource.fs.flag.sunos import FsFlag as FsFlagSunOS
 import pytest
 
 
