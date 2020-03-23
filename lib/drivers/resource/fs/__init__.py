@@ -1,5 +1,6 @@
 import os
 import subprocess
+import shutil
 import time
 
 import rcExceptions as ex
@@ -7,7 +8,7 @@ import rcStatus
 
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, mimport, lazy
+from rcUtilities import which, mimport, lazy, justcall, protected_dir
 from svcBuilder import init_kwargs
 
 
@@ -310,3 +311,190 @@ class BaseFs(Resource):
         if not hasattr(mod, "Prov"):
             raise ex.excError("missing Prov class in module %s" % str(mod))
         return getattr(mod, "Prov")(self)
+
+    """
+    Provisioning:
+    
+    required attributes from child classes:
+    *  mkfs = ['mkfs.ext4', '-F']
+    *  info = ['tune2fs', '-l']
+    """
+
+    def check_fs(self):
+        if not hasattr(self, "info"):
+            return True
+        if self.mkfs_dev is None:
+            return True
+        cmd = getattr(self, "info") + [self.mkfs_dev]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            return True
+        self.log.info("%s is not formatted"%self.mkfs_dev)
+        return False
+
+    def lv_name(self):
+        raise ex.excError
+        return "dummy"
+
+    def lv_resource(self):
+        try:
+            name = self.lv_name()
+        except ex.excError:
+            return
+        vg = self.oget("vg")
+        size = self.oget("size")
+        try:
+            mod = mimport("resource", "disk", "lv")
+            if mod is None:
+                return
+        except ImportError:
+            return
+        return mod.DiskLv(name=name, vg=vg, size=size)
+
+    def provision_dev(self):
+        res = self.lv_resource()
+        if not res:
+            return
+        res.provisioner()
+
+    def unprovision_dev(self):
+        res = self.lv_resource()
+        if not res:
+            return
+        res.unprovisioner()
+
+    def provisioned(self):
+        if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
+            return
+        try:
+            self.dev = self.conf_get("dev")
+            self.mnt = self.conf_get("mnt")
+        except ex.OptNotFound:
+            return
+        if self.dev is None:
+            return
+        if self.mnt is None:
+            return
+        if not os.path.exists(self.mnt):
+            return False
+        if self.fs_type in self.netfs + ["tmpfs"]:
+            return
+        try:
+            self.get_mkfs_dev()
+        except ex.excError:
+            self.mkfs_dev = None
+        if not os.path.exists(self.dev) and (self.mkfs_dev is None or not os.path.exists(self.mkfs_dev)):
+            return False
+        return self.check_fs()
+
+    def get_mkfs_dev(self):
+        self.mkfs_dev = self.dev
+        if rcEnv.sysname == 'HP-UX':
+            l = self.dev.split('/')
+            l[-1] = 'r'+l[-1]
+            self.mkfs_dev = '/'.join(l)
+            if not os.path.exists(self.mkfs_dev):
+                raise ex.excError("%s raw device does not exists"%self.mkfs_dev)
+        elif rcEnv.sysname == 'Darwin':
+            if os.path.isfile(self.mkfs_dev):
+                from rcLoopDarwin import file_to_loop
+                devs = file_to_loop(self.mkfs_dev)
+                if len(devs) == 1:
+                    self.mkfs_dev = devs[0]
+                else:
+                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+        elif rcEnv.sysname == 'Linux':
+            if os.path.isfile(self.mkfs_dev):
+                from rcLoopLinux import file_to_loop
+                devs = file_to_loop(self.mkfs_dev)
+                if len(devs) == 1:
+                    self.mkfs_dev = devs[0]
+                else:
+                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+
+    def provisioner_fs(self):
+        if self.fs_type in self.netfs + ["tmpfs"]:
+            return
+        if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
+            return
+
+        self.dev = self.conf_get("dev")
+        self.mnt = self.conf_get("mnt")
+
+        if self.dev is None:
+            raise ex.excError("device %s not found. parent resource is down ?" % self.dev)
+        if not os.path.exists(self.mnt):
+            os.makedirs(self.mnt)
+            self.log.info("%s mount point created"%self.mnt)
+
+        if not os.path.exists(self.dev):
+            try:
+                self.conf_get("vg", verbose=False)
+                self.provision_dev()
+            except ValueError:
+                # keyword not supported (ex. bind mounts)
+                pass
+            except ex.OptNotFound:
+                pass
+
+        self.get_mkfs_dev()
+
+        if not os.path.exists(self.mkfs_dev):
+            raise ex.excError("abort fs provisioning: %s does not exist" % self.mkfs_dev)
+
+        if self.check_fs():
+            self.log.info("already provisioned")
+            return
+
+        if hasattr(self, "do_mkfs"):
+            getattr(self, "do_mkfs")()
+        elif hasattr(self, "mkfs"):
+            try:
+                opts = self.svc.conf_get(self.rid, "mkfs_opt")
+            except:
+                opts = []
+            cmd = getattr(self, "mkfs") + opts + [self.mkfs_dev]
+            (ret, out, err) = self.vcall(cmd)
+            if ret != 0:
+                self.log.error('Failed to format %s'%self.mkfs_dev)
+                raise ex.excError
+        else:
+            raise ex.excError("no mkfs method implemented")
+
+    def provisioner_shared_non_leader(self):
+        self.unset_lazy("device")
+        self.unset_lazy("label")
+
+    def provisioner(self):
+        self.unset_lazy("device")
+        self.unset_lazy("label")
+        self.provisioner_fs()
+
+    def purge_mountpoint(self):
+        if self.mount_point is None:
+            return
+        if os.path.exists(self.mount_point) and not protected_dir(self.mount_point):
+            self.log.info("rm -rf %s" % self.mount_point)
+            try:
+                shutil.rmtree(self.mount_point)
+            except Exception as e:
+                raise ex.excError(str(e))
+
+    def unprovisioner_fs(self):
+        pass
+
+    def unprovisioner(self):
+        if self.fs_type in self.netfs + ["tmpfs"]:
+            return
+        self.unprovisioner_fs()
+        self.purge_mountpoint()
+        try:
+            self.conf_get("vg", verbose=False)
+            self.unprovision_dev()
+        except ValueError:
+            # keyword not supported (ex. bind mounts)
+            return
+        except ex.OptNotFound:
+            pass
+
+

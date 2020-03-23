@@ -1,9 +1,16 @@
 import os
+import signal
+import time
+
+from subprocess import *
 
 import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcUtilities import lazy
+from converters import convert_size
+from rcGlobalEnv import rcEnv
+from rcUtilities import lazy, justcall, which, bdecode
+from rcUtilitiesLinux import label_to_dev
 from rcZfs import dataset_exists, zpool_devs
 from svcBuilder import init_kwargs
 from svcdict import KEYS
@@ -47,6 +54,8 @@ KEYS.register_driver(
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["create_option"] = svc.oget(s, "create_option")
     r = DiskZvol(**kwargs)
     svc += r
 
@@ -55,9 +64,13 @@ class DiskZvol(BaseDisk):
     def __init__(self,
                  rid=None,
                  name=None,
+                 size=None,
+                 create_options=None,
                  **kwargs):
         super().__init__(rid=rid, name=name, type='disk.zvol', **kwargs)
         self.name = name
+        self.size = size
+        self.create_options = create_options or []
         self.label = "zvol %s" % self.name
         if name:
             self.pool = name.split("/", 1)[0]
@@ -125,4 +138,41 @@ class DiskZvol(BaseDisk):
         if os.path.exists(self.device):
             return set([self.device])
         return set()
+
+
+    def provisioned(self):
+        return self.has_it()
+
+    def unprovisioner(self):
+        if not self.has_it():
+            self.log.info("zvol %s already destroyed", self.name)
+            return
+        cmd = [rcEnv.syspaths.zfs, "destroy", "-f", self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.svc.node.unset_lazy("devtree")
+
+    def provisioner(self):
+        if self.has_it():
+            self.log.info("zvol %s already exists", self.name)
+            return
+        cmd = [rcEnv.syspaths.zfs, "create", "-V"]
+        cmd += self.create_options
+        cmd += [str(convert_size(self.size, _to="m"))+'M', self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.can_rollback = True
+
+        for i in range(3, 0, -1):
+            if os.path.exists(self.device):
+                break
+            if i != 0:
+                time.sleep(1)
+        if i == 0:
+            self.log.error("timed out waiting for %s to appear" % self.device)
+            raise ex.excError
+
+        self.svc.node.unset_lazy("devtree")
 

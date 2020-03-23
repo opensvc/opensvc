@@ -477,3 +477,6 @@ class BaseDiskRaw(BaseDisk):
     def sub_devs(self):
         return self.devs
 
+    def provisioned(self):
+        return True
+

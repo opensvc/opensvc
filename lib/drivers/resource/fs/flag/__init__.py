@@ -54,6 +54,9 @@ class BaseFsFlag(Resource):
     def is_provisionned(self):
         return True
 
+    def provisionned(self):
+        return True
+
     def abort_start(self):
         if self.svc.topology != "failover":
             return
