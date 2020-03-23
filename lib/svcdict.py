@@ -2,7 +2,7 @@ import sys
 
 from keywords import KeywordStore
 from rcGlobalEnv import rcEnv
-from rcUtilities import list_drivers, mimport
+from rcUtilities import iter_drivers, mimport
 
 SECTIONS = [
     "DEFAULT",
@@ -1372,8 +1372,8 @@ KEYS = KeywordStore(
 
 def full_kwstore():
     global KEYS
-    for modname in list_drivers(SECTIONS + DATA_SECTIONS):
-        KEYS += modname
+    for mod in iter_drivers(SECTIONS + DATA_SECTIONS):
+        KEYS += mod
     return KEYS
 
 
