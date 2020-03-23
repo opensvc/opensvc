@@ -3197,9 +3197,9 @@ class Svc(BaseSvc):
             return
 
         try:
-            sr = __import__('resScsiReserv'+rcEnv.sysname)
+            sr = self.load_driver("disk", "scsireserv")
         except ImportError:
-            sr = __import__('resScsiReserv')
+            return
 
         kwargs = {}
         pr_rid = resource.rid+"pr"
@@ -3249,7 +3249,7 @@ class Svc(BaseSvc):
         kwargs['rid'] = resource.rid
         kwargs['peer_resource'] = resource
 
-        r = sr.ScsiReserv(**kwargs)
+        r = sr.DiskScsireserv(**kwargs)
         self += r
 
     def add_requires(self, resource):

@@ -7,8 +7,8 @@ from subprocess import *
 
 import rcExceptions as ex
 import rcStatus
-import resScsiReserv
 
+from . import BaseDiskScsireserv
 from rcUtilities import which
 
 def mpath_to_path(disks):
@@ -35,17 +35,16 @@ def mpath_to_path(disks):
             l.append(d.replace("/dev/dsk", "/dev/rdsk"))
     return l
 
-class ScsiReserv(resScsiReserv.ScsiReserv):
+class Scsireserv(BaseDiskScsireserv):
     def __init__(self,
                  rid=None,
                  peer_resource=None,
                  no_preempt_abort=False,
                  **kwargs):
-        resScsiReserv.ScsiReserv.__init__(self,
-                                          rid=rid,
-                                          peer_resource=peer_resource,
-                                          no_preempt_abort=no_preempt_abort,
-                                          **kwargs)
+        super().__init__(rid=rid,
+                         peer_resource=peer_resource,
+                         no_preempt_abort=no_preempt_abort,
+                         **kwargs)
         self.prtype = 'wero'
         self.leg_mpath_disable()
 
