@@ -1721,18 +1721,17 @@ def create_protected_file(filepath, buff, mode):
         f.write(buff)
 
 
-def list_drivers(groups=None):
+def iter_drivers(groups=None):
+    import importlib
+    import pkgutil
     groups = groups or [""]
-    dirpath = os.path.dirname(__file__)
     for group in groups:
-        if group:
-            group = group.capitalize()
-        pattern = os.path.join(dirpath, "res" + group + "*.py")
-        for f in glob.glob(pattern):
-            if not os.path.isfile(f):
+        try:
+            package = importlib.import_module("drivers.resource."+group)
+        except ImportError:
+            continue
+        for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
+            if not ispkg:
                 continue
-            b = os.path.basename(f)[:-3]
-            if b in ("__init__", "resources", "resourcesets"):
-                continue
-            yield b
+            yield mimport("resource", group, modname)
 
