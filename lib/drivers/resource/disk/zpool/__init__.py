@@ -9,7 +9,7 @@ import rcStatus
 from .. import BaseDisk, BASE_KEYWORDS
 from lock import cmlock
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, qcall, which, lazy, cache, clear_cache
+from rcUtilities import justcall, qcall, which, lazy, cache, clear_cache, drop_option
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
 from converters import convert_duration
 from svcBuilder import init_kwargs
@@ -36,7 +36,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "vdev",
-        "required": True,
+        "default": [],
         "convert": "list",
         "at": True,
         "provisioning": True,
@@ -81,7 +81,9 @@ KEYS.register_driver(
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
+    kwargs["vdev"] = svc.oget(s, "vdev")
     kwargs["multihost"] = svc.oget(s, "multihost")
+    kwargs["create_options"] = svc.oget(s, "create_options")
     zone = svc.oget(s, "zone")
     r = ZpoolDisk(**kwargs)
     if zone is not None:
@@ -98,12 +100,16 @@ class ZpoolDisk(BaseDisk):
                  rid=None,
                  name=None,
                  multihost=None,
+                 vdev=None,
+                 create_options=None,
                  **kwargs):
         super().__init__(rid=rid,
                          name=name,
                          type='disk.zpool',
                          **kwargs)
         self.multihost = multihost
+        self.vdev = vdev or []
+        self.create_options = create_options or []
         self.label = 'zpool ' + name if name else "<undefined>"
 
     def _info(self):
@@ -388,4 +394,53 @@ class ZpoolDisk(BaseDisk):
                 self.log.info("multihost is already off")
         if ret != 0:
             raise ex.excError
+
+
+    def provisioned(self):
+        return self.has_it()
+
+    def unprovisioner(self):
+        if not self.is_up():
+            ret = self.import_pool(verbose=False, retries=1)
+            if ret != 0:
+                self.log.info("already unprovisioned")
+                return
+        cmd = ["zpool", "destroy", "-f", self.name]
+        ret, _, _ = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.svc.node.unset_lazy("devtree")
+
+    def pre_unprovision_stop(self):
+        # a pool must be imported for destroy
+        pass
+
+    def provisioner(self):
+        if self.is_provisioned():
+            self.log.info("already provisioned")
+            return
+        name = self.name
+        multihost = self.multihost
+        create_options = self.create_options
+        vdev = self.vdev or self.oget("vdev") # reference
+
+        args = create_options
+        args += [name]
+        args += vdev
+        args = drop_option("-m", args, drop_value=True)
+        args = drop_option("-o", args, drop_value="cachefile")
+        args = drop_option("-o", args, drop_value="multihost")
+        args = [
+            "-m", "legacy",
+            "-o", "cachefile="+self.zpool_cache,
+        ] + args
+        if self.multihost and rcEnv.sysname == "Linux":
+            args = ["-o", "multihost=on"] + args
+            self.zgenhostid()
+        cmd = ["zpool", "create"] + args
+        ret, _, _ = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.can_rollback = True
+        self.svc.node.unset_lazy("devtree")
 
