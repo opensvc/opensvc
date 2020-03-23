@@ -11,7 +11,8 @@ import rcStatus
 from . import BaseDiskScsireserv
 from rcUtilities import which
 
-class Scsireserv(BaseDiskScsireserv):
+
+class DiskScsireserv(BaseDiskScsireserv):
     def __init__(self,
                  rid=None,
                  peer_resource=None,

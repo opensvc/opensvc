@@ -3,12 +3,10 @@ import rcStatus
 from .sg import DiskScsireservSg
 from rcUtilitiesLinux import dev_to_paths, dev_is_ro
 
-class Scsireserv(DiskScsireservSg):
 
-
+class DiskScsireserv(DiskScsireservSg):
     def mangle_devs(self, devs):
         return dict((dev, dev_to_paths(dev)) for dev in devs)
-
 
     def _status(self, verbose=False):
         ret = super()._status(verbose=verbose)
