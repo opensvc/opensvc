@@ -157,7 +157,7 @@ class Listener(shared.OsvcThread):
     @lazy
     def certfs(self):
         mod = mimport("res", "fs")
-        res = mod.Mount(rid="fs#certs", mount_point=rcEnv.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
+        res = mod.Fs(rid="fs#certs", mount_point=rcEnv.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
         set_lazy(res, "log",  self.log)
         return res
 
