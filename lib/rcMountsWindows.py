@@ -1,6 +1,9 @@
 import rcMounts
 
 class Mounts(rcMounts.Mounts):
+    def __init__(self, wmi=None):
+        self.wmi = wmi
+        super().__init__()
 
     def match_mount(self, i, dev, mnt):
         """Given a line of 'mount' output, returns True if (dev, mnt) matches
@@ -13,11 +16,11 @@ class Mounts(rcMounts.Mounts):
         return False
 
     def parse_mounts(self, wmi=None):
-        if wmi is None:
+        if self.wmi is None:
             import wmi
-            wmi = wmi.WMI()
+            self.wmi = wmi.WMI()
         mounts = []
-        for volume in wmi.Win32_Volume():
+        for volume in self.wmi.Win32_Volume():
             dev = volume.DeviceID
             mnt = volume.Name
             if mnt is None:

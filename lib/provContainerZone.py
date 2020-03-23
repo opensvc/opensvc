@@ -1,14 +1,16 @@
 import os
-import resContainerZone
+import shutil
+
 import lock
 import provisioning
-from rcZfs import Dataset
-import rcZone
 import rcExceptions as ex
+import rcZone
+
+from drivers.resource.container.zone import ContainerZone
 from rcGlobalEnv import rcEnv
 from rcUtilitiesSunOS import get_solaris_version
 from rcUtilities import justcall
-import shutil
+from rcZfs import Dataset
 
 
 SYSIDCFG="/etc/sysidcfg"
@@ -245,7 +247,7 @@ class Prov(provisioning.Prov):
 
     def _create_zone2clone_11(self):
         zonename = self.container_origin
-        zone2clone = resContainerZone.Zone(rid="container#skelzone", name=zonename)
+        zone2clone = ContainerZone(rid="container#skelzone", name=zonename)
         zone2clone.log = self.r.log
         if zone2clone.state == "installed":
             return
@@ -275,7 +277,7 @@ class Prov(provisioning.Prov):
         then install container_origin if required
         """
         zonename = self.container_origin
-        zone2clone = resContainerZone.Zone(rid="container#skelzone", name=zonename)
+        zone2clone = ContainerZone(rid="container#skelzone", name=zonename)
         zone2clone.log = self.r.log
         if zone2clone.state == "installed":
             return
