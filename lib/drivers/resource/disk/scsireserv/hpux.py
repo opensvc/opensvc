@@ -65,7 +65,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         cmd = ['scsimgr', 'save_attr', '-a', 'leg_mpath_enable=false']
         self.log.info(' '.join(cmd))
         p = Popen(cmd, stderr=None, stdout=PIPE, close_fds=True)
-        buff = p.communicate()
+        p.communicate()
         ret = p.returncode
         if ret != 0:
             self.log.error("can not set 'leg_mpath_enable' value")
