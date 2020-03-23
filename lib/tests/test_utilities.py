@@ -135,7 +135,7 @@ class TestUtilities:
         mimport()
         """
         mod = mimport("res", "fs", "linux")
-        assert hasattr(mod, "Mount") is True
+        assert hasattr(mod, "Fs") is True
         mod = mimport("prov", "fs", "linux")
         assert hasattr(mod, "Prov") is True
         mod = mimport("prov", "fs", "linux", "")
