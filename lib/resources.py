@@ -1154,19 +1154,6 @@ class Resource(object):
         else:
             return self.driver_group
 
-    @lazy
-    def prov(self):
-        """
-        Find the provisioning module, import it and instanciate a Prov object.
-        """
-        try:
-            mod = mimport("prov", self.driver_group, self.driver_basename, fallback=True)
-        except ImportError as exc:
-            mod = __import__("provisioning")
-        if not hasattr(mod, "Prov"):
-            raise ex.excError("missing Prov class in module %s" % str(mod))
-        return getattr(mod, "Prov")(self)
-
     def provision_shared_non_leader(self):
         self.log.info("non leader shared resource provisioning")
         self.write_is_provisioned_flag(True, mtime=1)
@@ -1178,10 +1165,8 @@ class Resource(object):
         if self.skip_provision:
             self.log.info("provision skipped (configuration directive)")
             return
-        if self.prov is None:
-            return
-        if hasattr(self.prov, "provisioner_shared_non_leader"):
-            self.prov.provisioner_shared_non_leader()
+        if hasattr(self, "provisioner_shared_non_leader"):
+            getattr(self, "provisioner_shared_non_leader")()
 
     def provision(self):
         if self.shared and not self.svc.options.leader:
@@ -1189,7 +1174,7 @@ class Resource(object):
             return
         self._provision()
         try:
-            self.prov.start()
+            self.post_provision_start()
         except Exception as exc:
             if self.skip_provision:
                 # best effort
@@ -1206,17 +1191,17 @@ class Resource(object):
             self.log.info("provision skipped (configuration directive)")
             self.write_is_provisioned_flag(True)
             return
-        if self.prov is None:
+        if not hasattr(self, "provisioner"):
             return
         if self.is_provisioned(refresh=self.refresh_provisioned_on_provision) is True:
             self.log.info("%s already provisioned", self.label)
         else:
-            self.prov.provisioner()
+            getattr(self, "provisioner")()
         self.write_is_provisioned_flag(True)
 
     def unprovision(self):
         try:
-            self.prov.stop()
+            self.pre_provision_stop()
         except Exception:
             if self.skip_unprovision:
                 # best effort
@@ -1238,10 +1223,10 @@ class Resource(object):
         if self.skip_unprovision:
             self.log.info("unprovision skipped (configuration directive)")
             return
-        if self.prov is None:
+        if not hasattr(self, "unprovisioner") and not hasattr(self, "unprovisioner_shared_non_leader"):
             return
-        if hasattr(self.prov, "unprovisioner_shared_non_leader"):
-            self.prov.unprovisioner_shared_non_leader()
+        if hasattr(self, "unprovisioner_shared_non_leader"):
+            getattr(self, "unprovisioner_shared_non_leader")()
         self.write_is_provisioned_flag(False)
 
     def _unprovision(self):
@@ -1252,24 +1237,30 @@ class Resource(object):
         if self.skip_provision or self.skip_unprovision:
             self.log.info("unprovision skipped (configuration directive)")
             return
-        if self.prov is None:
+        if not hasattr(self, "unprovisioner") and not hasattr(self, "unprovisioner_shared_non_leader"):
             return
         if self.is_provisioned(refresh=self.refresh_provisioned_on_unprovision) is False:
             self.log.info("%s already unprovisioned", self.label)
         else:
-            self.prov.unprovisioner()
+            getattr(self, "unprovisioner")()
         self.write_is_provisioned_flag(False)
 
+    def post_provision_start(self):
+        self.start()
+
+    def pre_provision_stop(self):
+        self.stop()
+
     def is_provisioned(self, refresh=False):
-        if self.prov is None:
+        if not hasattr(self, "provisioner") and not hasattr(self, "provisioner_shared_non_leader"):
             return True
         if not refresh:
             flag = self.is_provisioned_flag()
             if flag is not None:
                 return flag
-        if not hasattr(self.prov, "is_provisioned"):
+        if not hasattr(self, "provisioned"):
             return
-        value = self.prov.is_provisioned()
+        value = getattr(self, "provisioned")()
         if not self.shared or self.svc.options.leader or \
            (self.shared and not refresh and value):
             self.write_is_provisioned_flag(value)

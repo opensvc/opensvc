@@ -265,3 +265,47 @@ class DiskAmazon(BaseDisk, AmazonMixin):
         disks = set([ r.rstrip("1234567890") for r in self.sub_devs() ])
         return disks
 
+    def provisioner(self):
+        for volume in self.volumes:
+            volumes_done = self._provisioner(volume)
+        volumes = ' '.join(volumes_done)
+        self.svc.set_multi(["%s.volumes=%s" % (self.rid, volumes)])
+        self.volumes = volumes_done
+        self.log.info("provisioned")
+        self.start()
+        self.svc.node.unset_lazy("devtree")
+
+    def _provisioner(self, volume):
+        volumes_done = []
+        if not volume.startswith("<") and not volume.endswith(">"):
+            self.log.info("volume %s already provisioned" % volume)
+            volumes_done.append(volume)
+            return
+
+        s = volume.strip("<>")
+        v = s.split(",")
+        kwargs = {}
+        for e in v:
+            try:
+                key, val = e.split("=")
+            except:
+                raise ex.excError("format error: %s. expected key=value." % e)
+            kwargs[key] = val
+        cmd = ["ec2", "create-volume"]
+        if "size" in kwargs:
+            cmd += ["--size", kwargs["size"]]
+        if "iops" in kwargs:
+            cmd += ["--iops", kwargs["iops"]]
+        if "availability-zone" in kwargs:
+            cmd += ["--availability-zone", kwargs["availability-zone"]]
+        else:
+            node = self.get_instance_data()
+            availability_zone = node["Placement"]["AvailabilityZone"]
+            cmd += ["--availability-zone", availability_zone]
+        data = self.aws(cmd)
+        self.wait_avail(data["VolumeId"])
+        volumes_done.append(data["VolumeId"])
+        self.svc.node.unset_lazy("devtree")
+        return volumes_done
+
+

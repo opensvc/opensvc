@@ -1,11 +1,15 @@
+import glob
+import json
 import re
 import os
+
+from stat import *
 
 import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
-from rcUtilities import qcall
+from rcUtilities import qcall, justcall, lazy
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from svcdict import KEYS
@@ -22,8 +26,9 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "options",
-        "default": "",
+        "default": [],
         "at": True,
+        "convert": "shlex",
         "provisioning": True,
         "text": "The vgcreate options to use upon vg provisioning."
     },
@@ -37,6 +42,8 @@ KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "pvs",
         "required": True,
+        "convert": "list",
+        "default": [],
         "text": "The list of paths to the physical volumes of the volume group.",
         "provisioning": True
     },
@@ -421,4 +428,57 @@ class DiskVg(BaseDisk):
         import lock
         lock.unlock(self.lockfd)
 
+    @lazy
+    def options(self):
+        return self.oget("options")
 
+    @lazy
+    def pvs(self):
+        try:
+            pvs = self.oget("pvs")
+        except:
+            raise ex.excError("pvs provisioning keyword is not set")
+        l = []
+        for pv in pvs:
+            l += glob.glob(pv)
+        return l
+
+    def provisioner(self):
+        if self.has_it():
+            self.log.info("already provisioned")
+            return
+
+        err = False
+        for i, pv in enumerate(self.pvs):
+            if not os.path.exists(pv):
+                self.log.error("pv %s does not exist"%pv)
+                err |= True
+            mode = os.stat(pv)[ST_MODE]
+            if S_ISBLK(mode):
+                continue
+            else:
+                self.log.error("pv %s is not a block device nor a loop file"%pv)
+                err |= True
+        if err:
+            raise ex.excError
+
+        for pv in self.pvs:
+            pv = pv.replace('/disk/', '/rdisk/')
+            cmd = ['pvcreate', '-f', pv]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
+
+        pvs = []
+        for pv in self.pvs:
+            pvs.append(pv.replace('/rdisk/', '/disk/'))
+        cmd = ['vgcreate']
+        if len(self.options) > 0:
+            cmd += self.options
+        cmd += [self.name] + pvs
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+        self.log.info("provisioned")
+        self.svc.node.unset_lazy("devtree")

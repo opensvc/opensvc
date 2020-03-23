@@ -326,4 +326,10 @@ class ContainerVcloud(BaseContainer):
     def install_drp_flag(self):
         pass
 
+    def provision(self):
+        image = self.get_template()
+        size = self.get_size()
+        self.log.info("create instance %s, size %s, image %s, key %s"%(self.name, size.name, image.name, self.key_name))
+        self.cloud.driver.create_node(name=self.name, size=size, image=image, ex_key_name=self.key_name, ex_shared_ip_group_id=self.shared_ip_group)
+        self.wait_for_startup()
 
