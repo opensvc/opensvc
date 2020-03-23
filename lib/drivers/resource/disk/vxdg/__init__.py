@@ -1,11 +1,16 @@
+import fnmatch
+import glob
+import os
 import re
+
 from collections import namedtuple
+from stat import *
 
 import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, justcall
+from rcUtilities import qcall, which, justcall, lazy
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
@@ -199,3 +204,144 @@ class DiskVxdg(BaseDisk):
 
         return devs
 
+
+    def provisioned(self):
+        return self.prov_has_it()
+
+    def prov_has_it(self):
+        cmd = ["vxdisk", "list"]
+        out, err, ret = justcall(cmd)
+        words  = out.split()
+        if "(%s)" % self.name in words or \
+           " %s " % self.name in words:
+            return True
+        return False
+
+    def unprovisioner(self):
+        #if self.has_it():
+        #    self.destroy_vg()
+        self.unsetup()
+
+    def unsetup(self):
+        cmd = ["vxdisk", "list"]
+        out, err, ret = justcall(cmd)
+        for line in out.splitlines():
+            words = line.split()
+            if "(%s)" % self.name in words:
+                cmd = ["/opt/VRTS/bin/vxdiskunsetup", "-f", words[0]]
+                ret, out, err = self.vcall(cmd)
+                if ret != 0:
+                    raise ex.excError
+
+    def destroy_vg(self):
+        cmd = ["vxdg", "destroy", self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.svc.node.unset_lazy("devtree")
+
+    def has_pv(self, pv):
+        cmd = ["vxdisk", "list", pv]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        for line in out.splitlines():
+            if line.startswith("group:"):
+                if "name=%s "%self.name in line:
+                    self.log.info("pv %s is already a member of vg %s", pv, self.name)
+                    return True
+                elif "name= " in line:
+                    # pv already initialized but not in a dg
+                    return True
+                else:
+                    vg = line.split("name=", 1)[0].split()[0]
+                    raise ex.excError("pv %s in use by vg %s" % (pv, vg))
+            if line.startswith("flags:") and "invalid" in line:
+                return False
+        return False
+
+    @lazy
+    def vxdisks(self):
+        """
+        Parse vxdisk list output.
+
+        Example:
+
+        # vxdisk list
+        DEVICE          TYPE            DISK         GROUP        STATUS
+        aluadisk_0   auto:cdsdisk    aluadisk_0   osvcdg       online
+        aluadisk_1   auto:cdsdisk    aluadisk_1   osvcdg       online
+        aluadisk_2   auto:none       -            -            online invalid
+
+        """
+        cmd = ["vxdisk", "list"]
+        out, err, ret = justcall(cmd)
+        data = []
+        for line in out.splitlines():
+            words = line.split()
+            if len(words) < 1:
+                continue
+            if words[0] == "DEVICE":
+                continue
+            data.append(words[0])
+        return data
+
+    def vxname_glob(self, pattern):
+        """
+        Return the list of vxdisks matching the name globing pattern.
+        """
+        return [name for name in self.vxdisks if fnmatch.fnmatch(name, pattern)]
+
+    def sysname_glob(self, pattern):
+        """
+        Return the list of vxdisks matching the system devpath globing pattern.
+        """
+        data = []
+        for devpath in glob.glob(pattern):
+            dev = self.svc.node.devtree.get_dev_by_devpath(devpath)
+            if dev is None:
+                continue
+            data.append(dev.alias)
+        return data
+
+    def provisioner(self):
+        self.pvs = self.oget("pvs")
+
+        if self.pvs is None:
+            # lazy reference not resolvable
+            raise ex.excError("%s.pvs value is not valid" % self.rid)
+
+        self.pvs = self.pvs.split()
+        l = []
+        for pv in self.pvs:
+            if os.sep not in pv:
+                _l = self.vxname_glob(pv)
+            else:
+                _l = self.sysname_glob(pv)
+            if _l:
+                self.log.info("expand %s to %s" % (pv, ', '.join(_l)))
+            l += _l
+        self.pvs = l
+
+        if len(self.pvs) == 0:
+            raise ex.excError("no pvs specified")
+
+        for pv in self.pvs:
+            if self.has_pv(pv):
+                continue
+            cmd = ["/opt/VRTS/bin/vxdisksetup", "-i", pv]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
+
+        if self.prov_has_it():
+            self.log.info("vg %s already exists")
+            return
+
+        cmd = ["vxdg", "init", self.name] + self.pvs
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+        self.can_rollback = True
+        self.svc.node.unset_lazy("devtree")

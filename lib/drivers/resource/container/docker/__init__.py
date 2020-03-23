@@ -1062,3 +1062,14 @@ class ContainerDocker(BaseContainer):
         Used by ip.cni
         """
         return self.container_sandboxkey()
+
+    def is_provisioned(self):
+        return True
+
+    def post_provision_start(self):
+        self._start()
+        self.status(resfresh=True)
+
+    def pre_provision_stop(self):
+        self._stop()
+        self.status(resfresh=True)

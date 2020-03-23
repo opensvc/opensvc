@@ -5,6 +5,7 @@ import rcStatus
 import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
+from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 from svcBuilder import init_kwargs
@@ -332,4 +333,25 @@ class DiskRadoslock(DiskRados):
         if ret != 0:
             raise ex.excError("failed to lock %s"%self.devname(image))
 
+    def provisioner(self):
+        for image in self.images:
+            self.provisioner_one(image)
+        self.log.info("provisioned")
+        self.start()
+        self.svc.node.unset_lazy("devtree")
+
+    def provisioner_one(self, image):
+        if self.exists(image):
+            self.log.info("%s already provisioned"%image)
+            return
+        size = self.oget('size')
+        size = convert_size(size, _to="m")
+        image_format = self.oget('image_format')
+        cmd = self.rbd_rcmd() + ['create', '--size', str(size), image]
+        if image_format:
+            cmd += ["--image-format", str(image_format)]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.svc.node.unset_lazy("devtree")
 

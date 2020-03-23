@@ -53,24 +53,31 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
+def adder(svc, s, drv=None):
+    drv = drv or BaseDiskLv
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
     kwargs["vg"] = svc.oget(s, "vg")
-    r = DiskLv(**kwargs)
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["create_options"] = svc.oget(s, "create_options")
+    r = drv(**kwargs)
     svc += r
 
 
-class DiskLv(BaseDisk):
+class BaseDiskLv(BaseDisk):
     def __init__(self,
                  rid=None,
                  name=None,
                  vg=None,
+                 size=None,
+                 create_options=None,
                  **kwargs):
         super().__init__(rid=rid, name=name, type='disk.lv', **kwargs)
         self.fullname = "%s/%s" % (vg, name)
         self.label = "lv %s" % self.fullname
         self.vg = vg
+        self.size = size
+        self.create_options = create_options or []
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
 

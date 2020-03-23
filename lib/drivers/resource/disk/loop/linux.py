@@ -12,6 +12,7 @@ from . import \
     DRIVER_GROUP, \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
+from converters import convert_size
 from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcLoopLinux import file_to_loop
@@ -31,8 +32,12 @@ def adder(svc, s):
 
 
 class DiskLoop(BaseDiskLoop):
+    def __init__(self, rid, loopFile, **kwargs):
+        super().__init__(rid, loopFile, **kwargs)
+
     def is_up(self):
-        """Returns True if the loop group is present and activated
+        """
+        Returns True if the loop group is present and activated
         """
         self.loop = file_to_loop(self.loopFile)
         if len(self.loop) == 0:
@@ -85,10 +90,40 @@ class DiskLoop(BaseDiskLoop):
         else:
             return rcStatus.DOWN
 
-    def __init__(self, rid, loopFile, **kwargs):
-        super().__init__(rid, loopFile, **kwargs)
-
     def exposed_devs(self):
         self.loop = file_to_loop(self.loopFile)
         return set(self.loop)
 
+    def provisioned(self):
+        try:
+            return os.path.exists(self.loopFile)
+        except Exception:
+            return
+
+    def unprovisioner(self):
+        try:
+            self.loopFile
+        except Exception as e:
+            raise ex.excError(str(e))
+
+        if not self.provisioned():
+            return
+
+        self.log.info("unlink %s" % self.loopFile)
+        os.unlink(self.loopFile)
+        self.svc.node.unset_lazy("devtree")
+
+    def provisioner(self):
+        self.size = self.oget("size")
+        d = os.path.dirname(self.loopFile)
+        try:
+            if not os.path.exists(d):
+                self.log.info("create directory %s"%d)
+                os.makedirs(d)
+            with open(self.loopFile, 'w') as f:
+                self.log.info("create file %s, size %s"%(self.loopFile, self.size))
+                f.seek(convert_size(self.size, _to='b', _round=512)-1)
+                f.write('\0')
+        except Exception as e:
+            raise ex.excError("failed to create %s: %s"% (self.loopFile, str(e)))
+        self.svc.node.unset_lazy("devtree")

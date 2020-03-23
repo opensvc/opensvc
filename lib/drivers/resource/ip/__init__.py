@@ -160,6 +160,7 @@ def adder(svc, s, drv=None):
     kwargs["ipname"] = svc.oget(s, "ipname")
     kwargs["mask"] = svc.oget(s, "netmask")
     kwargs["gateway"] = svc.oget(s, "gateway")
+    kwargs["provisioner"] = svc.oget(s, "provisioner")
     r = drv(**kwargs)
     svc += r
 
@@ -180,6 +181,7 @@ class Ip(Resource):
                  check_carrier=True,
                  alias=True,
                  wait_dns=0,
+                 provisioner=None,
                  **kwargs):
         super().__init__(rid, type=type, **kwargs)
         self.ipdev = ipdev
@@ -193,6 +195,7 @@ class Ip(Resource):
         self.check_carrier = check_carrier
         self.alias = alias
         self.wait_dns = wait_dns
+        self.kw_provisioner = provisioner
 
     def on_add(self):
         self.set_label()
@@ -221,7 +224,7 @@ class Ip(Resource):
     @lazy
     def dns_name_suffix(self):
         try:
-            dns_name_suffix = self.svc.conf_get(self.rid, "dns_name_suffix").strip("'\"$#")
+            dns_name_suffix = self.conf_get("dns_name_suffix").strip("'\"$#")
         except ex.OptNotFound:
             dns_name_suffix = None
         return dns_name_suffix
@@ -643,7 +646,7 @@ class Ip(Resource):
             return
 
         try:
-            self.svc.conf_get(self.rid, "dns_update")
+            self.conf_get("dns_update")
         except ex.OptNotFound:
             self.log.debug("skip dns update: dns_update is not set")
             return
@@ -748,7 +751,7 @@ class Ip(Resource):
 
         try:
             # explicit network setting
-            network = self.svc.conf_get(self.rid, "network")
+            network = self.conf_get("network")
         except ex.OptNotFound:
             network = None
 
@@ -892,3 +895,29 @@ class Ip(Resource):
             raise ex.excError("invalid expose protocol %s. expected tcp or udp" % words[1])
         data["protocol"] = words[1]
         return data
+
+    def provisioned(self):
+        try:
+            self.conf_get("ipname")
+            return True
+        except ex.OptNotFound:
+            return False
+
+    def provisioner(self):
+        """
+        Provision the ip resource, allocate an ip collector's side, and
+        start it.
+        """
+        if self.kw_provisioner != "collector":
+            return
+        self.allocate()
+
+    def unprovisioner(self):
+        """
+        Unprovision the ip resource, meaning unplumb and release collector's
+        side.
+        """
+        if self.kw_provisioner != "collector":
+            return
+        self.release()
+

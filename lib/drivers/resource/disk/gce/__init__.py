@@ -6,6 +6,7 @@ import rcGce
 import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS
+from converters import convert_size
 from rcGlobalEnv import *
 from rcUtilities import justcall
 from svcBuilder import init_kwargs
@@ -252,4 +253,78 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
     def exposed_disks(self):
         attached = self.get_attached_disks()
         return set([d["deviceName"] for d in attached if d["name"] in self.names])
+
+
+    def provisioner(self):
+        for name in self.names:
+            self._provisioner(name)
+        self.log.info("provisioned")
+        self.get_disks(refresh=True)
+        self.start()
+        self.svc.node.unset_lazy("devtree")
+
+    def _provisioner(self, name):
+        disk_names = self.get_disk_names()
+        if name in disk_names:
+            self.log.info("gce disk name %s already provisioned" % name)
+            return
+
+        size = self.oget("size")
+        size = str(convert_size(size, _to="MB"))+'MB'
+
+        cmd = ["gcloud", "compute", "disks", "create", "-q",
+               name,
+               "--size", size,
+               "--zone", self.gce_zone]
+
+        try:
+            description = self.svc.conf_get(self.rid, "description")
+            cmd += ["--description", description]
+        except:
+            pass
+
+        try:
+            image = self.svc.conf_get(self.rid, "image")
+            cmd += ["--image", image]
+        except:
+            pass
+
+        try:
+            source_snapshot = self.svc.conf_get(self.rid, "source_snapshot")
+            cmd += ["--source-snapshot", source_snapshot]
+        except:
+            pass
+
+        try:
+            image_project = self.svc.conf_get(self.rid, "image_project")
+            cmd += ["--image-project", image_project]
+        except:
+            pass
+
+        try:
+            disk_type = self.svc.conf_get(self.rid, "disk_type")
+            cmd += ["--type", disk_type]
+        except:
+            pass
+
+        self.vcall(cmd)
+
+    def unprovisioner(self):
+        self.stop()
+        for name in self.names:
+            self._unprovisioner(name)
+        self.log.info("unprovisioned")
+        self.svc.node.unset_lazy("devtree")
+
+    def _unprovisioner(self, name):
+        disk_names = self.get_disk_names()
+        if name not in disk_names:
+            self.log.info("gce disk name %s already unprovisioned" % name)
+            return
+
+        cmd = ["gcloud", "compute", "disks", "delete", "-q", name,
+               "--zone", self.gce_zone]
+
+        self.vcall(cmd)
+
 

@@ -1,4 +1,5 @@
 import os
+import socket
 
 import rcExceptions as ex
 import rcStatus
@@ -68,6 +69,22 @@ def adder(svc, s):
 
 
 class ContainerSrp(BaseContainer):
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="HP-UX",
+                 osvc_root_path=None,
+                 **kwargs):
+        super().__init__(rid=rid,
+                         name=name,
+                         type="container.srp",
+                         guestos=guestos,
+                         osvc_root_path=osvc_root_path,
+                         **kwargs)
+        self.runmethod = ['srp_su', name, 'root', '-c']
+        self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
+        self.need_start = []
+
     def files_to_sync(self):
         return [self.export_file]
 
@@ -286,19 +303,6 @@ class ContainerSrp(BaseContainer):
         if ret != 0:
             raise ex.excError()
 
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="HP-UX",
-                 osvc_root_path=None,
-                 **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.srp",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
-        self.runmethod = ['srp_su', name, 'root', '-c']
 
     @lazy
     def export_file(self):
@@ -307,3 +311,100 @@ class ContainerSrp(BaseContainer):
     def __str__(self):
         return "%s name=%s" % (Resource.__str__(self), self.name)
 
+
+    @lazy
+    def ip(self):
+        ip = self.oget("ip")
+        return self.lookup(ip)
+
+    @lazy
+    def prm_cores(self):
+        return self.oget("prm_cores")
+
+    def lookup(self, ip):
+        if ip is None:
+            raise ex.excError("the ip provisioning keyword is not set")
+
+        try:
+            int(ip[0])
+            # already in cidr form
+            return
+        except:
+            pass
+
+        try:
+            a = socket.getaddrinfo(ip, None)
+            if len(a) == 0:
+                raise Exception
+            ip = a[0][-1][0]
+            return ip
+        except:
+            raise ex.excError("could not resolve %s to an ip address"%ip)
+
+    def validate(self):
+        # False triggers provisioner, True skip provisioner
+        if not which('srp'):
+            self.log.error("this node is not srp capable")
+            return True
+
+        if self.check_srp():
+            self.log.error("container is already created")
+            return True
+
+        return False
+
+    def check_srp(self):
+        try:
+            self.get_status()
+        except:
+            return False
+        return True
+
+    def cleanup(self):
+        rs = self.svc.get_resources('fs')
+        rs.sort(key=lambda x: x.mount_point, reverse=True)
+        for r in rs:
+            if r.mount_point == self.rootpath:
+                continue
+            if not r.mount_point.startswith(self.rootpath):
+                continue
+            r.stop()
+            self.need_start.append(r)
+            os.unlink(r.mount_point)
+            p = r.mount_point
+            while True:
+                p = os.path.realpath(os.path.join(p, '..'))
+                if p == self.rootpath:
+                    break
+                try:
+                    self.log.info("unlink %s"%p)
+                    os.unlink(p)
+                except:
+                    break
+
+    def restart_fs(self):
+        for r in self.need_start:
+            r.start()
+
+    def add_srp(self):
+        self.cleanup()
+        cmd = ['srp', '-batch',
+               '-a', self.name,
+               '-t', 'system',
+               '-s', 'admin,cmpt,init,prm,network',
+               'ip_address='+self.ip, 'assign_ip=no',
+               'autostart=no',
+               'delete_files_ok=no',
+               'root_password=""',
+               'prm_group_type=PSET',
+               'prm_cores='+str(self.prm_cores)]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError()
+        self.restart_fs()
+
+    def provisioner(self):
+        self.add_srp()
+        self.start()
+        self.log.info("provisioned")
+        return True
