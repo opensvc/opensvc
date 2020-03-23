@@ -1,17 +1,19 @@
-import resources as Res
-import uuid
-import re
 import os
+import re
 import time
-import rcStatus
+import uuid
+
 import rcExceptions as ex
+import rcStatus
+
+from resources import Resource
 from rcUtilities import which
 from subprocess import *
 from rcGlobalEnv import rcEnv
 hostId = __import__('hostid'+rcEnv.sysname)
 
 
-class ScsiReserv(Res.Resource):
+class ScsiReserv(Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on devs held by a service
     """
@@ -29,10 +31,7 @@ class ScsiReserv(Res.Resource):
         self.hostid = None
         self.peer_resource = peer_resource
         self.prkey = prkey
-        Res.Resource.__init__(self,
-                              rid=rid+"pr",
-                              type="disk.scsireserv",
-                              **kwargs)
+        super().__init__(rid=rid+"pr", type="disk.scsireserv", **kwargs)
         self.sort_key = rid
 
 

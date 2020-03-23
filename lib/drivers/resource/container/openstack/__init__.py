@@ -2,7 +2,6 @@ import os
 import time
 
 import rcStatus
-import resources as Res
 import rcExceptions as ex
 
 from .. import \
@@ -23,6 +22,7 @@ from .. import \
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
 from rcUtilitiesLinux import check_ping
+from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
 
@@ -231,7 +231,7 @@ class ContainerOpenstack(BaseContainer):
         return False
 
     def __str__(self):
-        return "%s name=%s" % (Res.Resource.__str__(self), self.name)
+        return "%s name=%s" % (Resource.__str__(self), self.name)
 
     def getaddr(self):
         if self.addr is not None:
