@@ -1,16 +1,11 @@
 import os
-import uuid
-import re
 import time
-
 from subprocess import *
 
 import rcExceptions as ex
-import rcStatus
-
-from . import BaseDiskScsireserv
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, bdecode, lazy
+from . import BaseDiskScsireserv
 
 
 class DiskScsireservSg(BaseDiskScsireserv):

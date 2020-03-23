@@ -1,15 +1,9 @@
 import os
-import re
-import time
-import uuid
-
 from subprocess import *
 
 import rcExceptions as ex
-import rcStatus
-
-from . import BaseDiskScsireserv
 from rcUtilities import which
+from . import BaseDiskScsireserv
 
 
 def mpath_to_path(disks):
