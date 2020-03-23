@@ -3,11 +3,11 @@ from __future__ import print_function
 
 import rcStatus
 import svc
+from drivers.resource.container.docker import ContainerDocker
+from drivers.resource.volume import Volume
 from node import Node
 from poolDirectory import Pool
 from rcUtilities import factory
-from resVolume import Volume
-from resContainerDocker import Container
 import rcExceptions as ex
 import pytest
 
@@ -24,8 +24,8 @@ class TestVolumeOptions:
             options,
             expected_options):
         svc1 = svc.Svc('test-service')
-        container = Container(rid='#docker0',
-                              volume_mounts=[str(tmpdir) + ':/dst:' + options])
+        container = ContainerDocker(rid='#docker0',
+                                    volume_mounts=[str(tmpdir) + ':/dst:' + options])
         svc1 += container
         res = container.volume_options()
         assert res == [str(tmpdir) + ':/dst:' + expected_options]
@@ -54,8 +54,8 @@ class TestVolumeOptions:
 
         svc1 = svc.Svc('svc1')
         vol = Volume(rid="#" + vol_name, name=vol_name, access=vol_options)
-        container = Container(rid='#dck1',
-                              volume_mounts=[vol_name + '/src:/dst:' + container_options])
+        container = ContainerDocker(rid='#dck1',
+                                    volume_mounts=[vol_name + '/src:/dst:' + container_options])
         svc1 += vol
         svc1 += container
 
@@ -75,7 +75,7 @@ class TestVolumeOptions:
             pool.configure_volume(factory("vol")(name=vol_name))
             svc1 += Volume(rid="#" + vol_name, name=vol_name)
 
-        container = Container(rid='#dck1', volume_mounts=volume_mounts)
+        container = ContainerDocker(rid='#dck1', volume_mounts=volume_mounts)
         svc1 += container
 
         with pytest.raises(ex.excError, match=r'same destination mount point'):
