@@ -3,17 +3,19 @@ import re
 import time
 import uuid
 
+from subprocess import *
+
 import rcExceptions as ex
 import rcStatus
 
 from resources import Resource
 from rcUtilities import which
-from subprocess import *
 from rcGlobalEnv import rcEnv
+
 hostId = __import__('hostid'+rcEnv.sysname)
 
 
-class ScsiReserv(Resource):
+class BaseDiskScsireserv(Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
     on devs held by a service
     """
