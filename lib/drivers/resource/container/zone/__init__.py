@@ -119,12 +119,12 @@ class ContainerZone(BaseContainer):
                  delete_on_stop=False,
                  osvc_root_path=None,
                  **kwargs):
-        BaseContainer.__init__(rid=rid,
-                               name=name,
-                               type="container.zone",
-                               guestos=guestos,
-                               osvc_root_path=osvc_root_path,
-                               **kwargs)
+        super(ContainerZone, self).__init__(rid=rid,
+                                            name=name,
+                                            type="container.zone",
+                                            guestos=guestos,
+                                            osvc_root_path=osvc_root_path,
+                                            **kwargs)
         self.label = name
         self.delete_on_stop = delete_on_stop
         self.runmethod = ["/usr/sbin/zlogin", name]
