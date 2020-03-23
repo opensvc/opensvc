@@ -180,7 +180,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
     def get_reservation_key(self, disk):
         try:
             return self._get_reservation_key(disk)
-        except ex.excError as e:
+        except ex.excError:
             disk = self.dev_to_mpath_dev(disk)
             return self._get_reservation_key(disk)
 
@@ -208,7 +208,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
     def disk_reserved(self, disk):
         try:
             return self._disk_reserved(disk)
-        except ex.excError as e:
+        except ex.excError:
             disk = self.dev_to_mpath_dev(disk)
             return self._disk_reserved(disk)
 
