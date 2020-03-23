@@ -19,7 +19,7 @@ install:
 - pip install -r test-requirements.txt
 script:
 - sudo $(which pytest) -vvv --cov -m "ci"
-- pylint -E lib/*py
+- pylint -E lib/*py lib/drivers
 after_success:
 - pip install codecov
 - codecov
