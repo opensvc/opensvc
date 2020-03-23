@@ -153,8 +153,8 @@ class TestUtilities:
         """
         ximport()
         """
-        mod = ximport("resFs")
-        assert hasattr(mod, "Mount") is True
+        mod = ximport("provVolume")
+        assert hasattr(mod, "Prov") is True
 
         try:
             _ = ximport("aa")
