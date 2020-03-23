@@ -104,3 +104,6 @@ class Fs(BaseFs):
         if ret != 0:
             self.log.error('failed to umount %s'%self.mount_point)
             raise ex.excError
+
+    def lv_name(self):
+        return os.path.basename(self.device)

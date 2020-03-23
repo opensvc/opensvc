@@ -29,6 +29,17 @@ def adder(svc, s):
 
 
 class NfsShare(Resource):
+    def __init__(self, rid, path, opts, **kwargs):
+        Resource.__init__(self, rid, type="share.nfs", **kwargs)
+
+        if not which("share"):
+            raise ex.excInitError("share is not installed")
+        self.label = "nfs:"+path
+        self.path = path
+        try:
+            self.opts = self.parse_opts(opts)
+        except ex.excError as e:
+            raise ex.excInitError(str(e))
 
     def get_opts(self):
         cmd = ["share", "-F", "nfs", "-A"]
@@ -118,16 +129,6 @@ class NfsShare(Resource):
                 out.append(e)
         return ','.join(out)
 
-    def __init__(self, rid, path, opts, **kwargs):
-        Resource.__init__(self, rid, type="share.nfs", **kwargs)
-
-        if not which("share"):
-            raise ex.excInitError("share is not installed")
-        self.label = "nfs:"+path
-        self.path = path
-        try:
-            self.opts = self.parse_opts(opts)
-        except ex.excError as e:
-            raise ex.excInitError(str(e))
-
+    def post_provision_start(self):
+        pass
 

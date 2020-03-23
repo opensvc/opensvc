@@ -1,6 +1,8 @@
 import json
 import os
 
+from subprocess import PIPE
+
 import rcExceptions as ex
 
 from .. import \
@@ -347,4 +349,25 @@ class ContainerLxd(BaseContainer):
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
         super().unprovision()
+
+    def provisioned(self):
+        return self.has_it()
+
+    def provisioner(self):
+        if self.has_it():
+            return
+        image = self.oget("launch_image")
+        options = self.oget("launch_options")
+        cmd = ["/usr/bin/lxc", "launch", image] + options + [self.name]
+        ret, out, err = self.vcall(cmd, stdin=PIPE)
+        if ret != 0:
+            raise ex.excError
+        self.wait_for_fn(self.is_up, self.start_timeout, 2)
+        self.can_rollback = True
+
+    def unprovisioner(self):
+        cmd = ["/usr/bin/lxc", "delete", self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
 

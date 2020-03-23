@@ -1,5 +1,9 @@
+import json
+import glob
 import os
 import re
+
+from stat import *
 
 import rcExceptions as ex
 
@@ -30,7 +34,8 @@ KEYWORDS = [
     },
     {
         "keyword": "pvs",
-        "required": True,
+        "convert": "list",
+        "default": [],
         "text": "The list of paths to the physical volumes of the volume group.",
         "provisioning": True
     },
@@ -61,6 +66,7 @@ KEYS.register_driver(
 def adder(svc, s):
     kwargs = init_kwargs(svc, s)
     kwargs["name"] = svc.oget(s, "name")
+    kwargs["pvs"] = svc.oget(s, "pvs")
     r = DiskVg(**kwargs)
     svc += r
 
@@ -69,19 +75,21 @@ class DiskVg(BaseDisk):
     def __init__(self,
                  rid=None,
                  name=None,
+                 pvs=None,
                  **kwargs):
         super().__init__(rid=rid,
                          name=name,
                          type='disk.vg',
                          **kwargs)
         self.label = "vg "+name
+        self.pvs = pvs or []
         self.tag = rcEnv.nodename
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
 
     def _info(self):
         data = [
-          ["name", self.name],
+            ["name", self.name],
         ]
         return data
 
@@ -334,3 +342,109 @@ class DiskVg(BaseDisk):
 
     def boot(self):
         self.do_stop()
+
+
+
+    def provisioned(self):
+        # don't trust cache for that
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
+        self.clear_cache("vg.pvs")
+        self.vgscan()
+        return self.has_it()
+
+    def unprovisioner(self):
+        if not self.has_it():
+            return
+        cmd = ['vgremove', '-ff', self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
+        self.clear_cache("vg.pvs")
+        self.svc.node.unset_lazy("devtree")
+
+    def vgscan(self):
+        cmd = [rcEnv.syspaths.vgscan, "--cache"]
+        justcall(cmd)
+
+    def has_pv(self, pv):
+        cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
+        justcall(cmd)
+        cmd = [rcEnv.syspaths.pvs, "-o", "vg_name", "--noheadings", pv]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        out = out.strip()
+        if out == self.name:
+            self.log.info("pv %s is already a member of vg %s", pv, self.name)
+            return True
+        if out != "":
+            raise ex.excError("pv %s in use by vg %s" % (pv, out))
+        return True
+
+    def provisioner(self):
+        self.pvs = self.pvs or self.oget("pvs")
+        if not self.pvs:
+            # lazy reference not resolvable
+            raise ex.excError("%s.pvs value is not valid" % self.rid)
+
+        l = []
+        for pv in self.pvs:
+            _l = glob.glob(pv)
+            self.log.info("expand %s to %s" % (pv, ', '.join(_l)))
+            l += _l
+        self.pvs = l
+
+        pv_err = False
+        for i, pv in enumerate(self.pvs):
+            pv = os.path.realpath(pv)
+            if not os.path.exists(pv):
+                self.log.error("pv %s does not exist"%pv)
+                pv_err |= True
+            mode = os.stat(pv)[ST_MODE]
+            if S_ISBLK(mode):
+                continue
+            elif S_ISREG(mode):
+                cmd = [rcEnv.syspaths.losetup, '-j', pv]
+                out, err, ret = justcall(cmd)
+                if ret != 0 or not out.startswith('/dev/loop'):
+                    self.log.error("pv %s is a regular file but not a loop"%pv)
+                    pv_err |= True
+                    continue
+                self.pvs[i] = out.split(':')[0]
+            else:
+                self.log.error("pv %s is not a block device nor a loop file"%pv)
+                pv_err |= True
+        if pv_err:
+            raise ex.excError
+
+        for pv in self.pvs:
+            if self.has_pv(pv):
+                continue
+            cmd = ['pvcreate', '-f', pv]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.excError
+
+        if len(self.pvs) == 0:
+            raise ex.excError("no pvs specified")
+
+        if self.has_it():
+            self.log.info("vg %s already exists", self.name)
+            return
+
+        cmd = ['vgcreate', self.name] + self.pvs
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+
+        self.can_rollback = True
+        self.clear_cache("vg.lvs")
+        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("vg.tags")
+        self.clear_cache("vg.pvs")
+        self.svc.node.unset_lazy("devtree")

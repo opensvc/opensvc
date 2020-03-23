@@ -724,3 +724,5 @@ class App(Resource):
             self.log.error(msg)
         return ret
 
+    def pre_provision_start(self):
+        pass

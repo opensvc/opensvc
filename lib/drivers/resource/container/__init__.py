@@ -164,7 +164,7 @@ class BaseContainer(Resource):
     @lazy
     def vm_hostname(self):
         try:
-            hostname = self.svc.conf_get(self.rid, "hostname")
+            hostname = self.conf_get("hostname")
         except ex.OptNotFound:
             hostname = self.name
         return hostname

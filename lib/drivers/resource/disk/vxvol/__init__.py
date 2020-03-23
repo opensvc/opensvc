@@ -5,6 +5,7 @@ from collections import namedtuple
 import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
+from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, cache
 from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
@@ -173,4 +174,56 @@ class DiskVxvol(BaseDisk):
         if os.path.exists(self.devpath):
             devs.add(self.devpath)
         return devs
+
+    def pre_unprovision_stop(self):
+        # leave the vxvol active for wipe
+        pass
+
+    def unprovisioner(self):
+        if not which('vxassist'):
+            raise ex.excError("vxassist command not found")
+
+        if not self.has_it():
+            self.log.info("skip vxvol unprovision: %s already unprovisioned", self.fullname)
+            return
+
+        if which('wipefs') and os.path.exists(self.devpath) and self.is_up():
+            self.vcall(["wipefs", "-a", self.devpath])
+
+        cmd = ["vxassist", "-g", self.vg, "remove", "volume", self.name]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError
+        self.svc.node.unset_lazy("devtree")
+
+    def provisioner(self):
+        if not which('vxassist'):
+            raise ex.excError("vxassist command not found")
+
+        if self.has_it():
+            self.log.info("skip vxvol provision: %s already exists" % self.fullname)
+            return
+
+        try:
+            self.size = self.conf_get("size")
+            self.size = str(self.size).upper()
+            size_parm = [str(convert_size(self.size, _to="m"))+'M']
+        except Exception as e:
+            self.log.info("skip vxvol provisioning: %s %s" % (self.fullname, str(e)))
+            return
+
+        create_options = self.oget("create_options")
+
+        # strip dev dir in case the alloc vxassist parameter was formatted using sub_devs
+        # lazy references
+        for idx, option in enumerate(create_options):
+            create_options[idx] = option.replace("/dev/vx/dsk/", "")
+
+        # create the logical volume
+        cmd = ['vxassist', '-g', self.vg, "make", self.name] + size_parm + create_options
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.excError(err)
+        self.can_rollback = True
+        self.svc.node.unset_lazy("devtree")
 

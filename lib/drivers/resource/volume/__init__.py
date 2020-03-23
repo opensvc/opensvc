@@ -6,7 +6,8 @@ import os
 import rcExceptions as ex
 import rcStatus
 
-from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob
+from converters import print_size
+from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob, factory, is_string
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
@@ -316,4 +317,154 @@ class Volume(Resource):
 
     def has_secret(self, name, key=None):
         return self.has_data("sec", name, key)
+
+    def provisioned(self):
+        if not self.volsvc.exists():
+            return False
+        if not self.owned():
+            return False
+        return self.volsvc.print_status_data().get("provisioned")
+
+    def claimed(self, volume=None):
+        if not volume:
+            volume = self.volsvc
+        if volume.children:
+            return True
+        return False
+
+    def owned(self, volume=None):
+        if not volume:
+            volume = self.volsvc
+        if not self.claimed(volume):
+            return False
+        if self.svc.path not in volume.children:
+            return False
+        return True
+
+    def owned_exclusive(self, volume=None):
+        if not volume:
+            volume = self.volsvc
+        if set(volume.children) != set([self.svc.path]):
+            return False
+        return True
+
+    def claim(self, volume):
+        if self.shared:
+            if self.owned_exclusive(volume):
+                self.log.info("volume %s is already claimed exclusively by %s",
+                                volume.path, self.svc.path)
+                return
+            if self.claimed(volume):
+                raise ex.excError("shared volume %s is already claimed by %s" % (volume.name, ",".join(volume.children)))
+        else:
+            if self.owned(volume):
+                self.log.info("volume %s is already claimed by %s",
+                                volume.path, self.svc.path)
+                return
+        self.log.info("claim volume %s", volume.name)
+        volume.set_multi(["DEFAULT.children+=%s" % self.svc.path])
+
+    def unclaim(self):
+        self.log.info("unclaim volume %s", self.volsvc.name)
+        self.volsvc.set_multi(["DEFAULT.children-=%s" % self.svc.path], validation=False)
+
+    def unprovisioner(self):
+        if not self.volsvc.exists():
+            return
+        self.unclaim()
+
+    def provisioner_shared_non_leader(self):
+        self.provisioner()
+
+    def provisioner(self):
+        """
+        Create a volume service with resources definitions deduced from the storage
+        pool translation rules.
+        """
+        volume = self.create_volume()
+        self.claim(volume)
+        self.log.info("provision the %s volume service instance", self.volname)
+
+        # will be rolled back by the volume resource. for now, the remaining
+        # resources might need the volume for their provision
+        ret = volume.action("provision", options={
+            "disable_rollback": True,
+            "local": True,
+            "leader": self.svc.options.leader,
+            "notify": True,
+        }) 
+        if ret != 0:
+            raise ex.excError("volume provision returned %d" % ret)
+        self.can_rollback = True
+        self.unset_lazy("device")
+        self.unset_lazy("mount_point")
+        self.unset_lazy("volsvc")
+
+    def create_volume(self):
+        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        if volume.exists():
+            self.log.info("volume %s already exists", self.volname)
+            data = volume.print_status_data(mon_data=True)
+            if not data or "cluster" not in data:
+                return volume
+            if not self.svc.node.get_pool(volume.pool):
+                raise ex.excError("pool %s not found on this node" % volume.pool)
+            if self.svc.options.leader and volume.topology == "failover" and \
+               (self.owned() or not self.claimed(volume)) and \
+               data["avail"] != "up":
+                cluster_avail = data["cluster"].get("avail")
+                if cluster_avail is None:
+                    self.log.info("no take over decision, we are leader but unknown cluster avail for volume %s",
+                                  self.volname)
+                elif cluster_avail == "up":
+                    self.log.info("volume %s is up on, peer, we are leader: take it over", self.volname)
+                    volume.action("takeover", options={"wait": True, "time": 60})
+            return volume
+        elif not self.svc.options.leader:
+            self.log.info("volume %s does not exist, we are not leader: wait its propagation", self.volname)
+            self.wait_for_fn(lambda: volume.exists(), 10, 1,
+                               "non leader instance waited for too long for the "
+                               "volume to appear")
+            return volume
+        pooltype = self.oget("type")
+        self.log.info("create new volume %s (pool name: %s, pool type: %s, "
+                        "access: %s, size: %s, format: %s, shared: %s)",
+                        self.volname, self.pool, pooltype, self.access,
+                        print_size(self.size, unit="B", compact=True),
+                        self.format, self.shared)
+        pool = self.svc.node.find_pool(poolname=self.pool,
+                                         pooltype=pooltype,
+                                         access=self.access,
+                                         size=self.size,
+                                         fmt=self.format,
+                                         shared=self.shared)
+        if pool is None:
+            raise ex.excError("could not find a pool matching criteria")
+        pool.log = self.log
+        try:
+            nodes = self.svc._get("DEFAULT.nodes")
+        except ex.OptNotFound:
+            nodes = None
+        env = {}
+        for mapping in pool.volume_env:
+            try:
+                src, dst = mapping.split(":", 1)
+            except Exception:
+                continue
+            args = src.split(".", 1)
+            val = self.svc.oget(*args)
+            if val is None:
+                raise ex.excError("missing mapped key in %s: %s" % (self.svc.path, mapping))
+            if is_string(val) and ".." in val:
+                raise ex.excError("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
+            env[dst] = val
+        pool.configure_volume(volume,
+                              fmt=self.format,
+                              size=self.size,
+                              access=self.access,
+                              nodes=nodes,
+                              shared=self.shared,
+                              env=env)
+        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        return volume
 

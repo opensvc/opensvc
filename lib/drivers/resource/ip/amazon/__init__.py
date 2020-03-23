@@ -192,3 +192,77 @@ class IpAmazon(Ip, AmazonMixin):
     def shutdown(self):
         pass
 
+
+    def provisioner(self):
+        self.provisioner_private()
+        self.provisioner_public()
+        self.provisioner_docker_ip()
+        self.cascade_allocation()
+        self.log.info("provisioned")
+        self.start()
+        return True
+
+    def cascade_allocation(self):
+        cascade = self.oget("cascade_allocation")
+        if not cascade:
+            return
+        changes = []
+        for e in cascade:
+            try:
+                rid, param = e.split(".")
+            except:
+                self.log.warning("misformatted cascade entry: %s (expected <rid>.<param>[@<scope>])" % e)
+                continue
+            if not rid in self.svc.cd:
+                self.log.warning("misformatted cascade entry: %s (rid does not exist)" % e)
+                continue
+            self.log.info("cascade %s to %s" % (self.ipname, e))
+            changes.append("%s.%s=%s" % (rid, param, self.ipname))
+            self.svc.resources_by_id[rid].ipname = self.svc.conf_get(rid, param)
+            self.svc.resources_by_id[rid].addr = self.svc.resources_by_id[rid].ipname
+        self.svc.set_multi(changes)
+
+    def provisioner_docker_ip(self):
+        if not self.oget("docker_daemon_ip"):
+            return
+        args = self.svc.oget('DEFAULT', 'docker_daemon_args')
+        args += ["--ip", self.ipname]
+        self.svc.set_multi(["DEFAULT.docker_daemon_args=%s" % " ".join(args)])
+        for r in self.svc.get_resources("container.docker"):
+            # reload docker daemon args
+            r.on_add()
+
+    def provisioner_private(self):
+        if self.ipname != "<allocate>":
+            self.log.info("private ip already provisioned")
+            return
+
+        eni = self.get_network_interface()
+        if eni is None:
+            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
+
+        ips1 = set(self.get_instance_private_addresses())
+        data = self.aws([
+          "ec2", "assign-private-ip-addresses",
+          "--network-interface-id", eni,
+          "--secondary-private-ip-address-count", "1"
+        ])
+        ips2 = set(self.get_instance_private_addresses())
+        new_ip = list(ips2 - ips1)[0]
+
+        self.svc.set_multi(["%s.ipname=%s" % (self.rid, new_ip)])
+        self.ipname = new_ip
+
+    def provisioner_public(self):
+        if self.eip != "<allocate>":
+            self.log.info("public ip already provisioned")
+            return
+
+        data = self.aws([
+          "ec2", "allocate-address",
+          "--domain", "vpc",
+        ])
+
+        self.svc.set_multi(["%s.eip=%s" % (self.rid, data["PublicIp"])])
+        self.eip = data["PublicIp"]
+
