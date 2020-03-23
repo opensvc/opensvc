@@ -15,7 +15,7 @@ class TestSvcWithDiskLvm:
         for name in ['simple', 'optional', 'scsireserv', 'scsireserv-optional']:
             rid = 'disk#' + name
             assert svc.get_resource(rid).type == "disk.vg"
-            assert str(type(svc.get_resource(rid))) == "<class 'resDiskVgLinux.Disk'>"
+            assert str(type(svc.get_resource(rid))) == "<class 'drivers.resource.disk.vg.linux.DiskVg'>"
 
     @staticmethod
     def test_disk_resource_is_optional_by_default(svc):
