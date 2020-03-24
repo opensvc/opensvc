@@ -284,7 +284,7 @@ class BaseContainer(Resource):
         try:
             self.getaddr()
             if not hasattr(self, 'addr'):
-                Container.getaddr(self)
+                BaseContainer.getaddr(self)
             if not hasattr(self, 'addr'):
                 raise ex.excError()
         except:
