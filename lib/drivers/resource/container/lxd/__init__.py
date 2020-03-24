@@ -75,19 +75,11 @@ def adder(svc, s):
 class ContainerLxd(BaseContainer):
     refresh_provisioned_on_unprovision = True
 
-    def __init__(self,
-                 rid,
-                 name,
-                 **kwargs):
-        super(ContainerLxd, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.lxd",
-            **kwargs
-        )
-        self.runmethod = ['lxc', 'exec', name, '--']
+    def __init__(self, **kwargs):
+        super(ContainerLxd, self).__init__(type="container.lxd", **kwargs)
+        self.runmethod = ['lxc', 'exec', self.name, '--']
         self.getaddr = self.dummy
-        self.label = "lxd " + name if name else "<undefined>"
+        self.label = "lxd %s" % self.name if self.name else "<undefined>"
 
     def files_to_sync(self):
         return ["/var/lib/lxd/containers/"+self.name]

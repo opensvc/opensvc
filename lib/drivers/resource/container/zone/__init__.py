@@ -116,28 +116,17 @@ class ContainerZone(BaseContainer):
     Zone container resource driver.
     """
     def __init__(self,
-                 rid,
-                 name,
-                 guestos="SunOS",
                  delete_on_stop=False,
-                 osvc_root_path=None,
                  zonepath=None,
                  container_origin=None,
                  rootfs=None,
                  snap=None,
                  snapof=None,
                  **kwargs):
-        super(ContainerZone, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.zone",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
-        self.label = name
+        super(ContainerZone, self).__init__(type="container.zone", **kwargs)
+        self.label = self.name
         self.delete_on_stop = delete_on_stop
-        self.runmethod = ["/usr/sbin/zlogin", name]
+        self.runmethod = ["/usr/sbin/zlogin", self.name]
         self.zone_cf = "/etc/zones/%s.xml" % self.name
         self.delayed_noaction = True
         self.container_origin = container_origin

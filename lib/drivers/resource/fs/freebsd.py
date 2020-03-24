@@ -48,24 +48,9 @@ def try_umount(self):
 
 class Fs(BaseFs):
     """ define FreeBSD mount/umount doAction """
-    def __init__(self,
-                 rid,
-                 mount_point,
-                 device,
-                 fs_type,
-                 mount_options,
-                 snap_size=None,
-                 **kwargs):
+    def __init__(self, **kwargs):
         self.Mounts = None
-        super(Fs, self).__init__(
-            rid,
-            mount_point,
-            device,
-            fs_type,
-            mount_options,
-            snap_size,
-            **kwargs
-        )
+        super(Fs, self).__init__(**kwargs)
 
     def set_fsck_h(self):
         self.fsck_h = {

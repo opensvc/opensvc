@@ -83,12 +83,12 @@ def adder(svc, s):
 
 class DiskRados(BaseDisk):
     def __init__(self,
-                 rid=None,
+                 type="disk.rados",
                  images=set(),
                  client_id=None,
                  keyring=None,
                  **kwargs):
-        super(DiskRados, self).__init__(rid=rid, type="disk.rados", **kwargs)
+        super(DiskRados, self).__init__(type=type, **kwargs)
         self.images = images
         self.keyring = keyring
         if not client_id.startswith("client."):
@@ -244,30 +244,12 @@ class DiskRados(BaseDisk):
         return l
 
 class DiskRadoslock(DiskRados):
-    def __init__(self,
-                 rid=None,
-                 type="disk.radoslock",
-                 images=set(),
-                 client_id=None,
-                 keyring=None,
-                 lock=None,
-                 lock_shared_tag=None,
-                 **kwargs):
-
+    def __init__(self, lock=None, lock_shared_tag=None, **kwargs):
+        super(DiskRadoslock, self).__init__(type="disk.radoslock", **kwargs)
         self.lock = lock
         self.lock_shared_tag = lock_shared_tag
-
-        super(DiskRadoslock, self).__init__(
-            rid=rid,
-            type=type,
-            images=images,
-            client_id=client_id,
-            keyring=keyring,
-            **kwargs
-        )
         self.label = self.fmt_label()
         self.unlocked = []
-
 
     def fmt_label(self):
         return "%s lock on %s" % (

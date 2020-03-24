@@ -75,7 +75,6 @@ class BaseFs(Resource):
     """
 
     def __init__(self,
-                 rid=None,
                  mount_point=None,
                  device=None,
                  fs_type=None,
@@ -83,7 +82,7 @@ class BaseFs(Resource):
                  stat_timeout=5,
                  snap_size=None,
                  **kwargs):
-        super(BaseFs, self).__init__(rid=rid, type="fs", **kwargs)
+        super(BaseFs, self).__init__(type="fs", **kwargs)
         self.mount_point = mount_point
         self._device = device
         self.fs_type = fs_type

@@ -67,13 +67,12 @@ def adder(svc, s):
 
 class SyncZfssnap(Sync):
     def __init__(self,
-                 rid=None,
                  name=None,
                  dataset=[],
                  keep=1,
                  recursive=True,
                  **kwargs):
-        super(SyncZfssnap, self).__init__(rid=rid, type="sync.zfssnap", **kwargs)
+        super(SyncZfssnap, self).__init__(type="sync.zfssnap", **kwargs)
 
         try:
             self.dataset = [ds.strip("/") for ds in dataset]

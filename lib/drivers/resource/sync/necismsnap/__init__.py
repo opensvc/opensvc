@@ -44,17 +44,16 @@ def adder(svc, s):
 
 class SyncNecismsnap(Sync):
     def __init__(self,
-                 rid=None,
                  array_name=None,
-                 devs=[],
+                 devs=None,
                  **kwargs):
-        super(SyncNecismsnap, self).__init__(rid=rid, type="sync.necismsnap", **kwargs)
+        super(SyncNecismsnap, self).__init__(type="sync.necismsnap", **kwargs)
 
-        self.label = "NecIsm snapshot %s"%(rid)
-        self.devs = devs
+        self.devs = devs or []
         self.array = rcNecIsm.NecIsm(array_name)
         self.parse_devs(devs)
         self.default_schedule = "@0"
+        self.label = "NecIsm snapshot %s" % array_name
 
     def on_add(self):
         self.array.log = self.log

@@ -17,24 +17,9 @@ class Fs(BaseFs):
     """
     SunOS fs resource driver.
     """
-    def __init__(self,
-                 rid,
-                 mount_point,
-                 device,
-                 fs_type,
-                 mount_options,
-                 snap_size=None,
-                 **kwargs):
-        self.rdevice = device.replace('/dsk/', '/rdsk/', 1)
-        super(Fs, self).__init__(
-            rid=rid,
-            mount_point=mount_point,
-            device=device,
-            fs_type=fs_type,
-            mount_options=mount_options,
-            snap_size=snap_size,
-            **kwargs
-        )
+    def __init__(self, **kwargs):
+        super(Fs, self).__init__(**kwargs)
+        self.rdevice = self.device.replace('/dsk/', '/rdsk/', 1)
 
     def set_fsck_h(self):
         self.fsck_h = {

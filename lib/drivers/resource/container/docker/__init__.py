@@ -320,7 +320,6 @@ class ContainerDocker(BaseContainer):
     dns_option_option = "--dns-option"
 
     def __init__(self,
-                 rid,
                  name="",
                  type="container.docker",
                  image=None,
@@ -344,14 +343,11 @@ class ContainerDocker(BaseContainer):
                  secrets_environment=None,
                  configs_environment=None,
                  guestos="Linux",
-                 osvc_root_path=None,
                  **kwargs):
         super(ContainerDocker, self).__init__(
-            rid=rid,
             name="",
             type=type,
             guestos=guestos,
-            osvc_root_path=osvc_root_path,
             **kwargs
         )
         self.user_defined_name = name

@@ -74,8 +74,8 @@ class DiskDisk(Resource):
     SAN Disk resource
     """
 
-    def __init__(self, rid=None, **kwargs):
-        super(DiskDisk, self).__init__(rid, "disk.disk", **kwargs)
+    def __init__(self, **kwargs):
+        super(DiskDisk, self).__init__(type="disk.disk", **kwargs)
 
     def __str__(self):
         return "%s disk disk_id=%s" % (

@@ -37,22 +37,13 @@ def adder(svc, s, drv=None, t="sync.symclone"):
 
 class SyncSymclone(BaseSyncSymclone):
     def __init__(self,
-                 rid=None,
                  type="sync.symclone",
                  symid=None,
                  pairs=[],
                  precopy=True,
                  consistent=True,
                  **kwargs):
-        super(SyncSymclone, self).__init__(
-            rid=rid,
-            type=type,
-            symid=symid,
-            pairs=pairs,
-            precopy=precopy,
-            consistent=consistent,
-            **kwargs
-        )
+        super(SyncSymclone, self).__init__(type=type, **kwargs)
 
     def dev_rescan(self, dev):
         dev = dev.replace('/dev/', '')

@@ -89,19 +89,13 @@ def adder(svc, s, drv=None):
 
 class BaseDiskRaw(BaseDisk):
     def __init__(self,
-                 rid=None,
                  devs=set(),
                  user=None,
                  group=None,
                  perm=None,
                  create_char_devices=False,
                  **kwargs):
-        super(BaseDiskRaw, self).__init__(
-            rid=rid,
-            name="raw",
-            type='disk.raw',
-            **kwargs
-        )
+        super(BaseDiskRaw, self).__init__(name="raw", type='disk.raw', **kwargs)
 
         self.label = "raw"
         self.user = user

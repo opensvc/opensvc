@@ -68,14 +68,13 @@ def adder(svc, s):
 
 class SyncEvasnap(Sync):
     def __init__(self,
-                 rid=None,
                  pairs=[],
                  eva_name="",
                  snap_name="",
                  **kwargs):
-        super(SyncEvasnap, self).__init__(rid=rid, type="sync.evasnap", **kwargs)
+        super(SyncEvasnap, self).__init__(type="sync.evasnap", **kwargs)
 
-        self.label = "EVA snapshot %s"%(rid)
+        self.label = "EVA snapshot %s" % eva_name
         self.eva_name = eva_name
         self.snap_name = snap_name
         self.pairs = pairs

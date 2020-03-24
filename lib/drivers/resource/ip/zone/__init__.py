@@ -15,22 +15,8 @@ def adder(svc, s):
 
 
 class IpZone(Ip):
-    def __init__(self,
-                 rid=None,
-                 ipdev=None,
-                 ipname=None,
-                 zone=None,
-                 mask=None,
-                 gateway=None,
-                 **kwargs):
-        super(IpZone, self).__init__(
-            rid=rid,
-            ipdev=ipdev,
-            ipname=ipname,
-            mask=mask,
-            gateway=gateway,
-            **kwargs
-        )
+    def __init__(self, zone=None, **kwargs):
+        super(IpZone, self).__init__(type="ip.zone", **kwargs)
         self.zone = zone
         self.tags.add(zone)
         self.tags.add('zone')

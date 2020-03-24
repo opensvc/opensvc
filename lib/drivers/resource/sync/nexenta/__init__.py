@@ -63,13 +63,12 @@ def adder(svc, s):
 
 class SyncNexenta(Sync):
     def __init__(self,
-                 rid=None,
                  name=None,
                  path=None,
                  filers={},
                  reversible=False,
                  **kwargs):
-        super(SyncNexenta, self).__init__(rid=rid, type="sync.nexenta", **kwargs)
+        super(SyncNexenta, self).__init__(type="sync.nexenta", **kwargs)
         self.pausable = False
         self.label = "nexenta autosync %s"%name
         self.autosync = name

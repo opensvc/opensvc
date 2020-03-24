@@ -11,17 +11,9 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import qcall
 
 class DiskHpvm(DiskVg):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 container_name=None,
-                 **kwargs):
-        super(DiskHpvm, self).__init__(
-            rid=rid,
-            name=name,
-            **kwargs
-        )
-        self.label = "vmdg "+str(name)
+    def __init__(self, container_name=None, **kwargs):
+        super(DiskHpvm, self).__init__(**kwargs)
+        self.label = "vmdg %s" % self.name
         self.container_name = container_name
 
     def has_it(self):

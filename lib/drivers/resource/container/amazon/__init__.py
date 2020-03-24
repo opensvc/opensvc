@@ -69,26 +69,15 @@ class ContainerAmazon(BaseContainer):
     save_timeout = 240
 
     def __init__(self,
-                 rid,
-                 name,
-                 guestos=None,
                  cloud_id=None,
                  image_id=None,
                  size="t2.micro",
                  key_name=None,
                  subnet=None,
-                 osvc_root_path=None,
                  **kwargs):
-        super(ContainerAmazon, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.amazon",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+        super(ContainerAmazon, self).__init__(type="container.amazon", **kwargs)
         self.cloud_id = cloud_id
-        self.save_name = name + '.save'
+        self.save_name = "%s.save" % self.name
         self.size_id = size
         self.image_id = image_id
         self.key_name = key_name

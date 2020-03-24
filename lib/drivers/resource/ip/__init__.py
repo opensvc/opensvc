@@ -171,7 +171,6 @@ class Ip(Resource):
     """
 
     def __init__(self,
-                 rid=None,
                  ipdev=None,
                  ipname=None,
                  mask=None,
@@ -183,7 +182,7 @@ class Ip(Resource):
                  wait_dns=0,
                  provisioner=None,
                  **kwargs):
-        super(Ip, self).__init__(rid, type=type, **kwargs)
+        super(Ip, self).__init__(type=type, **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
         self.mask = mask

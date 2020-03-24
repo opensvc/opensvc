@@ -62,18 +62,15 @@ def adder(svc, s):
 
 class DiskZvol(BaseDisk):
     def __init__(self,
-                 rid=None,
-                 name=None,
                  size=None,
                  create_options=None,
                  **kwargs):
-        super(DiskZvol, self).__init__(rid=rid, name=name, type='disk.zvol', **kwargs)
-        self.name = name
+        super(DiskZvol, self).__init__(type='disk.zvol', **kwargs)
         self.size = size
         self.create_options = create_options or []
         self.label = "zvol %s" % self.name
-        if name:
-            self.pool = name.split("/", 1)[0]
+        if self.name:
+            self.pool = self.name.split("/", 1)[0]
         else:
             self.pool = None
 

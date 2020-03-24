@@ -88,7 +88,7 @@ class DiskMd(BaseDisk):
     startup_timeout = 10
 
     def __init__(self,
-                 rid=None,
+                 name=None,
                  uuid=None,
                  level=None,
                  devs=None,
@@ -103,12 +103,7 @@ class DiskMd(BaseDisk):
         self.chunk = chunk
         self.layout = layout
         self.mdadm = "/sbin/mdadm"
-        super(DiskMd, self).__init__(
-            rid=rid,
-            name=uuid,
-            type='disk.md',
-            **kwargs
-        )
+        super(DiskMd, self).__init__(name=uuid, type='disk.md', **kwargs)
         if uuid:
             self.label = "md " + uuid
         else:

@@ -199,9 +199,9 @@ class AppSimple(BaseApp):
     The simple App resource driver class.
     """
 
-    def __init__(self, rid, kill="parent", **kwargs):
+    def __init__(self, kill="parent", **kwargs):
         self.kill = kill
-        super(AppSimple, self).__init__(rid, type="app.simple", **kwargs)
+        super(AppSimple, self).__init__(type="app.simple", **kwargs)
 
     def _check_simple(self):
         match = self.get_running()
