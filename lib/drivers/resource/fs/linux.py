@@ -6,13 +6,13 @@ import os
 from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 
 import rcExceptions as ex
+import utilities.devices.linux
 
 from . import BaseFs, adder as base_adder
 from rcGlobalEnv import rcEnv
 from rcLoopLinux import file_to_loop, loop_to_file
 from rcMountsLinux import Mounts
 from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, lv_exists, devs_to_disks, label_to_dev, udevadm_query_symlink
 from rcZfs import zfs_getprop, zfs_setprop
 
 def adder(svc, s):
@@ -128,7 +128,7 @@ class Fs(BaseFs):
             self.status_log("mnt is not defined", "info")
             return False
         self.mounts = Mounts()
-        for dev in [self.device] + udevadm_query_symlink(self.device):
+        for dev in [self.device] + utilities.devices.linux.udevadm_query_symlink(self.device):
             ret = self.mounts.has_mount(dev, self.mount_point)
             if ret:
                 return True
@@ -224,7 +224,7 @@ class Fs(BaseFs):
             return
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
             try:
-                _dev = label_to_dev(self.device, self.svc.node.devtree)
+                _dev = utilities.devices.linux.label_to_dev(self.device, self.svc.node.devtree)
             except ex.excError as exc:
                 self.status_log(str(exc))
                 _dev = None
@@ -297,7 +297,7 @@ class Fs(BaseFs):
     @lazy
     def dm_major(self):
         try:
-            return major('device-mapper')
+            return utilities.devices.linux.major('device-mapper')
         except:
             return
 
@@ -400,7 +400,7 @@ class Fs(BaseFs):
         if not self.is_devmap(statinfo):
             return set([dev])
 
-        if lv_exists(self, dev):
+        if utilities.devices.linux.lv_exists(self, dev):
             # If the fs is built on a lv of a private vg, its
             # disks will be given by the vg resource.
             # if the fs is built on a lv of a shared vg, we
@@ -410,11 +410,11 @@ class Fs(BaseFs):
 
         devname = 'dm-' + str(os.minor(statinfo.st_rdev))
         syspath = '/sys/block/' + devname + '/slaves'
-        devs = get_blockdev_sd_slaves(syspath)
+        devs = utilities.devices.linux.get_blockdev_sd_slaves(syspath)
         return devs
 
     def sub_disks(self):
-        return devs_to_disks(self, self.sub_devs())
+        return utilities.devices.linux.devs_to_disks(self, self.sub_devs())
 
     def can_check_writable(self):
         if self.fs_type == "zfs":
@@ -649,7 +649,7 @@ class Fs(BaseFs):
 
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
             try:
-                _dev = label_to_dev(dev, tree=self.svc.node.devtree)
+                _dev = utilities.devices.linux.label_to_dev(dev, tree=self.svc.node.devtree)
             except ex.excError as exc:
                 _dev = None
             if _dev is None:

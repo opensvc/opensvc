@@ -1,4 +1,3 @@
-
 import glob
 import json
 import os
@@ -7,13 +6,12 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, lazy, fcache, bdecode
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
-                             dev_to_paths
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
@@ -394,7 +392,7 @@ class DiskMd(BaseDisk):
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
                 for dev in l:
-                    _paths = set(dev_to_paths(dev))
+                    _paths = set(utilities.devices.linux.dev_to_paths(dev))
                     if set([dev]) != _paths:
                         paths |= _paths
                     devs.add(dev)
