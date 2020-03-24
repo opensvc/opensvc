@@ -71,7 +71,7 @@ class DiskGandi(BaseDisk):
                  group="root",
                  perm="660",
                  **kwargs):
-        super().__init__(rid=rid, name="gandi", type='disk.gandi', **kwargs)
+        super(DiskGandi, self).__init__(rid=rid, name="gandi", type='disk.gandi', **kwargs)
         self.label = "gandi volume %s"%str(name)
         self.name = name
         self.node = node

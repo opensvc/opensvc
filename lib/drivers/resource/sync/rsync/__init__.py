@@ -182,6 +182,51 @@ class SyncRsync(Sync):
     can be restricted to production sibblings or to disaster recovery nodes,
     or both.
     """
+    def __init__(self,
+                 rid=None,
+                 src=[],
+                 dst=None,
+                 options=[],
+                 target=[],
+                 dstfs=None,
+                 snap=False,
+                 bwlimit=None,
+                 internal=False,
+                 reset_options=False,
+                 **kwargs):
+        super(SyncRsync, self).__init__(rid=rid, type="sync.rsync", **kwargs)
+
+        if internal:
+            if rcEnv.paths.drp_path in dst:
+                self.label = "rsync system files to drpnodes"
+            else:
+                self.label = "rsync svc config to %s"%(', '.join(sorted(sorted(target))))
+        else:
+            _src = ', '.join(sorted(src))
+            if len(_src) > 300:
+                _src = _src[0:300]
+            _dst = ', '.join(sorted(target))
+            self.label = "rsync %s to %s"%(_src, _dst)
+        self.src = src
+        self.dst = dst
+        self.dstfs = dstfs
+        self.snap = snap
+        self.target = target
+        self.bwlimit = bwlimit
+        self.internal = internal
+        self.timeout = 3600
+        self.options = options
+        self.reset_options = reset_options
+
+    def __str__(self):
+        return "%s src=%s dst=%s options=%s target=%s" % (
+            super(SyncRsync, self).__str__(),
+            self.src,
+            self.dst,
+            self.full_options,
+            self.target
+        )
+
     def node_can_sync(self, node):
         ts = get_timestamp(self, node)
         return not self.skip_sync(ts)
@@ -530,42 +575,6 @@ class SyncRsync(Sync):
         options += ["--timeout=%s" % self.timeout]
         return options
 
-    def __init__(self,
-                 rid=None,
-                 src=[],
-                 dst=None,
-                 options=[],
-                 target=[],
-                 dstfs=None,
-                 snap=False,
-                 bwlimit=None,
-                 internal=False,
-                 reset_options=False,
-                 **kwargs):
-        super().__init__(rid=rid, type="sync.rsync", **kwargs)
-
-        if internal:
-            if rcEnv.paths.drp_path in dst:
-                self.label = "rsync system files to drpnodes"
-            else:
-                self.label = "rsync svc config to %s"%(', '.join(sorted(sorted(target))))
-        else:
-            _src = ', '.join(sorted(src))
-            if len(_src) > 300:
-                _src = _src[0:300]
-            _dst = ', '.join(sorted(target))
-            self.label = "rsync %s to %s"%(_src, _dst)
-        self.src = src
-        self.dst = dst
-        self.dstfs = dstfs
-        self.snap = snap
-        self.target = target
-        self.bwlimit = bwlimit
-        self.internal = internal
-        self.timeout = 3600
-        self.options = options
-        self.reset_options = reset_options
-
     def add_resource_files_to_sync(self):
         if self.rid != "sync#i0":
             return
@@ -587,10 +596,6 @@ class SyncRsync(Sync):
         ]
         data += self.stats_keys()
         return data
-
-    def __str__(self):
-        return "%s src=%s dst=%s options=%s target=%s" % (super().__str__(),\
-                self.src, self.dst, str(self.full_options), str(self.target))
 
     @notify
     def sync_all(self):

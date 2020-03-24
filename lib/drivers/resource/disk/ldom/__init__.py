@@ -61,7 +61,7 @@ class DiskLdom(BaseDisk):
                  **kwargs):
         self.label = "vmdg "+str(name)
         self.container_id = container_id
-        super().__init__(rid=rid, name=name, type='disk.vg', **kwargs)
+        super(DiskLdom, self).__init__(rid=rid, name=name, type='disk.vg', **kwargs)
 
     def has_it(self):
         return True

@@ -59,12 +59,14 @@ class ContainerEsx(BaseContainer):
                  guestos=None,
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         guestos=guestos,
-                         type="container.esx",
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerEsx, self).__init__(
+            rid=rid,
+            name=name,
+            guestos=guestos,
+            type="container.esx",
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.vmx = None
 
     def __str__(self):

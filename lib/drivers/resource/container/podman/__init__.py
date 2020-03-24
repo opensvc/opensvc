@@ -64,7 +64,7 @@ class ContainerPodman(ContainerDocker):
 
     def __init__(self, *args, **kwargs):
         kwargs["type"] = "container.podman"
-        super().__init__(*args, **kwargs)
+        super(ContainerPodman, self).__init__(*args, **kwargs)
 
     @lazy
     def lib(self):

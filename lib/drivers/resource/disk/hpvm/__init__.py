@@ -16,9 +16,11 @@ class DiskHpvm(DiskVg):
                  name=None,
                  container_name=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         **kwargs)
+        super(DiskHpvm, self).__init__(
+            rid=rid,
+            name=name,
+            **kwargs
+        )
         self.label = "vmdg "+str(name)
         self.container_name = container_name
 

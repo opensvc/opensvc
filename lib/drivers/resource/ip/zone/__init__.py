@@ -23,12 +23,14 @@ class IpZone(Ip):
                  mask=None,
                  gateway=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         ipdev=ipdev,
-                         ipname=ipname,
-                         mask=mask,
-                         gateway=gateway,
-                         **kwargs)
+        super(IpZone, self).__init__(
+            rid=rid,
+            ipdev=ipdev,
+            ipname=ipname,
+            mask=mask,
+            gateway=gateway,
+            **kwargs
+        )
         self.zone = zone
         self.tags.add(zone)
         self.tags.add('zone')

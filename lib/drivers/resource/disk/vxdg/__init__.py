@@ -58,7 +58,7 @@ class DiskVxdg(BaseDisk):
                  rid=None,
                  name=None,
                  **kwargs):
-        super().__init__(rid=rid, name=name, type='disk.vxdg', **kwargs)
+        super(DiskVxdg, self).__init__(rid=rid, name=name, type='disk.vxdg', **kwargs)
         self.label = "vxdg "+str(name)
         self.sub_devs_cache = set()
 
@@ -119,7 +119,7 @@ class DiskVxdg(BaseDisk):
     def _status(self, **kwargs):
         for defect in self.defects():
              self.status_log(defect, "warn")
-        return super()._status(**kwargs)
+        return super(DiskVxdg, self)._status(**kwargs)
 
     def has_vxvol_resources(self):
         for res in self.svc.get_resources("disk.vxvol"):

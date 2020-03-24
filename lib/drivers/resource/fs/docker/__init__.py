@@ -51,7 +51,7 @@ class FsDocker(Resource):
                  driver=None,
                  options=None,
                  **kwargs):
-        super().__init__(rid=rid, type='fs.docker', **kwargs)
+        super(FsDocker, self).__init__(rid=rid, type='fs.docker', **kwargs)
         self.driver = driver
         self.options = options
 

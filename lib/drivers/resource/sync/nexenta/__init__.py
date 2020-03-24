@@ -69,7 +69,7 @@ class SyncNexenta(Sync):
                  filers={},
                  reversible=False,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.nexenta", **kwargs)
+        super(SyncNexenta, self).__init__(rid=rid, type="sync.nexenta", **kwargs)
         self.pausable = False
         self.label = "nexenta autosync %s"%name
         self.autosync = name
@@ -86,7 +86,10 @@ class SyncNexenta(Sync):
         self.remote = None
 
     def __str__(self):
-        return "%s autosync=%s" % (super().__str__(), self.autosync)
+        return "%s autosync=%s" % (
+            super(SyncNexenta, self).__str__(),
+            self.autosync
+        )
 
     def can_sync(self, target=None):
         try:

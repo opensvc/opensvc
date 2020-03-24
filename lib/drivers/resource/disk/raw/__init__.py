@@ -96,10 +96,12 @@ class BaseDiskRaw(BaseDisk):
                  perm=None,
                  create_char_devices=False,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name="raw",
-                         type='disk.raw',
-                         **kwargs)
+        super(BaseDiskRaw, self).__init__(
+            rid=rid,
+            name="raw",
+            type='disk.raw',
+            **kwargs
+        )
 
         self.label = "raw"
         self.user = user

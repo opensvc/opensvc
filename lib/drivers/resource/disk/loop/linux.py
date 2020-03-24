@@ -33,7 +33,7 @@ def adder(svc, s):
 
 class DiskLoop(BaseDiskLoop):
     def __init__(self, rid, loopFile, **kwargs):
-        super().__init__(rid, loopFile, **kwargs)
+        super(DiskLoop, self).__init__(rid, loopFile, **kwargs)
 
     def is_up(self):
         """

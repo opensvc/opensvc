@@ -9,7 +9,7 @@ from rcUtilities import lazy, makedirs, justcall
 
 class BaseFsFlag(Resource):
     def __init__(self, **kwargs):
-        super().__init__(type="fs.flag", **kwargs)
+        super(BaseFsFlag, self).__init__(type="fs.flag", **kwargs)
 
     @lazy
     def base_flag_d(self):

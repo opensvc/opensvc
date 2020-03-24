@@ -26,13 +26,15 @@ class Fs(BaseFs):
                  snap_size=None,
                  **kwargs):
         self.rdevice = device.replace('/dsk/', '/rdsk/', 1)
-        super().__init__(rid=rid,
-                         mount_point=mount_point,
-                         device=device,
-                         fs_type=fs_type,
-                         mount_options=mount_options,
-                         snap_size=snap_size,
-                         **kwargs)
+        super(Fs, self).__init__(
+            rid=rid,
+            mount_point=mount_point,
+            device=device,
+            fs_type=fs_type,
+            mount_options=mount_options,
+            snap_size=snap_size,
+            **kwargs
+        )
 
     def set_fsck_h(self):
         self.fsck_h = {
@@ -55,7 +57,7 @@ class Fs(BaseFs):
         return mounts.has_mount(self.device, self.mount_point)
 
     def start(self):
-        super().start()
+        super(Fs, self).start()
         m = re.match("<(\w+)>", self.mount_point)
         if m:
             # the zone was not created when the service was built. now it should,

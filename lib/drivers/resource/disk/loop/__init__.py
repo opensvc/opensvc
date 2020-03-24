@@ -48,7 +48,7 @@ class BaseDiskLoop(Resource):
     """
 
     def __init__(self, rid=None, loopFile=None, **kwargs):
-        super().__init__(rid, "disk.loop", **kwargs)
+        super(BaseDiskLoop, self).__init__(rid, "disk.loop", **kwargs)
         self.loopFile = loopFile
         self.label = "loop "+loopFile
 
@@ -56,4 +56,4 @@ class BaseDiskLoop(Resource):
         return [["file", self.loopFile]]
 
     def __str__(self):
-        return "%s loopfile=%s" % (super().__str__(), self.loopFile)
+        return "%s loopfile=%s" % (super(BaseDiskLoop, self).__str__(), self.loopFile)

@@ -78,6 +78,29 @@ class ContainerJail(BaseContainer):
                 ip4.addr=192.168.0.208
                 command=/bin/sh /etc/rc
     """
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="FreeBSD",
+                 jailroot="/tmp",
+                 ips=[],
+                 ip6s=[],
+                 osvc_root_path=None,
+                 **kwargs):
+        super(ContainerJail, self).__init__(
+            rid=rid,
+            name=name,
+            guestos=guestos,
+            type="container.jail",
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
+        self.jailroot = jailroot
+        self.ips = ips
+        self.ip6s = ip6s
+
+    def __str__(self):
+        return "%s name=%s" % (Resource.__str__(self), self.name)
     def operational(self):
         return True
 
@@ -146,25 +169,4 @@ class ContainerJail(BaseContainer):
         else:
             return rcStatus.DOWN
 
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="FreeBSD",
-                 jailroot="/tmp",
-                 ips=[],
-                 ip6s=[],
-                 osvc_root_path=None,
-                 **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         guestos=guestos,
-                         type="container.jail",
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
-        self.jailroot = jailroot
-        self.ips = ips
-        self.ip6s = ip6s
-
-    def __str__(self):
-        return "%s name=%s" % (Resource.__str__(self), self.name)
 

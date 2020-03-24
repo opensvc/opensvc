@@ -34,8 +34,13 @@ class Snap(Resource):
     """
     def __init__(self, rid, optional=False, disabled=False, tags=set()):
         self.snaps = {}
-        super().__init__(rid, "sync.snap", optional=optional, \
-                         disabled=disabled, tags=tags)
+        super(Snap, self).__init__(
+            rid,
+            "sync.snap",
+            optional=optional,
+            disabled=disabled,
+            tags=tags
+        )
 
     def try_snap(self, rset, action, rid=None):
         if action == "nodes":

@@ -78,7 +78,7 @@ class SyncHp3par(Sync):
                  mode=None,
                  rcg_names={},
                  **kwargs):
-        super().__init__(rid=rid, type="sync.hp3par", **kwargs)
+        super(SyncHp3par, self).__init__(rid=rid, type="sync.hp3par", **kwargs)
         self.pausable = False
         self.array = array
         self.rcg_names = rcg_names
@@ -91,11 +91,12 @@ class SyncHp3par(Sync):
 
     def __str__(self):
         return "%s array=%s method=%s mode=%s rcg=%s" % (
-                super().__str__(),
-                self.array,
-                self.method,
-                self.mode,
-                self.rcg)
+            super(SyncHp3par, self).__str__(),
+            self.array,
+            self.method,
+            self.mode,
+            self.rcg
+        )
 
     def on_add(self):
         try:

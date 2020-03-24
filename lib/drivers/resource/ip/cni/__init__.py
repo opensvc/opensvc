@@ -121,12 +121,14 @@ class IpCni(Ip):
                  netns=None,
                  expose=None,
                  **kwargs):
-        super().__init__(rid,
-                         ipname=ipname,
-                         ipdev=ipdev,
-                         type="ip.cni",
-                         expose=expose,
-                         **kwargs)
+        super(IpCni, self).__init__(
+            rid,
+            ipname=ipname,
+            ipdev=ipdev,
+            type="ip.cni",
+            expose=expose,
+            **kwargs
+        )
         self.network = network
         self.container_rid = netns
         if self.container_rid:
@@ -153,7 +155,7 @@ class IpCni(Ip):
 
 
     def _status_info(self):
-        data = super()._status_info()
+        data = super(IpCni, self)._status_info()
         intf = self.get_ipdev()
         if intf and len(intf.ipaddr) > 0:
             data["ipaddr"] = intf.ipaddr[0]
