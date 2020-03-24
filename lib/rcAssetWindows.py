@@ -10,11 +10,11 @@ try:
 except ImportError:
     raise
 
-from rcUtilities import justcall, which, try_decode, lazy
-from rcUtilitiesWindows import get_registry_value
 import rcAsset
-from rcDiskInfoWindows import diskInfo
+
 from converters import convert_size
+from rcUtilities import justcall, which, try_decode, lazy
+from rcDiskInfoWindows import diskInfo
 from storage import Storage
 
 class MEMORYSTATUSEX(ctypes.Structure):

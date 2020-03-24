@@ -1,18 +1,20 @@
 from __future__ import print_function
-import sys
-import os
-import re
+
+import glob
 import json
 import math
-import glob
+import os
+import re
+import sys
 import time
 
-from rcUtilities import justcall, which, lazy
-from rcUtilitiesLinux import udevadm_settle
-import rcDiskInfo
-from rcGlobalEnv import rcEnv
-from rcExceptions import excError
 import rcDevTreeVeritas
+import rcDiskInfo
+import utilities.devices.linux
+
+from rcExceptions import excError
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which, lazy
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}
@@ -338,7 +340,7 @@ class diskInfo(rcDiskInfo.diskInfo):
                 log.info("scan %s target%s lun%s", os.path.basename(host), target_num, lun)
             os.system('echo - ' + target_num + ' ' + lun + ' >' + scan_f)
 
-        udevadm_settle()
+        utilities.devices.linux.udevadm_settle()
         disks_after = glob.glob('/sys/block/sd*')
         disks_after += glob.glob('/sys/block/vd*')
         new_disks = set(disks_after) - set(disks_before)

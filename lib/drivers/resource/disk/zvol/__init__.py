@@ -10,7 +10,6 @@ from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, justcall, which, bdecode
-from rcUtilitiesLinux import label_to_dev
 from rcZfs import dataset_exists, zpool_devs
 from svcBuilder import init_kwargs
 from svcdict import KEYS

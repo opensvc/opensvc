@@ -1,7 +1,9 @@
-import checks
 import os
+
+import checks
+import utilities.os.sunos
+
 from rcUtilities import justcall, which
-from rcUtilitiesSunOS import get_solaris_version
 from rcGlobalEnv import rcEnv
 
 """
@@ -46,7 +48,7 @@ class check(checks.check):
     def do_check(self):
         if not which("dladm"):
             return self.undef
-        self.osver = get_solaris_version()
+        self.osver = utilities.os.sunos.get_solaris_version()
         if self.osver >= 11:
             cmd = ['dladm', 'show-phys', '-p', '-o', 'link,state,speed,duplex']
             out, err, ret = justcall(cmd)

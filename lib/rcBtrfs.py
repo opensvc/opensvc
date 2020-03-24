@@ -3,9 +3,9 @@ import os
 import logging
 
 import rcExceptions as ex
+import utilities.devices.linux
 
 from rcUtilities import justcall, vcall
-from rcUtilitiesLinux import label_to_dev
 from rcGlobalEnv import rcEnv
 
 class InitError(Exception):
@@ -69,8 +69,10 @@ class Btrfs(object):
             return
         if self.node is None:
             try:
-                self.dev = label_to_dev("LABEL="+self.label,
-                                        tree=self.resource.svc.node.devtree)
+                self.dev = utilities.devices.linux.label_to_dev(
+                    "LABEL="+self.label,
+                    tree=self.resource.svc.node.devtree
+                )
             except ex.excError as exc:
                 self.dev = None
         else:
