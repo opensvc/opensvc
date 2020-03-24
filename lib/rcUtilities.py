@@ -1344,7 +1344,7 @@ def list_services(namespace=None, kinds=None):
     n = len(os.path.join(rcEnv.paths.pathetcns, ""))
     for path in glob_ns_config(namespace):
         path = path[n:-5]
-        if path[-1] == os.sep:
+        if not path or path[-1] == os.sep:
             continue
         if kinds:
             try:
