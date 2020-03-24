@@ -1,10 +1,11 @@
+import json
 import os
 import re
 import glob
 import time
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import call, qcall, justcall, which
+from rcUtilities import call, qcall, justcall, which, cache
 import rcExceptions as ex
 
 label_to_dev_cache = {}
@@ -310,4 +311,66 @@ def devs_to_disks(self, devs=set()):
     for i, disk in enumerate(_disks):
         _disks[i] = re.sub("^(/dev/[vhs]d[a-z]*)[0-9]*$", r"\1", disk)
     return disks
+
+@cache("losetup.json")
+def losetup_data():
+    cmd = ["losetup", "-J"]
+    out, err, ret = justcall(cmd)
+    try:
+        return json.loads(out)["loopdevices"]
+    except ValueError:
+        return
+
+def file_to_loop(f):
+    """
+    Given a file path, returns the loop device associated. For example,
+    /path/to/file => /dev/loop0
+    """
+    data = losetup_data()
+    if data:
+        return [_data["name"] for _data in data if _data["back-file"] == f]
+
+    out, err, ret = justcall([rcEnv.syspaths.losetup, '-j', f])
+    if len(out) == 0:
+        return []
+
+    # It's possible multiple loopdev are associated with the same file
+    devs = []
+    for line in out.split('\n'):
+        l = line.split(':')
+        if len(l) == 0:
+            continue
+        if len(l[0]) == 0:
+            continue
+        if not os.path.exists(l[0]):
+            continue
+        devs.append(l[0])
+    return devs
+
+def loop_to_file(f):
+    """
+    Given a loop dev, returns the loop file associated. For example,
+    /dev/loop0 => /path/to/file
+    """
+    data = losetup_data()
+    if data:
+        for _data in data:
+            if _data["name"] == f:
+                return _data["back-file"]
+        return
+
+    out, err, ret = justcall([rcEnv.syspaths.losetup, f])
+    if len(out) == 0:
+        return
+
+    for line in out.split('\n'):
+        l = line.split('(')
+        if len(l) == 0:
+            continue
+        fpath = l[-1].rstrip(")")
+        if len(fpath) == 0:
+            continue
+        if not os.path.exists(fpath):
+            continue
+        return fpath
 

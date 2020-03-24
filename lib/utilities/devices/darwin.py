@@ -1,11 +1,9 @@
 import os
-import re
 import plistlib
 
-from rcGlobalEnv import *
-from rcUtilities import call, which
-import rcStatus
 import rcExceptions as ex
+
+from rcUtilities import justcall, which
 
 def file_to_loop(f):
     """Given a file path, returns the disk device associated. For example,
@@ -15,7 +13,7 @@ def file_to_loop(f):
         return []
     if not os.path.isfile(f):
         return []
-    (ret, out, err) = call(['hdiutil', 'info', '-plist'])
+    out, err, ret = justcall(['hdiutil', 'info', '-plist'])
     if ret != 0:
         return []
 
@@ -32,5 +30,4 @@ def file_to_loop(f):
                     devs.append(diskdevice)
                 else:
                     return []
-
     return devs

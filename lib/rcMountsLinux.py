@@ -1,8 +1,9 @@
 import os
 
-from rcGlobalEnv import rcEnv
 import rcMounts
-from rcLoopLinux import file_to_loop
+import utilities.devices.linux
+
+from rcGlobalEnv import rcEnv
 from rcUtilities import justcall
 
 class Mounts(rcMounts.Mounts):
@@ -17,7 +18,7 @@ class Mounts(rcMounts.Mounts):
             return False
         if i.dev == dev:
             return True
-        if i.dev in file_to_loop(dev):
+        if i.dev in utilities.devices.linux.file_to_loop(dev):
             return True
         if dev.startswith(os.sep) and os.path.isdir(dev):
             # zfs datasets <pool>/<ds> might match the isdir test because the
