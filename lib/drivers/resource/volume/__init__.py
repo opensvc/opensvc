@@ -113,9 +113,9 @@ class Volume(Resource):
     * rox  Read Only Many
     """
 
-    def __init__(self, rid=None, name=None, pool=None, size=None, format=True,
+    def __init__(self, name=None, pool=None, size=None, format=True,
                  access="rwo", secrets=None, configs=None, **kwargs):
-        super(Volume, self).__init__(rid, type="volume", **kwargs)
+        super(Volume, self).__init__(type="volume", **kwargs)
         self.access = access
         self.name = name
         self.pool = pool

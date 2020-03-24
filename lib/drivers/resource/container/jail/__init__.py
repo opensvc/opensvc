@@ -79,20 +79,14 @@ class ContainerJail(BaseContainer):
                 command=/bin/sh /etc/rc
     """
     def __init__(self,
-                 rid,
-                 name,
                  guestos="FreeBSD",
                  jailroot="/tmp",
                  ips=[],
                  ip6s=[],
-                 osvc_root_path=None,
                  **kwargs):
         super(ContainerJail, self).__init__(
-            rid=rid,
-            name=name,
             guestos=guestos,
             type="container.jail",
-            osvc_root_path=osvc_root_path,
             **kwargs
         )
         self.jailroot = jailroot

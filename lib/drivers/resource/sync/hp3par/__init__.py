@@ -72,13 +72,12 @@ def adder(svc, s):
 
 class SyncHp3par(Sync):
     def __init__(self,
-                 rid=None,
                  array=None,
                  method=None,
                  mode=None,
                  rcg_names={},
                  **kwargs):
-        super(SyncHp3par, self).__init__(rid=rid, type="sync.hp3par", **kwargs)
+        super(SyncHp3par, self).__init__(type="sync.hp3par", **kwargs)
         self.pausable = False
         self.array = array
         self.rcg_names = rcg_names

@@ -23,8 +23,8 @@ class Fs(BaseFs):
     Linux Fs resource driver
     """
     def __init__(self, **kwargs):
-        self.mounts = None
         super(Fs, self).__init__(**kwargs)
+        self.mounts = None
         self.loopdevice = None
 
     def set_fsck_h(self):

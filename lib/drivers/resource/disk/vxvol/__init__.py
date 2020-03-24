@@ -61,13 +61,9 @@ def adder(svc, s):
 
 
 class DiskVxvol(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 vg=None,
-                 **kwargs):
-        super(DiskVxvol, self).__init__(rid=rid, name=name, type='disk.vxvol', **kwargs)
-        self.fullname = "%s/%s" % (vg, name)
+    def __init__(self, vg=None, **kwargs):
+        super(DiskVxvol, self).__init__(type='disk.vxvol', **kwargs)
+        self.fullname = "%s/%s" % (vg, self.name)
         self.label = "vxvol %s" % self.fullname
         self.vg = vg
         self.devpath  = "/dev/vx/dsk/%s/%s" % (self.vg, self.name)

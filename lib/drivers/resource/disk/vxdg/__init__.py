@@ -54,12 +54,9 @@ def adder(svc, s):
 class DiskVxdg(BaseDisk):
     """ basic Veritas Volume group resource
     """
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 **kwargs):
-        super(DiskVxdg, self).__init__(rid=rid, name=name, type='disk.vxdg', **kwargs)
-        self.label = "vxdg "+str(name)
+    def __init__(self, **kwargs):
+        super(DiskVxdg, self).__init__(type='disk.vxdg', **kwargs)
+        self.label = "vxdg %s" % self.name
         self.sub_devs_cache = set()
 
     def vxprint(self):

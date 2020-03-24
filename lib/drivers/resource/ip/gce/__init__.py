@@ -65,18 +65,11 @@ def adder(svc, s):
 
 class IpGce(Ip, rcGce.GceMixin):
     def __init__(self,
-                 rid=None,
-                 ipname=None,
-                 ipdev=None,
                  routename=None,
                  gce_zone=None,
                  **kwargs):
-        Ip.__init__(self,
-                    rid=rid,
-                    ipname=ipname,
-                    ipdev=ipdev,
-                    **kwargs)
-        self.label = "gce ip %s@%s" % (ipname, ipdev)
+        Ip.__init__(self, type="ip.gce", **kwargs)
+        self.label = "gce ip %s@%s" % (self.ipname, self.ipdev)
         self.routename = routename
         self.gce_zone = gce_zone
 

@@ -68,19 +68,9 @@ def adder(svc, s):
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
 class DiskVg(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 dsf=True,
-                 **kwargs):
-        super(DiskVg, self).__init__(
-            rid=rid,
-            name=name,
-            type='disk.vg',
-            **kwargs
-        )
-        self.label = "vg "+name
-        self.dsf = dsf
+    def __init__(self, **kwargs):
+        super(DiskVg, self).__init__(type='disk.vg', **kwargs)
+        self.label = "vg %s" % self.name
 
     def has_it(self):
         """ returns True if the volume is present

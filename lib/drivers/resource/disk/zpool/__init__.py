@@ -97,22 +97,15 @@ class ZpoolDisk(BaseDisk):
     Zfs pool resource driver.
     """
     def __init__(self,
-                 rid=None,
-                 name=None,
                  multihost=None,
                  vdev=None,
                  create_options=None,
                  **kwargs):
-        super(ZpoolDisk, self).__init__(
-            rid=rid,
-            name=name,
-            type='disk.zpool',
-            **kwargs
-        )
+        super(ZpoolDisk, self).__init__(type='disk.zpool', **kwargs)
         self.multihost = multihost
         self.vdev = vdev or []
         self.create_options = create_options or []
-        self.label = 'zpool ' + name if name else "<undefined>"
+        self.label = 'zpool ' + self.name if self.name else "<undefined>"
 
     def _info(self):
         data = [

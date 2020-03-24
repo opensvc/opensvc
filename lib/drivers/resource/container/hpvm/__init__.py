@@ -53,20 +53,8 @@ def adder(svc, s):
 
 
 class ContainerHpvm(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="HP-UX",
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerHpvm, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.hpvm",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+    def __init__(self, guestos="HP-UX", **kwargs):
+        super(ContainerHpvm, self).__init__(type="container.hpvm", guestos=guestos, **kwargs)
         self.vg = DiskHpvm(
             rid = 'vmdg#'+self.rid,
             name = 'vmdg_'+self.name,

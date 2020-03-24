@@ -119,15 +119,14 @@ class BaseContainer(Resource):
     """
 
     def __init__(self,
-                 rid,
-                 name,
+                 name=None,
                  guestos=None,
                  type=None,
                  osvc_root_path=None,
                  start_timeout=600,
                  stop_timeout=60,
                  **kwargs):
-        super(BaseContainer, self).__init__(rid=rid, type=type, **kwargs)
+        super(BaseContainer, self).__init__(type=type, **kwargs)
         self.start_timeout = start_timeout
         self.stop_timeout = stop_timeout
         self.osvc_root_path = osvc_root_path

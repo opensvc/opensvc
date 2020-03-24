@@ -54,12 +54,8 @@ def adder(svc, s):
 
 
 class SyncHp3parsnap(Sync):
-    def __init__(self,
-                 rid=None,
-                 array=None,
-                 vv_names=[],
-                 **kwargs):
-        super(SyncHp3parsnap, self).__init__(rid=rid, type="sync.hp3parsnap", **kwargs)
+    def __init__(self, array=None, vv_names=[], **kwargs):
+        super(SyncHp3parsnap, self).__init__(type="sync.hp3parsnap", **kwargs)
         self.array = array
         self.vv_names = vv_names
         self.label = "hp3parsnap %s" % ", ".join(self.vv_names)

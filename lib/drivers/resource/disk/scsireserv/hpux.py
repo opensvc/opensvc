@@ -32,18 +32,8 @@ def mpath_to_path(disks):
 
 
 class DiskScsireserv(BaseDiskScsireserv):
-    def __init__(self,
-                 rid=None,
-                 peer_resource=None,
-                 no_preempt_abort=False,
-                 **kwargs):
-        super(DiskScsireserv, self).__init__(
-            rid=rid,
-            peer_resource=peer_resource,
-            no_preempt_abort=no_preempt_abort,
-            **kwargs
-        )
-        self.prtype = 'wero'
+    def __init__(self, **kwargs):
+        super(DiskScsireserv, self).__init__(**kwargs)
         self.leg_mpath_disable()
 
     def get_devs(self):

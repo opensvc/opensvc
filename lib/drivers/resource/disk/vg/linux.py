@@ -72,18 +72,9 @@ def adder(svc, s):
 
 
 class DiskVg(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 pvs=None,
-                 **kwargs):
-        super(DiskVg, self).__init__(
-            rid=rid,
-            name=name,
-            type='disk.vg',
-            **kwargs
-        )
-        self.label = "vg "+name
+    def __init__(self, pvs=None, **kwargs):
+        super(DiskVg, self).__init__(type='disk.vg', **kwargs)
+        self.label = "vg %s" % self.name
         self.pvs = pvs or []
         self.tag = rcEnv.nodename
         self.refresh_provisioned_on_provision = True

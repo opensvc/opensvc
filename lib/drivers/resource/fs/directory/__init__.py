@@ -87,13 +87,12 @@ class FsDirectory(Resource):
     """
 
     def __init__(self,
-                 rid=None,
                  path=None,
                  user=None,
                  group=None,
                  perm=None,
                  **kwargs):
-        super(FsDirectory, self).__init__(rid=rid, type="fs.directory", **kwargs)
+        super(FsDirectory, self).__init__(type="fs.directory", **kwargs)
         self.path = path
         self.mount_point = path # for fs ordering
         self.user = user

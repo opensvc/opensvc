@@ -58,21 +58,8 @@ def adder(svc, s):
 utilities = __import__('rcUtilities'+rcEnv.sysname)
 
 class ContainerVbox(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos=None,
-                 headless=None,
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerVbox, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.vbox",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+    def __init__(self, headless=None, **kwargs):
+        super(ContainerVbox, self).__init__(type="container.vbox", **kwargs)
         #self.sshbin = '/usr/local/bin/ssh'
         self.vminfo = None
         self.headless = headless

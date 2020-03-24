@@ -29,7 +29,6 @@ class Sync(Resource):
     default_optional = True
 
     def __init__(self,
-                 rid=None,
                  sync_max_delay=None,
                  schedule=None,
                  **kwargs):
@@ -50,7 +49,7 @@ class Sync(Resource):
             "targets": {},
         }
 
-        Resource.__init__(self, rid=rid, **kwargs)
+        Resource.__init__(self, **kwargs)
 
     def target_nodes(self, target):
         """
