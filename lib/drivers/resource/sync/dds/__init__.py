@@ -5,12 +5,12 @@ from subprocess import *
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.linux
 
 from .. import Sync, notify
 from converters import print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import which
-from rcUtilitiesLinux import lv_info
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
 
@@ -169,7 +169,7 @@ class SyncDds(Sync):
         return os.path.basename(self.src_lv).replace('-', '_')+'_osvc_'+snap
 
     def get_src_info(self):
-        (self.src_vg, self.src_lv, self.src_size) = lv_info(self, self.src)
+        (self.src_vg, self.src_lv, self.src_size) = utilities.devices.linux.lv_info(self, self.src)
         if self.src_lv is None:
             self.log.error("unable to fetch source logical volume information")
             raise ex.excError

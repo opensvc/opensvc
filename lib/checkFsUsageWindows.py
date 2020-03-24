@@ -1,5 +1,5 @@
 import checks
-from rcUtilitiesWindows import get_drives
+import utilities.devices.windows
 
 class check(checks.check):
     chk_type = "fs_u"
@@ -20,7 +20,7 @@ class check(checks.check):
             return []
         cmd = ['df', '-lP']
         r = []
-        for drive in get_drives():
+        for drive in utilities.devices.windows.get_drives():
             try:
                 n_free_user, n_total, n_free = win32api.GetDiskFreeSpaceEx(drive+':\\')
             except:

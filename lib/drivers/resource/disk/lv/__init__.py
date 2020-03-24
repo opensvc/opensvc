@@ -2,12 +2,11 @@ import os
 import re
 
 import rcExceptions as ex
+import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, cache
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
-                             devs_to_disks, udevadm_settle
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
@@ -159,7 +158,7 @@ class BaseDiskLv(BaseDisk):
             self.log.info("%s is already down" % self.label)
             return
         self.remove_holders()
-        udevadm_settle()
+        utilities.devices.linux.udevadm_settle()
         self.deactivate_lv()
 
     def lv_devices(self):

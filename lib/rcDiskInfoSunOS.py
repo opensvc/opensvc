@@ -1,10 +1,12 @@
-import os
-import rcDiskInfo
-import rcDevTreeVeritas
-from rcUtilities import justcall
-from rcUtilitiesSunOS import prtvtoc
 import math
+import os
+
+import rcDevTreeVeritas
+import rcDiskInfo
+import utilities.devices.sunos
+
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall
 from rcZone import is_zone
 
 class diskInfo(rcDiskInfo.diskInfo):
@@ -21,7 +23,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         part = dev[-1]
         basedev = dev[:-2] + "s2"
         size = 0
-        out = prtvtoc(basedev)
+        out = utilities.devices.sunos.prtvtoc(basedev)
         if out is None:
             return size
 
@@ -54,7 +56,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         size = 0
         dev = dev.replace("/dev/dsk/", "/dev/rdsk/")
         dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
-        out = prtvtoc(dev)
+        out = utilities.devices.sunos.prtvtoc(dev)
         if out is None:
             return size
 
