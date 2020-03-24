@@ -1,6 +1,7 @@
 import os
 
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -21,8 +22,6 @@ from rcUtilities import fcache
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
-
-rcU = __import__("rcUtilities" + os.uname()[0])
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "ovm"
@@ -90,7 +89,7 @@ class ContainerOvm(BaseContainer):
         return True
 
     def ping(self):
-        return rcU.check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def find_vmcf(self):
         import glob

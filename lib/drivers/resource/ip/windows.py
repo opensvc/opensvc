@@ -5,9 +5,9 @@ This module implements the Windows ip resource driver
 import time
 
 import rcExceptions as ex
+import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder
-from rcUtilitiesWindows import check_ping
 
 def adder(svc, s):
     parent_adder(svc, s, drv=Ip)
@@ -15,7 +15,7 @@ def adder(svc, s):
 class Ip(ParentIp):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr, timeout=timeout, count=count)
+        return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
 
     def startip_cmd(self):
         #netsh interface ip add address "Local Area Connection" 33.33.33.33 255.255.255.255
@@ -34,7 +34,7 @@ class Ip(ParentIp):
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
         for i in range(5, 0, -1):
-            if check_ping(self.addr, timeout=1, count=1):
+            if utilities.ping.check_ping(self.addr, timeout=1, count=1):
                 return ret, out, err
             time.sleep(1)
         self.log.error("timed out waiting for ip activation")

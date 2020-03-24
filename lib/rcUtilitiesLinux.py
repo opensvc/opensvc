@@ -262,20 +262,6 @@ def get_blockdev_sd_slaves(syspath):
             slaves |= get_blockdev_sd_slaves(deeper)
     return slaves
 
-def check_ping(addr, timeout=5, count=1):
-    if ':' in addr:
-        ping = 'ping6'
-    else:
-        ping = 'ping'
-    cmd = [ping, '-c', repr(count),
-                 '-W', repr(timeout),
-                 '-w', repr(timeout),
-                 addr]
-    out, err, ret = justcall(cmd)
-    if ret == 0:
-        return True
-    return False
-
 def lv_exists(self, device):
     if qcall([rcEnv.syspaths.lvs, device]) == 0:
         return True

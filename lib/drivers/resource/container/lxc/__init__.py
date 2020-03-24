@@ -8,6 +8,7 @@ from datetime import datetime
 
 import rcExceptions as ex
 import rcStatus
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -21,7 +22,6 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, lazy, makedirs, protected_dir
 from svcBuilder import init_kwargs, container_kwargs, get_rcmd
 from svcdict import KEYS
@@ -479,7 +479,7 @@ class ContainerLxc(BaseContainer):
             self.cleanup_link(link)
 
     def _ping(self):
-        return check_ping(self.addr, timeout=1)
+        return utilities.ping.check_ping(self.addr, timeout=1)
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)
