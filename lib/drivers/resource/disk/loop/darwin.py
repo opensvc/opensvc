@@ -3,6 +3,7 @@ import re
 
 import rcStatus
 import rcExceptions as ex
+import utilities.devices.darwin
 
 from . import \
     BaseDiskLoop, \
@@ -12,7 +13,6 @@ from . import \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
 from converters import convert_size
-from rcLoopDarwin import file_to_loop
 from rcGlobalEnv import rcEnv
 from rcUtilities import call, which
 from svcdict import KEYS
@@ -33,7 +33,7 @@ class DiskLoop(BaseDiskLoop):
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.darwin.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             return False
         return True
@@ -46,7 +46,7 @@ class DiskLoop(BaseDiskLoop):
         (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.excError
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.darwin.file_to_loop(self.loopFile)
         self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
         self.can_rollback = True
 

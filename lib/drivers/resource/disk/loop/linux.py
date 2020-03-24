@@ -4,6 +4,7 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.linux
 
 from . import \
     BaseDiskLoop, \
@@ -15,7 +16,6 @@ from . import \
 from converters import convert_size
 from lock import cmlock
 from rcGlobalEnv import rcEnv
-from rcLoopLinux import file_to_loop
 from rcUtilities import call, which, clear_cache
 from svcdict import KEYS
 
@@ -36,7 +36,7 @@ class DiskLoop(BaseDiskLoop):
         """
         Returns True if the loop group is present and activated
         """
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.linux.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             return False
         return True
@@ -55,7 +55,7 @@ class DiskLoop(BaseDiskLoop):
             raise ex.excError(str(exc))
         if ret != 0:
             raise ex.excError
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.linux.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             raise ex.excError("loop device did not appear or disappeared")
         time.sleep(2)
@@ -88,7 +88,7 @@ class DiskLoop(BaseDiskLoop):
             return rcStatus.DOWN
 
     def exposed_devs(self):
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.linux.file_to_loop(self.loopFile)
         return set(self.loop)
 
     def provisioned(self):
