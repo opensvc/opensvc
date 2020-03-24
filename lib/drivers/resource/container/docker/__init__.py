@@ -11,6 +11,7 @@ from itertools import chain
 import rcContainer
 import rcExceptions as ex
 import rcStatus
+import utilities.ping
 
 from .. import \
     KW_NO_PREEMPT_ABORT, \
@@ -19,7 +20,6 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV, \
     BaseContainer
-from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from resources import Resource
 from converters import print_duration
@@ -998,7 +998,7 @@ class ContainerDocker(BaseContainer):
         self.docker('kill')
 
     def _ping(self):
-        return check_ping(self.addr, timeout=1)
+        return utilities.ping.check_ping(self.addr, timeout=1)
 
     def is_down(self):
         return not self.is_up()

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import rcExceptions as ex
 import rcStatus
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -18,7 +19,6 @@ from .. import \
     KW_SCSIRESERV
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilitiesFreeBSD import check_ping
 from rcUtilities import qcall
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
@@ -133,7 +133,7 @@ class ContainerJail(BaseContainer):
         raise ex.excError
 
     def ping(self):
-        return check_ping(self.addr, timeout=1)
+        return utilities.ping.check_ping(self.addr, timeout=1)
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)

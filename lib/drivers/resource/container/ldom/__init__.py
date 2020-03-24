@@ -1,6 +1,7 @@
 import os
 
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -15,7 +16,6 @@ from .. import \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
 from rcUtilities import qcall
-from rcUtilitiesSunOS import check_ping
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
@@ -81,7 +81,7 @@ class ContainerLdom(BaseContainer):
         return None
 
     def ping(self):
-        return check_ping(self.addr)
+        return utilities.ping.check_ping(self.addr)
 
     def container_action(self,action):
         cmd = ['/usr/sbin/ldm', action, self.name]

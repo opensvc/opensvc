@@ -2,6 +2,7 @@ import time
 
 import rcStatus
 import rcExceptions as ex
+import utilities.ping
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, getaddr, lazy
@@ -290,10 +291,8 @@ class BaseContainer(Resource):
             self.log.info("could not resolve %s to an ip address" % self.vm_hostname)
             return True
 
-        u = __import__("rcUtilities"+rcEnv.sysname)
-        ping = u.check_ping
         self.log.info("test %s ip %s availability" % (self.name, self.addr))
-        if ping(self.addr):
+        if utilities.ping.check_ping(self.addr):
             self.log.info("address %s is alive" % self.addr)
             return True
 
