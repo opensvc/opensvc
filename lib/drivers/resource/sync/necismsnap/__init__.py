@@ -48,7 +48,7 @@ class SyncNecismsnap(Sync):
                  array_name=None,
                  devs=[],
                  **kwargs):
-        super().__init__(rid=rid, type="sync.necismsnap", **kwargs)
+        super(SyncNecismsnap, self).__init__(rid=rid, type="sync.necismsnap", **kwargs)
 
         self.label = "NecIsm snapshot %s"%(rid)
         self.devs = devs

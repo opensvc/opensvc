@@ -79,11 +79,12 @@ class ContainerLxd(BaseContainer):
                  rid,
                  name,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.lxd",
-                         **kwargs)
-
+        super(ContainerLxd, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.lxd",
+            **kwargs
+        )
         self.runmethod = ['lxc', 'exec', name, '--']
         self.getaddr = self.dummy
         self.label = "lxd " + name if name else "<undefined>"
@@ -267,13 +268,13 @@ class ContainerLxd(BaseContainer):
         return True
 
     def _status(self, verbose=False):
-        return super()._status(verbose=verbose)
+        return super(ContainerLxd, self)._status(verbose=verbose)
 
     def dummy(self, cache_fallback=False):
         pass
 
     def operational(self):
-        if not super().operational():
+        if not super(ContainerLxd, self).operational():
             return False
 
         cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
@@ -335,20 +336,20 @@ class ContainerLxd(BaseContainer):
             return
 
     def start(self):
-        super().start()
+        super(ContainerLxd, self).start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def stop(self):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
-        super().stop()
+        super(ContainerLxd, self).stop()
 
     def provision(self):
-        super().provision()
+        super(ContainerLxd, self).provision()
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
-        super().unprovision()
+        super(ContainerLxd, self).unprovision()
 
     def provisioned(self):
         return self.has_it()

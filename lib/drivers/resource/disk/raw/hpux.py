@@ -35,13 +35,15 @@ class DiskRaw(BaseDiskRaw):
                  create_char_devices=False,
                  **kwargs):
 
-        super().__init__(rid=rid,
-                         devs=devs,
-                         user=user,
-                         group=group,
-                         perm=perm,
-                         create_char_devices=False,
-                         **kwargs)
+        super(DiskRaw, self).__init__(
+            rid=rid,
+            devs=devs,
+            user=user,
+            group=group,
+            perm=perm,
+            create_char_devices=False,
+            **kwargs
+        )
 
     def verify_dev(self, dev):
         cmd = ["diskinfo", dev]

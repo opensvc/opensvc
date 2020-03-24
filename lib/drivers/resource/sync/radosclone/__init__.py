@@ -53,18 +53,19 @@ class SyncRadosclone(SyncRadossnap):
                  internal=False,
                  subset=None):
         images = map(lambda x: x.split(":")[0], pairs)
-        super().__init__(rid=rid,
-                         images=images,
-                         client_id=client_id,
-                         keyring=keyring,
-                         type=type,
-                         sync_max_delay=sync_max_delay,
-                         schedule=schedule,
-                         optional=optional,
-                         disabled=disabled,
-                         tags=tags,
-                         subset=subset)
-
+        super(SyncRadosclone, self).__init__(
+            rid=rid,
+            images=images,
+            client_id=client_id,
+            keyring=keyring,
+            type=type,
+            sync_max_delay=sync_max_delay,
+            schedule=schedule,
+            optional=optional,
+            disabled=disabled,
+            tags=tags,
+            subset=subset
+        )
         self.pairs = pairs
         self.fmt_label("clone", pairs)
 

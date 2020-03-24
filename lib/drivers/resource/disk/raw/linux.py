@@ -38,13 +38,15 @@ class DiskRaw(BaseDiskRaw):
                  perm=None,
                  **kwargs):
 
-        super().__init__(rid=rid,
-                         devs=devs,
-                         user=user,
-                         group=group,
-                         perm=perm,
-                         create_char_devices=create_char_devices,
-                         **kwargs)
+        super(DiskRaw, self).__init__(
+            rid=rid,
+            devs=devs,
+            user=user,
+            group=group,
+            perm=perm,
+            create_char_devices=create_char_devices,
+            **kwargs
+        )
         self.min_raw = 1
         self.sys_devs = {}
 

@@ -67,7 +67,7 @@ class DiskZvol(BaseDisk):
                  size=None,
                  create_options=None,
                  **kwargs):
-        super().__init__(rid=rid, name=name, type='disk.zvol', **kwargs)
+        super(DiskZvol, self).__init__(rid=rid, name=name, type='disk.zvol', **kwargs)
         self.name = name
         self.size = size
         self.create_options = create_options or []

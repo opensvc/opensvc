@@ -13,11 +13,13 @@ class DiskScsireserv(BaseDiskScsireserv):
                  no_preempt_abort=False,
                  prkey=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         peer_resource=peer_resource,
-                         no_preempt_abort=no_preempt_abort,
-                         prkey=prkey,
-                         **kwargs)
+        super(DiskScsireserv, self).__init__(
+            rid=rid,
+            peer_resource=peer_resource,
+            no_preempt_abort=no_preempt_abort,
+            prkey=prkey,
+            **kwargs
+        )
         self.prtype = 'wero'
         self.disk_id = {}
         self.itn = {}

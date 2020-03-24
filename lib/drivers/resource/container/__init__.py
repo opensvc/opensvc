@@ -127,7 +127,7 @@ class BaseContainer(Resource):
                  start_timeout=600,
                  stop_timeout=60,
                  **kwargs):
-        super().__init__(rid=rid, type=type, **kwargs)
+        super(BaseContainer, self).__init__(rid=rid, type=type, **kwargs)
         self.start_timeout = start_timeout
         self.stop_timeout = stop_timeout
         self.osvc_root_path = osvc_root_path
@@ -180,7 +180,7 @@ class BaseContainer(Resource):
                 raise ex.excError("could not resolve name %s: %s" % (self.vm_hostname, str(e)))
 
     def __str__(self):
-        return "%s name=%s" % (super().__str__(), self.name)
+        return "%s name=%s" % (super(BaseContainer, self).__str__(), self.name)
 
     def operational(self):
         if not self.runmethod or not self.svc.has_encap_resources:

@@ -8,7 +8,7 @@ class DiskScsireserv(DiskScsireservSg):
         return dict((dev, dev_to_paths(dev)) for dev in devs)
 
     def _status(self, verbose=False):
-        ret = super()._status(verbose=verbose)
+        ret = super(DiskScsireserv, self)._status(verbose=verbose)
         if ret != rcStatus.UP:
             return ret
         self.get_devs()

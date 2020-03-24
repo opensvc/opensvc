@@ -83,7 +83,7 @@ class BaseFs(Resource):
                  stat_timeout=5,
                  snap_size=None,
                  **kwargs):
-        super().__init__(rid=rid, type="fs", **kwargs)
+        super(BaseFs, self).__init__(rid=rid, type="fs", **kwargs)
         self.mount_point = mount_point
         self._device = device
         self.fs_type = fs_type
@@ -287,7 +287,7 @@ class BaseFs(Resource):
         return set([self.device])
 
     def __str__(self):
-        return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (super().__str__(),\
+        return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (super(BaseFs, self).__str__(),\
                 self.mount_point, self.device, self.fs_type, self.mount_options)
 
     def __lt__(self, other):

@@ -75,12 +75,14 @@ class ContainerSrp(BaseContainer):
                  guestos="HP-UX",
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.srp",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerSrp, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.srp",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.runmethod = ['srp_su', name, 'root', '-c']
         self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
         self.need_start = []

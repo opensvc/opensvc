@@ -82,6 +82,51 @@ def adder(svc, s, drv=None, t="sync.symclone"):
 
 
 class SyncSymclone(Sync):
+    def __init__(self,
+                 rid=None,
+                 type="sync.symclone",
+                 symid=None,
+                 pairs=[],
+                 precopy=True,
+                 consistent=True,
+                 restore_timeout=None,
+                 recreate_timeout=None,
+                 **kwargs):
+        super(SyncSymclone, self).__init__(rid=rid, type=type, **kwargs)
+
+        if self.type == "sync.symclone":
+            self.active_states = ["copied", "copyinprog"]
+            self.activable_states = ["recreated", "precopy"]
+        elif self.type == "sync.symsnap":
+            self.active_states = ["copyonwrite"]
+            self.activable_states = ["recreated", "created"]
+        else:
+            raise ex.excInitError("unsupported symclone driver type %s", self.type)
+        self.activate_timeout = 20
+        self.recreate_timeout = recreate_timeout
+        self.restore_timeout = restore_timeout
+        self.precopy = precopy
+        self.pairs_written = {}
+        self.label = "symclone symid %s pairs %s" % (symid, " ".join(pairs))
+        if len(self.label) > 80:
+            self.label = self.label[:76] + "..."
+        self.symid = symid
+        self.pairs = pairs
+        self.consistent = consistent
+        self.svcstatus = {}
+        self.default_schedule = "@0"
+        if restore_timeout is None:
+            self.restore_timeout = 300
+        else:
+            self.restore_timeout = restore_timeout
+
+    def __str__(self):
+        return "%s symid=%s pairs=%s" % (
+            super(SyncSymclone, self).__str__(),
+            self.symid,
+            str(self.pairs)
+        )
+
     def wait_for_devs_ready(self):
         pass
 
@@ -323,47 +368,3 @@ class SyncSymclone(Sync):
 
     def start(self):
         self.activate()
-
-    def __init__(self,
-                 rid=None,
-                 type="sync.symclone",
-                 symid=None,
-                 pairs=[],
-                 precopy=True,
-                 consistent=True,
-                 restore_timeout=None,
-                 recreate_timeout=None,
-                 **kwargs):
-        super().__init__(rid=rid, type=type, **kwargs)
-
-        if self.type == "sync.symclone":
-            self.active_states = ["copied", "copyinprog"]
-            self.activable_states = ["recreated", "precopy"]
-        elif self.type == "sync.symsnap":
-            self.active_states = ["copyonwrite"]
-            self.activable_states = ["recreated", "created"]
-        else:
-            raise ex.excInitError("unsupported symclone driver type %s", self.type)
-        self.activate_timeout = 20
-        self.recreate_timeout = recreate_timeout
-        self.restore_timeout = restore_timeout
-        self.precopy = precopy
-        self.pairs_written = {}
-        self.label = "symclone symid %s pairs %s" % (symid, " ".join(pairs))
-        if len(self.label) > 80:
-            self.label = self.label[:76] + "..."
-        self.symid = symid
-        self.pairs = pairs
-        self.consistent = consistent
-        self.svcstatus = {}
-        self.default_schedule = "@0"
-        if restore_timeout is None:
-            self.restore_timeout = 300
-        else:
-            self.restore_timeout = restore_timeout
-
-
-    def __str__(self):
-        return "%s symid=%s pairs=%s" % (super().__str__(),\
-                self.symid, str(self.pairs))
-

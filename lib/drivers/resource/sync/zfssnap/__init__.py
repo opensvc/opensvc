@@ -73,7 +73,7 @@ class SyncZfssnap(Sync):
                  keep=1,
                  recursive=True,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.zfssnap", **kwargs)
+        super(SyncZfssnap, self).__init__(rid=rid, type="sync.zfssnap", **kwargs)
 
         try:
             self.dataset = [ds.strip("/") for ds in dataset]
@@ -87,6 +87,13 @@ class SyncZfssnap(Sync):
         self.keep = keep
         self.name = name
         self.zfs = {}
+
+    def __str__(self):
+        return "%s dataset=%s keep=%s" % (
+            super(SyncZfssnap, self).__str__(),
+            self.dataset,
+            self.keep
+        )
 
     def _info(self):
         data = [
@@ -257,7 +264,3 @@ class SyncZfssnap(Sync):
     def remove_snaps(self):
         for dataset in self.dataset:
             self.remove_snap(dataset)
-
-    def __str__(self):
-        return "%s dataset=%s keep=%s" % (super().__str__(), str(self.dataset), str(self.keep))
-

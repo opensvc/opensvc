@@ -60,12 +60,14 @@ class ContainerXen(BaseContainer):
                  guestos=None,
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.xen",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerXen, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.xen",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
 
     def __str__(self):
         return "%s name=%s" % (Resource.__str__(self), self.name)

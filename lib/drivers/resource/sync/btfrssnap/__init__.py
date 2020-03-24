@@ -63,7 +63,7 @@ class SyncBtrfssnap(Sync):
                  subvol=[],
                  keep=1,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.btrfssnap", **kwargs)
+        super(SyncBtrfssnap, self).__init__(rid=rid, type="sync.btrfssnap", **kwargs)
 
         if name:
             self.label = "btrfs '%s' snapshot %s" % (name, ", ".join(subvol))
@@ -76,6 +76,13 @@ class SyncBtrfssnap(Sync):
 
     def on_add(self):
         pass
+
+    def __str__(self):
+        return "%s subvol=%s keep=%s" % (
+            super(SyncBtrfssnap, self).__str__(),
+            self.subvol,
+            self.keep
+        )
 
     def test_btrfs(self, label):
         cmd = [rcEnv.syspaths.blkid, "-L", label]
@@ -236,7 +243,4 @@ class SyncBtrfssnap(Sync):
     def sync_update(self):
         for subvol in self.subvol:
             self._sync_update(subvol)
-
-    def __str__(self):
-        return "%s subvol=%s keep=%s" % (super().__str__(), str(self.subvol), str(self.keep))
 

@@ -103,10 +103,12 @@ class ZpoolDisk(BaseDisk):
                  vdev=None,
                  create_options=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type='disk.zpool',
-                         **kwargs)
+        super(ZpoolDisk, self).__init__(
+            rid=rid,
+            name=name,
+            type='disk.zpool',
+            **kwargs
+        )
         self.multihost = multihost
         self.vdev = vdev or []
         self.create_options = create_options or []

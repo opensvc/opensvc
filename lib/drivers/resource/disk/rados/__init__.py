@@ -88,7 +88,7 @@ class DiskRados(BaseDisk):
                  client_id=None,
                  keyring=None,
                  **kwargs):
-        super().__init__(rid=rid, type="disk.rados", **kwargs)
+        super(DiskRados, self).__init__(rid=rid, type="disk.rados", **kwargs)
         self.images = images
         self.keyring = keyring
         if not client_id.startswith("client."):
@@ -257,18 +257,23 @@ class DiskRadoslock(DiskRados):
         self.lock = lock
         self.lock_shared_tag = lock_shared_tag
 
-        super().__init__(rid=rid,
-                         type=type,
-                         images=images,
-                         client_id=client_id,
-                         keyring=keyring,
-                         **kwargs)
+        super(DiskRadoslock, self).__init__(
+            rid=rid,
+            type=type,
+            images=images,
+            client_id=client_id,
+            keyring=keyring,
+            **kwargs
+        )
         self.label = self.fmt_label()
         self.unlocked = []
 
 
     def fmt_label(self):
-        return str(self.lock) + " lock on " + super().fmt_label()
+        return "%s lock on %s" % (
+            self.lock,
+            super(DiskRadoslock, self).fmt_label()
+        )
 
     def locklist(self, image):
         cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]
