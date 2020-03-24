@@ -1,12 +1,15 @@
-import rcDevTree
 import glob
 import os
 import re
+
 from subprocess import PIPE
-from rcUtilities import which, cache, justcall
-from rcUtilitiesSunOS import prtvtoc
-from rcGlobalEnv import rcEnv
+
+import rcDevTree
 import rcDevTreeVeritas
+import utilities.devices.sunos
+
+from rcUtilities import which, cache, justcall
+from rcGlobalEnv import rcEnv
 
 class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     di = None
@@ -26,7 +29,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                2      5    00          0  71127180  71127179
                7      0    00   71060733     66447  71127179
         """
-        out = prtvtoc(d.devpath[0])
+        out = utilities.devices.sunos.prtvtoc(d.devpath[0])
         if out is None:
             return
         for line in out.splitlines():

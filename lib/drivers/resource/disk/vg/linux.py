@@ -6,12 +6,11 @@ import re
 from stat import *
 
 import rcExceptions as ex
+import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, cache, lazy
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
-                             devs_to_disks, udevadm_settle
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
@@ -276,7 +275,7 @@ class DiskVg(BaseDisk):
             return
         self.remove_holders()
         self.remove_tags([self.tag])
-        udevadm_settle()
+        utilities.devices.linux.udevadm_settle()
         self.deactivate_vg()
 
     @cache("vg.lvs")

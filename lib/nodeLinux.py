@@ -1,10 +1,12 @@
 import os
 import time
+
 from itertools import islice
 
-from rcUtilitiesLinux import get_tid
-from rcUtilities import lazy, justcall
 import node
+import utilities.os.linux
+
+from rcUtilities import lazy, justcall
 
 class Node(node.Node):
     def still_alive(self, action):
@@ -70,7 +72,7 @@ class Node(node.Node):
 
     @staticmethod
     def get_tid():
-        return get_tid()
+        return utilities.os.linux.get_tid()
 
     def cpu_time(self, stat_path='/proc/stat'):
         with open(stat_path) as stat_file:

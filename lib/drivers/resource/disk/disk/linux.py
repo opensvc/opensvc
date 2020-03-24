@@ -4,10 +4,10 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.linux
 
 from . import DiskDisk as BaseDiskDisk, KEYWORDS
 from rcUtilities import lazy, which, justcall
-from rcUtilitiesLinux import multipath_flush, dev_delete, dev_to_paths
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from svcdict import KEYS
@@ -75,10 +75,10 @@ class DiskDisk(BaseDiskDisk):
         except IndexError:
             mpath = None
         if mpath and mpath.startswith("/dev/dm-"):
-            paths = dev_to_paths(mpath)
-            multipath_flush(mpath, log=self.log)
+            paths = utilities.devices.linux.dev_to_paths(mpath)
+            utilities.devices.linux.multipath_flush(mpath, log=self.log)
             for path in paths:
-                dev_delete(path, log=self.log)
+                utilities.devices.linux.dev_delete(path, log=self.log)
         self.svc.node.unset_lazy("devtree")
 
     def configure(self, force=False):

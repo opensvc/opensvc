@@ -8,8 +8,6 @@ from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, cache
-from rcUtilitiesLinux import major, get_blockdev_sd_slaves, \
-                             devs_to_disks, udevadm_settle
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 

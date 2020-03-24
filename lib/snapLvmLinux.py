@@ -1,10 +1,11 @@
 import os
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import protected_mount, justcall, which
-from rcUtilitiesLinux import lv_info, lv_exists, udevadm_settle
 import rcExceptions as ex
 import snap
+import utilities.devices.linux
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import protected_mount, justcall, which
 
 class Snap(snap.Snap):
     def mntopt_and_ro(self, m):
@@ -22,12 +23,12 @@ class Snap(snap.Snap):
     def snapcreate(self, m):
         snap_name = ''
         snap_mnt = ''
-        (vg_name, lv_name, lv_size) = lv_info(self, m.device)
+        (vg_name, lv_name, lv_size) = utilities.devices.linux.lv_info(self, m.device)
         if lv_name is None:
             self.log.error("can not snap %s: not a logical volume"%m.device)
             raise ex.syncNotSnapable
         snap_name = 'osvc_sync_'+lv_name
-        if lv_exists(self, os.path.join(os.sep, 'dev', vg_name, snap_name)):
+        if utilities.devices.linux.lv_exists(self, os.path.join(os.sep, 'dev', vg_name, snap_name)):
             self.log.error("snap of %s already exists"%(lv_name))
             raise ex.syncSnapExists
 
@@ -83,7 +84,7 @@ class Snap(snap.Snap):
         cmd = [rcEnv.syspaths.umount, self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
 
-        udevadm_settle()
+        utilities.devices.linux.udevadm_settle()
         cmd = ['lvremove', '-A', 'n', '-f', self.snaps[s]['snap_dev']]
         self.log.info(' '.join(cmd))
         for i in range(1, 30):
