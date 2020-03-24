@@ -2,10 +2,10 @@ import os
 from stat import *
 
 import rcExceptions as ex
+import utilities.devices.darwin
 
 from . import BaseFs, adder as base_adder
 from rcGlobalEnv import rcEnv
-from rcLoopDarwin import file_to_loop
 from rcMountsDarwin import Mounts
 from rcUtilities import qcall, protected_mount, getmount
 
@@ -100,7 +100,7 @@ class Fs(BaseFs):
 
             if S_ISREG(mode):
                 # might be a loopback mount
-                devs = file_to_loop(self.device)
+                devs = utilities.devices.darwin.file_to_loop(self.device)
                 for dev in devs:
                     ret = self.Mounts.has_mount(dev, self.mount_point)
                     if ret:
@@ -157,7 +157,7 @@ class Fs(BaseFs):
             try:
                 mode = os.stat(self.device)[ST_MODE]
                 if S_ISREG(mode):
-                    devs = file_to_loop(self.device)
+                    devs = utilities.devices.darwin.file_to_loop(self.device)
                     if len(devs) > 0:
                         self.loopdevice = devs[0]
                     self.loopdev = devs[0]

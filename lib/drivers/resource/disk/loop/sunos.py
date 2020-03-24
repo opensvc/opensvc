@@ -4,6 +4,7 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.sunos
 
 from . import \
     BaseDiskLoop, \
@@ -14,7 +15,6 @@ from . import \
     DEPRECATED_SECTIONS
 from converters import convert_size
 from lock import cmlock
-from rcLoopSunOS import file_to_loop
 from rcGlobalEnv import rcEnv
 from rcUtilities import call, which, clear_cache
 from svcdict import KEYS
@@ -36,7 +36,7 @@ class DiskLoop(BaseDiskLoop):
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.sunos.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             return False
         return True
@@ -54,7 +54,7 @@ class DiskLoop(BaseDiskLoop):
             raise ex.excError(str(exc))
         if ret != 0:
             raise ex.excError
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.sunos.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
             raise ex.excError("loop device did not appear or disappeared")
         time.sleep(1)
@@ -85,7 +85,7 @@ class DiskLoop(BaseDiskLoop):
             return rcStatus.DOWN
 
     def exposed_devs(self):
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = utilities.devices.sunos.file_to_loop(self.loopFile)
         return set(self.loop)
 
     def provisioned(self):

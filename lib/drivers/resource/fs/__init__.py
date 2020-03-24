@@ -396,16 +396,16 @@ class BaseFs(Resource):
                 raise ex.excError("%s raw device does not exists"%self.mkfs_dev)
         elif rcEnv.sysname == 'Darwin':
             if os.path.isfile(self.mkfs_dev):
-                from rcLoopDarwin import file_to_loop
-                devs = file_to_loop(self.mkfs_dev)
+                import utilities.devices.darwin
+                devs = utilities.devices.darwin.file_to_loop(self.mkfs_dev)
                 if len(devs) == 1:
                     self.mkfs_dev = devs[0]
                 else:
                     raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
         elif rcEnv.sysname == 'Linux':
             if os.path.isfile(self.mkfs_dev):
-                from rcLoopLinux import file_to_loop
-                devs = file_to_loop(self.mkfs_dev)
+                import utilities.devices.linux
+                devs = utilities.devices.linux.file_to_loop(self.mkfs_dev)
                 if len(devs) == 1:
                     self.mkfs_dev = devs[0]
                 else:
