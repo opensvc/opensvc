@@ -1,6 +1,7 @@
 import os
 
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -54,8 +55,6 @@ def adder(svc, s):
     kwargs["headless"] = svc.oget(s, "headless")
     r = ContainerVbox(**kwargs)
     svc += r
-
-utilities = __import__('rcUtilities'+rcEnv.sysname)
 
 class ContainerVbox(BaseContainer):
     def __init__(self, headless=None, **kwargs):
@@ -118,7 +117,7 @@ class ContainerVbox(BaseContainer):
         return 'off'
 
     def ping(self):
-        return utilities.check_ping(self.addr)
+        return utilities.ping.check_ping(self.addr)
 
     def container_action(self, action, add=[]):
         cmd = ['VBoxManage', action, self.name] + add

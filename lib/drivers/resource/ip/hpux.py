@@ -1,5 +1,5 @@
-u = __import__("rcUtilitiesHP-UX")
 import rcExceptions as ex
+import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder
 from rcUtilities import to_cidr, to_dotted
@@ -10,7 +10,7 @@ def adder(svc, s):
 class Ip(ParentIp):
     def check_ping(self, count=1, timeout=5):
         self.log.info("checking %s availability"%self.addr)
-        return u.check_ping(self.addr, count=count, timeout=timeout)
+        return utilities.ping.check_ping(self.addr, count=count, timeout=timeout)
 
     def arp_announce(self):
         """ arp_announce job is done by HP-UX ifconfig... """

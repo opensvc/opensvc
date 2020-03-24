@@ -3,6 +3,7 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -22,7 +23,6 @@ from .. import \
 from resources import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
-from rcUtilitiesLinux import check_ping
 from svcdict import KEYS
 from svcBuilder import init_kwargs, container_kwargs
 
@@ -215,7 +215,7 @@ class ContainerAmazon(BaseContainer):
 
         # find first pinging ip
         for ip in ips:
-            if check_ping(ip, timeout=1, count=1):
+            if utilities.ping.check_ping(ip, timeout=1, count=1):
                 self.addr = ip
                 break
 
@@ -227,7 +227,7 @@ class ContainerAmazon(BaseContainer):
     def ping(self):
         if self.addr is None:
             return 0
-        return check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def start(self):
         if self.is_up():
