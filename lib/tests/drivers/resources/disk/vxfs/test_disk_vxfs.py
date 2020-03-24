@@ -3,9 +3,12 @@ import pytest
 from tests.drivers.resources.helpers import assert_resource_has_mandatory_methods
 
 
-OS_LIST = {'Linux', 'SunOS'}
+OS_LIST = ['Linux', 'SunOS']
+
 SCENARIOS = [
-    ('fs.flag', 'FsFlag', {}, 'fs.flag'),
+    ('fs.vxfs', 'FsVxfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop',
+                           'device': '/dev/disk', 'mount_options': None},
+     'fs'),
 ]
 
 
@@ -13,7 +16,7 @@ SCENARIOS = [
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.parametrize('sysname', OS_LIST)
 @pytest.mark.parametrize('scenario', SCENARIOS)
-class TestDriverFsFlagInstances:
+class TestDriverDiskVxfsInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
         assert create_driver_resource(sysname, scenario).type == scenario[3]

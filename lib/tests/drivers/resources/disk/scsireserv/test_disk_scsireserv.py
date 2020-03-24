@@ -3,9 +3,12 @@ import pytest
 from tests.drivers.resources.helpers import assert_resource_has_mandatory_methods
 
 
-OS_LIST = {'Linux', 'SunOS'}
+# HP-UX not yet added because of leg_mpath_disable call during __init__()
+OS_LIST = {'FreeBSD', 'OSF1', 'Linux', 'SunOS'}
+
 SCENARIOS = [
-    ('fs.flag', 'FsFlag', {}, 'fs.flag'),
+    ('disk.scsireserv', 'DiskScsireserv', {'rid': '#1'}, 'disk.scsireserv'),
+    ('disk.scsireserv.sg', 'DiskScsireservSg', {'rid': '#1'}, 'disk.scsireserv'),
 ]
 
 
@@ -13,7 +16,7 @@ SCENARIOS = [
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.parametrize('sysname', OS_LIST)
 @pytest.mark.parametrize('scenario', SCENARIOS)
-class TestDriverFsFlagInstances:
+class TestDriverDiskScsireservInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
         assert create_driver_resource(sysname, scenario).type == scenario[3]
