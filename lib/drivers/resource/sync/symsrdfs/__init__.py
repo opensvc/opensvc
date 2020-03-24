@@ -59,6 +59,40 @@ def adder(svc, s):
 
 
 class SyncSymsrdfs(Sync):
+    def __init__(self,
+                 rid=None,
+                 symid=None,
+                 symdg=None,
+                 rdfg=None,
+                 symdevs=[],
+                 precopy_timeout=300,
+                 **kwargs):
+        super(SyncSymsrdfs, self).__init__(rid=rid, type="sync.symsrdfs", **kwargs)
+
+        self.pausable = False
+        self.label = "srdf/s symdg %s"%(symdg)
+        self.symid = symid
+
+        self.symdg = symdg
+        self.rdfg = rdfg
+        self.symdevs = symdevs
+        self.precopy_timeout = precopy_timeout
+        self.symdev = {}
+        self.pdevs = {}
+        self.svcstatus = {}
+        self.symld = {}
+        self.pairs = []
+        self._pairs = []
+        self.active_pairs = []
+        self.last = None
+
+    def __str__(self):
+        return "%s symdg=%s symdevs=%s rdfg=%s" % (
+            super(SyncSymsrdfs, self).__str__(),
+            self.symdg,
+            self.symdevs,
+            self.rdfg
+        )
 
     def list_pd(self):
         """
@@ -610,35 +644,3 @@ class SyncSymsrdfs(Sync):
     def get_svcstatus(self):
         if len(self.svcstatus) == 0:
             self.refresh_svcstatus()
-
-    def __init__(self,
-                 rid=None,
-                 symid=None,
-                 symdg=None,
-                 rdfg=None,
-                 symdevs=[],
-                 precopy_timeout=300,
-                 **kwargs):
-        super().__init__(rid=rid, type="sync.symsrdfs", **kwargs)
-
-        self.pausable = False
-        self.label = "srdf/s symdg %s"%(symdg)
-        self.symid = symid
-
-        self.symdg = symdg
-        self.rdfg = rdfg
-        self.symdevs = symdevs
-        self.precopy_timeout = precopy_timeout
-        self.symdev = {}
-        self.pdevs = {}
-        self.svcstatus = {}
-        self.symld = {}
-        self.pairs = []
-        self._pairs = []
-        self.active_pairs = []
-        self.last = None
-
-    def __str__(self):
-        return "%s symdg=%s symdevs=%s rdfg=%s" % (super().__str__(), \
-                self.symdg, self.symdevs, self.rdfg)
-

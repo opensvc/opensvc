@@ -37,10 +37,12 @@ class DiskScsireserv(BaseDiskScsireserv):
                  peer_resource=None,
                  no_preempt_abort=False,
                  **kwargs):
-        super().__init__(rid=rid,
-                         peer_resource=peer_resource,
-                         no_preempt_abort=no_preempt_abort,
-                         **kwargs)
+        super(DiskScsireserv, self).__init__(
+            rid=rid,
+            peer_resource=peer_resource,
+            no_preempt_abort=no_preempt_abort,
+            **kwargs
+        )
         self.prtype = 'wero'
         self.leg_mpath_disable()
 

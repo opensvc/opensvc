@@ -101,7 +101,7 @@ def adder(svc, s):
 
 class ExposeEnvoy(Data):
     def __init__(self, rid, **kwargs):
-        super().__init__(rid, type="expose.envoy", **kwargs)
+        super(ExposeEnvoy, self).__init__(rid, type="expose.envoy", **kwargs)
         self.label = "envoy expose %s/%s via %s:%d" % (
             self.options.port,
             self.options.protocol,

@@ -66,7 +66,7 @@ class DiskVxvol(BaseDisk):
                  name=None,
                  vg=None,
                  **kwargs):
-        super().__init__(rid=rid, name=name, type='disk.vxvol', **kwargs)
+        super(DiskVxvol, self).__init__(rid=rid, name=name, type='disk.vxvol', **kwargs)
         self.fullname = "%s/%s" % (vg, name)
         self.label = "vxvol %s" % self.fullname
         self.vg = vg

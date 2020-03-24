@@ -23,7 +23,7 @@ class AppSimple(ParentAppSimple):
     """
 
     def __init__(self, rid, **kwargs):
-        super().__init__(rid, **kwargs)
+        super(AppSimple, self).__init__(rid, **kwargs)
 
     def get_running(self, with_children=False):
         cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]

@@ -115,7 +115,7 @@ class Volume(Resource):
 
     def __init__(self, rid=None, name=None, pool=None, size=None, format=True,
                  access="rwo", secrets=None, configs=None, **kwargs):
-        super().__init__(rid, type="volume", **kwargs)
+        super(Volume, self).__init__(rid, type="volume", **kwargs)
         self.access = access
         self.name = name
         self.pool = pool
@@ -127,7 +127,7 @@ class Volume(Resource):
         self.refresh_provisioned_on_unprovision = True
 
     def __str__(self):
-        return "%s name=%s" % (super().__str__(), self.volname)
+        return "%s name=%s" % (super(Volume, self).__str__(), self.volname)
 
     def set_label(self):
         self.label = self.volname

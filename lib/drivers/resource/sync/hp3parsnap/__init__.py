@@ -59,7 +59,7 @@ class SyncHp3parsnap(Sync):
                  array=None,
                  vv_names=[],
                  **kwargs):
-        super().__init__(rid=rid, type="sync.hp3parsnap", **kwargs)
+        super(SyncHp3parsnap, self).__init__(rid=rid, type="sync.hp3parsnap", **kwargs)
         self.array = array
         self.vv_names = vv_names
         self.label = "hp3parsnap %s" % ", ".join(self.vv_names)

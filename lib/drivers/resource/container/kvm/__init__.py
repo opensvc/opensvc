@@ -70,12 +70,14 @@ class ContainerKvm(BaseContainer):
                  snapof=None,
                  virtinst=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.kvm",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerKvm, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.kvm",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
@@ -147,7 +149,7 @@ class ContainerKvm(BaseContainer):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def start(self):
-        super().start()
+        super(ContainerKvm, self).start()
 
     def container_stop(self):
         state = self.dom_state()
@@ -164,7 +166,7 @@ class ContainerKvm(BaseContainer):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def stop(self):
-        super().stop()
+        super(ContainerKvm, self).stop()
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
@@ -349,9 +351,7 @@ class ContainerKvm(BaseContainer):
         return data
 
     def _status(self, verbose=False):
-        return super()._status(verbose=verbose)
-
-
+        return super(ContainerKvm, self)._status(verbose=verbose)
 
     def check_kvm(self):
         if os.path.exists(self.cf):

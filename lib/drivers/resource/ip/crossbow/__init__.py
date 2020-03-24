@@ -68,12 +68,14 @@ class IpCrossbow(Ip):
                  ipdevExt="v4",
                  **kwargs):
         self.ipdevExt = ipdevExt
-        super().__init__( rid=rid,
-                         ipdev=ipdev,
-                         ipname=ipname,
-                         mask=mask,
-                         gateway=gateway,
-                         **kwargs)
+        super(IpCrossbow, self).__init__(
+            rid=rid,
+            ipdev=ipdev,
+            ipname=ipname,
+            mask=mask,
+            gateway=gateway,
+            **kwargs
+        )
         if 'noalias' not in self.tags:
             self.tags.add('noalias')
 

@@ -346,12 +346,14 @@ class ContainerDocker(BaseContainer):
                  guestos="Linux",
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name="",
-                         type=type,
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerDocker, self).__init__(
+            rid=rid,
+            name="",
+            type=type,
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.user_defined_name = name
         self.image = image
         self.image_pull_policy = image_pull_policy
@@ -517,7 +519,7 @@ class ContainerDocker(BaseContainer):
     def wait_for_startup(self):
         if not self.detach:
             return
-        super().wait_for_startup()
+        super(ContainerDocker, self).wait_for_startup()
 
     def wait_for_removed(self):
         def removed():
@@ -851,15 +853,15 @@ class ContainerDocker(BaseContainer):
 
     def _start(self):
         self.lib.docker_start()
-        super().start()
+        super(ContainerDocker, self).start()
 
     def provision(self):
-        super().provision()
+        super(ContainerDocker, self).provision()
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
-        super().unprovision()
+        super(ContainerDocker, self).unprovision()
         self.container_rm()
 
     def start(self):
@@ -887,7 +889,7 @@ class ContainerDocker(BaseContainer):
     def _stop(self):
         if not self.lib.docker_running():
             return
-        super().stop()
+        super(ContainerDocker, self).stop()
         if self.rm:
             self.container_rm()
         self.is_up_clear_cache()
@@ -992,7 +994,7 @@ class ContainerDocker(BaseContainer):
         if not self.lib.docker_running():
             self.status_log("docker daemon is not running", "info")
             return rcStatus.DOWN
-        sta = super()._status(verbose)
+        sta = super(ContainerDocker, self)._status(verbose)
         self._status_inspect()
         return sta
 

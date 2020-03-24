@@ -93,7 +93,7 @@ class FsDirectory(Resource):
                  group=None,
                  perm=None,
                  **kwargs):
-        super().__init__(rid=rid, type="fs.directory", **kwargs)
+        super(FsDirectory, self).__init__(rid=rid, type="fs.directory", **kwargs)
         self.path = path
         self.mount_point = path # for fs ordering
         self.user = user
@@ -190,8 +190,10 @@ class FsDirectory(Resource):
             return rcStatus.NA
 
     def __str__(self):
-        return "%s path=%s user=%s group=%s perm=%s" % (super().__str__(),\
-                self.path, str(self.user), str(self.group), str(self.perm))
+        return "%s path=%s user=%s group=%s perm=%s" % (
+            super(FsDirectory, self).__str__(),\
+            self.path, str(self.user), str(self.group), str(self.perm)
+        )
 
     def __lt__(self, other):
         """

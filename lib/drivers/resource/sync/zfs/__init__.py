@@ -85,8 +85,7 @@ class SyncZfs(Sync):
                  recursive = True,
                  snap_size=0,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.zfs", **kwargs)
-
+        super(SyncZfs, self).__init__(rid=rid, type="sync.zfs", **kwargs)
         self.label = "zfs of %s to %s"%(src, ",".join(target))
         self.target = target
         self.recursive = recursive
@@ -94,6 +93,13 @@ class SyncZfs(Sync):
         self.dst = dst
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
         (self.dst_pool, self.dst_ds) = a2pool_dataset(dst)
+
+    def __str__(self):
+        return "%s target=%s src=%s" % (
+            super(SyncZfs, self).__str__(),
+            self.target,
+            self.src
+        )
 
     def _info(self):
         data = [
@@ -145,10 +151,6 @@ class SyncZfs(Sync):
                     continue
             if not r.snap_exists(r.src_snap_tosend):
                 r.create_snap(r.src_snap_tosend)
-
-    def __str__(self):
-        return "%s target=%s src=%s" % (super().__str__(), \
-                self.target, self.src)
 
     def snap_exists(self, snapname, node=None):
         cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'snapshot', snapname]
