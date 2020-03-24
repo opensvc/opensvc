@@ -3,6 +3,7 @@ import re
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices
 
 from . import \
     BaseDiskRaw, \
@@ -10,7 +11,6 @@ from . import \
     BASE_RAW_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, cache, lazy
-from rcUtilitiesLinux import devs_to_disks
 from svcdict import KEYS
 
 DRIVER_GROUP = "disk"
@@ -261,7 +261,7 @@ class DiskRaw(BaseDiskRaw):
 
     def sub_disks(self):
         sys_devs = self.sub_devs()
-        return devs_to_disks(self, sys_devs)
+        return utilities.devices.devs_to_disks(self, sys_devs)
 
     def sub_devs(self):
         """ Admins can set arbitrary named devices, for example /dev/oracle/DGREDO_MYSID.

@@ -1,7 +1,8 @@
+import utilities.devices.linux
+
 from .sg import DiskScsireservSg
-from rcUtilitiesLinux import dev_to_paths
 
 
 class DiskScsireserv(DiskScsireservSg):
     def mangle_devs(self, devs):
-        return dict((dev, dev_to_paths(dev)) for dev in devs)
+        return dict((dev, utilities.devices.linux.dev_to_paths(dev)) for dev in devs)
