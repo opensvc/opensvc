@@ -3,6 +3,7 @@ import time
 
 import rcExceptions as ex
 import rcStatus
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -21,7 +22,6 @@ from .. import \
 from resources import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, cache, clear_cache, lazy, which
-from rcUtilitiesLinux import check_ping
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
 
@@ -111,7 +111,7 @@ class ContainerKvm(BaseContainer):
         return True
 
     def ping(self):
-        return check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def is_up_clear_cache(self):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))

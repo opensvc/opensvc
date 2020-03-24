@@ -1,10 +1,4 @@
 from rcUtilities import justcall, cache
-def check_ping(addr, timeout=5, count=1):
-    cmd = ['ping', addr, "%s" % timeout]
-    out, err, ret = justcall(cmd)
-    if ret == 0:
-        return True
-    return False
 
 def get_os_ver():
     cmd = ['uname', '-v']

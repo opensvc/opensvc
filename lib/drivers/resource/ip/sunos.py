@@ -1,7 +1,9 @@
 from subprocess import *
-from . import Ip as ParentIp
-from rcUtilitiesSunOS import check_ping
+
 import rcExceptions as ex
+import utilities.ping
+
+from . import Ip as ParentIp
 from svcBuilder import init_kwargs
 
 def adder(svc, s, drv=None):
@@ -43,7 +45,7 @@ class Ip(ParentIp):
 
     def check_ping(self, count=1, timeout=2):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr, timeout=timeout)
+        return utilities.ping.check_ping(self.addr, timeout=timeout)
 
     def startip_cmd(self):
         cmd=['/usr/sbin/ifconfig', self.stacked_dev, 'plumb', self.addr, \
