@@ -127,12 +127,14 @@ class ContainerZone(BaseContainer):
                  snap=None,
                  snapof=None,
                  **kwargs):
-        super(ContainerZone, self).__init__(rid=rid,
-                                            name=name,
-                                            type="container.zone",
-                                            guestos=guestos,
-                                            osvc_root_path=osvc_root_path,
-                                            **kwargs)
+        super(ContainerZone, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.zone",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.label = name
         self.delete_on_stop = delete_on_stop
         self.runmethod = ["/usr/sbin/zlogin", name]
@@ -568,7 +570,7 @@ class ContainerZone(BaseContainer):
 
     def provision(self):
         if not "noaction" in self.tags:
-            super().provision()
+            super(ContainerZone, self).provision()
         self.svc.sub_set_action([
             #"ip",
             "disk.scsireserv",
@@ -584,7 +586,7 @@ class ContainerZone(BaseContainer):
             "disk.scsireserv",
             "ip"], "unprovision", tags=set([self.name]))
         if not "noaction" in self.tags:
-            super().unprovision()
+            super(ContainerZone, self).unprovision()
 
     def presync(self):
         self.export_zone_cfg()

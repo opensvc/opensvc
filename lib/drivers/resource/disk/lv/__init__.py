@@ -72,7 +72,7 @@ class BaseDiskLv(BaseDisk):
                  size=None,
                  create_options=None,
                  **kwargs):
-        super().__init__(rid=rid, name=name, type='disk.lv', **kwargs)
+        super(BaseDiskLv, self).__init__(rid=rid, name=name, type='disk.lv', **kwargs)
         self.fullname = "%s/%s" % (vg, name)
         self.label = "lv %s" % self.fullname
         self.vg = vg

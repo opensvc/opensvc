@@ -53,13 +53,15 @@ class Fs(BaseFs):
                  mount_options,
                  snap_size=None,
                  **kwargs):
-        super().__init__(rid,
-                         mount_point=mount_point,
-                         device=device,
-                         fs_type=fs_type,
-                         mount_options=mount_options,
-                         snap_size=snap_size,
-                         **kwargs)
+        super(Fs, self).__init__(
+            rid,
+            mount_point=mount_point,
+            device=device,
+            fs_type=fs_type,
+            mount_options=mount_options,
+            snap_size=snap_size,
+            **kwargs
+        )
 
     def set_fsck_h(self):
         self.fsck_h = {
@@ -73,7 +75,7 @@ class Fs(BaseFs):
         return rcMounts.Mounts().has_mount(self.device, self.mount_point)
 
     def start(self):
-        super().start()
+        super(Fs, self).start()
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
             return 0

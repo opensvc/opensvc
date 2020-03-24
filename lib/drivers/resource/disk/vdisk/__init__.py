@@ -55,13 +55,16 @@ class DiskVdisk(Resource):
                  name=None,
                  devpath={},
                  **kwargs):
-        super().__init__(rid, "disk.vdisk", **kwargs)
+        super(DiskVdisk, self).__init__(rid, "disk.vdisk", **kwargs)
         self.label = "vdisk "+name
         self.name = name
         self.devpath = devpath
 
     def __str__(self):
-        return "%s name=%s" % (super().__str__(), self.name)
+        return "%s name=%s" % (
+            super(DiskVdisk, self).__str__(),
+            self.name
+        )
 
     def sub_devs(self):
         return self.devpath.keys()

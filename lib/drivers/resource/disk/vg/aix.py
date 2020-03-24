@@ -73,10 +73,12 @@ class DiskVg(BaseDisk):
                  name=None,
                  dsf=True,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type='disk.vg',
-                         **kwargs)
+        super(DiskVg, self).__init__(
+            rid=rid,
+            name=name,
+            type='disk.vg',
+            **kwargs
+        )
         self.label = "vg "+name
         self.dsf = dsf
 

@@ -54,7 +54,7 @@ class Fs(BaseFs):
                  snap_size=None,
                  **kwargs):
         self.mounts = None
-        super().__init__(rid,
+        super(Fs, self).__init__(rid,
                          mount_point=mount_point,
                          device=device,
                          fs_type=fs_type,
@@ -121,7 +121,7 @@ class Fs(BaseFs):
     def start(self):
         if self.mounts is None:
             self.mounts = Mounts()
-        super().start()
+        super(Fs, self).start()
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
             return 0

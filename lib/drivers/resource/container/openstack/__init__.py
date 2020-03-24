@@ -75,12 +75,14 @@ class ContainerOpenstack(BaseContainer):
                  shared_ip_group=None,
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.openstack",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerOpenstack).__init__(
+            rid=rid,
+            name=name,
+            type="container.openstack",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.cloud_id = cloud_id
         self.save_name = name + '.save'
         self.size_name = size

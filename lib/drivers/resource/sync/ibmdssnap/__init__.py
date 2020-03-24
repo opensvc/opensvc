@@ -67,6 +67,28 @@ def adder(svc, s):
 
 
 class SyncIbmdssnap(Sync):
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 array=None,
+                 bgcopy=True,
+                 recording=True,
+                 **kwargs):
+        super(SyncIbmdssnap, self).__init__(rid=rid, type="sync.ibmdssnap", **kwargs)
+
+        self.label = "flash copy %s"%','.join(pairs)
+        self.pairs = pairs
+        self.arrayname = array
+        self.recording = recording
+        self.bgcopy = bgcopy
+        self.array = None
+        self.last = None
+        self.params = "setenv -banner off -header on -format delim\n"
+        self.default_schedule = "@0"
+
+    def __str__(self):
+        return "%s pairs=%s" % (super(SyncIbmdssnap, self).__str__(), ','.join(self.pairs))
+
     def resyncflash(self):
         if self.array is None:
             self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
@@ -230,25 +252,6 @@ class SyncIbmdssnap(Sync):
     def start(self):
         pass
 
-    def __init__(self,
-                 rid=None,
-                 pairs=[],
-                 array=None,
-                 bgcopy=True,
-                 recording=True,
-                 **kwargs):
-        super().__init__(rid=rid, type="sync.ibmdssnap", **kwargs)
-
-        self.label = "flash copy %s"%','.join(pairs)
-        self.pairs = pairs
-        self.arrayname = array
-        self.recording = recording
-        self.bgcopy = bgcopy
-        self.array = None
-        self.last = None
-        self.params = "setenv -banner off -header on -format delim\n"
-        self.default_schedule = "@0"
-
     def lsflash(self):
         if self.array is None:
             self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
@@ -311,7 +314,3 @@ class SyncIbmdssnap(Sync):
                     d[key] = l[i]
             data.append(d)
         return data
-
-    def __str__(self):
-        return "%s pairs=%s" % (super().__str__(), ','.join(self.pairs))
-

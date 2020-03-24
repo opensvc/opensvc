@@ -183,7 +183,7 @@ class Ip(Resource):
                  wait_dns=0,
                  provisioner=None,
                  **kwargs):
-        super().__init__(rid, type=type, **kwargs)
+        super(Ip, self).__init__(rid, type=type, **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
         self.mask = mask
@@ -308,7 +308,7 @@ class Ip(Resource):
                 raise ex.excError("could not resolve name %s: %s" % (self.ipname, str(exc)))
 
     def __str__(self):
-        return "%s ipdev=%s ipname=%s" % (super().__str__(), \
+        return "%s ipdev=%s ipname=%s" % (super(Ip, self).__str__(), \
                                          self.ipdev, self.ipname)
 
     def setup_environ(self):

@@ -70,13 +70,15 @@ class Fs(BaseFs):
         self.Mounts = None
         self.loopdevice = None
         self.isloop = False
-        super().__init__(rid,
-                         mount_point=mount_point,
-                         device=device,
-                         fs_type=fs_type,
-                         mount_options=mount_options,
-                         snap_size=snap_size,
-                         **kwargs)
+        super(Fs, self).__init__(
+            rid,
+            mount_point=mount_point,
+            device=device,
+            fs_type=fs_type,
+            mount_options=mount_options,
+            snap_size=snap_size,
+            **kwargs
+        )
 
     def set_fsck_h(self):
         self.fsck_h = {
@@ -161,7 +163,7 @@ class Fs(BaseFs):
     def start(self):
         if self.Mounts is None:
             self.Mounts = Mounts()
-        super().start()
+        super(Fs, self).start()
 
         if self.fs_type in self.netfs or self.device == "none":
             # TODO showmount -e

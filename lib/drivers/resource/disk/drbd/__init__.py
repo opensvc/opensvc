@@ -53,14 +53,17 @@ class DiskDrbd(Resource):
                  rid=None,
                  res=None,
                  **kwargs):
-        super().__init__(rid, "disk.drbd", **kwargs)
+        super(DiskDrbd, self).__init__(rid, "disk.drbd", **kwargs)
         self.res = res
         self.label = "drbd "+res
         self.drbdadm = None
         self.rollback_even_if_standby = True
 
     def __str__(self):
-        return "%s resource=%s" % (super.__str__(), self.res)
+        return "%s resource=%s" % (
+            super.__str__(DiskDrbd, self),
+            self.res
+        )
 
     def files_to_sync(self):
         cf = os.path.join(os.sep, 'etc', 'drbd.d', self.res+'.res')

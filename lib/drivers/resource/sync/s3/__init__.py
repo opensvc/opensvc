@@ -82,13 +82,20 @@ class SyncS3(Sync):
                  snar=None,
                  full_schedule="@1441 sun",
                  **kwargs):
-        super().__init__(rid=rid, type="sync.s3", **kwargs)
+        super(SyncS3, self).__init__(rid=rid, type="sync.s3", **kwargs)
         self.label = "s3 backup"
         self.src = src
         self.bucket = bucket
         self.options = options
         self.full_schedule = full_schedule
         self.snar = snar
+
+    def __str__(self):
+        return "%s src=%s bucket=%s" % (
+            super(SyncS3, self).__str__(),
+            self.src,
+            self.bucket
+        )
 
     def on_add(self):
         if self.svc.namespace:
@@ -346,7 +353,3 @@ class SyncS3(Sync):
         n = self.get_n_incr()
         for i in range(n):
             self.do_tar_x(i)
-
-    def __str__(self):
-        return "%s src=%s bucket=%s" % (super().__str__(), str(self.src), str(self.bucket))
-

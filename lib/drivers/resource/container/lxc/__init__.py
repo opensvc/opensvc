@@ -183,12 +183,14 @@ class ContainerLxc(BaseContainer):
                  osvc_root_path=None,
                  container_data_dir=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.lxc",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerLxc, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.lxc",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
         self.always_pg = True
@@ -595,7 +597,7 @@ class ContainerLxc(BaseContainer):
 
     def _status(self, verbose=False):
         self.check_installed_cf()
-        return super()._status(verbose=verbose)
+        return super(ContainerLxc, self)._status(verbose=verbose)
 
     def find_cf(self):
         if self.cf is not None:
@@ -646,7 +648,7 @@ class ContainerLxc(BaseContainer):
         pass
 
     def operational(self):
-        if not super().operational():
+        if not super(ContainerLxc, self).operational():
             return False
 
         cmd = self.runmethod + ['test', '-f', '/bin/systemctl']
@@ -690,20 +692,20 @@ class ContainerLxc(BaseContainer):
             return
 
     def start(self):
-        super().start()
+        super(ContainerLxc, self).start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
 
     def stop(self):
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
-        super().stop()
+        super(ContainerLxc, self).stop()
 
     def provision(self):
-        super().provision()
+        super(ContainerLxc, self).provision()
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
 
     def unprovision(self):
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
-        super().unprovision()
+        super(ContainerLxc, self).unprovision()
 
 
 
