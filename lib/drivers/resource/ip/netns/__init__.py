@@ -7,7 +7,6 @@ import rcStatus
 from ..linux import Ip
 from .. import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilitiesLinux import check_ping
 from rcUtilities import which, justcall, to_cidr, lazy
 from svcBuilder import init_kwargs
 from svcdict import KEYS

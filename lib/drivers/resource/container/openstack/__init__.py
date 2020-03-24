@@ -3,6 +3,7 @@ import time
 
 import rcStatus
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -21,7 +22,6 @@ from .. import \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, lazy
-from rcUtilitiesLinux import check_ping
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
@@ -236,7 +236,7 @@ class ContainerOpenstack(BaseContainer):
 
         # find first pinging ip
         for ip in ips:
-            if check_ping(ip, timeout=1, count=1):
+            if utilities.ping.check_ping(ip, timeout=1, count=1):
                 self.addr = ip
                 break
 
@@ -248,7 +248,7 @@ class ContainerOpenstack(BaseContainer):
     def ping(self):
         if self.addr is None:
             return 0
-        return check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def start(self):
         if self.is_up():
