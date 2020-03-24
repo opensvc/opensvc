@@ -63,21 +63,8 @@ def adder(svc, s):
 
 
 class ContainerOvm(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 uuid,
-                 guestos=None,
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerOvm, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.ovm",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+    def __init__(self, uuid=None, **kwargs):
+        super(ContainerOvm, self).__init__(type="container.ovm", **kwargs)
         self.uuid = uuid
         self.xen_d = os.path.join(os.sep, 'etc', 'xen')
         self.xen_auto_d = os.path.join(self.xen_d, 'auto')

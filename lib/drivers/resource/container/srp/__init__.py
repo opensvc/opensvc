@@ -69,21 +69,9 @@ def adder(svc, s):
 
 
 class ContainerSrp(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="HP-UX",
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerSrp, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.srp",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
-        self.runmethod = ['srp_su', name, 'root', '-c']
+    def __init__(self, guestos="HP-UX", **kwargs):
+        super(ContainerSrp, self).__init__(type="container.srp", guestos=guestos, **kwargs)
+        self.runmethod = ['srp_su', self.name, 'root', '-c']
         self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
         self.need_start = []
 

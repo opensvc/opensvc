@@ -67,22 +67,12 @@ def adder(svc, s):
 
 
 class IpAmazon(Ip, AmazonMixin):
-    def __init__(self,
-                 rid=None,
-                 ipname=None,
-                 ipdev=None,
-                 eip=None,
-                 **kwargs):
-        Ip.__init__(self,
-                    rid=rid,
-                    ipname=ipname,
-                    ipdev=ipdev,
-                    **kwargs)
-        self.label = "ec2 ip %s@%s" % (ipname, ipdev)
+    def __init__(self, eip=None, **kwargs):
+        Ip.__init__(self, type="ip.amazon", **kwargs)
+        self.eip = eip
+        self.label = "ec2 ip %s@%s" % (self.ipname, self.ipdev)
         if eip:
             self.label += ", eip %s" % eip
-
-        self.eip = eip
 
     def get_eip(self):
         ip = getaddr(self.eip, True)

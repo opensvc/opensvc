@@ -80,18 +80,9 @@ def adder(svc, s):
 
 
 class DiskVg(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 dsf=True,
-                 **kwargs):
-        super(DiskVg, self).__init__(
-            rid=rid,
-            name=name,
-            type='disk.vg',
-            **kwargs
-        )
-        self.label = "vg "+name
+    def __init__(self, dsf=True, **kwargs):
+        super(DiskVg, self).__init__(type='disk.vg', **kwargs)
+        self.label = "vg %s " % self.name
         self.dsf = dsf
 
     def is_child_dev(self, device):

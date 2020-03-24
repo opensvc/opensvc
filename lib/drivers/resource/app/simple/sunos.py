@@ -21,10 +21,6 @@ class AppSimple(ParentAppSimple):
     """
     The simple App resource driver class.
     """
-
-    def __init__(self, rid, **kwargs):
-        super(AppSimple, self).__init__(rid, **kwargs)
-
     def get_running(self, with_children=False):
         cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
         out, err, ret = justcall(cmd)

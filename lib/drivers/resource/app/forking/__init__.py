@@ -179,5 +179,5 @@ class AppForking(App):
     The forking App resource driver class.
     """
 
-    def __init__(self, rid, **kwargs):
-        super(AppForking, self).__init__(rid, type="app.forking", **kwargs)
+    def __init__(self, **kwargs):
+        super(AppForking, self).__init__(type="app.forking", **kwargs)

@@ -43,11 +43,8 @@ def adder(svc, s):
 
 
 class SyncDocker(Sync):
-    def __init__(self,
-                 rid=None,
-                 target=None,
-                 **kwargs):
-        super(SyncDocker, self).__init__(rid=rid, type="sync.docker", **kwargs)
+    def __init__(self, target=None, **kwargs):
+        super(SyncDocker, self).__init__(type="sync.docker", **kwargs)
 
         self.label = "docker img sync to %s" % ", ".join(target)
         self.target = target

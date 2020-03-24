@@ -54,14 +54,10 @@ def adder(svc, s):
 
 
 class DiskLdom(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 container_id=None,
-                 **kwargs):
-        self.label = "vmdg "+str(name)
+    def __init__(self, container_id=None, **kwargs):
+        super(DiskLdom, self).__init__(type='disk.ldom', **kwargs)
+        self.label = "vmdg %s" % self.name
         self.container_id = container_id
-        super(DiskLdom, self).__init__(rid=rid, name=name, type='disk.vg', **kwargs)
 
     def has_it(self):
         return True

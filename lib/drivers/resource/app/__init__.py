@@ -192,7 +192,7 @@ class App(Resource):
     The App resource driver class.
     """
 
-    def __init__(self, rid=None,
+    def __init__(self,
                  script=None,
                  start=None,
                  stop=None,
@@ -212,7 +212,7 @@ class App(Resource):
                  secrets_environment=None,
                  **kwargs):
 
-        Resource.__init__(self, rid, **kwargs)
+        Resource.__init__(self, **kwargs)
         self.script = script
         self.start_seq = start
         self.stop_seq = stop

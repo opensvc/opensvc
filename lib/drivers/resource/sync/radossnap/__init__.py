@@ -39,12 +39,11 @@ def adder(svc, s):
 
 class SyncRadossnap(Sync):
     def __init__(self,
-                 rid=None,
                  images=[],
                  client_id=None,
                  keyring=None,
                  **kwargs):
-        super(SyncRadossnap, self).__init__(rid=rid, type="sync.radossnap", **kwargs)
+        super(SyncRadossnap, self).__init__(type="sync.radossnap", **kwargs)
 
         self.fmt_label("snap", images)
         self.images = images

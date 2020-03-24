@@ -62,26 +62,15 @@ def adder(svc, s):
 
 class ContainerKvm(BaseContainer):
     def __init__(self,
-                 rid,
-                 name,
-                 guestos=None,
-                 osvc_root_path=None,
                  snap=None,
                  snapof=None,
                  virtinst=None,
                  **kwargs):
-        super(ContainerKvm, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.kvm",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+        super(ContainerKvm, self).__init__(type="container.kvm", **kwargs)
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
-        self.cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', name+'.xml')
+        self.cf = os.path.join(os.sep, 'etc', 'libvirt', 'qemu', self.name+'.xml')
         self.virtinst_cfdisk = []
 
     def __str__(self):
