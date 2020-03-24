@@ -3,7 +3,7 @@ from subprocess import Popen, PIPE, STDOUT
 from rcUtilities import bdecode
 from rcExceptions import excError
 
-class Mount:
+class Mount(object):
     def __init__(self, dev, mnt, type, mnt_opt):
         self.dev = dev.rstrip("/")
         self.mnt = mnt.rstrip("/")
@@ -16,7 +16,7 @@ class Mount:
         return "Mount: dev[%s] mnt[%s] type[%s] options[%s]" % \
             (self.dev,self.mnt,self.type,self.mnt_opt)
 
-class Mounts:
+class Mounts(object):
     src_dir_devs_cache = {}
     df_one_cmd = []
 
