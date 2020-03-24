@@ -133,7 +133,7 @@ class IpNetns(Ip):
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
-        super(IpNetns).__init__(type="ip.netns", **kwargs)
+        super(IpNetns, self).__init__(type="ip.netns", **kwargs)
         self.mode = mode if mode else "bridge"
         self.network = network
         self.nsdev = nsdev
