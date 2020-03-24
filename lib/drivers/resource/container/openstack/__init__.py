@@ -75,7 +75,7 @@ class ContainerOpenstack(BaseContainer):
                  shared_ip_group=None,
                  osvc_root_path=None,
                  **kwargs):
-        super(ContainerOpenstack).__init__(
+        super(ContainerOpenstack, self).__init__(
             rid=rid,
             name=name,
             type="container.openstack",
