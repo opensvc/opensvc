@@ -91,14 +91,8 @@ def adder(svc, s):
 
 
 class DiskGce(BaseDisk, rcGce.GceMixin):
-    def __init__(self,
-                 rid=None,
-                 type="disk.gce",
-                 names=set(),
-                 gce_zone=None,
-                 **kwargs):
-
-        BaseDisk.__init__(self, rid=rid, type=type, **kwargs)
+    def __init__(self, names=set(), gce_zone=None, **kwargs):
+        BaseDisk.__init__(self, type="disk.gce", **kwargs)
         self.names = names
         self.gce_zone = gce_zone
         self.label = self.fmt_label()

@@ -71,7 +71,6 @@ class SyncBtrfs(Sync):
     Define btrfs sync resource to be btrfs send/btrfs receive between nodes
     """
     def __init__(self,
-                 rid=None,
                  target=None,
                  src=None,
                  dst=None,
@@ -79,7 +78,7 @@ class SyncBtrfs(Sync):
                  recursive=False,
                  snap_size=0,
                  **kwargs):
-        super(SyncBtrfs, self).__init__(rid=rid, type="sync.btrfs", **kwargs)
+        super(SyncBtrfs, self).__init__(type="sync.btrfs", **kwargs)
 
         self.label = "btrfs of %s to %s"%(src, ", ".join(target))
         self.src = src

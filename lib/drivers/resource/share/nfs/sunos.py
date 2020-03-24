@@ -29,8 +29,8 @@ def adder(svc, s):
 
 
 class NfsShare(Resource):
-    def __init__(self, rid, path, opts, **kwargs):
-        Resource.__init__(self, rid, type="share.nfs", **kwargs)
+    def __init__(self, path, opts, **kwargs):
+        Resource.__init__(self, type="share.nfs", **kwargs)
 
         if not which("share"):
             raise ex.excInitError("share is not installed")

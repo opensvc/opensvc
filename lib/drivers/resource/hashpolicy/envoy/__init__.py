@@ -46,7 +46,7 @@ def adder(svc, s):
     svc += r
 
 class HashpolicyEnvoy(Data):
-    def __init__(self, rid, **kwargs):
-        super(HashpolicyEnvoy, self).__init__(rid, type="hash_policy.envoy", **kwargs)
+    def __init__(self, **kwargs):
+        super(HashpolicyEnvoy, self).__init__(type="hash_policy.envoy", **kwargs)
         self.label = "envoy hash policy"
 

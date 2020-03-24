@@ -47,10 +47,10 @@ class BaseDiskLoop(Resource):
     Base loopback device resource
     """
 
-    def __init__(self, rid=None, loopFile=None, **kwargs):
-        super(BaseDiskLoop, self).__init__(rid, "disk.loop", **kwargs)
+    def __init__(self, loopFile=None, **kwargs):
+        super(BaseDiskLoop, self).__init__(type="disk.loop", **kwargs)
         self.loopFile = loopFile
-        self.label = "loop "+loopFile
+        self.label = "loop %s" % loopFile
 
     def _info(self):
         return [["file", self.loopFile]]

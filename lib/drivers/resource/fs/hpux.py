@@ -44,25 +44,6 @@ def try_umount(self):
 
 
 class Fs(BaseFs):
-    """ define HP-UX mount/umount doAction """
-    def __init__(self,
-                 rid,
-                 mount_point,
-                 device,
-                 fs_type,
-                 mount_options,
-                 snap_size=None,
-                 **kwargs):
-        super(Fs, self).__init__(
-            rid,
-            mount_point=mount_point,
-            device=device,
-            fs_type=fs_type,
-            mount_options=mount_options,
-            snap_size=snap_size,
-            **kwargs
-        )
-
     def set_fsck_h(self):
         self.fsck_h = {
             'vxfs': {

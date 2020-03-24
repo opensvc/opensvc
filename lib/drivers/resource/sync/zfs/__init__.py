@@ -78,14 +78,13 @@ class SyncZfs(Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes
     """
     def __init__(self,
-                 rid=None,
                  target=None,
                  src=None,
                  dst=None,
                  recursive = True,
                  snap_size=0,
                  **kwargs):
-        super(SyncZfs, self).__init__(rid=rid, type="sync.zfs", **kwargs)
+        super(SyncZfs, self).__init__(type="sync.zfs", **kwargs)
         self.label = "zfs of %s to %s"%(src, ",".join(target))
         self.target = target
         self.recursive = recursive

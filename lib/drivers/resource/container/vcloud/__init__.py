@@ -82,26 +82,15 @@ class ContainerVcloud(BaseContainer):
     save_timeout = 240
 
     def __init__(self,
-                 rid,
-                 name,
                  vapp=None,
-                 guestos=None,
                  cloud_id=None,
                  size="tiny",
                  key_name=None,
                  shared_ip_group=None,
-                 osvc_root_path=None,
                  **kwargs):
-        super(ContainerVcloud, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.vcloud",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+        super(ContainerVcloud, self).__init__(type="container.vcloud", **kwargs)
         self.cloud_id = cloud_id
-        self.save_name = name + '.save'
+        self.save_name = "%s.save" % self.name
         self.size_name = size
         self.key_name = key_name
         self.vapp = vapp

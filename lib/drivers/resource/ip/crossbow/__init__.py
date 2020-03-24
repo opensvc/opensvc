@@ -59,23 +59,9 @@ def adder(svc, s):
 
 
 class IpCrossbow(Ip):
-    def __init__(self,
-                 rid=None,
-                 ipdev=None,
-                 ipname=None,
-                 mask=None,
-                 gateway=None,
-                 ipdevExt="v4",
-                 **kwargs):
+    def __init__(self, ipdevExt="v4", **kwargs):
         self.ipdevExt = ipdevExt
-        super(IpCrossbow, self).__init__(
-            rid=rid,
-            ipdev=ipdev,
-            ipname=ipname,
-            mask=mask,
-            gateway=gateway,
-            **kwargs
-        )
+        super(IpCrossbow, self).__init__(type="ip.crossbow", **kwargs)
         if 'noalias' not in self.tags:
             self.tags.add('noalias')
 

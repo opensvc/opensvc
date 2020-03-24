@@ -63,17 +63,14 @@ def adder(svc, s):
 
 class DiskGandi(BaseDisk):
     def __init__(self,
-                 rid=None,
-                 name=None,
                  node=None,
                  cloud_id=None,
                  user="root",
                  group="root",
                  perm="660",
                  **kwargs):
-        super(DiskGandi, self).__init__(rid=rid, name="gandi", type='disk.gandi', **kwargs)
-        self.label = "gandi volume %s"%str(name)
-        self.name = name
+        super(DiskGandi, self).__init__(type='disk.gandi', **kwargs)
+        self.label = "gandi volume %s" % self.name
         self.node = node
         self.cloud_id = cloud_id
         self.user = user

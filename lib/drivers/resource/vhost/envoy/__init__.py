@@ -35,8 +35,8 @@ def adder(svc, s):
     svc += r
 
 class VhostEnvoy(Data):
-    def __init__(self, rid, **kwargs):
-        super(VhostEnvoy, self).__init__(rid, type="vhost.envoy", **kwargs)
+    def __init__(self, **kwargs):
+        super(VhostEnvoy, self).__init__(type="vhost.envoy", **kwargs)
         if self.options.domains:
             self.label = "envoy vhost %s" % ", ".join(self.options.domains)
         else:
