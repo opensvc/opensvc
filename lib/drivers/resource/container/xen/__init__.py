@@ -1,6 +1,7 @@
 import os
 
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -20,8 +21,6 @@ from resources import Resource
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
-
-rcU = __import__("rcUtilities" + os.uname()[0])
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "xen"
@@ -78,7 +77,7 @@ class ContainerXen(BaseContainer):
         return True
 
     def ping(self):
-        return rcU.check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         cf = os.path.join(os.sep, 'opt', 'opensvc', 'var', self.name+'.xml')

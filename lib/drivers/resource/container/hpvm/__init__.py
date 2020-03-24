@@ -3,6 +3,7 @@ import time
 
 import rcStatus
 import rcExceptions as ex
+import utilities.ping
 
 from .. import \
     BaseContainer, \
@@ -21,8 +22,6 @@ from rcUtilities import qcall
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
-
-u = __import__('rcUtilitiesHP-UX')
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "hpvm"
@@ -79,7 +78,7 @@ class ContainerHpvm(BaseContainer):
         return a
 
     def ping(self):
-        return u.check_ping(self.addr, timeout=1, count=1)
+        return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def container_start(self):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]

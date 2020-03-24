@@ -1,9 +1,9 @@
 import rcExceptions as ex
+import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, to_cidr, to_dotted
-from rcUtilitiesLinux import check_ping
 
 def adder(svc, s):
     parent_adder(svc, s, drv=Ip)
@@ -11,7 +11,7 @@ def adder(svc, s):
 class Ip(ParentIp):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
-        return check_ping(self.addr, timeout=timeout, count=count)
+        return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
 
     def start_link(self):
         if which(rcEnv.syspaths.ip):
@@ -38,7 +38,7 @@ class Ip(ParentIp):
         # ip activation may still be incomplete
         # wait for activation, to avoid startapp scripts to fail binding their listeners
         for i in range(5, 0, -1):
-            if check_ping(self.addr, timeout=1, count=1):
+            if utilities.ping.check_ping(self.addr, timeout=1, count=1):
                 return ret, out, err
         self.log.error("timed out waiting for ip activation")
         raise ex.excError

@@ -16,7 +16,6 @@ from ..docker import \
     KEYWORDS, \
     ContainerDocker, \
     adder as docker_adder
-from rcUtilitiesLinux import check_ping
 from rcUtilities import justcall, lazy, drop_option, has_option, get_option, get_options
 from rcGlobalEnv import rcEnv
 from svcdict import KEYS
