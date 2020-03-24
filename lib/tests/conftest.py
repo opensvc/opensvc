@@ -8,6 +8,11 @@ import rcGlobalEnv  # nopep8
 import pytest  # nopep8
 
 
+@pytest.fixture(scope='function')
+def which(mocker):
+    mocker.patch('rcUtilities.which')
+
+
 @pytest.fixture(scope='function', name='osvc_path_tests')
 def osvc_path_tests_fixture(tmpdir):
     test_dir = str(tmpdir)
