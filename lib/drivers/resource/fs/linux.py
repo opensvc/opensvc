@@ -10,7 +10,6 @@ import utilities.devices.linux
 
 from . import BaseFs, adder as base_adder
 from rcGlobalEnv import rcEnv
-from rcLoopLinux import file_to_loop, loop_to_file
 from rcMountsLinux import Mounts
 from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
 from rcZfs import zfs_getprop, zfs_setprop
@@ -147,7 +146,7 @@ class Fs(BaseFs):
 
         # might be a loop device seen in mounts as its backing file
         if self.device.startswith("/dev/loop"):
-            backfile = loop_to_file(self.device)
+            backfile = utilities.devices.linux.loop_to_file(self.device)
             if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
                 return True
 
@@ -160,7 +159,7 @@ class Fs(BaseFs):
             if ret:
                 return True
             if dev.startswith("/dev/loop"):
-                backfile = loop_to_file(dev)
+                backfile = utilities.devices.linux.loop_to_file(dev)
                 if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
                     return True
 
@@ -186,7 +185,7 @@ class Fs(BaseFs):
 
             if S_ISREG(mode):
                 # might be a loopback mount
-                devs = file_to_loop(self.device)
+                devs = utilities.devices.linux.file_to_loop(self.device)
                 for dev in devs:
                     ret = self.mounts.has_mount(dev, self.mount_point)
                     if ret:
@@ -433,7 +432,7 @@ class Fs(BaseFs):
         if not os.path.isfile(self.device):
             return
         try:
-            devs = file_to_loop(self.device)
+            devs = utilities.devices.linux.file_to_loop(self.device)
             if len(devs) > 0:
                 self.loopdevice = devs[0]
                 mntopt_l = self.mount_options.split(',')
