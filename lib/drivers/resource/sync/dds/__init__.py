@@ -77,7 +77,7 @@ class SyncDds(Sync):
                  dsts={},
                  snap_size=0,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.dds", **kwargs)
+        super(SyncDds, self).__init__(rid=rid, type="sync.dds", **kwargs)
         self.label = "dds of %s to %s"%(src, ", ".join(target))
         self.target = target
         self.src = src
@@ -85,7 +85,11 @@ class SyncDds(Sync):
         self.snap_size = snap_size
 
     def __str__(self):
-        return "%s target=%s src=%s" % (super().__str__(), self.target, self.src)
+        return "%s target=%s src=%s" % (
+            super(SyncDds, self).__str__(),
+            self.target,
+            self.src
+        )
 
     def pre_action(self, action):
         resources = [r for r in self.rset.resources if \

@@ -49,7 +49,7 @@ def try_umount(self):
 class Fs(BaseFs):
     def __init__(self, **kwargs):
         self.Mounts = None
-        super().__init__(**kwargs)
+        super(Fs, self).__init__(**kwargs)
 
     def set_fsck_h(self):
         self.fsck_h = {
@@ -100,7 +100,7 @@ class Fs(BaseFs):
     def start(self):
         if self.Mounts is None:
             self.Mounts = Mounts()
-        super().start()
+        super(Fs, self).start()
 
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)

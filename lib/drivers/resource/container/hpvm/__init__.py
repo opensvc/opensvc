@@ -59,12 +59,14 @@ class ContainerHpvm(BaseContainer):
                  guestos="HP-UX",
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.hpvm",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerHpvm, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.hpvm",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         self.vg = DiskHpvm(
             rid = 'vmdg#'+self.rid,
             name = 'vmdg_'+self.name,

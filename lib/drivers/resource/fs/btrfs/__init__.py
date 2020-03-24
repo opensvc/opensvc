@@ -28,7 +28,7 @@ class FsBtrfs(Fs):
         return self.svc.name + '.' + self.rid.replace("#", ".")
 
     def provisioned(self):
-        ret = super().provisioned()
+        ret = super(FsBtrfs, self).provisioned()
         if not ret:
             return ret
         if self.subvol is None:

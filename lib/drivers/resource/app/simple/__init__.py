@@ -201,7 +201,7 @@ class AppSimple(BaseApp):
 
     def __init__(self, rid, kill="parent", **kwargs):
         self.kill = kill
-        super().__init__(rid, type="app.simple", **kwargs)
+        super(AppSimple, self).__init__(rid, type="app.simple", **kwargs)
 
     def _check_simple(self):
         match = self.get_running()
@@ -261,13 +261,13 @@ class AppSimple(BaseApp):
 
     def _check(self):
         try:
-            ret = super()._check(verbose=False)
+            ret = super(AppSimple, self)._check(verbose=False)
             return ret
         except StatusNA:
             return self._check_simple()
 
     def stop(self):
-        super().stop()
+        super(AppSimple, self).stop()
         match = self.get_running(with_children=self.kill=="tree")
         if not match:
             self.log.info("already stopped")

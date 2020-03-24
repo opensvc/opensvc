@@ -47,7 +47,7 @@ class SyncDocker(Sync):
                  rid=None,
                  target=None,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.docker", **kwargs)
+        super(SyncDocker, self).__init__(rid=rid, type="sync.docker", **kwargs)
 
         self.label = "docker img sync to %s" % ", ".join(target)
         self.target = target

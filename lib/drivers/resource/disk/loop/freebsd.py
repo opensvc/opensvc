@@ -54,6 +54,9 @@ def file_to_loop(f):
     return devs
 
 class DiskLoop(BaseDiskLoop):
+    def __init__(self, rid, loopFile, **kwargs):
+        super(DiskLoop, self).__init__(rid, loopFile, **kwargs)
+
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
@@ -89,6 +92,3 @@ class DiskLoop(BaseDiskLoop):
             return rcStatus.UP
         else:
             return rcStatus.DOWN
-
-    def __init__(self, rid, loopFile, **kwargs):
-        super().__init__(rid, loopFile, **kwargs)

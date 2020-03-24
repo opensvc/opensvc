@@ -139,14 +139,16 @@ class IpNetns(Ip):
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
-        super().__init__(rid,
-                         type="ip.netns",
-                         ipdev=ipdev,
-                         ipname=ipname,
-                         gateway=gateway,
-                         macaddr=macaddr,
-                         mask=mask,
-                         **kwargs)
+        super(IpNetns).__init__(
+            rid,
+            type="ip.netns",
+            ipdev=ipdev,
+            ipname=ipname,
+            gateway=gateway,
+            macaddr=macaddr,
+            mask=mask,
+            **kwargs
+        )
         self.mode = mode if mode else "bridge"
         self.network = network
         self.nsdev = nsdev
@@ -270,7 +272,7 @@ class IpNetns(Ip):
         return ifconfig
 
     def abort_start(self):
-        return super().abort_start()
+        return super(IpNetns, self).abort_start()
 
     def is_up(self):
         if not self.container.is_up():
@@ -278,7 +280,7 @@ class IpNetns(Ip):
         ifconfig = self.get_docker_ifconfig()
         if ifconfig is None:
             return False
-        return super()._is_up(ifconfig)
+        return super(IpNetns, self)._is_up(ifconfig)
 
     def get_docker_interface(self):
         ifconfig = self.get_docker_ifconfig()
@@ -300,7 +302,7 @@ class IpNetns(Ip):
         if self.container_running_elsewhere():
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
             return rcStatus.NA
-        ret = super()._status()
+        ret = super(IpNetns, self)._status()
         return ret
 
     def startip_cmd(self):

@@ -3,7 +3,7 @@ import rcMounts
 class Mounts(rcMounts.Mounts):
     def __init__(self, wmi=None):
         self.wmi = wmi
-        super().__init__()
+        super(Mounts, self).__init__()
 
     def match_mount(self, i, dev, mnt):
         """Given a line of 'mount' output, returns True if (dev, mnt) matches

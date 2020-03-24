@@ -65,12 +65,14 @@ class ContainerVbox(BaseContainer):
                  headless=None,
                  osvc_root_path=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.vbox",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
+        super(ContainerVbox, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.vbox",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
         #self.sshbin = '/usr/local/bin/ssh'
         self.vminfo = None
         self.headless = headless

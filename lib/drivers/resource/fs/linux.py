@@ -24,7 +24,7 @@ class Fs(BaseFs):
     """
     def __init__(self, **kwargs):
         self.mounts = None
-        super().__init__(**kwargs)
+        super(Fs, self).__init__(**kwargs)
         self.loopdevice = None
 
     def set_fsck_h(self):
@@ -446,7 +446,7 @@ class Fs(BaseFs):
     def start(self):
         if self.mounts is None:
             self.mounts = Mounts()
-        super().start()
+        super(Fs, self).start()
 
         self.set_loopdevice()
 

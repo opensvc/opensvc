@@ -44,13 +44,15 @@ class SyncSymclone(BaseSyncSymclone):
                  precopy=True,
                  consistent=True,
                  **kwargs):
-        super().__init__(rid=rid,
-                         type=type,
-                         symid=symid,
-                         pairs=pairs,
-                         precopy=precopy,
-                         consistent=consistent,
-                         **kwargs)
+        super(SyncSymclone, self).__init__(
+            rid=rid,
+            type=type,
+            symid=symid,
+            pairs=pairs,
+            precopy=precopy,
+            consistent=consistent,
+            **kwargs
+        )
 
     def dev_rescan(self, dev):
         dev = dev.replace('/dev/', '')

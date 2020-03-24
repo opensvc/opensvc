@@ -77,10 +77,12 @@ class DiskVg(BaseDisk):
                  name=None,
                  pvs=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type='disk.vg',
-                         **kwargs)
+        super(DiskVg, self).__init__(
+            rid=rid,
+            name=name,
+            type='disk.vg',
+            **kwargs
+        )
         self.label = "vg "+name
         self.pvs = pvs or []
         self.tag = rcEnv.nodename

@@ -67,11 +67,9 @@ def adder(svc, s):
 
 
 class SyncBtrfs(Sync):
-    """define btrfs sync resource to be btrfs send/btrfs receive between nodes
     """
-    def sort_rset(self, rset):
-        rset.resources.sort(key=lambda x: x.src_subvol)
-
+    Define btrfs sync resource to be btrfs send/btrfs receive between nodes
+    """
     def __init__(self,
                  rid=None,
                  target=None,
@@ -81,7 +79,7 @@ class SyncBtrfs(Sync):
                  recursive=False,
                  snap_size=0,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.btrfs", **kwargs)
+        super(SyncBtrfs, self).__init__(rid=rid, type="sync.btrfs", **kwargs)
 
         self.label = "btrfs of %s to %s"%(src, ", ".join(target))
         self.src = src
@@ -105,6 +103,15 @@ class SyncBtrfs(Sync):
 
         self.dst_btrfs = {}
         self.src_btrfs = None
+
+    def __str__(self):
+        return "%s target=%s src=%s" % (
+            super(SyncBtrfs, self).__str__(),\
+            self.target, self.src
+        )
+
+    def sort_rset(self, rset):
+        rset.resources.sort(key=lambda x: x.src_subvol)
 
     def _info(self):
         data = [
@@ -154,10 +161,6 @@ class SyncBtrfs(Sync):
 
             if not r.src_btrfs.has_subvol(r.src_snap_tosend):
                 r.create_snap(r.src, r.src_snap_tosend)
-
-    def __str__(self):
-        return "%s target=%s src=%s" % (super().__str__(),\
-                self.target, self.src)
 
     def create_snap(self, snap_orig, snap):
         self.init_src_btrfs()

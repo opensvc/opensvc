@@ -33,7 +33,7 @@ class BaseDiskScsireserv(Resource):
         self.hostid = None
         self.peer_resource = peer_resource
         self.prkey = prkey
-        super().__init__(rid=rid+"pr", type="disk.scsireserv", **kwargs)
+        super(BaseDiskScsireserv, self).__init__(rid=rid+"pr", type="disk.scsireserv", **kwargs)
         self.sort_key = rid
 
 

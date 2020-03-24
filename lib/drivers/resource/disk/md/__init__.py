@@ -103,10 +103,12 @@ class DiskMd(BaseDisk):
         self.chunk = chunk
         self.layout = layout
         self.mdadm = "/sbin/mdadm"
-        super().__init__(rid=rid,
-                         name=uuid,
-                         type='disk.md',
-                         **kwargs)
+        super(DiskMd, self).__init__(
+            rid=rid,
+            name=uuid,
+            type='disk.md',
+            **kwargs
+        )
         if uuid:
             self.label = "md " + uuid
         else:
@@ -319,7 +321,7 @@ class DiskMd(BaseDisk):
         if self.uuid is None:
             return rcStatus.NA
         self.auto_assemble_disabled()
-        s = super()._status(verbose=verbose)
+        s = super(DiskMd, self)._status(verbose=verbose)
         if s == rcStatus.DOWN:
              self.down_state_alerts()
         return s

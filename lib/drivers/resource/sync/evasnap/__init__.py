@@ -67,6 +67,27 @@ def adder(svc, s):
 
 
 class SyncEvasnap(Sync):
+    def __init__(self,
+                 rid=None,
+                 pairs=[],
+                 eva_name="",
+                 snap_name="",
+                 **kwargs):
+        super(SyncEvasnap, self).__init__(rid=rid, type="sync.evasnap", **kwargs)
+
+        self.label = "EVA snapshot %s"%(rid)
+        self.eva_name = eva_name
+        self.snap_name = snap_name
+        self.pairs = pairs
+        self._lun_info = {}
+        self.default_schedule = "@0"
+
+    def __str__(self):
+        return "%s eva_name=%s pairs=%s" % (
+            super(SyncEvasnap, self).__str__(),
+            self.eva_name, str(self.pairs)
+        )
+
     def wait_for_devs_ready(self):
         pass
 
@@ -313,23 +334,3 @@ class SyncEvasnap(Sync):
             raise ex.excError("error login to %s"%self.manager)
         elif "Error" in out:
             raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
-
-    def __init__(self,
-                 rid=None,
-                 pairs=[],
-                 eva_name="",
-                 snap_name="",
-                 **kwargs):
-        super().__init__(rid=rid, type="sync.evasnap", **kwargs)
-
-        self.label = "EVA snapshot %s"%(rid)
-        self.eva_name = eva_name
-        self.snap_name = snap_name
-        self.pairs = pairs
-        self._lun_info = {}
-        self.default_schedule = "@0"
-
-    def __str__(self):
-        return "%s eva_name=%s pairs=%s" % (super().__str__(), \
-                self.eva_name, str(self.pairs))
-
