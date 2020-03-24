@@ -121,7 +121,7 @@ class BaseTask(Resource):
                  secrets_environment=None,
                  check=None,
                  **kwargs):
-        super().__init__(rid, type=type, **kwargs)
+        super(BaseTask, self).__init__(rid, type=type, **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user
@@ -135,7 +135,11 @@ class BaseTask(Resource):
         self.checker = check
 
     def __str__(self):
-        return "%s command=%s user=%s" % (super().__str__(), self.command, str(self.user))
+        return "%s command=%s user=%s" % (
+            super(BaseTask, self).__str__(),
+            self.command,
+            self.user
+        )
 
     def _info(self):
         data = [

@@ -38,6 +38,29 @@ def adder(svc, s):
 
 
 class SyncRadossnap(Sync):
+    def __init__(self,
+                 rid=None,
+                 images=[],
+                 client_id=None,
+                 keyring=None,
+                 **kwargs):
+        super(SyncRadossnap, self).__init__(rid=rid, type="sync.radossnap", **kwargs)
+
+        self.fmt_label("snap", images)
+        self.images = images
+        if not client_id.startswith("client."):
+            client_id = "client."+client_id
+        self.client_id = client_id
+        self.keyring = keyring
+        self.list_data = None
+        self.date_fmt = "%Y-%m-%d.%H:%M:%S"
+
+    def __str__(self):
+        return "%s images=%s" % (
+            super(SyncRadossnap, self).__str__(),
+            ", ".join(self.images)
+        )
+
     def recreate(self):
         self.validate_image_fmt()
         for image in self.images:
@@ -196,23 +219,6 @@ class SyncRadossnap(Sync):
     def sync_resync(self):
         self.recreate()
 
-    def __init__(self,
-                 rid=None,
-                 images=[],
-                 client_id=None,
-                 keyring=None,
-                 **kwargs):
-        super().__init__(rid=rid, type="sync.radossnap", **kwargs)
-
-        self.fmt_label("snap", images)
-        self.images = images
-        if not client_id.startswith("client."):
-            client_id = "client."+client_id
-        self.client_id = client_id
-        self.keyring = keyring
-        self.list_data = None
-        self.date_fmt = "%Y-%m-%d.%H:%M:%S"
-
     def validate_image_fmt(self):
         l = []
         for image in self.images:
@@ -225,7 +231,3 @@ class SyncRadossnap(Sync):
         self.label = t+" rados %s"%', '.join(l)
         if len(self.label) > 80:
             self.label = self.label[:76]+"..."
-
-    def __str__(self):
-        return "%s images=%s" % (super().__str__(), \
-                ', '.join(self.images))

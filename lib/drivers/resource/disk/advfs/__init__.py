@@ -68,10 +68,12 @@ class DiskAdvfs(BaseDisk):
                  rid=None,
                  name=None,
                  **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type='disk.vg',
-                         **kwargs)
+        super(DiskAdvfs, self).__init__(
+            rid=rid,
+            name=name,
+            type='disk.vg',
+            **kwargs
+        )
         self.label = 'fdmn ' + name
         self.sub_devs_cache = set()
 

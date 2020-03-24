@@ -60,7 +60,7 @@ class SyncNetapp(Sync):
                  path=None,
                  user=None,
                  **kwargs):
-        super().__init__(rid=rid, type="sync.netapp", **kwargs)
+        super(SyncNetapp, self).__init__(rid=rid, type="sync.netapp", **kwargs)
         self.pausable = False
         self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers
@@ -69,8 +69,12 @@ class SyncNetapp(Sync):
         self.path_short = self.path.replace('/vol/','')
 
     def __str__(self):
-        return "%s filers=%s user=%s path=%s" % (super().__str__(), \
-                self.filers, self.user, self.path)
+        return "%s filers=%s user=%s path=%s" % (
+            super(SyncNetapp, self).__str__(),
+            self.filers,
+            self.user,
+            self.path
+        )
 
     def master(self):
         s = self.local_snapmirror_status()

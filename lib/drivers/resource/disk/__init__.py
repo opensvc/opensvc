@@ -51,11 +51,11 @@ class BaseDisk(Resource):
     """
 
     def __init__(self, rid=None, name=None, **kwargs):
-        super().__init__(rid, **kwargs)
+        super(BaseDisk, self).__init__(rid, **kwargs)
         self.name = name
 
     def __str__(self):
-        return "%s name=%s" % (super().__str__(), self.name)
+        return "%s name=%s" % (super(BaseDisk, self).__str__(), self.name)
 
     def has_it(self): return False
     def is_up(self): return False

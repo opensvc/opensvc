@@ -75,7 +75,13 @@ class DiskDisk(Resource):
     """
 
     def __init__(self, rid=None, **kwargs):
-        super().__init__(rid, "disk.disk", **kwargs)
+        super(DiskDisk, self).__init__(rid, "disk.disk", **kwargs)
+
+    def __str__(self):
+        return "%s disk disk_id=%s" % (
+            super(DiskDisk, self).__str__(),
+            self.disk_id
+        )
 
     def on_add(self):
         self.set_label()
@@ -97,9 +103,6 @@ class DiskDisk(Resource):
         return [
             ["disk_id", self.disk_id],
         ]
-
-    def __str__(self):
-        return "%s disk disk_id=%s" % (super().__str__(), str(self.disk_id))
 
     def configure(self, force=False):
         # OS specific

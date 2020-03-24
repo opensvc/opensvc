@@ -180,4 +180,4 @@ class AppForking(App):
     """
 
     def __init__(self, rid, **kwargs):
-        super().__init__(rid, type="app.forking", **kwargs)
+        super(AppForking, self).__init__(rid, type="app.forking", **kwargs)

@@ -60,6 +60,25 @@ def adder(svc, s):
     svc += r
 
 class ContainerVz(BaseContainer):
+    def __init__(self,
+                 rid,
+                 name,
+                 guestos="Linux",
+                 osvc_root_path=None,
+                 **kwargs):
+        super(ContainerVz, self).__init__(
+            rid=rid,
+            name=name,
+            type="container.vz",
+            guestos=guestos,
+            osvc_root_path=osvc_root_path,
+            **kwargs
+        )
+        self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
+        self.runmethod = ['vzctl', 'exec', name]
+
+    def __str__(self):
+        return "%s name=%s" % (Resource.__str__(self), self.name)
     def files_to_sync(self):
         return [self._cf]
 
@@ -192,21 +211,4 @@ class ContainerVz(BaseContainer):
             raise ex.excError
         return self._cf
 
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="Linux",
-                 osvc_root_path=None,
-                 **kwargs):
-        super().__init__(rid=rid,
-                         name=name,
-                         type="container.vz",
-                         guestos=guestos,
-                         osvc_root_path=osvc_root_path,
-                         **kwargs)
-        self._cf = os.path.join(os.sep, 'etc', 'vz', 'conf', name+'.conf')
-        self.runmethod = ['vzctl', 'exec', name]
-
-    def __str__(self):
-        return "%s name=%s" % (Resource.__str__(self), self.name)
 

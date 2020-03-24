@@ -70,7 +70,7 @@ class AppWinservice(App):
 
     def __init__(self, rid, name=None, **kwargs):
         self.name = name
-        super().__init__(rid, type="app.winservice", **kwargs)
+        super(AppWinservice, self).__init__(rid, type="app.winservice", **kwargs)
 
     def get_state(self):
         """
@@ -88,7 +88,7 @@ class AppWinservice(App):
         return state
 
     def get_timeout(self, action):
-        timeout = super().get_timeout(action)
+        timeout = super(AppWinservice, self).get_timeout(action)
         if timeout is None:
             return DEFAULT_TIMEOUT
         return timeout
