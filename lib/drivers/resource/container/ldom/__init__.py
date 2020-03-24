@@ -49,22 +49,9 @@ def adder(svc, s):
 
 
 class ContainerLdom(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos="SunOS",
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerLdom, self).__init__(
-            rid=rid,
-            name=name,
-            type="container.ldom",
-            guestos=guestos,
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+    def __init__(self, guestos="SunOS", **kwargs):
+        super(ContainerLdom, self).__init__(type="container.ldom", guestos=guestos, **kwargs)
         self.sshbin = '/usr/local/bin/ssh'
-
 
     def __str__(self):
         return "%s name=%s" % (Resource.__str__(self), self.name)

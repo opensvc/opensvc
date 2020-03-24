@@ -58,12 +58,11 @@ def adder(svc, s):
 
 class SyncBtrfssnap(Sync):
     def __init__(self,
-                 rid=None,
                  name=None,
                  subvol=[],
                  keep=1,
                  **kwargs):
-        super(SyncBtrfssnap, self).__init__(rid=rid, type="sync.btrfssnap", **kwargs)
+        super(SyncBtrfssnap, self).__init__(type="sync.btrfssnap", **kwargs)
 
         if name:
             self.label = "btrfs '%s' snapshot %s" % (name, ", ".join(subvol))

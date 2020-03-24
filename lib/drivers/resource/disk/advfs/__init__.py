@@ -64,17 +64,9 @@ def adder(svc, s):
     svc += r
 
 class DiskAdvfs(BaseDisk):
-    def __init__(self,
-                 rid=None,
-                 name=None,
-                 **kwargs):
-        super(DiskAdvfs, self).__init__(
-            rid=rid,
-            name=name,
-            type='disk.vg',
-            **kwargs
-        )
-        self.label = 'fdmn ' + name
+    def __init__(self, **kwargs):
+        super(DiskAdvfs, self).__init__(type='disk.advfs', **kwargs)
+        self.label = "fdmn %s" % self.name
         self.sub_devs_cache = set()
 
     def sub_devs_name(self):

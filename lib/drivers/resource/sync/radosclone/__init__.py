@@ -40,32 +40,14 @@ def adder(svc, s):
 
 class SyncRadosclone(SyncRadossnap):
     def __init__(self,
-                 rid=None,
-                 pairs=[],
+                 type="sync.radosclone",
                  client_id=None,
                  keyring=None,
-                 type="sync.radosclone",
-                 sync_max_delay=None,
-                 schedule=None,
-                 optional=False,
-                 disabled=False,
-                 tags=set(),
-                 internal=False,
-                 subset=None):
+                 pairs=None,
+                 **kwargs):
+        pairs = pairs or []
         images = map(lambda x: x.split(":")[0], pairs)
-        super(SyncRadosclone, self).__init__(
-            rid=rid,
-            images=images,
-            client_id=client_id,
-            keyring=keyring,
-            type=type,
-            sync_max_delay=sync_max_delay,
-            schedule=schedule,
-            optional=optional,
-            disabled=disabled,
-            tags=tags,
-            subset=subset
-        )
+        super(SyncRadosclone, self).__init__(type=type, images=images, **kwargs)
         self.pairs = pairs
         self.fmt_label("clone", pairs)
 

@@ -53,20 +53,8 @@ def adder(svc, s):
 
 
 class ContainerEsx(BaseContainer):
-    def __init__(self,
-                 rid,
-                 name,
-                 guestos=None,
-                 osvc_root_path=None,
-                 **kwargs):
-        super(ContainerEsx, self).__init__(
-            rid=rid,
-            name=name,
-            guestos=guestos,
-            type="container.esx",
-            osvc_root_path=osvc_root_path,
-            **kwargs
-        )
+    def __init__(self, **kwargs):
+        super(ContainerEsx, self).__init__(type="container.esx", **kwargs)
         self.vmx = None
 
     def __str__(self):

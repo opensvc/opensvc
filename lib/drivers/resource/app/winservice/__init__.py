@@ -68,9 +68,9 @@ class AppWinservice(App):
     The app.winservice resource driver class.
     """
 
-    def __init__(self, rid, name=None, **kwargs):
+    def __init__(self, name=None, **kwargs):
         self.name = name
-        super(AppWinservice, self).__init__(rid, type="app.winservice", **kwargs)
+        super(AppWinservice, self).__init__(type="app.winservice", **kwargs)
 
     def get_state(self):
         """

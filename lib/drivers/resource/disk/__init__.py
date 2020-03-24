@@ -50,8 +50,8 @@ class BaseDisk(Resource):
     Base disk resource driver, derived for LVM, Veritas, ZFS, ...
     """
 
-    def __init__(self, rid=None, name=None, **kwargs):
-        super(BaseDisk, self).__init__(rid, **kwargs)
+    def __init__(self, name=None, **kwargs):
+        super(BaseDisk, self).__init__(**kwargs)
         self.name = name
 
     def __str__(self):

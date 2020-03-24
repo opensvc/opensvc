@@ -114,21 +114,10 @@ def adder(svc, s):
 
 class IpCni(Ip):
     def __init__(self,
-                 rid=None,
-                 ipname=None,
-                 ipdev=None,
                  network=None,
                  netns=None,
-                 expose=None,
                  **kwargs):
-        super(IpCni, self).__init__(
-            rid,
-            ipname=ipname,
-            ipdev=ipdev,
-            type="ip.cni",
-            expose=expose,
-            **kwargs
-        )
+        super(IpCni, self).__init__(type="ip.cni", **kwargs)
         self.network = network
         self.container_rid = netns
         if self.container_rid:

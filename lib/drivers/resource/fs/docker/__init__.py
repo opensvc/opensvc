@@ -46,12 +46,8 @@ def adder(svc, s):
 
 
 class FsDocker(Resource):
-    def __init__(self,
-                 rid=None,
-                 driver=None,
-                 options=None,
-                 **kwargs):
-        super(FsDocker, self).__init__(rid=rid, type='fs.docker', **kwargs)
+    def __init__(self, driver=None, options=None, **kwargs):
+        super(FsDocker, self).__init__(type='fs.docker', **kwargs)
         self.driver = driver
         self.options = options
 

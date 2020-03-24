@@ -60,14 +60,13 @@ def adder(svc, s):
 
 class SyncSymsrdfs(Sync):
     def __init__(self,
-                 rid=None,
                  symid=None,
                  symdg=None,
                  rdfg=None,
                  symdevs=[],
                  precopy_timeout=300,
                  **kwargs):
-        super(SyncSymsrdfs, self).__init__(rid=rid, type="sync.symsrdfs", **kwargs)
+        super(SyncSymsrdfs, self).__init__(type="sync.symsrdfs", **kwargs)
 
         self.pausable = False
         self.label = "srdf/s symdg %s"%(symdg)

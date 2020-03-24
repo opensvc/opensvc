@@ -49,13 +49,10 @@ class DiskDrbd(Resource):
         Stop 'downs' the drbd devices.
     """
 
-    def __init__(self,
-                 rid=None,
-                 res=None,
-                 **kwargs):
-        super(DiskDrbd, self).__init__(rid, "disk.drbd", **kwargs)
+    def __init__(self, res=None, **kwargs):
+        super(DiskDrbd, self).__init__(type="disk.drbd", **kwargs)
         self.res = res
-        self.label = "drbd "+res
+        self.label = "drbd %s" % res
         self.drbdadm = None
         self.rollback_even_if_standby = True
 

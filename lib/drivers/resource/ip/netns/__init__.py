@@ -125,12 +125,7 @@ def adder(svc, s):
 
 class IpNetns(Ip):
     def __init__(self,
-                 rid=None,
-                 ipdev=None,
-                 ipname=None,
                  mode=None,
-                 mask=None,
-                 gateway=None,
                  network=None,
                  del_net_route=False,
                  netns=None,
@@ -139,16 +134,7 @@ class IpNetns(Ip):
                  vlan_tag=None,
                  vlan_mode=None,
                  **kwargs):
-        super(IpNetns).__init__(
-            rid,
-            type="ip.netns",
-            ipdev=ipdev,
-            ipname=ipname,
-            gateway=gateway,
-            macaddr=macaddr,
-            mask=mask,
-            **kwargs
-        )
+        super(IpNetns).__init__(type="ip.netns", **kwargs)
         self.mode = mode if mode else "bridge"
         self.network = network
         self.nsdev = nsdev

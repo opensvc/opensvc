@@ -66,14 +66,12 @@ def adder(svc, s, drv=None):
 
 class BaseDiskLv(BaseDisk):
     def __init__(self,
-                 rid=None,
-                 name=None,
                  vg=None,
                  size=None,
                  create_options=None,
                  **kwargs):
-        super(BaseDiskLv, self).__init__(rid=rid, name=name, type='disk.lv', **kwargs)
-        self.fullname = "%s/%s" % (vg, name)
+        super(BaseDiskLv, self).__init__(type='disk.lv', **kwargs)
+        self.fullname = "%s/%s" % (vg, self.name)
         self.label = "lv %s" % self.fullname
         self.vg = vg
         self.size = size
