@@ -136,10 +136,12 @@ class TestUtilities:
         """
         mod = mimport("res", "fs", "linux")
         assert hasattr(mod, "Fs") is True
-        mod = mimport("prov", "fs", "linux")
-        assert hasattr(mod, "Prov") is True
-        mod = mimport("prov", "fs", "linux", "")
-        assert hasattr(mod, "Prov") is True
+        mod = mimport("res", "fs", "linux", "")
+        assert hasattr(mod, "Fs") is True
+        mod = mimport("resource", "fs", "linux")
+        assert hasattr(mod, "Fs") is True
+        mod = mimport("resource", "fs", "xfs")
+        assert hasattr(mod, "FsXfs") is True
 
         try:
             _ = mimport("aa", "bb", "cc")
