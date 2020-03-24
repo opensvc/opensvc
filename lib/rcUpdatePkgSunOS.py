@@ -1,6 +1,8 @@
-from subprocess import *
-from rcUtilitiesSunOS import get_solaris_version
 import os
+
+from subprocess import *
+
+import utilities.os.sunos
 
 repo_subdir = "sunos-pkg"
 
@@ -52,7 +54,7 @@ def update(fpath):
     p.communicate()
     if p.returncode != 0:
         return 1
-    osver = get_solaris_version()
+    osver = utilities.os.sunos.get_solaris_version()
     if osver < 10.0:
         opts = ''
     else:

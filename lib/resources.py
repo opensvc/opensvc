@@ -12,11 +12,13 @@ import json
 
 import lock
 import rcExceptions as ex
+import rcColor
 import rcStatus
+import utilities.devices
+
 from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
                         action_triggers, mimport, unset_lazy, factory
 from rcGlobalEnv import rcEnv
-import rcColor
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",
@@ -785,8 +787,7 @@ class Resource(object):
         """
         devs = self.base_devs()
         try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            disks = u.devs_to_disks(self, devs)
+            disks = utilities.devices.devs_to_disks(self, devs)
         except:
             disks = devs
         return disks
@@ -798,8 +799,7 @@ class Resource(object):
         """
         devs = self.sub_devs()
         try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            disks = u.devs_to_disks(self, devs)
+            disks = utilities.devices.devs_to_disks(self, devs)
         except:
             disks = devs
         return disks
@@ -811,8 +811,7 @@ class Resource(object):
         """
         devs = self.exposed_devs()
         try:
-            u = __import__('rcUtilities'+rcEnv.sysname)
-            disks = u.devs_to_disks(self, devs)
+            disks = utilities.devices.devs_to_disks(self, devs)
         except:
             disks = devs
         return disks

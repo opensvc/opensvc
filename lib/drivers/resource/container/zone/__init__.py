@@ -9,6 +9,7 @@ import lock
 import rcExceptions as ex
 import rcStatus
 import rcZone
+import utilities.os.sunos
 
 from .. import \
     BaseContainer, \
@@ -26,7 +27,6 @@ from .. import \
 from rcGlobalEnv import rcEnv
 from resources import Resource
 from rcUtilities import justcall, qcall, which, lazy
-from rcUtilitiesSunOS import get_solaris_version
 from rcZfs import zfs_setprop, Dataset
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
@@ -280,7 +280,7 @@ class ContainerZone(BaseContainer):
             if ret != 0:
                 raise ex.excError
         options = []
-        if get_solaris_version() >= 11.3:
+        if utilities.os.sunos.get_solaris_version() >= 11.3:
             options += ["-x", "deny-zbe-clone"]
         try:
             self.umount_fs_in_zonepath()
@@ -942,7 +942,7 @@ class ContainerZone(BaseContainer):
         - create sysidcfg
         - if need_boot boot and wait multiuser
         """
-        self.osver = get_solaris_version()
+        self.osver = utilities.os.sunos.get_solaris_version()
         self.zone_configure()
 
         if self.osver >= 11:

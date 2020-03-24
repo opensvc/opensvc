@@ -9,6 +9,7 @@ from xml.etree.ElementTree import ElementTree, XML
 
 import rcExceptions as ex
 import rcStatus
+import utilities.devices.linux
 
 from .. import Sync, notify
 from svcBuilder import sync_kwargs
@@ -166,8 +167,7 @@ class SyncSymsrdfs(Sync):
             self.promote_dev_rw(dev)
 
     def promote_dev_rw(self, dev):
-        from rcUtilitiesLinux import promote_dev_rw
-        promote_dev_rw(dev, log=self.log)
+        utilities.devices.linux.promote_dev_rw(dev, log=self.log)
 
     def get_symid_from_export(self, cf):
         with open(cf, 'r') as f:

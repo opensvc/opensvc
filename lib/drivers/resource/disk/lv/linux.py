@@ -9,7 +9,6 @@ import rcExceptions as ex
 from . import BaseDiskLv, adder as base_adder
 from converters import convert_size
 from rcUtilities import justcall, which, bdecode
-from rcUtilitiesLinux import label_to_dev
 from rcGlobalEnv import rcEnv
 
 def adder(svc, s):
