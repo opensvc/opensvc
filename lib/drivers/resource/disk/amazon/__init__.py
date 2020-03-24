@@ -42,17 +42,12 @@ def adder(svc, s):
 
 class DiskAmazon(BaseDisk, AmazonMixin):
     def __init__(self,
-                 rid=None,
-                 type="disk.vg",
                  volumes=set(),
                  client_id=None,
                  keyring=None,
                  **kwargs):
 
-        BaseDisk.__init__(self,
-                          rid=rid,
-                          type=type,
-                          **kwargs)
+        BaseDisk.__init__(self, type="disk.amazon", **kwargs)
 
         self.volumes = volumes
         self.label = self.fmt_label()

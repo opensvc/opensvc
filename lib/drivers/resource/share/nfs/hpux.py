@@ -28,8 +28,8 @@ def adder(svc, s):
     svc += r
 
 class NfsShare(Resource):
-    def __init__(self, rid, path, opts, **kwargs):
-        Resource.__init__(self, rid, type="share.nfs", **kwargs)
+    def __init__(self, path, opts, **kwargs):
+        Resource.__init__(self, type="share.nfs", **kwargs)
         self.sharetab = "/etc/dfs/sharetab"
         self.dfstab = "/etc/dfs/dfstab"
 

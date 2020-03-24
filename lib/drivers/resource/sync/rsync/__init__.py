@@ -183,7 +183,6 @@ class SyncRsync(Sync):
     or both.
     """
     def __init__(self,
-                 rid=None,
                  src=[],
                  dst=None,
                  options=[],
@@ -194,7 +193,7 @@ class SyncRsync(Sync):
                  internal=False,
                  reset_options=False,
                  **kwargs):
-        super(SyncRsync, self).__init__(rid=rid, type="sync.rsync", **kwargs)
+        super(SyncRsync, self).__init__(type="sync.rsync", **kwargs)
 
         if internal:
             if rcEnv.paths.drp_path in dst:

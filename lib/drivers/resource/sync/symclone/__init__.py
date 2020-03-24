@@ -83,7 +83,6 @@ def adder(svc, s, drv=None, t="sync.symclone"):
 
 class SyncSymclone(Sync):
     def __init__(self,
-                 rid=None,
                  type="sync.symclone",
                  symid=None,
                  pairs=[],
@@ -92,7 +91,7 @@ class SyncSymclone(Sync):
                  restore_timeout=None,
                  recreate_timeout=None,
                  **kwargs):
-        super(SyncSymclone, self).__init__(rid=rid, type=type, **kwargs)
+        super(SyncSymclone, self).__init__(type=type, **kwargs)
 
         if self.type == "sync.symclone":
             self.active_states = ["copied", "copyinprog"]

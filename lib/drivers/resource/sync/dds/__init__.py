@@ -71,13 +71,12 @@ def adder(svc, s):
 
 class SyncDds(Sync):
     def __init__(self,
-                 rid=None,
                  target=None,
                  src=None,
                  dsts={},
                  snap_size=0,
                  **kwargs):
-        super(SyncDds, self).__init__(rid=rid, type="sync.dds", **kwargs)
+        super(SyncDds, self).__init__(type="sync.dds", **kwargs)
         self.label = "dds of %s to %s"%(src, ", ".join(target))
         self.target = target
         self.src = src

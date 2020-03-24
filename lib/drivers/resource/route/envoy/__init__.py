@@ -103,6 +103,6 @@ def adder(svc, s):
     svc += r
 
 class RouteEnvoy(Data):
-    def __init__(self, rid, **kwargs):
-        super(RouteEnvoy, self).__init__(rid, type="route.envoy", **kwargs)
+    def __init__(self, **kwargs):
+        super(RouteEnvoy, self).__init__(type="route.envoy", **kwargs)
         self.label = "envoy route"

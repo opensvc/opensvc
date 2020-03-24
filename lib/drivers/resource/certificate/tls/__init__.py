@@ -51,6 +51,6 @@ def adder(svc, s):
     svc += r
 
 class CertificateTls(Data):
-    def __init__(self, rid, **kwargs):
-        Data.__init__(self, rid, type="certificate.tls", **kwargs)
+    def __init__(self, **kwargs):
+        Data.__init__(self, type="certificate.tls", **kwargs)
         self.label = "tls certificate"

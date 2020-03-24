@@ -175,20 +175,14 @@ class ContainerLxc(BaseContainer):
     """
 
     def __init__(self,
-                 rid,
-                 name,
                  guestos="Linux",
                  cf=None,
                  rcmd=None,
-                 osvc_root_path=None,
                  container_data_dir=None,
                  **kwargs):
         super(ContainerLxc, self).__init__(
-            rid=rid,
-            name=name,
             type="container.lxc",
             guestos=guestos,
-            osvc_root_path=osvc_root_path,
             **kwargs
         )
         self.refresh_provisioned_on_provision = True

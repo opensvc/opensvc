@@ -107,7 +107,6 @@ KEYWORDS = [
 class BaseTask(Resource):
     default_optional = True
     def __init__(self,
-                 rid=None,
                  type="task",
                  command=None,
                  user=None,
@@ -121,7 +120,7 @@ class BaseTask(Resource):
                  secrets_environment=None,
                  check=None,
                  **kwargs):
-        super(BaseTask, self).__init__(rid, type=type, **kwargs)
+        super(BaseTask, self).__init__(type=type, **kwargs)
         self.command = command
         self.on_error = on_error
         self.user = user
