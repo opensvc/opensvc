@@ -2330,11 +2330,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return 1
 
         try:
-            mod = __import__('rcPasswd'+rcEnv.sysname)
+            from utilities.password import change_root_pw
         except ImportError:
             print("not implemented")
             return 1
-        ret = mod.change_root_pw(passwd)
+        ret = change_root_pw(passwd)
         if ret == 0:
             print("root password changed")
         else:
