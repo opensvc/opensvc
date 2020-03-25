@@ -1,6 +1,9 @@
 import pytest
-from drivers.resource.fs.linux import Fs
 
+from rcUtilities import driver_import
+
+
+Fs = driver_import('res', 'fs.linux').Fs
 
 LIB_PATH = 'drivers.resource.fs.linux'
 
