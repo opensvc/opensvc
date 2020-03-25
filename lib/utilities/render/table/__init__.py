@@ -93,7 +93,7 @@ def print_table_tabulate(data, width=20):
     except Exception as e:
         return
 
-    from tabulate import tabulate
+    from .tabulate import tabulate
     import rcColor
 
     try:
