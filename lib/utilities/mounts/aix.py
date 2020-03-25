@@ -17,6 +17,7 @@ class Mounts(BaseMounts):
             src_dir_dev = self.get_src_dir_dev(dev)
         else:
             is_bind = False
+            src_dir_dev = None
 
         if i.mnt != mnt:
             return False
