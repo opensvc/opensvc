@@ -1,6 +1,7 @@
 from subprocess import *
 from rcUtilities import which
 
+
 def change_root_pw(pw):
     if which('pw') is None:
         print("pw command not found")
