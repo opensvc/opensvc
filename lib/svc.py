@@ -846,7 +846,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         signal.signal(signal.SIGTERM, signal_handler)
 
     def systemd_join_agent_service(self):
-        from rcSystemd import systemd_system, systemd_join
+        from utilities.systemd import systemd_system, systemd_join
         if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" or not systemd_system():
                return
         systemd_join("opensvc-agent.service")
