@@ -129,7 +129,7 @@ class Sec(DataMixin, BaseSvc):
 
     def pkcs12(self):
         if six.PY3:
-            sys.stdout.buffer.write(self._pkcs12(self.options.password))
+            sys.stdout.buffer.write(self._pkcs12(self.options.password))  # pylint: disable=no-member
         else:
             print(self._pkcs12(self.options.password))
 
