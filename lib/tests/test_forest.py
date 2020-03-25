@@ -1,7 +1,7 @@
 import pytest
 
-from forest import Forest, forest
 from rcColor import color
+from utilities.render.forest import Forest, forest
 
 
 @pytest.mark.ci
