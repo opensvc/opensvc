@@ -1,8 +1,6 @@
-import time
 import os
-import shutil
 import stat
-
+import time
 from datetime import datetime
 
 import lock
@@ -10,7 +8,13 @@ import rcExceptions as ex
 import rcStatus
 import rcZone
 import utilities.os.sunos
-
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, qcall, which, lazy
+from rcZfs import zfs_setprop, Dataset
+from resources import Resource
+from svcBuilder import init_kwargs, container_kwargs
+from svcdict import KEYS
+from utilities.mounts import Mounts
 from .. import \
     BaseContainer, \
     KW_SNAP, \
@@ -24,12 +28,6 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
-from resources import Resource
-from rcUtilities import justcall, qcall, which, lazy
-from rcZfs import zfs_setprop, Dataset
-from svcBuilder import init_kwargs, container_kwargs
-from svcdict import KEYS
 
 SYSIDCFG="/etc/sysidcfg"
 ZONECFG = "/usr/sbin/zonecfg"
@@ -508,8 +506,7 @@ class ContainerZone(BaseContainer):
             # sanity check
             return
 
-        m = __import__("rcMounts" + rcEnv.sysname)
-        mounts = m.Mounts()
+        mounts = Mounts()
         mounts.sort(reverse=True)
         mntpts = []
         for resource in self.svc.get_resources("fs"):
