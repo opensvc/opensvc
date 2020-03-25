@@ -13,10 +13,12 @@ import sys
 import optparse
 import textwrap
 import utilities.render.color
-from rcUtilities import term_width, is_string, wipe_rest_markup
 import rcExceptions as ex
 import svc
 import re
+
+from rcUtilities import is_string, wipe_rest_markup
+from utilities.render.term import term_width
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):
