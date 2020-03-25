@@ -25,7 +25,7 @@ class BaseMounts(object):
 
     def __init__(self):
         try:
-            self.mounts = self.parse_mounts()
+            self.mounts = self.parse_mounts()  # pylint: disable=assignment-from-no-return
         except Exception as exc:
             self.mounts = None
 
