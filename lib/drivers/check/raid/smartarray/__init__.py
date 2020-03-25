@@ -2,7 +2,7 @@ import os
 
 import drivers.check
 
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 sep = ':'
 path_list = os.environ['PATH'].split(sep) + ['/opt/HPQacucli/sbin']

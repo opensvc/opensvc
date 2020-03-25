@@ -1,9 +1,10 @@
-import rcDevTree
 import os
 import re
-from rcUtilities import which, justcall
+
+import rcDevTree
 from rcGlobalEnv import rcEnv
 from rcDiskInfoOSF1 import diskInfo
+from utilities.proc import justcall, which
 
 regex = re.compile('\W*[a-h]:')
 

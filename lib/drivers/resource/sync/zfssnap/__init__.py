@@ -8,9 +8,10 @@ import rcZfs
 
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache, clear_cache
+from rcUtilities import cache, clear_cache
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "zfssnap"

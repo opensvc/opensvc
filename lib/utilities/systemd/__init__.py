@@ -1,7 +1,7 @@
 import os
 import glob
 
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 def systemd_escape(s):
     def escape(s):

@@ -6,8 +6,8 @@ import rcDiskInfo
 import utilities.devices.sunos
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
 from rcZone import is_zone
+from utilities.proc import justcall
 
 class diskInfo(rcDiskInfo.diskInfo):
     h = {}

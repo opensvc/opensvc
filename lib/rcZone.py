@@ -1,6 +1,6 @@
 import os
 from rcZfs import Dataset
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 ZONEADM="/usr/sbin/zoneadm"
 

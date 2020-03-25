@@ -1,5 +1,6 @@
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, justcall, which
+from rcUtilities import cache
+from utilities.proc import justcall, which
 
 
 def listpkg():

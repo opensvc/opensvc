@@ -9,9 +9,11 @@ import datetime
 from .. import Sync, notify
 from converters import convert_speed, convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, cache, bdecode, drop_option
+from rcUtilities import lazy, cache, drop_option
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
+from utilities.string import bdecode
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "rsync"

@@ -7,10 +7,11 @@ from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 import rcExceptions as ex
 import utilities.devices.linux
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
+from rcUtilities import protected_mount, getmount, lazy, cache
 from rcZfs import zfs_getprop, zfs_setprop
 from utilities.mounts.linux import Mounts
 from . import BaseFs, adder as base_adder
+from utilities.proc import justcall, qcall
 
 
 def adder(svc, s):

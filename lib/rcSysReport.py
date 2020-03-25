@@ -11,7 +11,7 @@ from subprocess import *
 import six
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
+from utilities.proc import which
 
 POSIX = os.name == "posix"
 

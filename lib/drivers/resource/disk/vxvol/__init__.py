@@ -7,9 +7,10 @@ import rcExceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, cache
+from rcUtilities import cache
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vxvol"

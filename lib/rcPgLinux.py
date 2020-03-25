@@ -2,8 +2,8 @@ import os
 import re
 import glob
 import rcExceptions as ex
-from rcUtilities import justcall
 from converters import convert_size
+from utilities.proc import justcall
 
 UNIFIED_MNT = "/sys/fs/cgroup/unified"
 UNIFIED = os.path.exists(UNIFIED_MNT)

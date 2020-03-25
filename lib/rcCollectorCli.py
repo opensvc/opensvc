@@ -26,8 +26,9 @@ from six.moves import configparser as ConfigParser
 import rcExceptions as ex
 from six.moves import input
 from storage import Storage
-from rcUtilities import bdecode, is_glob, find_editor
+from rcUtilities import is_glob, find_editor
 from utilities.render.color import formatter
+from utilities.string import bdecode
 
 try:
     import requests

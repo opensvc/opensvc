@@ -1,6 +1,6 @@
 from .. import adder as base_adder
 from ..linux import Fs
-from rcUtilities import which
+from utilities.proc import which
 
 def adder(svc, s):
     base_adder(svc, s, drv=FsVxfs)

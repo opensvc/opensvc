@@ -4,9 +4,10 @@ import os
 
 import pool
 import rcExceptions as ex
-from rcUtilities import lazy, justcall
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from converters import convert_size
+from utilities.proc import justcall
 
 class Pool(pool.Pool):
     type = "shm"

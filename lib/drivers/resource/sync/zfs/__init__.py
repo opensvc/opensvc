@@ -8,12 +8,13 @@ import rcStatus
 
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
 from rcZfs import a2pool_dataset, Dataset
-from rcUtilities import bdecode, lazy
+from rcUtilities import lazy
 from converters import print_duration
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
+from utilities.string import bdecode
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "zfs"

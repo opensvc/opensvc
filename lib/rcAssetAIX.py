@@ -3,8 +3,8 @@ import datetime
 
 import rcAsset
 import rcExceptions as ex
-from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 class Asset(rcAsset.Asset):
     def __init__(self, node):

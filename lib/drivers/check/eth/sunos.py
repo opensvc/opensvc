@@ -4,8 +4,8 @@ import re
 import drivers.check
 import utilities.os.sunos
 
-from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 """
 # ifconfig -a

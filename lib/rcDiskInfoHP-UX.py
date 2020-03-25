@@ -1,6 +1,7 @@
-from rcUtilities import justcall, which
-import rcDiskInfo
 import os
+
+import rcDiskInfo
+from utilities.proc import justcall, which
 
 class diskInfo(rcDiskInfo.diskInfo):
     legacy_size_cache = {}

@@ -1,6 +1,6 @@
 from subprocess import *
-from rcUtilities import which
 
+from utilities.proc import which
 from .ifconfig import BaseIfconfig, Interface
 
 class Ifconfig(BaseIfconfig):

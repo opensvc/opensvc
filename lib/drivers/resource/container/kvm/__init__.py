@@ -21,9 +21,10 @@ from .. import \
     KW_SCSIRESERV
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache, clear_cache, lazy, which
+from rcUtilities import cache, clear_cache, lazy
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 CAPABILITIES = {
     "partitions": "1.0.1",

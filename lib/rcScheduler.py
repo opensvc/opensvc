@@ -13,8 +13,8 @@ import logging
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import is_string
 from utilities.render.color import formatter, color
+from utilities.string import is_string
 from converters import convert_duration
 
 SCHED_FMT = "%s: %s"

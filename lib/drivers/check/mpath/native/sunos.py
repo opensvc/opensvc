@@ -1,6 +1,6 @@
 import drivers.check
 
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 class Check(drivers.check.Check):
     """

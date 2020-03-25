@@ -3,18 +3,19 @@
 """
 The module implementing the DockerLib class.
 """
-import os
-import errno
 import distutils
+import errno
+import json
+import os
+import re
 from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
 
-import json
-import re
 import rcStatus
 import rcExceptions as ex
 
-from rcUtilities import which, justcall, lazy, unset_lazy, set_lazy
+from rcUtilities import lazy, unset_lazy, set_lazy
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class ContainerLib(object):
     """

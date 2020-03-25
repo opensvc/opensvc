@@ -17,11 +17,12 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy
+from rcUtilities import lazy
 from resources import Resource
 from storage import Storage
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 lxc = "/usr/bin/lxc"
 lxd = "/usr/bin/lxd"

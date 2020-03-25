@@ -1,12 +1,13 @@
-import os
 import datetime
-import re
 import json
-from six.moves.urllib.parse import quote # pylint: disable=import-error
-from rcUtilities import justcall, which
-from rcGlobalEnv import rcEnv
+import os
+import re
+
 import rcAsset
+from six.moves.urllib.parse import quote # pylint: disable=import-error
+from rcGlobalEnv import rcEnv
 from rcZone import is_zone
+from utilities.proc import justcall, which
 
 class Asset(rcAsset.Asset):
     def __init__(self, node=None):

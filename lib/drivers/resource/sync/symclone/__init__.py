@@ -9,9 +9,10 @@ import rcStatus
 from .. import Sync, notify
 from converters import print_duration
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy
+from rcUtilities import lazy
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symclone"

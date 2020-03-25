@@ -9,12 +9,13 @@ import rcStatus
 import rcZone
 import utilities.os.sunos
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, qcall, which, lazy
+from rcUtilities import lazy
 from rcZfs import zfs_setprop, Dataset
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
 from utilities.mounts import Mounts
+from utilities.proc import justcall, qcall, which
 from .. import \
     BaseContainer, \
     KW_SNAP, \
