@@ -11,6 +11,7 @@ import ipaddress
 import lock
 import rcStatus
 import rcExceptions as ex
+import utilities.ifconfig
 
 from arp import send_arp
 from converters import convert_duration, print_duration
@@ -19,8 +20,6 @@ from rcUtilities import qcall, which, getaddr, lazy, to_cidr
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
-
-IFCONFIG_MOD = __import__('rcIfconfig'+rcEnv.sysname)
 
 KW_IPNAME = {
     "keyword": "ipname",
@@ -350,7 +349,7 @@ class Ip(Resource):
                 return rcStatus.DOWN
             else:
                 return rcStatus.WARN
-        ifconfig = IFCONFIG_MOD.ifconfig()
+        ifconfig = utilities.ifconfig.Ifconfig()
         intf = ifconfig.interface(self.ipdev)
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
         if intf is None and "dedicated" not in self.tags and mode != "dedicated":
@@ -477,7 +476,7 @@ class Ip(Resource):
         if self.is_up() is True:
             self.log.info("%s is already up on %s", self.addr, self.ipdev)
             raise ex.IpAlreadyUp(self.addr)
-        ifconfig = IFCONFIG_MOD.ifconfig()
+        ifconfig = utilities.ifconfig.Ifconfig()
         intf = ifconfig.interface(self.ipdev)
         if self.has_carrier(intf) is False and not self.svc.options.force:
             self.log.error("interface %s no-carrier.", self.ipdev)
@@ -549,7 +548,7 @@ class Ip(Resource):
         Wrapper around the os specific rcIfconfig module's ifconfig function.
         Return a parsed ifconfig dataset.
         """
-        return IFCONFIG_MOD.ifconfig()
+        return utilities.ifconfig.Ifconfig()
 
     def start(self):
         """
@@ -756,7 +755,7 @@ class Ip(Resource):
 
         if network is None:
             # implicit network: the network of the first ipdev ip
-            ifconfig = IFCONFIG_MOD.ifconfig()
+            ifconfig = utilities.ifconfig.Ifconfig()
             intf = ifconfig.interface(self.ipdev)
             try:
                 if isinstance(intf.ipaddr, list):

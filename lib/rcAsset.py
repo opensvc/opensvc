@@ -573,8 +573,8 @@ class Asset(object):
         kwargs = {'mcast': True}
         if rcEnv.sysname == 'HP-UX':
             kwargs['hwaddr'] = True
-        rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
-        ifconfig = rcIfconfig.ifconfig(**kwargs)
+        import utilities.ifconfig
+        ifconfig = utilities.ifconfig.Ifconfig(**kwargs)
         lan = {}
         for intf in ifconfig.intf:
             if len(intf.hwaddr) == 0:

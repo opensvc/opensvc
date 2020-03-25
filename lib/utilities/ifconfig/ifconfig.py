@@ -1,8 +1,4 @@
-from subprocess import *
-import logging
-from rcGlobalEnv import *
-
-class interface:
+class Interface:
     def __str__(self):
         a = ['ifconfig %s:'%self.name]
         a += [' link_encap = ' + str(self.link_encap)]
@@ -46,9 +42,9 @@ class interface:
         self.flag_loopback = False
         self.flag_no_carrier = False
 
-class ifconfig(object):
+class BaseIfconfig(object):
     def add_interface(self, name):
-        i = interface(name)
+        i = Interface(name)
         self.intf.append(i)
 
     def interface(self, name):
@@ -135,5 +131,3 @@ class ifconfig(object):
             stacked_dev = self.next_stacked_dev(dev)
             log.debug("allocate new stacked device %s" % stacked_dev)
         return stacked_dev
-
-

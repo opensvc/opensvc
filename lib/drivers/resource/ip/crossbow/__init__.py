@@ -1,16 +1,15 @@
 import time
+
 from subprocess import *
+
+import rcExceptions as ex
 
 from ..sunos import Ip
 from .. import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
-
-import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, to_cidr, justcall
 from svcBuilder import init_kwargs
 from svcdict import KEYS
-
-rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "crossbow"
