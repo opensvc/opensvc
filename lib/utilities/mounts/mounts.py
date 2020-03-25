@@ -44,7 +44,6 @@ class BaseMounts(object):
 
     def parse_mounts(self):
         raise excError("parse_mounts is not implemented")
-        return []
 
     def has_mount(self, dev, mnt):
         if self.mounts is None:
