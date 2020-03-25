@@ -12,8 +12,6 @@ from resources import Resource
 from rcUtilities import which
 from rcGlobalEnv import rcEnv
 
-hostId = __import__('hostid'+rcEnv.sysname)
-
 
 class BaseDiskScsireserv(Resource):
     """Define method to acquire and release scsi SPC-3 persistent reservations
