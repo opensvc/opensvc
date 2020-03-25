@@ -1,11 +1,12 @@
-from subprocess import *
-from rcUtilities import which
 import shutil
-import crypt
+from subprocess import *
+
+from rcUtilities import which
 
 shadow = '/etc/shadow'
 tmpshadow = '/etc/shadow.tmp'
 policy = '/etc/security/policy.conf'
+
 
 def get_polices():
     """
@@ -27,6 +28,7 @@ def get_polices():
                 l = v[1].split(',')
     return l
 
+
 def change_root_pw(pw):
     try:
         _change_root_pw(pw)
@@ -34,6 +36,7 @@ def change_root_pw(pw):
         print(e)
         return 1
     return 0
+
 
 def _change_root_pw(pw):
     allowed = get_polices()
@@ -55,8 +58,9 @@ def _change_root_pw(pw):
             lines.append(':'.join(v))
         buff = '\n'.join(lines)
     with open(tmpshadow, 'w') as fd:
-        fd.write(buff+'\n')
+        fd.write(buff + '\n')
     shutil.copy(tmpshadow, shadow)
+
 
 def pw_crypt(pw):
     if not which('openssl'):
@@ -67,6 +71,7 @@ def pw_crypt(pw):
     if p.returncode != 0:
         raise Exception()
     return out.strip('\n')
+
 
 if __name__ == "__main__":
     change_root_pw('toto')
