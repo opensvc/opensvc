@@ -7,7 +7,7 @@ When need more tests move the scenario into dedicated test file
 import socket
 import pytest
 
-from tests.drivers.resources.helpers import assert_resource_has_mandatory_methods
+from tests.drivers.resource.helpers import assert_resource_has_mandatory_methods
 
 
 nodename = socket.gethostname().lower()

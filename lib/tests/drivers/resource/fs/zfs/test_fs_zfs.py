@@ -1,12 +1,14 @@
 import pytest
 
-from tests.drivers.resources.helpers import assert_resource_has_mandatory_methods
+from tests.drivers.resource.helpers import assert_resource_has_mandatory_methods
 
 
-OS_LIST = {'Linux', 'HP-UX'}
+OS_LIST = {'Linux', 'SunOS', 'FreeBSD'}
 
 SCENARIOS = [
-    ('disk.lv', 'DiskLv', {'rid': '#1', 'loopFile': 'loopFile'}, 'disk.lv'),
+    ('fs.zfs', 'FsZfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop',
+                         'mount_options': None, 'device': '/dev/zvol/...'},
+     'fs'),
 ]
 
 
@@ -14,7 +16,7 @@ SCENARIOS = [
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.parametrize('sysname', OS_LIST)
 @pytest.mark.parametrize('scenario', SCENARIOS)
-class TestDriverDiskLvInstances:
+class TestDriverFsZfsInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
         assert create_driver_resource(sysname, scenario).type == scenario[3]
