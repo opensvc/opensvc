@@ -1,12 +1,12 @@
 import os
 from rcUtilities import justcall, protected_mount
 import rcExceptions as ex
-import snap
+import utilities.snap
 import rcAdvfs
 from rcMountsOSF1 import Mounts
 from rcGlobalEnv import rcEnv
 
-class Snap(snap.Snap):
+class Snap(utilities.snap.Snap):
     """Defines a snap object with ZFS
     """
 

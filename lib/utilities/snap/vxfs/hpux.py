@@ -3,9 +3,9 @@ import os
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, qcall, protected_mount
 import rcExceptions as ex
-import snap
+import utilities.snap
 
-class Snap(snap.Snap):
+class Snap(utilities.snap.Snap):
     def lv_exists(self, device):
         if qcall(['lvdisplay', device]) == 0:
             return True

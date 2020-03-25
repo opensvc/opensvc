@@ -1,13 +1,13 @@
 import os
 
 import rcExceptions as ex
-import snap
+import utilities.snap
 import utilities.devices.linux
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount, justcall, which
 
-class Snap(snap.Snap):
+class Snap(utilities.snap.Snap):
     def mntopt_and_ro(self, m):
         opt_set = set()
         if m.fs_type == "xfs":
