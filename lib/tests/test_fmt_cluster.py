@@ -1,6 +1,6 @@
 import pytest
 
-from fmt_cluster import *
+from utilities.render.cluster import bare_len
 
 
 @pytest.mark.ci
