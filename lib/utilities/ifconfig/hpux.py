@@ -1,9 +1,48 @@
 from subprocess import *
 
-import rcIfconfig
 import rcExceptions as ex
 
-class ifconfig(rcIfconfig.ifconfig):
+from .ifconfig import BaseIfconfig, Interface
+
+class Ifconfig(BaseIfconfig):
+    def __init__(self, hwaddr=False, mcast=False):
+        self.intf = []
+        intf_list = []
+        self.hwaddr = {}
+        if mcast:
+            self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
+        if hwaddr:
+            lines = Popen(['lanscan', '-i', '-a'], stdout=PIPE).communicate()[0].split('\n')
+            for line in lines:
+                l = line.split()
+                if len(l) < 2:
+                    continue
+                mac = l[0].replace('0x','').lower()
+                if len(mac) < 11:
+                    continue
+                mac_l = list(mac)
+                for c in (10, 8, 6, 4, 2):
+                    mac_l.insert(c, ':')
+                self.hwaddr[l[1]] = ''.join(mac_l)
+        out = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
+        for line in out.split('\n'):
+            if len(line) == 0:
+                continue
+            if 'IPv4:' in line or 'IPv6' in line:
+                continue
+            intf = line.split()[0]
+            intf_list.append(intf.replace('*', ''))
+        for intf in intf_list:
+            p = Popen(['ifconfig', intf], stdout=PIPE, stderr=PIPE)
+            out = p.communicate()
+            if "no such interface" in out[1]:
+                continue
+            elif p.returncode != 0:
+                raise ex.excError
+            self.parse(out[0])
+
     def parse(self, out):
         if len(out) == 0:
             return
@@ -11,7 +50,7 @@ class ifconfig(rcIfconfig.ifconfig):
         if intf[len(intf)-1] == ':':
             intf = intf[0:len(intf)-1]
 
-        i = rcIfconfig.interface(intf)
+        i = Interface(intf)
         self.intf.append(i)
 
         # defaults
@@ -125,41 +164,3 @@ class ifconfig(rcIfconfig.ifconfig):
             else:
                 data[intf] += [addr]
         return data
-
-    def __init__(self, hwaddr=False, mcast=False):
-        self.intf = []
-        intf_list = []
-        self.hwaddr = {}
-        if mcast:
-            self.mcast_data = self.get_mcast()
-        else:
-            self.mcast_data = {}
-        if hwaddr:
-            lines = Popen(['lanscan', '-i', '-a'], stdout=PIPE).communicate()[0].split('\n')
-            for line in lines:
-                l = line.split()
-                if len(l) < 2:
-                    continue
-                mac = l[0].replace('0x','').lower()
-                if len(mac) < 11:
-                    continue
-                mac_l = list(mac)
-                for c in (10, 8, 6, 4, 2):
-                    mac_l.insert(c, ':')
-                self.hwaddr[l[1]] = ''.join(mac_l)
-        out = Popen(['netstat', '-win'], stdout=PIPE).communicate()[0]
-        for line in out.split('\n'):
-            if len(line) == 0:
-                continue
-            if 'IPv4:' in line or 'IPv6' in line:
-                continue
-            intf = line.split()[0]
-            intf_list.append(intf.replace('*', ''))
-        for intf in intf_list:
-            p = Popen(['ifconfig', intf], stdout=PIPE, stderr=PIPE)
-            out = p.communicate()
-            if "no such interface" in out[1]:
-                continue
-            elif p.returncode != 0:
-                raise ex.excError
-            self.parse(out[0])

@@ -1,8 +1,9 @@
+import copy
+
 from rcUtilities import which, cidr_to_dotted, justcall
 from rcGlobalEnv import rcEnv
 
-import rcIfconfig
-import copy
+from .ifconfig import BaseIfconfig, Interface
 
 """
 ip addr:
@@ -25,7 +26,24 @@ ip addr:
 
 """
 
-class ifconfig(rcIfconfig.ifconfig):
+class Ifconfig(BaseIfconfig):
+    def __init__(self, mcast=False, ip_out=None):
+        self.intf = []
+        if mcast:
+            self.mcast_data = self.get_mcast()
+        else:
+            self.mcast_data = {}
+        if ip_out:
+            self.parse_ip(ip_out)
+        elif which(rcEnv.syspaths.ip):
+            cmd = [rcEnv.syspaths.ip, 'addr']
+            out, _, _ = justcall(cmd)
+            self.parse_ip(out)
+        else:
+            cmd = ['ifconfig', '-a']
+            out, _, _ = justcall(cmd)
+            self.parse_ifconfig(out)
+
     def parse_ip(self, out):
         for line in out.splitlines():
             if len(line) == 0:
@@ -41,7 +59,7 @@ class ifconfig(rcIfconfig.ifconfig):
                     ifname = ifname[:ifname.index("@")]
                 else:
                     ifkname = None
-                i = rcIfconfig.interface(ifname)
+                i = Interface(ifname)
                 i.ifkname = ifkname
 
                 # defaults
@@ -150,7 +168,7 @@ class ifconfig(rcIfconfig.ifconfig):
         prevprev = ''
         for w in out.split():
             if w == 'Link':
-                i = rcIfconfig.interface(prev)
+                i = Interface(prev)
                 self.intf.append(i)
 
                 # defaults
@@ -259,24 +277,7 @@ class ifconfig(rcIfconfig.ifconfig):
             data[name].append(line.split()[-1])
         return data
 
-    def __init__(self, mcast=False, ip_out=None):
-        self.intf = []
-        if mcast:
-            self.mcast_data = self.get_mcast()
-        else:
-            self.mcast_data = {}
-        if ip_out:
-            self.parse_ip(ip_out)
-        elif which(rcEnv.syspaths.ip):
-            cmd = [rcEnv.syspaths.ip, 'addr']
-            out, _, _ = justcall(cmd)
-            self.parse_ip(out)
-        else:
-            cmd = ['ifconfig', '-a']
-            out, _, _ = justcall(cmd)
-            self.parse_ifconfig(out)
-
 if __name__ == "__main__":
-    ifaces = ifconfig(mcast=True)
+    ifaces = Ifconfig(mcast=True)
     print(ifaces)
 

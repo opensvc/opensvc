@@ -1,7 +1,6 @@
 from subprocess import *
 
-import rcIfconfig
-from rcUtilities import justcall
+from .ifconfig import BaseIfconfig, Interface
 
 def ipv4_bitmask(s):
     if len(s) != 8:
@@ -16,11 +15,10 @@ def ipv4_bitmask(s):
         r.append(int(pk, 16))
     return '.'.join(map(str, r))
 
-class ifconfig(rcIfconfig.ifconfig):
-
+class Ifconfig(BaseIfconfig):
     def __init__(self, mcast=False):
-        rcIfconfig.ifconfig.__init__(self, mcast=mcast)
-        out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE,stderr=PIPE,close_fds=True).communicate()[0]
+        super(Ifconfig, self).__init__(mcast=mcast)
+        out = Popen(['ifconfig', '-a'], stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True).communicate()[0]
         self.parse(out)
 
     def set_hwaddr(self, i):
@@ -32,8 +30,9 @@ class ifconfig(rcIfconfig.ifconfig):
             name = i.name
         cmd = ["hwmgr", "get", "attribute", "-category", "network",
                "-a", "name="+name, "-a", "MAC_address"]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
+        p = Popen(cmd, stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
+        out, err = p.communicate()
+        if p.returncode != 0:
             return i
         for line in out.split('\n'):
             if not line.strip().startswith("MAC"):
@@ -50,7 +49,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i = self.set_hwaddr(i)
                 (ifname,ifstatus)=l.split(': ')
 
-                i=rcIfconfig.interface(ifname)
+                i = Interface(ifname)
                 self.intf.append(i)
 
                 # defaults
@@ -95,5 +94,5 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    for c in (ifconfig,) :
+    for c in (Ifconfig,) :
         help(c)

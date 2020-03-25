@@ -2,6 +2,7 @@ import os
 
 import rcExceptions as ex
 import rcStatus
+import utilities.ifconfig
 
 from .. import Ip, COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcAmazon import AmazonMixin
@@ -9,8 +10,6 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr
 from svcBuilder import init_kwargs
 from svcdict import KEYS
-
-rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "amazon"
@@ -94,7 +93,7 @@ class IpAmazon(Ip, AmazonMixin):
         return ips
 
     def get_network_interface(self):
-        ifconfig = rcIfconfig.ifconfig()
+        ifconfig = utilities.ifconfig.Ifconfig()
         intf = ifconfig.interface(self.ipdev)
         ips = set(intf.ipaddr + intf.ip6addr)
         instance_data = self.get_instance_data(refresh=True)

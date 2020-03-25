@@ -4,9 +4,9 @@ import json
 import os
 
 import drivers.check
+import utilities.ifconfig
 
 from rcGlobalEnv import rcEnv
-from rcIfconfigLinux import ifconfig
 
 """
 Ethernet Channel Bonding Driver: v3.4.0 (October 7, 2008)
@@ -40,7 +40,7 @@ class Check(drivers.check.Check):
         l = glob.glob(self.bonding_p+'/*')
         if len(l) == 0:
             return self.undef
-        ifg = ifconfig()
+        ifg = utilities.ifconfig.Ifconfig()
         r = []
         for bond in l:
             ifname = os.path.basename(bond)

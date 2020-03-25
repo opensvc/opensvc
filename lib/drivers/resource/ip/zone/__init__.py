@@ -1,13 +1,12 @@
 import time
 
-from ..sunos import \
-    Ip, \
-    adder as parent_adder
-import rcExceptions as ex
 from subprocess import *
-from rcGlobalEnv import rcEnv
 
-rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
+import rcExceptions as ex
+import utilities.ifconfig
+
+from ..sunos import Ip, adder as parent_adder
+from rcGlobalEnv import rcEnv
 
 
 def adder(svc, s):
@@ -37,7 +36,7 @@ class IpZone(Ip):
         ok = False
         if 'noalias' not in self.tags:
             for i in range(retry):
-                ifconfig = rcIfconfig.ifconfig()
+                ifconfig = utilities.ifconfig.Ifconfig()
                 intf = ifconfig.interface(self.ipdev)
                 if intf is not None and intf.flag_up:
                     ok = True

@@ -1,8 +1,8 @@
 import os
 
 import rcExceptions as ex
-import rcIfconfigLinux as rcIfconfig
 import rcStatus
+import utilities.ifconfig
 
 from ..linux import Ip
 from .. import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
@@ -253,7 +253,7 @@ class IpNetns(Ip):
         if ret != 0:
             return
 
-        ifconfig = rcIfconfig.ifconfig(ip_out=out)
+        ifconfig = utilities.ifconfig.Ifconfig(ip_out=out)
         return ifconfig
 
     def abort_start(self):
