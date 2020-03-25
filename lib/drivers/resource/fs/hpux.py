@@ -1,13 +1,10 @@
 import os
 
 import rcExceptions as ex
-import rcStatus
-
-from . import BaseFs, adder as base_adder
-from rcGlobalEnv import rcEnv
 from rcUtilities import qcall, protected_mount
+from utilities.mounts.hpux import Mounts
+from . import BaseFs, adder as base_adder
 
-rcMounts = __import__('rcMounts'+rcEnv.sysname)
 
 def adder(svc, s):
     base_adder(svc, s, drv=Fs)
@@ -53,7 +50,7 @@ class Fs(BaseFs):
         }
 
     def is_up(self):
-        return rcMounts.Mounts().has_mount(self.device, self.mount_point)
+        return Mounts().has_mount(self.device, self.mount_point)
 
     def start(self):
         super(Fs, self).start()
