@@ -116,15 +116,15 @@ def adder(svc, s):
 
 def lookup_snap_mod():
     if rcEnv.sysname == 'Linux':
-        return __import__('snapLvmLinux')
+        return __import__('utilities.snap.lvm.linux')
     elif rcEnv.sysname == 'HP-UX':
-        return __import__('snapVxfsHP-UX')
+        return __import__('utilities.snap.vxfs.hpux')
     elif rcEnv.sysname == 'AIX':
-        return __import__('snapJfs2AIX')
+        return __import__('utilities.snap.jfs2.aix')
     elif rcEnv.sysname in ['SunOS', 'FreeBSD']:
-        return __import__('snapZfsSunOS')
+        return __import__('utilities.snap.zfs.sunos')
     elif rcEnv.sysname in ['OSF1']:
-        return __import__('snapAdvfsOSF1')
+        return __import__('utilities.snap.advfs.osf1')
     else:
         raise ex.excError
 
@@ -343,8 +343,8 @@ class SyncRsync(Sync):
 
         if "delay_snap" in self.tags:
             if not hasattr(self.rset, 'snaps'):
-                Snap = lookup_snap_mod()
-                self.rset.snaps = Snap.Snap(self.rid)
+                mod = lookup_snap_mod()
+                self.rset.snaps = mod.Snap(self.rid)
                 self.rset.snaps.set_logger(self.log)
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
@@ -438,9 +438,9 @@ class SyncRsync(Sync):
             self.rset.log.debug("snap not needed")
             return
 
-        Snap = lookup_snap_mod()
+        mod = lookup_snap_mod()
         try:
-            self.rset.snaps = Snap.Snap(self.rid)
+            self.rset.snaps = mod.Snap(self.rid)
             self.rset.snaps.set_logger(self.rset.log)
             self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
