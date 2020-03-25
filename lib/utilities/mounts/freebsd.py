@@ -1,7 +1,8 @@
 import os
 
-from utilities.mounts.base_mounts import BaseMounts, Mount
 from rcUtilities import justcall
+from .mounts import BaseMounts, Mount
+
 
 class Mounts(BaseMounts):
     df_one_cmd = ['df', '-l']
@@ -16,6 +17,7 @@ class Mounts(BaseMounts):
             src_dir_dev = self.get_src_dir_dev(dev)
         else:
             is_bind = False
+            src_dir_dev = None
 
         if i.mnt != mnt:
             return False
@@ -44,7 +46,8 @@ class Mounts(BaseMounts):
             mounts.append(m)
         return mounts
 
-if __name__ == "__main__" :
+
+if __name__ == "__main__":
     help(Mounts)
     for m in Mounts():
         print(m)

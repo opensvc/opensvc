@@ -1,5 +1,6 @@
-from utilities.mounts.base_mounts import BaseMounts, Mount
 from rcUtilities import justcall
+from .mounts import BaseMounts, Mount
+
 
 class Mounts(BaseMounts):
     df_one_cmd = ["df", "-l"]
@@ -17,23 +18,23 @@ class Mounts(BaseMounts):
 
     def parse_mounts(self):
         mounts = []
-        out, err, ret = justcall(['mount','-p'])
+        out, err, ret = justcall(['mount', '-p'])
         for line in out.split('\n'):
-            words=line.split()
-            if len(words) < 6 :
+            words = line.split()
+            if len(words) < 6:
                 continue
-            elif words[1]+words[4] != '--' :
+            elif words[1] + words[4] != '--':
                 # ignore mount line with space in mountpoint or dev
                 continue
-            elif len(words) == 6 :
+            elif len(words) == 6:
                 words.append('-')
             dev, null, mnt, type, null, null, mnt_opt = words
             m = Mount(dev, mnt, type, mnt_opt.strip('()'))
             mounts.append(m)
         return mounts
 
-if __name__ == "__main__" :
-    help(Mounts)
-    M=Mounts()
-    print(M)
 
+if __name__ == "__main__":
+    help(Mounts)
+    M = Mounts()
+    print(M)
