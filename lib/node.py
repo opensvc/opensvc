@@ -1781,11 +1781,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The checks node action entrypoint.
         Runs health checks.
         """
-        import checks
+        import drivers.check
         if self.svcs is None:
             self.build_services()
-        checkers = checks.checks([svc for svc in self.svcs if svc.kind in ["vol", "svc"]])
-        checkers.node = self
+        objs = [svc for svc in self.svcs if svc.kind in ["vol", "svc"]]
+        checkers = drivers.check.Checks(objs, node=self)
         data = checkers.do_checks()
         self.print_data(data)
 

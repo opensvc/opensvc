@@ -175,6 +175,7 @@ class rcEnv:
     ]
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
+    module_sysname = sysname.lower().replace("-", "")
     nodename = socket.gethostname().lower()
     fqdn = socket.getfqdn().lower()
     listener_port = 1214
