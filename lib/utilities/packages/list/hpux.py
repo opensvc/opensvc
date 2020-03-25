@@ -1,6 +1,8 @@
-from rcUtilities import call, which
-from rcGlobalEnv import rcEnv
 import datetime
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import call, which
+
 
 def listpkg():
     if which('swlist') is None:

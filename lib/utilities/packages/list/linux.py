@@ -1,10 +1,11 @@
-import os
 import datetime
+import os
 from collections import namedtuple
 from stat import *
 
-from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
+
 
 def listpkg_dummy():
     print("pushpkg not supported on this system")

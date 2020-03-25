@@ -1,5 +1,6 @@
-from rcUtilities import justcall, which, cache
 from rcGlobalEnv import rcEnv
+from rcUtilities import cache, justcall, which
+
 
 def listpkg():
     lines = list_pkg_info()
@@ -41,4 +42,3 @@ def list_pkg_query():
 
 def listpatch():
     return []
-

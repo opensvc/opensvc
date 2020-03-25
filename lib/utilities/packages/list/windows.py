@@ -3,6 +3,8 @@ from ctypes import byref, create_unicode_buffer, windll
 from ctypes.wintypes import DWORD
 from itertools import count
 
+from rcGlobalEnv import rcEnv
+
 # defined at http://msdn.microsoft.com/en-us/library/aa370101(v=VS.85).aspx
 UID_BUFFER_SIZE = 39
 PROPERTY_BUFFER_SIZE = 256
@@ -99,7 +101,6 @@ def is_product_installed_uid(uid):
     else:
         return True
 
-from rcGlobalEnv import rcEnv
 
 def listpkg():
     plist = get_installed_products()

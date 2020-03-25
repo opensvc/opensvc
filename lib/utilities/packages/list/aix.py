@@ -1,6 +1,8 @@
 import os
-from rcUtilities import justcall, which
+
 from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
+
 
 def listpkg():
     cmd = ['lslpp', '-Lc']
@@ -20,4 +22,3 @@ def listpkg():
 
 def listpatch():
     return []
-

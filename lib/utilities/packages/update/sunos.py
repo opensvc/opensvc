@@ -1,5 +1,4 @@
 import os
-
 from subprocess import *
 
 import utilities.os.sunos
