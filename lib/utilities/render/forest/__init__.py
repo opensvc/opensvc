@@ -9,7 +9,7 @@ from textwrap import wrap
 import six
 
 from rcUtilities import term_width
-from rcColor import colorize, color
+from utilities.render.color import colorize, color
 
 LAST_NODE = "`- "
 NEXT_NODE = "|- "
