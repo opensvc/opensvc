@@ -6,6 +6,7 @@ import six
 import socket
 
 import rcExceptions as ex
+
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs
 from ipaddress import ip_network, ip_address, summarize_address_range
@@ -44,7 +45,7 @@ class NetworksMixin(object):
             return data
         if not data:
             return
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         tree.load(data, title="networks")
@@ -71,7 +72,7 @@ class NetworksMixin(object):
         data = self.network_status_data(self.options.name)
         if self.options.format in ("json", "flat_json"):
             return data
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         head = tree.add_node()

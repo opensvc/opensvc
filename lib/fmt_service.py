@@ -1,10 +1,11 @@
 import re
 import os
 
+import utilities.render.forest
+
 from rcGlobalEnv import rcEnv
 from rcUtilities import split_path, strip_path, resolve_path, is_service
 from rcColor import color, colorize, STATUS_COLOR
-from forest import Forest
 from storage import Storage
 from svc import DEFAULT_STATUS_GROUPS
 
@@ -338,7 +339,7 @@ def format_service(path, idata, mon_data=None, discard_disabled=False, nodename=
     name, namespace, kind = split_path(path)
     svc_notice = get_svc_notice(idata)
 
-    tree = Forest(
+    tree = utilities.render.forest.Forest(
         separator=" ",
         widths=(
             (14, None),
