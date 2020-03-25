@@ -2505,9 +2505,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         else:
             discard_disabled = not self.show_disabled
 
-        from fmt_service import format_service
+        from utilities.render.instance import format_instance
         mon_data = self.get_mon_data()
-        format_service(self.path, data, mon_data=mon_data, discard_disabled=discard_disabled, nodename=nodename)
+        format_instance(self.path, data, mon_data=mon_data, discard_disabled=discard_disabled, nodename=nodename)
 
     def purge(self):
         self.options.unprovision = True

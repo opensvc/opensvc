@@ -335,7 +335,7 @@ def service_nodes(path, mon_data):
         nodes |= _nodes
     return nodes
 
-def format_service(path, idata, mon_data=None, discard_disabled=False, nodename=None):
+def format_instance(path, idata, mon_data=None, discard_disabled=False, nodename=None):
     name, namespace, kind = split_path(path)
     svc_notice = get_svc_notice(idata)
 
