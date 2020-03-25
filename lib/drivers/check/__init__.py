@@ -48,11 +48,17 @@ class Checks(Check):
             type, value, traceback = sys.exc_info()
             print_tb(traceback)
         for modinfo in pkgutil.walk_packages(__path__, __name__ + '.', onerror=onerror):
-            if modinfo.ispkg:
+            if hasattr(modinfo, "ispkg"):
+                name = modinfo.name
+                ispkg = modinfo.ispkg
+            else:
+                name = modinfo[1]
+                ispkg = modinfo[2]
+            if ispkg:
                 continue
-            if modinfo.name.split(".")[-1] != rcEnv.module_sysname:
+            if name.split(".")[-1] != rcEnv.module_sysname:
                 continue
-            mod = importlib.import_module(modinfo.name)
+            mod = importlib.import_module(name)
             self += mod.Check(svcs=self.svcs)
 
     def register_local_checkers(self):
