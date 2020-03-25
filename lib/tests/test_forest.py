@@ -1,6 +1,6 @@
 import pytest
 
-from rcColor import color
+from utilities.render.color import color
 from utilities.render.forest import Forest, forest
 
 
