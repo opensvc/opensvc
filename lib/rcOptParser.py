@@ -12,7 +12,7 @@ import os
 import sys
 import optparse
 import textwrap
-import rcColor
+import utilities.render.color
 from rcUtilities import term_width, is_string, wipe_rest_markup
 import rcExceptions as ex
 import svc
@@ -162,7 +162,7 @@ class OptParser(object):
         """
         fancya = self.prog + " " + action.replace('_', ' ')
         if self.colorize:
-            desc = "  " + rcColor.colorize(fancya, rcColor.color.BOLD)
+            desc = "  " + utilities.render.color.colorize(fancya, utilities.render.color.color.BOLD)
         else:
             desc = "  " + fancya
         desc += '\n\n'

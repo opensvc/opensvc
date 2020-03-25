@@ -454,7 +454,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.log_status()
 
     def log_status(self):
-        from rcColor import format_str_flat_json
+        from utilities.render.color import format_str_flat_json
         data = self.status()
         for line in format_str_flat_json(data).splitlines():
             self.log.info(line)

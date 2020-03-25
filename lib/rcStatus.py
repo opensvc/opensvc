@@ -2,7 +2,7 @@
 This module defines the Status class and the functions
 to convert a Status to its printable form or integer form.
 """
-from rcColor import color, colorize
+from utilities.render.color import color, colorize
 
 UP = 0
 DOWN = 1

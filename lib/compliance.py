@@ -13,7 +13,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import is_exe, justcall, banner, is_string, fcache, ANSI_ESCAPE
-from rcColor import color, colorize, formatter
+from utilities.render.color import color, colorize, formatter
 
 comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
 
