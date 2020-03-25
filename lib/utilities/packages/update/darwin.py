@@ -1,5 +1,5 @@
-from subprocess import *
 import os
+from subprocess import *
 
 repo_subdir = "macos-pkg"
 

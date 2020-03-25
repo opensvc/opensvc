@@ -1,7 +1,20 @@
 from __future__ import print_function
+
+import importlib
+import logging
+import logging.handlers
+import os
+import random
 import socket
 import sys
-import os
+import time
+from datetime import datetime, timedelta
+
+import six
+
+import rcExceptions as ex
+import rcStatus
+from rcGlobalEnv import rcEnv
 from rcUtilities import split_path
 
 socket.setdefaulttimeout(5)
@@ -31,21 +44,10 @@ def get_proxy(uri):
         if "__init__" in str(e):
             return xmlrpclib.ServerProxy(uri)
 
-from datetime import datetime, timedelta
-import time
-import random
-import os
-import sys
 
-import six
-from rcGlobalEnv import rcEnv
-import rcStatus
-import rcExceptions as ex
 
 rcEnv.warned = False
 
-import logging
-import logging.handlers
 logfile = os.path.join(rcEnv.paths.pathlog, 'xmlrpc.log')
 log = logging.getLogger("xmlrpc")
 log.setLevel(logging.INFO)
@@ -574,7 +576,7 @@ class Collector(object):
         self.proxy.insert_stats_fs_u(*args)
 
     def push_pkg(self, sync=True):
-        p = __import__('rcPkg'+rcEnv.sysname)
+        p = importlib.import_module('utilities.packages.list.'+rcEnv.module_sysname)
         vars = ['pkg_nodename',
                 'pkg_name',
                 'pkg_version',

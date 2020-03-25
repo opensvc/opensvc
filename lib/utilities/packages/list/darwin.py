@@ -1,6 +1,8 @@
 import os
-from rcUtilities import call, which
+
 from rcGlobalEnv import rcEnv
+from rcUtilities import call, which
+
 
 """
 format:
@@ -39,4 +41,3 @@ def listpkg():
 
 def listpatch():
     return []
-

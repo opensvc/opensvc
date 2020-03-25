@@ -1,5 +1,5 @@
-from subprocess import *
 import os
+from subprocess import *
 
 
 def update_deb(fpath):
@@ -24,5 +24,3 @@ elif os.path.exists('/etc/SuSE-release') or \
      os.path.exists('/etc/redhat-release'):
     repo_subdir = "rpms"
     update = update_rpm
-
-
