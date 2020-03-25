@@ -8,8 +8,9 @@ import rcDevTree
 import rcDevTreeVeritas
 import utilities.devices.sunos
 
-from rcUtilities import which, cache, justcall
 from rcGlobalEnv import rcEnv
+from rcUtilities import cache
+from utilities.proc import justcall, which
 
 class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
     di = None

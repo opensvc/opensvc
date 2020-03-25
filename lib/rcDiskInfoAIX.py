@@ -1,6 +1,7 @@
-from rcUtilities import call, justcall
-import rcDiskInfo
 import re
+
+import rcDiskInfo
+from utilities.proc import call, justcall
 
 class diskInfo(rcDiskInfo.diskInfo):
 

@@ -10,9 +10,9 @@ import utilities.devices.linux
 from .. import Sync, notify
 from converters import print_duration
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import which
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "dds"

@@ -3,8 +3,8 @@ import rcLvmAIX
 import os
 import re
 from subprocess import *
-from rcUtilities import which
 from rcGlobalEnv import rcEnv
+from utilities.proc import which
 
 class DevTree(rcDevTree.DevTree):
     def load_lvm(self):

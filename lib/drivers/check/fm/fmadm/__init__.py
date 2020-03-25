@@ -2,8 +2,8 @@ import os
 
 import drivers.check
 
-from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
     prefixes = [os.path.join(os.sep, "usr", "sbin")]

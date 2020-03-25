@@ -1,6 +1,7 @@
 import json
-from rcUtilities import which, justcall
+
 import rcExceptions as ex
+from utilities.proc import justcall, which
 
 class AmazonMixin(object):
     instance_id = None

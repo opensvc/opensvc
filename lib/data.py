@@ -5,9 +5,10 @@ import shutil
 import glob
 import tempfile
 
-from rcUtilities import bencode, create_protected_file, factory, find_editor, makedirs, split_path, want_context
 import rcExceptions as ex
 import rcStatus
+from rcUtilities import create_protected_file, factory, find_editor, makedirs, split_path, want_context
+from utilities.string import bencode
 
 
 class DataMixin(object):

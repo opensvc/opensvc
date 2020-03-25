@@ -1,6 +1,6 @@
 import os
 
-from rcUtilities import justcall
+from utilities.proc import justcall
 from .mounts import BaseMounts, Mount
 
 

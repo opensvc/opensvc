@@ -1,7 +1,8 @@
 import copy
 
-from rcUtilities import which, cidr_to_dotted, justcall
+from rcUtilities import cidr_to_dotted
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 from .ifconfig import BaseIfconfig, Interface
 

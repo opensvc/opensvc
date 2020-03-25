@@ -2,8 +2,9 @@ import os
 from stat import *
 
 import rcExceptions as ex
-from rcUtilities import qcall, protected_mount
+from rcUtilities import protected_mount
 from utilities.mounts.osf1 import Mounts
+from utilities.proc import qcall
 from . import BaseFs, adder as base_adder
 
 

@@ -1,6 +1,6 @@
 from subprocess import *
-from rcUtilities import which
 
+from utilities.proc import which
 
 def change_root_pw(pw):
     if which('chpasswd') is not None:

@@ -1,8 +1,9 @@
-import os
 import datetime
-from rcUtilities import justcall, which
-from rcGlobalEnv import rcEnv
+import os
+
 import rcAssetLinux
+from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class Asset(rcAssetLinux.Asset):
     def _get_mem_bytes(self):

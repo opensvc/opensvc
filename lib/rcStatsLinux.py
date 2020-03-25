@@ -1,9 +1,9 @@
 import os
 import re
 import datetime
-from rcUtilities import justcall, which
 import rcStats
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class StatsProvider(rcStats.StatsProvider):
     def xentopfile(self, day):

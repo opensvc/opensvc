@@ -1,6 +1,7 @@
 import os
 import glob
-from rcUtilities import call
+
+from utilities.proc import call
 
 class ExInit(Exception):
     pass

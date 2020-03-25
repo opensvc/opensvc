@@ -8,8 +8,9 @@ import rcStatus
 
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, mimport, lazy, justcall, protected_dir
+from rcUtilities import mimport, lazy, protected_dir
 from svcBuilder import init_kwargs
+from utilities.proc import justcall, which
 
 
 def adder(svc, s, drv=None):

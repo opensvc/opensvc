@@ -4,8 +4,8 @@ import rcExceptions as ex
 
 from converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
 from rcZfs import Dataset
+from utilities.proc import which
 
 class FsZfsMixin():
     def unprovisioner(self):

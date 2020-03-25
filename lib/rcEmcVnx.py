@@ -6,9 +6,10 @@ import time
 from subprocess import *
 
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, factory, split_path
 from node import Node
+from rcGlobalEnv import rcEnv
+from rcUtilities import factory, split_path
+from utilities.proc import justcall, which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

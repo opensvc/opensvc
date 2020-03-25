@@ -1,7 +1,7 @@
 import os
 import datetime
-from rcUtilities import call, which
 from rcGlobalEnv import rcEnv
+from utilities.proc import call, which
 
 today = datetime.datetime.today()
 yesterday = today - datetime.timedelta(days=1)

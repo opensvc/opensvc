@@ -16,9 +16,10 @@ import rcStatus
 import utilities.devices
 import utilities.render.color
 
-from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
+from rcUtilities import lazy, clear_cache, set_lazy, \
                         action_triggers, mimport, unset_lazy, factory
 from rcGlobalEnv import rcEnv
+from utilities.proc import call, vcall, lcall
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",

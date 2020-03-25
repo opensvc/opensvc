@@ -1,5 +1,4 @@
-from rcUtilities import justcall
-
+from utilities.proc import justcall
 def get_solaris_version():
     """
     Solaris 2.6 is SunOS 5.6 : osver = 6.0

@@ -7,9 +7,9 @@ import re
 
 import six
 import rcExceptions as ex
-from rcUtilities import is_string
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
+from utilities.string import is_string
 
 try:
     from collections import OrderedDict
