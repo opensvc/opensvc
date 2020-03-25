@@ -77,6 +77,18 @@ def mock_sysname_fixture(mocker):
 
 
 @pytest.fixture(scope='function')
+def create_driver_resource(mock_sysname):
+    def create(sysname, scenario):
+        driver_name, class_name, kwargs, expected_type = scenario
+        mock_sysname(sysname)
+        from rcUtilities import driver_import
+        driver = driver_import('resource', driver_name)
+        return getattr(driver, class_name)(**kwargs)
+
+    return create
+
+
+@pytest.fixture(scope='function')
 def has_node_config(osvc_path_tests):
 
     pathetc = rcGlobalEnv.rcEnv.paths.pathetc
