@@ -1,7 +1,7 @@
-import rcMounts
+from utilities.mounts.base_mounts import BaseMounts, Mount
 from rcUtilities import justcall
 
-class Mounts(rcMounts.Mounts):
+class Mounts(BaseMounts):
     df_one_cmd = ['df', '-l']
 
     def match_mount(self, i, dev, mnt):
@@ -23,7 +23,7 @@ class Mounts(rcMounts.Mounts):
             if len(l.split()) != 6:
                 break
             dev, null, mnt, null, type, mnt_opt = l.split()
-            m = rcMounts.Mount(dev, mnt, type, mnt_opt.strip('()'))
+            m = Mount(dev, mnt, type, mnt_opt.strip('()'))
             mounts.append(m)
         return mounts
 

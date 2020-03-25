@@ -2,17 +2,16 @@
 Linux Fs resource driver module
 """
 import os
-
 from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 
 import rcExceptions as ex
 import utilities.devices.linux
-
-from . import BaseFs, adder as base_adder
 from rcGlobalEnv import rcEnv
-from rcMountsLinux import Mounts
 from rcUtilities import qcall, protected_mount, getmount, justcall, lazy, cache
 from rcZfs import zfs_getprop, zfs_setprop
+from utilities.mounts.linux import Mounts
+from . import BaseFs, adder as base_adder
+
 
 def adder(svc, s):
     base_adder(svc, s, drv=Fs)
@@ -627,7 +626,6 @@ class Fs(BaseFs):
     def remove_holders(self):
         if not self.svc:
             return
-        import glob
         tree = self.svc.node.devtree
         dev_realpath = os.path.realpath(self.device)
         self.remove_dev_holders(dev_realpath, tree)
