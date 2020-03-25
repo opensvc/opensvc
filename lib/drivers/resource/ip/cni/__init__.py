@@ -9,8 +9,8 @@ import socket
 from subprocess import Popen, PIPE
 
 import rcExceptions as ex
-import rcIfconfigLinux as rcIfconfig
 import rcStatus
+import utilities.ifconfig
 
 from .. import \
     KW_WAIT_DNS, \
@@ -179,7 +179,7 @@ class IpCni(Ip):
         if ret != 0:
             return
 
-        ifconfig = rcIfconfig.ifconfig(ip_out=out)
+        ifconfig = utilities.ifconfig.Ifconfig(ip_out=out)
         return ifconfig
 
     def _get_ifconfig(self):
@@ -195,7 +195,7 @@ class IpCni(Ip):
         if ret != 0:
             return
 
-        ifconfig = rcIfconfig.ifconfig(ip_out=out)
+        ifconfig = utilities.ifconfig.Ifconfig(ip_out=out)
         return ifconfig
 
     def get_ipdev(self):

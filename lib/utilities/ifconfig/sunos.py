@@ -1,9 +1,8 @@
 from subprocess import *
 
-import rcIfconfig
+from .ifconfig import BaseIfconfig, Interface
 
-class ifconfig(rcIfconfig.ifconfig):
-
+class Ifconfig(BaseIfconfig):
     def __init__(self, ifconfig=None, mcast=False):
         self.intf = []
         if mcast:
@@ -102,7 +101,7 @@ class ifconfig(rcIfconfig.ifconfig):
                 i = self.set_hwaddr(i)
                 (ifname,ifstatus)=l.split(': ')
 
-                i=rcIfconfig.interface(ifname)
+                i = Interface(ifname)
                 self.intf.append(i)
 
                 # defaults
@@ -150,5 +149,5 @@ class ifconfig(rcIfconfig.ifconfig):
 
 
 if __name__ == "__main__":
-    ifaces = ifconfig(mcast=True)
+    ifaces = Ifconfig(mcast=True)
     print(ifaces)
