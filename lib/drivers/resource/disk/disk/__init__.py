@@ -4,11 +4,11 @@ import time
 import rcExceptions as ex
 
 from .. import BASE_KEYWORDS
-from rcColor import format_str_flat_json
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from resources import Resource
 from svcdict import KEYS
+from utilities.render.color import format_str_flat_json
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"

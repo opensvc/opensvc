@@ -382,8 +382,6 @@ def print_color_config(fpath):
     """
     Colorize and print the content of the file passed as argument.
     """
-    from rcColor import colorize, color
-    import re
     def highlighter(line):
         """
         Colorize interesting parts to help readability

@@ -10,7 +10,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs
 from ipaddress import ip_network, ip_address, summarize_address_range
-from rcColor import formatter
+from utilities.render.color import formatter
 
 
 DRIVERS = {
@@ -46,7 +46,7 @@ class NetworksMixin(object):
         if not data:
             return
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         tree.load(data, title="networks")
         print(tree)
@@ -73,7 +73,7 @@ class NetworksMixin(object):
         if self.options.format in ("json", "flat_json"):
             return data
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         head = tree.add_node()
         head.add_column("name", color.BOLD)

@@ -12,9 +12,9 @@ import json
 
 import lock
 import rcExceptions as ex
-import rcColor
 import rcStatus
 import utilities.devices
+import utilities.render.color
 
 from rcUtilities import lazy, clear_cache, call, vcall, lcall, set_lazy, \
                         action_triggers, mimport, unset_lazy, factory
@@ -712,12 +712,12 @@ class Resource(object):
             entry = level + ": " + text + "\n"
             if color:
                 if level == "warn":
-                    color = rcColor.color.BROWN
+                    color = utilities.render.color.color.BROWN
                 elif level == "error":
-                    color = rcColor.color.RED
+                    color = utilities.render.color.color.RED
                 else:
-                    color = rcColor.color.LIGHTBLUE
-                status_str += rcColor.colorize(entry, color)
+                    color = utilities.render.color.color.LIGHTBLUE
+                status_str += utilities.render.color.colorize(entry, color)
             else:
                 status_str += entry
         return status_str

@@ -27,7 +27,7 @@ import rcExceptions as ex
 from six.moves import input
 from storage import Storage
 from rcUtilities import bdecode, is_glob, find_editor
-from rcColor import formatter
+from utilities.render.color import formatter
 
 try:
     import requests

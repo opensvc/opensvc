@@ -1750,7 +1750,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.options.format is not None or self.options.jsonpath_filter:
             return self.print_config_data(evaluate=self.options.eval,
                                           impersonate=self.options.impersonate)
-        from rcColor import print_color_config
+        from utilities.render.color import print_color_config
         print_color_config(self.paths.cf)
 
     def make_temp_config(self):
@@ -2155,7 +2155,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 return
 
     def _backlogs(self, server=None, node=None, backlog=None, debug=False, auto=None):
-        from rcColor import colorize_log_line
+        from utilities.render.color import colorize_log_line
         lines = []
         for line in self.daemon_backlogs(server, node, backlog, debug):
             try:
@@ -2167,7 +2167,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 sys.stdout.flush()
 
     def _followlogs(self, server=None, node=None, debug=False, auto=None):
-        from rcColor import colorize_log_line
+        from utilities.render.color import colorize_log_line
         lines = []
         for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
@@ -4318,7 +4318,7 @@ class Svc(BaseSvc):
         if self.options.format is not None or self.options.jsonpath_filter:
             return data
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         node1 = tree.add_node()
         node1.add_column(self.path, color.BOLD)
@@ -4799,7 +4799,7 @@ class Svc(BaseSvc):
 
     def print_resinfo_tree(self):
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         node1 = tree.add_node()
         node1.add_column(self.path, color.BOLD)

@@ -12,7 +12,7 @@ import sys
 import os
 
 import rcStatus
-import rcColor
+import utilities.render.color
 import rcExceptions as ex
 from rcUtilities import ximport, check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
@@ -275,7 +275,7 @@ class Mgr(object):
         options = self.prepare_options(options)
         self.export_env_from_options(options)
         options.extra_argv = extra_argv
-        rcColor.use_color = options.color
+        utilities.render.color.use_color = options.color
         try:
             self.node.options.format = options.format
             self.node.options.jsonpath_filter = options.jsonpath_filter
