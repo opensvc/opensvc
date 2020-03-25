@@ -1,14 +1,19 @@
 from __future__ import division
-import rcDevTree
+
 import glob
 import os
 import re
-import math
 from subprocess import *
-from rcUtilities import which
-from rcGlobalEnv import rcEnv
+
+import math
+
+import rcDevTree
 import rcDevTreeVeritas
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
+from rcUtilities import which
+from utilities.mounts import Mounts
+
 
 class Dev(rcDevTree.Dev):
     def remove_loop(self, r):
@@ -374,7 +379,6 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
 
     def add_loop_relations(self):
         self.get_loop()
-        from rcMountsLinux import Mounts
         m = Mounts()
         for devname, fpath in self.loop.items():
             if fpath == "(deleted)":
