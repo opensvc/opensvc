@@ -1,13 +1,22 @@
-from subprocess import *
-
-import rcIfconfig
 import wmi
 
-class ifconfig(rcIfconfig.ifconfig):
+from subprocess import *
+
+from .ifconfig import BaseIfconfig, Interface
+
+
+class Ifconfig(BaseIfconfig):
+    def __init__(self, mcast=False):
+        self.wmi = wmi.WMI()
+        self.intf = []
+        self.mcast_data = {}
+        for n, nc in zip(self.wmi.Win32_NetworkAdapter(), self.wmi.Win32_NetworkAdapterConfiguration()):
+            self.parse(n, nc)
+
     def parse(self, intf, intf_cf):
         if intf_cf.IPAddress is None:
             return
-        i = rcIfconfig.interface(intf.NetConnectionID)
+        i = Interface(intf.NetConnectionID)
         self.intf.append(i)
 
         # defaults
@@ -37,13 +46,6 @@ class ifconfig(rcIfconfig.ifconfig):
                 i.ipaddr.append(ip)
                 i.mask.append(intf_cf.IPsubnet[idx])
 
-    def __init__(self, mcast=False):
-        self.wmi = wmi.WMI()
-        self.intf = []
-        self.mcast_data = {}
-        for n, nc in zip(self.wmi.Win32_NetworkAdapter(), self.wmi.Win32_NetworkAdapterConfiguration()):
-            self.parse(n, nc)
-
 if __name__ == "__main__" :
-    o = ifconfig()
+    o = Ifconfig()
     print(o)

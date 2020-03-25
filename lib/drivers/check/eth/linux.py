@@ -3,6 +3,7 @@ import os
 
 import rcEthtool
 import drivers.check
+import utilities.ifconfig
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import justcall, which
@@ -16,8 +17,7 @@ class Check(drivers.check.Check):
         l = glob.glob(self.bonding_p+'/*')
         for bond in l:
             intf += self.add_slaves(bond)
-        rcIfconfig = __import__("rcIfconfig"+rcEnv.sysname)
-        ifconfig = rcIfconfig.ifconfig()
+        ifconfig = utilities.ifconfig.Ifconfig()
         for i in ifconfig.intf:
             if not i.name.startswith('eth'):
                 continue
