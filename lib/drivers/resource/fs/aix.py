@@ -1,13 +1,11 @@
 import os
-
 from stat import *
 
 import rcExceptions as ex
-
-from . import BaseFs, adder as base_adder
-from rcGlobalEnv import rcEnv
-from rcMountsAIX import Mounts
 from rcUtilities import qcall, protected_mount, getmount
+from utilities.mounts.aix import Mounts
+from . import BaseFs, adder as base_adder
+
 
 def adder(svc, s):
     base_adder(svc, s, drv=Fs)

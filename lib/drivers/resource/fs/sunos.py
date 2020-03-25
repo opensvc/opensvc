@@ -1,14 +1,14 @@
 import os
-import time
 import re
+import time
 
 import rcExceptions as ex
-
-from . import BaseFs, adder as base_adder
 from rcGlobalEnv import rcEnv
-from rcMountsSunOS import Mounts
 from rcUtilities import justcall
 from rcZfs import zfs_getprop, zfs_setprop
+from utilities.mounts.sunos import Mounts
+from . import BaseFs, adder as base_adder
+
 
 def adder(svc, s):
     base_adder(svc, s, drv=Fs)

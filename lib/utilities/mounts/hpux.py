@@ -1,9 +1,10 @@
 import os
 
-import rcMounts
 from rcUtilities import justcall
+from utilities.mounts.base_mounts import BaseMounts, Mount
 
-class Mounts(rcMounts.Mounts):
+
+class Mounts(BaseMounts):
     df_one_cmd = ['df', '-l']
 
     def match_mount(self, i, dev, mnt):
@@ -27,20 +28,12 @@ class Mounts(rcMounts.Mounts):
 
     def parse_mounts(self):
         mounts = []
-        out, err, ret = justcall(['mount'])
+        out, err, ret = justcall(['mount', '-v'])
         for l in out.split('\n'):
-            words = l.split()
-            if len(words) < 4:
+            if len(l.split()) != 12:
                 break
-            dev = words[0]
-            mnt = words[2]
-            opts = ' '.join(words[3:]).strip('(').strip(')').split(', ')
-            type = opts[0]
-            if len(opts) < 3:
-                mnt_opt = ''
-            else:
-                mnt_opt = ','.join(opts[2:])
-            m = rcMounts.Mount(dev, mnt, type, mnt_opt)
+            dev, null, mnt, null, type, mnt_opt, null, null, null, null, null, null = l.split()
+            m = Mount(dev, mnt, type, mnt_opt.strip('()'))
             mounts.append(m)
         return mounts
 

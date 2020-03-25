@@ -1,12 +1,10 @@
 import os
 
 import rcExceptions as ex
-import rcStatus
-
-from . import BaseFs, adder as base_adder
-from rcGlobalEnv import rcEnv
-from rcMountsWindows import Mounts
 from rcUtilities import lazy
+from utilities.mounts.windows import Mounts
+from . import BaseFs, adder as base_adder
+
 
 def adder(svc, s):
     base_adder(svc, s, drv=Fs)
