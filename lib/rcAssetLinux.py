@@ -1,9 +1,12 @@
+import datetime
 import os
 import re
-import datetime
-from rcUtilities import justcall, which, bdecode, lazy
-from storage import Storage
+
 import rcAsset
+from rcUtilities import lazy
+from storage import Storage
+from utilities.proc import justcall, which
+from utilities.string import bdecode
 
 def is_container():
     p = '/proc/1/environ'

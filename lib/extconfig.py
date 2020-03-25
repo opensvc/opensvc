@@ -9,9 +9,10 @@ import codecs
 import six
 import rcExceptions as ex
 from converters import *
-from rcUtilities import is_string, try_decode, read_cf, eval_expr, unset_lazy, \
+from rcUtilities import read_cf, eval_expr, unset_lazy, \
                         lazy, makedirs, factory, read_cf_comments
 from rcGlobalEnv import rcEnv
+from utilities.string import is_string, try_decode
 
 SECRETS = []
 

@@ -10,11 +10,12 @@ import rcExceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall, which, factory, split_path
+from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
 from node import Node
+from utilities.proc import justcall, which
 
 PROG = "om array"
 OPT = Storage({

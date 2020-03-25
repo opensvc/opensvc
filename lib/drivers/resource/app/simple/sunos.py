@@ -9,8 +9,8 @@ from datetime import datetime
 import rcStatus
 import rcExceptions as ex
 from . import AppSimple as ParentAppSimple, adder as parent_adder
-from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 
 def adder(svc, s):

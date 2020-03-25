@@ -46,11 +46,12 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from comm import Headers
-from rcUtilities import bdecode, drop_option, chunker, svc_pathcf, \
+from rcUtilities import drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
-                        unset_lazy, bencode
+                        unset_lazy
 from converters import convert_size, print_duration
+from utilities.string import bencode, bdecode
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 

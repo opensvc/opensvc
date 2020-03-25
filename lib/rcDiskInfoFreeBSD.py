@@ -1,5 +1,5 @@
-from rcUtilities import call, which
 import rcDiskInfo
+from utilities.proc import call, which
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}

@@ -9,10 +9,12 @@ import stat
 import shlex
 import six
 
-from rcUtilities import which, lazy, is_string, lcall
+from rcUtilities import lazy
 from converters import convert_boolean
 from rcGlobalEnv import rcEnv
 from resources import Resource
+from utilities.proc import which, lcall
+from utilities.string import is_string
 import rcStatus
 import rcExceptions as ex
 import lock

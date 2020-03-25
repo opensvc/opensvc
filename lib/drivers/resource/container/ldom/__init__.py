@@ -15,10 +15,10 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import qcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "ldom"

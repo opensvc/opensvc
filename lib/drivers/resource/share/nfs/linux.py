@@ -5,10 +5,11 @@ import rcExceptions as ex
 
 from . import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, cache, clear_cache
+from rcUtilities import cache, clear_cache
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"

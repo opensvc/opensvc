@@ -2,8 +2,8 @@ import os
 import socket
 import six
 
-from rcUtilities import justcall, which
 import rcExceptions as ex
+from utilities.proc import justcall, which
 
 class Nsr(object):
     def __init__(self):

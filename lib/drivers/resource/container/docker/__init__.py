@@ -20,11 +20,12 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV, \
     BaseContainer
-from rcUtilities import justcall, unset_lazy, lazy, drop_option, has_option, get_option, get_options
+from rcUtilities import unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from resources import Resource
 from converters import print_duration
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "docker"

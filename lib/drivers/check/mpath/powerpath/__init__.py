@@ -1,7 +1,7 @@
 import drivers.check
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 di = __import__("rcDiskInfo"+rcEnv.sysname)
 _di = di.diskInfo()

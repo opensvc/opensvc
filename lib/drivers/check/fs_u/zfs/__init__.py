@@ -4,7 +4,7 @@ import drivers.check
 
 from converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
     def __init__(self, svcs=[]):

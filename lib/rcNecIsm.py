@@ -1,6 +1,7 @@
-from rcUtilities import which, justcall
-import rcExceptions as ex
 import os
+
+import rcExceptions as ex
+from utilities.proc import justcall, which
 
 class NecMixin(object):
     """

@@ -1,8 +1,8 @@
 import os
 from subprocess import Popen, PIPE, STDOUT
 
-from rcUtilities import bdecode
 from rcExceptions import excError
+from utilities.string import bdecode
 
 
 class Mount(object):

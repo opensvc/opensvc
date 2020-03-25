@@ -10,8 +10,9 @@ from . import \
     adder as base_raw_adder, \
     BASE_RAW_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, cache, lazy
+from rcUtilities import cache, lazy
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"

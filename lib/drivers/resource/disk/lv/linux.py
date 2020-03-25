@@ -8,8 +8,9 @@ import rcExceptions as ex
 
 from . import BaseDiskLv, adder as base_adder
 from converters import convert_size
-from rcUtilities import justcall, which, bdecode
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
+from utilities.string import bdecode
 
 def adder(svc, s):
     base_adder(svc, s, drv=DiskLv)

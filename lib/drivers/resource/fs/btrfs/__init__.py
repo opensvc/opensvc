@@ -7,7 +7,8 @@ import rcExceptions as ex
 from .. import adder as base_adder
 from ..linux import Fs
 from rcBtrfs import Btrfs
-from rcUtilities import which, justcall, lazy
+from rcUtilities import lazy
+from utilities.proc import justcall, which
 
 def adder(svc, s):
     base_adder(svc, s, drv=FsBtrfs)

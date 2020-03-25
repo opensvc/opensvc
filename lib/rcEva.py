@@ -2,12 +2,13 @@ from __future__ import print_function
 
 import os
 import sys
+from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
-from xml.etree.ElementTree import XML, fromstring
-from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, factory, split_path
 from node import Node
+from rcGlobalEnv import rcEnv
+from rcUtilities import factory, split_path
+from utilities.proc import justcall, which
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:

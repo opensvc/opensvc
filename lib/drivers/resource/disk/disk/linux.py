@@ -7,10 +7,11 @@ import rcStatus
 import utilities.devices.linux
 
 from . import DiskDisk as BaseDiskDisk, KEYWORDS
-from rcUtilities import lazy, which, justcall
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"

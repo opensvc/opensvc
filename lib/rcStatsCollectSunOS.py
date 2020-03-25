@@ -7,9 +7,9 @@ import os, sys, platform
 import time
 import datetime
 import subprocess
-from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
 from converters import convert_size
+from utilities.proc import justcall, which
 
 def collect(node):
     now = str(datetime.datetime.now())

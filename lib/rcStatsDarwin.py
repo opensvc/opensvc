@@ -1,7 +1,8 @@
 import os
-from rcUtilities import call, which
-from rcGlobalEnv import rcEnv
+
 import rcStats
+from rcGlobalEnv import rcEnv
+from utilities.proc import call, which
 
 class StatsProvider(rcStats.StatsProvider):
     def customfile(self, metric, day):

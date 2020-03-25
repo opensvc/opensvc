@@ -5,9 +5,10 @@ import sys
 
 import pool
 import rcExceptions as ex
-from rcUtilities import lazy, justcall
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from rcDorado import Dorados
+from utilities.proc import justcall
 
 def session(fn):
     """

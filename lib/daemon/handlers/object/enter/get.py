@@ -7,8 +7,9 @@ import uuid
 import daemon.handlers.handler as handler
 import daemon.shared as shared
 from rcExceptions import HTTP
-from rcUtilities import which, try_decode
 from rcGlobalEnv import rcEnv
+from utilities.proc import which
+from utilities.string import try_decode
 
 MAX_TIMEOUT = 60
 

@@ -14,9 +14,10 @@ from .. import \
     KW_GATEWAY, \
     COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import getaddr, justcall
+from rcUtilities import getaddr
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 
 DRIVER_GROUP = "ip"

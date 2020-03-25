@@ -21,10 +21,11 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, lazy
+from rcUtilities import lazy
 from resources import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import qcall
 
 try:
     from libcloud.utils.py3 import urlparse

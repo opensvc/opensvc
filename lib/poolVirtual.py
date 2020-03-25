@@ -4,9 +4,9 @@ import os
 
 import pool
 import rcExceptions as ex
-from rcUtilities import lazy, justcall
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_service, split_path, factory
+from rcUtilities import is_service, split_path, factory, lazy
+from utilities.proc import justcall
 
 class Pool(pool.Pool):
     type = "virtual"

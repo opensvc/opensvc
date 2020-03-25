@@ -1,7 +1,7 @@
 import datetime
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import call, which
+from utilities.proc import call, which
 
 
 def listpkg():

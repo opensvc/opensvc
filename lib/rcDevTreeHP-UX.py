@@ -3,8 +3,8 @@ import glob
 import os
 import re
 from subprocess import *
-from rcUtilities import which
 from rcGlobalEnv import rcEnv
+from utilities.proc import which
 
 dim = __import__("rcDiskInfoHP-UX")
 di = dim.diskInfo()

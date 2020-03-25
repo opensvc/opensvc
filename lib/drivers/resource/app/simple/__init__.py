@@ -11,10 +11,10 @@ from datetime import datetime
 import rcStatus
 import rcExceptions as ex
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
-from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "app"
 DRIVER_BASENAME = "simple"

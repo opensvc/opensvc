@@ -12,8 +12,9 @@ import time
 import rcExceptions as ex
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
-from rcUtilities import chunker, bdecode
+from rcUtilities import chunker
 from .hb import Hb
+from utilities.string import bdecode
 
 MAX_MESSAGES = 100
 MAX_FRAGMENTS = 1000

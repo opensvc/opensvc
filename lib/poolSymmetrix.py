@@ -5,9 +5,10 @@ import sys
 
 import pool
 import rcExceptions as ex
-from rcUtilities import lazy, justcall
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from rcSymmetrix import Arrays
+from utilities.proc import justcall
 
 LOCK_NAME = "symmetrix_create_disk"
 

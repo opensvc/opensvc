@@ -5,8 +5,8 @@ import datetime
 import time
 import json
 import re
-from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 mntpt_blacklist = [
     "/proc",

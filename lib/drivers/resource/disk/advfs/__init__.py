@@ -6,9 +6,9 @@ import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"

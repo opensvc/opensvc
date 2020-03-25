@@ -1,7 +1,8 @@
 import os
-from rcUtilities import call, which
-import rcStats
 import datetime
+
+import rcStats
+from utilities.proc import call, which
 
 class StatsProvider(rcStats.StatsProvider):
     def __init__(self, interval=2880, stats_dir=None,
