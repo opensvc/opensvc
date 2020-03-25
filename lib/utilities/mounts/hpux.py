@@ -1,7 +1,7 @@
 import os
 
 from rcUtilities import justcall
-from utilities.mounts.base_mounts import BaseMounts, Mount
+from .mounts import BaseMounts, Mount
 
 
 class Mounts(BaseMounts):
