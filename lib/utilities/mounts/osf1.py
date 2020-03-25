@@ -1,5 +1,6 @@
-from utilities.mounts.base_mounts import BaseMounts, Mount
 from rcUtilities import justcall
+from .mounts import BaseMounts, Mount
+
 
 class Mounts(BaseMounts):
     df_one_cmd = ['df', '-l']
