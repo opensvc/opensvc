@@ -193,6 +193,9 @@ def add_resource(svc, driver_group, s):
     if s in svc.resources_by_id:
         return
 
+    if not hasattr(mod, "adder"):
+        raise ImportError("%s returned by load_driver(%s, %s) does not have a adder" % (mod, driver_group, driver_basename))
+
     mod.adder(svc, s)
 
 def add_mandatory_syncs(svc):
@@ -246,6 +249,7 @@ def add_mandatory_syncs(svc):
 def add_resources(svc):
     """
     Instanciate resource objects and add them to the service.
+    Return the number of resource add errors.
     """
     ret = 0
     sections = {}
