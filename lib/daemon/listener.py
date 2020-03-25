@@ -77,61 +77,10 @@ ROUTED_ACTIONS = {
     },
 }
 
-HANDLERS = [
-    "handlerGetApi",
-    "handlerGetAuthinfo",
-    "handlerGetBlacklistStatus",
-    "handlerGetCatalogs",
-    "handlerGetDaemonStats",
-    "handlerGetDaemonStatus",
-    "handlerGetEvents",
-    "handlerGetKey",
-    "handlerGetKeywords",
-    "handlerGetNetworks",
-    "handlerGetNode",
-    "handlerGetNodeBacklogs",
-    "handlerGetNodeConfig",
-    "handlerGetSshKey",
-    "handlerGetNodeLogs",
-    "handlerGetNodesInfo",
-    "handlerGetObjectBacklogs",
-    "handlerGetObjectConfig",
-    "handlerGetObjectKeys",
-    "handlerGetObjectEnter",
-    "handlerGetObjectLogs",
-    "handlerGetObjectSelector",
-    "handlerGetPools",
-    "handlerGetRelayRx",
-    "handlerGetRelayStatus",
-    "handlerGetSync",
-    "handlerGetTemplates",
-    "handlerGetTemplate",
-    "handlerGetWait",
-    "handlerGetWhoami",
-    "handlerPostAskFull",
-    "handlerPostBlacklistClear",
-    "handlerPostCollectorRPC",
-    "handlerPostDaemonShutdown",
-    "handlerPostDaemonStart",
-    "handlerPostDaemonStop",
-    "handlerPostJoin",
-    "handlerPostKey",
-    "handlerPostLeave",
-    "handlerPostLock",
-    "handlerPostNodeMonitor",
-    "handlerPostObjectClear",
-    "handlerPostObjectMonitor",
-    "handlerPostNodeAction",
-    "handlerPostObjectCreate",
-    "handlerPostObjectAction",
-    "handlerPostRunDone",
-    "handlerPostRelayTx",
-    "handlerPostUnlock",
-    "handlerPostWakeMonitor",
-]
 
 class Close(Exception):
     pass
+
 
 class DontClose(Exception):
     pass
