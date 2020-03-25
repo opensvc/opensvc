@@ -8,10 +8,11 @@ import glob
 import tempfile
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, factory, bdecode
+from rcUtilities import lazy, makedirs, split_path, factory
 from svc import BaseSvc
 from rcSsl import gen_cert
 from sec import Sec
+from utilities.string import bdecode
 import rcExceptions as ex
 
 DEFAULT_STATUS_GROUPS = [

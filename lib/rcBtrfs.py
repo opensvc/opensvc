@@ -5,8 +5,8 @@ import logging
 import rcExceptions as ex
 import utilities.devices.linux
 
-from rcUtilities import justcall, vcall
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, vcall
 
 class InitError(Exception):
      pass

@@ -6,7 +6,7 @@ import drivers.check
 import utilities.ifconfig
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
     chk_type = "eth"

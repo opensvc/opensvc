@@ -4,9 +4,10 @@ import re
 import glob
 import time
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import call, qcall, justcall, which, cache
 import rcExceptions as ex
+from rcGlobalEnv import rcEnv
+from rcUtilities import cache
+from utilities.proc import justcall, call, qcall, which
 
 label_to_dev_cache = {}
 

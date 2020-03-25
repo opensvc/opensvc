@@ -14,7 +14,8 @@ import utilities.devices.linux
 
 from rcExceptions import excError
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which, lazy
+from rcUtilities import lazy
+from utilities.proc import justcall, which
 
 class diskInfo(rcDiskInfo.diskInfo):
     disk_ids = {}

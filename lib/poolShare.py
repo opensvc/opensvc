@@ -4,8 +4,9 @@ import os
 
 import pool
 import rcExceptions as ex
-from rcUtilities import lazy, justcall
+from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 class Pool(pool.Pool):
     type = "share"

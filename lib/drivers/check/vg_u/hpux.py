@@ -1,6 +1,6 @@
 import drivers.check
 
-from rcUtilities import call
+from utilities.proc import call
 
 class Check(drivers.check.Check):
     chk_type = "vg_u"

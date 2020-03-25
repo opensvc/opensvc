@@ -2,7 +2,7 @@ import rcExceptions as ex
 
 from .. import adder as base_adder
 from ..darwin import Fs
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 def adder(svc, s):
     base_adder(svc, s, drv=FsHfs)

@@ -1,7 +1,8 @@
-import rcExceptions as ex
 import json
-from rcUtilities import justcall
+
+import rcExceptions as ex
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 class GceDiskss(object):
     arrays = []

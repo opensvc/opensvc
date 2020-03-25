@@ -10,9 +10,10 @@ import rcExceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, justcall, lazy
+from rcUtilities import lazy
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, qcall, which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vxdg"

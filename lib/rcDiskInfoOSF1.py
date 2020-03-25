@@ -1,7 +1,9 @@
 from __future__ import print_function
-from rcUtilities import justcall
-import rcDiskInfo
+
 import re
+
+import rcDiskInfo
+from utilities.proc import justcall
 
 regex = re.compile("^\W*[0-9]*:")
 regex_path = re.compile('\W*[0-9]*\W+')

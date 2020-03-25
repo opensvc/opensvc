@@ -9,8 +9,8 @@ import rcExceptions as ex
 import rcStatus
 
 from resources import Resource
-from rcUtilities import which
 from rcGlobalEnv import rcEnv
+from utilities.proc import which
 
 
 class BaseDiskScsireserv(Resource):

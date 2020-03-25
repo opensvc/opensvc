@@ -3,7 +3,7 @@ import plistlib
 
 import rcExceptions as ex
 
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 def file_to_loop(f):
     """Given a file path, returns the disk device associated. For example,

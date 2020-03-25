@@ -37,8 +37,9 @@ import six
 import pyaes
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import lazy, bdecode
+from rcUtilities import lazy
 from contexts import get_context, want_context
+from utilities.string import bdecode
 import rcExceptions as ex
 
 if six.PY3:

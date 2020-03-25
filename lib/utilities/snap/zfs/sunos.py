@@ -1,8 +1,8 @@
-from rcUtilities import justcall
-from rcGlobalEnv import rcEnv
 import rcExceptions as ex
 import utilities.snap
+from rcGlobalEnv import rcEnv
 from rcZfs import dataset_exists
+from utilities.proc import justcall
 
 class Snap(utilities.snap.Snap):
     """Defines a snap object with ZFS

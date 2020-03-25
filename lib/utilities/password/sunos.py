@@ -1,7 +1,7 @@
 import shutil
 from subprocess import *
 
-from rcUtilities import which
+from utilities.proc import which
 
 shadow = '/etc/shadow'
 tmpshadow = '/etc/shadow.tmp'
