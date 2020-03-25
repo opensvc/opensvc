@@ -4003,7 +4003,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.print_data(data)
             return
 
-        from fmt_cluster import format_cluster
+        from utilities.render.cluster import format_cluster
         print(format_cluster(paths=paths, node=self.cluster_nodes, data=data))
         return 0
 
