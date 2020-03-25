@@ -2124,7 +2124,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Downloads and installs the cluster manager bundle archive from the url
         specified as node.repopkg or node.repo in node.conf.
         """
-        import osvcd_shared as shared
+        import daemon.shared as shared
         api_version = str(shared.API_VERSION)
         repopkg = self.oget("node", "repopkg")
         repo = self.oget("node", "repo")
@@ -4480,7 +4480,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self._daemon_join(self.options.node, self.cluster_key)
 
     def _daemon_join(self, *args):
-        from osvcd_shared import CONFIG_LOCK
+        from daemon.shared import CONFIG_LOCK
         locked = CONFIG_LOCK.acquire()
         if not locked:
             return
