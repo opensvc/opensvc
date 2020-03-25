@@ -45,7 +45,8 @@ class Mounts(BaseMounts):
             mounts.append(m)
         return mounts
 
-if __name__ == "__main__" :
+
+if __name__ == "__main__":
     help(Mounts)
     for m in Mounts():
         print(m)

@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE, STDOUT
 from rcUtilities import bdecode
 from rcExceptions import excError
 
+
 class Mount(object):
     def __init__(self, dev, mnt, type, mnt_opt):
         self.dev = dev.rstrip("/")
@@ -15,7 +16,8 @@ class Mount(object):
 
     def __str__(self):
         return "Mount: dev[%s] mnt[%s] type[%s] options[%s]" % \
-            (self.dev,self.mnt,self.type,self.mnt_opt)
+               (self.dev, self.mnt, self.type, self.mnt_opt)
+
 
 class BaseMounts(object):
     src_dir_devs_cache = {}
@@ -95,7 +97,7 @@ class BaseMounts(object):
         return self.src_dir_devs_cache[dev]
 
     def __str__(self):
-        output="%s" % (self.__class__.__name__)
+        output = "%s" % self.__class__.__name__
         for m in self.mounts or []:
-            output+="\n  %s" % m.__str__()
+            output += "\n  %s" % m.__str__()
         return output
