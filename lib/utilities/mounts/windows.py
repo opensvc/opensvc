@@ -27,12 +27,13 @@ class Mounts(BaseMounts):
             if mnt is None:
                 mnt = ""
             type = volume.FileSystem
-            mnt_opt = "NULL"    # quoi mettre d autre...
+            mnt_opt = "NULL"  # quoi mettre d autre...
             m = Mount(dev, mnt, type, mnt_opt)
             mounts.append(m)
         return mounts
 
-if __name__ == "__main__" :
-    #help(Mounts)
+
+if __name__ == "__main__":
+    # help(Mounts)
     for m in Mounts():
         print(m)
