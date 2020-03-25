@@ -14,9 +14,6 @@
  C:\>python aservice.py  --username <username> --password <PASSWORD> --startup auto install
 
 """
-from lock import lock, unlock
-from rcGlobalEnv import rcEnv
-
 try:
     import win32service
     import win32serviceutil
@@ -31,7 +28,10 @@ except ImportError:
 import os
 import sys
 
-from osvcd import Daemon
+from daemon.main import Daemon
+from lock import lock, unlock
+from rcGlobalEnv import rcEnv
+
 
 class OsvcAgent(win32serviceutil.ServiceFramework):
 
