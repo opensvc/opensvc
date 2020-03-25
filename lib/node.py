@@ -1773,8 +1773,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Return a stable host unique id
         """
-        mod = __import__('hostid'+rcEnv.sysname)
-        return mod.hostid()
+        from utilities.hostid import hostid
+        return hostid()
 
     def checks(self):
         """
