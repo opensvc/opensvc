@@ -2,8 +2,8 @@ import os
 import sys
 import datetime
 from subprocess import *
-from rcUtilities import justcall, is_exe
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, is_exe
 
 def collect(node):
     now = str(datetime.datetime.now())

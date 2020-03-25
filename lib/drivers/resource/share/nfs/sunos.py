@@ -5,10 +5,10 @@ import rcStatus
 
 from . import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"

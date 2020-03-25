@@ -8,10 +8,11 @@ import glob
 import six
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, is_string, bencode, bdecode
+from rcUtilities import lazy, makedirs
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
+from utilities.string import bencode, bdecode, is_string
 import rcExceptions as ex
 
 DEFAULT_STATUS_GROUPS = [

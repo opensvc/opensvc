@@ -23,10 +23,12 @@ from .. import \
     KW_EXPOSE
 from ..linux import Ip
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
+from rcUtilities import to_cidr, lazy, makedirs
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 from utilities.render.color import format_str_flat_json
+from utilities.string import bencode, bdecode
 
 CNI_VERSION = "0.3.0"
 PORTMAP_CONF = {

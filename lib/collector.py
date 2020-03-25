@@ -7,7 +7,8 @@ import datetime
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall, banner
+from rcUtilities import banner
+from utilities.proc import justcall
 from converters import convert_duration
 from subprocess import *
 

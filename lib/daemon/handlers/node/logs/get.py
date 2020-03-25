@@ -1,8 +1,8 @@
 import os
 
 import daemon.handlers.handler as handler
-from rcUtilities import bdecode
 from rcGlobalEnv import rcEnv
+from utilities.string import bdecode
 
 try:
     from hyper.common.headers import HTTPHeaderMap

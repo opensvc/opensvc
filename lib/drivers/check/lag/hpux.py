@@ -4,8 +4,8 @@ import os
 import drivers.check
 import rcEthtool
 
-from rcUtilities import justcall, which
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
     chk_type = "lag"

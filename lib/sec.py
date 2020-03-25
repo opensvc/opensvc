@@ -11,11 +11,12 @@ import tempfile
 import six
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, split_path, fmt_path, factory, bdecode, bencode
+from rcUtilities import lazy, makedirs, split_path, fmt_path, factory
 from svc import BaseSvc
 from converters import print_size
 from data import DataMixin
 from rcSsl import gen_cert, get_expire
+from utilities.string import bencode, bdecode
 import rcExceptions as ex
 
 DEFAULT_STATUS_GROUPS = [

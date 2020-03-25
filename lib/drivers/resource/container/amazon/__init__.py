@@ -22,9 +22,10 @@ from .. import \
     KW_SCSIRESERV
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, lazy
+from rcUtilities import lazy
 from svcdict import KEYS
 from svcBuilder import init_kwargs, container_kwargs
+from utilities.proc import justcall
 
 
 DRIVER_GROUP = "container"

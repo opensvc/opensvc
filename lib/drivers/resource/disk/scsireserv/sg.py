@@ -4,7 +4,9 @@ from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, bdecode, lazy
+from rcUtilities import lazy
+from utilities.proc import which
+from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
 

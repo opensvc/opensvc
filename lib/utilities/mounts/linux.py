@@ -2,7 +2,7 @@ import os
 
 import utilities.devices.linux
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
+from utilities.proc import justcall
 from .mounts import BaseMounts, Mount
 
 

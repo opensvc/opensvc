@@ -4,7 +4,7 @@ from collections import namedtuple
 from stat import *
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 
 def listpkg_dummy():

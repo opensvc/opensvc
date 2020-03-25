@@ -2,8 +2,8 @@ from __future__ import print_function
 
 import drivers.check
 
-from rcUtilities import justcall
 from storage import Storage
+from utilities.proc import justcall
 
 class Check(drivers.check.Check):
     chk_type = "jstat"

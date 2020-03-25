@@ -10,9 +10,11 @@ import rcExceptions as ex
 import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcUtilities import which, is_string, lazy
+from rcUtilities import lazy
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import which
+from utilities.string import is_string
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"

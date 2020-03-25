@@ -5,9 +5,10 @@ import tempfile
 from subprocess import *
 
 import rcExceptions as ex
-from rcUtilities import which, factory, split_path
+from rcUtilities import factory, split_path
 from rcGlobalEnv import rcEnv
 from node import Node
+from utilities.proc import which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

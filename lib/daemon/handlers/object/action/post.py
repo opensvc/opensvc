@@ -6,9 +6,10 @@ import daemon.handlers.handler as handler
 import daemon.handlers.rbac
 import daemon.shared as shared
 import rcExceptions as ex
-from rcUtilities import bdecode, drop_option, split_path
+from rcUtilities import drop_option, split_path
 from rcGlobalEnv import rcEnv
 from rcExceptions import HTTP
+from utilities.string import bdecode
 
 GUEST_ACTIONS = (
     "eval",

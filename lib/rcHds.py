@@ -4,16 +4,17 @@ import logging
 import os
 import sys
 import json
+from optparse import Option
 from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
-from rcGlobalEnv import rcEnv
-from storage import Storage
-from rcUtilities import which, justcall, lazy, factory, split_path
 from converters import convert_size
-from rcOptParser import OptParser
-from optparse import Option
 from node import Node
+from rcGlobalEnv import rcEnv
+from rcOptParser import OptParser
+from rcUtilities import lazy, factory, split_path
+from storage import Storage
+from utilities.proc import justcall, which
 
 PROG = "om array"
 OPT = Storage({

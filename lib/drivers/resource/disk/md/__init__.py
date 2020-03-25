@@ -11,9 +11,11 @@ import utilities.devices.linux
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, fcache, bdecode
+from rcUtilities import lazy, fcache
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
+from utilities.string import bdecode
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "md"

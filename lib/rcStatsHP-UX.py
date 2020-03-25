@@ -1,7 +1,8 @@
 import os
-from rcUtilities import call
-from rcGlobalEnv import rcEnv
+
 import rcStats
+from rcGlobalEnv import rcEnv
+from utilities.proc import call
 
 class StatsProvider(rcStats.StatsProvider):
     def glancefile(self, day):

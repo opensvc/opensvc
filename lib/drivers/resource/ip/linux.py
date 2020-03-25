@@ -3,7 +3,8 @@ import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, to_cidr, to_dotted
+from rcUtilities import to_cidr, to_dotted
+from utilities.proc import which
 
 def adder(svc, s):
     parent_adder(svc, s, drv=Ip)

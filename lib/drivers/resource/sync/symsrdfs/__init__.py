@@ -1,11 +1,11 @@
 import datetime
 import json
 import os
+from xml.etree.ElementTree import ElementTree, XML
 
 from rcGlobalEnv import rcEnv
 from rcSymmetrix import set_sym_env
-from rcUtilities import which, lazy
-from xml.etree.ElementTree import ElementTree, XML
+from rcUtilities import lazy
 
 import rcExceptions as ex
 import rcStatus
@@ -14,6 +14,7 @@ import utilities.devices.linux
 from .. import Sync, notify
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import which
 
 os.environ['PATH'] += ":/usr/symcli/bin"
 set_sym_env()

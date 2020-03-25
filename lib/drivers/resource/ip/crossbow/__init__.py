@@ -7,9 +7,10 @@ import rcExceptions as ex
 from ..sunos import Ip
 from .. import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, to_cidr, justcall
+from rcUtilities import to_cidr
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "crossbow"

@@ -26,8 +26,8 @@ from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, Paths
 from storage import Storage
-from rcUtilities import justcall, lazy, unset_lazy, vcall, lcall, is_string, \
-                        try_decode, action_triggers, read_cf, set_lazy, \
+from rcUtilities import lazy, unset_lazy, \
+                        action_triggers, read_cf, set_lazy, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
@@ -40,6 +40,8 @@ import node
 from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
 from extconfig import ExtConfigMixin
+from utilities.proc import justcall, vcall, lcall
+from utilities.string import is_string, try_decode
 
 if six.PY2:
     BrokenPipeError = IOError

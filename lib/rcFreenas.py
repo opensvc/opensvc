@@ -8,9 +8,10 @@ from optparse import Option
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import bdecode, factory, split_path
+from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
+from utilities.string import bencode, bdecode, is_string
 from node import Node
 
 try:

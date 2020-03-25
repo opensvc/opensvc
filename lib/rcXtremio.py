@@ -9,10 +9,11 @@ from optparse import Option
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
-from rcUtilities import justcall, factory, split_path
+from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
 from node import Node
+from utilities.proc import justcall
 
 try:
     import requests

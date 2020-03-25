@@ -12,8 +12,8 @@ from . import \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
 from rcGlobalEnv import rcEnv
-from rcUtilities import call, which
 from svcdict import KEYS
+from utilities.proc import call, which
 
 KEYS.register_driver(
     DRIVER_GROUP,

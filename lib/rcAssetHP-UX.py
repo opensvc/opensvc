@@ -1,9 +1,10 @@
-import os
-from rcUtilities import justcall, which
-from rcGlobalEnv import rcEnv
-from subprocess import *
-import rcAsset
 import datetime
+import os
+from subprocess import Popen, PIPE
+
+import rcAsset
+from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 os.environ['PATH'] += ":/opt/ignite/bin:/opt/propplus/bin"
 

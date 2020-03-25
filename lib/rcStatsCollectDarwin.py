@@ -1,8 +1,8 @@
 import os
 import sys
 import datetime
-from rcUtilities import justcall
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall
 
 def collect(node):
     now = datetime.datetime.now()

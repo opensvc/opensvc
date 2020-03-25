@@ -5,8 +5,9 @@ from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, factory, split_path
+from rcUtilities import factory, split_path
 from node import Node
+from utilities.proc import justcall
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

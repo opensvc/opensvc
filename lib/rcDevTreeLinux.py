@@ -11,8 +11,8 @@ import rcDevTree
 import rcDevTreeVeritas
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import which
 from utilities.mounts import Mounts
+from utilities.proc import which
 
 
 class Dev(rcDevTree.Dev):

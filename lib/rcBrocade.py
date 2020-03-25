@@ -1,12 +1,11 @@
-from rcUtilities import justcall, which
-
 import os
 import telnetlib
 
 import rcExceptions as ex
+from node import Node
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory
-from node import Node
+from utilities.proc import justcall, which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

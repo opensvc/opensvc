@@ -1,5 +1,7 @@
-from rcUtilities import is_string, justcall
 import json
+
+from utilities.proc import justcall
+from utilities.string import is_string
 
 class GceMixin(object):
     valid_auth = False

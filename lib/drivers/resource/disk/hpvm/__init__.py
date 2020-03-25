@@ -8,7 +8,7 @@ import rcStatus
 
 from ..vg.hpux import DiskVg
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall
+from utilities.proc import qcall
 
 class DiskHpvm(DiskVg):
     def __init__(self, container_name=None, **kwargs):

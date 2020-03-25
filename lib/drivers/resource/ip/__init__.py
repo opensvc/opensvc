@@ -16,10 +16,11 @@ import utilities.ifconfig
 from arp import send_arp
 from converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
-from rcUtilities import qcall, which, getaddr, lazy, to_cidr
+from rcUtilities import getaddr, lazy, to_cidr
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import qcall, which
 
 KW_IPNAME = {
     "keyword": "ipname",

@@ -1,5 +1,5 @@
 import node
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 class Node(node.Node):
     def shutdown(self):

@@ -7,9 +7,9 @@ import rcStatus
 
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
 from svcBuilder import sync_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "hp3parsnap"

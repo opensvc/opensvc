@@ -22,9 +22,10 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, lazy, makedirs, protected_dir
+from rcUtilities import lazy, makedirs, protected_dir
 from svcBuilder import init_kwargs, container_kwargs, get_rcmd
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 CAPABILITIES = {
     "cgroup_dir": "2.1",

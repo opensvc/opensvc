@@ -17,8 +17,9 @@ import rcExceptions as ex
 import svc
 import re
 
-from rcUtilities import is_string, wipe_rest_markup
+from rcUtilities import wipe_rest_markup
 from utilities.render.term import term_width
+from utilities.string import is_string
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):

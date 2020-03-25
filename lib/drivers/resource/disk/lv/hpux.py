@@ -3,8 +3,8 @@ import os
 import rcExceptions as ex
 
 from . import BaseDiskLv, adder as base_adder
-from rcUtilities import justcall, which
 from converters import convert_size
+from utilities.proc import justcall, which
 
 def adder(svc, s):
     base_adder(svc, s, drv=DiskLv)

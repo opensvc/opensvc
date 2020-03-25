@@ -8,10 +8,11 @@ import rcExceptions as ex
 import rcStatus
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_string, lazy, protected_dir
+from rcUtilities import lazy, protected_dir
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.string import is_string
 
 DRIVER_GROUP = "fs"
 DRIVER_BASENAME = "directory"

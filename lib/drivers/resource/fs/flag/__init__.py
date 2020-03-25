@@ -4,7 +4,8 @@ import rcStatus
 
 from resources import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs, justcall
+from rcUtilities import lazy, makedirs
+from utilities.proc import justcall
 
 
 class BaseFsFlag(Resource):

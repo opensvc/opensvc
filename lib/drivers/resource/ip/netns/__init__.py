@@ -7,9 +7,10 @@ import utilities.ifconfig
 from ..linux import Ip
 from .. import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import which, justcall, to_cidr, lazy
+from rcUtilities import to_cidr, lazy
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "netns"

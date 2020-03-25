@@ -14,7 +14,7 @@ import daemon.shared as shared
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from .hb import Hb
-from rcUtilities import bdecode
+from utilities.string import bdecode
 
 class HbDisk(Hb):
     """
