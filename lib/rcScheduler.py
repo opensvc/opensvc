@@ -971,7 +971,7 @@ class Scheduler(object):
         """
         Print the scheduling table in normal or detailed mode.
         """
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         head_node = tree.add_node()
