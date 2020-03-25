@@ -1,8 +1,8 @@
-from rcStatus import Status, colorize_status, status_value, status_str, UP
-import rcColor
 import pytest
 
-rcColor.use_color = "no"
+from rcStatus import Status, colorize_status, status_value, status_str, UP
+
+color = "no"
 
 
 @pytest.mark.ci
