@@ -1,8 +1,10 @@
-import os
 import datetime
-from rcUtilities import which, justcall
-from rcGlobalEnv import rcEnv
+import os
 from stat import ST_MTIME
+
+from rcGlobalEnv import rcEnv
+from rcUtilities import justcall, which
+
 
 def listpkg_ips():
     """
