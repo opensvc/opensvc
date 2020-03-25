@@ -18,7 +18,6 @@ from rcUtilities import getaddr, justcall
 from svcBuilder import init_kwargs
 from svcdict import KEYS
 
-rcIfconfig = __import__('rcIfconfig'+rcEnv.sysname)
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "gce"

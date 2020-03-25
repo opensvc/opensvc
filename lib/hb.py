@@ -9,10 +9,9 @@ import struct
 import json_delta
 import osvcd_shared as shared
 import rcExceptions as ex
+import utilities.ifconfig
 from rcGlobalEnv import rcEnv
 from storage import Storage
-
-rcifconfig = __import__("rcIfconfig"+rcEnv.sysname)
 
 class Hb(shared.OsvcThread):
     """
@@ -140,7 +139,7 @@ class Hb(shared.OsvcThread):
 
     @staticmethod
     def get_ip_address(ifname):
-        ifconfig = rcifconfig.ifconfig()
+        ifconfig = utilities.ifconfig.Ifconfig()
         intf = ifconfig.interface(ifname)
         if intf is None:
             raise AttributeError("interface %s not found" % ifname)

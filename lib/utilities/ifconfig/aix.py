@@ -1,9 +1,15 @@
 from subprocess import *
 from rcUtilities import hexmask_to_dotted, cache
 
-import rcIfconfig
+from .ifconfig import BaseIfconfig, Interface
 
-class ifconfig(rcIfconfig.ifconfig):
+class Ifconfig(BaseIfconfig):
+    def __init__(self, mcast=False):
+        super(Ifconfig, self).__init__(mcast=mcast)
+        self.intf = []
+        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
+        self.parse(out)
+
     def get_mac(self, intf):
         for line in self.get_netstat_in().split("\n"):
             l = line.split()
@@ -32,7 +38,7 @@ class ifconfig(rcIfconfig.ifconfig):
         prevprev = ''
         for w in out.split():
             if 'flags=' in w:
-                i = rcIfconfig.interface(prev.replace(':',''))
+                i = Interface(prev.replace(':',''))
                 i.hwaddr = self.get_mac(i)
                 self.intf.append(i)
 
@@ -75,13 +81,7 @@ class ifconfig(rcIfconfig.ifconfig):
             prevprev = prev
             prev = w
 
-    def __init__(self, mcast=False):
-        rcIfconfig.ifconfig.__init__(self)
-        self.intf = []
-        out = Popen(['ifconfig', '-a'], stdout=PIPE).communicate()[0]
-        self.parse(out)
-
 if __name__ == "__main__":
-    ifaces = ifconfig(mcast=True)
+    ifaces = Ifconfig(mcast=True)
     print(ifaces)
 
