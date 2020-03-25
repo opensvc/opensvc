@@ -7,23 +7,48 @@ The node
 * holds the list of services
 * has a scheduler
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
+from __future__ import absolute_import, division, print_function
 
-import os
 import datetime
-import sys
 import fnmatch
 import json
-import socket
-import time
+import logging
+import os
 import re
 import shlex
-import logging
+import socket
+import sys
+import time
 from errno import ECONNREFUSED, EPIPE
 
 import six
+
+import rcExceptions as ex
+import rcLogger
+import svcBuilder
+import xmlrpcClient
+from comm import Crypt
+from contexts import want_context
+from converters import *
+from extconfig import ExtConfigMixin
+from freezer import Freezer
+from lock import LOCK_EXCEPTIONS
+from network import NetworksMixin
+from rcGlobalEnv import rcEnv
+from rcScheduler import SchedOpts, Scheduler, sched_action
+from rcUtilities import (ANSI_ESCAPE, bdecode, bencode, call, check_privs,
+                         daemon_process_running, drop_option, factory,
+                         find_editor, fmt_path, glob_services_config,
+                         init_locale, is_service, is_string, justcall, lazy,
+                         lazy_initialized, list_services, makedirs,
+                         normalize_paths, purge_cache_expired, read_cf,
+                         resolve_path, set_lazy, split_path, strip_path,
+                         svc_pathetc, try_decode, unset_all_lazy, unset_lazy,
+                         validate_kind, validate_name, validate_ns_name, vcall,
+                         which)
+from storage import Storage
+from utilities.render.color import formatter
+
 try:
     from six.moves.urllib.request import Request, urlopen
     from six.moves.urllib.error import HTTPError
@@ -32,31 +57,6 @@ except ImportError:
     # pylint false positive
     pass
 
-import svcBuilder
-import xmlrpcClient
-from network import NetworksMixin
-from rcGlobalEnv import rcEnv
-from storage import Storage
-import rcLogger
-import rcExceptions as ex
-from freezer import Freezer
-from rcScheduler import Scheduler, SchedOpts, sched_action
-from utilities.render.color import formatter
-from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
-                        call, which, purge_cache_expired, read_cf, unset_lazy, \
-                        drop_option, is_string, try_decode, is_service, \
-                        bencode, bdecode, set_lazy, \
-                        list_services, init_locale, ANSI_ESCAPE, svc_pathetc, \
-                        makedirs, fmt_path, \
-                        glob_services_config, split_path, validate_name, \
-                        validate_ns_name, unset_all_lazy, \
-                        factory, resolve_path, strip_path, normalize_paths, \
-                        daemon_process_running, validate_kind, find_editor
-from contexts import want_context
-from converters import *
-from comm import Crypt
-from extconfig import ExtConfigMixin
-from lock import LOCK_EXCEPTIONS
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -2075,14 +2075,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pkg_format = exc.default
 
         if pkg_format == "tar":
-            modname = 'rcUpdatePkgOSF1'
+            modname = 'utilitities.packages.update.osf1'
         else:
-            modname = 'rcUpdatePkg'+rcEnv.sysname
+            modname = 'utilitities.packages.update.'+rcEnv.module_sysname
 
-        if not os.path.exists(os.path.join(rcEnv.paths.pathlib, modname+'.py')):
+        import importlib
+        try:
+            mod = importlib.import_module(modname)
+        except ImportError:
             print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
             return 1
-        mod = __import__(modname)
         repopkg = self.oget("node", "repopkg")
         repo = self.oget("node", "repo")
         if repopkg:
@@ -5184,4 +5186,3 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return "podman"
         else:
             return "docker"
-
