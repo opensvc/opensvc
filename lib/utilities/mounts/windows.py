@@ -1,6 +1,7 @@
-import rcMounts
+from utilities.mounts.base_mounts import BaseMounts, Mount
 
-class Mounts(rcMounts.Mounts):
+
+class Mounts(BaseMounts):
     def __init__(self, wmi=None):
         self.wmi = wmi
         super(Mounts, self).__init__()
@@ -27,7 +28,7 @@ class Mounts(rcMounts.Mounts):
                 mnt = ""
             type = volume.FileSystem
             mnt_opt = "NULL"    # quoi mettre d autre...
-            m = rcMounts.Mount(dev, mnt, type, mnt_opt)
+            m = Mount(dev, mnt, type, mnt_opt)
             mounts.append(m)
         return mounts
 
