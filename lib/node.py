@@ -41,7 +41,7 @@ import rcLogger
 import rcExceptions as ex
 from freezer import Freezer
 from rcScheduler import Scheduler, SchedOpts, sched_action
-from rcColor import formatter
+from utilities.render.color import formatter
 from rcUtilities import justcall, lazy, lazy_initialized, vcall, check_privs, \
                         call, which, purge_cache_expired, read_cf, unset_lazy, \
                         drop_option, is_string, try_decode, is_service, \
@@ -1205,7 +1205,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def print_asset(self, data):
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column(rcEnv.nodename, color.BOLD)
@@ -1505,7 +1505,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def print_push_disks(self, data):
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
 
         tree = Forest()
         head_node = tree.add_node()
@@ -3525,7 +3525,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 return
 
     def _backlogs(self, server=None, node=None, backlog=None, debug=False, auto=None):
-        from rcColor import colorize_log_line
+        from utilities.render.color import colorize_log_line
         lines = []
         for line in self.daemon_backlogs(server, node, backlog, debug):
             line = colorize_log_line(line, auto=auto)
@@ -3534,7 +3534,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 sys.stdout.flush()
 
     def _followlogs(self, server=None, node=None, debug=False, auto=None):
-        from rcColor import colorize_log_line
+        from utilities.render.color import colorize_log_line
         for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
@@ -3558,7 +3558,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return self.print_config_data()
         if not os.path.exists(rcEnv.paths.nodeconf):
             return
-        from rcColor import print_color_config
+        from utilities.render.color import print_color_config
         print_color_config(rcEnv.paths.nodeconf)
 
     @formatter
@@ -4112,7 +4112,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
 
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
 
         tree = Forest()
         head = tree.add_node()
@@ -4901,7 +4901,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if self.options.format in ("json", "flat_json"):
             return data
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         node = tree.add_node()
         node.add_column("name", color.BOLD)

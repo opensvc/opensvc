@@ -22,7 +22,7 @@ import platform
 import re
 
 import extconfig
-from rcColor import colorize, color
+from utilities.render.color import colorize, color
 
 DEFAULT_HANDLERS = ["file", "stream", "syslog"]
 

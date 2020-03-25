@@ -22,11 +22,11 @@ from .. import \
     KW_ALIAS, \
     KW_EXPOSE
 from ..linux import Ip
-from rcColor import format_str_flat_json
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.render.color import format_str_flat_json
 
 CNI_VERSION = "0.3.0"
 PORTMAP_CONF = {

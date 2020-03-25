@@ -11,7 +11,7 @@ import optparse
 prog = "nodemgr"
 
 import rcStatus
-import rcColor
+import utilities.render.color
 import rcExceptions as ex
 from rcGlobalEnv import *
 from rcUtilities import ximport
@@ -68,7 +68,7 @@ def _main(node, argv=None):
     options, action = optparser.parse_args(argv)
     options.extra_argv = extra_argv
 
-    rcColor.use_color = options.color
+    utilities.render.color.use_color = options.color
     node.options.update(options.__dict__)
     do_symcli_db_file(options)
 

@@ -3,12 +3,14 @@ from __future__ import unicode_literals
 
 import sys
 
+import rcExceptions as ex
+import utilities.render.color
+
+from .tabulate import tabulate
+from rcUtilities import term_width
 from six.moves import reduce
 from six import u as unicode
-import rcExceptions as ex
 from textwrap import wrap
-from rcColor import color, colorize
-from rcUtilities import term_width
 
 def parse_data(data):
     try:
@@ -93,17 +95,14 @@ def print_table_tabulate(data, width=20):
     except Exception as e:
         return
 
-    from .tabulate import tabulate
-    import rcColor
-
     try:
         table = tabulate(data, headers="firstrow", tablefmt="plain").splitlines()
     except UnicodeEncodeError:
         table = tabulate(data, headers="firstrow", tablefmt="plain").encode("utf-8").splitlines()
 
     colors = [
-        rcColor.color.BGWHITE+rcColor.color.BLACK,
-        rcColor.color.E_BGODD+rcColor.color.BLACK,
+        utilities.render.color.color.BGWHITE + utilities.render.color.color.BLACK,
+        utilities.render.color.color.E_BGODD + utilities.render.color.color.BLACK,
     ]
     idx = 0
     tw = term_width()
@@ -113,7 +112,7 @@ def print_table_tabulate(data, width=20):
             idx = (idx + 1) % 2
             continue
         if line_idx == 0:
-            color = rcColor.color.BOLD
+            color = utilities.render.color.color.BOLD
         else:
             color = colors[idx]
         if line.endswith("|"):
@@ -124,7 +123,7 @@ def print_table_tabulate(data, width=20):
         if length > tw or cont:
             rpad = tw - (length % tw)
             line += " " * rpad
-        print(rcColor.colorize(line, color))
+        print(utilities.render.color.colorize(line, color))
 
 def print_table_default(data):
     try:
@@ -148,9 +147,9 @@ def print_table_default(data):
                        width=78
                   ))
             try:
-                print(colorize(fmt % (label+":"), color.LIGHTBLUE), val)
+                print(utilities.render.color.colorize(fmt % (label+":"), utilities.render.color.color.LIGHTBLUE), val)
             except UnicodeEncodeError:
-                print(colorize(fmt % (label+":"), color.LIGHTBLUE), val.encode("utf-8"))
+                print(utilities.render.color.colorize(fmt % (label+":"), utilities.render.color.color.LIGHTBLUE), val.encode("utf-8"))
 
 def print_table_csv(data):
     try:
