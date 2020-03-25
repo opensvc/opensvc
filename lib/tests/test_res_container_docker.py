@@ -3,13 +3,17 @@ from __future__ import print_function
 
 import rcStatus
 import svc
-from drivers.resource.container.docker import ContainerDocker
-from drivers.resource.volume import Volume
 from node import Node
 from poolDirectory import Pool
 from rcUtilities import factory
 import rcExceptions as ex
 import pytest
+
+from rcUtilities import driver_import
+
+
+ContainerDocker = driver_import('res', 'container.docker').ContainerDocker
+Volume = driver_import('res', 'volume').Volume
 
 
 @pytest.mark.ci
