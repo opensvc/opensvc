@@ -11,7 +11,7 @@ A logical volume lv0 with segments on pv1 pv2 has two parent
 relations : lv0-pv1 and lv0-pv2
 
 """
-from forest import Forest
+from utilities.render.forest import Forest
 from converters import print_size
 from rcGlobalEnv import rcEnv
 from rcColor import color

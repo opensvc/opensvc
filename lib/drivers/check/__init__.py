@@ -44,9 +44,7 @@ class Checks(Check):
 
     def register_internal_checkers(self):
         def onerror(name):
-            print("Error importing module %s" % name)
-            type, value, traceback = sys.exc_info()
-            print_tb(traceback)
+            pass
         for modinfo in pkgutil.walk_packages(__path__, __name__ + '.', onerror=onerror):
             if hasattr(modinfo, "ispkg"):
                 name = modinfo.name
@@ -144,7 +142,7 @@ class Checks(Check):
         return data
 
     def print_checks(self, data):
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         head_node = tree.add_node()

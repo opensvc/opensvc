@@ -4317,7 +4317,7 @@ class Svc(BaseSvc):
         data = self.devs(categories=categories)
         if self.options.format is not None or self.options.jsonpath_filter:
             return data
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         node1 = tree.add_node()
@@ -4798,7 +4798,7 @@ class Svc(BaseSvc):
         return data
 
     def print_resinfo_tree(self):
-        from forest import Forest
+        from utilities.render.forest import Forest
         from rcColor import color
         tree = Forest()
         node1 = tree.add_node()

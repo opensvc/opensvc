@@ -173,18 +173,18 @@ def format_str_flat_json(d):
         return buff
 
 def format_table(d):
-    from rcPrintTable import print_table_tabulate
-    print_table_tabulate(d)
+    import utilities.render.table
+    utilities.render.table.print_table_tabulate(d)
 
 def format_default(d):
-    from rcPrintTable import print_table_default
+    import utilities.render.table
     if "error" in d and is_string(d["error"]):
         print(d["error"], file=sys.stderr)
-    print_table_default(d)
+    utilities.render.table.print_table_default(d)
 
 def format_csv(d):
-    from rcPrintTable import print_table_csv
-    print_table_csv(d)
+    import utilities.render.table
+    utilities.render.table.print_table_csv(d)
 
 def is_list_of_list(d):
     if type(d) != list:
