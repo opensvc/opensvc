@@ -143,7 +143,7 @@ class Checks(Check):
 
     def print_checks(self, data):
         from utilities.render.forest import Forest
-        from rcColor import color
+        from utilities.render.color import color
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column(rcEnv.nodename, color.BOLD)

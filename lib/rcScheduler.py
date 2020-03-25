@@ -14,7 +14,7 @@ import rcExceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import is_string
-from rcColor import formatter
+from utilities.render.color import formatter, color
 from converters import convert_duration
 
 SCHED_FMT = "%s: %s"
@@ -972,7 +972,6 @@ class Scheduler(object):
         Print the scheduling table in normal or detailed mode.
         """
         from utilities.render.forest import Forest
-        from rcColor import color
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column("Action", color.BOLD)

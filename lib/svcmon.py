@@ -16,7 +16,7 @@ from six.moves import queue
 prog = "svcmon"
 
 import rcExceptions as ex
-import rcColor
+import utilities.render.color
 from node import Node
 from fmt_cluster import format_cluster
 
@@ -151,7 +151,7 @@ def _main(node, argv=None):
 
 def svcmon(node, options=None):
     global PATCH_Q
-    rcColor.use_color = options.color
+    utilities.render.color.use_color = options.color
     if not options.node:
         options.node = "*"
     chars = 0
