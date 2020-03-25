@@ -1,10 +1,10 @@
 import os
 
-import rcMounts
-#import resLoopAIX as Res
 from rcUtilities import justcall
+from utilities.mounts.base_mounts import BaseMounts, Mount
 
-class Mounts(rcMounts.Mounts):
+
+class Mounts(BaseMounts):
     df_one_cmd = ['df']
 
     def match_mount(self, i, dev, mnt):
@@ -51,7 +51,7 @@ class Mounts(rcMounts.Mounts):
                     node, dev, mnt, type, null, null, null, mnt_opt = l.split()
                 else:
                     continue
-            m = rcMounts.Mount(dev, mnt, type, mnt_opt)
+            m = Mount(dev, mnt, type, mnt_opt)
             mounts.append(m)
         return mounts
 

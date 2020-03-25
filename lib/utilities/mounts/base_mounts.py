@@ -16,7 +16,7 @@ class Mount(object):
         return "Mount: dev[%s] mnt[%s] type[%s] options[%s]" % \
             (self.dev,self.mnt,self.type,self.mnt_opt)
 
-class Mounts(object):
+class BaseMounts(object):
     src_dir_devs_cache = {}
     df_one_cmd = []
 
