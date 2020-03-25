@@ -5,9 +5,9 @@ import sys
 
 import rcExceptions as ex
 import utilities.render.color
+import utilities.render.term
 
 from .tabulate import tabulate
-from rcUtilities import term_width
 from six.moves import reduce
 from six import u as unicode
 from textwrap import wrap
@@ -105,7 +105,7 @@ def print_table_tabulate(data, width=20):
         utilities.render.color.color.E_BGODD + utilities.render.color.color.BLACK,
     ]
     idx = 0
-    tw = term_width()
+    tw = utilities.render.term.term_width()
 
     for line_idx, line in enumerate(table):
         if line.startswith("+-"):

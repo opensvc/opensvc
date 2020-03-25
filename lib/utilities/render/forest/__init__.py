@@ -5,11 +5,11 @@ Forest data representation module.
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from textwrap import wrap
 import six
 
-from rcUtilities import term_width
+from textwrap import wrap
 from utilities.render.color import colorize, color
+from utilities.render.term import term_width
 
 LAST_NODE = "`- "
 NEXT_NODE = "|- "
