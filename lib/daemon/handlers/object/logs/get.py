@@ -1,9 +1,10 @@
 import os
 
 import daemon.handlers.handler as handler
-from rcUtilities import bdecode, split_path
+from rcUtilities import split_path
 from rcGlobalEnv import rcEnv
 from rcExceptions import HTTP
+from utilities.string import bdecode
 
 try:
     from hyper.common.headers import HTTPHeaderMap

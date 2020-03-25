@@ -2,7 +2,7 @@ import os
 import re
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 def term_width():
     min_columns = 78

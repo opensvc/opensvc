@@ -1,7 +1,7 @@
 import time
 
 import node
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 class Node(node.Node):
     def sys_reboot(self, delay=0):

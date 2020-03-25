@@ -5,8 +5,9 @@ import rcExceptions as ex
 import utilities.ping
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall, getaddr, lazy
+from rcUtilities import getaddr, lazy
 from resources import Resource
+from utilities.proc import justcall
 
 KW_START_TIMEOUT = {   
     "keyword": "start_timeout",

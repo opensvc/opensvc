@@ -1,5 +1,6 @@
-from rcUtilities import which
 from subprocess import Popen, PIPE
+
+from utilities.proc import which
 
 def hostid():
     if which('getconf') is None:

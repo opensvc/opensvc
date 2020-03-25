@@ -17,9 +17,9 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from resources import Resource
-from rcUtilities import which
 from svcBuilder import init_kwargs, container_kwargs
 from svcdict import KEYS
+from utilities.proc import which
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "esx"

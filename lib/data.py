@@ -5,9 +5,10 @@ import shutil
 import glob
 import tempfile
 
-from rcUtilities import bencode, create_protected_file, factory, find_editor, makedirs, split_path, want_context, read_unicode_file, try_decode
 import rcExceptions as ex
 import rcStatus
+from rcUtilities import create_protected_file, factory, find_editor, makedirs, split_path, want_context
+from utilities.string import bencode
 
 
 class DataMixin(object):
@@ -127,15 +128,20 @@ class DataMixin(object):
         buff = self.decode_key(self.options.key)
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
-        if isinstance(buff, bytes):
-            raise ex.excError("binary keys are not editable")
-        no_newline = os.sep not in try_decode(buff)
+        try:
+            no_newline = os.sep not in buff.decode()
+        except Exception:
+            raise ex.excError("this key is not editable")
         editor = find_editor()
         fpath = self.tempfilename()
-        create_protected_file(fpath, buff)
+        try:
+            create_protected_file(fpath, buff, "wb")
+        except TypeError:
+            create_protected_file(fpath, buff, "w")
         try:
             os.system(' '.join((editor, fpath)))
-            edited = read_unicode_file(fpath)
+            with open(fpath, "r") as f:
+                edited = f.read()
             if no_newline and edited.count(os.linesep) == 1 and edited.endswith(os.linesep):
                 self.log.debug("striping trailing newline from edited key value")
                 edited = edited.rstrip(os.linesep)
@@ -218,14 +224,14 @@ class DataMixin(object):
 
         return recurse(key_to_resolve, set())[0]
 
-    def install_key(self, key, path, uid=None, gid=None, mode=None, dirmode=None):
+    def install_key(self, key, path):
         if key["type"] == "file":
             vpath = self.key_path(key, path)
-            self.install_file_key(key["path"], vpath, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
+            self.install_file_key(key["path"], vpath)
         elif key["type"] == "dir":
-            self.install_dir_key(key, path, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
+            self.install_dir_key(key, path)
 
-    def install_dir_key(self, data, path, uid=None, gid=None, mode=None, dirmode=None):
+    def install_dir_key(self, data, path):
         """
         Install a key decoded data in the host's volatile storage.
         """
@@ -234,11 +240,11 @@ class DataMixin(object):
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
         else:
             dirpath = path + "/"
-        makedirs(dirpath, uid=uid, gid=gid, mode=dirmode)
+        makedirs(dirpath)
         for key in data["keys"]:
-            self.install_key(key, dirpath, uid=uid, gid=uid, mode=mode, dirmode=dirmode)
+            self.install_key(key, dirpath)
 
-    def install_file_key(self, key, vpath, uid=None, gid=None, mode=None, dirmode=None):
+    def install_file_key(self, key, vpath):
         """
         Install a key decoded data in the host's volatile storage.
         """
@@ -255,9 +261,8 @@ class DataMixin(object):
         if os.path.isfile(vdir) or os.path.islink(vdir):
             self.log.info("remove %s key %s file at parent location %s", self.desc, key, vdir)
             os.unlink(vdir)
-        makedirs(vdir, uid=uid, gid=gid, mode=dirmode)
-        self.write_key(vpath, data, key=key, uid=uid, gid=gid, mode=mode)
-
+        makedirs(vdir)
+        self.write_key(vpath, data, key=key)
 
     @staticmethod
     def key_path(key, path):
@@ -271,7 +276,7 @@ class DataMixin(object):
             npath = path
         return npath
 
-    def write_key(self, vpath, data, key=None, uid=None, gid=None, mode=None):
+    def write_key(self, vpath, data, key=None):
         mtime = os.path.getmtime(self.paths.cf)
         try:
             data = data.encode()
@@ -279,7 +284,6 @@ class DataMixin(object):
             # already bytes
             pass
         if os.path.exists(vpath):
-            self.set_perm(vpath, uid, gid, mode)
             if mtime == os.path.getmtime(vpath):
                 return
             with open(vpath, "rb") as ofile:
@@ -290,15 +294,8 @@ class DataMixin(object):
         self.log.info("install %s/%s in %s", self.name, key, vpath)
         with open(vpath, "wb") as ofile:
             os.chmod(vpath, self.default_mode)
-            self.set_perm(vpath, uid, gid, mode)
             ofile.write(data)
             os.utime(vpath, (mtime, mtime))
-
-    def set_perm(self, path, uid=None, gid=None, mode=None):
-        os.chmod(path, mode or self.default_mode)
-        uid = uid if uid is not None else -1
-        gid = gid if gid is not None else -1
-        os.chown(path, uid, gid)
 
     def _install(self, key, path):
         """

@@ -1,10 +1,10 @@
-from rcUtilities import justcall, call, vcall, cache
-from rcGlobalEnv import rcEnv
-import rcExceptions as ex
 import logging
 import sys
-"""
-"""
+
+from rcUtilities import cache
+from rcGlobalEnv import rcEnv
+import rcExceptions as ex
+from utilities.proc import call, vcall, justcall
 
 def dataset_exists(device, dstype):
     """

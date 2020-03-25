@@ -1,7 +1,8 @@
 import os
-from rcUtilities import justcall, which
-import rcAsset
 import re
+
+import rcAsset
+from utilities.proc import justcall, which
 
 sim = False
 regex = re.compile("^\W*[0-9]*:")

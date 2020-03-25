@@ -4,8 +4,9 @@ from subprocess import Popen, PIPE
 import daemon.handlers.handler as handler
 import daemon.shared as shared
 import rcExceptions as ex
-from rcUtilities import bdecode, drop_option
+from rcUtilities import drop_option
 from rcGlobalEnv import rcEnv
+from utilities.string import bdecode
 
 class Handler(handler.Handler):
     """

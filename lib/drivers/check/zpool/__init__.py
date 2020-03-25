@@ -3,7 +3,7 @@ import os
 import drivers.check
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 class Check(drivers.check.Check):
     """

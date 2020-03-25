@@ -7,10 +7,11 @@ import rcExceptions as ex
 import rcStatus
 
 from converters import print_size
-from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob, factory, is_string
+from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, is_glob, factory
 from resources import Resource
 from svcBuilder import init_kwargs
 from svcdict import KEYS
+from utilities.string import is_string
 
 DRIVER_GROUP = "volume"
 DRIVER_BASENAME = None

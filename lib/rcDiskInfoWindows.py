@@ -1,6 +1,6 @@
 import rcDiskInfo
 import wmi
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 class diskInfo(rcDiskInfo.diskInfo):
 

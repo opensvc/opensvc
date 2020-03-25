@@ -6,11 +6,12 @@ from six.moves import queue
 import daemon.handlers.handler as handler
 import daemon.shared as shared
 import rcExceptions as ex
-from rcUtilities import bdecode, normalize_jsonpath, is_string
+from rcUtilities import normalize_jsonpath
 from rcGlobalEnv import rcEnv
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from converters import convert_boolean
+from utilities.string import bdecode, is_string
 
 
 OPERATORS = (">=", "<=", "=", ">", "<", "~", " in ")

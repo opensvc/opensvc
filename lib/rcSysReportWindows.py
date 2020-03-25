@@ -1,7 +1,7 @@
 import os
 import rcSysReport
 
-from rcUtilities import which
+from utilities.proc import which
 
 class SysReport(rcSysReport.SysReport):
     def __init__(self, node=None, **kwargs):

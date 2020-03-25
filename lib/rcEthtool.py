@@ -1,4 +1,4 @@
-from rcUtilities import justcall, which
+from utilities.proc import justcall, which
 
 """
 Settings for eth0:

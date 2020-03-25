@@ -3,8 +3,8 @@ import time
 from six.moves import queue
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-from rcUtilities import bdecode
 from rcGlobalEnv import rcEnv
+from utilities.string import bdecode
 
 try:
     from hyper.common.headers import HTTPHeaderMap

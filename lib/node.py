@@ -36,18 +36,19 @@ from lock import LOCK_EXCEPTIONS
 from network import NetworksMixin
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts, Scheduler, sched_action
-from rcUtilities import (ANSI_ESCAPE, bdecode, bencode, call, check_privs,
+from rcUtilities import (ANSI_ESCAPE, check_privs,
                          daemon_process_running, drop_option, factory,
                          find_editor, fmt_path, glob_services_config,
-                         init_locale, is_service, is_string, justcall, lazy,
+                         init_locale, is_service, lazy,
                          lazy_initialized, list_services, makedirs,
                          normalize_paths, purge_cache_expired, read_cf,
                          resolve_path, set_lazy, split_path, strip_path,
-                         svc_pathetc, try_decode, unset_all_lazy, unset_lazy,
-                         validate_kind, validate_name, validate_ns_name, vcall,
-                         which)
+                         svc_pathetc, unset_all_lazy, unset_lazy,
+                         validate_kind, validate_name, validate_ns_name)
 from storage import Storage
+from utilities.proc import call, justcall, vcall, which
 from utilities.render.color import formatter
+from utilities.string import bencode, bdecode, is_string, try_decode
 
 try:
     from six.moves.urllib.request import Request, urlopen
@@ -2630,7 +2631,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def download_from_safe(self, safe_id, path=None):
         import base64
-        from rcUtilities import bdecode
         if safe_id.startswith("safe://"):
             safe_id = safe_id[7:].lstrip("/")
         fpath = os.path.join(rcEnv.paths.safe, safe_id)

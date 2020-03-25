@@ -6,7 +6,8 @@ from itertools import islice
 import node
 import utilities.os.linux
 
-from rcUtilities import lazy, justcall
+from rcUtilities import lazy
+from utilities.proc import justcall
 
 class Node(node.Node):
     def still_alive(self, action):

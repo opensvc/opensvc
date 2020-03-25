@@ -1,9 +1,10 @@
 import glob
 import os
 from subprocess import *
-from rcUtilities import which, justcall
+
 import rcDevTree
 from rcGlobalEnv import rcEnv
+from utilities.proc import justcall, which
 
 class DevTreeVeritas(rcDevTree.DevTree):
     vxprint_cache = {}

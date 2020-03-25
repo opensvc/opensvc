@@ -1,6 +1,6 @@
 import os
 
-from rcUtilities import justcall
+from utilities.proc import justcall
 
 def vx_dev_to_paths(dev):
     dev = os.path.basename(dev)
