@@ -2,14 +2,14 @@ from __future__ import print_function
 
 import os
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from converters import convert_size
 from utilities.proc import justcall
+from .pool import BasePool
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "shm"
     capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
 

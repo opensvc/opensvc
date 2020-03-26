@@ -2,42 +2,45 @@ from __future__ import print_function
 
 import os
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall
+from .pool import BasePool
 
-class Pool(pool.Pool):
-    type = "directory"
-    capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
+class Pool(BasePool):
+    type = "share"
+    capabilities = ["rox", "rwx", "roo", "rwo", "blk", "shared"]
 
     @lazy
     def path(self):
         return self.oget("path")
 
-    def translate_blk(self, name=None, size=None, shared=False):
+    def translate_blk(self, path=None, size=None, shared=False):
         data = [
             {
                 "rtype": "disk",
                 "type": "loop",
-                "file": os.path.join(self.path, "%s.img" % name),
+                "file": "%s.img" % path,
                 "size": size,
             }
         ]
         return data
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
+        if shared:
+            path = os.path.join(self.path, name)
+        else:
+            path = os.path.join(self.path, "%s.{nodename}" % name)
         if not fmt:
-            return self.translate_blk(name=name, size=size, shared=shared)
-        data = []
-        path = os.path.join(self.path, name)
-        data.append({
+            return self.translate_blk(path, size=size, shared=shared)
+
+        fs = {
             "rtype": "fs",
             "type": "directory",
             "path": path,
-        })
-        return data
+        }
+        return [fs]
 
     def pool_status(self):
         from converters import convert_size
@@ -47,6 +50,7 @@ class Pool(pool.Pool):
             "type": self.type,
             "name": self.name,
             "capabilities": self.capabilities,
+            "head": self.path,
         }
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
@@ -56,6 +60,5 @@ class Pool(pool.Pool):
         data["free"] = int(l[3])
         data["used"] = int(l[2])
         data["size"] = int(l[1])
-        data["head"] = self.path
         return data
 

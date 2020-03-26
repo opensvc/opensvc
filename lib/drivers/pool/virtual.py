@@ -2,18 +2,18 @@ from __future__ import print_function
 
 import os
 
-import pool
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_service, split_path, factory, lazy
 from utilities.proc import justcall
+from .pool import BasePool
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "virtual"
     capabilities = []
 
     def __init__(self, *args, **kwargs):
-        pool.Pool.__init__(self, *args, **kwargs)
+        super(Pool, self).__init__(*args, **kwargs)
         self.capabilities = self.oget("capabilities")
 
     @lazy
