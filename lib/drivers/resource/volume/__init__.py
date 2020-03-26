@@ -10,7 +10,7 @@ from converters import print_size
 from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, factory
 from resources import Resource
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.string import is_string, is_glob
 
 DRIVER_GROUP = "volume"

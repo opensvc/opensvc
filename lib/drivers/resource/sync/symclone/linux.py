@@ -10,7 +10,7 @@ from . import \
     DRIVER_BASENAME
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import which
 
 KEYS.register_driver(

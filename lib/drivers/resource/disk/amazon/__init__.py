@@ -11,7 +11,7 @@ from .. import \
 from rcGlobalEnv import rcEnv
 from rcAmazon import AmazonMixin
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "amazon"

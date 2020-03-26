@@ -9,7 +9,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from resources import Resource
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "fs"
 DRIVER_BASENAME = "docker"

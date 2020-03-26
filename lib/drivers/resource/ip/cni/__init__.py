@@ -25,7 +25,7 @@ from ..linux import Ip
 from rcGlobalEnv import rcEnv
 from rcUtilities import to_cidr, lazy, makedirs
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 from utilities.render.color import format_str_flat_json
 from utilities.string import bencode, bdecode

@@ -6,7 +6,7 @@ import rcStatus
 
 from .. import Sync, notify
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
 DRIVER_GROUP = "sync"

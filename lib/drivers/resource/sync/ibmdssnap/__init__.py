@@ -9,7 +9,7 @@ from .. import Sync, notify
 from converters import print_duration
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import which
 
 DRIVER_GROUP = "sync"

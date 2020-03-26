@@ -9,7 +9,7 @@ from rcAmazon import AmazonMixin
 from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "amazon"

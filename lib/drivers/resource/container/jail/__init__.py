@@ -20,7 +20,7 @@ from .. import \
 from resources import Resource
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs, container_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import qcall
 
 DRIVER_GROUP = "container"
