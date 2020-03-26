@@ -283,7 +283,7 @@ def add_resources(svc):
         for section in sections.get(restype, []):
             try:
                 add_resource(svc, restype, section)
-            except (ex.excError, ex.RequiredOptNotFound):
+            except (ex.Error, ex.RequiredOptNotFound):
                 ret += 1
     add_mandatory_syncs(svc)
     return ret
@@ -322,7 +322,7 @@ def build_services(status=None, paths=None, create_instance=False,
         name, namespace, kind = split_path(path)
         try:
             svc = factory(kind)(name, namespace, node=node)
-        except (ex.excError, ex.InitError, ValueError, rcConfigParser.Error) as e:
+        except (ex.Error, ex.InitError, ValueError, rcConfigParser.Error) as e:
             errors.append("%s: %s" % (path, str(e)))
             node.log.error(str(e))
             continue

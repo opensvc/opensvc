@@ -85,23 +85,23 @@ class ContainerXen(BaseContainer):
             cmd = ['virsh', 'define', cf]
             (ret, buff, err) = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
         cmd = ['virsh', 'start', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_stop(self):
         cmd = ['virsh', 'shutdown', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_forcestop(self):
         cmd = ['virsh', 'destroy', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)

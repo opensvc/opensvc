@@ -79,7 +79,7 @@ class Snap(utilities.snap.Snap):
     def snapdestroykey(self, s):
         if protected_mount(self.snaps[s]['snap_mnt']):
             self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
-            raise ex.excError
+            raise ex.Error
         cmd = ['fuser', '-kmv', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         cmd = [rcEnv.syspaths.umount, self.snaps[s]['snap_mnt']]

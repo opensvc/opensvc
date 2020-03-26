@@ -38,7 +38,7 @@ class Pool(pool.Pool):
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
         if not mappings:
-            raise ex.excError("refuse to create a disk with no mappings")
+            raise ex.Error("refuse to create a disk with no mappings")
         lock_id = None
         result = {}
         try:
@@ -84,7 +84,7 @@ class Pool(pool.Pool):
         o = Freenass()
         array = o.get_freenas(self.array_name)
         if array is None:
-            raise ex.excError("array %s not found" % self.array_name)
+            raise ex.Error("array %s not found" % self.array_name)
         array.node = self.node
         return array
 

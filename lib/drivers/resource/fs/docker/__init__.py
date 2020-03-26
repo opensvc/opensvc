@@ -115,7 +115,7 @@ class FsDocker(Resource):
             cmd += self.options
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def start(self):
         pass
@@ -142,7 +142,7 @@ class FsDocker(Resource):
         finally:
             del os.environ["OPENSVC_VOL_PATH"]
         if ret:
-            raise ex.excError
+            raise ex.Error
 
     def unprovisioner(self):
         if not self.has_it():
@@ -150,5 +150,5 @@ class FsDocker(Resource):
         cmd = self.lib.docker_cmd + ["volume", "rm", "-f", self.volname]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 

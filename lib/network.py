@@ -59,7 +59,7 @@ class NetworksMixin(object):
         for name in names:
             try:
                 self.network_overlaps(name, data)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.log.warning("skip setup: %s", exc)
                 continue
             self.network_create_config(name)
@@ -298,7 +298,7 @@ class NetworksMixin(object):
             except Exception:
                 continue
             if other_network and network.overlaps(other_network):
-                raise ex.excError("network %s %s overlaps with %s %s" % \
+                raise ex.Error("network %s %s overlaps with %s %s" % \
                                   (name, network, other_name, other_network))
 
     def network_create_fwrules(self, name):
@@ -341,7 +341,7 @@ class NetworksMixin(object):
         try:
             data = self.network_data(name, nets=nets)
         except KeyError:
-            raise ex.excError("network %s does not exist" % name)
+            raise ex.Error("network %s does not exist" % name)
         ntype = data["config"]["type"]
         fn = "network_create_%s_config" % ntype
         if hasattr(self, fn):

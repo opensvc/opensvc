@@ -224,7 +224,7 @@ class Fs(BaseFs):
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):
             try:
                 _dev = utilities.devices.linux.label_to_dev(self.device, self.svc.node.devtree)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.status_log(str(exc))
                 _dev = None
             if _dev:
@@ -394,7 +394,7 @@ class Fs(BaseFs):
             statinfo = os.stat(dev)
         except:
             self.log.error("can not stat %s", dev)
-            raise ex.excError
+            raise ex.Error
 
         if not self.is_devmap(statinfo):
             return set([dev])
@@ -440,7 +440,7 @@ class Fs(BaseFs):
                     mntopt_l.remove("loop")
                     self.mount_options = ','.join(mntopt_l)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def start(self):
         if self.mounts is None:
@@ -465,7 +465,7 @@ class Fs(BaseFs):
             try:
                 os.makedirs(self.mount_point, 0o755)
             except Exception as exc:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
 
         if self.fs_type == "zfs":
             self.mount_zfs()
@@ -512,7 +512,7 @@ class Fs(BaseFs):
         if not self.encap and not zone and \
            zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
-                raise ex.excError
+                raise ex.Error
         try:
             os.unlink(self.mount_point+"/.opensvc")
         except:
@@ -525,14 +525,14 @@ class Fs(BaseFs):
     def mount_zfs_native(self):
         if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
             if not zfs_setprop(self.device, 'mountpoint', self.mount_point, log=self.log):
-                raise ex.excError
+                raise ex.Error
             # the prop change has mounted the dataset
             return
         ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device])
         if ret != 0:
             ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
         return ret, out, err
 
     def mount_generic(self):
@@ -560,7 +560,7 @@ class Fs(BaseFs):
         cmd = ['mount'] + fstype + mntopt + [device, self.mount_point]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def kill_users(self):
         import glob
@@ -597,7 +597,7 @@ class Fs(BaseFs):
                 self.log.warning("I/O error on mount point. try to umount anyway")
                 self.kill_users()
             else:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
         self.remove_holders()
         self.remove_deeper_mounts()
         for _ in range(3):
@@ -605,7 +605,7 @@ class Fs(BaseFs):
             if ret == 0:
                 break
         if ret != 0:
-            raise ex.excError('failed to umount %s'%self.mount_point)
+            raise ex.Error('failed to umount %s'%self.mount_point)
         self.mounts = None
 
     def remove_dev_holders(self, devpath, tree):
@@ -619,7 +619,7 @@ class Fs(BaseFs):
         holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.exposed_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
-            raise ex.excError("resource %s has holders handled by other "
+            raise ex.Error("resource %s has holders handled by other "
                               "resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
             holder_dev.remove(self)
@@ -648,7 +648,7 @@ class Fs(BaseFs):
         if dev.startswith("LABEL=") or dev.startswith("UUID="):
             try:
                 _dev = utilities.devices.linux.label_to_dev(dev, tree=self.svc.node.devtree)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 _dev = None
             if _dev is None:
                 self.log.info("unable to find device identified by %s", dev)

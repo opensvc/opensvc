@@ -67,23 +67,23 @@ class SyncRadosclone(SyncRadossnap):
         cmd = self.rbd_cmd()+['snap', 'create', image, '--snap', snapname]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         cmd = self.rbd_cmd()+['snap', 'protect', image+"@"+snapname]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         list_data = self.list()
         if clone in list_data:
             cmd = self.rbd_cmd()+['rm', clone]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
         cmd = self.rbd_cmd()+['clone', image+"@"+snapname, clone]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         for snapname in snapnames:
             try:
@@ -103,7 +103,7 @@ class SyncRadosclone(SyncRadossnap):
             if image.count("/") != 1 or clone.count("/") != 1:
                 l.append(image)
         if len(l) > 0:
-            raise ex.excError("wrong format (expected pool/image:pool/image): "+", ".join(l))
+            raise ex.Error("wrong format (expected pool/image:pool/image): "+", ".join(l))
 
     def snap_basename(self):
         return self.rid+".cloneref."

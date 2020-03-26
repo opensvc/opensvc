@@ -21,7 +21,7 @@ def file_to_loop(f):
     try:
         pl = plistlib.readPlistFromString(out)
     except AttributeError as exc:
-        raise ex.excError(str(exc))
+        raise ex.Error(str(exc))
     for image in pl['images']:
         if image.get('image-path') == f:
             for se in image['system-entities']:

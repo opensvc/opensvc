@@ -57,7 +57,7 @@ def adder(svc, s, drv=None):
                 break
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
-            raise ex.excError()
+            raise ex.Error()
         kwargs["mount_point"] = zp+"/root"+kwargs["mount_point"]
         if "<%s>" % zone != zp:
             kwargs["mount_point"] = os.path.realpath(kwargs["mount_point"])
@@ -152,11 +152,11 @@ class BaseFs(Resource):
             # pseudo fs have no dev
             return
         if not self.device:
-            raise ex.excError("device keyword not set or evaluates to None")
+            raise ex.Error("device keyword not set or evaluates to None")
         if self.device.startswith("UUID=") or self.device.startswith("LABEL="):
             return
         if not os.path.exists(self.device):
-            raise ex.excError("device does not exist %s" % self.device)
+            raise ex.Error("device does not exist %s" % self.device)
 
     def create_mntpt(self):
         if self.fs_type in ["zfs", "advfs"]:
@@ -193,7 +193,7 @@ class BaseFs(Resource):
         else:
             allowed_ret = [0]
         if ret not in allowed_ret:
-            raise ex.excError
+            raise ex.Error
 
     def need_check_writable(self):
         if 'ro' in self.mount_options.split(','):
@@ -309,7 +309,7 @@ class BaseFs(Resource):
         except ImportError:
             return
         if not hasattr(mod, "Prov"):
-            raise ex.excError("missing Prov class in module %s" % str(mod))
+            raise ex.Error("missing Prov class in module %s" % str(mod))
         return getattr(mod, "Prov")(self)
 
     """
@@ -333,13 +333,13 @@ class BaseFs(Resource):
         return False
 
     def lv_name(self):
-        raise ex.excError
+        raise ex.Error
         return "dummy"
 
     def lv_resource(self):
         try:
             name = self.lv_name()
-        except ex.excError:
+        except ex.Error:
             return
         vg = self.oget("vg")
         size = self.oget("size")
@@ -381,7 +381,7 @@ class BaseFs(Resource):
             return
         try:
             self.get_mkfs_dev()
-        except ex.excError:
+        except ex.Error:
             self.mkfs_dev = None
         if not os.path.exists(self.dev) and (self.mkfs_dev is None or not os.path.exists(self.mkfs_dev)):
             return False
@@ -394,7 +394,7 @@ class BaseFs(Resource):
             l[-1] = 'r'+l[-1]
             self.mkfs_dev = '/'.join(l)
             if not os.path.exists(self.mkfs_dev):
-                raise ex.excError("%s raw device does not exists"%self.mkfs_dev)
+                raise ex.Error("%s raw device does not exists"%self.mkfs_dev)
         elif rcEnv.sysname == 'Darwin':
             if os.path.isfile(self.mkfs_dev):
                 import utilities.devices.darwin
@@ -402,7 +402,7 @@ class BaseFs(Resource):
                 if len(devs) == 1:
                     self.mkfs_dev = devs[0]
                 else:
-                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+                    raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
         elif rcEnv.sysname == 'Linux':
             if os.path.isfile(self.mkfs_dev):
                 import utilities.devices.linux
@@ -410,7 +410,7 @@ class BaseFs(Resource):
                 if len(devs) == 1:
                     self.mkfs_dev = devs[0]
                 else:
-                    raise ex.excError("unable to find a device associated to %s" % self.mkfs_dev)
+                    raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
 
     def provisioner_fs(self):
         if self.fs_type in self.netfs + ["tmpfs"]:
@@ -422,7 +422,7 @@ class BaseFs(Resource):
         self.mnt = self.conf_get("mnt")
 
         if self.dev is None:
-            raise ex.excError("device %s not found. parent resource is down ?" % self.dev)
+            raise ex.Error("device %s not found. parent resource is down ?" % self.dev)
         if not os.path.exists(self.mnt):
             os.makedirs(self.mnt)
             self.log.info("%s mount point created"%self.mnt)
@@ -440,7 +440,7 @@ class BaseFs(Resource):
         self.get_mkfs_dev()
 
         if not os.path.exists(self.mkfs_dev):
-            raise ex.excError("abort fs provisioning: %s does not exist" % self.mkfs_dev)
+            raise ex.Error("abort fs provisioning: %s does not exist" % self.mkfs_dev)
 
         if self.check_fs():
             self.log.info("already provisioned")
@@ -457,9 +457,9 @@ class BaseFs(Resource):
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
                 self.log.error('Failed to format %s'%self.mkfs_dev)
-                raise ex.excError
+                raise ex.Error
         else:
-            raise ex.excError("no mkfs method implemented")
+            raise ex.Error("no mkfs method implemented")
 
     def provisioner_shared_non_leader(self):
         self.unset_lazy("device")
@@ -478,7 +478,7 @@ class BaseFs(Resource):
             try:
                 shutil.rmtree(self.mount_point)
             except Exception as e:
-                raise ex.excError(str(e))
+                raise ex.Error(str(e))
 
     def unprovisioner_fs(self):
         pass

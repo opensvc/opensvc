@@ -121,17 +121,17 @@ class SyncS3(Sync):
         try:
             e = [ d for d in self.ls() if d["key"] == key ][0]
         except:
-            raise ex.excError("key %s not found in bucket" % key)
+            raise ex.Error("key %s not found in bucket" % key)
         try:
             _d = datetime.datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")
         except:
-            raise ex.excError("undecodable date %s" % e["date"])
+            raise ex.Error("undecodable date %s" % e["date"])
         return _d
 
     def _status(self, verbose=False):
         try:
             self.check_bin()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         try:
@@ -164,9 +164,9 @@ class SyncS3(Sync):
 
     def check_bin(self):
         if not which("gof3r"):
-            raise ex.excError("could not find gof3r binary")
+            raise ex.Error("could not find gof3r binary")
         if not which("tar"):
-            raise ex.excError("could not find tar binary")
+            raise ex.Error("could not find tar binary")
 
     def sync_full(self):
         self.check_bin()
@@ -210,7 +210,7 @@ class SyncS3(Sync):
             aws_cf = ConfigParser.RawConfigParser()
             aws_cf.read(aws_cf_f)
         except:
-            raise ex.excError("failed to load aws config at %s" % aws_cf_f)
+            raise ex.Error("failed to load aws config at %s" % aws_cf_f)
         if hasattr(self.svc, "aws_profile"):
             profile = self.svc.aws_profile
         else:
@@ -218,11 +218,11 @@ class SyncS3(Sync):
         try:
             key = aws_cf.get(profile, "aws_access_key_id")
         except:
-            raise ex.excError("aws_access_key_id not found in section %s of %s" % (profile, aws_cf_f))
+            raise ex.Error("aws_access_key_id not found in section %s of %s" % (profile, aws_cf_f))
         try:
             secret = aws_cf.get(profile, "aws_secret_access_key")
         except:
-            raise ex.excError("aws_secret_access_key not found in section %s of %s" % (profile, aws_cf_f))
+            raise ex.Error("aws_secret_access_key not found in section %s of %s" % (profile, aws_cf_f))
         return key, secret
 
     def set_creds(self):
@@ -283,7 +283,7 @@ class SyncS3(Sync):
         except SchedNotAllowed:
             return False
         except SchedSyntaxError as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         return True
 
     def tar(self):

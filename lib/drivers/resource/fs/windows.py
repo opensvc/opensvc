@@ -22,7 +22,7 @@ def online_drive(self, driveindex):
     cmd = ['diskpart', '/s', diskpart_file]
     (ret, out, err) = self.vcall(cmd)
     if ret != 0:
-        raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+        raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
 
 def offline_drive(self, driveindex):
     diskpart_file = diskpartfile_name(self) + '_offline_disk_' + str(driveindex)
@@ -34,7 +34,7 @@ def offline_drive(self, driveindex):
     cmd = ['diskpart', '/s', diskpart_file]
     (ret, out, err) = self.vcall(cmd)
     if ret != 0:
-        raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+        raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
 
 class Fs(BaseFs):
     """
@@ -51,7 +51,7 @@ class Fs(BaseFs):
         for vol in vols:
             if vol.DeviceId == self.device_id:
                 return vol
-        raise ex.excError("volume %s not found" % self.device)
+        raise ex.Error("volume %s not found" % self.device)
 
     @lazy
     def device_id(self):
@@ -121,5 +121,5 @@ class Fs(BaseFs):
             return
         ret = self.try_umount()
         if ret != 0:
-            raise ex.excError("failed to umount %s" % self.device)
+            raise ex.Error("failed to umount %s" % self.device)
         return 0

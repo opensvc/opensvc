@@ -17,12 +17,12 @@ class FsHfs(Fs):
        ret, out, err = self.vcall(cmd)
        if ret != 0:
            self.log.error('Failed to format %s'%self.mkfs_dev)
-           raise ex.excError
+           raise ex.Error
        self.start()
        cmd = ["diskutil", "enableOwnership", self.mkfs_dev]
        ret, out, err = self.vcall(cmd)
        if ret != 0:
-           raise ex.excError
+           raise ex.Error
 
    def check_fs(self):
        """
@@ -62,7 +62,7 @@ class FsHfs(Fs):
        cmd = self.info + [self.mkfs_dev]
        out, err, ret = justcall(cmd)
        if ret != 0:
-           raise ex.excError(err)
+           raise ex.Error(err)
        for line in out.splitlines():
            line = line.strip()
            if not line.startswith("File System:") and not line.startswith("File System Personality:"):
@@ -72,5 +72,5 @@ class FsHfs(Fs):
                return False
            else:
                return True
-       raise ex.excError("unable to determine if %s is formatted" % self.mkfs_dev)
+       raise ex.Error("unable to determine if %s is formatted" % self.mkfs_dev)
 

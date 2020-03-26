@@ -45,7 +45,7 @@ class Handler(handler.Handler):
             self.validate_cluster_global_expect(options.global_expect)
         except ex.AbortAction as exc:
             info.append(str(exc))
-        except ex.excError as exc:
+        except ex.Error as exc:
             error.append(str(exc))
         else:
             thr.set_nmon(

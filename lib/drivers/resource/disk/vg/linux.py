@@ -190,7 +190,7 @@ class DiskVg(BaseDisk):
             self.pvscan()
         data = self.get_tags()
         if self.name not in data:
-            raise ex.excError("vg %s not found" % self.name)
+            raise ex.Error("vg %s not found" % self.name)
         return data[self.name]
 
     def remove_tags(self, tags=[]):
@@ -204,7 +204,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgchange', '--addtag', '@'+self.tag, self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.clear_cache("vg.tags")
 
     def activate_vg(self):
@@ -214,7 +214,7 @@ class DiskVg(BaseDisk):
         self.clear_cache("vg.lvs.attr")
         self.clear_cache("vg.tags")
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def _deactivate_vg(self):
         cmd = ['vgchange', '-a', 'n', self.name]
@@ -256,7 +256,7 @@ class DiskVg(BaseDisk):
         holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.sub_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
-            raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
+            raise ex.Error("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
             holder_dev.remove(self)
 
@@ -353,7 +353,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgremove', '-ff', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.clear_cache("vg.lvs")
         self.clear_cache("vg.lvs.attr")
         self.clear_cache("vg.tags")
@@ -376,14 +376,14 @@ class DiskVg(BaseDisk):
             self.log.info("pv %s is already a member of vg %s", pv, self.name)
             return True
         if out != "":
-            raise ex.excError("pv %s in use by vg %s" % (pv, out))
+            raise ex.Error("pv %s in use by vg %s" % (pv, out))
         return True
 
     def provisioner(self):
         self.pvs = self.pvs or self.oget("pvs")
         if not self.pvs:
             # lazy reference not resolvable
-            raise ex.excError("%s.pvs value is not valid" % self.rid)
+            raise ex.Error("%s.pvs value is not valid" % self.rid)
 
         l = []
         for pv in self.pvs:
@@ -413,7 +413,7 @@ class DiskVg(BaseDisk):
                 self.log.error("pv %s is not a block device nor a loop file"%pv)
                 pv_err |= True
         if pv_err:
-            raise ex.excError
+            raise ex.Error
 
         for pv in self.pvs:
             if self.has_pv(pv):
@@ -421,10 +421,10 @@ class DiskVg(BaseDisk):
             cmd = ['pvcreate', '-f', pv]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
         if len(self.pvs) == 0:
-            raise ex.excError("no pvs specified")
+            raise ex.Error("no pvs specified")
 
         if self.has_it():
             self.log.info("vg %s already exists", self.name)
@@ -433,7 +433,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgcreate', self.name] + self.pvs
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         self.can_rollback = True
         self.clear_cache("vg.lvs")

@@ -38,7 +38,7 @@ def brocadecmd(cmd, switch, username, key):
                        '-l', username, '-i', key, switch, 'bash --login -c '+cmd]
         out, err, ret = justcall(_cmd)
     if ret != 0:
-        raise ex.excError("brocade command execution error")
+        raise ex.Error("brocade command execution error")
     return out, err, ret
 
 class Brocades(object):
