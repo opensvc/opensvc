@@ -3,12 +3,12 @@ from __future__ import print_function
 import os
 import sys
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.dorado import Dorados
 from utilities.proc import justcall
+from .pool import BasePool
 
 def session(fn):
     """
@@ -25,7 +25,7 @@ def session(fn):
 
     return wrapper
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "dorado"
     capabilities = ["roo", "rwo", "shared", "blk", "fc"]
 

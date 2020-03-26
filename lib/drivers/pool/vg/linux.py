@@ -2,12 +2,12 @@ from __future__ import print_function
 
 import os
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from utilities.proc import justcall
+from ..pool import BasePool
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "vg"
     capabilities = ["rox", "rwx", "roo", "rwo", "snap", "blk"]
 
