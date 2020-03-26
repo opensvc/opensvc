@@ -15,17 +15,8 @@ from utilities.render.forest import Forest
 from converters import print_size
 from rcGlobalEnv import rcEnv
 from utilities.render.color import color
+from utilities.hash.md5 import hexdigest
 
-try:
-    from hashlib import md5
-    def hash(s):
-        o = md5()
-        o.update(s.encode('utf-8'))
-        return o.hexdigest()
-except ImportError:
-    from rcMd5 import md5
-    def hash(s):
-        return md5(s).digest().encode('hex')
 
 class DevRelation(object):
     def __init__(self, parent, child, used=0):
@@ -410,7 +401,7 @@ class DevTree(object):
             else:
                 used = self.get_used(chain)
                 ref = self.get_dev(chain[0].child).alias
-                region = hash(ref)
+                region = hexdigest(ref)
             l.append((d.devpath[0], used, region))
         return l
 
