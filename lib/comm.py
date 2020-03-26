@@ -236,8 +236,8 @@ class Crypt(object):
         else:
             nodes = [rcEnv.nodename]
 
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
+        from core.objects.ccfg import Ccfg
+        svc = Ccfg()
         svc.set_multi(["cluster.nodes=" + " ".join(nodes)], validation=False)
         node.unset_multi(["cluster.nodes"])
         return nodes
@@ -266,8 +266,8 @@ class Crypt(object):
         except Exception as exc:
             pass
         name = "default"
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
+        from core.objects.ccfg import Ccfg
+        svc = Ccfg()
         svc.set_multi(["cluster.name=" + name], validation=False)
         return name
 
@@ -292,9 +292,9 @@ class Crypt(object):
         except Exception as exc:
             pass
         import uuid
+        from core.objects.ccfg import Ccfg
         key = uuid.uuid1().hex
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
+        svc = Ccfg()
         svc.set_multi(["cluster.secret="+key], validation=False)
         return self.prepare_key(key)
 
@@ -310,9 +310,9 @@ class Crypt(object):
         except Exception as exc:
             pass
         import uuid
+        from core.objects.ccfg import Ccfg
         cluster_id = str(uuid.uuid1())
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
+        svc = Ccfg()
         svc.set_multi(["cluster.id="+cluster_id], validation=False)
         return cluster_id
 

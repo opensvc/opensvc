@@ -1,10 +1,10 @@
 from rcUtilities import lazy
-from svc import BaseSvc
+from core.objects.svc import BaseSvc
 
 DEFAULT_STATUS_GROUPS = [
 ]
 
-class ClusterSvc(BaseSvc):
+class Ccfg(BaseSvc):
     kind = "ccfg"
 
     def __init__(self, *args, **kwargs):

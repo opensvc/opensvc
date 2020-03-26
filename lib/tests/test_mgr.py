@@ -6,7 +6,7 @@ from mgr import Mgr
 
 import pytest
 
-from node import Node
+from core.node import Node
 
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'}
 OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS'}

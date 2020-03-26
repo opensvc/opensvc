@@ -1175,11 +1175,8 @@ def factory(kind):
     if kind == "node":
         from core.node import Node
         return Node
-    if kind == "ccfg":
-        from cluster import ClusterSvc
-        return ClusterSvc
     try:
-        mod = __import__(kind)
+        mod = importlib.import_module("core.objects."+kind)
         return getattr(mod, kind.capitalize())
     except Exception:
         pass

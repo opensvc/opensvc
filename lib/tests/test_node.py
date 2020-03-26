@@ -2,7 +2,7 @@ import os
 import logging
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from node import Node
+from core.node import Node
 import pytest
 
 

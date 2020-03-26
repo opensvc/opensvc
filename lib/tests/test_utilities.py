@@ -156,21 +156,6 @@ class TestUtilities:
             assert False
 
     @staticmethod
-    def test_ximport():
-        """
-        ximport()
-        """
-        mod = ximport("node")
-        assert hasattr(mod, "Node") is True
-
-        try:
-            _ = ximport("aa")
-        except ImportError:
-            pass
-        else:
-            assert False
-
-    @staticmethod
     def test_is_exe():
         """
         is_exe()
