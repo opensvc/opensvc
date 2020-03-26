@@ -49,4 +49,8 @@ def is_string(s):
     return False
 
 
+def is_glob(text):
+    if len(set(text) & set("?*[")) > 0:
+        return True
+    return False
 
