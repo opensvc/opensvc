@@ -48,10 +48,10 @@ if six.PY2:
 
 def signal_handler(*args):
     """
-    A signal handler raising the excSignal exception.
+    A signal handler raising the Signal exception.
     Args can be signum and frame, but we don't use them.
     """
-    raise ex.excSignal
+    raise ex.Signal
 
 # Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
@@ -823,7 +823,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             raise ex.excError("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
             raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
-        except ex.excSignal:
+        except ex.Signal:
             raise ex.excError("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
@@ -1121,7 +1121,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 self.log.error(msg)
             err = 1
             self.rollback_handler(action)
-        except ex.excSignal:
+        except ex.Signal:
             self.log.error("interrupted by signal")
             err = 1
         except:
@@ -2149,7 +2149,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self._followlogs(server=self.options.server, node=node,
                        debug=self.options.debug,
                        auto=auto)
-        except ex.excSignal:
+        except ex.Signal:
             return
         except (OSError, IOError) as exc:
             if exc.errno == 32:
@@ -4505,7 +4505,7 @@ class Svc(BaseSvc):
                     try:
                         if func():
                             sys.exit(1)
-                    except ex.excSignal:
+                    except ex.Signal:
                         sys.exit(1)
             except ImportError:
                 parallel = False

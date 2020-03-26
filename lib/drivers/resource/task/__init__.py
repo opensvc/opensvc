@@ -186,7 +186,7 @@ class BaseTask(Resource):
 
     @staticmethod
     def alarm_handler(signum, frame):
-        raise ex.excSignal
+        raise ex.Signal
 
     def lcall(self, *args, **kwargs):
         """
@@ -216,7 +216,7 @@ class BaseTask(Resource):
               "understand its role and effects before confirming the run.")
         try:
             buff = input("Do you really want to run %s (yes/no) > " % self.rid)
-        except ex.excSignal:
+        except ex.Signal:
             raise ex.excError("timeout waiting for confirmation")
 
         if buff == "yes":

@@ -107,7 +107,7 @@ class Mgr(object):
             os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
             print("kill detached process")
             ret = 1
-        except ex.excSignal as exc:
+        except ex.Signal as exc:
             print("the action, detached as pid %d, "
                   "will continue executing" % proc.pid)
             ret = 1
