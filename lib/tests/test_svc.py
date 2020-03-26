@@ -1,5 +1,6 @@
-from svc import Svc
 import pytest
+
+from core.objects.svc import Svc
 
 
 @pytest.fixture(scope='function', name='svc')
