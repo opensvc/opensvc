@@ -14,7 +14,6 @@ import optparse
 import textwrap
 import utilities.render.color
 import rcExceptions as ex
-import svc
 import re
 
 from core.node import Node

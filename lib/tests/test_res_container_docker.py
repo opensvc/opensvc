@@ -2,10 +2,10 @@
 from __future__ import print_function
 
 import rcStatus
-import svc
-from node import Node
+from core.node import Node
 from poolDirectory import Pool
 from rcUtilities import factory
+from core.objects.svc import Svc
 import rcExceptions as ex
 import pytest
 
@@ -27,7 +27,7 @@ class TestVolumeOptions:
             osvc_path_tests,
             options,
             expected_options):
-        svc1 = svc.Svc('test-service')
+        svc1 = Svc('test-service')
         container = ContainerDocker(rid='#docker0',
                                     volume_mounts=[str(tmpdir) + ':/dst:' + options])
         svc1 += container
@@ -56,7 +56,7 @@ class TestVolumeOptions:
         Pool(name="dir1", node=Node()).configure_volume(factory("vol")(name=vol_name),
                                                         access=vol_options)
 
-        svc1 = svc.Svc('svc1')
+        svc1 = Svc('svc1')
         vol = Volume(rid="#" + vol_name, name=vol_name, access=vol_options)
         container = ContainerDocker(rid='#dck1',
                                     volume_mounts=[vol_name + '/src:/dst:' + container_options])
@@ -73,7 +73,7 @@ class TestVolumeOptions:
     def test_raises_on_dup_destinations(mocker, osvc_path_tests, volume_mounts):
         mocker.patch.object(Volume, 'status', return_value=rcStatus.UP)
 
-        svc1 = svc.Svc('svc1')
+        svc1 = Svc('svc1')
         pool = Pool(name="dir1", node=Node())
         for vol_name in ['vol1', 'vol2']:
             pool.configure_volume(factory("vol")(name=vol_name))
