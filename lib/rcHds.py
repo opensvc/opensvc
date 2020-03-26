@@ -9,7 +9,7 @@ from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
 from converters import convert_size
-from node import Node
+from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcOptParser import OptParser
 from rcUtilities import lazy, factory, split_path

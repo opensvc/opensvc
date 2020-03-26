@@ -17,6 +17,7 @@ import rcExceptions as ex
 import svc
 import re
 
+from core.node import Node
 from rcUtilities import wipe_rest_markup
 from utilities.render.term import term_width
 from utilities.string import is_string
@@ -341,7 +342,6 @@ class OptParser(object):
             from version import version
         except ImportError:
             try:
-                from node import Node
                 version = Node().agent_version
             except IndexError:
                 version = "dev"

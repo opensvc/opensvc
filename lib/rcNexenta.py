@@ -8,7 +8,7 @@ from six.moves.urllib.request import Request, urlopen # pylint: disable=import-e
 from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory, split_path
-from node import Node
+from core.node import Node
 
 class logger(object):
     def __init__(self):
