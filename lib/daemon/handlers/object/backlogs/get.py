@@ -2,8 +2,8 @@ import os
 
 import daemon.handlers.handler as handler
 import daemon.shared as shared
+import exceptions as ex
 from rcUtilities import split_path
-from rcExceptions import HTTP
 
 class Handler(handler.Handler):
     """
@@ -38,7 +38,7 @@ class Handler(handler.Handler):
         options = self.parse_options(kwargs)
         svc = thr.get_service(options.path)
         if svc is None:
-            raise HTTP(404, "%s not found" % options.path)
+            raise ex.HTTP(404, "%s not found" % options.path)
         logfile = os.path.join(svc.log_d, svc.name+".log")
         ofile = thr._action_logs_open(logfile, options.backlog, svc.path)
         return thr.read_file_lines(ofile)

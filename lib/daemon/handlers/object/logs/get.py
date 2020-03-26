@@ -1,9 +1,9 @@
 import os
 
 import daemon.handlers.handler as handler
+import exceptions as ex
 from rcUtilities import split_path
 from rcGlobalEnv import rcEnv
-from rcExceptions import HTTP
 from utilities.string import bdecode
 
 try:
@@ -38,7 +38,7 @@ class Handler(handler.Handler):
         options = self.parse_options(kwargs)
         svc = thr.get_service(options.path)
         if svc is None:
-            raise HTTP(404, "%s not found" % options.path)
+            raise ex.HTTP(404, "%s not found" % options.path)
         request_headers = HTTPHeaderMap(thr.streams[stream_id]["request"].headers)
         try:
             content_type = bdecode(request_headers.get("accept").pop())

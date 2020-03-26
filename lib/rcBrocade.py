@@ -1,7 +1,7 @@
 import os
 import telnetlib
 
-import rcExceptions as ex
+import exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory

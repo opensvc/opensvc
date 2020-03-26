@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 
 import pool
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall

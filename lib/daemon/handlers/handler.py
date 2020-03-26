@@ -1,6 +1,6 @@
-from rcExceptions import HTTP
-from rcGlobalEnv import Storage
 import converters
+import exceptions as ex
+from rcGlobalEnv import Storage
 
 class Handler(object):
     """
@@ -30,7 +30,7 @@ class Handler(object):
                 except KeyError:
                     pass
             if required:
-                raise HTTP(400, "required option path is not set")
+                raise ex.HTTP(400, "required option path is not set")
             return None
 
         def get_option(data, opt):
@@ -38,7 +38,7 @@ class Handler(object):
             fmt = opt.get("format", "string")
             required = opt.get("required", False)
             if fmt != "object_path" and required and name not in data:
-                raise HTTP(400, "required option %s is not set" % name)
+                raise ex.HTTP(400, "required option %s is not set" % name)
             value = data.get(name, opt.get("default"))
             if value is None:
                 value = opt.get("default")
@@ -47,7 +47,7 @@ class Handler(object):
             except AttributeError:
                 pass
             except Exception as exc:
-                raise HTTP(400, "option %s format conversion to %s error: %s" % (name, fmt, exc))
+                raise ex.HTTP(400, "option %s format conversion to %s error: %s" % (name, fmt, exc))
             if fmt == "object_path":
                 value = options_path(data, required=required)
             return name, value

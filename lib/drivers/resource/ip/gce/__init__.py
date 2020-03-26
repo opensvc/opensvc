@@ -1,7 +1,7 @@
 import json
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 import rcGce
 import rcStatus
 

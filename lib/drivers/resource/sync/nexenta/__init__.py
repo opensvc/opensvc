@@ -1,7 +1,7 @@
 import datetime
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 import drivers.array.nexenta as array_driver
 

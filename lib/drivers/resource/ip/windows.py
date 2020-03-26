@@ -4,7 +4,7 @@ This module implements the Windows ip resource driver
 
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder

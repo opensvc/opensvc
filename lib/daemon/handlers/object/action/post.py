@@ -5,10 +5,9 @@ from subprocess import Popen, PIPE
 import daemon.handlers.handler as handler
 import daemon.handlers.rbac
 import daemon.shared as shared
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import drop_option, split_path
 from rcGlobalEnv import rcEnv
-from rcExceptions import HTTP
 from utilities.string import bdecode
 
 GUEST_ACTIONS = (
@@ -153,7 +152,7 @@ class Handler(handler.Handler, daemon.handlers.rbac.ObjectCreateMixin):
             payload = {options.path: cf}
             errors = self.rbac_create_data(payload=payload, thr=thr, **kwargs)
             if errors:
-                raise HTTP(403, errors)
+                raise ex.HTTP(403, errors)
         else:
             thr.rbac_requires(roles=[role], namespaces=[namespace], **kwargs)
 
@@ -169,10 +168,10 @@ class Handler(handler.Handler, daemon.handlers.rbac.ObjectCreateMixin):
 
         if thr.get_service(options.path) is None and options.action not in ("create", "deploy"):
             thr.log_request("service action (%s not installed)" % options.path, nodename, lvl="warning", **kwargs)
-            raise HTTP(404, "%s not found" % options.path)
+            raise ex.HTTP(404, "%s not found" % options.path)
         if not options.action and not options.cmd:
             thr.log_request("service action (no action set)", nodename, lvl="error", **kwargs)
-            raise HTTP(400, "action not set")
+            raise ex.HTTP(400, "action not set")
 
         for opt in ("node", "daemon", "svcs", "service", "s", "parm_svcs", "local", "id"):
             if opt in options.options:

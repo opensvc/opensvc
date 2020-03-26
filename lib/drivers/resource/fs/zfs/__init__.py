@@ -1,6 +1,6 @@
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 
 from converters import convert_size
 from rcGlobalEnv import rcEnv

@@ -4,7 +4,7 @@ import re
 import glob
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache
 from utilities.proc import justcall, call, qcall, which

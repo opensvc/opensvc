@@ -1,7 +1,7 @@
 import os
 
 import rcStatus
-import rcExceptions as ex
+import exceptions as ex
 
 from . import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv

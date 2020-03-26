@@ -13,7 +13,7 @@ from optparse import OptionParser
 import six
 
 import daemon.shared as shared
-import rcExceptions as ex
+import exceptions as ex
 import rcLogger
 from comm import CRYPTO_MODULE
 from lock import LockTimeout, cmlock

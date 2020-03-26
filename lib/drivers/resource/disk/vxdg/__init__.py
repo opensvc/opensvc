@@ -6,7 +6,7 @@ import re
 from collections import namedtuple
 from stat import *
 
-import rcExceptions as ex
+import exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv

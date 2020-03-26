@@ -1,4 +1,4 @@
-import rcExceptions as ex
+import exceptions as ex
 import utilities.ping
 
 from . import \

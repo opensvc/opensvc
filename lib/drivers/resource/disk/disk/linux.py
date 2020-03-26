@@ -2,7 +2,7 @@ import glob
 import os
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 import utilities.devices.linux
 

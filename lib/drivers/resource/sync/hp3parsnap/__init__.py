@@ -1,7 +1,7 @@
 import datetime
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 import drivers.array.hp3par as array_driver
 import rcStatus
 

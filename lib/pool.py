@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import lazy, factory
 from converters import convert_size
 
