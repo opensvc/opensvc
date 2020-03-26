@@ -11,7 +11,7 @@ from converters import convert_speed, print_size
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts
 from rcUtilities import lazy
-from resources import Resource
+from core.resource import Resource
 from utilities.string import bdecode
 
 def notify(func):

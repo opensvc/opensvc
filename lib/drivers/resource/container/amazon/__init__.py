@@ -20,7 +20,7 @@ from .. import \
     KW_CLOUD_ID, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from resources import Resource
+from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from core.objects.svcdict import KEYS

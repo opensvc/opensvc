@@ -8,7 +8,7 @@ import exceptions as exc
 import rcStatus
 
 from rcGlobalEnv import rcEnv
-from resources import Resource
+from core.resource import Resource
 
 KW_PRKEY = {
     "keyword": "prkey",

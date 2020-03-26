@@ -8,7 +8,7 @@ from subprocess import *
 import exceptions as ex
 import rcStatus
 
-from resources import Resource
+from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 

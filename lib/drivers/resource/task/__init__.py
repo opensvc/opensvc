@@ -9,7 +9,7 @@ import rcStatus
 from rcScheduler import SchedOpts
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
-from resources import Resource
+from core.resource import Resource
 from six.moves import input
 from utilities.proc import lcall
 

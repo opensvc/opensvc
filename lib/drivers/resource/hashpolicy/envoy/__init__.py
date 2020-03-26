@@ -1,4 +1,4 @@
-from resources import DataResource
+from core.resource import DataResource
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "hashpolicy"

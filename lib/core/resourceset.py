@@ -11,7 +11,7 @@ import exceptions as ex
 import rcStatus
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
-from resources import Resource
+from core.resource import Resource
 
 class ResourceSet(object):
     """
