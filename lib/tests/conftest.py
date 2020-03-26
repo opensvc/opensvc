@@ -10,7 +10,7 @@ import pytest  # nopep8
 
 @pytest.fixture(scope='function')
 def which(mocker):
-    mocker.patch('rcUtilities.which')
+    mocker.patch('utilities.proc.which')
 
 
 @pytest.fixture(scope='function', name='osvc_path_tests')
