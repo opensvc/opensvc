@@ -3,7 +3,7 @@ import os
 import time
 
 import rcExceptions as ex
-import rcNecIsm
+import drivers.array.necism as array_driver
 import rcStatus
 
 from .. import Sync, notify
@@ -50,7 +50,7 @@ class SyncNecismsnap(Sync):
         super(SyncNecismsnap, self).__init__(type="sync.necismsnap", **kwargs)
 
         self.devs = devs or []
-        self.array = rcNecIsm.NecIsm(array_name)
+        self.array = array_driver.NecIsm(array_name)
         self.parse_devs(devs)
         self.default_schedule = "@0"
         self.label = "NecIsm snapshot %s" % array_name

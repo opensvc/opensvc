@@ -3,10 +3,10 @@ import os
 
 import rcExceptions as ex
 import rcStatus
+import drivers.array.nexenta as array_driver
 
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from rcNexenta import Nexenta
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
 
@@ -256,8 +256,8 @@ class SyncNexenta(Sync):
         if len(heads) != 1:
             raise ex.excError("two heads need to be setup")
 
-        self.local = Nexenta(self.filer, self.log)
-        self.remote = Nexenta(heads[0], self.log)
+        self.local = array_driver.Nexenta(self.filer, self.log)
+        self.remote = array_driver.Nexenta(heads[0], self.log)
 
         prop = 'zfs/to-host'
         try:

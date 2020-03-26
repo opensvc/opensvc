@@ -2,7 +2,7 @@ import datetime
 import os
 
 import rcExceptions as ex
-import rcIbmDs
+import drivers.array.ibmds as array_driver
 import rcStatus
 
 from .. import Sync, notify
@@ -90,7 +90,7 @@ class SyncIbmdssnap(Sync):
 
     def resyncflash(self):
         if self.array is None:
-            self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
+            self.array = array_driver.IbmDss(node=self.svc.node).get(self.arrayname)
         data = self.lsflash()
         ese_pairs = []
         other_pairs = []
@@ -253,7 +253,7 @@ class SyncIbmdssnap(Sync):
 
     def lsflash(self):
         if self.array is None:
-            self.array = rcIbmDs.IbmDss(node=self.svc.node).get(self.arrayname)
+            self.array = array_driver.IbmDss(node=self.svc.node).get(self.arrayname)
         out, err = self.array.dscli(self.params+'lsflash -l -dev %s ' % self.arrayname + ' '.join(self.pairs))
         if 'No Flash Copy found' in out:
             return []

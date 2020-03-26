@@ -2,7 +2,7 @@ import datetime
 import os
 
 import rcExceptions as ex
-import rcHp3par as rc
+import drivers.array.hp3par as array_driver
 import rcStatus
 
 from .. import Sync, notify
@@ -99,7 +99,7 @@ class SyncHp3par(Sync):
 
     def on_add(self):
         try:
-            arrays = rc.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
+            arrays = array_driver.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
             raise ex.excError(str(e))
         if len(arrays.arrays) == 1:
@@ -116,7 +116,7 @@ class SyncHp3par(Sync):
             array_name = target
             if self.remote_array_obj is None:
                 try:
-                    self.remote_array_obj = rc.Hp3pars(objects=[target], log=self.log, node=self.svc.node).arrays[0]
+                    self.remote_array_obj = array_driver.Hp3pars(objects=[target], log=self.log, node=self.svc.node).arrays[0]
                     if self.remote_array_obj is None:
                         raise ex.excError("array %s is not accessible" % array_name)
                     self.remote_array_obj.path = self.svc.path

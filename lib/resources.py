@@ -1271,8 +1271,9 @@ class Resource(object):
     def promote_rw(self):
         if not self.need_promote_rw:
             return
-        mod = __import__("rcUtilities"+rcEnv.sysname)
-        if not hasattr(mod, "promote_dev_rw"):
+        try:
+            from utilities.devices import promote_dev_rw
+        except ImportError:
             self.log.warning("promote_rw is not supported on this operating system")
             return
         for dev in self.base_devs():
