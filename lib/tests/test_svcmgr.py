@@ -3,13 +3,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
 import json
+import os
 import socket
+import sys
 import uuid
 
 try:
@@ -17,13 +14,13 @@ try:
 except ImportError:
     from io import StringIO
 
-from rcUtilities import try_decode
-
 import svcmgr
 import nodemgr
+from utilities.string import try_decode
 
 UNICODE_STRING = "bêh"
 SVCNAME = "unittest-" + str(uuid.uuid4())
+
 
 class TestSvcmgr:
 
