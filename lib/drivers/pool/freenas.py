@@ -3,16 +3,16 @@ from __future__ import print_function
 import os
 import sys
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.freenas import Freenass
 from utilities.proc import justcall
+from .pool import BasePool
 
 LOCK_NAME = "freenas_create_disk"
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "freenas"
     capabilities = ["roo", "rwo", "shared", "blk", "iscsi"]
 
