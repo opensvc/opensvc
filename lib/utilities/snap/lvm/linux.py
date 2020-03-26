@@ -1,6 +1,6 @@
 import os
 
-import exceptions as ex
+import core.exceptions as ex
 import utilities.snap
 import utilities.devices.linux
 

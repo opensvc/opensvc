@@ -5,7 +5,7 @@ import time
 from six.moves import queue
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 
 

@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 import sys
 
-import exceptions as ex
+import core.exceptions as ex
 
 from rcGlobalEnv import rcEnv
 from core.node import Node

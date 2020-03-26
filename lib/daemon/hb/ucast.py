@@ -7,7 +7,7 @@ import threading
 import time
 
 import six
-import exceptions as ex
+import core.exceptions as ex
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 from .hb import Hb

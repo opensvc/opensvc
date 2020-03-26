@@ -9,7 +9,7 @@ import uuid
 import json
 import time
 
-import exceptions as ex
+import core.exceptions as ex
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 from rcUtilities import chunker

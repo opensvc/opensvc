@@ -3,7 +3,7 @@ import pwd
 import sys
 
 import lock
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from rcScheduler import SchedOpts

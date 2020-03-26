@@ -6,7 +6,7 @@ from core.node import Node
 from poolDirectory import Pool
 from rcUtilities import factory
 from core.objects.svc import Svc
-import exceptions as ex
+import core.exceptions as ex
 import pytest
 
 from rcUtilities import driver_import

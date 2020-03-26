@@ -18,7 +18,7 @@ from subprocess import Popen, PIPE
 from itertools import chain
 
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 import json_delta
 from rcGlobalEnv import rcEnv
 from storage import Storage

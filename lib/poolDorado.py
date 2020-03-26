@@ -4,7 +4,7 @@ import os
 import sys
 
 import pool
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.dorado import Dorados

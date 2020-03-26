@@ -1,5 +1,5 @@
 import socket
-import exceptions as ex
+import core.exceptions as ex
 
 class Cloud(object):
     def __init__(self, s, auth):

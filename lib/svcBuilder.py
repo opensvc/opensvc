@@ -8,7 +8,7 @@ import logging
 from rcGlobalEnv import rcEnv
 from storage import Storage
 import rcLogger
-import exceptions as ex
+import core.exceptions as ex
 import rcConfigParser
 from rcUtilities import mimport, list_services, \
                         svc_pathetc, split_path, makedirs, factory

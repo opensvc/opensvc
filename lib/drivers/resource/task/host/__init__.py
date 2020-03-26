@@ -1,6 +1,6 @@
 import os
 
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import BaseTask, KEYWORDS as BASE_KEYWORDS
 from rcGlobalEnv import rcEnv

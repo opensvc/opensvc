@@ -2,7 +2,7 @@ import os
 import re
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 import utilities.devices.darwin
 
 from . import \

@@ -1,7 +1,7 @@
 import os
 import re
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import utilities.devices
 

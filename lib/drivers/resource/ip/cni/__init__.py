@@ -8,7 +8,7 @@ import socket
 
 from subprocess import Popen, PIPE
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import utilities.ifconfig
 

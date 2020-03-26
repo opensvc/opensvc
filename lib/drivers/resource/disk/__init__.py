@@ -4,7 +4,7 @@ Base disk resource driver module.
 
 import os
 
-import exceptions as exc
+import core.exceptions as exc
 import rcStatus
 
 from rcGlobalEnv import rcEnv

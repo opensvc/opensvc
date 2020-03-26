@@ -2,7 +2,7 @@ import time
 
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 
 from ..sunos import Ip
 from .. import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY

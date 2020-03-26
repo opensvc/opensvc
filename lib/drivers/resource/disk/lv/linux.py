@@ -4,7 +4,7 @@ import time
 
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 
 from . import BaseDiskLv, adder as base_adder
 from converters import convert_size

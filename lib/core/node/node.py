@@ -23,7 +23,7 @@ from errno import ECONNREFUSED, EPIPE
 
 import six
 
-import exceptions as ex
+import core.exceptions as ex
 import rcLogger
 import svcBuilder
 import xmlrpcClient

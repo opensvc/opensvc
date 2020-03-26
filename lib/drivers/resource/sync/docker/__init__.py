@@ -3,7 +3,7 @@ import os
 from subprocess import Popen, PIPE
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 import rcContainer
 
 from .. import Sync, notify

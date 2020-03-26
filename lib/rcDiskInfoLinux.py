@@ -8,7 +8,7 @@ import re
 import sys
 import time
 
-import exceptions as ex
+import core.exceptions as ex
 import rcDevTreeVeritas
 import rcDiskInfo
 import utilities.devices.linux

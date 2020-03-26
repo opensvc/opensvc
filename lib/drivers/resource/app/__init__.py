@@ -16,7 +16,7 @@ from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 import lock
 
 KEYWORDS = [
