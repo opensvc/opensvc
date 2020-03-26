@@ -7,7 +7,7 @@ try:
     from libcloud.compute.providers import get_driver
     import libcloud.security
 except ImportError:
-    raise ex.excInitError("apache-libcloud module must be installed")
+    raise ex.InitError("apache-libcloud module must be installed")
 
 class Cloud(rcCloud.Cloud):
     mode = 'openstack'
@@ -17,13 +17,13 @@ class Cloud(rcCloud.Cloud):
         kwargs = {}
 
         if 'username' not in auth:
-            raise ex.excInitError("option 'username' is mandatory in %s section"%self.mode)
+            raise ex.InitError("option 'username' is mandatory in %s section"%self.mode)
 
         if 'password' not in auth:
-            raise ex.excInitError("option 'password' is mandatory in %s section"%self.mode)
+            raise ex.InitError("option 'password' is mandatory in %s section"%self.mode)
 
         if 'url' not in auth:
-            raise ex.excInitError("option 'url' is mandatory in %s section"%self.mode)
+            raise ex.InitError("option 'url' is mandatory in %s section"%self.mode)
 
         kwargs['ex_force_auth_url'] = auth['url']
 
