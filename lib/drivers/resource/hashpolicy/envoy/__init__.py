@@ -1,4 +1,4 @@
-from resData import Data
+from resources import DataResource
 from svcdict import KEYS
 
 DRIVER_GROUP = "hashpolicy"
@@ -45,7 +45,7 @@ def adder(svc, s):
     r = HashpolicyEnvoy(**kwargs)
     svc += r
 
-class HashpolicyEnvoy(Data):
+class HashpolicyEnvoy(DataResource):
     def __init__(self, **kwargs):
         super(HashpolicyEnvoy, self).__init__(type="hash_policy.envoy", **kwargs)
         self.label = "envoy hash policy"
