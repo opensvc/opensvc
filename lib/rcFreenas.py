@@ -12,7 +12,7 @@ from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
 from utilities.string import bencode, bdecode, is_string
-from node import Node
+from core.node import Node
 
 try:
     import requests
