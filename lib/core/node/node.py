@@ -2541,7 +2541,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     if not need_aggregate:
                         print("%s: %s" % (svc.path, exc), file=sys.stderr)
                     continue
-                except ex.excSignal:
+                except ex.Signal:
                     break
 
         if self.can_parallel(action, svcs, options):
@@ -3471,7 +3471,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def events(self, server=None):
         try:
             self._events(server=server)
-        except ex.excSignal:
+        except ex.Signal:
             return
         except (OSError, IOError) as exc:
             if exc.errno == EPIPE:
@@ -3520,7 +3520,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self._followlogs(server=self.options.server, node=node,
                              debug=self.options.debug,
                              auto=auto)
-        except ex.excSignal:
+        except ex.Signal:
             return
         except (OSError, IOError) as exc:
             if exc.errno == EPIPE:

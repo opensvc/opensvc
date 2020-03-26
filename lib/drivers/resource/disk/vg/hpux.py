@@ -410,7 +410,7 @@ class DiskVg(BaseDisk):
         except lock.LockAcquire as e:
             self.log.warning("another action is currently running (pid=%s)"%e.pid)
             raise ex.excError
-        except ex.excSignal:
+        except ex.Signal:
             self.log.error("interrupted by signal")
             raise ex.excError
         except:

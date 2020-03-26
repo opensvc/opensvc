@@ -297,7 +297,7 @@ class BaseDiskScsireserv(Resource):
             return rcStatus.NA
         try:
             self.check_all_paths_registered()
-        except ex.excSignal as exc:
+        except ex.Signal as exc:
             self.status_log(str(exc))
         except ex.excError as exc:
             self.status_log(str(exc))
