@@ -5,7 +5,7 @@ import subprocess
 import time
 import xml.etree.ElementTree as ET
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from .. import Sync, notify

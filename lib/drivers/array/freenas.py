@@ -5,7 +5,7 @@ import os
 import json
 from optparse import Option
 
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import factory, split_path

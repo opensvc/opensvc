@@ -8,7 +8,7 @@ import re
 import datetime
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache

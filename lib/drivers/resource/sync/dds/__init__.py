@@ -3,7 +3,7 @@ import os
 
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 import utilities.devices.linux
 

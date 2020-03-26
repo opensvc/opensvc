@@ -1,5 +1,5 @@
 import socket
-import rcExceptions as ex
+import exceptions as ex
 
 class Cloud(object):
     def __init__(self, s, auth):

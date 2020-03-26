@@ -1,6 +1,6 @@
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import protected_mount
 from utilities.mounts.hpux import Mounts
 from utilities.proc import qcall

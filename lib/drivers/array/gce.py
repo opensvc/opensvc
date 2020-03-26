@@ -1,6 +1,6 @@
 import json
 
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall
 

@@ -7,7 +7,7 @@ import copy
 import codecs
 
 import six
-import rcExceptions as ex
+import exceptions as ex
 from converters import *
 from rcUtilities import read_cf, eval_expr, unset_lazy, \
                         lazy, makedirs, factory, read_cf_comments

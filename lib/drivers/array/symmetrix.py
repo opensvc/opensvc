@@ -6,7 +6,7 @@ import os
 import json
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
 from storage import Storage

@@ -6,7 +6,7 @@ import re
 import stat
 import sys
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS
