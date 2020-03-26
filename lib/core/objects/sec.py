@@ -15,7 +15,7 @@ from rcUtilities import lazy, makedirs, split_path, fmt_path, factory
 from core.objects.svc import BaseSvc
 from converters import print_size
 from core.objects.data import DataMixin
-from rcSsl import gen_cert, get_expire
+from utilities.ssl import gen_cert, get_expire
 from utilities.string import bencode, bdecode
 import rcExceptions as ex
 
