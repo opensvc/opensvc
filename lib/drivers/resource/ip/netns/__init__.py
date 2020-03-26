@@ -644,9 +644,9 @@ class IpNetns(Ip):
     def stopip_cmd(self):
         intf = self.get_docker_interface()
         if intf is None:
-            raise ex.excContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
+            raise ex.ContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
         if self.mask is None:
-            raise ex.excContinueAction("netmask is not set")
+            raise ex.ContinueAction("netmask is not set")
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
         cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "del", "dev", intf]

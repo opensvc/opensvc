@@ -334,7 +334,7 @@ class ResourceSet(object):
                         resource.log.warning(msg)
                     resource.log.warning("abort action on resource set")
                     break
-                except ex.excContinueAction as exc:
+                except ex.ContinueAction as exc:
                     msg = str(exc)
                     if msg != "":
                         resource.log.info(msg)
