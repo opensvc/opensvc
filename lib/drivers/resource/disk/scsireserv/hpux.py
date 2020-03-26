@@ -51,7 +51,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         ret = p.returncode
         if ret != 0:
             self.log.error("can not fetch 'leg_mpath_enable' value")
-            raise ex.excError
+            raise ex.Error
         if 'false' in buff[0]:
             return
         cmd = ['scsimgr', 'save_attr', '-a', 'leg_mpath_enable=false']
@@ -61,7 +61,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         ret = p.returncode
         if ret != 0:
             self.log.error("can not set 'leg_mpath_enable' value")
-            raise ex.excError
+            raise ex.Error
 
     def ack_unit_attention(self, d):
         return 0

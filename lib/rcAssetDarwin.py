@@ -46,7 +46,7 @@ class Asset(rcAsset.Asset):
         elif unit == 'MB':
             pass
         else:
-            raise ex.excError("unexpected memory format")
+            raise ex.Error("unexpected memory format")
         return str(size)
 
     def _get_mem_banks(self):

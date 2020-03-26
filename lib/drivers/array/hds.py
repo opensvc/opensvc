@@ -204,7 +204,7 @@ class Array(object):
             os.environ["HDVM_CLI_JRE_PATH"] = self.jre_path
 
         if which(self.bin) is None:
-            raise ex.excError("Can not find %s"%self.bin)
+            raise ex.Error("Can not find %s"%self.bin)
         l = [
             self.bin, self.url, cmd[0],
             "-u", self.username,
@@ -231,7 +231,7 @@ class Array(object):
             self.log_result(out, err)
         if ret != 0:
             self.log.error(err)
-            raise ex.excError(err)
+            raise ex.Error(err)
         return out, err, ret
 
     def parse(self, out):
@@ -513,7 +513,7 @@ class Array(object):
 
     def del_map(self, devnum=None, mappings=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         devnum = self.to_devnum(devnum)
         results = []
         if mappings is not None:
@@ -540,11 +540,11 @@ class Array(object):
 
     def _del_map(self, devnum=None, domain=None, portname=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         if domain is None:
-            raise ex.excError("--domain is mandatory")
+            raise ex.Error("--domain is mandatory")
         if portname is None:
-            raise ex.excError("--portname is mandatory")
+            raise ex.Error("--portname is mandatory")
         cmd = [
             "deletelun",
             "devnum="+str(devnum),
@@ -553,15 +553,15 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         return {}
 
     def add_map(self, devnum=None, mappings=None, lun=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         devnum = self.to_devnum(devnum)
         if mappings is None:
-            raise ex.excError("--mappings is mandatory")
+            raise ex.Error("--mappings is mandatory")
         results = []
         if mappings is not None:
             internal_mappings = self.translate_mappings(mappings)
@@ -578,13 +578,13 @@ class Array(object):
 
     def _add_map(self, devnum=None, domain=None, portname=None, lun=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         if domain is None:
-            raise ex.excError("--domain is mandatory")
+            raise ex.Error("--domain is mandatory")
         if portname is None:
-            raise ex.excError("--portname is mandatory")
+            raise ex.Error("--portname is mandatory")
         if lun is None:
-            raise ex.excError("--lun is mandatory")
+            raise ex.Error("--lun is mandatory")
         domain = str(domain)
         devnum = str(devnum)
         for dom in self.domain_data:
@@ -603,7 +603,7 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = self.parse(out)
         return data[0]["Path"][0]
 
@@ -618,9 +618,9 @@ class Array(object):
 
     def add_disk(self, name=None, pool=None, size=None, lun=None, mappings=None, **kwargs):
         if pool is None:
-            raise ex.excError("--pool is mandatory")
+            raise ex.Error("--pool is mandatory")
         if size == 0 or size is None:
-            raise ex.excError("--size is mandatory")
+            raise ex.Error("--size is mandatory")
         pool_id = self.get_pool_by_name(pool)["poolID"]
         cmd = [
             "addvirtualvolume",
@@ -630,7 +630,7 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = self.parse(out)
         ret = data[0]["ArrayGroup"][0]["Lu"][0]
 
@@ -667,10 +667,10 @@ class Array(object):
 
     def resize_disk(self, devnum=None, size=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         devnum = self.to_devnum(devnum)
         if size == 0 or size is None:
-            raise ex.excError("--size is mandatory")
+            raise ex.Error("--size is mandatory")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="KB")
             data = self.get_logicalunit(devnum=devnum)
@@ -686,11 +686,11 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def del_disk(self, devnum=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         devnum = self.to_devnum(devnum)
         self.del_map(devnum=devnum)
         cmd = [
@@ -699,14 +699,14 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.del_diskinfo(devnum)
 
     def rename_disk(self, devnum=None, name=None, **kwargs):
         if devnum is None:
-            raise ex.excError("--devnum is mandatory")
+            raise ex.Error("--devnum is mandatory")
         if name is None:
-            raise ex.excError("--name is mandatory")
+            raise ex.Error("--name is mandatory")
         devnum = self.to_devnum(devnum)
         cmd = [
             "modifylabel",
@@ -715,7 +715,7 @@ class Array(object):
         ]
         out, err, ret = self.cmd(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = self.parse(out)
         return data[0]
 
@@ -727,7 +727,7 @@ class Array(object):
         try:
             ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in ret:
             self.log.error("failed to delete the disk object in the collector: %s", ret["error"])
         return ret
@@ -746,23 +746,23 @@ class Array(object):
                 "disk_group": self.get_pool_by_id(data["dpPoolID"]),
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(ret["error"])
+            raise ex.Error(ret["error"])
         return ret
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
     array = o.get_array(array_name)
     if array is None:
-        raise ex.excError("array %s not found" % array_name)
+        raise ex.Error("array %s not found" % array_name)
     array.node = node
     node.logger.handlers[1].setLevel(logging.CRITICAL)
     if not hasattr(array, action):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
     try:
         ret = getattr(array, action)(**kwargs)
-    except ex.excError as exc:
+    except ex.Error as exc:
         ret = {
             "log": array.journal,
         }
@@ -788,7 +788,7 @@ def main(argv, node=None):
 if __name__ == "__main__":
     try:
         main(sys.argv)
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         sys.exit(1)
     except IOError as exc:

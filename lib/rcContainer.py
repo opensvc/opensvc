@@ -58,7 +58,7 @@ class ContainerLib(object):
         cmd = self.docker_cmd + ["ps", "-a", "--no-trunc"] + self.json_opt
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = []
         for line in out.splitlines():
             data.append(json.loads(line))
@@ -258,7 +258,7 @@ class ContainerLib(object):
         cmd = self.docker_cmd + ["pull", ref]
         results = justcall(cmd)
         if results[2] != 0:
-            raise ex.excError(results[1])
+            raise ex.Error(results[1])
 
     @lazy
     def images(self):
@@ -626,7 +626,7 @@ class DockerLib(ContainerLib):
                     # already dead
                     pass
                 else:
-                    raise ex.excError("failed to kill docker daemon: %s" % str(exc))
+                    raise ex.Error("failed to kill docker daemon: %s" % str(exc))
 
     def docker_start(self, verbose=True):
         """
@@ -635,7 +635,7 @@ class DockerLib(ContainerLib):
         if not self.docker_daemon_private:
             return
         if self.docker_cmd is None:
-            raise ex.excError("docker executable not found")
+            raise ex.Error("docker executable not found")
         import lock
         lockfile = os.path.join(self.svc.var_d, "lock.docker_start")
         try:
@@ -736,7 +736,7 @@ class DockerLib(ContainerLib):
         except IOError as exc:
             if exc.errno == errno.ENOENT:
                 return False
-            return ex.excError("docker_running: "+str(exc))
+            return ex.Error("docker_running: "+str(exc))
         self.svc.log.debug("docker_running: pid found in pid file %s", buff)
         exe = os.path.join(os.sep, "proc", buff, "exe")
         try:
@@ -806,7 +806,7 @@ class PodmanLib(ContainerLib):
         cmd = self.docker_cmd + ["ps", "-a", "--no-trunc"] + self.json_opt
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         return json.loads(out)
 
     def docker_stop(self):

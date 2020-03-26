@@ -63,7 +63,7 @@ class BaseDiskScsireserv(Resource):
         try:
             self.hostid = self.svc.node.get_prkey()
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
 
     def _info(self):
@@ -118,7 +118,7 @@ class BaseDiskScsireserv(Resource):
     def disk_preempt_reservation(self, disk, oldkey):
         if not self.svc.options.force and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
             self.log.error("%s is already reserved. use --force to override this safety net"%disk)
-            raise ex.excError
+            raise ex.Error
         return self._disk_preempt_reservation(disk, oldkey)
 
 
@@ -299,7 +299,7 @@ class BaseDiskScsireserv(Resource):
             self.check_all_paths_registered()
         except ex.Signal as exc:
             self.status_log(str(exc))
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.status_log(str(exc))
             return rcStatus.WARN
         return self.checkreserv()
@@ -314,7 +314,7 @@ class BaseDiskScsireserv(Resource):
             return
         self.can_rollback = True
         if self.scsireserv() != 0:
-            raise ex.excError
+            raise ex.Error
 
 
     def stop(self):
@@ -322,7 +322,7 @@ class BaseDiskScsireserv(Resource):
         if not self.scsireserv_supported():
             return
         if self.scsirelease() != 0:
-            raise ex.excError
+            raise ex.Error
 
 
     def boot(self):

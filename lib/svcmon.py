@@ -176,7 +176,7 @@ def svcmon(node, options=None):
     status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
     if status_data is None or status_data.get("status", 0) != 0:
         status, error, info = node.parse_result(status_data)
-        raise ex.excError(error)
+        raise ex.Error(error)
     nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
     if not nodes:
@@ -285,7 +285,7 @@ def main(argv=None):
     try:
         _main(node, argv)
         return 0
-    except ex.excError as e:
+    except ex.Error as e:
         if str(e):
             print(e, file=sys.stderr)
         return 1

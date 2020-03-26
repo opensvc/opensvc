@@ -161,7 +161,7 @@ class IpNetns(Ip):
         try:
             cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "address", self.macaddr]
             ret, out, err = self.vcall(cmd)
-        except ex.excError:
+        except ex.Error:
              pass
         if ret != 0:
             return ret, out, err
@@ -172,7 +172,7 @@ class IpNetns(Ip):
         """
         try:
              self.get_mask()
-        except ex.excError:
+        except ex.Error:
              pass
         self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.mask), self.ipdev, self.container_rid)
 
@@ -185,7 +185,7 @@ class IpNetns(Ip):
         used eth netdevs.
         """
         if self.netns is None:
-            raise ex.excError("could not determine netns")
+            raise ex.Error("could not determine netns")
         with open("/proc/net/dev", "r") as filep:
             local_devs = [line.split(":", 1)[0] for line in filep.readlines() if ":" in line]
 
@@ -223,7 +223,7 @@ class IpNetns(Ip):
     @lazy
     def container(self):
         if self.container_rid not in self.svc.resources_by_id:
-            raise ex.excError("rid %s not found" % self.container_rid)
+            raise ex.Error("rid %s not found" % self.container_rid)
         return self.svc.resources_by_id[self.container_rid]
 
     def container_id(self, refresh=False):
@@ -232,7 +232,7 @@ class IpNetns(Ip):
         elif self.container.type in ("container.docker", "container.podman"):
             return self.container.lib.get_container_id(self.container, refresh=refresh)
         else:
-            raise ex.excError("unsupported container %s type: %s" % (
+            raise ex.Error("unsupported container %s type: %s" % (
                 self.container.rid,
                 self.container.type,
             ))
@@ -245,7 +245,7 @@ class IpNetns(Ip):
     def get_docker_ifconfig(self):
         try:
             nspid = self.get_nspid()
-        except ex.excError as e:
+        except ex.Error as e:
             return
         if nspid is None:
             return
@@ -327,7 +327,7 @@ class IpNetns(Ip):
         # assign interface to the nspid
         nspid = self.get_nspid()
         if nspid is None:
-            raise ex.excError("could not determine nspid")
+            raise ex.Error("could not determine nspid")
         cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -557,7 +557,7 @@ class IpNetns(Ip):
         cmd = [rcEnv.syspaths.ip, "link", "show", self.ipdev]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("failed to get %s mtu: %s" % (self.ipdev, err))
+            raise ex.Error("failed to get %s mtu: %s" % (self.ipdev, err))
         mtu = out.split()[4]
         return mtu
 
@@ -607,12 +607,12 @@ class IpNetns(Ip):
     def get_nspid_docker(self):
         nspid = self.container.container_pid()
         if nspid is None:
-            raise ex.excError("failed to get nspid")
+            raise ex.Error("failed to get nspid")
         nspid = str(nspid).strip()
         if "'" in nspid:
             nspid = nspid.replace("'","")
         if nspid == "0":
-            raise ex.excError("nspid is 0")
+            raise ex.Error("nspid is 0")
         return nspid
 
     @lazy
@@ -628,17 +628,17 @@ class IpNetns(Ip):
             return
         elif self.container.type in ("container.lxd", "container.lxc"):
             return self.container.cni_netns()
-        raise ex.excError("unsupported container type: %s" % self.container.type)
+        raise ex.Error("unsupported container type: %s" % self.container.type)
 
     def sandboxkey(self):
         sandboxkey = self.container.container_sandboxkey()
         if sandboxkey is None:
-            raise ex.excError("failed to get sandboxkey")
+            raise ex.Error("failed to get sandboxkey")
         sandboxkey = str(sandboxkey).strip()
         if "'" in sandboxkey:
             sandboxkey = sandboxkey.replace("'","")
         if sandboxkey == "":
-            raise ex.excError("sandboxkey is empty")
+            raise ex.Error("sandboxkey is empty")
         return sandboxkey
 
     def stopip_cmd(self):

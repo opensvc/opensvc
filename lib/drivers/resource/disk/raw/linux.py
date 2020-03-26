@@ -79,14 +79,14 @@ class DiskRaw(BaseDiskRaw):
         cmd = [rcEnv.syspaths.lsmod]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         if "raw" in out.split():
             return
         cmd = ["modprobe", "raw"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to load raw device driver")
-            raise ex.excError
+            raise ex.Error
 
     @cache("raw.list")
     def get_raws(self):
@@ -112,7 +112,7 @@ class DiskRaw(BaseDiskRaw):
         out, err, ret = justcall(cmd)
         if ret != 0:
             self.log.error('failed to fetch raw device bindings')
-            raise ex.excError
+            raise ex.Error
         for line in out.split('\n'):
             l = line.split()
             if len(l) != 7:
@@ -144,7 +144,7 @@ class DiskRaw(BaseDiskRaw):
         candidates -= allocated
         if len(candidates) == 0:
             self.log.error("no more raw device can be allocated")
-            raise ex.excError
+            raise ex.Error
         return 'raw%d'%sorted(list(candidates))[0]
 
     def find_raw(self, dev):
@@ -161,22 +161,22 @@ class DiskRaw(BaseDiskRaw):
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.LockTimeout:
             self.log.error("timed out waiting for lock")
-            raise ex.excError
+            raise ex.Error
         except lock.LockNoLockFile:
             self.log.error("lock_nowait: set the 'lockfile' param")
-            raise ex.excError
+            raise ex.Error
         except lock.LockCreateError:
             self.log.error("can not create lock file %s"%lockfile)
-            raise ex.excError
+            raise ex.Error
         except lock.LockAcquire as e:
             self.log.warning("another action is currently running (pid=%s)"%e.pid)
-            raise ex.excError
+            raise ex.Error
         except ex.Signal:
             self.log.error("interrupted by signal")
-            raise ex.excError
+            raise ex.Error
         except:
             self.save_exc()
-            raise ex.excError("unexpected locking error")
+            raise ex.Error("unexpected locking error")
         self.lockfd = lockfd
 
     def unlock(self):
@@ -219,7 +219,7 @@ class DiskRaw(BaseDiskRaw):
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
                     self.unlock()
-                    raise ex.excError
+                    raise ex.Error
                 s = os.stat("/dev/raw/"+raw)
                 self.raws[raw] = {
                   'rdev': (os.major(s.st_rdev), os.minor(s.st_rdev)),
@@ -246,7 +246,7 @@ class DiskRaw(BaseDiskRaw):
                 cmd = ['raw', '/dev/raw/raw%d'%self.raws[raw]['rdev'][1], '0', '0']
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
-                    raise ex.excError
+                    raise ex.Error
                 del(self.raws[raw])
         self.clear_caches()
 

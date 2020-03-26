@@ -430,7 +430,7 @@ class Dorado(object):
                 time.sleep(1)
                 continue
             elif code:
-                raise ex.excError("open_session error: %s => %s" % ((self.auth[0], "xxx"), data.get("error")))
+                raise ex.Error("open_session error: %s => %s" % ((self.auth[0], "xxx"), data.get("error")))
             self.session_data = data["data"]
             return
 
@@ -564,7 +564,7 @@ class Dorado(object):
         elif naa:
             data = self.get("/lun?filter=WWN::%s" % naa)
         else:
-            raise ex.excError("oid, name or naa must be specified to get_lun()")
+            raise ex.Error("oid, name or naa must be specified to get_lun()")
         try:
             return data["data"][0]
         except KeyError:
@@ -647,7 +647,7 @@ class Dorado(object):
         data = self.delete(path, d)
         code = data.get("error", {}).get("code")
         if code and code != ERRCODE_MAPPING_HOST_LUN_NOT_EXISTS:
-            raise ex.excError("delete error: %s %s %s" % (path, d, data.get("error")))
+            raise ex.Error("delete error: %s %s %s" % (path, d, data.get("error")))
         return data["data"]
 
 
@@ -655,7 +655,7 @@ class Dorado(object):
         path = '/lun/%s' % oid
         data = self.delete(path)
         if data.get("error", {}).get("code"):
-            raise ex.excError("delete error: %s %s" % (path, data.get("error")))
+            raise ex.Error("delete error: %s %s" % (path, data.get("error")))
         return data["data"]
 
 
@@ -664,7 +664,7 @@ class Dorado(object):
                 **kwargs):
         for key in ["name", "size", "storagepool"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         size = convert_size(size, _to="B") // 512
         path = "/lun"
         d = {
@@ -678,14 +678,14 @@ class Dorado(object):
         }
         data = self.post(path, d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("add lun error: %s => %s" % (d, data.get("error")))
+            raise ex.Error("add lun error: %s => %s" % (d, data.get("error")))
         return data["data"]
 
 
     def list_mappings(self, id=None, name=None, naa=None, **kwargs):
         lun_data = self.get_lun(oid=id, name=name, naa=naa)
         if lun_data is None:
-            raise ex.excError("lun not found")
+            raise ex.Error("lun not found")
         return self._list_mappings(lun_data["ID"], lun_data["WWN"])
         
 
@@ -744,15 +744,15 @@ class Dorado(object):
 
     def resize_disk(self, id=None, name=None, naa=None, size=None, **kwargs):
         if size is None:
-            raise ex.excError("'size' key is mandatory")
+            raise ex.Error("'size' key is mandatory")
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified")
+            raise ex.Error("'name' or 'naa' must be specified")
         lun_data = self.get_lun(oid=id, name=name, naa=naa)
         if lun_data is None:
-            raise ex.excError("extent not found")
+            raise ex.Error("extent not found")
         storagepool = self.get_storagepool_by_id(lun_data["PARENTID"])
         if storagepool is None:
-            raise ex.excError("storagepool not found")
+            raise ex.Error("storagepool not found")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="B") // 512
             current_size = int(lun_data["ALLOCCAPACITY"]) * 512
@@ -766,21 +766,21 @@ class Dorado(object):
         }
         data = self.put("/lun/expand", d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("expand_lun error: %s => %s" % ((lun_data["ID"], size), data.get("error")))
+            raise ex.Error("expand_lun error: %s => %s" % ((lun_data["ID"], size), data.get("error")))
         return data["data"]
 
 
     def del_hostgroup(self, oid=None, **kwargs):
         if oid is None:
-            raise ex.excError("'id' is mandatory")
+            raise ex.Error("'id' is mandatory")
         response = self.delete('/hostgroup/%s' % oid)
         if response.status_code != 200:
-            raise ex.excError(str(response))
+            raise ex.Error(str(response))
 
 
     def add_hostgroup(self, name=None, desc=None, hosts=None, **kwargs):
         if name is None:
-            raise ex.excError("name is mandatory")
+            raise ex.Error("name is mandatory")
         d = {
             "NAME": name,
         }
@@ -804,7 +804,7 @@ class Dorado(object):
         data = self.post('/mapping', d)
         code = data.get("error", {}).get("code")
         if code and code != ERRCODE_MAPPING_HOST_LUN_EXISTS:
-            raise ex.excError("map_lun_to_host error: %s => %s" % ((lun_id, host_id), data.get("error")))
+            raise ex.Error("map_lun_to_host error: %s => %s" % ((lun_id, host_id), data.get("error")))
         return data["data"]
 
 
@@ -827,7 +827,7 @@ class Dorado(object):
         }
         data = self.put("/HyperMetroPair/disable_hcpair", d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("pause_hypermetropair error: %s => %s" % (oid, data.get("error")))
+            raise ex.Error("pause_hypermetropair error: %s => %s" % (oid, data.get("error")))
         return data["data"]
 
 
@@ -837,7 +837,7 @@ class Dorado(object):
         }
         data = self.put("/HyperMetroPair/synchronize_hcpair", d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("synchronize_hypermetropair error: %s => %s" % (oid, data.get("error")))
+            raise ex.Error("synchronize_hypermetropair error: %s => %s" % (oid, data.get("error")))
         return data["data"]
 
 
@@ -867,7 +867,7 @@ class Dorado(object):
     def del_hypermetropair(self, oid):
         data = self.delete('/HyperMetroPair/%s' % oid)
         if data.get("error", {}).get("code"):
-            raise ex.excError("del_hypermetropair error: %s => %s" % (oid, data.get("error")))
+            raise ex.Error("del_hypermetropair error: %s => %s" % (oid, data.get("error")))
         return data["data"]
 
 
@@ -881,7 +881,7 @@ class Dorado(object):
         }
         data = self.post('/HyperMetroPair', d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("add_hypermetropair error: %s => %s" % ((local_id, remote_id, domain_id), data.get("error")))
+            raise ex.Error("add_hypermetropair error: %s => %s" % ((local_id, remote_id, domain_id), data.get("error")))
         return data["data"]
 
 
@@ -891,7 +891,7 @@ class Dorado(object):
         }
         data = self.get('/HyperMetroPair', params=d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("get_hypermetropair error: %s => %s" % ((key, oid), data.get("error")))
+            raise ex.Error("get_hypermetropair error: %s => %s" % ((key, oid), data.get("error")))
         try:
             return data["data"][0]
         except (KeyError, IndexError):
@@ -906,13 +906,13 @@ class Dorado(object):
         }
         data = self.post('/hostgroup/associate', d)
         if data.get("error", {}).get("code"):
-            raise ex.excError("associate_hostgroup_host error: %s => %s" % ((hostgroup_id, host_id), data.get("error")))
+            raise ex.Error("associate_hostgroup_host error: %s => %s" % ((hostgroup_id, host_id), data.get("error")))
         return data["data"]
 
 
     def del_disk(self, id=None, name=None, naa=None, **kwargs):
         if id is None and name is None and naa is None:
-            raise ex.excError("'id', 'name' or 'naa' must be specified")
+            raise ex.Error("'id', 'name' or 'naa' must be specified")
         data = self.get_lun(oid=id, name=name, naa=naa)
         if data is None:
             return
@@ -965,10 +965,10 @@ class Dorado(object):
 
     def unmap_lun(self, id=None, name=None, naa=None, mappings=None, **kwargs):
         if not name and not naa and not id:
-            raise ex.excError("'id', 'name' or 'naa' is mandatory")
+            raise ex.Error("'id', 'name' or 'naa' is mandatory")
         lun_data = self.get_lun(oid=id, name=name, naa=naa)
         if not lun_data:
-            raise ex.excError("no lun found")
+            raise ex.Error("no lun found")
         return self._unmap_lun(lun_data["ID"], mappings)
 
 
@@ -997,7 +997,7 @@ class Dorado(object):
         for hba_id in hbagroup:
             hba = self.get_fc_initiator(hba_id)
             if not hba:
-                raise ex.excError("fc initiator %s not found" % hba_id)
+                raise ex.Error("fc initiator %s not found" % hba_id)
             host_id = hba["PARENTID"]
             host_name = hba["PARENTNAME"]
             host_hbas = self.get_host_fc_initiators(host_id)
@@ -1016,20 +1016,20 @@ class Dorado(object):
 
     def map_lun(self, id=None, name=None, naa=None, targets=None, mappings=None, lun=None, lun_data=None, **kwargs):
         if not name and not naa and not id:
-            raise ex.excError("'id', 'name' or 'naa' is mandatory")
+            raise ex.Error("'id', 'name' or 'naa' is mandatory")
         if targets is None and mappings is None:
-            raise ex.excError("'targets' or 'mappings' must be specified")
+            raise ex.Error("'targets' or 'mappings' must be specified")
 
         if lun_data is None:
             lun_data = self.get_lun(oid=id, name=name, naa=naa)
         if lun_data is None:
-            raise ex.excError("lun not found")
+            raise ex.Error("lun not found")
 
         results = []
         for hbagroup, targetgroup in self.hbagroup_by_targetgroup(mappings):
             hosts = self.find_hosts(hbagroup)
             if hosts is None:
-                raise ex.excError("could not find a set of array hosts equivalent to: %s" % hbagroup)
+                raise ex.Error("could not find a set of array hosts equivalent to: %s" % hbagroup)
             for host_id in hosts:
                 result = self.map_lun_to_host(lun_id=lun_data["ID"], host_id=host_id, hostlun_id=lun)
                 results.append(result)
@@ -1041,13 +1041,13 @@ class Dorado(object):
                  hypermetrodomain=None, **kwargs):
         for key in ["name", "size", "storagepool"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
 
         # lun
         data = self.add_lun(name=name, size=size, storagepool=storagepool, compression=compression, dedup=dedup)
 
         if "WWN" not in data:
-            raise ex.excError("no WWN in data")
+            raise ex.Error("no WWN in data")
 
         # mappings
         if mappings:
@@ -1132,9 +1132,9 @@ class Dorado(object):
         try:
             result = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in result:
-            raise ex.excError(result["error"])
+            raise ex.Error(result["error"])
         return result
 
 
@@ -1152,9 +1152,9 @@ class Dorado(object):
                 "disk_group": storagepool,
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(result["error"])
+            raise ex.Error(result["error"])
         return result
 
 
@@ -1168,10 +1168,10 @@ def do_action(action, array_name=None, node=None, **kwargs):
     o = Dorados()
     array = o.get_dorado(array_name)
     if array is None:
-        raise ex.excError("array %s not found" % array_name)
+        raise ex.Error("array %s not found" % array_name)
     array.node = node
     if not hasattr(array, action):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
     result = getattr(array, action)(**kwargs)
     array.close_session()
     if result is not None:
@@ -1209,7 +1209,7 @@ if __name__ == "__main__":
     try:
         main(sys.argv)
         ret = 0
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         ret = 1
     sys.exit(ret)

@@ -20,7 +20,7 @@ class AmazonMixin(object):
             self.log.info(" ".join(_cmd))
         out, err, ret = justcall(_cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = json.loads(out)
         return data
 
@@ -30,7 +30,7 @@ class AmazonMixin(object):
         try:
             import httplib
         except ImportError:
-            raise ex.excError("the httplib module is required")
+            raise ex.Error("the httplib module is required")
         c = httplib.HTTPConnection("instance-data")
         c.request("GET", "/latest/meta-data/instance-id")
         self.instance_id = c.getresponse().read()

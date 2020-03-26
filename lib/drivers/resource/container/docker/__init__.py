@@ -390,12 +390,12 @@ class ContainerDocker(BaseContainer):
     def on_add(self):
         try:
             self.volume_options()
-        except ex.excError:
+        except ex.Error:
             # volume not created yet
             pass
         try:
             self.device_options()
-        except ex.excError:
+        except ex.Error:
             # volume not created yet
             pass
 
@@ -477,7 +477,7 @@ class ContainerDocker(BaseContainer):
         cmd = self.lib.docker_cmd + ["cp", self.container_name + ":" + src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s" % (" ".join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s" % (" ".join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
@@ -487,7 +487,7 @@ class ContainerDocker(BaseContainer):
         cmd = self.lib.docker_cmd + ["cp", src, self.container_name + ":" + dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s" % (" ".join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s" % (" ".join(cmd), err))
         return out, err, ret
 
     def files_to_sync(self):
@@ -544,7 +544,7 @@ class ContainerDocker(BaseContainer):
                 self.wait_for_removed()
             else:
                 self.log.info(" ".join(cmd))
-                raise ex.excError(err)
+                raise ex.Error(err)
         else:
             self.log.info(" ".join(cmd))
         self.is_up_clear_cache()
@@ -554,7 +554,7 @@ class ContainerDocker(BaseContainer):
         Wrap docker commands to honor <action>.
         """
         if self.lib.docker_cmd is None:
-            raise ex.excError("docker executable not found")
+            raise ex.Error("docker executable not found")
         sec_env = {}
         cfg_env = {}
         cmd = self.lib.docker_cmd + []
@@ -570,7 +570,7 @@ class ContainerDocker(BaseContainer):
                 try:
                     image_id = self.lib.get_image_id(self.image)
                 except ValueError as exc:
-                    raise ex.excError(str(exc))
+                    raise ex.Error(str(exc))
                 if image_id is None:
                     self.lib.docker_login(self.image)
                 sec_env = self.kind_environment_env("sec", self.secrets_environment)
@@ -609,7 +609,7 @@ class ContainerDocker(BaseContainer):
         if not self.detach:
             signal.alarm(0)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         if action == "start":
             self.is_up_clear_cache()
@@ -635,7 +635,7 @@ class ContainerDocker(BaseContainer):
                 devices.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
-                raise ex.excError("source dir of mapping %s does not "
+                raise ex.Error("source dir of mapping %s does not "
                                   "exist" % arg)
             else:
                 devices.append(arg)
@@ -653,7 +653,7 @@ class ContainerDocker(BaseContainer):
             if not elements or len(elements) not in (2, 3):
                 continue
             if elements[1] in dsts:
-                raise ex.excError("different volume mounts use the same destination "
+                raise ex.Error("different volume mounts use the same destination "
                                   "mount point: %s" % elements[1])
             if not elements[0].startswith(os.sep):
                 # vol service
@@ -676,7 +676,7 @@ class ContainerDocker(BaseContainer):
                 volumes.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
-                raise ex.excError("source dir of mapping %s does not "
+                raise ex.Error("source dir of mapping %s does not "
                                   "exist" % volarg)
             else:
                 volumes.append(volarg)
@@ -748,7 +748,7 @@ class ContainerDocker(BaseContainer):
                 if res is not None:
                     args += ["--net=container:" + res.container_name]
                 elif errors == "raise":
-                    raise ex.excError("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
+                    raise ex.Error("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
             else:
                 args += ["--net=" + self.netns]
         elif not has_option("--net", args):
@@ -761,7 +761,7 @@ class ContainerDocker(BaseContainer):
                 if res is not None:
                     args += ["--pid=container:" + res.container_name]
                 elif errors == "raise":
-                    raise ex.excError("resource %s, referenced in %s.pidns, does not exist" % (self.pidns, self.rid))
+                    raise ex.Error("resource %s, referenced in %s.pidns, does not exist" % (self.pidns, self.rid))
             else:
                 args += ["--pid=" + self.pidns]
 
@@ -772,7 +772,7 @@ class ContainerDocker(BaseContainer):
                 if res is not None:
                     args += ["--ipc=container:" + res.container_name]
                 elif errors == "raise":
-                    raise ex.excError("resource %s, referenced in %s.ipcns, does not exist" % (self.ipcns, self.rid))
+                    raise ex.Error("resource %s, referenced in %s.ipcns, does not exist" % (self.ipcns, self.rid))
             else:
                 args += ["--ipc=" + self.ipcns]
 
@@ -871,7 +871,7 @@ class ContainerDocker(BaseContainer):
                 self.is_up_clear_cache()
                 self.container_forcestop()
                 self.container_rm()
-                raise ex.excError("timeout")
+                raise ex.Error("timeout")
             else:
                 raise ex.AbortAction
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))

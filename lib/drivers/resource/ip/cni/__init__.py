@@ -187,7 +187,7 @@ class IpCni(Ip):
     def _get_ifconfig(self):
         try:
             nspid = self.nspid
-        except ex.excError as e:
+        except ex.Error as e:
             return
         if nspid is None:
             return
@@ -235,7 +235,7 @@ class IpCni(Ip):
             with open(self.cni_conf, "r") as ofile:
                 return json.load(ofile)
         except ValueError:
-            raise ex.excError("invalid json in cni configuration file %s" % self.cni_conf)
+            raise ex.Error("invalid json in cni configuration file %s" % self.cni_conf)
 
     @lazy
     def cni_plugins(self):
@@ -294,7 +294,7 @@ class IpCni(Ip):
     def cni_cmd(self, _env, data):
         cmd = [self.cni_bin(data)]
         if not which(cmd[0]):
-            raise ex.excError("%s not found" % cmd[0])
+            raise ex.Error("%s not found" % cmd[0])
         self.log_cmd(_env, data, cmd)
         env = {}
         env.update(rcEnv.initial_env)
@@ -308,9 +308,9 @@ class IpCni(Ip):
             if proc.returncode == 0:
                 # for example a del portmap outs nothing
                 return
-            raise ex.excError(err)
+            raise ex.Error(err)
         if "code" in data:
-            raise ex.excError(data.get("msg", ""))
+            raise ex.Error(data.get("msg", ""))
         for line in format_str_flat_json(data).splitlines():
             self.log.info(line)
         return data
@@ -335,7 +335,7 @@ class IpCni(Ip):
         cmd = [rcEnv.syspaths.ip, "netns", "add", self.nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def del_netns(self):
         if self.container_rid:
@@ -347,7 +347,7 @@ class IpCni(Ip):
         cmd = [rcEnv.syspaths.ip, "netns", "del", self.nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
     def get_plugins(self):
         if "type" in self.cni_data:
@@ -355,7 +355,7 @@ class IpCni(Ip):
         elif "plugins" in self.cni_data:
             return [pdata for pdata in self.cni_data["plugins"]
                     if pdata.get("type") != "portmap"]
-        raise ex.excError("no type nor plugins in cni configuration %s" % self.cni_conf)
+        raise ex.Error("no type nor plugins in cni configuration %s" % self.cni_conf)
 
     def runtime_config(self):
         data = []
@@ -391,7 +391,7 @@ class IpCni(Ip):
 
     def add_cni(self):
         if not self.has_netns():
-            raise ex.excError("netns %s not found" % self.nspid)
+            raise ex.Error("netns %s not found" % self.nspid)
         if self.has_ipdev():
             self.log.info("cni %s already added" % self.ipdev)
             return
@@ -402,7 +402,7 @@ class IpCni(Ip):
         }
         if self.container_rid:
             if self.containerid is None:
-                raise ex.excError("container %s is down" % self.container_rid)
+                raise ex.Error("container %s is down" % self.container_rid)
             _env["CNI_CONTAINERID"] = str(self.containerid)
             _env["CNI_NETNS"] = self.netns
         else:
@@ -486,7 +486,7 @@ class IpCni(Ip):
     def _status(self, verbose=False):
         try:
             self.cni_data
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.status_log(str(exc))
         _has_netns = self.has_netns()
         _has_ipdev = self.has_ipdev()

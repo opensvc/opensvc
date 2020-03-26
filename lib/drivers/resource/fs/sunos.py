@@ -69,7 +69,7 @@ class Fs(BaseFs):
         zone = self.svc.oget(self.rid, "zone")
         if not self.encap and not zone and zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
-                raise ex.excError
+                raise ex.Error
         if zfs_getprop(self.device, 'mountpoint') == "legacy":
             self.mount_generic()
         else:
@@ -78,7 +78,7 @@ class Fs(BaseFs):
     def mount_zfs_native(self):
         if zfs_getprop(self.device, 'mountpoint') != self.mount_point:
             if not zfs_setprop(self.device, 'mountpoint', self.mount_point, log=self.log):
-                raise ex.excError
+                raise ex.Error
 
         if self.is_up() is True:
             return
@@ -91,7 +91,7 @@ class Fs(BaseFs):
         if ret != 0:
             ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
         self.can_rollback = True
 
     def mount_generic(self):
@@ -117,7 +117,7 @@ class Fs(BaseFs):
 
 
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         self.can_rollback = True
 
@@ -143,7 +143,7 @@ class Fs(BaseFs):
             if ret != 0:
                 ret, out, err = self.vcall(['zfs', 'umount', '-f', self.device], err_to_info=True)
                 if ret != 0:
-                    raise ex.excError
+                    raise ex.Error
             return
         (ret, out, err) = self.vcall(['umount', self.mount_point], err_to_info=True)
         if ret == 0:
@@ -160,7 +160,7 @@ class Fs(BaseFs):
                                            err_to_info=True)
                 if ret == 0:
                     return
-        raise ex.excError
+        raise ex.Error
 
     def stop(self):
         if self.is_up() is False:
@@ -171,4 +171,4 @@ class Fs(BaseFs):
             self.try_umount()
         except:
             self.log.error("failed")
-            raise ex.excError
+            raise ex.Error

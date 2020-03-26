@@ -199,7 +199,7 @@ class SyncSymclone(Sync):
            return
         cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
         cmd = " ".join(cmd)
-        raise ex.excError("timeout waiting for devs to become 'restored'. "
+        raise ex.Error("timeout waiting for devs to become 'restored'. "
                           "once restored, you can terminate running: " + cmd)
 
     def wait_for_active(self):
@@ -214,7 +214,7 @@ class SyncSymclone(Sync):
         self.log.error("timed out waiting for active state (%i secs, %s)" % (self.activate_timeout, ass))
         ina = set(self.pairs) - set(self.active_pairs)
         ina = ", ".join(ina)
-        raise ex.excError("%s still not in active state (%s)" % (ina, ass))
+        raise ex.Error("%s still not in active state (%s)" % (ina, ass))
 
     def wait_for_activable(self):
         delay = 10
@@ -225,7 +225,7 @@ class SyncSymclone(Sync):
             if i == 0:
                 self.log.info("waiting for activable state (max %i secs, %s)" % (self.recreate_timeout, ass))
             time.sleep(delay)
-        raise ex.excError("timed out waiting for activable state (%i secs, %s)" % (self.recreate_timeout, ass))
+        raise ex.Error("timed out waiting for activable state (%i secs, %s)" % (self.recreate_timeout, ass))
 
     def activate(self):
         if self.is_active():
@@ -238,14 +238,14 @@ class SyncSymclone(Sync):
             cmd.append("-consistent")
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.wait_for_active()
         self.wait_for_devs_ready()
 
     def can_sync(self, target=None):
         try:
             self.check_requires("sync_update")
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.debug(e)
             return False
 
@@ -264,21 +264,21 @@ class SyncSymclone(Sync):
             cmd.append("-precopy")
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def restore(self):
         self.unset_lazy("last")
         cmd = self.symclone_cmd() + ['-noprompt', 'restore']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def terminate_restore(self):
         self.unset_lazy("last")
         cmd = self.symclone_cmd() + ['-noprompt', 'terminate', '-restored']
         (ret, out, err) = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def _info(self):
         data = [
@@ -292,7 +292,7 @@ class SyncSymclone(Sync):
     def split_pair(self, pair):
         l = pair.split(":")
         if len(l) != 2:
-            raise ex.excError("pair %s malformed" % pair)
+            raise ex.Error("pair %s malformed" % pair)
         return l
 
     def _showdevs(self):
@@ -361,7 +361,7 @@ class SyncSymclone(Sync):
             ina = set(self.pairs) - set(self.active_pairs)
             ina = ", ".join(ina)
             ass = " or ".join(self.active_states)
-            raise ex.excError("%s not in active state (%s)" % (ina, ass))
+            raise ex.Error("%s not in active state (%s)" % (ina, ass))
         self.restore()
         self.wait_restored()
         self.terminate_restore()

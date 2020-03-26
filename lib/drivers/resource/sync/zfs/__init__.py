@@ -114,7 +114,7 @@ class SyncZfs(Sync):
     def sanity_check(self):
         if self.src_pool == self.dst_pool and 'local' in self.target:
             self.log.error('zfs send/receive in same pool not allowed')
-            raise ex.excError
+            raise ex.Error
 
     def pre_action(self, action):
         """Prepare dataset snapshots
@@ -166,14 +166,14 @@ class SyncZfs(Sync):
         snapds = Dataset(snap)
         if snapds.exists():
             self.log.error('%s should not exist'%snap)
-            raise ex.excError
+            raise ex.Error
         if self.recursive :
             cmd = [rcEnv.syspaths.zfs, 'snapshot' , '-r' , snap]
         else:
             cmd = [rcEnv.syspaths.zfs, 'snapshot' , snap]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def get_upper_fs(self, fs):
         fsmembers = fs.split('/')
@@ -211,7 +211,7 @@ class SyncZfs(Sync):
             cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def get_src_info(self):
         self.src_snap_sent_old = self.src_ds + "@sent"
@@ -300,7 +300,7 @@ class SyncZfs(Sync):
         if p2.returncode != 0:
             if err is not None and len(err) > 0:
                 self.log.error(err)
-            raise ex.excError("sync failed")
+            raise ex.Error("sync failed")
         if out is not None and len(out) > 0:
             self.log.info(out)
 
@@ -352,7 +352,7 @@ class SyncZfs(Sync):
     def force_remove_snap(self, snap, node=None):
         try:
             self.remove_snap(snap, node=node, check_exists=False)
-        except ex.excError:
+        except ex.Error:
             pass
 
     def remove_snap(self, snap, node=None, check_exists=True):
@@ -370,12 +370,12 @@ class SyncZfs(Sync):
             err_to_info = True
         (ret, out, err) = self.vcall(cmd, err_to_info=err_to_info)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def rename_snap(self, src, dst,  node=None):
         if self.snap_exists(dst, node):
             self.log.error("%s should not exist"%dst)
-            raise ex.excError
+            raise ex.Error
         if self.recursive :
             cmd = [rcEnv.syspaths.zfs, 'rename', '-r', src, dst]
         else:
@@ -385,7 +385,7 @@ class SyncZfs(Sync):
             cmd = rcEnv.rsh.split() + [node] + cmd
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def rotate_snaps(self, src, dst, node=None):
         self.remove_snap(dst, node)
@@ -464,7 +464,7 @@ class SyncZfs(Sync):
         rs = self.get_remote_state(node)
         if self.snap_uuid != rs['uuid']:
             self.log.error("%s last update uuid doesn't match snap uuid"%(node))
-            raise ex.excError
+            raise ex.Error
 
     def get_remote_state(self, node):
         cmd1 = ['cat', self.statefile]
@@ -472,7 +472,7 @@ class SyncZfs(Sync):
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
-            raise ex.excError
+            raise ex.Error
         return self.parse_statefile(out, node=node)
 
     def get_local_state(self):
@@ -484,7 +484,7 @@ class SyncZfs(Sync):
         cmd = ['env', 'LC_ALL=C', rcEnv.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.snap_uuid = out.strip()
 
     @lazy
@@ -501,7 +501,7 @@ class SyncZfs(Sync):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def push_statefile(self, node):
         self._push_statefile(node)
@@ -515,10 +515,10 @@ class SyncZfs(Sync):
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         fields = lines[0].split(';')
         if len(fields) != 2:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         return dict(date=fields[0], uuid=fields[1])
 

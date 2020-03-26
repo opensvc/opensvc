@@ -210,7 +210,7 @@ class Ip(Resource):
         try:
             result = self.svc.node._wait(path=path, duration=left)
         except KeyboardInterrupt:
-            raise ex.excError("dns resolution not ready after %s (ip not in local dataset)" % print_duration(self.wait_dns))
+            raise ex.Error("dns resolution not ready after %s (ip not in local dataset)" % print_duration(self.wait_dns))
         left = time.time() - timeout
         while left:
             result = self.svc.node.daemon_get({"action": "sync"}, timeout=left)
@@ -218,7 +218,7 @@ class Ip(Resource):
                 break
             left = time.time() - timeout
             if left <= 0:
-                raise ex.excError("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
+                raise ex.Error("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
 
     @lazy
     def dns_name_suffix(self):
@@ -234,12 +234,12 @@ class Ip(Resource):
         """
         try:
              self.get_mask()
-        except ex.excError:
+        except ex.Error:
              pass
         try:
             self.getaddr()
             addr = self.addr
-        except ex.excError:
+        except ex.Error:
             addr = self.ipname
         self.label = "%s/%s %s" % (addr, self.mask, self.ipdev)
         if self.ipname != addr:
@@ -252,7 +252,7 @@ class Ip(Resource):
         data = {}
         try:
             self.getaddr()
-        except ex.excError:
+        except ex.Error:
             pass
 
         try:
@@ -278,7 +278,7 @@ class Ip(Resource):
             return []
         try:
             self.getaddr()
-        except ex.excError:
+        except ex.Error:
             pass
         data = [
             ["ipaddr", self.addr],
@@ -296,7 +296,7 @@ class Ip(Resource):
         <cache_fallback> is True, use the last successful resolution result.
         """
         if self.ipname is None:
-            raise ex.excError("ip address is not allocated yet")
+            raise ex.Error("ip address is not allocated yet")
         if self.addr is not None:
             return
         try:
@@ -304,7 +304,7 @@ class Ip(Resource):
             self.addr = getaddr(self.ipname, cache_fallback=cache_fallback, log=self.log)
         except Exception as exc:
             if not self.is_disabled():
-                raise ex.excError("could not resolve name %s: %s" % (self.ipname, str(exc)))
+                raise ex.Error("could not resolve name %s: %s" % (self.ipname, str(exc)))
 
     def __str__(self):
         return "%s ipdev=%s ipname=%s" % (super(Ip, self).__str__(), \
@@ -364,7 +364,7 @@ class Ip(Resource):
         except ex.NotSupported:
             self.status_log("not supported", "info")
             return rcStatus.NA
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.status_log(str(exc), "error")
             return rcStatus.WARN
 
@@ -521,18 +521,18 @@ class Ip(Resource):
         try:
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
         except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+            raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+            raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
+            raise ex.Error("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+            raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
-            raise ex.excError("interrupted by signal %s" % details)
+            raise ex.Error("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+            raise ex.Error("unexpected locking error %s: %s" % (details, str(exc)))
 
         if lockfd is not None:
             self.lockfd = lockfd
@@ -562,7 +562,7 @@ class Ip(Resource):
         try:
             self.allow_start()
         except (ex.IpConflict, ex.IpDevDown):
-            raise ex.excError
+            raise ex.Error
         except (ex.IpAlreadyUp, ex.IpNoActions):
             return
         self.log.debug('pre-checks passed')
@@ -581,7 +581,7 @@ class Ip(Resource):
 
         try:
             self.dns_update()
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.log.error(str(exc))
         self.wait_dns_records()
 
@@ -591,12 +591,12 @@ class Ip(Resource):
         if self.mask is None:
             intf = ifconfig.interface(self.ipdev)
             if intf is None:
-                raise ex.excError("netmask parameter is mandatory with 'noalias' tag")
+                raise ex.Error("netmask parameter is mandatory with 'noalias' tag")
             self.mask = intf.mask
         if not self.mask:
             if "noaction" not in self.tags:
                 self.mask = None
-                raise ex.excError("No netmask set on parent interface %s" % self.ipdev)
+                raise ex.Error("No netmask set on parent interface %s" % self.ipdev)
         if isinstance(self.mask, list):
             try:
                 self.mask = self.mask[0]
@@ -616,7 +616,7 @@ class Ip(Resource):
                                                         self.addr,\
                                                         self.log)
         if self.stacked_dev is None:
-            raise ex.excError("could not determine a stacked dev for parent "
+            raise ex.Error("could not determine a stacked dev for parent "
                               "interface %s" % self.ipdev)
 
         arp_announce = True
@@ -629,7 +629,7 @@ class Ip(Resource):
             arp_announce = False
 
         if ret != 0:
-            raise ex.excError("failed")
+            raise ex.Error("failed")
 
         return arp_announce
 
@@ -659,7 +659,7 @@ class Ip(Resource):
 
         try:
             self.getaddr()
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.log.error(str(exc))
             return
 
@@ -677,9 +677,9 @@ class Ip(Resource):
                 path=self.dns_rec_name(),
             )
         except Exception as exc:
-            raise ex.excError("dns update failed: "+str(exc))
+            raise ex.Error("dns update failed: "+str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
         self.log.info("dns updated")
 
@@ -705,7 +705,7 @@ class Ip(Resource):
                                                         self.addr,\
                                                         self.log)
         if self.stacked_dev is None:
-            raise ex.excError
+            raise ex.Error
 
         try:
             ret = self.stopip_cmd()[0]
@@ -715,7 +715,7 @@ class Ip(Resource):
 
         if ret != 0:
             self.log.error("failed")
-            raise ex.excError
+            raise ex.Error
 
         tmo = 15
         idx = 0
@@ -726,7 +726,7 @@ class Ip(Resource):
 
         if idx == tmo-1:
             self.log.error("%s refuse to go down", self.addr)
-            raise ex.excError
+            raise ex.Error
 
     def allocate(self):
         """
@@ -785,9 +785,9 @@ class Ip(Resource):
                 path=self.dns_rec_name(),
             )
         except Exception as exc:
-            raise ex.excError("ip allocation failed: "+str(exc))
+            raise ex.Error("ip allocation failed: "+str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
         if "info" in data:
             self.log.info(data["info"])
@@ -826,7 +826,7 @@ class Ip(Resource):
 
         try:
             self.getaddr()
-        except ex.excError:
+        except ex.Error:
             self.log.info("skip release: ipname does not resolve to an address")
             return
 
@@ -844,7 +844,7 @@ class Ip(Resource):
                 path=self.dns_rec_name(),
             )
         except Exception as exc:
-            raise ex.excError("ip release failed: "+str(exc))
+            raise ex.Error("ip release failed: "+str(exc))
         if "error" in data:
             self.log.warning(data["error"])
             return
@@ -882,16 +882,16 @@ class Ip(Resource):
             try:
                 data["host_port"] = int(words[1])
             except ValueError:
-                raise ex.excError("invalid host port format %s. expected integer" % words[1])
+                raise ex.Error("invalid host port format %s. expected integer" % words[1])
         words = re.split("[-/]", words[0])
         if len(words) != 2:
-            raise ex.excError("invalid expose format %s. expected <nsport>/<proto>[:<hostport>]" % expose)
+            raise ex.Error("invalid expose format %s. expected <nsport>/<proto>[:<hostport>]" % expose)
         try:
             data["port"] = int(words[0])
         except ValueError:
-            raise ex.excError("invalid expose port format %s. expected integer" % words[0])
+            raise ex.Error("invalid expose port format %s. expected integer" % words[0])
         if words[1] not in ("tcp", "udp"):
-            raise ex.excError("invalid expose protocol %s. expected tcp or udp" % words[1])
+            raise ex.Error("invalid expose protocol %s. expected tcp or udp" % words[1])
         data["protocol"] = words[1]
         return data
 

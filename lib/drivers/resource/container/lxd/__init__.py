@@ -89,14 +89,14 @@ class ContainerLxd(BaseContainer):
         cmd = [lxc, "file", "pull", self.name+src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
         cmd = [lxc, "file", "push", src, self.name+dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def lxc_info(self, nodename=None):
@@ -122,20 +122,20 @@ class ContainerLxd(BaseContainer):
         cmd = [lxd, "import", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def lxc_start(self):
         self.lxd_import()
         cmd = [lxc, "start", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def lxc_stop(self):
         cmd = [lxc, "stop", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def set_cpuset_clone_children(self):
         ppath = "/sys/fs/cgroup/cpuset"
@@ -193,7 +193,7 @@ class ContainerLxd(BaseContainer):
         cmd = [lxc, 'move', self.name, self.svc.options.to+":"+self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_start(self):
         if not self.svc.create_pg:
@@ -212,7 +212,7 @@ class ContainerLxd(BaseContainer):
         """ no harder way to stop a lxc container, raise to signal our
             helplessness
         """
-        raise ex.excError
+        raise ex.Error
 
     def get_links(self):
         data = self.lxc_info()
@@ -355,7 +355,7 @@ class ContainerLxd(BaseContainer):
         cmd = ["/usr/bin/lxc", "launch", image] + options + [self.name]
         ret, out, err = self.vcall(cmd, stdin=PIPE)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.wait_for_fn(self.is_up, self.start_timeout, 2)
         self.can_rollback = True
 
@@ -363,5 +363,5 @@ class ContainerLxd(BaseContainer):
         cmd = ["/usr/bin/lxc", "delete", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 

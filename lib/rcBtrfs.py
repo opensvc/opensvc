@@ -73,7 +73,7 @@ class Btrfs(object):
                     "LABEL="+self.label,
                     tree=self.resource.svc.node.devtree
                 )
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.dev = None
         else:
             return
@@ -337,7 +337,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'fi', 'label', mntpt]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            raise ex.excError("error running %s:\n"%' '.join(cmd)+err)
+            raise ex.Error("error running %s:\n"%' '.join(cmd)+err)
         return out.strip('\n')
 
     def is_mounted_subvol(self, path):

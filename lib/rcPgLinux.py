@@ -112,7 +112,7 @@ def _set_cgroup(o, t, name, key, force=False):
         return
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
-        raise ex.excError("can not find %s"%path)
+        raise ex.Error("can not find %s"%path)
     if hasattr(o, "log"):
         log = o.log
     elif hasattr(o, "svc"):
@@ -129,7 +129,7 @@ def get_cgroup(o, t, name):
     cgp = get_cgroup_path(o, t)
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
-        raise ex.excError("can not find %s"%path)
+        raise ex.Error("can not find %s"%path)
     with open(path, 'r') as f:
         buff = f.read()
     return buff
@@ -147,7 +147,7 @@ def set_cpu_quota(o):
         try:
             quota, threads = v.split("@")
         except Exception as e:
-            raise ex.excError("malformed cpu quota: %s (%s)" % (v, str(e)))
+            raise ex.Error("malformed cpu quota: %s (%s)" % (v, str(e)))
     else:
         threads = 1
         quota = v
@@ -201,12 +201,12 @@ def set_mem_cgroup(o):
     #
     try:
         cur_vmem_limit = int(get_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes'))
-    except ex.excError:
+    except ex.Error:
         cur_vmem_limit = None
     if mem_limit is not None and vmem_limit is not None:
         if mem_limit > vmem_limit:
             log.error("pg_vmem_limit must be greater than pg_mem_limit")
-            raise ex.excError
+            raise ex.Error
         if mem_limit > cur_vmem_limit:
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
             set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
@@ -216,13 +216,13 @@ def set_mem_cgroup(o):
     elif mem_limit is not None:
         if cur_vmem_limit and mem_limit > cur_vmem_limit:
             log.error("pg_mem_limit must not be greater than current pg_vmem_limit (%d)"%cur_vmem_limit)
-            raise ex.excError
+            raise ex.Error
         set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
     elif vmem_limit is not None:
         cur_mem_limit = int(get_cgroup(o, 'memory', 'memory.limit_in_bytes'))
         if vmem_limit < cur_mem_limit:
             log.error("pg_vmem_limit must not be lesser than current pg_mem_limit (%d)"%cur_mem_limit)
-            raise ex.excError
+            raise ex.Error
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
 def get_namespace(o):
@@ -273,7 +273,7 @@ def get_cgroup_path(o, t, create=True):
     o.log.debug("get_cgroup_path : t=%s, create=%s"%(t, create))
     cgroup_mntpt = get_cgroup_mntpt(t)
     if cgroup_mntpt is None:
-        raise ex.excError("cgroup fs with option %s is not mounted" % t)
+        raise ex.Error("cgroup fs with option %s is not mounted" % t)
     relpath = get_cgroup_relpath(o)
     cgp = os.sep.join([cgroup_mntpt, relpath])
     log = get_log(o)
@@ -394,12 +394,12 @@ def _freezer(o, a, cgp):
     elif hasattr(o, "svc"):
         log = o.svc.log
     if not os.path.exists(path):
-        raise ex.excError("freezer control file not found: %s"%path)
+        raise ex.Error("freezer control file not found: %s"%path)
     try:
         with open(path, "r") as f:
             buff = f.read()
     except Exception as e:
-        raise ex.excError(str(e))
+        raise ex.Error(str(e))
     buff = buff.strip()
     if buff == a:
         log.info("%s is already %s" % (path, a))
@@ -411,7 +411,7 @@ def _freezer(o, a, cgp):
         with open(path, "w") as f:
             buff = f.write(a)
     except Exception as e:
-        raise ex.excError(str(e))
+        raise ex.Error(str(e))
     log.info("%s on %s submitted successfully" % (a, path))
 
     # el6 kernel does not freeze child cgroups, as later kernels do
@@ -458,7 +458,7 @@ def set_controllers_task(o):
     for controller in CONTROLLERS:
         try:
             set_task(o, controller)
-        except ex.excError:
+        except ex.Error:
             pass
 
 def _create_pg(o):
@@ -512,7 +512,7 @@ def get_stats_blk(o):
     data = {}
     cgp = get_cgroup_path(o, "blkio", create=False)
     if not os.path.exists(cgp):
-        raise ex.excError
+        raise ex.Error
 
     rb = 0
     wb = 0
@@ -557,7 +557,7 @@ def get_stats_blk(o):
 def get_stats_tasks(o):
     cgp = get_cgroup_path(o, "cpu", create=False)
     if not os.path.exists(cgp):
-        raise ex.excError
+        raise ex.Error
     count = 0
     for path, subdirs, _ in os.walk(cgp):
         if subdirs:

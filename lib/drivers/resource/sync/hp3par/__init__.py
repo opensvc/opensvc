@@ -101,11 +101,11 @@ class SyncHp3par(Sync):
         try:
             arrays = array_driver.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         if len(arrays.arrays) == 1:
             self.array_obj = arrays.arrays[0]
         if self.array_obj is None:
-            raise ex.excError("array %s is not accessible" % self.array)
+            raise ex.Error("array %s is not accessible" % self.array)
         self.array_obj.path = self.svc.path
 
     def get_array_obj(self, target=None, log=False):
@@ -118,11 +118,11 @@ class SyncHp3par(Sync):
                 try:
                     self.remote_array_obj = array_driver.Hp3pars(objects=[target], log=self.log, node=self.svc.node).arrays[0]
                     if self.remote_array_obj is None:
-                        raise ex.excError("array %s is not accessible" % array_name)
+                        raise ex.Error("array %s is not accessible" % array_name)
                     self.remote_array_obj.path = self.svc.path
                     return self.remote_array_obj
                 except Exception as e:
-                    raise ex.excError(str(e))
+                    raise ex.Error(str(e))
 
     def _cmd(self, cmd, target=None, log=False):
         array_obj = self.get_array_obj(target=target, log=self.log)
@@ -144,7 +144,7 @@ class SyncHp3par(Sync):
             self.log.info(out)
         if len(err) > 0:
             self.log.error(err)
-            raise ex.excError()
+            raise ex.Error()
         return out, err
 
     def can_sync(self, target=None, s=None):
@@ -164,7 +164,7 @@ class SyncHp3par(Sync):
         data = self.showrcopy()
         if data['rcg']['Role'] == 'Primary':
             self.log.error("rcopy group %s role is Primary. refuse to swap")
-            raise ex.excError()
+            raise ex.Error()
         self.stoprcopygroup()
         self.setrcopygroup_reverse()
         self.startrcopygroup()
@@ -253,7 +253,7 @@ class SyncHp3par(Sync):
             return
         if data['rcg']['Role'] != 'Primary':
             self.log.error("rcopy group %s role is not Primary. refuse to start rcopy" % self.rcg)
-            raise ex.excError()
+            raise ex.Error()
         self._cmd("startrcopygroup %s" % self.rcg, log=True)
         self.clear_caches()
 
@@ -267,7 +267,7 @@ class SyncHp3par(Sync):
         else:
             target = data['rcg']['Target']
             if target not in self.rcg_names:
-                raise ex.excError("target %s not found in rcg names (%s)" % (target, ", ".join([name for name in self.rcg_names])))
+                raise ex.Error("target %s not found in rcg names (%s)" % (target, ", ".join([name for name in self.rcg_names])))
             self._cmd("stoprcopygroup -f %s" % self.rcg_names[target], target=target, log=True)
         self.clear_caches()
 
@@ -315,7 +315,7 @@ class SyncHp3par(Sync):
 
         try:
             data = self.showrcopy()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
 

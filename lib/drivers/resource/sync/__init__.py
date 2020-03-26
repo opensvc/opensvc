@@ -59,7 +59,7 @@ class Sync(Resource):
         name.
         """
         if target not in ("nodes", "drpnodes"):
-            raise ex.excError("invalid target: %s" % target)
+            raise ex.Error("invalid target: %s" % target)
         return set([node for node in getattr(self.svc, target)])
 
     def can_sync(self, target):
@@ -71,7 +71,7 @@ class Sync(Resource):
             Zero is a infinite interval
         """
         if delay == 0:
-            raise ex.excError("sync_max_delay cannot be 0")
+            raise ex.Error("sync_max_delay cannot be 0")
         limit = ts + datetime.timedelta(seconds=delay)
         if comp == "more" and datetime.datetime.now() < limit:
             return False
@@ -103,11 +103,11 @@ class Sync(Resource):
         try:
             dst = getattr(self, "dst")
         except AttributeError:
-            raise ex.excError("the 'dst' attribute is not set")
+            raise ex.Error("the 'dst' attribute is not set")
         try:
             dstfs = getattr(self, "dstfs")
         except AttributeError:
-            raise ex.excError("the 'dstfs' attribute is not set")
+            raise ex.Error("the 'dstfs' attribute is not set")
         if dstfs is None:
             # No dstfs check has been configured. Assume the admin knows better.
             return True
@@ -115,7 +115,7 @@ class Sync(Resource):
         cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', dstfs]
         (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         """
         # df /zones

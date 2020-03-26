@@ -91,7 +91,7 @@ class DiskDisk(BaseDiskDisk):
             return
         self.log.info("configure disk %s", self.disk_id)
         if not self.disk_id:
-            raise ex.excError("disk_id is not set. should be at this point")
+            raise ex.Error("disk_id is not set. should be at this point")
         self.svc.node._scanscsi(log=self.log)
         self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
@@ -108,7 +108,7 @@ class DiskDisk(BaseDiskDisk):
                 self.log.info("%s now exists", self.anypath)
                 return
             time.sleep(1)
-        raise ex.excError("time out waiting for %s to appear" % self.anypath)
+        raise ex.Error("time out waiting for %s to appear" % self.anypath)
 
     def wait_devpath(self):
         for retry in range(30):
@@ -117,5 +117,5 @@ class DiskDisk(BaseDiskDisk):
                 self.log.info("%s now exists", self.devpath)
                 return
             time.sleep(1)
-        raise ex.excError("time out waiting for %s to appear" % self.devpath)
+        raise ex.Error("time out waiting for %s to appear" % self.devpath)
 

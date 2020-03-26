@@ -67,13 +67,13 @@ class OptionParserNoHelpOptions(optparse.OptionParser):
         """
         Override optparse.exit so sys.exit doesn't get called.
         """
-        raise ex.excError(msg)
+        raise ex.Error(msg)
 
     def error(self, msg):
         """
         Override optparse.error so sys.exit doesn't get called.
         """
-        raise ex.excError(msg)
+        raise ex.Error(msg)
 
     def print_version(self, file=None):
         """
@@ -406,7 +406,7 @@ class OptParser(object):
             try:
                 parser.add_option(option)
             except TypeError as exc:
-                raise ex.excError("misclassified option: %s" % exc)
+                raise ex.Error("misclassified option: %s" % exc)
         options_discarded, args_discarded = parser.parse_args(self.args, optparse.Values())
         return options, action
 
@@ -449,8 +449,8 @@ class OptParser(object):
         for the action prefix.
         """
         if options.parm_help:
-            raise ex.excError(self.parser.format_help())
+            raise ex.Error(self.parser.format_help())
         else:
             usage = self.format_digest(action)
-            raise ex.excError("%s\n%s" % (str(action), usage))
+            raise ex.Error("%s\n%s" % (str(action), usage))
 

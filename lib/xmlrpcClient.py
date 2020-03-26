@@ -104,9 +104,9 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         _d = _e - _b
         log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, exc))
         if hasattr(exc, "faultString"):
-            raise ex.excError(getattr(exc, "faultString").split(":", 1)[-1])
+            raise ex.Error(getattr(exc, "faultString").split(":", 1)[-1])
         else:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
 class Collector(object):
     def call(self, *args, **kwargs):
@@ -1004,7 +1004,7 @@ class Collector(object):
             except Exception as exc:
                 print("error pushing", array.name, file=sys.stderr)
                 print(exc, file=sys.stderr)
-                raise ex.excError
+                raise ex.Error
 
     def push_eva(self, objects=[], sync=True):
         if 'update_eva_xml' not in self.proxy_methods:

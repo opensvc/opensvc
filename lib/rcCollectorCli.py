@@ -33,7 +33,7 @@ from utilities.string import bdecode, is_glob
 try:
     import requests
 except ImportError:
-    raise ex.excError("This feature requires the python requests module")
+    raise ex.Error("This feature requires the python requests module")
 
 try:
     from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -2427,7 +2427,7 @@ class Cli(object):
         try:
             self.api_o = Api(cli=self, refresh=self.options.refresh_api)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
     def read_config(self):
         if os.path.exists(self.options.config):
@@ -2457,7 +2457,7 @@ class Cli(object):
             return self.conf.get(conf_section, o)
         if default is not None:
             return default
-        raise ex.excError("missing parameter: "+o)
+        raise ex.Error("missing parameter: "+o)
 
     def dispatch_noninteractive(self, args):
         # non interactive mode
@@ -2466,7 +2466,7 @@ class Cli(object):
         try:
             return self.dispatch(line)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def readline_setup(self):
         readline.parse_and_bind('tab: complete')

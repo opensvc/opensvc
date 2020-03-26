@@ -72,12 +72,12 @@ class Hp3pars(object):
                 kwargs["username"] = self.node.oget(s, 'username')
                 kwargs["key"] = self.node.oget(s, 'key')
                 if kwargs["username"] is None or kwargs["key"] is None:
-                    raise ex.excError("username and key are required for the ssh method")
+                    raise ex.Error("username and key are required for the ssh method")
             elif method in ("cli"):
                 kwargs['cli'] = self.node.oget(s, "cli")
                 kwargs['pwf'] = self.node.oget(s, "pwf")
                 if kwargs["pwf"] is None:
-                    raise ex.excError("pwf is required for the cli method")
+                    raise ex.Error("pwf is required for the cli method")
             self.arrays.append(Hp3par(name, method, **kwargs))
             done.append(name)
 
@@ -141,7 +141,7 @@ class Hp3par(object):
             err = "unexpected proxy response format (not json)"
 
         if ret != 0:
-            raise ex.excError("proxy error: %s" % err)
+            raise ex.Error("proxy error: %s" % err)
 
         return out, err
 
@@ -164,13 +164,13 @@ class Hp3par(object):
             else:
                 print(cmd)
                 print(out)
-            raise ex.excError("3par command execution error")
+            raise ex.Error("3par command execution error")
 
         return out, err
 
     def cli_cmd(self, cmd, log=False):
         if which(self.cli) is None:
-            raise ex.excError("%s executable not found" % self.cli)
+            raise ex.Error("%s executable not found" % self.cli)
 
         # HOME is needed to locate the ssl cert validation file
         os.environ["HOME"] = os.path.expanduser("~root")
@@ -191,14 +191,14 @@ class Hp3par(object):
 
         if p.returncode != 0:
             if "The authenticity of the storage system cannot be established." in err:
-                 raise ex.excError("3par connection error. array ssl cert is not trusted. open interactive session to trust it.")
+                 raise ex.Error("3par connection error. array ssl cert is not trusted. open interactive session to trust it.")
             if log:
                 if len(out) > 0: self.log.info(out)
                 if len(err) > 0: self.log.error(err)
             else:
                 print(' '.join(cmd))
                 print(out)
-            raise ex.excError("3par command execution error")
+            raise ex.Error("3par command execution error")
 
         return out, err
 
@@ -220,7 +220,7 @@ class Hp3par(object):
             self.get_uuid()
             return self.proxy_cmd(cmd, log=log)
         else:
-            raise ex.excError("unsupported method %s for array %s" % (self.method, self.name))
+            raise ex.Error("unsupported method %s for array %s" % (self.method, self.name))
 
     def serialize(self, s, cols):
         return json.dumps(self.csv_to_list_of_dict(s, cols))
@@ -273,7 +273,7 @@ class Hp3par(object):
     def updatevv(self, vvnames=None, log=False):
         cmd = 'updatevv -f'
         if vvnames is None or len(vvnames) == 0:
-            raise ex.excError("updatevv: no vv names specified")
+            raise ex.Error("updatevv: no vv names specified")
         if vvnames:
             cmd += ' ' + ' '.join(vvnames)
         s = self.rcmd(cmd, log=log)[0]
@@ -313,7 +313,7 @@ class Hp3par(object):
         out, err = self._showrcopy()
 
         if len(out) == 0:
-            raise ex.excError("unable to fetch rcg status")
+            raise ex.Error("unable to fetch rcg status")
 
         lines = []
         cols_rcg = ["Name", "Target", "Status", "Role", "Mode"]
@@ -333,7 +333,7 @@ class Hp3par(object):
                 lines.append(line)
 
         if len(lines) == 0:
-            raise ex.excError("rcg does not exist")
+            raise ex.Error("rcg does not exist")
 
         # RCG status
         rcg_s = lines[0]

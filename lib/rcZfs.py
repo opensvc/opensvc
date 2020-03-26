@@ -220,7 +220,7 @@ class Dataset(object):
         Return False on error.
         """
         if snapname is None:
-            raise ex.excError("snapname should be defined")
+            raise ex.Error("snapname should be defined")
         snapdataset = self.name + "@" + snapname
         cmd = [rcEnv.syspaths.zfs, 'snapshot']
         if recursive:
@@ -261,7 +261,7 @@ def zpool_devs(poolname, node=None):
     cmd += [poolname]
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(err)
+        raise ex.Error(err)
 
     import re
 
