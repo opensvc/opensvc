@@ -461,7 +461,7 @@ class App(Resource):
             raise ex.excError("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
             raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
-        except ex.excSignal:
+        except ex.Signal:
             self.log.info("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
@@ -693,7 +693,7 @@ class App(Resource):
         self.log.info('exec %s as user %s', cmd_s, user)
         try:
             ret = lcall(cmd, **kwargs)
-        except (KeyboardInterrupt, ex.excSignal):
+        except (KeyboardInterrupt, ex.Signal):
             _len = datetime.now() - now
             self.log.info('%s interrupted after %s - ret %d',
                            action, _len, 1)
