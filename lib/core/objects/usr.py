@@ -42,11 +42,13 @@ class Usr(Sec, BaseSvc):
 
     @lazy
     def kwstore(self):
-        return __import__("usrdict").KEYS
+        from .usrdict import KEYS
+        return KEYS
 
     @lazy
     def full_kwstore(self):
-        return __import__("usrdict").full_kwstore()
+        from .usrdict import full_kwstore
+        return full_kwstore()
 
     def on_create(self):
         changes = []

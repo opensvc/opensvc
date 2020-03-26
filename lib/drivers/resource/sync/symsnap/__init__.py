@@ -1,5 +1,5 @@
 from ..symclone import SyncSymclone, adder as base_adder
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symsnap"

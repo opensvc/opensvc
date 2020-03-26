@@ -210,7 +210,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def kwstore(self):
-        return __import__("nodedict").KEYS
+        from .nodedict import KEYS
+        return KEYS
 
     @lazy
     def devnull(self):

@@ -3,7 +3,7 @@ import os
 from . import BaseFsFlag
 from rcUtilities import lazy
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "fs"
 DRIVER_BASENAME = "flag"

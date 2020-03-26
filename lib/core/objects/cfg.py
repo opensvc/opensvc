@@ -25,11 +25,13 @@ class Cfg(DataMixin, BaseSvc):
 
     @lazy
     def kwstore(self):
-        return __import__("cfgdict").KEYS
+        from .cfgdict import KEYS
+        return KEYS
 
     @lazy
     def full_kwstore(self):
-        return __import__("cfgdict").full_kwstore()
+        from .cfgdict import full_kwstore
+        return full_kwstore()
 
     def _add_key(self, key, data):
         if not key:

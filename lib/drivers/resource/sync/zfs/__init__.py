@@ -12,7 +12,7 @@ from rcZfs import a2pool_dataset, Dataset
 from rcUtilities import lazy
 from converters import print_duration
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 from utilities.string import bdecode
 

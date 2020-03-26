@@ -11,7 +11,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, protected_dir
 from resources import Resource
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.string import is_string
 
 DRIVER_GROUP = "fs"

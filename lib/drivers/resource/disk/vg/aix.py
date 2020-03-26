@@ -10,7 +10,7 @@ import rcExceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"

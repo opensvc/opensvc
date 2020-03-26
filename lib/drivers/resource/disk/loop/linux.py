@@ -17,7 +17,7 @@ from converters import convert_size
 from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import clear_cache
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import call, which
 
 KEYS.register_driver(
