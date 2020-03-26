@@ -89,7 +89,7 @@ class HbUcastTx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
 
         try:
@@ -169,7 +169,7 @@ class HbUcastRx(HbUcast):
                 lexc = exc
                 time.sleep(1)
         self.log.error("init error: %s", str(lexc))
-        raise ex.excAbortAction
+        raise ex.AbortAction
 
     def configure_listener(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -183,7 +183,7 @@ class HbUcastRx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
 
         self.log.info("listening on %s:%s",

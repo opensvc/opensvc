@@ -326,7 +326,7 @@ def build_services(status=None, paths=None, create_instance=False,
             errors.append("%s: %s" % (path, str(e)))
             node.log.error(str(e))
             continue
-        except ex.excAbortAction:
+        except ex.AbortAction:
             continue
         except:
             import traceback
