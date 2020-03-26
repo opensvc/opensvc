@@ -65,10 +65,10 @@ class HbDisk(Hb):
         try:
             new_dev = shared.NODE.oget(self.name, "dev")
         except ex.RequiredOptNotFound:
-            raise ex.excAbortAction("no %s.dev is not set in node.conf" % self.name)
+            raise ex.AbortAction("no %s.dev is not set in node.conf" % self.name)
 
         if not os.path.exists(new_dev):
-            raise ex.excAbortAction("%s does not exist" % new_dev)
+            raise ex.AbortAction("%s does not exist" % new_dev)
 
         new_dev = os.path.realpath(new_dev)
         new_flags = os.O_RDWR
@@ -78,10 +78,10 @@ class HbDisk(Hb):
                 self.log.info("using directio")
                 new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC  # (Darwin, SunOS) pylint: disable=no-member
             else:
-                raise ex.excAbortAction("%s must be a block device" % new_dev)
+                raise ex.AbortAction("%s must be a block device" % new_dev)
         else:
             if not stat.S_ISCHR(statinfo.st_mode):
-                raise ex.excAbortAction("%s must be a char device" % new_dev)
+                raise ex.AbortAction("%s must be a char device" % new_dev)
 
         if new_dev != self.dev:
             self.dev = new_dev
@@ -99,11 +99,11 @@ class HbDisk(Hb):
             fo = os.fdopen(fd, 'rb+')
         except OSError as exc:
             if exc.errno == errno.EINVAL:
-                raise ex.excAbortAction("%s directio is not supported" % self.dev)
+                raise ex.AbortAction("%s directio is not supported" % self.dev)
             else:
-                raise ex.excAbortAction("error opening %s: %s" % (self.dev, str(exc)))
+                raise ex.AbortAction("error opening %s: %s" % (self.dev, str(exc)))
         except Exception as exc:
-            raise ex.excAbortAction("error opening %s: %s" % (self.dev, str(exc)))
+            raise ex.AbortAction("error opening %s: %s" % (self.dev, str(exc)))
         try:
             yield fo
         except Exception as exc:
@@ -132,7 +132,7 @@ class HbDisk(Hb):
     def meta_write_slot(self, slot, data, fo=None):
         if len(data) > mmap.PAGESIZE:
             self.log.error("attempt to write too long data in meta slot %d", slot)
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
         self.meta_slot_buff.seek(0)
         self.meta_slot_buff.write(data)
         offset = self.meta_slot_offset(slot)
@@ -154,7 +154,7 @@ class HbDisk(Hb):
     def write_slot(self, slot, data, fo=None):
         if len(data) > self.SLOTSIZE:
             self.log.error("attempt to write too long data in slot %d", slot)
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
         self.slot_buff.seek(0)
         self.slot_buff.write(data)
         offset = self.slot_offset(slot)
@@ -221,7 +221,7 @@ class HbDiskTx(HbDisk):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
             sys.exit(1)
@@ -282,7 +282,7 @@ class HbDiskRx(HbDisk):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
             sys.exit(1)

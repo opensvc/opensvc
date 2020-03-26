@@ -403,7 +403,7 @@ class Scheduler(shared.OsvcThread):
             for action in shared.NODE.sched.scheduler_actions:
                 try:
                     delay = shared.NODE.sched.validate_action(action, now=now)
-                except ex.excAbortAction:
+                except ex.AbortAction:
                     continue
                 self.queue_action(action, delay, now=now)
         for path in list(shared.SERVICES):
@@ -425,7 +425,7 @@ class Scheduler(shared.OsvcThread):
                     continue
                 try:
                     data = svc.sched.validate_action(action, lasts=lasts, now=now)
-                except ex.excAbortAction as exc:
+                except ex.AbortAction as exc:
                     self.log.debug("skip %s on %s: validation", action, path)
                     continue
                 try:

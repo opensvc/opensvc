@@ -150,7 +150,7 @@ class Sync(Resource):
         if not self.svc.options.cron:
             self.log.info("skip: reference resources aggregated status "
                           "is %s/%s" % (s['avail'], s['overall']))
-        raise ex.excAbortAction
+        raise ex.AbortAction
 
     def pre_sync_check_flex_primary(self):
         """ Refuse to sync from a flex non-primary node
@@ -161,7 +161,7 @@ class Sync(Resource):
                 self.log.debug("won't sync this resource from a flex non-primary node")
             else:
                 self.log.info("won't sync this resource from a flex non-primary node")
-            raise ex.excAbortAction
+            raise ex.AbortAction
 
     def pre_sync_check_prd_svc_on_non_prd_node(self):
         if self.svc.svc_env == 'PRD' and self.svc.node.env != 'PRD':
@@ -169,7 +169,7 @@ class Sync(Resource):
                 self.log.debug("won't sync a PRD service running on a !PRD node")
             else:
                 self.log.info("won't sync a PRD service running on a !PRD node")
-            raise ex.excAbortAction
+            raise ex.AbortAction
 
     def sync_status(self, *args, **kwargs):
         """

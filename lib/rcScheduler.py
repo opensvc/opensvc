@@ -112,7 +112,7 @@ def sched_action(func):
             self.sched.action_timestamps(action, options.rid)
         try:
             ret = func(self, action, options)
-        except ex.excAbortAction:
+        except ex.AbortAction:
             # finer-grained locking can raise that to cancel the task
             return 0
         if ret == 0 and action in self.sched.scheduler_actions:
@@ -814,7 +814,7 @@ class Scheduler(object):
         Decide if the scheduler task can run, and return the concerned rids
         for multi-resources actions.
 
-        The callers are responsible for catching excAbortAction.
+        The callers are responsible for catching AbortAction.
         """
         if isinstance(now, (int, float)):
             now = datetime.datetime.fromtimestamp(now)
@@ -825,12 +825,12 @@ class Scheduler(object):
         if not isinstance(self.scheduler_actions[action], list):
             skip = self.skip_action(action, now=now, lasts=lasts)
             if skip is True:
-                raise ex.excAbortAction
+                raise ex.AbortAction
             return skip
         data = self.skip_action(action, now=now, lasts=lasts)
         sched_options = data["keep"]
         if len(sched_options) == 0:
-            raise ex.excAbortAction
+            raise ex.AbortAction
         return [option.section for option in sched_options], data["delay"]
 
     def action_timestamps(self, action, rids=None, success=False):

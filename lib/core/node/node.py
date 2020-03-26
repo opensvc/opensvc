@@ -1051,7 +1051,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         try:
             self.async_action(action)
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return 0
         try:
             return self._action(action, options)
@@ -3753,7 +3753,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             sync = action not in ACTIONS_WAIT_RESULT
             ret = self.daemon_node_action(action=action, options=options, node=self.options.node, sync=sync, action_mode=False)
             if ret == 0:
-                raise ex.excAbortAction()
+                raise ex.AbortAction()
             else:
                 raise ex.excError()
         if self.options.local:
@@ -3765,9 +3765,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for line in data.get("info", []):
             self.log.info(line)
             if " already " in line:
-                raise ex.excAbortAction()
+                raise ex.AbortAction()
         if not wait:
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
         self.poll_async_action(ACTION_ASYNC[action]["target"], timeout=timeout, begin=begin)
 
     def poll_async_action(self, global_expect, timeout=None, begin=None):
