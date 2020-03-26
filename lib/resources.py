@@ -31,6 +31,7 @@ LOCKER_TYPES = [
     "disk.radoslock",
 ]
 
+
 class Resource(object):
     """
     Resource drivers parent class
@@ -686,8 +687,8 @@ class Resource(object):
         """
         if levels is None:
             levels = ["info", "warn", "error"]
-        return [entry[1] for entry in self.status_logs if \
-                entry[0] in levels and entry[1] != ""]
+        return [entry[1] for entry in self.status_logs
+                if entry[0] in levels and entry[1] != ""]
 
     def status_logs_count(self, levels=None):
         """
@@ -1069,7 +1070,7 @@ class Resource(object):
         try:
             isprov = self.is_provisioned()
         except Exception as exc:
-            self.status_log("provisioned: %s"%str(exc), "error")
+            self.status_log("provisioned: %s" % str(exc), "error")
             isprov = False
         data = {}
         if isprov is not None:
