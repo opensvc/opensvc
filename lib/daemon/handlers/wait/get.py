@@ -103,7 +103,7 @@ class Handler(handler.Handler):
         try:
             jsonpath_expr = parse(path)
         except Exception as exc:
-            raise ex.excError(exc)
+            raise ex.Error(exc)
 
         return neg, jsonpath_expr, oper, val
 
@@ -121,7 +121,7 @@ class Handler(handler.Handler):
                 else:
                     val = obj_class(val)
             except Exception as exc:
-                raise ex.excError("can not convert to a common type")
+                raise ex.Error("can not convert to a common type")
             if oper is None:
                 if match.value:
                     return True

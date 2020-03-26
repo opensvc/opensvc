@@ -131,7 +131,7 @@ class Mgr(object):
         else:
             try:
                 ret = self.node.do_svcs_action(action, options)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 print(exc, file=sys.stderr)
                 ret = 1
         return ret
@@ -189,7 +189,7 @@ class Mgr(object):
             try:
                 validate_kind(kind)
             except ValueError as exc:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
             try:
                 data[kind].append(path)
             except KeyError:
@@ -252,7 +252,7 @@ class Mgr(object):
                 err.append("%s: %s" % (self.optparser.prog, exc))
                 pass
         # no parser matched. display a per-parser errorlog
-        raise ex.excError("\n".join(err))
+        raise ex.Error("\n".join(err))
 
     def _main(self, argv=None):
         """
@@ -265,11 +265,11 @@ class Mgr(object):
         argv, extra_argv = self.get_extra_argv(argv)
         try:
             options, action = self.parse_args(argv)
-        except ex.excError as exc:
+        except ex.Error as exc:
             if str(exc):
                 raise
             else:
-                raise ex.excError("no match")
+                raise ex.Error("no match")
         if action == "deploy":
             action = "create"
             options.provision = True
@@ -283,7 +283,7 @@ class Mgr(object):
         except AttributeError:
             pass
         if action not in ("ls", "monitor", "create") and options.svcs is None and options.status is None:
-            raise ex.excError("no service selected.")
+            raise ex.Error("no service selected.")
         if action in ("ls", "monitor") and options.svcs is None:
             kind = os.environ.get("OSVC_KIND", "svc")
             options.svcs = "*/%s/*" % kind
@@ -307,7 +307,7 @@ class Mgr(object):
         if action != "create":
             try:
                 self.node.build_services(**build_kwargs)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 if len(str(exc)) > 0:
                     print(exc, file=sys.stderr)
                 build_err = True
@@ -348,7 +348,7 @@ class Mgr(object):
 
         try:
             ret = self._main(argv=argv)
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc, file=sys.stderr)
             return 1
         except ex.Version as exc:

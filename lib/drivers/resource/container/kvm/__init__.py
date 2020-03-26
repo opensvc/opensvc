@@ -121,7 +121,7 @@ class ContainerKvm(BaseContainer):
         cmd = ['virsh', 'define', self.cf]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_start(self):
         if self.svc.create_pg and which("machinectl") is None and self.capable("partitions"):
@@ -130,12 +130,12 @@ class ContainerKvm(BaseContainer):
             self.unset_partition()
         if not os.path.exists(self.cf):
             self.log.error("%s not found"%self.cf)
-            raise ex.excError
+            raise ex.Error
         self.virsh_define()
         cmd = ['virsh', 'start', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def start(self):
@@ -152,7 +152,7 @@ class ContainerKvm(BaseContainer):
             return
         ret, buff, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
 
     def stop(self):
@@ -162,7 +162,7 @@ class ContainerKvm(BaseContainer):
         cmd = ['virsh', 'destroy', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)
@@ -227,10 +227,10 @@ class ContainerKvm(BaseContainer):
         try:
             tree.parse(self.cf)
         except Exception as exc:
-            raise ex.excError("container config parsing error: %s" % exc)
+            raise ex.Error("container config parsing error: %s" % exc)
         root = tree.getroot()
         if root is None:
-            raise ex.excError("invalid container config %s" % self.cf)
+            raise ex.Error("invalid container config %s" % self.cf)
         resource = root.find("resource")
         if resource is None:
             return
@@ -251,10 +251,10 @@ class ContainerKvm(BaseContainer):
         try:
             tree.parse(self.cf)
         except Exception as exc:
-            raise ex.excError("container config parsing error: %s" % exc)
+            raise ex.Error("container config parsing error: %s" % exc)
         root = tree.getroot()
         if root is None:
-            raise ex.excError("invalid container config %s" % self.cf)
+            raise ex.Error("invalid container config %s" % self.cf)
         resource = root.find("resource")
         if resource is None:
             resource = SubElement(root, "resource")
@@ -276,7 +276,7 @@ class ContainerKvm(BaseContainer):
         try:
             tree.parse(self.cf)
         except Exception as exc:
-            raise ex.excError("container config parsing error: %s" % exc)
+            raise ex.Error("container config parsing error: %s" % exc)
 
         # create the vdisk if it does not exist yet
         if not os.path.exists(flag_disk_path):
@@ -351,11 +351,11 @@ class ContainerKvm(BaseContainer):
     def setup_kvm(self):
         if self.virtinst is None:
             self.log.error("the 'virtinst' parameter must be set")
-            raise ex.excError
+            raise ex.Error
         cmd = [] + self.virtinst + self.virtinst_cfdisk
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def setup_ips(self):
         self.purge_known_hosts()
@@ -372,18 +372,18 @@ class ContainerKvm(BaseContainer):
     def setup_snap(self):
         if self.snap is None:
             self.log.error("the 'snap' parameter must be set")
-            raise ex.excError
+            raise ex.Error
         if self.snapof is None:
             self.log.error("the 'snapof' parameter must be set")
-            raise ex.excError
+            raise ex.Error
         if not which('btrfs'):
             self.log.error("'btrfs' command not found")
-            raise ex.excError
+            raise ex.Error
 
         cmd = ['btrfs', 'subvolume', 'snapshot', self.snapof, self.snap]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def get_pubkey(self):
         p = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
@@ -392,7 +392,7 @@ class ContainerKvm(BaseContainer):
                 pub = f.read(8000)
         except:
             self.log.error('failed to read root public key')
-            raise ex.excError
+            raise ex.Error
         return pub
 
     def get_gw(self):
@@ -400,14 +400,14 @@ class ContainerKvm(BaseContainer):
         ret, out, err = self.call(cmd)
         if ret != 0:
             self.log.error('failed to read routing table')
-            raise ex.excError
+            raise ex.Error
         for line in out.split('\n'):
             if line.startswith('0.0.0.0'):
                 l = line.split()
                 if len(l) > 1:
                     return l[1]
         self.log.error('failed to find default gateway')
-        raise ex.excError
+        raise ex.Error
 
     def get_ns(self):
         p = os.path.join(os.sep, 'etc', 'resolv.conf')
@@ -418,7 +418,7 @@ class ContainerKvm(BaseContainer):
                     if len(l) > 1:
                         return l[1]
         self.log.error('failed to find a nameserver')
-        raise ex.excError
+        raise ex.Error
 
     def get_config(self):
         cf = ['todo']
@@ -431,7 +431,7 @@ class ContainerKvm(BaseContainer):
         try:
             s = ';'.join(('hv_root_pubkey', self.get_pubkey()))
             cf.append(s)
-        except ex.excError:
+        except ex.Error:
             pass
         for resource in self.svc.get_resources("ip"):
             s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.mask))
@@ -450,7 +450,7 @@ class ContainerKvm(BaseContainer):
                 f.write('\0')
         except:
             self.log.error("failed to create config disk")
-            raise ex.excError
+            raise ex.Error
         self.virtinst_cfdisk = ["--disk", "path=%s,device=floppy"%cfdisk]
         self.log.info("created config disk with content;\n%s", config)
 

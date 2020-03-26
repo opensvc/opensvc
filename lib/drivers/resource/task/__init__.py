@@ -217,20 +217,20 @@ class BaseTask(Resource):
         try:
             buff = input("Do you really want to run %s (yes/no) > " % self.rid)
         except ex.Signal:
-            raise ex.excError("timeout waiting for confirmation")
+            raise ex.Error("timeout waiting for confirmation")
 
         if buff == "yes":
             signal.alarm(0)
             self.log.info("run confirmed")
         else:
-            raise ex.excError("run aborted")
+            raise ex.Error("run aborted")
 
     def run(self):
         try:
             with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
                 self._run()
         except lock.LOCK_EXCEPTIONS:
-            raise ex.excError("task is already running (maybe too long for the schedule)")
+            raise ex.Error("task is already running (maybe too long for the schedule)")
         finally:
             self.svc.notify_done("run", rids=[self.rid])
 
@@ -260,7 +260,7 @@ class BaseTask(Resource):
         elif self.checker == "last_run":
             try:
                 self.check_requires("run")
-            except (ex.excError, ex.ContinueAction):
+            except (ex.Error, ex.ContinueAction):
                 return rcStatus.NA
             ret = self.read_last_run_retcode()
             if ret is None:

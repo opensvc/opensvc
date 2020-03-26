@@ -38,7 +38,7 @@ def dev_to_paths(dev, log=None):
     cmd = ["dmsetup", "table", "-j", str(major("device-mapper")), "-m", dev[8:]]
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(err)
+        raise ex.Error(err)
     if "multipath" not in out:
         return []
     paths = ["/dev/"+os.path.basename(_name) for _name in glob.glob("/sys/block/%s/slaves/*" % name)]
@@ -50,13 +50,13 @@ def dev_set_rw(dev, log=None):
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(err)
+        raise ex.Error(err)
 
 def dev_is_ro_ioctl(dev):
     cmd = ["blockdev", "--getro", dev]
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(err)
+        raise ex.Error(err)
     if out.strip() == "1":
         return True
     return False
@@ -104,13 +104,13 @@ def refresh_multipath(dev, log=None):
     cmd = [rcEnv.syspaths.multipath, "-v0", "-r", dev]
     (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
-        raise ex.excError
+        raise ex.Error
 
 def multipath_flush(dev, log=None):
     cmd = [rcEnv.syspaths.multipath, "-f", dev]
     ret, out, err = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
-        raise ex.excError
+        raise ex.Error
 
 def dev_ready(dev, log=None):
     cmd = ['sg_turs', dev]
@@ -131,7 +131,7 @@ def wait_for_dev_ready(dev, log=None):
         time.sleep(delay)
     if log:
         log.error("timed out waiting for device %s to become ready (max %i secs)"%(dev,timeout))
-    raise ex.excError
+    raise ex.Error
 
 def promote_dev_rw(dev, log=None):
     count = 0
@@ -152,17 +152,17 @@ def promote_dev_rw(dev, log=None):
     if dev_is_ro(dev):
         try:
             dev_set_rw(dev, log=log)
-        except ex.excError:
+        except ex.Error:
             pass
     if count > 0:
         try:
             refresh_multipath(dev, log=log)
-        except ex.excError:
+        except ex.Error:
             pass
 
 def loop_is_deleted(dev):
     if not which(rcEnv.syspaths.losetup):
-        raise ex.excError("losetup must be installed")
+        raise ex.Error("losetup must be installed")
     out, err, ret = justcall([rcEnv.syspaths.losetup, dev])
     if "(deleted)" in out:
         return True
@@ -214,7 +214,7 @@ def label_to_dev(label, tree=None):
             label_to_dev_cache[label] = devp
             return devp
 
-    raise ex.excError("multiple devs match the label: %s" % ", ".join(devps))
+    raise ex.Error("multiple devs match the label: %s" % ", ".join(devps))
 
 def major(driver):
     path = os.path.join(os.path.sep, 'proc', 'devices')
@@ -265,7 +265,7 @@ def lv_info(self, device):
         lv_size = float(info[2].split('m')[0])
     else:
         self.log.error("%s output does not have the expected unit (m or M)"%' '.join(cmd))
-        ex.excError
+        ex.Error
     return (info[0], info[1], lv_size)
 
 def get_partition_parent(dev):

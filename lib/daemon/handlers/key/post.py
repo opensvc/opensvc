@@ -43,7 +43,7 @@ class Handler(handler.Handler):
         try:
             shared.SERVICES[options.path].add_key(options.key, options.data)
             return {"status": 0, "info": "key %s value set" % options.key}
-        except ex.excError as exc:
+        except ex.Error as exc:
             return {"status": 1, "error": str(exc)}
         except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}

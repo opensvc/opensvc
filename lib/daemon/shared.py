@@ -1779,7 +1779,7 @@ class OsvcThread(threading.Thread, Crypt):
                     return False
                 try:
                     current = svc._get(param, evaluate=True)
-                except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                     current = None
                 if current is None:
                     if "." in param:
@@ -1794,7 +1794,7 @@ class OsvcThread(threading.Thread, Crypt):
                         for rid in rids:
                             try:
                                 _current = svc._get(rid+"."+_param, evaluate=True)
-                            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                            except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                                 continue
                             if matching(_current, op, value):
                                 return True

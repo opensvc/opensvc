@@ -20,7 +20,7 @@ class Asset(rcAsset.Asset):
         cmd = ["prtconf", "-L"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         if '-1' in out:
             return False
         return True

@@ -74,7 +74,7 @@ class DiskDrbd(Resource):
             if which('drbdadm'):
                 self.drbdadm = 'drbdadm'
             else:
-                raise ex.excError("drbdadm command not found")
+                raise ex.Error("drbdadm command not found")
         return [self.drbdadm] + cmd.split() + [self.res]
 
     def exposed_devs(self):
@@ -82,7 +82,7 @@ class DiskDrbd(Resource):
 
         ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         from xml.etree.ElementTree import XML, fromstring
         tree = fromstring(out)
@@ -109,7 +109,7 @@ class DiskDrbd(Resource):
 
         ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         from xml.etree.ElementTree import XML, fromstring
         tree = fromstring(out)
@@ -132,12 +132,12 @@ class DiskDrbd(Resource):
     def drbdadm_down(self):
         ret, out, err = self.vcall(self.drbdadm_cmd('down'))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def drbdadm_up(self):
         ret, out, err = self.vcall(self.drbdadm_cmd('up'))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.wait_for_kwown_dstate()
         self.can_rollback_connection = True
         self.can_rollback = True
@@ -149,13 +149,13 @@ class DiskDrbd(Resource):
             if "Device minor not allocated" in err or ret == 10:
                 return "Unattached"
             else:
-                raise ex.excError
+                raise ex.Error
         return out.split("\n")[0].strip()
 
     def prereq(self):
         if not os.path.exists("/proc/drbd"):
             ret, out, err = self.vcall(['modprobe', 'drbd'])
-            if ret != 0: raise ex.excError
+            if ret != 0: raise ex.Error
 
     def start_connection(self):
         cstate = self.get_cstate()
@@ -175,7 +175,7 @@ class DiskDrbd(Resource):
     def get_role(self):
         out, err, ret = justcall(self.drbdadm_cmd('role'))
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         out = out.strip()
         if out in ("Primary", "Secondary"):
             # drbd9
@@ -183,7 +183,7 @@ class DiskDrbd(Resource):
         try:
             loc, rem = out.split("\n")[0].split('/')
         except (IndexError, ValueError, AttributeError):
-            raise ex.excError(out)
+            raise ex.Error(out)
         return loc
 
     def start_role(self, role):
@@ -191,7 +191,7 @@ class DiskDrbd(Resource):
         if cur_role != role:
             ret, out, err = self.vcall(self.drbdadm_cmd(role.lower()))
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
             self.can_rollback_role = True
             self.can_rollback = True
         else:
@@ -242,7 +242,7 @@ class DiskDrbd(Resource):
     def get_dstate(self):
         ret, out, err = self.call(self.drbdadm_cmd('dstate'))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         return out.splitlines()
 
     def wait_for_kwown_dstate(self):
@@ -268,7 +268,7 @@ class DiskDrbd(Resource):
         self.status_log(str(role), "info")
         try:
             dstates = self.get_dstate()
-        except ex.excError:
+        except ex.Error:
             self.status_log("drbdadm dstate %s failed"%self.res)
             return rcStatus.WARN
         if self.dstate_uptodate(dstates):

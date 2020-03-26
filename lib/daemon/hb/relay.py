@@ -115,9 +115,9 @@ class HbRelayTx(HbRelay):
         }
         resp = self.daemon_post(request, cluster_name="join", server="raw://"+self.relay, secret=self.secret)
         if resp is None:
-            raise ex.excError("not responding")
+            raise ex.Error("not responding")
         if resp.get("status", 1) != 0:
-            raise ex.excError("return status not 0")
+            raise ex.Error("return status not 0")
 
 
 
@@ -195,13 +195,13 @@ class HbRelayRx(HbRelay):
         }
         resp = self.daemon_get(request, cluster_name="join", server="raw://"+self.relay, secret=self.secret)
         if resp is None:
-            raise ex.excError("no response reading relay slot %s" % nodename)
+            raise ex.Error("no response reading relay slot %s" % nodename)
         if resp.get("status", 1) != 0:
-            raise ex.excError("return status not 0 reading relay slot %s" % nodename)
+            raise ex.Error("return status not 0 reading relay slot %s" % nodename)
         if resp.get("data") is None:
-            raise ex.excError("no data in response reading relay slot %s" % nodename)
+            raise ex.Error("no data in response reading relay slot %s" % nodename)
         if resp.get("updated") is None:
-            raise ex.excError("no 'updated' key in response reading relay slot %s" % nodename)
+            raise ex.Error("no 'updated' key in response reading relay slot %s" % nodename)
         try:
             # python3
             return resp.get("updated"), bytes(resp["data"], "ascii")

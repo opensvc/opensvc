@@ -52,7 +52,7 @@ class DataMixin(object):
         if info:
             print(info)
         if status:
-            raise ex.excError(error)
+            raise ex.Error(error)
 
     def _add(self, key=None, value_from=None, append=False):
         if key and sys.stdin and value_from in ("-", "/dev/stdin"):
@@ -66,7 +66,7 @@ class DataMixin(object):
         elif value_from:
             self.add_glob(key, value_from, append=append)
         else:
-            raise ex.excError("missing arguments")
+            raise ex.Error("missing arguments")
 
     def add_stdin(self, key, append=False):
         if append:
@@ -126,12 +126,9 @@ class DataMixin(object):
             self.edit_config()
             return
         buff = self.decode_key(self.options.key)
+        no_newline = buff.count(os.linesep) == 0
         if buff is None:
-            raise ex.excError("could not decode the secret key '%s'" % self.options.key)
-        try:
-            no_newline = os.sep not in buff.decode()
-        except Exception:
-            raise ex.excError("this key is not editable")
+            raise ex.Error("could not decode the secret key '%s'" % self.options.key)
         editor = find_editor()
         fpath = self.tempfilename()
         try:
@@ -154,7 +151,7 @@ class DataMixin(object):
     def decode(self):
         buff = self.decode_key(self.options.key)
         if buff is None:
-            raise ex.excError("could not decode the secret key '%s'" % self.options.key)
+            raise ex.Error("could not decode the secret key '%s'" % self.options.key)
         try:
             sys.stdout.buffer.write(buff)
         except (TypeError, AttributeError):
@@ -253,7 +250,7 @@ class DataMixin(object):
             return
         data = self.decode_key(key)
         if data is None:
-            raise ex.excError("no data in key %s" % key)
+            raise ex.Error("no data in key %s" % key)
         if os.path.isdir(vpath):
             self.log.info("remove %s key %s directory at location %s", self.desc, key, vpath)
             shutil.rmtree(vpath)
@@ -303,7 +300,7 @@ class DataMixin(object):
         """
         keys = self.resolve_key(key)
         if not keys:
-            raise ex.excError("%s key %s not found" % (self.desc, key))
+            raise ex.Error("%s key %s not found" % (self.desc, key))
         for _key in keys:
             self.install_key(_key, path)
 

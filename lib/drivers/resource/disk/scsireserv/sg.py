@@ -97,7 +97,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return
         if n_registered > n_paths:
             raise ex.Signal("%d/%d paths registered" % (n_registered, n_paths))
-        raise ex.excError("%d/%d paths registered" % (n_registered, n_paths))
+        raise ex.Error("%d/%d paths registered" % (n_registered, n_paths))
 
     def disk_registered(self, disk):
         ret, out, err = self.read_path_registrations(disk)
@@ -171,18 +171,18 @@ class DiskScsireservSg(BaseDiskScsireserv):
         cmd = [rcEnv.syspaths.multipath, "-l", "-v1", devpath]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         _devpath = "/dev/mapper/" + out.strip()
         if not out:
-            raise ex.excError()
+            raise ex.Error()
         if not os.path.exists(_devpath):
-            raise ex.excError("%s does not exist" % _devpath)
+            raise ex.Error("%s does not exist" % _devpath)
         return _devpath
 
     def get_reservation_key(self, disk):
         try:
             return self._get_reservation_key(disk)
-        except ex.excError:
+        except ex.Error:
             disk = self.dev_to_mpath_dev(disk)
             return self._get_reservation_key(disk)
 
@@ -194,7 +194,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             cmd = ["sg_persist", "-n", "-r", disk]
         ret, out, err = self.call(cmd, errlog=None)
         if ret != 0:
-            raise ex.excError("failed to list reservation for disk %s" % disk)
+            raise ex.Error("failed to list reservation for disk %s" % disk)
         if "Key=" in out:
             # sg_persist format
             for w in out.split():
@@ -210,7 +210,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
     def disk_reserved(self, disk):
         try:
             return self._disk_reserved(disk)
-        except ex.excError:
+        except ex.Error:
             disk = self.dev_to_mpath_dev(disk)
             return self._disk_reserved(disk)
 
@@ -222,7 +222,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             cmd = ["sg_persist", "-n", "-r", disk]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("failed to read reservation for disk %s" % disk)
+            raise ex.Error("failed to read reservation for disk %s" % disk)
         if self.hostid in out:
             return True
         return False

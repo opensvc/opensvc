@@ -84,19 +84,19 @@ class ContainerHpvm(BaseContainer):
         cmd = ['/opt/hpvm/bin/hpvmstart', '-P', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_stop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-g', '-F', '-P', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_forcestop(self):
         cmd = ['/opt/hpvm/bin/hpvmstop', '-F', '-P', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def check_manual_boot(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
@@ -143,7 +143,7 @@ class ContainerHpvm(BaseContainer):
         cmd = ['hpvmmigrate', '-o', '-P', self.name, '-h', self.svc.options.to]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def sub_disks(self):
         return self.vg.sub_disks()

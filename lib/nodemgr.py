@@ -81,7 +81,7 @@ def _main(node, argv=None):
     except KeyboardInterrupt:
         sys.stderr.write("Keybord Interrupt\n")
         err = 1
-    except ex.excError:
+    except ex.Error:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()
         es = str(exc_value)
@@ -98,7 +98,7 @@ def main(argv=None):
 
     try:
         return _main(node, argv=argv)
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         return 1
     except ex.Version as exc:

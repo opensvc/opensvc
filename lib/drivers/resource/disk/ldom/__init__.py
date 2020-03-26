@@ -99,7 +99,7 @@ class DiskLdom(BaseDisk):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
-            raise ex.excError
+            raise ex.Error
         vds = ''
         for line in buff[0].split('\n'):
             keys = line.split('|')
@@ -131,7 +131,7 @@ class DiskLdom(BaseDisk):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
-            raise ex.excError
+            raise ex.Error
         for line in buff[0].split('\n'):
             keys = line.split('|')
             if keys[0] == 'VDISK' and len(keys) > 1 :

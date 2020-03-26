@@ -41,7 +41,7 @@ class NfsShare(Resource):
         for e in l:
             try:
                 client, opts = self.parse_entry(e)
-            except ex.excError as e:
+            except ex.Error as e:
                 raise ex.InitError(str(e))
             self.opts[client] = opts
 
@@ -51,7 +51,7 @@ class NfsShare(Resource):
         cmd = ["showmount", "-e", "--no-headers"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("nfs server not operational")
+            raise ex.Error("nfs server not operational")
         for line in out.splitlines():
             try:
                 idx = line.rindex(" ")
@@ -70,7 +70,7 @@ class NfsShare(Resource):
         cmd = ["exportfs", "-v"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         out = out.replace('\n ', '').replace('\n\t', '')
         for line in out.splitlines():
             words = line.split()
@@ -82,7 +82,7 @@ class NfsShare(Resource):
                 self.data[path] = {}
             try:
                 client, opts = self.parse_entry(e)
-            except ex.excError as e:
+            except ex.Error as e:
                 continue
             if client == '<world>':
                 client = '*'
@@ -99,7 +99,7 @@ class NfsShare(Resource):
             return False
         try:
             showmount = self.get_showmount()
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.status_log(str(exc), "info")
             return False
         if self.path not in showmount:
@@ -122,7 +122,7 @@ class NfsShare(Resource):
     def start(self):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("skip start because the share is in unknown state")
             return
 
@@ -144,12 +144,12 @@ class NfsShare(Resource):
             clear_cache("exportfs.v")
             clear_cache("showmount.e")
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
     def stop(self):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("continue with stop even if the share is in unknown state")
         if not up:
             self.log.info("%s is already down" % self.path)
@@ -160,12 +160,12 @@ class NfsShare(Resource):
             clear_cache("exportfs.v")
             clear_cache("showmount.e")
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
     def _status(self, verbose=False):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if len(self.issues) > 0:
@@ -178,7 +178,7 @@ class NfsShare(Resource):
 
     def parse_entry(self, e):
         if '(' not in e or ')' not in e:
-            raise ex.excError("malformed share opts: '%s'. must be in client(opts) client(opts) format"%e)
+            raise ex.Error("malformed share opts: '%s'. must be in client(opts) client(opts) format"%e)
         _l = e.split('(')
         client = _l[0]
         opts = _l[1].strip(')')

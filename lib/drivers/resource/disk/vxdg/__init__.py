@@ -64,7 +64,7 @@ class DiskVxdg(BaseDisk):
         cmd = ["vxprint", "-g", self.name]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {}
         for line in out.splitlines():
             words = line.split()
@@ -82,7 +82,7 @@ class DiskVxdg(BaseDisk):
         Return True if the vg is present
         """
         if not which("vxdg"):
-            raise ex.excError("vxdg command not found")
+            raise ex.Error("vxdg command not found")
         ret = qcall(["vxdg", "list", self.name])
         if ret == 0 :
             return True
@@ -107,7 +107,7 @@ class DiskVxdg(BaseDisk):
     def defects(self):
         try:
             data = self.vxprint()
-        except ex.excError:
+        except ex.Error:
             # dg does not exist
             return []
         errs = ["%s:%s:%s" % (key[0], key[1], val.STATE) for key, val in data.items() if val.STATE not in ("-", "ACTIVE")]
@@ -169,7 +169,7 @@ class DiskVxdg(BaseDisk):
         cmd = ["vxdisk", "list"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {}
         for line in out.splitlines():
             words = line.split(None, 4)
@@ -229,13 +229,13 @@ class DiskVxdg(BaseDisk):
                 cmd = ["/opt/VRTS/bin/vxdiskunsetup", "-f", words[0]]
                 ret, out, err = self.vcall(cmd)
                 if ret != 0:
-                    raise ex.excError
+                    raise ex.Error
 
     def destroy_vg(self):
         cmd = ["vxdg", "destroy", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
     def has_pv(self, pv):
@@ -253,7 +253,7 @@ class DiskVxdg(BaseDisk):
                     return True
                 else:
                     vg = line.split("name=", 1)[0].split()[0]
-                    raise ex.excError("pv %s in use by vg %s" % (pv, vg))
+                    raise ex.Error("pv %s in use by vg %s" % (pv, vg))
             if line.startswith("flags:") and "invalid" in line:
                 return False
         return False
@@ -307,7 +307,7 @@ class DiskVxdg(BaseDisk):
 
         if self.pvs is None:
             # lazy reference not resolvable
-            raise ex.excError("%s.pvs value is not valid" % self.rid)
+            raise ex.Error("%s.pvs value is not valid" % self.rid)
 
         self.pvs = self.pvs.split()
         l = []
@@ -322,7 +322,7 @@ class DiskVxdg(BaseDisk):
         self.pvs = l
 
         if len(self.pvs) == 0:
-            raise ex.excError("no pvs specified")
+            raise ex.Error("no pvs specified")
 
         for pv in self.pvs:
             if self.has_pv(pv):
@@ -330,7 +330,7 @@ class DiskVxdg(BaseDisk):
             cmd = ["/opt/VRTS/bin/vxdisksetup", "-i", pv]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
         if self.prov_has_it():
             self.log.info("vg %s already exists")
@@ -339,7 +339,7 @@ class DiskVxdg(BaseDisk):
         cmd = ["vxdg", "init", self.name] + self.pvs
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         self.can_rollback = True
         self.svc.node.unset_lazy("devtree")

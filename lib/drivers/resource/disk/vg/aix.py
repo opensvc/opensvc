@@ -143,7 +143,7 @@ class DiskVg(BaseDisk):
 
     def do_import(self):
         if not os.path.exists(self.vgfile_name()):
-            raise ex.excError("%s should exist" % self.vgfile_name())
+            raise ex.Error("%s should exist" % self.vgfile_name())
         if not self.dump_changed() and self.is_imported():
             self.log.info("%s is already imported" % self.name)
             return
@@ -157,7 +157,7 @@ class DiskVg(BaseDisk):
         try:
             data = json.loads(s)
         except:
-            raise ex.excError("%s is misformatted" % self.vgfile_name())
+            raise ex.Error("%s is misformatted" % self.vgfile_name())
         self.pvids = {}
         missing = []
         for l in data:
@@ -171,15 +171,15 @@ class DiskVg(BaseDisk):
 
         # check for missing devices
         if len(missing) > 1:
-            raise ex.excError("Missing hdisks for pvids %s to be able to import vg" % ','.join(missing))
+            raise ex.Error("Missing hdisks for pvids %s to be able to import vg" % ','.join(missing))
         elif len(missing) == 1:
-            raise ex.excError("Missing hdisk for pvid %s to be able to import vg" % ','.join(missing))
+            raise ex.Error("Missing hdisk for pvid %s to be able to import vg" % ','.join(missing))
 
         myhdisks = self.pvids.values()
         cmd = ['importvg', '-n', '-y', self.name, myhdisks[0]]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         shutil.copy2(self.vgfile_name(), self.vgimportedfile_name())
 
     def do_export(self):
@@ -189,7 +189,7 @@ class DiskVg(BaseDisk):
         cmd = ['exportvg', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_activate(self):
         if self.is_active():
@@ -198,7 +198,7 @@ class DiskVg(BaseDisk):
         cmd = ['varyonvg', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_deactivate(self):
         if not self.is_active():
@@ -207,7 +207,7 @@ class DiskVg(BaseDisk):
         cmd = ['varyoffvg', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_start(self):
         self.do_import()
@@ -282,7 +282,7 @@ class DiskVg(BaseDisk):
         cmd = ['lsvg', '-p', self.name]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         for e in out.split('\n'):
             x = e.split()

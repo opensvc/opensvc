@@ -111,9 +111,9 @@ class SyncEvasnap(Sync):
 
         try:
             self.prereq()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
         status = self._status(skip_prereq=True)
 
@@ -180,7 +180,7 @@ class SyncEvasnap(Sync):
         else:
             ret, out, err = self.call(cmd)
         if check and "Error" in out:
-            raise ex.excError("sssu command execution error")
+            raise ex.Error("sssu command execution error")
         return ret, out, err
 
     def lun_info(self, wwid):
@@ -240,7 +240,7 @@ class SyncEvasnap(Sync):
         try:
             if not skip_prereq:
                 self.prereq()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         for pair in self.pairs:
@@ -306,30 +306,30 @@ class SyncEvasnap(Sync):
         try:
             self.svc.node.oget(s, "type")
         except ex.RequiredOptNotFound:
-            raise ex.excError("no credentials for array %s in node or cluster configuration" % self.eva_name)
+            raise ex.Error("no credentials for array %s in node or cluster configuration" % self.eva_name)
         try:
             self.manager = self.svc.node.oget(s, "manager")
         except ex.RequiredOptNotFound:
-            raise ex.excError("no manager set for array %s in node or cluster configuration" % self.eva_name)
+            raise ex.Error("no manager set for array %s in node or cluster configuration" % self.eva_name)
         try:
             self.username = self.svc.node.oget(s, "username")
         except ex.RequiredOptNotFound:
-            raise ex.excError("no username set for array %s in node or cluster configuration" % self.eva_name)
+            raise ex.Error("no username set for array %s in node or cluster configuration" % self.eva_name)
         try:
             self.password = self.svc.node.oget(s, "password")
         except ex.RequiredOptNotFound:
-            raise ex.excError("no password set for array %s in node or cluster configuration" % self.eva_name)
+            raise ex.Error("no password set for array %s in node or cluster configuration" % self.eva_name)
         self.sssubin = self.svc.node.oget(s, "bin")
         if not self.sssubin:
             self.sssubin = which(self.sssubin)
         if not self.sssubin:
-            raise ex.excError("missing sssu binary")
+            raise ex.Error("missing sssu binary")
 
         for pair in self.pairs:
             if 'src' not in pair or 'dst' not in pair or 'mask' not in pair:
-                raise ex.excError("missing parameter in pair %s"%str(pair))
+                raise ex.Error("missing parameter in pair %s"%str(pair))
         ret, out, err = self.sssu(check=False)
         if "Error opening https connection" in out:
-            raise ex.excError("error login to %s"%self.manager)
+            raise ex.Error("error login to %s"%self.manager)
         elif "Error" in out:
-            raise ex.excError("eva %s is not managed by %s"%(self.eva_name, self.manager))
+            raise ex.Error("eva %s is not managed by %s"%(self.eva_name, self.manager))

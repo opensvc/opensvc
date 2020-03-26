@@ -82,7 +82,7 @@ class SyncNecismsnap(Sync):
     def get_sv_ts(self, sv):
         try:
             data = self.array.sc_query_ld(sv)
-        except ex.excError:
+        except ex.Error:
             self.status_log("unable to query SV:%s" % sv)
             return
         if len(data["sv"]) == 0:
@@ -142,7 +142,7 @@ class SyncNecismsnap(Sync):
     def __status_link(self, sv, ld):
         try:
             li = self.array.sc_linkinfo_ld(sv)
-        except ex.excError:
+        except ex.Error:
             self.status_log("unable to get SV:%s linkinfo" % sv)
             return 1
         l = [ dst for dst in li['dst'] if ld in dst.split() and 'link' in dst.split()]
@@ -195,7 +195,7 @@ class SyncNecismsnap(Sync):
             try:
                 src = self.array.sc_query_ld(sv)['LD Name']
             except:
-                raise ex.excError("can not determine source LD for SV:%s" % sv)
+                raise ex.Error("can not determine source LD for SV:%s" % sv)
             self.wait_for_changing_snap(src)
             self.array.sc_create_ld(src, sv)
 

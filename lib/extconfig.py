@@ -93,7 +93,7 @@ class ExtConfigMixin(object):
         try:
             self.dump_config_data(cd=cd)
         except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         return deleted
 
     def eval(self):
@@ -113,7 +113,7 @@ class ExtConfigMixin(object):
             print(exc.default)
         except ex.RequiredOptNotFound as exc:
             return 1
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc, file=sys.stderr)
             return 1
         except Exception:
@@ -140,7 +140,7 @@ class ExtConfigMixin(object):
             print(exc.default)
         except ex.RequiredOptNotFound as exc:
             return 1
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc, file=sys.stderr)
             return 1
         except Exception:
@@ -155,15 +155,15 @@ class ExtConfigMixin(object):
         * the dereferenced and evaluated value if evaluate is True
         """
         if param is None:
-            raise ex.excError("no parameter. set --param")
+            raise ex.Error("no parameter. set --param")
         elements = param.split(".", 1)
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
-            raise ex.excError("malformed parameter. format as 'section.key'")
+            raise ex.Error("malformed parameter. format as 'section.key'")
         section, option = elements
         if section == "DEFAULT" and not self.has_default_section:
-            raise ex.excError("the DEFAULT section is not allowed in %s" % self.paths.cf)
+            raise ex.Error("the DEFAULT section is not allowed in %s" % self.paths.cf)
         if section not in self.cd:
             if section != 'DEFAULT' and self.has_default_section:
                 raise ex.OptNotFound("section [%s] not found" % section)
@@ -204,7 +204,7 @@ class ExtConfigMixin(object):
         self.set_multi_cache = {}
         for kw in kws:
             if "=" not in kw:
-                raise ex.excError("malformed kw expression: %s: no '='" % kw)
+                raise ex.Error("malformed kw expression: %s: no '='" % kw)
             keyword, value = kw.split("=", 1)
             if 'DEFAULT' not in keyword and not keyword.startswith("data."):
                 keyword = keyword.lower()
@@ -223,12 +223,12 @@ class ExtConfigMixin(object):
             if "[" in keyword:
                 keyword, right = keyword.split("[", 1)
                 if not right.endswith("]"):
-                    raise ex.excError("malformed kw expression: %s: no trailing"
+                    raise ex.Error("malformed kw expression: %s: no trailing"
                                       " ']' at the end of keyword" % kw)
                 try:
                     index = int(right[:-1])
                 except ValueError:
-                    raise ex.excError("malformed kw expression: %s: index is "
+                    raise ex.Error("malformed kw expression: %s: index is "
                                       "not integer" % kw)
             if "." in keyword and "#" not in keyword:
                 # <group>.keyword[@<scope>] format => loop over all rids in group
@@ -294,7 +294,7 @@ class ExtConfigMixin(object):
                 return self.set_multi_cache[keyword].split()
             try:
                 _value = self._get(keyword, eval).split()
-            except (ex.excError, rcConfigParser.NoOptionError) as exc:
+            except (ex.Error, rcConfigParser.NoOptionError) as exc:
                 _value = []
             except ex.OptNotFound as exc:
                 _value = copy.copy(exc.default)
@@ -337,7 +337,7 @@ class ExtConfigMixin(object):
         if self.has_default_section and len(elements) == 1:
             elements.insert(0, "DEFAULT")
         elif len(elements) != 2:
-            raise ex.excError("malformed kw: format as 'section.key'")
+            raise ex.Error("malformed kw: format as 'section.key'")
         return elements[0], elements[1], _value, eval
 
     def _set(self, section, option, value, validation=True):
@@ -377,7 +377,7 @@ class ExtConfigMixin(object):
         try:
             self.dump_config_data(validation=validation)
         except (IOError, OSError) as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     #########################################################################
     #
@@ -516,7 +516,7 @@ class ExtConfigMixin(object):
                     val = self.download_from_safe(_ref)
                 val = val.decode()
                 SECRETS.append(val)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 val = ""
         else:
             val = None
@@ -535,9 +535,9 @@ class ExtConfigMixin(object):
                 _section, _v = _ref.split(".", 1)
 
             if len(_section) == 0:
-                raise ex.excError("%s: reference section can not be empty" % _ref)
+                raise ex.Error("%s: reference section can not be empty" % _ref)
             if len(_v) == 0:
-                raise ex.excError("%s: reference option can not be empty" % _ref)
+                raise ex.Error("%s: reference option can not be empty" % _ref)
 
             try:
                 val = self._handle_reference(_ref, _section, _v, scope=scope,
@@ -593,11 +593,11 @@ class ExtConfigMixin(object):
                 self.get_node()
                 return self.node.conf_get("node", _v)
             except Exception as exc:
-                raise ex.excError("%s: unresolved reference (%s)"
+                raise ex.Error("%s: unresolved reference (%s)"
                                   "" % (ref, str(exc)))
 
         if _section != "DEFAULT" and not _section in cd:
-            raise ex.excError("%s: section %s does not exist" % (ref, _section))
+            raise ex.Error("%s: section %s does not exist" % (ref, _section))
 
         # deferrable refs
         if hasattr(self, "path"):
@@ -619,10 +619,10 @@ class ExtConfigMixin(object):
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)
         except ex.RequiredOptNotFound as exc:
-            raise ex.excError("%s: unresolved reference (%s)"
+            raise ex.Error("%s: unresolved reference (%s)"
                               "" % (ref, str(exc)))
 
-        raise ex.excError("%s: unknown reference" % ref)
+        raise ex.Error("%s: unknown reference" % ref)
 
     def _handle_references(self, s, scope=False, impersonate=None, cd=None,
                            section=None, first_step=None):
@@ -665,7 +665,7 @@ class ExtConfigMixin(object):
             try:
                 val = eval_expr(expr)
             except TypeError as exc:
-                raise ex.excError("invalid expression: %s: %s" % (expr, str(exc)))
+                raise ex.Error("invalid expression: %s: %s" % (expr, str(exc)))
             if m.start() == 0 and m.end() == len(s):
                 # preserve the expression type
                 return val
@@ -690,7 +690,7 @@ class ExtConfigMixin(object):
                                           cd=cd, section=section)
         except Exception as e:
             raise
-            raise ex.excError("%s: reference evaluation failed: %s"
+            raise ex.Error("%s: reference evaluation failed: %s"
                               "" % (s, str(e)))
         if val is not None and cacheable:
             self.ref_cache[key] = val
@@ -725,7 +725,7 @@ class ExtConfigMixin(object):
         except ex.OptNotFound as exc:
             return exc.default
         except ex.RequiredOptNotFound as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def get_rtype(self, s, section, cd):
         if section == "DEFAULT":
@@ -855,7 +855,7 @@ class ExtConfigMixin(object):
                     return self.__conf_get(s, o, **kwargs)
         else:
             return self.__conf_get(s, o, **kwargs)
-        raise ex.excError("unknown inheritance value: %s" % str(inheritance))
+        raise ex.Error("unknown inheritance value: %s" % str(inheritance))
 
     def convert(self, converter, val):
         if converter == "nodes_selector":
@@ -892,7 +892,7 @@ class ExtConfigMixin(object):
             val = self.handle_references(val, scope=scope,
                                          impersonate=impersonate,
                                          cd=cd, section=s)
-        except ex.excError as exc:
+        except ex.Error as exc:
             if o.startswith("pre_") or o.startswith("post_") or \
                o.startswith("blocking_"):
                 pass
@@ -1002,7 +1002,7 @@ class ExtConfigMixin(object):
         try:
             val = cd[s][option]
         except KeyError:
-            raise ex.excError("param %s.%s is not set"%(s, o))
+            raise ex.Error("param %s.%s is not set"%(s, o))
 
         return val
 
@@ -1048,7 +1048,7 @@ class ExtConfigMixin(object):
             try:
                 value = self.handle_references(value, scope=True, cd=cd,
                                                section=section)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 if not option.startswith("pre_") and \
                    not option.startswith("post_") and \
                    not option.startswith("blocking_"):
@@ -1280,7 +1280,7 @@ class ExtConfigMixin(object):
                 except (ex.RequiredOptNotFound, ex.OptNotFound):
                     continue
                 except ValueError:
-                    raise
+                    pass
                 # ensure the data is json-exportable
                 if isinstance(val, set):
                     val = list(val)
@@ -1338,7 +1338,7 @@ class ExtConfigMixin(object):
         except Exception as exc:
             import traceback
             traceback.print_stack()
-            raise ex.excError("error parsing %s: %s" % (cf, exc))
+            raise ex.Error("error parsing %s: %s" % (cf, exc))
         try:
             from collections import OrderedDict
             best_dict = OrderedDict
@@ -1387,8 +1387,6 @@ class ExtConfigMixin(object):
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
-        import tempfile
-        import shutil
         if cd is None:
             try:
                 cd = self.private_cd
@@ -1411,14 +1409,9 @@ class ExtConfigMixin(object):
         if validation:
             ret = self._validate_config()
             if ret["errors"]:
-                raise ex.excError
+                raise ex.Error
 
-        dirpath = os.path.dirname(cf)
-        makedirs(dirpath)
-        tmpf = tempfile.NamedTemporaryFile(delete=False, dir=dirpath, prefix=os.path.basename(cf)+".")
-        tmpfpath = tmpf.name
-        tmpf.close()
-        os.chmod(tmpfpath, 0o0600)
+        makedirs(os.path.dirname(cf))
         lines = []
 
         for section_name, section in cd.items():
@@ -1435,20 +1428,15 @@ class ExtConfigMixin(object):
         try:
             buff = "\n".join(lines)
             if six.PY2:
-                with codecs.open(tmpfpath, "w", "utf-8") as ofile:
+                with codecs.open(cf, "w", "utf-8") as ofile:
+                    os.chmod(cf, 0o0600)
                     ofile.write(buff)
             else:
-                with open(tmpfpath, "w") as ofile:
+                with open(cf, "w") as ofile:
+                    os.chmod(cf, 0o0600)
                     ofile.write(buff)
-            shutil.move(tmpfpath, cf)
         except Exception as exc:
-            raise ex.excError("failed to write %s: %s" % (cf, exc))
-        finally:
-            try:
-                os.unlink(tmpfpath)
-            except Exception:
-                pass
-
+            raise ex.Error("failed to write %s: %s" % (cf, exc))
         self.unset_all_lazy()
         self.clear_ref_cache()
 

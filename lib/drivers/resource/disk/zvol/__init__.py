@@ -106,7 +106,7 @@ class DiskZvol(BaseDisk):
         holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.sub_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
-            raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
+            raise ex.Error("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
             holder_dev.remove(self)
 
@@ -148,7 +148,7 @@ class DiskZvol(BaseDisk):
         cmd = [rcEnv.syspaths.zfs, "destroy", "-f", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
     def provisioner(self):
@@ -160,7 +160,7 @@ class DiskZvol(BaseDisk):
         cmd += [str(convert_size(self.size, _to="m"))+'M', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.can_rollback = True
 
         for i in range(3, 0, -1):
@@ -170,7 +170,7 @@ class DiskZvol(BaseDisk):
                 time.sleep(1)
         if i == 0:
             self.log.error("timed out waiting for %s to appear" % self.device)
-            raise ex.excError
+            raise ex.Error
 
         self.svc.node.unset_lazy("devtree")
 

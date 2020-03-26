@@ -35,7 +35,7 @@ class Handler(handler.Handler):
         options = self.parse_options(kwargs)
         try:
             return {"status": 0, "data": bdecode(shared.SERVICES[options.path].decode_key(options.key))}
-        except ex.excError as exc:
+        except ex.Error as exc:
             return {"status": 1, "error": str(exc)}
         except Exception as exc:
             return {"status": 1, "error": str(exc), "traceback": traceback.format_exc()}

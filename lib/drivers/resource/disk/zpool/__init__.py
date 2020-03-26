@@ -130,7 +130,7 @@ class ZpoolDisk(BaseDisk):
         """Returns True if the pool is present
         """
         if not which("zpool"):
-            raise ex.excError("zpool command not found")
+            raise ex.Error("zpool command not found")
         _, _, ret = justcall(['zpool', 'list', self.name])
         if ret == 0 :
             return True
@@ -257,7 +257,7 @@ class ZpoolDisk(BaseDisk):
         self.zgenhostid()
         ret = self.import_pool()
         if ret != 0:
-            raise ex.excError("failed to import pool")
+            raise ex.Error("failed to import pool")
         self.can_rollback = True
         self.set_multihost()
         clear_cache("zpool.status." + self.name)
@@ -273,7 +273,7 @@ class ZpoolDisk(BaseDisk):
             ret, out, err = self.vcall(cmd)
         clear_cache("zpool.status." + self.name)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def sub_devs(self):
         if self.is_up():
@@ -305,7 +305,7 @@ class ZpoolDisk(BaseDisk):
                 try:
                     return set(json.load(f))
                 except:
-                    raise ex.excError("corrupted sub devs cache file %s"%self.sub_devs_name)
+                    raise ex.Error("corrupted sub devs cache file %s"%self.sub_devs_name)
 
     def remap_cached_sub_devs_controller(self, dl):
         if rcEnv.sysname != "SunOS":
@@ -389,7 +389,7 @@ class ZpoolDisk(BaseDisk):
             else:
                 self.log.info("multihost is already off")
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
 
     def provisioned(self):
@@ -404,7 +404,7 @@ class ZpoolDisk(BaseDisk):
         cmd = ["zpool", "destroy", "-f", self.name]
         ret, _, _ = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
     def pre_unprovision_stop(self):
@@ -436,7 +436,7 @@ class ZpoolDisk(BaseDisk):
         cmd = ["zpool", "create"] + args
         ret, _, _ = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.can_rollback = True
         self.svc.node.unset_lazy("devtree")
 
