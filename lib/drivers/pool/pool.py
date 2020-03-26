@@ -6,7 +6,7 @@ import core.exceptions as ex
 from rcUtilities import lazy, factory
 from converters import convert_size
 
-class Pool(object):
+class BasePool(object):
     type = None
 
     def __init__(self, name=None, node=None, **kwargs):
