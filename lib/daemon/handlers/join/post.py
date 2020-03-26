@@ -67,8 +67,8 @@ class Handler(handler.Handler, daemon.handlers.clusterlock.LockMixin):
                section.startswith("network#") or \
                section.startswith("arbitrator#"):
                 result["data"]["node"]["data"][section] = config[section]
-        from cluster import ClusterSvc
-        svc = ClusterSvc(volatile=True, node=shared.NODE)
+        from core.objects.ccfg import Ccfg
+        svc = Ccfg(volatile=True, node=shared.NODE)
         if svc.exists():
             result["data"]["cluster"] = {
                 "data": svc.print_config_data(),
