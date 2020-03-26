@@ -317,7 +317,7 @@ class App(Resource):
             raise StatusNA
         try:
             cmd = self.get_cmd("check", "status")
-        except ex.excAbortAction:
+        except ex.AbortAction:
             raise StatusNA
         except ex.excError as exc:
             self.status_log(str(exc), "warn")
@@ -345,7 +345,7 @@ class App(Resource):
         ]
         try:
             cmd = self.get_cmd("info")
-        except (ex.excAbortAction, AttributeError):
+        except (ex.AbortAction, AttributeError):
             return keyvals
 
         buff = self.run('info', cmd, dedicated_log=False, return_out=True)
@@ -370,7 +370,7 @@ class App(Resource):
         key = action + "_seq"
         val = getattr(self, key)
         if val in (None, False):
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
         try:
             int(val)
             cmd = [self.script, script_arg if script_arg else action]
@@ -378,9 +378,9 @@ class App(Resource):
             try:
                 val = convert_boolean(val)
                 if val is False:
-                    raise ex.excAbortAction()
+                    raise ex.AbortAction()
                 cmd = [self.script, script_arg if script_arg else action]
-            except ex.excAbortAction:
+            except ex.AbortAction:
                 raise
             except:
                 if six.PY2:
@@ -403,7 +403,7 @@ class App(Resource):
 
         try:
             cmd = self.get_cmd("start")
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
 
         try:
@@ -426,7 +426,7 @@ class App(Resource):
         """
         try:
             cmd = self.get_cmd("stop")
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
         except ex.excError as exc:
             if "does not exist" in str(exc):

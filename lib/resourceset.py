@@ -94,7 +94,7 @@ class ResourceSet(object):
                 continue
             try:
                 resource.pre_action(action)
-            except ex.excAbortAction:
+            except ex.AbortAction:
                 types_aborted.append(resource.type)
         return types_aborted
 
@@ -122,7 +122,7 @@ class ResourceSet(object):
                 continue
             try:
                 resource.post_action(action)
-            except ex.excAbortAction:
+            except ex.AbortAction:
                 types_aborted.append(resource.type)
         return types_aborted
 
@@ -328,7 +328,7 @@ class ResourceSet(object):
             for resource in resources:
                 try:
                     resource.action(action)
-                except ex.excAbortAction as exc:
+                except ex.AbortAction as exc:
                     msg = str(exc)
                     if msg != "":
                         resource.log.warning(msg)

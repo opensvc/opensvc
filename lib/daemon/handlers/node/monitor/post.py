@@ -43,7 +43,7 @@ class Handler(handler.Handler):
         data = {"data": {}}
         try:
             self.validate_cluster_global_expect(options.global_expect)
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             info.append(str(exc))
         except ex.excError as exc:
             error.append(str(exc))
@@ -67,7 +67,7 @@ class Handler(handler.Handler):
         if global_expect is None:
             return
         if global_expect == "thawed" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
-            raise ex.excAbortAction("cluster is already thawed")
+            raise ex.AbortAction("cluster is already thawed")
         if global_expect == "frozen" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
-            raise ex.excAbortAction("cluster is already frozen")
+            raise ex.AbortAction("cluster is already frozen")
 
