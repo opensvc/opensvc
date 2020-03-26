@@ -13,7 +13,7 @@ from core.objects.svc import BaseSvc
 from utilities.ssl import gen_cert
 from utilities.string import bdecode
 from .sec import Sec
-import rcExceptions as ex
+import exceptions as ex
 
 DEFAULT_STATUS_GROUPS = [
 ]

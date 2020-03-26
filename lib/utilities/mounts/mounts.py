@@ -1,7 +1,7 @@
 import os
 from subprocess import Popen, PIPE, STDOUT
 
-from rcExceptions import excError
+import exceptions as ex
 from utilities.string import bdecode
 
 
@@ -43,11 +43,11 @@ class BaseMounts(object):
         return None
 
     def parse_mounts(self):
-        raise excError("parse_mounts is not implemented")
+        raise ex.excError("parse_mounts is not implemented")
 
     def has_mount(self, dev, mnt):
         if self.mounts is None:
-            raise excError("unable to parse mounts")
+            raise ex.excError("unable to parse mounts")
         for i in self.mounts:
             if self.match_mount(i, dev, mnt):
                 return True

@@ -1,6 +1,6 @@
 import json
 
-import rcExceptions as ex
+import exceptions as ex
 from utilities.proc import justcall, which
 
 class AmazonMixin(object):

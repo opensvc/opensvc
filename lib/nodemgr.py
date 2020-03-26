@@ -12,7 +12,7 @@ prog = "nodemgr"
 
 import rcStatus
 import utilities.render.color
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import *
 from nodemgr_parser import NodemgrOptParser
 from core.node import Node

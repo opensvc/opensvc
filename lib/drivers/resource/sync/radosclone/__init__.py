@@ -1,7 +1,7 @@
 import datetime
 import json
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from ..radossnap import SyncRadossnap

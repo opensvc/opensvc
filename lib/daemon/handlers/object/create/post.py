@@ -5,10 +5,9 @@ from subprocess import PIPE
 import daemon.handlers.handler as handler
 import daemon.handlers.rbac
 import daemon.shared as shared
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import drop_option, split_path, validate_paths
 from rcGlobalEnv import rcEnv
-from rcExceptions import HTTP
 from utilities.string import bdecode
 
 class Handler(handler.Handler, daemon.handlers.rbac.ObjectCreateMixin):
@@ -79,7 +78,7 @@ class Handler(handler.Handler, daemon.handlers.rbac.ObjectCreateMixin):
             return
         errors = self.rbac_create_data(payload=options.data, thr=thr, **kwargs)
         if errors:
-            raise HTTP(403, errors)
+            raise ex.HTTP(403, errors)
 
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)

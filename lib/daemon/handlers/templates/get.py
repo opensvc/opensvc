@@ -1,6 +1,6 @@
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-from rcExceptions import HTTP
+import exceptions as ex
 
 class Handler(handler.Handler):
     """
@@ -28,7 +28,7 @@ class Handler(handler.Handler):
         data = {}
         if options.catalog == "collector":
             if shared.NODE.collector_env.dbopensvc is None:
-                raise HTTP(400, "This node is not registered on a collector")
+                raise ex.HTTP(400, "This node is not registered on a collector")
             data = []
             options = {
                 "limit": 0,
@@ -45,6 +45,6 @@ class Handler(handler.Handler):
                     "catalog": "collector",
                 })
         else:
-            raise HTTP(400, "unknown catalog %s" % options.catalog)
+            raise ex.HTTP(400, "unknown catalog %s" % options.catalog)
         return data
 

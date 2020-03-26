@@ -1,6 +1,6 @@
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 import utilities.ifconfig
 

@@ -17,7 +17,7 @@ import six
 # noinspection PyUnresolvedReferences
 from six.moves import queue
 
-import rcExceptions as ex
+import exceptions as ex
 from jsonpath_ng.ext import parse
 from rcUtilities import lazy, unset_lazy, factory, split_path, normalize_paths
 from rcGlobalEnv import rcEnv

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 import sys
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.render.color
 import utilities.render.term
 
