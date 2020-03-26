@@ -8,9 +8,9 @@ import signal
 
 from itertools import chain
 
+import core.status
 import rcContainer
 import core.exceptions as ex
-import rcStatus
 import utilities.ping
 
 from .. import \
@@ -982,15 +982,15 @@ class ContainerDocker(BaseContainer):
 
     def _status(self, verbose=False):
         if not self.detach:
-            return rcStatus.NA
+            return core.status.NA
         try:
             self.lib.docker_exe
         except ex.InitError as exc:
             self.status_log(str(exc), "warn")
-            return rcStatus.DOWN
+            return core.status.DOWN
         if not self.lib.docker_running():
             self.status_log("docker daemon is not running", "info")
-            return rcStatus.DOWN
+            return core.status.DOWN
         sta = super(ContainerDocker, self)._status(verbose)
         self._status_inspect()
         return sta

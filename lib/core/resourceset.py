@@ -8,7 +8,7 @@ import sys
 import logging
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from core.resource import Resource
@@ -142,7 +142,7 @@ class ResourceSet(object):
         """
         Return the aggregate status a ResourceSet.
         """
-        agg_status = rcStatus.Status()
+        agg_status = core.status.Status()
         for resource in self.resources:
             if resource.is_disabled():
                 continue
@@ -156,7 +156,7 @@ class ResourceSet(object):
                 import traceback
                 exc = sys.exc_info()
                 print(exc[0], exc[1], traceback.print_tb(exc[2]))
-                status = rcStatus.NA
+                status = core.status.NA
 
             agg_status += status
         return agg_status.status

@@ -1,20 +1,16 @@
 import json
-import os
 
 import core.exceptions as ex
+import core.status
 import rcGce
-import rcStatus
-
 from .. import \
     Ip, \
-    adder as parent_adder, \
     KW_IPNAME, \
     KW_IPDEV, \
     KW_NETMASK, \
     KW_GATEWAY, \
     COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import getaddr
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -224,9 +220,9 @@ class IpGce(Ip, rcGce.GceMixin):
 
         s = local_status & gce_status
         if s:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def check_ping(self, count=1, timeout=5):
         pass

@@ -4,26 +4,24 @@ https://github.com/containernetworking/cni/blob/master/SPEC.md
 """
 import os
 import json
-import socket
 
 from subprocess import Popen, PIPE
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.ifconfig
 
 from .. import \
     KW_WAIT_DNS, \
     KW_DNS_NAME_SUFFIX, \
     KW_PROVISIONER, \
-    KW_NETWORK, \
     KW_DNS_UPDATE, \
     KW_CHECK_CARRIER, \
     KW_ALIAS, \
     KW_EXPOSE
 from ..linux import Ip
 from rcGlobalEnv import rcEnv
-from rcUtilities import to_cidr, lazy, makedirs
+from rcUtilities import to_cidr, lazy
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
@@ -491,17 +489,17 @@ class IpCni(Ip):
         _has_netns = self.has_netns()
         _has_ipdev = self.has_ipdev()
         if self.container_rid and not _has_ipdev:
-            return rcStatus.DOWN
+            return core.status.DOWN
         elif not _has_netns and not _has_ipdev:
-            return rcStatus.DOWN
+            return core.status.DOWN
         elif _has_netns and _has_ipdev:
-            return rcStatus.UP
+            return core.status.UP
         else:
             if not _has_netns:
                 self.status_log("netns %s not found" % self.nspid)
             if not _has_ipdev:
                 self.status_log("cni %s not found" % self.ipdev)
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def is_up(self):
         if not self.has_netns():

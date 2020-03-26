@@ -3,16 +3,14 @@ import datetime
 
 from subprocess import *
 
+import core.status
 import rcBtrfs
 import core.exceptions as ex
-import rcStatus
-
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from converters import print_duration
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "btrfs"
@@ -446,17 +444,17 @@ class SyncBtrfs(Sync):
             delay = datetime.timedelta(seconds=self.sync_max_delay)
         except IOError:
             self.status_log("btrfs state file not found")
-            return rcStatus.WARN
+            return core.status.WARN
         except:
             import sys
             import traceback
             e = sys.exc_info()
             print(e[0], e[1], traceback.print_tb(e[2]))
-            return rcStatus.WARN
+            return core.status.WARN
         if last < now - delay:
             self.status_log("Last sync on %s older than %s"%(last, print_duration(self.sync_max_delay)))
-            return rcStatus.WARN
-        return rcStatus.UP
+            return core.status.WARN
+        return core.status.UP
 
     def check_remote(self, node):
         rs = self.get_remote_state(node)

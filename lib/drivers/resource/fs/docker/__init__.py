@@ -1,11 +1,8 @@
 import os
-import sys
 
+import core.status
 import rcContainer
 import core.exceptions as ex
-import rcStatus
-
-from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from core.resource import Resource
 from svcBuilder import init_kwargs
@@ -67,7 +64,7 @@ class FsDocker(Resource):
         return "%s volume %s" % (self.driver, self.volname)
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        return core.status.NA
 
     def _info(self):
         data = [
