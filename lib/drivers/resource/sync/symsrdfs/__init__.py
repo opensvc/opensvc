@@ -7,7 +7,7 @@ from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import set_sym_env
 from rcUtilities import lazy
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import utilities.devices.linux
 

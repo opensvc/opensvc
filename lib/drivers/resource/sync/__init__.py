@@ -4,7 +4,7 @@ import logging
 import os
 import time
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from converters import convert_speed, print_size

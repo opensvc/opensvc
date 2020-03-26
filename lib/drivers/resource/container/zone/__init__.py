@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 import lock
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import rcZone
 import utilities.os.sunos

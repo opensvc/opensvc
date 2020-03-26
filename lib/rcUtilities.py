@@ -19,7 +19,7 @@ from itertools import chain
 import six
 
 import lock
-import exceptions as ex
+import core.exceptions as ex
 from contexts import want_context
 from rcGlobalEnv import rcEnv
 from utilities.proc import which, call

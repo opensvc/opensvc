@@ -3,7 +3,7 @@ Volume resource driver module.
 """
 import os
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from converters import print_size

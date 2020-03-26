@@ -3,7 +3,7 @@ import re
 
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS

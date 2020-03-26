@@ -1,7 +1,7 @@
 import os
 
 import daemon.handlers.handler as handler
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import split_path
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode

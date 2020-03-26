@@ -2,7 +2,7 @@ import os
 import sys
 
 import rcContainer
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from rcGlobalEnv import rcEnv

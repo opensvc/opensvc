@@ -2,7 +2,7 @@ import os
 import re
 import time
 
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcZfs import zfs_getprop, zfs_setprop
 from utilities.mounts.sunos import Mounts

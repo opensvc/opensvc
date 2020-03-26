@@ -2,7 +2,7 @@ import os
 
 from datetime import datetime
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import utilities.ping
 

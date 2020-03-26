@@ -8,7 +8,7 @@ import time
 from subprocess import Popen, PIPE
 
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from converters import print_duration
 

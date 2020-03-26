@@ -11,7 +11,7 @@ import json
 import time
 
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from .hb import Hb
 from utilities.string import bdecode

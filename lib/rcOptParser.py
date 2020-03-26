@@ -13,7 +13,7 @@ import sys
 import optparse
 import textwrap
 import utilities.render.color
-import exceptions as ex
+import core.exceptions as ex
 import re
 
 from core.node import Node

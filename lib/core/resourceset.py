@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
