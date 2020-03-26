@@ -1277,7 +1277,7 @@ class Resource(object):
             self.log.warning("promote_rw is not supported on this operating system")
             return
         for dev in self.base_devs():
-            getattr(mod, "promote_dev_rw")(dev, log=self.log)
+            promote_dev_rw(dev, log=self.log)
 
     def progress(self):
         lock.progress(self.svc.lockfd, {"rid": self.rid})
