@@ -354,7 +354,7 @@ class ResourceSet(object):
                     break
 
         if barrier:
-            raise ex.excEndAction(barrier)
+            raise ex.EndAction(barrier)
 
     def action_job(self, resource, action):
         """
