@@ -2384,7 +2384,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
 
         if not section.startswith("cloud#"):
-            raise ex.excInitError("cloud sections must have a unique name in "
+            raise ex.InitError("cloud sections must have a unique name in "
                                   "the form '[cloud#n] in %s" % rcEnv.paths.nodeconf)
 
         if self.clouds and section in self.clouds:
@@ -2393,8 +2393,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             cloud_type = self.oget(section, 'type')
         except Exception:
-            raise ex.excInitError("type option is mandatory in cloud section "
-                                  "in %s" % rcEnv.paths.nodeconf)
+            raise ex.InitError("type option is mandatory in cloud section "
+                               "in %s" % rcEnv.paths.nodeconf)
 
         auth_dict = self.section_kwargs(section, cloud_type)
         mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
@@ -2402,7 +2402,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             mod = __import__(mod_name)
         except ImportError:
-            raise ex.excInitError("cloud type '%s' is not supported"%cloud_type)
+            raise ex.InitError("cloud type '%s' is not supported"%cloud_type)
 
         if self.clouds is None:
             self.clouds = {}

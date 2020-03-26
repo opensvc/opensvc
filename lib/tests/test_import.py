@@ -21,6 +21,6 @@ class TestImport:
             mod = os.path.basename(fpath).replace(".py", "")
             try:
                 __import__(mod)
-            except (ex.excInitError, ex.excError):
+            except (ex.InitError, ex.excError):
                 # dependent module missing
                 pass

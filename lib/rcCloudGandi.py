@@ -7,7 +7,7 @@ try:
     from libcloud.compute.providers import get_driver
     import libcloud.security
 except ImportError:
-    raise ex.excInitError("apache-libcloud module must be installed")
+    raise ex.InitError("apache-libcloud module must be installed")
 
 class Cloud(rcCloud.Cloud):
     mode = 'gandi'
@@ -15,12 +15,12 @@ class Cloud(rcCloud.Cloud):
     def __init__(self, s, auth):
         rcCloud.Cloud.__init__(self, s, auth)
         if 'key' not in auth:
-            raise ex.excInitError("option 'key' is mandatory in gandi section")
+            raise ex.InitError("option 'key' is mandatory in gandi section")
         gandi = get_driver(Provider.GANDI)
         try:
             self.driver = gandi(auth['key'])
         except Exception as e:
-            raise ex.excInitError("error login to gandi cloud %s: %s"%(s, str(e)))
+            raise ex.InitError("error login to gandi cloud %s: %s"%(s, str(e)))
 
     def app_id(self):
         return ''

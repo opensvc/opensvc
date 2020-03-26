@@ -67,11 +67,11 @@ class SyncNecismsnap(Sync):
             try:
                 sv, ld = e.split(':')
             except:
-                raise ex.excInitError("%s: malformed devs" % self.rid)
+                raise ex.InitError("%s: malformed devs" % self.rid)
             if sv in self.sv:
-                raise ex.excInitError("%s: duplicate sv %s in devs" % (self.rid, sv))
+                raise ex.InitError("%s: duplicate sv %s in devs" % (self.rid, sv))
             if ld in self.ld:
-                raise ex.excInitError("%s: duplicate ld %s in devs" % (self.rid, ld))
+                raise ex.InitError("%s: duplicate ld %s in devs" % (self.rid, ld))
             self.sv[sv] = sv
             self.ld[ld] = ld
             self.svld.append((sv, ld))

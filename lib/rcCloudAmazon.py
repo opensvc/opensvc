@@ -7,7 +7,7 @@ try:
     from libcloud.compute.providers import get_driver
     import libcloud.security
 except ImportError:
-    raise ex.excInitError("apache-libcloud module must be installed")
+    raise ex.InitError("apache-libcloud module must be installed")
 
 class Cloud(rcCloud.Cloud):
     mode = 'amazon'
@@ -15,11 +15,11 @@ class Cloud(rcCloud.Cloud):
     def __init__(self, s, auth):
         rcCloud.Cloud.__init__(self, s, auth)
         if 'access_key_id' not in auth:
-            raise ex.excInitError("option 'access_key_id' is mandatory in amazon section")
+            raise ex.InitError("option 'access_key_id' is mandatory in amazon section")
         if 'provider' not in auth:
-            raise ex.excInitError("option 'provider' is mandatory in amazon section")
+            raise ex.InitError("option 'provider' is mandatory in amazon section")
         if 'secret_key' not in auth:
-            raise ex.excInitError("option 'secret_key' is mandatory in amazon section")
+            raise ex.InitError("option 'secret_key' is mandatory in amazon section")
         o = get_driver(auth['provider'])
         self.driver = o(auth['access_key_id'], auth['secret_key'])
         if 'proxy' in auth:

@@ -122,7 +122,7 @@ class ContainerPodman(ContainerDocker):
             return rcStatus.NA
         try:
             self.lib.docker_exe
-        except ex.excInitError as exc:
+        except ex.InitError as exc:
             self.status_log(str(exc), "warn")
             return rcStatus.DOWN
         sta = BaseContainer._status(self, verbose)

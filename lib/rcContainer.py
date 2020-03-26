@@ -141,7 +141,7 @@ class ContainerLib(object):
         """
         try:
             self.docker_exe
-        except ex.excInitError:
+        except ex.InitError:
             return ""
         cmd = [self.docker_exe, "info"] + self.json_opt
         try:
@@ -157,7 +157,7 @@ class ContainerLib(object):
         """
         try:
             cmd = [self.docker_exe, "--version"]
-        except ex.excInitError:
+        except ex.InitError:
             return "0"
         out = justcall(cmd)[0]
         elements = out.split()
@@ -171,7 +171,7 @@ class ContainerLib(object):
         """
         try:
             cmd = [self.docker_exe, "--version"]
-        except ex.excInitError:
+        except ex.InitError:
             return False
         if V(self.docker_version) >= V(version):
             return True
@@ -381,7 +381,7 @@ class ContainerLib(object):
             return []
         try:
             self.docker_exe
-        except ex.excInitError:
+        except ex.InitError:
             return []
         cmd = self.docker_cmd + ["inspect"] + ids
         out = justcall(cmd)[0]
@@ -394,7 +394,7 @@ class ContainerLib(object):
         """
         try:
             self.docker_exe
-        except ex.excInitError:
+        except ex.InitError:
             return {}
         if vol_id is None:
             raise IndexError("vol id is None")
@@ -510,7 +510,7 @@ class DockerLib(ContainerLib):
         elif which("docker"):
             return "docker"
         else:
-            raise ex.excInitError("docker executable not found")
+            raise ex.InitError("docker executable not found")
 
     @lazy
     def dockerd_exe(self):
@@ -519,7 +519,7 @@ class DockerLib(ContainerLib):
         elif which("dockerd"):
             return "dockerd"
         else:
-            raise ex.excInitError("dockerd executable not found")
+            raise ex.InitError("dockerd executable not found")
 
     def test_sock(self, path):
         import socket
