@@ -7,7 +7,7 @@ import errno
 import contextlib
 
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from .hb import Hb
 

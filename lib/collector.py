@@ -4,7 +4,7 @@ import os
 import sys
 import re
 import datetime
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from utilities.proc import justcall

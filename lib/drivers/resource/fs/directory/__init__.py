@@ -4,7 +4,7 @@ import pwd
 import shutil
 import stat
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from rcGlobalEnv import rcEnv

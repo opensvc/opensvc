@@ -8,7 +8,7 @@ import struct
 
 import json_delta
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 import utilities.ifconfig
 from rcGlobalEnv import rcEnv
 from storage import Storage

@@ -3,7 +3,7 @@ import json
 import base64
 import os
 
-import exceptions as ex
+import core.exceptions as ex
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
 from rcGlobalEnv import rcEnv

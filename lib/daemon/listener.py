@@ -40,7 +40,7 @@ except Exception:
 
 import six
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage

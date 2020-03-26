@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 
-import exceptions as ex
+import core.exceptions as ex
 import utilities.devices.linux
 
 from rcGlobalEnv import rcEnv

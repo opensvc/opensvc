@@ -1,7 +1,7 @@
 import os
 import plistlib
 
-import exceptions as ex
+import core.exceptions as ex
 
 from utilities.proc import justcall, which
 
