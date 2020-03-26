@@ -584,7 +584,7 @@ class Resource(object):
                     shutil.rmtree(path)
                 else:
                     os.unlink(path)
-            except OSError as exc:
+            except OSError:
                 # errno 39: not empty (racing with a writer)
                 pass
 
@@ -619,7 +619,7 @@ class Resource(object):
                 attr = "label"
             try:
                 setattr(self, attr, data["label"])
-            except (IndexError, AttributeError, ValueError) as exc:
+            except (IndexError, AttributeError, ValueError):
                 pass
 
         self.status_logs = data.get("log", [])
@@ -765,8 +765,8 @@ class Resource(object):
         base_devs = set()
         for dev in devs:
             top_devs = dev.get_top_devs()
-            for dev in top_devs:
-                base_devs.add(os.path.realpath(dev.devpath[0]))
+            for top_dev in top_devs:
+                base_devs.add(os.path.realpath(top_dev.devpath[0]))
         return base_devs
 
     def sub_devs(self):
@@ -1139,7 +1139,7 @@ class Resource(object):
             return self.type.split(".", 1)[0]
         except ValueError:
             return self.type
-        except AttributeError as exc:
+        except AttributeError:
             return ""
 
     def format_driver_basename(self):
@@ -1175,7 +1175,7 @@ class Resource(object):
         self._provision()
         try:
             self.post_provision_start()
-        except Exception as exc:
+        except Exception:
             if self.skip_provision:
                 # best effort
                 pass
@@ -1378,7 +1378,7 @@ class Resource(object):
     def schedule_info(self, sopt):
         try:
             last = float(self.svc.sched.get_last(sopt.fname).strftime("%s.%f"))
-        except Exception as exc:
+        except Exception:
             return {}
         data = {
             "last": last,
