@@ -97,7 +97,7 @@ class syncSnapMountError(OsvcException):
     """ Error mounting fs => clean up
     """
 
-class excEndAction(OsvcException):
+class EndAction(OsvcException):
     """ End multi-resource action. Not an error.
     """
 
