@@ -1306,12 +1306,6 @@ def daemon_process_running():
         return False
 
 
-def is_glob(text):
-    if len(set(text) & set("?*[")) > 0:
-        return True
-    return False
-
-
 def find_editor():
     if "EDITOR" in os.environ:
         editor = os.environ["EDITOR"]
