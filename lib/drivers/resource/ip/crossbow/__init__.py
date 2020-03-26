@@ -71,12 +71,12 @@ class IpCrossbow(Ip):
         """
         try:
              self.get_mask()
-        except ex.excError:
+        except ex.Error:
              pass
         try:
             self.getaddr()
             addr = self.addr
-        except ex.excError:
+        except ex.Error:
             addr = self.ipname
         self.label = "%s/%s %s/%s" % (addr, to_cidr(self.mask), self.ipdev, self.ipdevExt)
         if self.ipname != addr:
@@ -84,7 +84,7 @@ class IpCrossbow(Ip):
 
     def stopip_cmd(self):
         if not which(rcEnv.syspaths.ipadm):
-            raise ex.excError("crossbow ips are not supported on this system")
+            raise ex.Error("crossbow ips are not supported on this system")
         ret, out, err = (0, '', '')
         if self.gateway is not None:
             cmd=['route', '-q', 'delete', 'default', self.gateway]
@@ -133,9 +133,9 @@ class IpCrossbow(Ip):
 
     def startip_cmd(self):
         if not which(rcEnv.syspaths.ipadm):
-            raise ex.excError("crossbow ips are not supported on this system")
+            raise ex.Error("crossbow ips are not supported on this system")
         if self.mask is None:
-            raise ex.excError("netmask not specified nor guessable")
+            raise ex.Error("netmask not specified nor guessable")
         self.wait_net_smf()
         ret, out, err = (0, '', '')
         cmd = [rcEnv.syspaths.ipadm, 'show-if', '-p', '-o', 'state', self.stacked_dev]
@@ -149,7 +149,7 @@ class IpCrossbow(Ip):
         if r != 0:
             cmd=[rcEnv.syspaths.ipadm, 'show-if' ]
             self.vcall(cmd)
-            raise ex.excError("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
+            raise ex.Error("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
         ret += r
         out += o
         err += e

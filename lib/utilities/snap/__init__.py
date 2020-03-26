@@ -91,7 +91,7 @@ class Snap(Resource):
                 """Clean up the mess
                 """
                 self.snap_cleanup(rset)
-                raise ex.excError
+                raise ex.Error
             except:
                 raise
 

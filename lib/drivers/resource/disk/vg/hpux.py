@@ -124,14 +124,14 @@ class DiskVg(BaseDisk):
         cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(dev), '-a', 'device_file', '-p']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         return out.split()[0]
 
     def write_mksf(self):
         cmd = ['ioscan', '-F', '-m', 'dsf']
         (ret, buff, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         if len(buff) == 0:
             return
         mksf = {}
@@ -146,7 +146,7 @@ class DiskVg(BaseDisk):
                     cmd = ['scsimgr', 'get_attr', '-D', self.dev2char(a), '-a', 'wwid', '-p']
                     (ret, out, err) = self.call(cmd)
                     if ret != 0:
-                        raise ex.excError
+                        raise ex.Error
                     f.write(":".join([a, out.split()[0].replace('0x', '')])+'\n')
 
     def do_mksf(self):
@@ -180,7 +180,7 @@ class DiskVg(BaseDisk):
                     r += 1
                     continue
         if r > 0:
-            raise ex.excError
+            raise ex.Error
 
     def presync(self):
         """ this one is exported as a service command line arg
@@ -188,7 +188,7 @@ class DiskVg(BaseDisk):
         cmd = [ 'vgexport', '-m', self.mapfile_name(), '-p', '-s', self.name ]
         ret = qcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.write_mksf()
 
     def is_active(self):
@@ -237,7 +237,7 @@ class DiskVg(BaseDisk):
         if not os.path.exists(self.mapfile_name()):
             try:
                 self.do_export(force_preview=True)
-            except ex.excError:
+            except ex.Error:
                 # vg does not exist
                 return False
         if not self.is_imported():
@@ -254,7 +254,7 @@ class DiskVg(BaseDisk):
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             self.log.error("failed to remove pre-existing %s"%gp)
-            raise ex.excError
+            raise ex.Error
 
     def do_import(self):
         if self.is_imported():
@@ -297,7 +297,7 @@ class DiskVg(BaseDisk):
             self.log.debug('output:\n' + buff[0])
 
         if process.returncode != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_export(self, force_preview=False):
         preview = False
@@ -313,7 +313,7 @@ class DiskVg(BaseDisk):
             cmd = [ 'vgexport', '-m', self.mapfile_name(), '-s', self.name ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_activate(self):
         if self.is_active():
@@ -322,11 +322,11 @@ class DiskVg(BaseDisk):
         cmd = ['vgchange', '-c', 'n', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         cmd = ['vgchange', '-a', 'y', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_deactivate(self):
         if not self.is_active():
@@ -335,7 +335,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgchange', '-a', 'n', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_start(self):
         self.do_import()
@@ -371,7 +371,7 @@ class DiskVg(BaseDisk):
         cmd = ['strings', tabp]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         tab = out.split('\n')
         insection = False
@@ -400,22 +400,22 @@ class DiskVg(BaseDisk):
             lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
         except lock.LockTimeout:
             self.log.error("timed out waiting for lock (%s)"%lockfile)
-            raise ex.excError
+            raise ex.Error
         except lock.LockNoLockFile:
             self.log.error("lock_nowait: set the 'lockfile' param")
-            raise ex.excError
+            raise ex.Error
         except lock.LockCreateError:
             self.log.error("can not create lock file %s"%lockfile)
-            raise ex.excError
+            raise ex.Error
         except lock.LockAcquire as e:
             self.log.warning("another action is currently running (pid=%s)"%e.pid)
-            raise ex.excError
+            raise ex.Error
         except ex.Signal:
             self.log.error("interrupted by signal")
-            raise ex.excError
+            raise ex.Error
         except:
             self.save_exc()
-            raise ex.excError("unexpected locking error")
+            raise ex.Error("unexpected locking error")
         self.lockfd = lockfd
 
     def unlock(self):
@@ -431,7 +431,7 @@ class DiskVg(BaseDisk):
         try:
             pvs = self.oget("pvs")
         except:
-            raise ex.excError("pvs provisioning keyword is not set")
+            raise ex.Error("pvs provisioning keyword is not set")
         l = []
         for pv in pvs:
             l += glob.glob(pv)
@@ -454,14 +454,14 @@ class DiskVg(BaseDisk):
                 self.log.error("pv %s is not a block device nor a loop file"%pv)
                 err |= True
         if err:
-            raise ex.excError
+            raise ex.Error
 
         for pv in self.pvs:
             pv = pv.replace('/disk/', '/rdisk/')
             cmd = ['pvcreate', '-f', pv]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
         pvs = []
         for pv in self.pvs:
@@ -472,7 +472,7 @@ class DiskVg(BaseDisk):
         cmd += [self.name] + pvs
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         self.log.info("provisioned")
         self.svc.node.unset_lazy("devtree")

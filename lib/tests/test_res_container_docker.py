@@ -82,5 +82,5 @@ class TestVolumeOptions:
         container = ContainerDocker(rid='#dck1', volume_mounts=volume_mounts)
         svc1 += container
 
-        with pytest.raises(ex.excError, match=r'same destination mount point'):
+        with pytest.raises(ex.Error, match=r'same destination mount point'):
             container.volume_options()

@@ -150,7 +150,7 @@ class Scheduler(shared.OsvcThread):
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
                 try:
                     expire = obj.get_cert_expire()
-                except ex.excError:
+                except ex.Error:
                     # usr in creation
                     expire = None
                 self.certificates[obj.path] = {
@@ -328,7 +328,7 @@ class Scheduler(shared.OsvcThread):
                 # deleted during previous iterations
                 drop.append(sig)
                 continue
-            except (ex.excError, ex.ContinueAction) as exc:
+            except (ex.Error, ex.ContinueAction) as exc:
                 self.log.info("drop queued %s on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue

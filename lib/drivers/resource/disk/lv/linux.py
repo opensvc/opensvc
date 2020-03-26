@@ -40,7 +40,7 @@ class DiskLv(BaseDiskLv):
         cmd = ["lvchange", "-a", "y", dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def unprovisioner(self):
         try:
@@ -64,7 +64,7 @@ class DiskLv(BaseDiskLv):
 
         if not which('lvremove'):
             self.log.error("lvcreate command not found")
-            raise ex.excError
+            raise ex.Error
 
         if which('wipefs') and os.path.exists(dev):
             self.vcall(["wipefs", "-a", dev])
@@ -72,7 +72,7 @@ class DiskLv(BaseDiskLv):
         cmd = ["lvremove", "-f", dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
     def is_provisioned(self):
@@ -86,15 +86,15 @@ class DiskLv(BaseDiskLv):
     def provisioner(self):
         if not which('vgdisplay'):
             self.log.error("vgdisplay command not found")
-            raise ex.excError
+            raise ex.Error
 
         if not which('lvcreate'):
             self.log.error("lvcreate command not found")
-            raise ex.excError
+            raise ex.Error
 
         if not which('lvdisplay'):
             self.log.error("lvdisplay command not found")
-            raise ex.excError
+            raise ex.Error
 
         dev = self.get_dev()
 
@@ -115,7 +115,7 @@ class DiskLv(BaseDiskLv):
         out, err, ret = justcall(cmd)
         if ret != 0:
             self.log.error("volume group %s does not exist" % vg)
-            raise ex.excError
+            raise ex.Error
 
         lvname = os.path.basename(dev)
 
@@ -129,7 +129,7 @@ class DiskLv(BaseDiskLv):
         out = bdecode(out)
         err = bdecode(err)
         if p2.returncode != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.can_rollback = True
         if len(out) > 0:
             for line in out.splitlines():
@@ -160,7 +160,7 @@ class DiskLv(BaseDiskLv):
                 time.sleep(1)
         if i == 0:
             self.log.error("timed out waiting for %s to appear"%dev)
-            raise ex.excError
+            raise ex.Error
 
         self.svc.node.unset_lazy("devtree")
 

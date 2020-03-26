@@ -77,7 +77,7 @@ def gen_self_signed_cert(log=None, **data):
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(out+err)
+        raise ex.Error(out+err)
 
 def gen_ca_signed_cert(log=None, **data):
     sign_csr(log=log, **data)
@@ -94,7 +94,7 @@ def gen_csr(log=None, **data):
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(out+err)
+        raise ex.Error(out+err)
 
 def sign_csr(log=None, **data):
     days = data["validity"]
@@ -115,7 +115,7 @@ def sign_csr(log=None, **data):
         log.info(" ".join(cmd))
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.excError(out+err)
+        raise ex.Error(out+err)
 
 def write_openssl_cnf(data):
     openssl_cnf_location = [
@@ -127,7 +127,7 @@ def write_openssl_cnf(data):
        if os.path.exists(loc):
            openssl_cnf = loc
     if not openssl_cnf:
-        raise ex.excError("could not determine openssl.cnf location")
+        raise ex.Error("could not determine openssl.cnf location")
     shutil.copy(openssl_cnf, data["cnf"])
     with open(data["cnf"], "a") as f:
         f.write("\n[SAN]\n%s\n" % data["alt_names"])

@@ -39,7 +39,7 @@ class NfsShare(Resource):
         self.path = path
         try:
             self.opts = self.parse_opts(opts)
-        except ex.excError as e:
+        except ex.Error as e:
             raise ex.InitError(str(e))
 
     def get_opts(self):
@@ -75,7 +75,7 @@ class NfsShare(Resource):
     def start(self):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("skip start because the share is in unknown state")
             return
         if up:
@@ -86,17 +86,17 @@ class NfsShare(Resource):
             cmd = [ 'unshare', '-F', 'nfs', self.path ]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError(err)
+                raise ex.Error(err)
         self.can_rollback = True
         cmd = [ 'share', '-F', 'nfs', '-o', self.opts, self.path ]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def stop(self):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("continue with stop even if the share is in unknown state")
         if not up:
             self.log.info("%s is already down" % self.path)
@@ -104,12 +104,12 @@ class NfsShare(Resource):
         cmd = [ 'unshare', '-F', 'nfs', self.path ]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def _status(self, verbose=False):
         try:
             up = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if len(self.issues) > 0:

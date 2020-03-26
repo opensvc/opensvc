@@ -69,7 +69,7 @@ def adder(svc, s):
                 break
         if zp is None:
             svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
-            raise ex.excError()
+            raise ex.Error()
         kwargs["path"] = zp+"/root"+kwargs["path"]
         if "<%s>" % zone != zp:
             kwargs["path"] = os.path.realpath(kwargs["path"])

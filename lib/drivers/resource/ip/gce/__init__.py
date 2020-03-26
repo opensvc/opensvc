@@ -162,11 +162,11 @@ class IpGce(Ip, rcGce.GceMixin):
         cmd = ["gcloud", "compute", "routes", "list", "--format", "json", routenames]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("gcloud route describe returned with error: %s, %s" % (out, err))
+            raise ex.Error("gcloud route describe returned with error: %s, %s" % (out, err))
         try:
             data = json.loads(out)
         except:
-            raise ex.excError("unable to parse gce route data: %s" % out)
+            raise ex.Error("unable to parse gce route data: %s" % out)
         h = {}
         for route in data:
             h[route["name"]] = route
@@ -210,7 +210,7 @@ class IpGce(Ip, rcGce.GceMixin):
             local_status = self.has_local_route()
             if not local_status:
                 self.status_log("local route is not installed")
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             local_status = False
 
@@ -218,7 +218,7 @@ class IpGce(Ip, rcGce.GceMixin):
             gce_status = self.has_gce_route()
             if not gce_status:
                 self.status_log("gce route is not installed")
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             gce_status = False
 

@@ -103,7 +103,7 @@ class DiskRados(BaseDisk):
             if "/" not in image:
                 l.append(image)
         if len(l):
-            raise ex.excError("wrong format (expected pool/image): "+", ".join(l))
+            raise ex.Error("wrong format (expected pool/image): "+", ".join(l))
 
     def fmt_label(self):
         s = "rados images: "
@@ -116,14 +116,14 @@ class DiskRados(BaseDisk):
         cmd = [rcEnv.syspaths.lsmod]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("lsmod failed")
+            raise ex.Error("lsmod failed")
         if "rbd" in out.split():
             # no need to load (already loaded or compiled-in)
             return
         cmd = ["modprobe", "rbd"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to load rbd device driver")
+            raise ex.Error("failed to load rbd device driver")
         self.modprobe_done = True
 
     def showmapped(self, refresh=False):
@@ -136,11 +136,11 @@ class DiskRados(BaseDisk):
         cmd = ["rbd", "showmapped", "--format", "json"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("rbd showmapped failed: "+err)
+            raise ex.Error("rbd showmapped failed: "+err)
         try:
             _data = json.loads(out)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         data = {}
         for id, img_data in _data.items():
             data[img_data["pool"]+"/"+img_data["name"]] = img_data
@@ -202,7 +202,7 @@ class DiskRados(BaseDisk):
         cmd = self.rbd_rcmd()+["map", image]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to map %s"%self.devname(image))
+            raise ex.Error("failed to map %s"%self.devname(image))
 
     def do_start(self):
         self.validate_image_fmt()
@@ -219,7 +219,7 @@ class DiskRados(BaseDisk):
         cmd = ["rbd", "unmap", self.devname(image)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to unmap %s"%self.devname(image))
+            raise ex.Error("failed to unmap %s"%self.devname(image))
 
 
     def do_stop(self):
@@ -261,12 +261,12 @@ class DiskRadoslock(DiskRados):
         cmd = self.rbd_rcmd()+["lock", "list", image, "--format", "json"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("rbd lock list failed")
+            raise ex.Error("rbd lock list failed")
         data = {}
         try:
             data = json.loads(out)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         return data
 
 
@@ -305,7 +305,7 @@ class DiskRadoslock(DiskRados):
             cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError("failed to unlock %s"%self.devname(image))
+                raise ex.Error("failed to unlock %s"%self.devname(image))
             data = self.locklist(image)
 
     def do_start_one(self, image):
@@ -318,7 +318,7 @@ class DiskRadoslock(DiskRados):
             cmd += ["--shared", self.lock_shared_tag]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("failed to lock %s"%self.devname(image))
+            raise ex.Error("failed to lock %s"%self.devname(image))
 
     def provisioner(self):
         for image in self.images:
@@ -339,6 +339,6 @@ class DiskRadoslock(DiskRados):
             cmd += ["--image-format", str(image_format)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 

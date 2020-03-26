@@ -408,7 +408,7 @@ class SysReport(object):
             to_send = self.full
             lstree_data = self.node.collector.call(self.lstree_rpc)
             if lstree_data is None:
-                raise ex.excError("can not get lstree from collector")
+                raise ex.Error("can not get lstree from collector")
             lstree_data = self.rel_paths("", lstree_data, posix=True)
             collected = self.rel_paths("", self.collected(), posix=True)
             self.deleted = sorted(list(set(lstree_data) - set(os.sep+"stat") - set(collected)))

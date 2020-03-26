@@ -948,7 +948,7 @@ class Scheduler(object):
         """
         if self.obj.cd is None:
             print("you are not allowed to print schedules", file=sys.stderr)
-            raise ex.excError()
+            raise ex.Error()
         if self.options.format is None:
             self._print_schedule_default()
             return

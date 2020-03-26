@@ -301,7 +301,7 @@ class BaseDiskRaw(BaseDisk):
         if self.user is None:
             return
         if self.uid is None:
-            raise ex.excError("user %s does not exist" % str(self.user))
+            raise ex.Error("user %s does not exist" % str(self.user))
         if not self.check_uid(path):
             self.vcall(['chown', str(self.uid), path])
         else:
@@ -311,7 +311,7 @@ class BaseDiskRaw(BaseDisk):
         if self.group is None:
             return
         if self.gid is None:
-            raise ex.excError("group %s does not exist" % str(self.group))
+            raise ex.Error("group %s does not exist" % str(self.group))
         if self.gid and not self.check_gid(path):
             self.vcall(['chgrp', str(self.gid), path])
         else:
@@ -409,7 +409,7 @@ class BaseDiskRaw(BaseDisk):
     def do_start_block(self, src, dst):
         if src is not None:
             if not os.path.exists(src):
-                raise ex.excError("src file %s does not exist" % src)
+                raise ex.Error("src file %s does not exist" % src)
             d = os.path.dirname(dst)
             if not os.path.exists(d):
                 self.log.info("create dir %s" % d)
@@ -429,17 +429,17 @@ class BaseDiskRaw(BaseDisk):
         elif stat.S_ISCHR(src_st.st_mode):
             t = "c"
         else:
-            raise ex.excError("%s is not a block nor a char device" % src)
+            raise ex.Error("%s is not a block nor a char device" % src)
         major = os.major(src_st.st_rdev)
         minor = os.minor(src_st.st_rdev)
         cmd = ["mknod", dst, t, str(major), str(minor)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_start_blocks(self):
         if which("mknod") is None:
-            raise ex.excError("mknod not found")
+            raise ex.Error("mknod not found")
         for src, dst in self.devs_map.items():
             self.do_start_block(src, dst)
 
@@ -468,7 +468,7 @@ class BaseDiskRaw(BaseDisk):
             try:
                 os.unlink(dst)
             except Exception as e:
-                raise ex.excError(str(e))
+                raise ex.Error(str(e))
         else:
             self.log.info("%s already unlinked" % dst)
 

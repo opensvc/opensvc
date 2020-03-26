@@ -77,7 +77,7 @@ class DiskAmazon(BaseDisk, AmazonMixin):
                 return
             self.log.info("%s is not present yet" % dev)
             time.sleep(1)
-        raise ex.excError("timeout waiting for %s to appear." % dev)
+        raise ex.Error("timeout waiting for %s to appear." % dev)
 
     def wait_avail(self, vol):
         for i in range(30):
@@ -86,12 +86,12 @@ class DiskAmazon(BaseDisk, AmazonMixin):
             if state == "available":
                 return
             time.sleep(1)
-        raise ex.excError("timeout waiting for %s to become available. last %s" % (vol, state))
+        raise ex.Error("timeout waiting for %s to become available. last %s" % (vol, state))
 
     def get_mapped_dev(self, volume):
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
-            raise ex.excError("can't find instance data")
+            raise ex.Error("can't find instance data")
 
         devs = []
         for b in instance_data["BlockDeviceMappings"]:
@@ -102,7 +102,7 @@ class DiskAmazon(BaseDisk, AmazonMixin):
     def get_mapped_devs(self, volumes=None):
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
-            raise ex.excError("can't find instance data")
+            raise ex.Error("can't find instance data")
 
         devs = []
         for b in instance_data["BlockDeviceMappings"]:
@@ -135,14 +135,14 @@ class DiskAmazon(BaseDisk, AmazonMixin):
                 for e in chars:
                     if c+d+e not in devs:
                         return "/dev/sd"+c+d+e
-        raise ex.excError("no available device name")
+        raise ex.Error("no available device name")
 
     def get_mapped_bdevs(self, refresh=False):
         if self.mapped_bdevs is not None and not refresh:
              return self.mapped_bdevs
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
-            raise ex.excError("can't find instance data")
+            raise ex.Error("can't find instance data")
 
         self.mapped_bdevs = []
         for b in instance_data["BlockDeviceMappings"]:
@@ -284,7 +284,7 @@ class DiskAmazon(BaseDisk, AmazonMixin):
             try:
                 key, val = e.split("=")
             except:
-                raise ex.excError("format error: %s. expected key=value." % e)
+                raise ex.Error("format error: %s. expected key=value." % e)
             kwargs[key] = val
         cmd = ["ec2", "create-volume"]
         if "size" in kwargs:

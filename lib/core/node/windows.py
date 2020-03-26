@@ -61,7 +61,7 @@ class Node(BaseNode):
         try:
             win32serviceutil.StartService(WINSVCNAME)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         finally:
             self.unset_upgrade_envvar()
 
@@ -75,13 +75,13 @@ class Node(BaseNode):
             if fn():
                 return
             time.sleep(1)
-        raise ex.excError("waited too long for startup")
+        raise ex.Error("waited too long for startup")
 
     def daemon_stop_native(self):
         try:
             win32serviceutil.StopService(WINSVCNAME)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def unset_upgrade_envvar(self):
         path = r"SYSTEM\CurrentControlSet\Services\%s\Environment" % WINSVCNAME
@@ -107,6 +107,6 @@ class Node(BaseNode):
         try:
             winreg.SetValue(key, "OPENSVC_AGENT_UPGRADE", winreg.REG_SZ, "1")
         except EnvironmentError:
-            raise ex.excError("failed to set OPENSVC_AGENT_UPGRADE=1 in %s" % path)
+            raise ex.Error("failed to set OPENSVC_AGENT_UPGRADE=1 in %s" % path)
         winreg.CloseKey(key)
         winreg.CloseKey(reg)

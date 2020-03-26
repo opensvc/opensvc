@@ -302,7 +302,7 @@ class Array(object):
                                    auth=self.auth, verify=verify,
                                    headers=headers)
         if response.status_code != 200:
-            raise ex.excError(response.content)
+            raise ex.Error(response.content)
         return 0
 
     def put(self, uri, params=None, data=None):
@@ -316,7 +316,7 @@ class Array(object):
         response = requests.put(uri, params=params, data=json.dumps(data), auth=self.auth,
                                 verify=verify, headers=headers)
         if response.status_code != 200:
-            raise ex.excError(response.content)
+            raise ex.Error(response.content)
         return
 
     def post(self, uri, params=None, data=None):
@@ -332,7 +332,7 @@ class Array(object):
         ret = json.loads(response.content)
         if response.status_code == 201:
             return self.get(ret["links"][0]["href"])
-        raise ex.excError(response.content)
+        raise ex.Error(response.content)
 
     def get(self, uri, params=None):
         if params is None:
@@ -361,9 +361,9 @@ class Array(object):
                  small_io_alerts=None, unaligned_io_alerts=None,
                  alignment_offset=None, mappings=None, **kwargs):
         if name is None:
-            raise ex.excError("--name is mandatory")
+            raise ex.Error("--name is mandatory")
         if size == 0 or size is None:
-            raise ex.excError("--size is mandatory")
+            raise ex.Error("--size is mandatory")
         d = {
             "vol-name": name,
             "vol-size": str(convert_size(size, _to="MB"))+"M",
@@ -409,11 +409,11 @@ class Array(object):
 
     def resize_disk(self, volume=None, size=None, **kwargs):
         if volume is None:
-            raise ex.excError("--volume is mandatory")
+            raise ex.Error("--volume is mandatory")
         if volume == "":
-            raise ex.excError("--volume can not be empty")
+            raise ex.Error("--volume can not be empty")
         if size == 0 or size is None:
-            raise ex.excError("--size is mandatory")
+            raise ex.Error("--size is mandatory")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="KB")
             data = self.get_volumes(volume=volume)
@@ -438,7 +438,7 @@ class Array(object):
         params = {"full": 1}
         uri = "/lun-maps"
         if volume is None:
-            raise ex.excError("--volume is mandatory")
+            raise ex.Error("--volume is mandatory")
         data = self.get_volumes(volume=volume)
         vol_name = data["content"]["name"]
         params["filter"] = "vol-name:eq:"+vol_name
@@ -452,12 +452,12 @@ class Array(object):
 
     def del_disk(self, volume=None, **kwargs):
         if volume is None:
-            raise ex.excError("--volume is mandatory")
+            raise ex.Error("--volume is mandatory")
         if volume == "":
-            raise ex.excError("volume can not be empty")
+            raise ex.Error("volume can not be empty")
         data = self.get_volumes(volume=volume)
         if "content" not in data:
-            raise ex.excError("volume %s does not exist" % volume)
+            raise ex.Error("volume %s does not exist" % volume)
         disk_id = data["content"]["naa-name"]
         self.del_volume_mappings(volume=volume)
         params = {}
@@ -489,9 +489,9 @@ class Array(object):
         params["filter"] = "port-address:eq:"+hba_id
         data = self.get(uri, params=params)
         if len(data["initiators"]) == 0:
-            raise ex.excError("no initiator found with port-address=%s" % hba_id)
+            raise ex.Error("no initiator found with port-address=%s" % hba_id)
         if len(data["initiators"][0]["ig-id"]) == 0:
-            raise ex.excError("initiator %s found in no initiatorgroup" % hba_id)
+            raise ex.Error("initiator %s found in no initiatorgroup" % hba_id)
         return data["initiators"][0]["ig-id"][-1]
 
     def get_target_targetgroup(self, hba_id):
@@ -501,9 +501,9 @@ class Array(object):
         params["filter"] = "port-address:eq:"+hba_id
         data = self.get(uri, params=params)
         if len(data["targets"]) == 0:
-            raise ex.excError("no target found with port-address=%s" % hba_id)
+            raise ex.Error("no target found with port-address=%s" % hba_id)
         if len(data["targets"][0]["tg-id"]) == 0:
-            raise ex.excError("target %s found in no targetgroup" % hba_id)
+            raise ex.Error("target %s found in no targetgroup" % hba_id)
         return data["targets"][0]["tg-id"][-1]
 
     def translate_mappings(self, mappings):
@@ -528,7 +528,7 @@ class Array(object):
     def add_map(self, volume=None, mappings=None, initiatorgroup=None, targetgroup=None,
                 lun=None, **kwargs):
         if volume is None:
-            raise ex.excError("--volume is mandatory")
+            raise ex.Error("--volume is mandatory")
         results = {}
         if mappings is not None and initiatorgroup is None:
             internal_mappings = self.translate_mappings(mappings)
@@ -544,7 +544,7 @@ class Array(object):
     def _add_map(self, volume=None, initiatorgroup=None, targetgroup=None,
                  lun=None, **kwargs):
         if initiatorgroup is None:
-            raise ex.excError("--initiatorgroup is mandatory")
+            raise ex.Error("--initiatorgroup is mandatory")
         d = {
             "vol-id": volume,
             "ig-id": initiatorgroup,
@@ -558,9 +558,9 @@ class Array(object):
 
     def del_map(self, mapping=None, **kwargs):
         if mapping is None:
-            raise ex.excError("--mapping is mandatory")
+            raise ex.Error("--mapping is mandatory")
         if mapping == "":
-            raise ex.excError("mapping can not be empty")
+            raise ex.Error("mapping can not be empty")
         params = {}
         uri = "/lun-maps"
         if mapping is not None:
@@ -705,7 +705,7 @@ class Array(object):
         try:
             ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in ret:
             self.log.error("failed to delete the disk object in the collector: %s", ret["error"])
         return ret
@@ -726,18 +726,18 @@ class Array(object):
                 "disk_group": "default",
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(ret["error"])
+            raise ex.Error(ret["error"])
         return ret
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
     array = o.get_array(array_name)
     if array is None:
-        raise ex.excError("array %s not found" % array_name)
+        raise ex.Error("array %s not found" % array_name)
     if not hasattr(array, action):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
     array.node = node
     ret = getattr(array, action)(**kwargs)
     if ret is not None:
@@ -755,7 +755,7 @@ if __name__ == "__main__":
     try:
         main(sys.argv)
         ret = 0
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         ret = 1
     sys.exit(ret)

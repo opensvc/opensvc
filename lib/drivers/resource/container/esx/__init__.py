@@ -79,7 +79,7 @@ class ContainerEsx(BaseContainer):
         cmd = ['vmware-cmd', '-l']
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         l = out.split()
         pattern = '/'+self.name+'.vmx'
         for vmx in l:
@@ -87,7 +87,7 @@ class ContainerEsx(BaseContainer):
                 self.vmx = vmx
         if self.vmx is None:
             self.log.error("vm %s not found on this node"%self.name)
-            raise ex.excError
+            raise ex.Error
         return self.vmx
 
     def _migrate(self):
@@ -98,19 +98,19 @@ class ContainerEsx(BaseContainer):
         cmd = ['start']
         ret, buff, err = self.vmcmd(cmd, verbose=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_stop(self):
         cmd = ['stop', 'soft']
         ret, buff, err = self.vmcmd(cmd, verbose=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_forcestop(self):
         cmd = ['stop', 'hard']
         ret, buff, err = self.vmcmd(cmd, verbose=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def is_up(self):
         try:

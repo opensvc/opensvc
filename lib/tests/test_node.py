@@ -122,7 +122,7 @@ class TestNode:
         try:
             node.split_url("http://localhost:80:80/feed/default/xmlrpc")
             assert False
-        except ex.excError:
+        except ex.Error:
             assert True
 
     @staticmethod

@@ -117,20 +117,20 @@ class ContainerJail(BaseContainer):
         self.log.info(' '.join(cmd))
         ret = qcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_stop(self):
         cmd = ['jail', '-r', self.name]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_forcestop(self):
         """ no harder way to stop a lxc container, raise to signal our
             helplessness
         """
         self.log.error("no forced stop method")
-        raise ex.excError
+        raise ex.Error
 
     def ping(self):
         return utilities.ping.check_ping(self.addr, timeout=1)
@@ -144,7 +144,7 @@ class ContainerJail(BaseContainer):
             cmd = rcEnv.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 4:

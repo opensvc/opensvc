@@ -34,7 +34,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         cmd = ['hwmgr', 'show', 'scsi']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         for line in out.split('\n'):
             v = line.split()
             if len(v) < 7:
@@ -88,7 +88,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         if len(err) > 0:
             self.log.error(out)
         if p.returncode:
-            raise ex.excError
+            raise ex.Error
 
     def disk_registered(self, disk):
         cmd = ['scu', '-f', disk, 'show', 'keys']
@@ -116,7 +116,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         cmd = self.set_nexus(itn) + 'preserve register skey ' + self.hostid
         try:
             self.pipe_scu(cmd)
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("failed to register key %s with nexus %s" % (self.hostid, ':'.join(itn.values())))
             return 1
         return 0
@@ -138,7 +138,7 @@ class DiskScsireserv(BaseDiskScsireserv):
         cmd = self.set_nexus(itn) + 'preserve register skey 0 key ' + self.hostid
         try:
             self.pipe_scu(cmd)
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("failed to unregister key %s with nexus %s" % (self.hostid, ':'.join(itn.values())))
             return 1
         return 0

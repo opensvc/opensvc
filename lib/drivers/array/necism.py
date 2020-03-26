@@ -36,7 +36,7 @@ class NecMixin(object):
                 setattr(self, bin_attr, bin)
                 break
         if getattr(self, bin_attr) is None:
-            raise ex.excError('Can not find %s program in PATH' % ' or '.join(candidates))
+            raise ex.Error('Can not find %s program in PATH' % ' or '.join(candidates))
 
     def get_view_bin(self):
         self.get_bin('view_bin', ['iSMcc_view', 'iSMview'])
@@ -96,21 +96,21 @@ class NecMixin(object):
         out, err, ret = self.sc_create_cmd(cmd)
         self.log.info(out)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def sc_unlink_ld(self, ld):
         cmd = ['-lv', ld, '-lvflg', 'ld']
         out, err, ret = self.sc_unlink_cmd(cmd)
         self.log.info(out)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def sc_link_ld(self, sv, ld):
         cmd = ['-lv', ld, '-sv', sv, '-lvflg', 'ld', '-svflg', 'ld']
         out, err, ret = self.sc_link_cmd(cmd)
         self.log.info(out)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def get_arrays(self):
         cmd = ['-d']
@@ -119,7 +119,7 @@ class NecMixin(object):
             self.refresh_vollist()
         out, err, ret = self.view_cmd(cmd, on_array=False)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
         """
 
@@ -168,7 +168,7 @@ Destination Volume Information
         cmd = ['-vol', vol, '-volflg', 'ld', '-lcl']
         out, err, ret = self.sc_linkinfo_cmd(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {'dst': []}
         for line in out.split('\n'):
             if line.startswith('SV:LD Name'):
@@ -200,7 +200,7 @@ SV Information
         cmd = ['-sv', sv, '-svflg', 'ld']
         out, err, ret = self.sc_query_cmd(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {'sv': []}
         for line in out.splitlines():
             line = line.strip()
@@ -257,7 +257,7 @@ SV Information
         cmd = ['-bv', bv, '-bvflg', 'ld', '-detail']
         out, err, ret = self.sc_query_cmd(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {
           'sv': {},
           'lv': {}

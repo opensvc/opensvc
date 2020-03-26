@@ -138,7 +138,7 @@ class Fs(BaseFs):
             statinfo = os.stat(dev)
         except:
             self.log.error("can not stat %s" % dev)
-            raise ex.excError
+            raise ex.Error
 
         return set([dev])
 
@@ -196,7 +196,7 @@ class Fs(BaseFs):
             cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
             (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.Mounts = None
         self.can_rollback = True
 
@@ -211,5 +211,5 @@ class Fs(BaseFs):
             if ret == 0: break
         if ret != 0:
             self.log.error('failed to umount %s'%self.mount_point)
-            raise ex.excError
+            raise ex.Error
         self.Mounts = None

@@ -103,7 +103,7 @@ class ContainerVcloud(BaseContainer):
         for vm in vms:
             path = get_url_path(vm.get('href'))
             if path is None:
-                raise ex.excError("libcloud is not installed")
+                raise ex.Error("libcloud is not installed")
             res = drv.connection.request(
                 '%s/power/action/%s' % (path, operation),
                 method='POST')
@@ -114,7 +114,7 @@ class ContainerVcloud(BaseContainer):
         for size in self.cloud.driver.list_sizes():
             if size.name == self.size_name:
                 return size
-        raise ex.excError("%s size not found"%self.size_name)
+        raise ex.Error("%s size not found"%self.size_name)
 
     @lazy
     def cloud(self):
@@ -153,7 +153,7 @@ class ContainerVcloud(BaseContainer):
             if image.name.startswith(self.save_name):
                 d[image.name] = image
         if len(d) == 0:
-             raise ex.excError("no save image found")
+             raise ex.Error("no save image found")
         elif len(d) == 1:
              self.log.info("no previous save image to delete")
         for k in sorted(d.keys())[:-1]:
@@ -177,7 +177,7 @@ class ContainerVcloud(BaseContainer):
             elif image.name.startswith(name):
                 d[image.name] = image
         if len(d) == 0:
-             raise ex.excError("image %s not found"%name)
+             raise ex.Error("image %s not found"%name)
         for k in sorted(d.keys()):
              last = d[k]
         return last
@@ -242,7 +242,7 @@ class ContainerVcloud(BaseContainer):
         self.container_stop()
         try:
             self.wait_for_shutdown()
-        except ex.excError:
+        except ex.Error:
             self.container_forcestop()
             self.wait_for_shutdown()
 
@@ -270,7 +270,7 @@ class ContainerVcloud(BaseContainer):
         try:
             image = self.cloud.driver.ex_save_image(n, save_name)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         import time
         delay = 5
         for i in range(self.save_timeout//delay):
@@ -279,7 +279,7 @@ class ContainerVcloud(BaseContainer):
                 break
             time.sleep(delay)
         if img.extra['status'] != 'ACTIVE':
-            raise ex.excError("save failed, image status %s"%img.extra['status'])
+            raise ex.Error("save failed, image status %s"%img.extra['status'])
 
     def container_forcestop(self):
         n = self.get_node()

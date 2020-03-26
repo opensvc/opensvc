@@ -126,7 +126,7 @@ class SyncBtrfs(Sync):
         try:
             self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, resource=self)
         except rcBtrfs.ExecError as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
     def pre_action(self, action):
         """Prepare snapshots
@@ -167,9 +167,9 @@ class SyncBtrfs(Sync):
             self.src_btrfs.snapshot(snap_orig, snap, readonly=True, recursive=self.recursive)
         except rcBtrfs.ExistError:
             self.log.error('%s should not exist'%snap)
-            raise ex.excError
+            raise ex.Error
         except rcBtrfs.ExecError:
-            raise ex.excError
+            raise ex.Error
 
     def get_src_info(self):
         self.init_src_btrfs()
@@ -184,7 +184,7 @@ class SyncBtrfs(Sync):
             try:
                 self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, resource=self, node=node)
             except rcBtrfs.ExecError as e:
-                raise ex.excError(str(e))
+                raise ex.Error(str(e))
             #self.dst_btrfs[node].setup_snap()
         subvol = self.src_subvol.replace('/','_')
         base = self.dst_btrfs[node].snapdir + '/' + subvol
@@ -220,7 +220,7 @@ class SyncBtrfs(Sync):
         self.init_src_btrfs()
         try:
             self.sanity_checks()
-        except ex.excError:
+        except ex.Error:
             return
         self.get_src_info()
         if not self.src_btrfs.has_subvol(self.src_snap_tosend):
@@ -265,7 +265,7 @@ class SyncBtrfs(Sync):
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("sync update failed")
-            raise ex.excError
+            raise ex.Error
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
@@ -292,7 +292,7 @@ class SyncBtrfs(Sync):
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("full sync failed")
-            raise ex.excError
+            raise ex.Error
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
@@ -311,7 +311,7 @@ class SyncBtrfs(Sync):
         try:
             o.subvol_delete(subvol, recursive=self.recursive)
         except rcBtrfs.ExecError:
-            raise ex.excError()
+            raise ex.Error()
 
     def remove_snap(self, node=None):
         self.init_src_btrfs()
@@ -328,7 +328,7 @@ class SyncBtrfs(Sync):
         try:
             o.subvol_delete(subvol, recursive=self.recursive)
         except rcBtrfs.ExecError:
-            raise ex.excError()
+            raise ex.Error()
 
     def rename_snap(self, node=None):
         self.init_src_btrfs()
@@ -343,7 +343,7 @@ class SyncBtrfs(Sync):
 
         if o.has_subvol(dst):
             self.log.error("%s should not exist"%self.dst_snap_sent)
-            raise ex.excError
+            raise ex.Error
 
         if self.recursive :
             # ??
@@ -356,7 +356,7 @@ class SyncBtrfs(Sync):
         ret, out, err = self.vcall(cmd)
 
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def remove_dst(self, node=None):
         if node is None:
@@ -367,7 +367,7 @@ class SyncBtrfs(Sync):
         try:
             self.dst_btrfs[node].subvol_delete(subvols)
         except rcBtrfs.ExecError:
-            raise ex.excError()
+            raise ex.Error()
 
     def install_dst(self, node=None):
         if node is None:
@@ -376,10 +376,10 @@ class SyncBtrfs(Sync):
             self.dst_btrfs[node].snapshot(self.dst_snap_sent, self.dst, readonly=False)
         except rcBtrfs.ExistError:
             self.log.error("%s should not exist on node %s", self.dst_snap_sent, node)
-            raise ex.excError()
+            raise ex.Error()
         except rcBtrfs.ExecError:
             self.log.error("failed to install snapshot %s on node %s"%(self.dst, node))
-            raise ex.excError()
+            raise ex.Error()
 
     def install_snaps(self, node=None):
         self.remove_dst(node)
@@ -393,7 +393,7 @@ class SyncBtrfs(Sync):
         self.init_src_btrfs()
         try:
             self.sanity_checks()
-        except ex.excError:
+        except ex.Error:
             return
         self.get_targets(action)
         if len(self.targets) == 0:
@@ -462,7 +462,7 @@ class SyncBtrfs(Sync):
         rs = self.get_remote_state(node)
         if self.snap_uuid != rs['uuid']:
             self.log.error("%s last update uuid doesn't match snap uuid"%(node))
-            raise ex.excError
+            raise ex.Error
 
     def get_remote_state(self, node):
         self.set_statefile()
@@ -471,7 +471,7 @@ class SyncBtrfs(Sync):
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
-            raise ex.excError
+            raise ex.Error
         return self.parse_statefile(out, node=node)
 
     def get_local_state(self):
@@ -498,7 +498,7 @@ class SyncBtrfs(Sync):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def push_statefile(self, node):
         self.set_statefile()
@@ -514,11 +514,11 @@ class SyncBtrfs(Sync):
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         fields = lines[0].split(';')
         if len(fields) != 2:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         return dict(date=fields[0], uuid=fields[1])
 
     @notify

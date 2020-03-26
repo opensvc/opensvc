@@ -24,11 +24,11 @@ class Handler(handler.Handler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         if options.peer is None:
-            raise ex.excError("The 'peer' option must be set")
+            raise ex.Error("The 'peer' option must be set")
         if options.peer == rcEnv.nodename:
-            raise ex.excError("Can't ask a full from ourself")
+            raise ex.Error("Can't ask a full from ourself")
         if options.peer not in thr.cluster_nodes:
-            raise ex.excError("Can't ask a full from %s: not in cluster.nodes" % options.peer)
+            raise ex.Error("Can't ask a full from %s: not in cluster.nodes" % options.peer)
         shared.REMOTE_GEN[options.peer] = 0
         result = {
             "info": "remote %s asked for a full" % options.peer,

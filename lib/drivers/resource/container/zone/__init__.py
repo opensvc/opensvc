@@ -151,27 +151,27 @@ class ContainerZone(BaseContainer):
         cmd = [ZONECFG, "-z", self.name, "export", "-f", cfg]
         ret, out, err = self.vcall(cmd)
         if ret != 0 and not os.path.exists(cfg):
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def get_zonepath_from_zonecfg_cmd(self):
         cmd = [ZONECFG, "-z", self.name, "info", "zonepath"]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("unable to determine zonepath using %s" % " ".join(cmd))
+            raise ex.Error("unable to determine zonepath using %s" % " ".join(cmd))
         zp = out.replace("zonepath: ", "").strip()
         return zp
 
     def get_zonepath_from_zonecfg_export(self):
         fpath = self.zone_cfg_path()
         if not os.path.exists(fpath):
-            raise ex.excError("zone config export file %s not found. "
+            raise ex.Error("zone config export file %s not found. "
                               "unable to determine zonepath" % fpath)
         with open(fpath, "r") as f:
             buff = f.read()
         for line in buff.split("\n"):
             if "set zonepath" in line:
                 return line.split("=")[-1].strip()
-        raise ex.excError("set zonepath command not found in %s" % fpath)
+        raise ex.Error("set zonepath command not found in %s" % fpath)
 
     def zonecfg(self, zonecfg_args=None):
         zonecfg_args = zonecfg_args or []
@@ -180,7 +180,7 @@ class ContainerZone(BaseContainer):
         if ret != 0:
             msg = "%s failed status: %i\n%s" % (" ".join(cmd), ret, out)
             self.log.error(msg)
-            raise ex.excError(msg)
+            raise ex.Error(msg)
         else:
             msg = "%s done status: %i\n%s" % (" ".join(cmd), ret, out)
             self.log.info(msg)
@@ -234,7 +234,7 @@ class ContainerZone(BaseContainer):
         ret = self.lcall(cmd, env={})
         duration = datetime.now() - begin
         if ret != 0:
-            raise ex.excError("%s failed in %s - ret %i" % (" ".join(cmd), duration, ret))
+            raise ex.Error("%s failed in %s - ret %i" % (" ".join(cmd), duration, ret))
         else:
             self.log.info("%s done in %s - ret %i" % (" ".join(cmd), duration, ret))
         self.zone_refresh()
@@ -257,7 +257,7 @@ class ContainerZone(BaseContainer):
         cmd = ["cp", src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(" ".join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
@@ -265,7 +265,7 @@ class ContainerZone(BaseContainer):
         cmd = ["cp", src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(" ".join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(" ".join(cmd), err))
         return out, err, ret
 
     def attach(self):
@@ -277,14 +277,14 @@ class ContainerZone(BaseContainer):
             ret, out, err = self.vcall(cmd)
             self.zone_refresh()
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
         options = []
         if utilities.os.sunos.get_solaris_version() >= 11.3:
             options += ["-x", "deny-zbe-clone"]
         try:
             self.umount_fs_in_zonepath()
             self.zoneadm("attach", options)
-        except ex.excError:
+        except ex.Error:
             options.append("-F")
             self.zoneadm("attach", options)
         self.can_rollback = True
@@ -299,7 +299,7 @@ class ContainerZone(BaseContainer):
         ret, out, err = self.vcall(cmd)
         self.zone_refresh()
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         return 0
 
     def detach(self):
@@ -355,7 +355,7 @@ class ContainerZone(BaseContainer):
             return
         self.zoneadm("boot")
         if self.state != "running":
-            raise ex.excError("zone should be running")
+            raise ex.Error("zone should be running")
         self.wait_multi_user()
 
     def halt(self):
@@ -398,7 +398,7 @@ class ContainerZone(BaseContainer):
     @lazy
     def state(self):
         if self.zone_data is None:
-            raise ex.excError("zone %s does not exist" % self.name)
+            raise ex.Error("zone %s does not exist" % self.name)
         else:
             return self.zone_data.get("state")
 
@@ -409,10 +409,10 @@ class ContainerZone(BaseContainer):
             return zp
         try:
             zp = self.get_zonepath_from_zonecfg_cmd()
-        except ex.excError:
+        except ex.Error:
             try:
                 zp = self.get_zonepath_from_zonecfg_export()
-            except ex.excError:
+            except ex.Error:
                 zp = "/etc/system/%s" % self.name
         return zp
 
@@ -443,7 +443,7 @@ class ContainerZone(BaseContainer):
         elif n_fields == 7:
             (zoneid, zonename, state, zonepath, uuid, brand, iptype) = l
         else:
-            raise ex.excError("Unexpected zoneadm list output: %s"%out)
+            raise ex.Error("Unexpected zoneadm list output: %s"%out)
         if zonename != self.name:
             return None
         return dict(state=state, zonepath=zonepath, brand=brand)
@@ -480,16 +480,16 @@ class ContainerZone(BaseContainer):
         self.log.info("wait for zone boot and reboot...")
         self.zone_boot()
         if self.is_running is False:
-            raise ex.excError("zone is not running")
+            raise ex.Error("zone is not running")
         cmd = [PGREP, "-z", self.name, "-f", INIT]
         out, err, st = justcall(cmd)
         if st != 0:
-            raise ex.excError("fail to detect zone init process")
+            raise ex.Error("fail to detect zone init process")
         pids = " ".join(out.split("\n")).rstrip()
         cmd = [PWAIT, pids]
         self.log.info("wait for zone init process %s termination" % (pids))
         if qcall(cmd) != 0:
-            raise ex.excError("failed " + " ".join(cmd))
+            raise ex.Error("failed " + " ".join(cmd))
         self.log.info("wait for zone running again")
         self.wait_for_fn(self.is_up, self.start_timeout, 2)
         self.log.info("wait for zone operational")
@@ -758,10 +758,10 @@ class ContainerZone(BaseContainer):
             cmd = ['/usr/sbin/js2ai', '-s']
             out, err, ret = justcall(cmd)
             if not os.path.exists(self.zonecfg_xml):
-                raise ex.excError("js2ai conversion error")
+                raise ex.Error("js2ai conversion error")
         except Exception as e:
             self.svc.save_exc()
-            raise ex.excError("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__()))
+            raise ex.Error("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__()))
 
     def _create_sysidcfg_10(self, zone=None):
         try:
@@ -783,7 +783,7 @@ class ContainerZone(BaseContainer):
             sysidcfg_file.write(contents)
             sysidcfg_file.close()
         except Exception as exc:
-            raise ex.excError("exception from %s: %s during create_sysidcfg file" % (exc.__class__.__name__, exc.__str__()))
+            raise ex.Error("exception from %s: %s during create_sysidcfg file" % (exc.__class__.__name__, exc.__str__()))
 
     def test_net_interface(self, intf):
         cmd = ['dladm', 'show-link', intf]
@@ -798,7 +798,7 @@ class ContainerZone(BaseContainer):
         cmds = []
         for r in self.svc.get_resources(["ip"]):
             if not self.test_net_interface(r.ipdev):
-                raise ex.excError("Missing interface: %s" % r.ipdev)
+                raise ex.Error("Missing interface: %s" % r.ipdev)
             cmds.append("add net ; set physical=%s ; end" % r.ipdev)
         for cmd in cmds:
             zone.zonecfg([cmd])
@@ -820,7 +820,7 @@ class ContainerZone(BaseContainer):
         if zone.state is None:
             zone.zonecfg([cmd])
             if zone.state != "configured":
-                raise ex.excError("zone %s is not configured" % zone.name)
+                raise ex.Error("zone %s is not configured" % zone.name)
 
         if self.osver >= 11.0:
             try:
@@ -848,23 +848,23 @@ class ContainerZone(BaseContainer):
             return
         self.zone_configure(zone=zone2clone)
         if zone2clone.state != "configured":
-            raise(ex.excError("zone %s is not configured" % (zonename)))
+            raise(ex.Error("zone %s is not configured" % (zonename)))
         self.create_sysidcfg(zone2clone)
         #zone2clone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
         zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
-            raise(ex.excError("zone %s is not installed" % (zonename)))
+            raise(ex.Error("zone %s is not installed" % (zonename)))
         brand = zone2clone.brand
         if brand == "native":
             zone2clone.boot_and_wait_reboot()
         elif brand == "ipkg":
             zone2clone.zone_boot()
         else:
-            raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
+            raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
         if zone2clone.state != "installed":
-            raise(ex.excError("zone %s is not installed" % (zonename)))
+            raise(ex.Error("zone %s is not installed" % (zonename)))
 
     def _create_zone2clone_10(self):
         """verify if self.container_origin zone is installed
@@ -878,10 +878,10 @@ class ContainerZone(BaseContainer):
             return
         self.zone_configure(zone=zone2clone)
         if zone2clone.state != "configured":
-            raise(ex.excError("zone %s is not configured" % (zonename)))
+            raise(ex.Error("zone %s is not configured" % (zonename)))
         zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
-            raise(ex.excError("zone %s is not installed" % (zonename)))
+            raise(ex.Error("zone %s is not installed" % (zonename)))
         self.create_sysidcfg(zone2clone)
         brand = zone2clone.brand
         if brand == "native":
@@ -889,11 +889,11 @@ class ContainerZone(BaseContainer):
         elif brand == "ipkg":
             zone2clone.zone_boot()
         else:
-            raise(ex.excError("zone brand: %s not yet implemented" % (brand)))
+            raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
         zone2clone.stop()
         if zone2clone.state != "installed":
-            raise(ex.excError("zone %s is not installed" % (zonename)))
+            raise(ex.Error("zone %s is not installed" % (zonename)))
 
     def create_cloned_zone(self):
         zone = self
@@ -906,7 +906,7 @@ class ContainerZone(BaseContainer):
             else:
                 self._create_cloned_zone_10(zone)
         if zone.state != "installed":
-            raise(ex.excError("zone %s is not installed" % (zone.name)))
+            raise(ex.Error("zone %s is not installed" % (zone.name)))
 
     def _create_cloned_zone_11(self, zone):
         zone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
@@ -922,7 +922,7 @@ class ContainerZone(BaseContainer):
         zonename = self.name
         source_ds = Dataset(self.snapof)
         if source_ds.exists(type="filesystem") is False:
-            raise(ex.excError("source dataset doesn't exist " + self.snapof))
+            raise(ex.Error("source dataset doesn't exist " + self.snapof))
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.kw_zonepath])
 
@@ -963,7 +963,7 @@ class ContainerZone(BaseContainer):
             try:
                 lockfd = lock.lock(timeout=1200, delay=5, lockfile=lockfile)
             except:
-                raise(ex.excError("failure in get lock %s"%(lockname)))
+                raise(ex.Error("failure in get lock %s"%(lockname)))
             try:
                 self.create_zone2clone()
             except:

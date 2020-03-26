@@ -44,7 +44,7 @@ class Pool(pool.Pool):
     def create_disk_simple(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
         if not mappings:
-            raise ex.excError("refuse to create a disk with no mappings")
+            raise ex.Error("refuse to create a disk with no mappings")
         lock_id = None
         try:
             lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
@@ -136,7 +136,7 @@ class Pool(pool.Pool):
         o = Arrays()
         array = o.get_array(self.array_name)
         if array is None:
-            raise ex.excError("array %s not found" % self.array_name)
+            raise ex.Error("array %s not found" % self.array_name)
         array.node = self.node
         return array
 
@@ -145,7 +145,7 @@ class Pool(pool.Pool):
         o = Arrays()
         array = o.get_array(self.remote_array_name)
         if array is None:
-            raise ex.excError("remote array %s not found" % self.remote_array_name)
+            raise ex.Error("remote array %s not found" % self.remote_array_name)
         array.node = self.node
         return array
 

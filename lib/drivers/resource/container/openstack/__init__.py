@@ -88,7 +88,7 @@ class ContainerOpenstack(BaseContainer):
         for k in kf:
             if os.path.exists(k):
                 return k
-        raise ex.excError("key file for key name '%s' not found"%self.key_name)
+        raise ex.Error("key file for key name '%s' not found"%self.key_name)
 
     def rcp_from(self, src, dst):
         if self.guestos == "windows":
@@ -98,7 +98,7 @@ class ContainerOpenstack(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable public ip to send files to')
+            raise ex.Error('no usable public ip to send files to')
 
         timeout = 5
         cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
@@ -107,7 +107,7 @@ class ContainerOpenstack(BaseContainer):
                         self.addr+':'+src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
@@ -118,7 +118,7 @@ class ContainerOpenstack(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable public ip to send files to')
+            raise ex.Error('no usable public ip to send files to')
 
         timeout = 5
         cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
@@ -127,7 +127,7 @@ class ContainerOpenstack(BaseContainer):
                         src, self.addr+':'+dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcmd(self, cmd):
@@ -138,7 +138,7 @@ class ContainerOpenstack(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable public ip to send command to')
+            raise ex.Error('no usable public ip to send command to')
 
         if type(cmd) == str:
             cmd = cmd.split(" ")
@@ -153,14 +153,14 @@ class ContainerOpenstack(BaseContainer):
                         self.addr] + cmd
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def get_size(self):
         for size in self.cloud.driver.list_sizes():
             if size.name == self.size_name:
                 return size
-        raise ex.excError("%s size not found"%self.size_name)
+        raise ex.Error("%s size not found"%self.size_name)
 
     @lazy
     def cloud(self):
@@ -186,7 +186,7 @@ class ContainerOpenstack(BaseContainer):
             if image.name.startswith(self.save_name):
                 d[image.name] = image
         if len(d) == 0:
-             raise ex.excError("no save image found")
+             raise ex.Error("no save image found")
         elif len(d) == 1:
              self.log.info("no previous save image to delete")
         for k in sorted(d.keys())[:-1]:
@@ -210,7 +210,7 @@ class ContainerOpenstack(BaseContainer):
             elif image.name.startswith(name):
                 d[image.name] = image
         if len(d) == 0:
-             raise ex.excError("image %s not found"%name)
+             raise ex.Error("image %s not found"%name)
         for k in sorted(d.keys()):
              last = d[k]
         return last
@@ -230,7 +230,7 @@ class ContainerOpenstack(BaseContainer):
             return
         n = self.get_node()
         if n is None:
-            raise ex.excError("could not get node details")
+            raise ex.Error("could not get node details")
         ips = set(n.public_ips+n.private_ips)
         if len(ips) == 0:
             return 0
@@ -268,7 +268,7 @@ class ContainerOpenstack(BaseContainer):
                 self.log.info("reboot %s"%self.name)
                 self.container_reboot()
             else:
-                raise ex.excError("abort reboot because vm is in state %d (!=4)"%n.state)
+                raise ex.Error("abort reboot because vm is in state %d (!=4)"%n.state)
         else:
             self.container_restore()
 
@@ -277,7 +277,7 @@ class ContainerOpenstack(BaseContainer):
         try:
             self.cloud.driver.reboot_node(n)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
     def container_restore(self):
         image = self.get_last_save()
@@ -298,7 +298,7 @@ class ContainerOpenstack(BaseContainer):
         self.container_stop()
         try:
             self.wait_for_shutdown()
-        except ex.excError:
+        except ex.Error:
             self.container_forcestop()
             self.wait_for_shutdown()
 
@@ -332,7 +332,7 @@ class ContainerOpenstack(BaseContainer):
         try:
             image = self.cloud.driver.ex_save_image(n, save_name)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         import time
         delay = 5
         for i in range(self.save_timeout//delay):
@@ -341,7 +341,7 @@ class ContainerOpenstack(BaseContainer):
                 break
             time.sleep(delay)
         if img.extra['status'] != 'ACTIVE':
-            raise ex.excError("save failed, image status %s"%img.extra['status'])
+            raise ex.Error("save failed, image status %s"%img.extra['status'])
 
     def is_up(self):
         n = self.get_node()

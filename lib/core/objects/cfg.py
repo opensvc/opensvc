@@ -35,9 +35,9 @@ class Cfg(DataMixin, BaseSvc):
 
     def _add_key(self, key, data):
         if not key:
-            raise ex.excError("configuration key name can not be empty")
+            raise ex.Error("configuration key name can not be empty")
         if data is None:
-            raise ex.excError("configuration value can not be empty")
+            raise ex.Error("configuration value can not be empty")
         if not is_string(data):
             data = "base64:"+bdecode(base64.urlsafe_b64encode(data))
         elif "\n" in data:
@@ -51,10 +51,10 @@ class Cfg(DataMixin, BaseSvc):
 
     def decode_key(self, key):
         if not key:
-            raise ex.excError("configuration key name can not be empty")
+            raise ex.Error("configuration key name can not be empty")
         data = self.oget("data", key)
         if not data:
-            raise ex.excError("configuration key %s does not exist or has no value" % key)
+            raise ex.Error("configuration key %s does not exist or has no value" % key)
         if data.startswith("base64:"):
             if six.PY2:
                 data = str(data)

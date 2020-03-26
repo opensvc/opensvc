@@ -365,7 +365,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             if os.path.exists(dev):
                 return
             time.sleep(1)
-        raise ex.excError("time out waiting for %s to appear" % dev)
+        raise ex.Error("time out waiting for %s to appear" % dev)
 
 if __name__ == "__main__":
     diskinfo = diskInfo()

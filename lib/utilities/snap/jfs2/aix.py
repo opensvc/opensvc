@@ -47,7 +47,7 @@ class Snap(utilities.snap.Snap):
             print("pp_size = ", pp_size)
             print("pp_unit = ", pp_unit)
             print("vg_name = ", vg_name)
-            raise ex.excError
+            raise ex.Error
 
         if pp_unit == 'megabyte(s)':
             mult = 1
@@ -57,7 +57,7 @@ class Snap(utilities.snap.Snap):
             mult = 1024*1024
         else:
             self.log.error("unexpected logical volume PP size unit: %s"%pp_unit)
-            raise ex.excError
+            raise ex.Error
 
         return (vg_name, lv_name, pps*pp_size*mult)
 
@@ -70,7 +70,7 @@ class Snap(utilities.snap.Snap):
             raise ex.syncNotSnapable
         if len(lv_name) > 12:
             self.log.error("can not snap lv with name >12 chars")
-            raise ex.excError
+            raise ex.Error
         snap_name = 'sy_'+os.path.basename(lv_name)
         if self.lv_exists(os.path.join(vg_name, snap_name)):
             self.log.error("snap of %s already exists"%(lv_name))
@@ -99,7 +99,7 @@ class Snap(utilities.snap.Snap):
     def snapdestroykey(self, s):
         if protected_mount(self.snaps[s]['snap_mnt']):
             self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
-            raise ex.excError
+            raise ex.Error
 
         """ fuser on HP-UX outs to stderr ...
         """

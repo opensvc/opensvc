@@ -88,7 +88,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
         try:
             fstat = os.stat(fpath)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         user_uid = fstat[stat.ST_UID]
         user_gid = fstat[stat.ST_GID]
         try:
@@ -107,7 +107,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
             try:
                 pwd_user = pwd.getpwnam(user)
             except KeyError:
-                raise ex.excError("user %s does not exist" % user)
+                raise ex.Error("user %s does not exist" % user)
             user_uid = pwd_user.pw_uid
             user_gid = pwd_user.pw_gid
             user_name = user
@@ -115,7 +115,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
             try:
                 pwd_user = pwd.getpwuid(user_uid)
             except KeyError:
-                raise ex.excError("user %d does not exist" % user_uid)
+                raise ex.Error("user %d does not exist" % user_uid)
             user_name = pwd_user.pw_name
             user_gid = pwd_user.pw_gid
 
@@ -127,13 +127,13 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
                 try:
                     grp_group = grp.getgrnam(group)
                 except KeyError:
-                    raise ex.excError("group %s does not exist" % group)
+                    raise ex.Error("group %s does not exist" % group)
                 user_gid = grp_group.gr_gid
             else:
                 try:
                     grp_group = grp.getgrgid(user_gid)
                 except KeyError:
-                    raise ex.excError("group %d does not exist" % user_gid)
+                    raise ex.Error("group %d does not exist" % user_gid)
 
     try:
         pw_record = pwd.getpwnam(user_name)
@@ -285,7 +285,7 @@ class App(Resource):
         if os.path.exists(cmd[0]):
             os.path.realpath(cmd[0])
             return cmd
-        raise ex.excError("%s does not exist" % cmd[0])
+        raise ex.Error("%s does not exist" % cmd[0])
 
     def is_up(self):
         """
@@ -304,7 +304,7 @@ class App(Resource):
             cmd = self.get_cmd("check", "status")
         except ex.AbortAction:
             raise StatusNA
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.status_log(str(exc), "warn")
             raise StatusNA
         ret = self.run("status", cmd, dedicated_log=False)
@@ -395,7 +395,7 @@ class App(Resource):
 
         ret = self.run("start", cmd)
         if ret != 0:
-            raise ex.excError("exit code %d" % ret)
+            raise ex.Error("exit code %d" % ret)
         self.can_rollback = True
 
     def stop(self):
@@ -406,7 +406,7 @@ class App(Resource):
             cmd = self.get_cmd("stop")
         except ex.AbortAction:
             return
-        except ex.excError as exc:
+        except ex.Error as exc:
             if "does not exist" in str(exc):
                 return
             raise
@@ -454,18 +454,18 @@ class App(Resource):
                 intent=action
             )
         except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+            raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+            raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
+            raise ex.Error("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+            raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
             self.log.info("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+            raise ex.Error("unexpected locking error %s: %s" % (details, str(exc)))
         finally:
             if lockfd is not None:
                 self.lockfd = lockfd
@@ -493,7 +493,7 @@ class App(Resource):
             return rcStatus.WARN
         except StatusNA:
             return rcStatus.NA
-        except ex.excError as exc:
+        except ex.Error as exc:
             msg = str(exc)
             if "intent '" in msg:
                 action = msg.split("intent '")[-1].split("'")[0]
@@ -554,7 +554,7 @@ class App(Resource):
             else:
                 self.svc.save_exc()
             return 1
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.log.error(exc)
             return 1
         except:

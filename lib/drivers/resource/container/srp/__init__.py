@@ -85,23 +85,23 @@ class ContainerSrp(BaseContainer):
     def rcp_from(self, src, dst):
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:
-            raise ex.excError()
+            raise ex.Error()
         src = rootfs + src
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
         rootfs = self.get_rootfs()
         if len(rootfs) == 0:
-            raise ex.excError()
+            raise ex.Error()
         dst = rootfs + dst
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def install_drp_flag(self):
@@ -116,16 +116,16 @@ class ContainerSrp(BaseContainer):
         cmd = ['srp', '-start', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
     def container_stop(self):
         cmd = ['srp', '-stop', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
     def container_forcestop(self):
-        raise ex.excError
+        raise ex.Error
 
     def operational(self):
         cmd = self.runmethod + ['pwd']
@@ -146,7 +146,7 @@ class ContainerSrp(BaseContainer):
         cmd = ['srp', '-list', self.name, '-v']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("srp -list returned %d:\n%s"%(ret, err))
+            raise ex.Error("srp -list returned %d:\n%s"%(ret, err))
 
         data = {}
 
@@ -176,7 +176,7 @@ class ContainerSrp(BaseContainer):
         cmd = ['srp', '-status', self.name, '-v']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("srp -status returned %d:\n%s"%(ret, err))
+            raise ex.Error("srp -status returned %d:\n%s"%(ret, err))
 
         data = {'ip': [], 'mem': {}, 'cpu': {}}
 
@@ -224,15 +224,15 @@ class ContainerSrp(BaseContainer):
 
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("srp -status returned %d:\n%s"%(ret, err))
+            raise ex.Error("srp -status returned %d:\n%s"%(ret, err))
         lines = out.split('\n')
         if len(lines) < 2:
-            raise ex.excError("srp -status output too short:\n%s"%out)
+            raise ex.Error("srp -status output too short:\n%s"%out)
         l = lines[1].split()
         if l[0] != self.name:
-            raise ex.excError("srp -status second line, first entry does not match container name")
+            raise ex.Error("srp -status second line, first entry does not match container name")
         if len(l) != 5:
-            raise ex.excError("unexpected number of entries in %s"%str(l))
+            raise ex.Error("unexpected number of entries in %s"%str(l))
         _type, _state, _subtype, _rootpath = l[1:]
         return {
           'type': l[1],
@@ -262,7 +262,7 @@ class ContainerSrp(BaseContainer):
     def check_manual_boot(self):
         try:
             val = self.get_verbose_list()['init.autostart']
-        except ex.excError:
+        except ex.Error:
             return False
         if val == 'yes' or val == '1':
             return False
@@ -282,17 +282,17 @@ class ContainerSrp(BaseContainer):
 
     def container_import(self):
         if not os.path.exists(self.export_file):
-            raise ex.excError("%s does not exist"%self.export_file)
+            raise ex.Error("%s does not exist"%self.export_file)
         cmd = ['srp', '-batch', '-import', '-xfile', self.export_file, 'allow_sw_mismatch=yes', 'autostart=no']
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
     def container_export(self):
         cmd = ['srp', '-batch', '-export', self.name, '-xfile', self.export_file]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
 
     @lazy
@@ -314,7 +314,7 @@ class ContainerSrp(BaseContainer):
 
     def lookup(self, ip):
         if ip is None:
-            raise ex.excError("the ip provisioning keyword is not set")
+            raise ex.Error("the ip provisioning keyword is not set")
 
         try:
             int(ip[0])
@@ -330,7 +330,7 @@ class ContainerSrp(BaseContainer):
             ip = a[0][-1][0]
             return ip
         except:
-            raise ex.excError("could not resolve %s to an ip address"%ip)
+            raise ex.Error("could not resolve %s to an ip address"%ip)
 
     def validate(self):
         # False triggers provisioner, True skip provisioner
@@ -391,7 +391,7 @@ class ContainerSrp(BaseContainer):
                'prm_cores='+str(self.prm_cores)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
         self.restart_fs()
 
     def provisioner(self):

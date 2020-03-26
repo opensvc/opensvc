@@ -77,7 +77,7 @@ def run_as_popen_kwargs(user):
     try:
         pw_record = pwd.getpwnam(user)
     except Exception as exc:
-        raise ex.excError("user lookup failure: %s" % str(exc))
+        raise ex.Error("user lookup failure: %s" % str(exc))
     user_name      = pw_record.pw_name
     user_home_dir  = pw_record.pw_dir
     user_uid  = pw_record.pw_uid
@@ -126,7 +126,7 @@ class TaskHost(BaseTask):
         try:
             self.action_triggers("", "command", **kwargs)
             self.write_last_run_retcode(0)
-        except ex.excError:
+        except ex.Error:
             self.write_last_run_retcode(1)
             if self.on_error:
                 kwargs["blocking"] = False

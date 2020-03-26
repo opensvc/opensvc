@@ -72,7 +72,7 @@ class Fs(BaseFs):
         cmd = ['mount']+fstype+mntopt+[self.device, self.mount_point]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.can_rollback = True
 
     def stop(self):
@@ -84,7 +84,7 @@ class Fs(BaseFs):
             if ret == 0: break
         if ret != 0:
             self.log.error('failed to umount %s'%self.mount_point)
-            raise ex.excError
+            raise ex.Error
 
     def lv_name(self):
         return os.path.basename(self.device)

@@ -15,6 +15,6 @@ class Cloud(object):
         try:
             nodes = self.driver.list_nodes()
         except socket.error as e:
-            raise ex.excError("error connecting to %s cloud url (%s)"%(self.cid, str(e)))
+            raise ex.Error("error connecting to %s cloud url (%s)"%(self.cid, str(e)))
         return nodes
 

@@ -43,7 +43,7 @@ class Module(object):
         #if len(match) == 0:
         #    raise ex.InitError('module %s not found in %s'%(name, comp_dir))
         if len(match) > 1:
-            raise ex.excError('module %s matches too many entries in %s'%(name,
+            raise ex.Error('module %s matches too many entries in %s'%(name,
                               comp_dir))
         if len(match) == 1:
             self.init_module_exe(match[0])
@@ -70,7 +70,7 @@ class Module(object):
             statinfo = os.stat(loc)
             mode = statinfo[ST_MODE]
             if statinfo.st_uid != 0 or statinfo.st_gid not in (0,2,3,4):
-                raise ex.excError('%s is not owned by root. security hazard.'%(loc))
+                raise ex.Error('%s is not owned by root. security hazard.'%(loc))
             if not S_ISREG(mode):
                 continue
             if not is_exe(loc):
@@ -328,9 +328,9 @@ class Module(object):
             fo.close()
             fe.close()
             if e.errno == 2:
-                raise ex.excError("%s execution error (File not found or bad interpreter)"%cmd[0])
+                raise ex.Error("%s execution error (File not found or bad interpreter)"%cmd[0])
             elif e.errno == 8:
-                raise ex.excError("%s execution error (Exec format error)"%cmd[0])
+                raise ex.Error("%s execution error (Exec format error)"%cmd[0])
             else:
                 raise
         fo.close()
@@ -460,7 +460,7 @@ class Compliance(object):
 
     def init(self):
         if self.options.moduleset != "" and self.options.module != "":
-            raise ex.excError('--moduleset and --module are exclusive')
+            raise ex.Error('--moduleset and --module are exclusive')
 
         if len(self.options.moduleset) != "" and \
            hasattr(self.options, "attach") and self.options.attach:
@@ -470,13 +470,13 @@ class Compliance(object):
             try:
                 self.data = self.get_comp_data()
             except Exception as e:
-                raise ex.excError(str(e))
+                raise ex.Error(str(e))
             if self.data is None:
-                raise ex.excError("could not fetch compliance data from the collector")
+                raise ex.Error("could not fetch compliance data from the collector")
             if "ret" in self.data and self.data["ret"] == 1:
                 if "msg" in self.data:
-                    raise ex.excError(self.data["msg"])
-                raise ex.excError("could not fetch compliance data from the collector")
+                    raise ex.Error(self.data["msg"])
+                raise ex.Error("could not fetch compliance data from the collector")
             modulesets = []
             if self.options.moduleset != "":
                 # purge unspecified modulesets
@@ -503,7 +503,7 @@ class Compliance(object):
                     if len(in_modsets) == 0:
                         print("module %s not found in any attached moduleset" % module)
                     elif len(in_modsets) > 1:
-                        raise ex.excError("module %s found in multiple attached moduleset (%s). Use --moduleset instead of --module to clear the ambiguity" % (module, ', '.join(in_modsets)))
+                        raise ex.Error("module %s found in multiple attached moduleset (%s). Use --moduleset instead of --module to clear the ambiguity" % (module, ', '.join(in_modsets)))
 
         self.module = self.merge_moduleset_modules()
         self.ruleset = self.data['rulesets']
@@ -554,7 +554,7 @@ class Compliance(object):
         else:
             moduleset = self.node.collector.call('comp_get_data_moduleset')
         if moduleset is None:
-            raise ex.excError('could not fetch moduleset')
+            raise ex.Error('could not fetch moduleset')
         return moduleset
 
     def get_ruleset(self):
@@ -569,13 +569,13 @@ class Compliance(object):
         else:
             ruleset = self.node.collector.call('comp_get_ruleset')
         if ruleset is None:
-            raise ex.excError('could not fetch ruleset')
+            raise ex.Error('could not fetch ruleset')
         return ruleset
 
     def get_ruleset_md5(self, rset_md5):
         ruleset = self.node.collector.call('comp_get_ruleset_md5', rset_md5)
         if ruleset is None:
-            raise ex.excError('could not fetch ruleset')
+            raise ex.Error('could not fetch ruleset')
         return ruleset
 
     def str_ruleset(self):
@@ -723,7 +723,7 @@ class Compliance(object):
             did_something = True
             self._compliance_detach_ruleset(self.options.ruleset.split(','))
         if not did_something:
-            raise ex.excError('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
+            raise ex.Error('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
 
     def compliance_attach(self):
         did_something = False
@@ -736,7 +736,7 @@ class Compliance(object):
             did_something = True
             self._compliance_attach_ruleset(self.options.ruleset.split(','))
         if not did_something:
-            raise ex.excError('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
+            raise ex.Error('no moduleset nor ruleset specified. use --moduleset and/or --ruleset')
 
     def _compliance_attach_moduleset(self, modulesets):
         err = False
@@ -753,7 +753,7 @@ class Compliance(object):
                 err = True
             print(d['msg'])
         if err:
-            raise ex.excError()
+            raise ex.Error()
 
     def _compliance_detach_moduleset(self, modulesets):
         err = False
@@ -770,7 +770,7 @@ class Compliance(object):
                 err = True
             print(d['msg'])
         if err:
-            raise ex.excError()
+            raise ex.Error()
 
     def _compliance_attach_ruleset(self, rulesets):
         err = False
@@ -787,7 +787,7 @@ class Compliance(object):
                 err = True
             print(d['msg'])
         if err:
-            raise ex.excError()
+            raise ex.Error()
 
     def _compliance_detach_ruleset(self, rulesets):
         err = False
@@ -804,7 +804,7 @@ class Compliance(object):
                 err = True
             print(d['msg'])
         if err:
-            raise ex.excError()
+            raise ex.Error()
 
     @formatter
     def compliance_show_status(self):
@@ -843,7 +843,7 @@ class Compliance(object):
         if l is None:
             return
         if isinstance(l, dict) and l.get("ret", 0) != 0:
-            raise ex.excError(l.get("msg", ""))
+            raise ex.Error(l.get("msg", ""))
         print('\n'.join(l))
 
     def compliance_list_module(self):

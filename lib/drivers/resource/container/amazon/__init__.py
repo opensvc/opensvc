@@ -93,7 +93,7 @@ class ContainerAmazon(BaseContainer):
         for k in kf:
             if os.path.exists(k):
                 return k
-        raise ex.excError("key file for key name '%s' not found"%self.key_name)
+        raise ex.Error("key file for key name '%s' not found"%self.key_name)
 
     def rcp_from(self, src, dst):
         if self.guestos == "windows":
@@ -103,7 +103,7 @@ class ContainerAmazon(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable ip to send files to')
+            raise ex.Error('no usable ip to send files to')
 
         timeout = 5
         cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
@@ -112,7 +112,7 @@ class ContainerAmazon(BaseContainer):
                         self.addr+':'+src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
@@ -123,7 +123,7 @@ class ContainerAmazon(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable ip to send files to')
+            raise ex.Error('no usable ip to send files to')
 
         timeout = 5
         cmd = [ 'scp', '-o', 'StrictHostKeyChecking=no',
@@ -132,7 +132,7 @@ class ContainerAmazon(BaseContainer):
                         src, self.addr+':'+dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcmd(self, cmd):
@@ -143,7 +143,7 @@ class ContainerAmazon(BaseContainer):
 
         self.getaddr()
         if self.addr is None:
-            raise ex.excError('no usable ip to send command to')
+            raise ex.Error('no usable ip to send command to')
 
         if type(cmd) == str:
             cmd = cmd.split(" ")
@@ -158,20 +158,20 @@ class ContainerAmazon(BaseContainer):
                         self.addr] + cmd
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def get_subnet(self):
         for subnet in self.cloud.driver.ex_list_subnets():
             if subnet.name == self.subnet_name:
                 return subnet
-        raise ex.excError("%s subnet not found"%self.subnet_name)
+        raise ex.Error("%s subnet not found"%self.subnet_name)
 
     def get_size(self):
         for size in self.cloud.driver.list_sizes():
             if size.id == self.size_id:
                 return size
-        raise ex.excError("%s size not found"%self.size_id)
+        raise ex.Error("%s size not found"%self.size_id)
 
     @lazy
     def cloud(self):
@@ -192,7 +192,7 @@ class ContainerAmazon(BaseContainer):
             if image.id == image_id:
                 # exact match
                 return image
-        raise ex.excError("image %s not found" % image_id)
+        raise ex.Error("image %s not found" % image_id)
 
     def has_image(self, image_id):
         l = self.cloud.driver.list_images([image_id])
@@ -209,7 +209,7 @@ class ContainerAmazon(BaseContainer):
             return
         n = self.get_node()
         if n is None:
-            raise ex.excError("could not get node details")
+            raise ex.Error("could not get node details")
         ips = set(n.public_ips+n.private_ips)
         if len(ips) == 0:
             return 0
@@ -255,7 +255,7 @@ class ContainerAmazon(BaseContainer):
         try:
             from libcloud.compute.types import NodeState
         except ImportError:
-            raise ex.excError("missing required module libcloud.compute.types")
+            raise ex.Error("missing required module libcloud.compute.types")
         n = self.get_node()
         if n is None:
             self.provision()
@@ -277,14 +277,14 @@ class ContainerAmazon(BaseContainer):
             self.log.info("wait for container up status")
             self.wait_for_fn(self.is_up, self.start_timeout, 5)
             return
-        raise ex.excError("don't know what to do with node in state: %s"%NodeState().tostring(n.state))
+        raise ex.Error("don't know what to do with node in state: %s"%NodeState().tostring(n.state))
 
     def container_reboot(self):
         n = self.get_node()
         try:
             self.cloud.driver.reboot_node(n)
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
     def wait_for_startup(self):
         pass
@@ -296,7 +296,7 @@ class ContainerAmazon(BaseContainer):
         try:
             self.container_stop()
             self.wait_for_shutdown()
-        except ex.excError:
+        except ex.Error:
             self.container_forcestop()
             self.wait_for_shutdown()
 
@@ -320,7 +320,7 @@ class ContainerAmazon(BaseContainer):
         try:
             from libcloud.compute.types import NodeState
         except ImportError:
-            raise ex.excError("missing required module libcloud.compute.types")
+            raise ex.Error("missing required module libcloud.compute.types")
         n = self.get_node()
         if n is not None and n.state == NodeState().RUNNING:
             return True
@@ -362,7 +362,7 @@ class ContainerAmazon(BaseContainer):
             self.log.error("the key_name keyword is mandatory for the provision action")
             prereq &= False
         if not prereq:
-            raise ex.excError()
+            raise ex.Error()
 
         image = self.get_image(self.image_id)
         size = self.get_size()

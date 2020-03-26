@@ -279,7 +279,7 @@ class Arrays(object):
 
             symcfg = os.path.join(symcli_path, "symcfg")
             if which(symcfg) is None:
-                raise ex.excError('can not find symcfg in %s' % symcli_path)
+                raise ex.Error('can not find symcfg in %s' % symcli_path)
 
             out, err, ret = justcall([symcfg, 'list', '-sid', name, '-output', 'xml_element'])
             if ret != 0:
@@ -540,7 +540,7 @@ class SymMixin(object):
     def list_tdevs(self, dev=None, **kwargs):
         try:
             dev = self.resolve_dev(dev)
-        except ex.excError:
+        except ex.Error:
             dev = None
         self.load_names()
         data = self.get_tdevs(dev)
@@ -561,7 +561,7 @@ class SymMixin(object):
     def list_views(self, dev=None, **kwargs):
         try:
             dev = self.resolve_dev(dev)
-        except ex.excError:
+        except ex.Error:
             dev = None
         if dev is None:
             print(json.dumps(self.get_views(), indent=4))
@@ -967,7 +967,7 @@ class Vmax(SymMixin):
             with open(fpath, "w") as tmpf:
                 tmpf.write(content)
         except (OSError, IOError) as exc:
-            raise ex.excError("failed to write temp file: %s" % str(exc))
+            raise ex.Error("failed to write temp file: %s" % str(exc))
         return fpath
 
     def add_tdev(self, name=None, size=None, srdf=False, rdfg=None, **kwargs):
@@ -991,14 +991,14 @@ class Vmax(SymMixin):
         """
 
         if size is None:
-            raise ex.excError("The '--size' parameter is mandatory")
+            raise ex.Error("The '--size' parameter is mandatory")
         size = convert_size(size, _to="MB")
         _cmd = "create dev count=1, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV" % size
 
         if srdf and rdfg:
             _cmd += ", config=RDF1+TDEV, remote_config=RDF2+TDEV, ra_group=%s" % str(rdfg)
         elif srdf and rdfg is None:
-            raise ex.excError("--srdf is specified but --rdfg is not")
+            raise ex.Error("--srdf is specified but --rdfg is not")
         else:
             _cmd += ", config=TDEV"
 
@@ -1008,7 +1008,7 @@ class Vmax(SymMixin):
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         """
             out contains:
             ...
@@ -1020,13 +1020,13 @@ class Vmax(SymMixin):
             if line.startswith("New symdev:"):
                 l = line.split()
                 if len(l) < 3:
-                    raise ex.excError("unable to determine the created SymDevName")
+                    raise ex.Error("unable to determine the created SymDevName")
                 dev = l[2]
                 if srdf:
                     self.set_mode(dev)
                 data = self.get_sym_dev_wwn(dev)[0]
                 return data
-        raise ex.excError("unable to determine the created SymDevName")
+        raise ex.Error("unable to determine the created SymDevName")
 
     def remote_dev_id(self, dev):
         data = self.get_dev_rdf(dev)
@@ -1035,10 +1035,10 @@ class Vmax(SymMixin):
     def get_dev_rdf(self, dev):
         data = self.get_sym_dev_show(dev)
         if len(data) != 1:
-            raise ex.excError("device %s does not exist" % dev)
+            raise ex.Error("device %s does not exist" % dev)
         data = data[0]
         if "RDF" not in data or "Local" not in data["RDF"] or "Remote" not in data["RDF"]:
-            raise ex.excError("device %s is not handled by srdf" % dev)
+            raise ex.Error("device %s is not handled by srdf" % dev)
         return data["RDF"]
 
     def write_dev_pairfile(self, dev, rdev):
@@ -1057,24 +1057,24 @@ class Vmax(SymMixin):
         out, err, ret = self.symrdf(cmd, xml=False, log=True)
         os.unlink(fpath)
         if ret != 0:
-            raise ex.excError(out+err)
+            raise ex.Error(out+err)
 
     def createpair(self, pair=None, rdfg=None, srdf_mode=None, srdf_type=None, invalidate=None, **kwargs):
         if pair is None:
-            raise ex.excError("the --pair argument is mandatory")
+            raise ex.Error("the --pair argument is mandatory")
         if srdf_type is None:
-            raise ex.excError("the --srdf-type argument is mandatory")
+            raise ex.Error("the --srdf-type argument is mandatory")
         if srdf_mode is None:
-            raise ex.excError("the --srdf-mode argument is mandatory")
+            raise ex.Error("the --srdf-mode argument is mandatory")
         if pair.count(":") != 1:
-            raise ex.excError("misformatted pair %s" % pair)
+            raise ex.Error("misformatted pair %s" % pair)
         dev, rdev = pair.split(":")
         try:
             rdf_data = self.get_dev_rdf(dev)
-        except ex.excError:
+        except ex.Error:
             rdf_data = None
         if rdf_data is not None:
-            raise ex.excError("dev %s is already is in a RDF relation" % dev)
+            raise ex.Error("dev %s is already is in a RDF relation" % dev)
         fpath = self.write_dev_pairfile(dev, rdev)
         cmd = ["-f", fpath, "-rdfg", rdfg, "createpair", "-noprompt", "-rdf_mode", srdf_mode, "-type", srdf_type]
         if invalidate in ("R1", "R2"):
@@ -1084,14 +1084,14 @@ class Vmax(SymMixin):
         out, err, ret = self.symrdf(cmd, xml=False, log=True)
         if ret != 0:
             os.unlink(fpath)
-            raise ex.excError(out+err)
+            raise ex.Error(out+err)
         os.unlink(fpath)
 
     def deletepair(self, dev=None, **kwargs):
         dev = self.resolve_dev(dev)
         try:
             data = self.get_dev_rdf(dev)
-        except ex.excError:
+        except ex.Error:
             return
         rdfg = data["Local"]["ra_group_num"]
         rdev = data["Remote"]["dev_name"]
@@ -1101,36 +1101,36 @@ class Vmax(SymMixin):
             out, err, ret = self.symrdf(cmd, xml=False, log=True)
             if ret != 0:
                 os.unlink(fpath)
-                raise ex.excError(out+err)
+                raise ex.Error(out+err)
         cmd = ["-f", fpath, "-rdfg", rdfg, "deletepair", "-noprompt", "-force"]
         out, err, ret = self.symrdf(cmd, xml=False, log=True)
         if ret != 0:
             os.unlink(fpath)
-            raise ex.excError(out+err)
+            raise ex.Error(out+err)
         os.unlink(fpath)
         return data
 
     def rename_disk(self, dev=None, name=None, **kwargs):
         dev = self.resolve_dev(dev)
         if dev is None:
-            raise ex.excError("--dev is mandatory")
+            raise ex.Error("--dev is mandatory")
         if name is None:
-            raise ex.excError("--name is mandatory")
+            raise ex.Error("--name is mandatory")
         _cmd = "set dev %s device_name='%s';" % (dev, name)
         cmd = ["-cmd", _cmd, "commit", "-noprompt"]
         out, err, ret = self.symconfigure(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def resize_disk(self, dev=None, size=None, force=False, **kwargs):
         dev = self.resolve_dev(dev)
         if dev is None:
-            raise ex.excError("The '--dev' parameter is mandatory")
+            raise ex.Error("The '--dev' parameter is mandatory")
         if size is None:
-            raise ex.excError("The '--size' parameter is mandatory")
+            raise ex.Error("The '--size' parameter is mandatory")
         dev_data = self.get_sym_dev_show(dev)
         if len(dev_data) != 1:
-            raise ex.excError("device %s does not exist" % dev)
+            raise ex.Error("device %s does not exist" % dev)
         dev_data = dev_data[0]
         current_size = int(dev_data["Capacity"]["megabytes"])
         if size.startswith("+"):
@@ -1139,7 +1139,7 @@ class Vmax(SymMixin):
         else:
             size = str(convert_size(size, _to="MB"))
         if not force and int(size) < current_size:
-            raise ex.excError("the target size is smaller than the current "
+            raise ex.Error("the target size is smaller than the current "
                               "size. refuse to process. use --force if you "
                               "accept the data loss risk.")
         if "RDF" in dev_data:
@@ -1155,7 +1155,7 @@ class Vmax(SymMixin):
             cmd += ["-rdfg", rdf_data["Local"]["ra_group_num"]]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         results = {
             "driver_data": {
                 "pair_deleted": deleted,
@@ -1168,7 +1168,7 @@ class Vmax(SymMixin):
     def del_tdev(self, dev=None, **kwargs):
         dev = self.resolve_dev(dev)
         if dev is None:
-            raise ex.excError("The '--dev' parameter is mandatory")
+            raise ex.Error("The '--dev' parameter is mandatory")
         data = self.get_sym_dev_wwn(dev)
         if len(data) == 0:
             self.log.info("%s does not exist", dev)
@@ -1177,21 +1177,21 @@ class Vmax(SymMixin):
         cmd = ["delete", dev, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.del_diskinfo(data["wwn"])
 
     def resolve_dev(self, dev):
         if dev and len(dev) > 6:
             dev = self.wwn_to_dev(dev)
         if dev is None:
-            raise ex.excError("dev not found")
+            raise ex.Error("dev not found")
         return dev
 
     def del_disk(self, dev=None, **kwargs):
         dev = self.resolve_dev(dev)
         try:
             rdf_data = self.get_dev_rdf(dev)
-        except ex.excError as exc:
+        except ex.Error as exc:
             self.log.info("rdf data: %s", exc)
             rdf_data = None
         self.set_dev_ro(dev)
@@ -1203,10 +1203,10 @@ class Vmax(SymMixin):
             try:
                 self.del_tdev(dev=dev, **kwargs)
                 break
-            except ex.excError as exc:
+            except ex.Error as exc:
                 if "A free of all allocations is required" in str(exc):
                     if retry == 1:
-                        raise ex.excError("dev %s is still not free of all allocations after 5 tries")
+                        raise ex.Error("dev %s is still not free of all allocations after 5 tries")
                     # retry
                     retry -= 1
                     time.sleep(5)
@@ -1257,7 +1257,7 @@ class Vmax(SymMixin):
         out, err, ret = self.symcfg(["verify", "-tdevs", "-devs", dev, status], xml=False)
         outv = out.strip().split()
         if len(outv) == 0:
-            raise ex.excError("unexpected verify output: %s" % out+err)
+            raise ex.Error("unexpected verify output: %s" % out+err)
         if outv[0] == "None":
             self.log.info("device %s is not %s", dev, status)
             return False
@@ -1354,7 +1354,7 @@ class Vmax(SymMixin):
 
     def _add_map(self, dev=None, mappings=None, slo=None, srp=None, sg=None, **kwargs):
         if dev is None:
-            raise ex.excError("--dev is mandatory")
+            raise ex.Error("--dev is mandatory")
         if sg is None:
             sg = self.mappings_to_sg(mappings, slo, srp)
         self.add_tdev_to_sg(dev, sg)
@@ -1378,10 +1378,10 @@ class Vmax(SymMixin):
             return
         sgs = self.translate_mappings(mappings)
         if len(sgs) == 0:
-            raise ex.excError("no storage group found for the requested mappings")
+            raise ex.Error("no storage group found for the requested mappings")
         sgs = self.filter_sgs(sgs, srp=srp, slo=slo)
         if len(sgs) == 0:
-            raise ex.excError("no storage group found for the requested mappings")
+            raise ex.Error("no storage group found for the requested mappings")
         narrowest = self.narrowest_sg(sgs)
         self.log.info("candidates sgs: %s, retain: %s", str(sgs), narrowest)
         return narrowest
@@ -1394,7 +1394,7 @@ class Vmax(SymMixin):
         try:
             ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in ret:
             self.log.error("failed to delete the disk object in the collector: %s", ret["error"])
         return ret
@@ -1413,9 +1413,9 @@ class Vmax(SymMixin):
                 "disk_group": srp,
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(ret["error"])
+            raise ex.Error(ret["error"])
         return ret
 
 
@@ -1436,9 +1436,9 @@ def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
     array = o.get_array(array_name)
     if array is None:
-        raise ex.excError("array %s not found" % array_name)
+        raise ex.Error("array %s not found" % array_name)
     if not hasattr(array, action):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
     array.node = node
     node.logger.handlers[1].setLevel(logging.CRITICAL)
     ret = getattr(array, action)(**kwargs)
@@ -1458,7 +1458,7 @@ def main(argv, node=None):
 if __name__ == "__main__":
     try:
         main(sys.argv)
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         sys.exit(1)
 

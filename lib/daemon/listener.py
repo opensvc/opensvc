@@ -920,7 +920,7 @@ class ClientHandler(shared.OsvcThread):
         self.last_auth = None
         self.usr_cf_sum = None
         self.same_auth = lambda h: False
-        raise ex.excError("refused %s auth" % str(self.addr))
+        raise ex.Error("refused %s auth" % str(self.addr))
 
     @lazy
     def jwt_provider_keys(self):
@@ -934,29 +934,29 @@ class ClientHandler(shared.OsvcThread):
 
     def authenticate_client_basic(self, authorization=None):
         if not authorization:
-            raise ex.excError("no authorization header key")
+            raise ex.Error("no authorization header key")
         buff = authorization[6:].strip()
         buff = base64.b64decode(buff)
         name, password = bdecode(buff).split(":", 1)
         usr = factory("usr")(name, namespace="system", volatile=True, log=self.log)
         if not usr.exists():
-            raise ex.excError("user %s does not exist" % name)
+            raise ex.Error("user %s does not exist" % name)
         if not usr.has_key("password"):
-            raise ex.excError("user %s has no password key" % name)
+            raise ex.Error("user %s has no password key" % name)
         if password != usr.decode_key("password"):
-            raise ex.excError("user %s authentication failed: wrong password" % name)
+            raise ex.Error("user %s authentication failed: wrong password" % name)
         return usr
 
     def authenticate_client_jwt(self, authorization=None):
         if not authorization:
-            raise ex.excError("no authorization header key")
+            raise ex.Error("no authorization header key")
         if not has_jwt:
-            raise ex.excError("jwt is disabled (import error)")
+            raise ex.Error("jwt is disabled (import error)")
         token = authorization[7:].strip()
         try:
             header = jwt.get_unverified_header(token)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         key_id = header['kid']
         algorithm = header['alg']
         public_key = self.jwt_provider_keys[key_id]
@@ -972,22 +972,22 @@ class ClientHandler(shared.OsvcThread):
 
     def authenticate_client_secret(self, secret=None):
         if not secret:
-            raise ex.excError("no secret header key")
+            raise ex.Error("no secret header key")
         if self.blacklisted(self.addr[0]):
-            raise ex.excError("sender %s is blacklisted" % self.addr[0])
+            raise ex.Error("sender %s is blacklisted" % self.addr[0])
         if bdecode(self.cluster_key) == secret:
             # caller will set self.usr to False, meaning superuser
             return False
         self.blacklist(self.addr[0])
-        raise ex.excError("wrong secret")
+        raise ex.Error("wrong secret")
 
     def authenticate_client_x509(self):
         try:
             cert = self.tls_conn.getpeercert()
         except Exception as exc:
-            raise ex.excError("x509 auth: getpeercert failed")
+            raise ex.Error("x509 auth: getpeercert failed")
         if cert is None:
-            raise ex.excError("x509 auth: no client certificate received")
+            raise ex.Error("x509 auth: no client certificate received")
         subject = dict(x[0] for x in cert['subject'])
         cn = subject["commonName"]
         if "." in cn:
@@ -998,7 +998,7 @@ class ClientHandler(shared.OsvcThread):
             usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
         if not usr or not usr.exists():
             self.conn.close()
-            raise ex.excError("x509 auth failed: %s (valid cert, unknown user)" % cn)
+            raise ex.Error("x509 auth failed: %s (valid cert, unknown user)" % cn)
         return usr
 
     def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):
@@ -1127,7 +1127,7 @@ class ClientHandler(shared.OsvcThread):
             self.authenticate_client(headers)
             self.parent.stats.sessions.auth_validated += 1
             self.parent.stats.sessions.clients[self.addr[0]].auth_validated += 1
-        except ex.excError:
+        except ex.Error:
             if handler.access:
                 status = 401
                 result = {"status": status, "error": "Not Authorized"}
@@ -1141,7 +1141,7 @@ class ClientHandler(shared.OsvcThread):
         except ex.HTTP as exc:
             status = exc.status
             result = {"status": exc.status, "error": exc.msg}
-        except ex.excError as exc:
+        except ex.Error as exc:
             status = 400
             result = {"status": status, "error": str(exc)}
         except Exception as exc:
@@ -1369,7 +1369,7 @@ class ClientHandler(shared.OsvcThread):
             result = self.router(nodename, data)
         except DontClose:
             raise
-        except ex.excError as exc:
+        except ex.Error as exc:
             result = {"status": 400, "error": str(exc)}
         except ex.HTTP as exc:
             result = {"status": exc.status, "error": exc.msg}
@@ -1594,7 +1594,7 @@ class ClientHandler(shared.OsvcThread):
                 except ex.HTTP as exc:
                     status = exc.status
                     _result = {"status": exc.status, "error": exc.msg}
-                except ex.excError as exc:
+                except ex.Error as exc:
                     status = 400
                     _result = {"status": status, "error": str(exc)}
                 except Exception as exc:

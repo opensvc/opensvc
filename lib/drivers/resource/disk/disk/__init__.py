@@ -139,7 +139,7 @@ class DiskDisk(Resource):
             name += "." + rcEnv.nodename
             result = pool.create_disk(name, size=size, nodes=[rcEnv.nodename])
         if not result:
-            raise ex.excError("invalid create disk result: %s" % result)
+            raise ex.Error("invalid create disk result: %s" % result)
         for line in format_str_flat_json(result).splitlines():
             self.log.info(line)
         changes = []
@@ -150,7 +150,7 @@ class DiskDisk(Resource):
             disk_id = result["disk_id"]
             changes.append("%s.%s=%s" % (self.rid, disk_id_kw, disk_id))
         else:
-            raise ex.excError("no disk id found in result")
+            raise ex.Error("no disk id found in result")
         self.log.info("changes: %s", changes)
         self.svc.set_multi(changes, validation=False)
         self.log.info("changes applied")

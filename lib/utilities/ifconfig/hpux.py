@@ -40,7 +40,7 @@ class Ifconfig(BaseIfconfig):
             if "no such interface" in out[1]:
                 continue
             elif p.returncode != 0:
-                raise ex.excError
+                raise ex.Error
             self.parse(out[0])
 
     def parse(self, out):
@@ -86,7 +86,7 @@ class Ifconfig(BaseIfconfig):
                         int(w[6:8], 16)
                     )
                 else:
-                    raise ex.excError("malformed ifconfig %s netmask: %s"%(intf, w))
+                    raise ex.Error("malformed ifconfig %s netmask: %s"%(intf, w))
             elif 'inet' == prev:
                 i.ipaddr = w
             elif 'inet6' == prev:

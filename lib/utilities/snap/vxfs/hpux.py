@@ -58,7 +58,7 @@ class Snap(utilities.snap.Snap):
     def snapdestroykey(self, s):
         if protected_mount(self.snaps[s]['snap_mnt']):
             self.log.error("the snapshot is no longer mounted in %s. panic."%self.snaps[s]['snap_mnt'])
-            raise ex.excError
+            raise ex.Error
 
         """ fuser on HP-UX outs to stderr ...
         """

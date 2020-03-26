@@ -115,7 +115,7 @@ class SyncSymsrdfs(Sync):
         cmd = ["syminq", "-identifier", "device_name", "-output", "xml_e"]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         xml = XML(out)
         for e in xml.findall("Inquiry/Dev_Info"):
             pd_name = e.find("pd_name").text
@@ -150,7 +150,7 @@ class SyncSymsrdfs(Sync):
                '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         devs = []
         xml = XML(out)
         for e in xml.findall("DG/Device/Dev_Info"):
@@ -211,7 +211,7 @@ class SyncSymsrdfs(Sync):
         cmd = ["/usr/symcli/bin/symdev", "list", "-output", "xml_e", "-sid", self.symid, "-devs", ",".join(devs), "-v"]
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         tree = XML(out)
         mapping = []
         for dev in tree.findall("Symmetrix/Device"):
@@ -237,7 +237,7 @@ class SyncSymsrdfs(Sync):
                '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def do_rdf_dgexport(self):
@@ -250,7 +250,7 @@ class SyncSymsrdfs(Sync):
                '-rdf', '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def do_dgremove(self):
@@ -258,7 +258,7 @@ class SyncSymsrdfs(Sync):
                '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     def is_dgimport_needed(self):
@@ -279,7 +279,7 @@ class SyncSymsrdfs(Sync):
         cmd = ['symdg', 'import', self.symdg, '-f', ef, '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     @lazy
@@ -302,7 +302,7 @@ class SyncSymsrdfs(Sync):
             l = symdev.split(':')
             if len(l) != 2:
                 self.log.error("symdevs must be in symid:symdev ... format")
-                raise ex.excError
+                raise ex.Error
             self.symdev[l[0],l[1]] = dict(symid=l[0], symdev=l[1])
 
     @lazy
@@ -311,7 +311,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), 'query', '-output', 'xml_e']
         ret, out, err = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd))
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd))
         return out
 
     def dg_query(self):
@@ -319,7 +319,7 @@ class SyncSymsrdfs(Sync):
                '-i', '15', '-c', '4']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         return out
 
     # browse local device groups and build dict with list
@@ -375,7 +375,7 @@ class SyncSymsrdfs(Sync):
                '-output', 'xml_e']
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         self.rdfpairs = {}   # remote_symm;remote_dev;rdfg
         self.xmldg = XML(out)
@@ -492,7 +492,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'resume', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def suspend(self):
@@ -500,7 +500,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'suspend', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def establish(self):
@@ -508,7 +508,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'establish', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def failover(self):
@@ -516,7 +516,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'failover', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def failoverestablish(self):
@@ -525,7 +525,7 @@ class SyncSymsrdfs(Sync):
                '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError("Failed to run command %s"% ' '.join(cmd) )
+            raise ex.Error("Failed to run command %s"% ' '.join(cmd) )
         self.flush_cache()
 
     def split(self):
@@ -533,7 +533,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'split', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.flush_cache()
 
     def swap(self):
@@ -541,7 +541,7 @@ class SyncSymsrdfs(Sync):
                str(self.rdfg), '-noprompt', 'swap', '-i', '15', '-c', '4']
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.flush_cache()
 
     def get_syminfo(self):
@@ -560,7 +560,7 @@ class SyncSymsrdfs(Sync):
     def sync_status(self, verbose=False):
         try:
             self.get_syminfo()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         state = self.get_dg_state()
@@ -608,12 +608,12 @@ class SyncSymsrdfs(Sync):
                 elif self.is_split_state():
                     self.log.info("symrdf dg %s is RDF2 and already splitted."%self.symdg)
                 else:
-                    raise ex.excError("symrdf dg %s is RDF2 on drp node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
+                    raise ex.Error("symrdf dg %s is RDF2 on drp node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
             elif self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
                     pass
                 else:
-                    raise ex.excError("symrdf dg %s is RDF1 on drp node, you have to manually return to a sane SRDF status.")
+                    raise ex.Error("symrdf dg %s is RDF1 on drp node, you have to manually return to a sane SRDF status.")
         elif rcEnv.nodename in self.svc.nodes:
             if self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
@@ -621,13 +621,13 @@ class SyncSymsrdfs(Sync):
                 elif self.is_partitioned_state():
                     self.log.warning("symrdf dg %s is RDF1 and partitioned."%self.symdg)
                 elif self.is_failedover_state():
-                    raise ex.excError("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie losing R2 data), or syncfailback (ie losing R1 data)"%self.symdg)
+                    raise ex.Error("symrdf dg %s is RDF1 and write protected, you have to manually run either sync_split+sync_establish (ie losing R2 data), or syncfailback (ie losing R1 data)"%self.symdg)
                 elif self.is_suspend_state():
                     self.log.warning("symrdf dg %s is RDF1 and suspended."%self.symdg)
                 elif self.is_split_state():
                     self.log.warning("symrdf dg %s is RDF1 and splitted."%self.symdg)
                 else:
-                    raise ex.excError("symrdf dg %s is RDF1 on primary node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
+                    raise ex.Error("symrdf dg %s is RDF1 on primary node and unexpected SRDF state, you have to manually return to a sane SRDF status.")
             elif self.is_rdf2_dg():         # start on metrocluster passive node
                 if self.is_synchronous_and_synchronized_state():
                     self.failoverestablish()
@@ -635,7 +635,7 @@ class SyncSymsrdfs(Sync):
                     self.log.warning("symrdf dg %s is RDF2 and partitioned, failover is preferred action."%self.symdg)
                     self.failover()
                 else:
-                    raise ex.excError("symrdf dg %s is RDF2 on primary node, you have to manually return to a sane SRDF status.")
+                    raise ex.Error("symrdf dg %s is RDF2 on primary node, you have to manually return to a sane SRDF status.")
         self.promote_devs_rw()
 
     def refresh_svcstatus(self):
