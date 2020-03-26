@@ -2,20 +2,21 @@ from __future__ import print_function
 
 import os
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
+from rcGlobalEnv import rcEnv
 from utilities.proc import justcall
+from .pool import BasePool
 
-class Pool(pool.Pool):
-    type = "loop"
+class Pool(BasePool):
+    type = "directory"
     capabilities = ["rox", "rwx", "roo", "rwo", "blk"]
 
     @lazy
     def path(self):
         return self.oget("path")
 
-    def translate(self, name=None, size=None, fmt=True, shared=False):
+    def translate_blk(self, name=None, size=None, shared=False):
         data = [
             {
                 "rtype": "disk",
@@ -24,8 +25,18 @@ class Pool(pool.Pool):
                 "size": size,
             }
         ]
-        if fmt:
-            data += self.add_fs(name, shared)
+        return data
+
+    def translate(self, name=None, size=None, fmt=True, shared=False):
+        if not fmt:
+            return self.translate_blk(name=name, size=size, shared=shared)
+        data = []
+        path = os.path.join(self.path, name)
+        data.append({
+            "rtype": "fs",
+            "type": "directory",
+            "path": path,
+        })
         return data
 
     def pool_status(self):
@@ -33,8 +44,8 @@ class Pool(pool.Pool):
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         data = {
-            "name": self.name,
             "type": self.type,
+            "name": self.name,
             "capabilities": self.capabilities,
         }
         cmd = ["df", "-P", self.path]
@@ -42,9 +53,9 @@ class Pool(pool.Pool):
         if ret != 0:
             return data
         l = out.splitlines()[-1].split()
-        data["free"] = convert_size(l[3], default_unit="K", _to="k")
-        data["used"] = convert_size(l[2], default_unit="K", _to="k")
-        data["size"] = convert_size(l[1], default_unit="K", _to="k")
+        data["free"] = int(l[3])
+        data["used"] = int(l[2])
+        data["size"] = int(l[1])
         data["head"] = self.path
         return data
 
