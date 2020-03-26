@@ -10,7 +10,7 @@ import utilities.devices.linux
 from .. import Sync, notify
 from converters import print_duration
 from rcGlobalEnv import rcEnv
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 

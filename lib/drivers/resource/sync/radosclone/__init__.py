@@ -3,7 +3,7 @@ import datetime
 import core.exceptions as ex
 import core.status
 from ..radossnap import SyncRadossnap
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"

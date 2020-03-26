@@ -4,7 +4,7 @@ import core.exceptions as ex
 from . import BASE_KEYWORDS
 from rcUtilities import cache, clear_cache
 from core.resource import Resource
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
