@@ -205,7 +205,7 @@ class DiskMd(BaseDisk):
                 devname = line.split()[1]
                 if os.path.exists(devname):
                     return devname
-        raise ex.excError("unable to find a devpath for md")
+        raise ex.Error("unable to find a devpath for md")
 
     def devname(self):
         if self.svc.namespace:
@@ -230,7 +230,7 @@ class DiskMd(BaseDisk):
         if ret == 2:
             self.log.info("no changes were made to the array")
         elif ret != 0:
-            raise ex.excError
+            raise ex.Error
         else:
             self.wait_for_fn(self.has_it, self.startup_timeout, 1, errmsg="waited too long for devpath creation")
 
@@ -238,12 +238,12 @@ class DiskMd(BaseDisk):
         cmd = [self.mdadm, "--stop", self.md_devpath()]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def detail(self):
         try:
             devpath = self.md_devpath()
-        except ex.excError as e:
+        except ex.Error as e:
             return "State : " + str(e)
         if not os.path.exists(devpath):
             return "State : devpath does not exist"
@@ -254,7 +254,7 @@ class DiskMd(BaseDisk):
         if ret != 0:
             if "does not appear to be active" in err:
                 return "State : md does not appear to be active"
-            raise ex.excError(err)
+            raise ex.Error(err)
         return out
 
     def detail_status(self):
@@ -323,7 +323,7 @@ class DiskMd(BaseDisk):
 
     def do_start(self):
         if self.uuid is None:
-            raise ex.excError("uuid is not set")
+            raise ex.Error("uuid is not set")
         self.auto_assemble_disable()
         if self.is_up():
             self.log.info("md %s is already assembled" % self.uuid)
@@ -360,7 +360,7 @@ class DiskMd(BaseDisk):
                 return set()
         try:
             devpath = self.md_devpath()
-        except ex.excError as e:
+        except ex.Error as e:
             return self.sub_devs_inactive()
         if os.path.exists(devpath):
             return self.sub_devs_active()
@@ -410,7 +410,7 @@ class DiskMd(BaseDisk):
 
         try:
             lines = self.detail().split("\n")
-        except ex.excError as e:
+        except ex.Error as e:
             return set()
 
         if len(lines) < 2:
@@ -447,7 +447,7 @@ class DiskMd(BaseDisk):
                 cmd = [self.mdadm, "--re-add", devpath, faultydev]
                 ret, out, err = self.vcall(cmd, warn_to_info=True)
                 if ret != 0:
-                    raise ex.excError("failed to re-add %s to %s"%(faultydev, devpath))
+                    raise ex.Error("failed to re-add %s to %s"%(faultydev, devpath))
                 added += 1
         if removed > added:
             self.log.error("no faulty device found to re-add to %s remaining "
@@ -462,7 +462,7 @@ class DiskMd(BaseDisk):
 
     def provisioner(self):
         if which("mdadm") is None:
-            raise ex.excError("mdadm is not installed")
+            raise ex.Error("mdadm is not installed")
 
         level = self.level
         devs = self.devs or self.oget("devs")
@@ -471,7 +471,7 @@ class DiskMd(BaseDisk):
         layout = self.layout
 
         if len(devs) == 0:
-            raise ex.excError("at least 2 devices must be set in the 'devs' provisioning parameter")
+            raise ex.Error("at least 2 devices must be set in the 'devs' provisioning parameter")
 
         # long md names cause a buffer overflow in mdadm
         name = self.devname()
@@ -494,7 +494,7 @@ class DiskMd(BaseDisk):
         out, err = bdecode(out).strip(), bdecode(err).strip()
         self.log.info(out)
         if proc.returncode != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.can_rollback = True
         if len(out) > 0:
             self.log.info(out)
@@ -517,7 +517,7 @@ class DiskMd(BaseDisk):
             line = line.strip()
             if line.startswith("UUID :"):
                 return line.split(" : ")[-1]
-        raise ex.excError("unable to determine md uuid")
+        raise ex.Error("unable to determine md uuid")
 
     def unprovisioner(self):
         if self.uuid == "" or self.uuid is None:

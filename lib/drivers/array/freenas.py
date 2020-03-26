@@ -469,13 +469,13 @@ class Freenas(object):
         path = "/services/iscsi/extent/%d" % extent_id
         response = self.delete(path)
         if response.status_code != 204:
-            raise ex.excError("delete error: %s (%d)" % (path, response.status_code))
+            raise ex.Error("delete error: %s (%d)" % (path, response.status_code))
 
     def add_iscsi_zvol_extent(self, name=None, size=None, volume=None,
                               insecure_tpc=True, blocksize=512, sparse=False, compression="inherit", **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         data = self.add_zvol(name=name, size=size, volume=volume, sparse=sparse, compression=compression, **kwargs)
         d = {
             "iscsi_target_extent_type": "Disk",
@@ -493,7 +493,7 @@ class Freenas(object):
                               insecure_tpc=True, blocksize=512, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         size = convert_size(size, _to="MiB")
         d = {
             "iscsi_target_extent_type": "File",
@@ -511,7 +511,7 @@ class Freenas(object):
                                     lun=None, **kwargs):
         for key in ["extent_id", "targets"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         target_ids = self.get_iscsi_target_ids(targets)
         if lun is None:
             lun = self.get_aligned_lun(target_ids)
@@ -533,18 +533,18 @@ class Freenas(object):
     def del_zvol(self, name=None, volume=None, **kwargs):
         for key in ["name", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         path = '/storage/volume/%s/zvols/%s' % (volume, name)
         response = self.delete(path)
         if response.status_code != 204:
-            raise ex.excError("delete error: %s (%d)" % (path, response.status_code))
+            raise ex.Error("delete error: %s (%d)" % (path, response.status_code))
 
     def add_zvol(self, name=None, size=None, volume=None,
                  compression="inherit", dedup="off", sparse=False,
                  **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         size = convert_size(size, _to="MiB")
         d = {
             "name": name,
@@ -557,14 +557,14 @@ class Freenas(object):
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     def get_zvol(self, volume=None, name=None):
         buff = self.get('/storage/volume/%s/zvols/%s' % (volume, name))
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     def get_aligned_lun(self, target_ids):
         tte_data = json.loads(self.get_iscsi_targettoextents())
@@ -579,7 +579,7 @@ class Freenas(object):
         if name is not None or naa is not None:
             data = self.get_iscsi_extent(name=name, naa=naa)
             if data is None:
-                raise ex.excError("extent not found")
+                raise ex.Error("extent not found")
             extent_id = data["id"]
             tte_data = [d for d in tte_data if d["iscsi_extent"] == extent_id]
         extent_data = {}
@@ -616,15 +616,15 @@ class Freenas(object):
 
     def resize_zvol(self, name=None, naa=None, size=None, **kwargs):
         if size is None:
-            raise ex.excError("'size' key is mandatory")
+            raise ex.Error("'size' key is mandatory")
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified")
+            raise ex.Error("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
-            raise ex.excError("extent not found")
+            raise ex.Error("extent not found")
         volume = self.extent_volume(data)
         if volume is None:
-            raise ex.excError("volume not found")
+            raise ex.Error("volume not found")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="MiB")
             zvol_data = self.get_zvol(volume=volume, name=data["iscsi_target_extent_name"])
@@ -640,23 +640,23 @@ class Freenas(object):
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     def del_iscsi_initiatorgroup(self, id=None, **kwargs):
         content = self.get_iscsi_authorizedinitiator_id(id)
         try:
             data = json.loads(content)
         except ValueError:
-            raise ex.excError("initiator group not found")
+            raise ex.Error("initiator group not found")
         self._del_iscsi_initiatorgroup(ig_id=id, **kwargs)
         return data
 
     def _del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
         if ig_id is None:
-            raise ex.excError("'id' in mandatory")
+            raise ex.Error("'id' in mandatory")
         response = self.delete('/services/iscsi/authorizedinitiator/%d' % ig_id)
         if response.status_code != 204:
-            raise ex.excError(str(response))
+            raise ex.Error(str(response))
 
     def _del_iscsi_targettoextent(self, id=None, **kwargs):
         try:
@@ -664,20 +664,20 @@ class Freenas(object):
         except Exception as exc:
             data = {"error": str(exc)}
         if id is None:
-            raise ex.excError("'id' in mandatory")
+            raise ex.Error("'id' in mandatory")
         response = self.delete('/services/iscsi/targettoextent/%d' % id)
         if response.status_code != 204:
-            raise ex.excError(str(response))
+            raise ex.Error(str(response))
         return data
 
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
-            raise ex.excError("'id' in mandatory")
+            raise ex.Error("'id' in mandatory")
         content = self.get('/services/iscsi/targettoextent/%d' % id)
         try:
             data = json.loads(content)
         except ValueError:
-            raise ex.excError("targettoextent not found")
+            raise ex.Error("targettoextent not found")
         return data
 
     def add_iscsi_initiatorgroup(self, **kwargs):
@@ -688,7 +688,7 @@ class Freenas(object):
                                   **kwargs):
         for key in ["initiators"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         d = {
             "iscsi_target_initiator_initiators": ",".join(initiators),
             "iscsi_target_initiator_auth_network": auth_network,
@@ -700,7 +700,7 @@ class Freenas(object):
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     # targetgroup
     def del_iscsi_targetgroup(self, id=None, **kwargs):
@@ -708,16 +708,16 @@ class Freenas(object):
         try:
             data = json.loads(content)
         except ValueError:
-            raise ex.excError("target group not found")
+            raise ex.Error("target group not found")
         self._del_iscsi_targetgroup(tg_id=id, **kwargs)
         return data
 
     def _del_iscsi_targetgroup(self, tg_id=None, **kwargs):
         if tg_id is None:
-            raise ex.excError("'tg_id' is mandatory")
+            raise ex.Error("'tg_id' is mandatory")
         response = self.delete('/services/iscsi/targetgroup/%d' % tg_id)
         if response.status_code != 204:
-            raise ex.excError(str(response))
+            raise ex.Error(str(response))
 
     def add_iscsi_targetgroup(self, **kwargs):
         if kwargs.get("portal_id") is None:
@@ -735,7 +735,7 @@ class Freenas(object):
                 fn = "get_iscsi_%s_ids" % key
                 ids += getattr(self, fn)(names)
                 if not ids:
-                    raise ex.excError("no '%s' ids found" % key)
+                    raise ex.Error("no '%s' ids found" % key)
                 del kwargs[key]
             kwargs[idkey] = ids
 
@@ -772,7 +772,7 @@ class Freenas(object):
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     # target
     def del_iscsi_target(self, id=None, **kwargs):
@@ -780,16 +780,16 @@ class Freenas(object):
         try:
             data = json.loads(content)
         except ValueError:
-            raise ex.excError("target not found")
+            raise ex.Error("target not found")
         self._del_iscsi_target(id=id, **kwargs)
         return data
 
     def _del_iscsi_target(self, id=None, **kwargs):
         if id is None:
-            raise ex.excError("'id' is mandatory")
+            raise ex.Error("'id' is mandatory")
         response = self.delete('/services/iscsi/target/%d' % id)
         if response.status_code != 204:
-            raise ex.excError(str(response))
+            raise ex.Error(str(response))
 
     def add_iscsi_target(self, **kwargs):
         data = self._add_iscsi_target(**kwargs)
@@ -798,7 +798,7 @@ class Freenas(object):
     def _add_iscsi_target(self, name=None, alias=None, **kwargs):
         for key in ["name"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         d = {
             "iscsi_target_name": name,
         }
@@ -809,16 +809,16 @@ class Freenas(object):
         try:
             return json.loads(buff)
         except ValueError:
-            raise ex.excError(buff)
+            raise ex.Error(buff)
 
     def add_iscsi_file(self, name=None, size=None, volume=None, targets=None,
                        mappings=None, insecure_tpc=True, blocksize=512, lun=None, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
 
         if targets is None and mappings is None:
-            raise ex.excError("'targets' or 'mappings' must be specified")
+            raise ex.Error("'targets' or 'mappings' must be specified")
 
         if mappings is not None and targets is None:
             targets = self.translate_mappings(mappings)
@@ -828,9 +828,9 @@ class Freenas(object):
         if "id" not in data:
             if "iscsi_target_extent_name" in data:
                 if isinstance(data["iscsi_target_extent_name"], list):
-                    raise ex.excError("\n".join(data["iscsi_target_extent_name"]))
-                raise ex.excError(data["iscsi_target_extent_name"])
-            raise ex.excError(str(data))
+                    raise ex.Error("\n".join(data["iscsi_target_extent_name"]))
+                raise ex.Error(data["iscsi_target_extent_name"])
+            raise ex.Error(str(data))
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
         disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
         results = {
@@ -843,7 +843,7 @@ class Freenas(object):
 
     def del_iscsi_file(self, name=None, naa=None, **kwargs):
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified")
+            raise ex.Error("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
@@ -869,7 +869,7 @@ class Freenas(object):
     def unmap(self, mappings=None, **kwargs):
         for key in ["mappings"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         targets = self.split_mappings(mappings)
         current_mappings = self.list_mappings()
         results = []
@@ -885,12 +885,12 @@ class Freenas(object):
     def unmap_iscsi_zvol(self, name=None, mappings=None, **kwargs):
         for key in ["name", "mappings"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         targets = self.split_mappings(mappings)
         current_mappings = self.list_mappings()
         extent = self.get_iscsi_extent(name=name)
         if not extent:
-            raise ex.excError("no extent found for disk : %s" % (name))
+            raise ex.Error("no extent found for disk : %s" % (name))
         results = []
         for mapping in self.split_mappings(mappings):
             mapping = ":".join(mapping)+":"+extent["iscsi_target_extent_naa"].replace("0x", "")
@@ -904,16 +904,16 @@ class Freenas(object):
     def map_iscsi_zvol(self, name=None, targets=None, mappings=None, lun=None, **kwargs):
         for key in ["name"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
         if targets is None and mappings is None:
-            raise ex.excError("'targets' or 'mappings' must be specified")
+            raise ex.Error("'targets' or 'mappings' must be specified")
 
         if mappings is not None and targets is None:
             targets = self.translate_mappings(mappings)
 
         data = self.get_iscsi_extent(name=name)
         if data is None:
-            raise ex.excError("zvol not found")
+            raise ex.Error("zvol not found")
         results = self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
         return results
 
@@ -921,7 +921,7 @@ class Freenas(object):
                        mappings=None, insecure_tpc=True, blocksize=512, sparse=False, lun=None, **kwargs):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
-                raise ex.excError("'%s' key is mandatory" % key)
+                raise ex.Error("'%s' key is mandatory" % key)
 
         # extent
         data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, sparse=sparse, **kwargs)
@@ -929,9 +929,9 @@ class Freenas(object):
         if "id" not in data:
             if "iscsi_target_extent_name" in data:
                 if isinstance(data["iscsi_target_extent_name"], list):
-                    raise ex.excError("\n".join(data["iscsi_target_extent_name"]))
-                raise ex.excError(data["iscsi_target_extent_name"])
-            raise ex.excError(str(data))
+                    raise ex.Error("\n".join(data["iscsi_target_extent_name"]))
+                raise ex.Error(data["iscsi_target_extent_name"])
+            raise ex.Error(str(data))
 
         # mappings
         if targets is not None or mappings is not None:
@@ -959,15 +959,15 @@ class Freenas(object):
 
     def del_iscsi_zvol(self, name=None, naa=None, volume=None, **kwargs):
         if name is None and naa is None:
-            raise ex.excError("'name' or 'naa' must be specified")
+            raise ex.Error("'name' or 'naa' must be specified")
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None and volume is None:
-            raise ex.excError("extent not found: need to specify the volume")
+            raise ex.Error("extent not found: need to specify the volume")
         if volume is None:
             try:
                 volume = self.extent_volume(data)
             except ValueError:
-                raise ex.excError("failed to identify zvol. may be a file ?")
+                raise ex.Error("failed to identify zvol. may be a file ?")
         if data:
             self.del_iscsi_extent(data["id"])
         else:
@@ -1016,9 +1016,9 @@ class Freenas(object):
         try:
             result = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in result:
-            raise ex.excError(result["error"])
+            raise ex.Error(result["error"])
         return result
 
     def add_diskinfo(self, data, size=None, volume=None):
@@ -1035,19 +1035,19 @@ class Freenas(object):
                 "disk_group": volume,
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(result["error"])
+            raise ex.Error(result["error"])
         return result
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Freenass()
     array = o.get_freenas(array_name)
     if array is None:
-        raise ex.excError("array %s not found" % array_name)
+        raise ex.Error("array %s not found" % array_name)
     array.node = node
     if not hasattr(array, action):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
     result = getattr(array, action)(**kwargs)
     if result is not None:
         print(json.dumps(result, indent=4))
@@ -1079,7 +1079,7 @@ if __name__ == "__main__":
     try:
         main(sys.argv)
         ret = 0
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         ret = 1
     sys.exit(ret)

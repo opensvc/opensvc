@@ -21,7 +21,7 @@ class Ip(ParentIp):
             cmd = ['ifconfig', self.ipdev, 'inet6', 'up']
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
             cmd = ['ifconfig', self.stacked_dev, 'inet6', self.addr+'/'+to_cidr(self.mask), 'up']
         else:
             cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']

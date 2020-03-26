@@ -609,7 +609,7 @@ class Crypt(object):
 
     def socket_parms_from_context(self, server):
         if not has_ssl:
-            raise ex.excError("tls1.2 capable ssl module is required but not available")
+            raise ex.Error("tls1.2 capable ssl module is required but not available")
         data = Storage()
         context = get_context()
         addr = context["cluster"]["addr"]
@@ -770,7 +770,7 @@ class Crypt(object):
                 conn.request(method, path, headers=headers, body=body)
                 break
             except AssertionError as exc:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
             except ConnectionResetError:
                 return {"status": 1, "error": "%s %s connection reset"%(method, path)}
             except (ConnectionRefusedError, ssl.SSLError, socket.error) as exc:

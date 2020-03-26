@@ -128,7 +128,7 @@ def lookup_snap_mod():
     elif rcEnv.sysname in ['OSF1']:
         return __import__('utilities.snap.advfs.osf1')
     else:
-        raise ex.excError
+        raise ex.Error
 
 def get_timestamp_filename(self, node):
     sync_timestamp_f = os.path.join(self.var_d, "last_sync_"+node)
@@ -154,7 +154,7 @@ def add_sudo_rsync_path(options):
                 val = options[i+1]
                 skip = True
             else:
-                raise ex.excError("malformed --rsync-path value")
+                raise ex.Error("malformed --rsync-path value")
             if not "sudo " in val:
                 val = val.strip("'")
                 val = val.strip('"')
@@ -446,7 +446,7 @@ class SyncRsync(Sync):
             self.rset.snaps.set_logger(self.rset.log)
             self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
-            raise ex.excError
+            raise ex.Error
 
     def post_action(self, action):
         """
@@ -515,7 +515,7 @@ class SyncRsync(Sync):
 
         try:
             options = [] + self.full_options
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
 
@@ -555,11 +555,11 @@ class SyncRsync(Sync):
     @cache("rsync.version")
     def rsync_version(self):
         if which("rsync") is None:
-            raise ex.excError("rsync not found")
+            raise ex.Error("rsync not found")
         cmd = ['rsync', '--version']
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("can not determine rsync capabilities")
+            raise ex.Error("can not determine rsync capabilities")
         return out
 
     @lazy

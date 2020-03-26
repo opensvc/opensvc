@@ -20,14 +20,14 @@ class Dev(rcDevTree.Dev):
         cmd = [rcEnv.syspaths.losetup, "-d", self.devpath[0]]
         ret, out, err = r.vcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.removed = True
 
     def remove_dm(self, r):
         cmd = [rcEnv.syspaths.dmsetup, "remove", self.alias]
         ret, out, err = r.vcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.removed = True
 
     def remove(self, r):

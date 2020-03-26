@@ -16,7 +16,7 @@ def parse_data(data):
     try:
         lines = data.splitlines()
     except AttributeError:
-        raise ex.excError
+        raise ex.Error
     if len(lines) < 2:
         return []
     labels = list(map(lambda x: x.split('.')[-1], lines[0].split(',')))
@@ -154,8 +154,8 @@ def print_table_default(data):
 def print_table_csv(data):
     try:
         data = validate_format(data)
-    except ex.excError:
-        raise ex.excError("unsupported format for this action")
+    except ex.Error:
+        raise ex.Error("unsupported format for this action")
 
     for d in data:
         print(";".join(map(lambda x: "'%s'" % unicode(x), d)))

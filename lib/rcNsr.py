@@ -8,7 +8,7 @@ from utilities.proc import justcall, which
 class Nsr(object):
     def __init__(self):
         if not which('mminfo'):
-            raise ex.excError('mminfo not found')
+            raise ex.Error('mminfo not found')
         self.keys = ['mminfo']
 
     def get_mminfo(self):

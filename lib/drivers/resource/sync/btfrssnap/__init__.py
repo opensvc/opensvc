@@ -119,7 +119,7 @@ class SyncBtrfssnap(Sync):
         try:
             self.btrfs[label] = rcBtrfs.Btrfs(label=label, resource=self)
         except rcBtrfs.ExecError as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         return self.btrfs[label]
 
     def create_snap(self, label, subvol):
@@ -135,9 +135,9 @@ class SyncBtrfssnap(Sync):
         try:
             btrfs.snapshot(orig, snap, readonly=True, recursive=False)
         except rcBtrfs.ExistError:
-            raise ex.excError('%s should not exist'%snap)
+            raise ex.Error('%s should not exist'%snap)
         except rcBtrfs.ExecError:
-            raise ex.excError
+            raise ex.Error
 
     def remove_snap(self, label, subvol):
         btrfs = self.get_btrfs(label)
@@ -167,7 +167,7 @@ class SyncBtrfssnap(Sync):
             try:
                 btrfs.subvol_delete(os.path.join(btrfs.rootdir, path), recursive=False)
             except rcBtrfs.ExecError:
-                raise ex.excError
+                raise ex.Error
 
     def _status_one(self, label, subvol):
         if self.test_btrfs(label) != 0:

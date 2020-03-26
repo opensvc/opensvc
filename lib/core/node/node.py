@@ -531,7 +531,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         elements = url.split('/')
         if len(elements) < 1:
-            raise ex.excError("url %s should have at least one slash")
+            raise ex.Error("url %s should have at least one slash")
 
         # app
         if len(elements) > 1:
@@ -551,7 +551,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             host = subelements[0]
             port = subelements[1]
         else:
-            raise ex.excError("too many columns in %s" % ":".join(subelements))
+            raise ex.Error("too many columns in %s" % ":".join(subelements))
 
         return transport, host, port, app
 
@@ -577,7 +577,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     data.dbopensvc_port,
                     data.dbopensvc_app
                 )
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.log.error("malformed dbopensvc url: %s (%s)",
                                url, str(exc))
         else:
@@ -602,7 +602,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     data.dbcompliance_port,
                     data.dbcompliance_app
                 )
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.log.error("malformed dbcompliance url: %s (%s)",
                                url, str(exc))
         else:
@@ -684,7 +684,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def _svcs_selector(self, selector, namespace=None):
         if want_context():
-            raise ex.excError("daemon is unreachable")
+            raise ex.Error("daemon is unreachable")
         self.build_services()
         paths = [svc.path for svc in self.svcs]
         paths = self.filter_ns(paths, namespace)
@@ -698,7 +698,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 if path not in result:
                     result.append(path)
         if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
-            raise ex.excError("object not found")
+            raise ex.Error("object not found")
         return result
 
     def __svcs_selector(self, selector, paths, namespace=None):
@@ -766,7 +766,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         def svc_matching(svc, param, op, value):
             try:
                 current = svc._get(param, evaluate=True)
-            except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+            except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                 current = None
             if current is None:
                 if "." in param:
@@ -781,7 +781,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     for rid in rids:
                         try:
                             _current = svc._get(rid+"."+_param, evaluate=True)
-                        except (ex.excError, ex.OptNotFound, ex.RequiredOptNotFound):
+                        except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                             continue
                         if matching(_current, op, value):
                             return True
@@ -916,7 +916,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             msg += "\n".join(["- "+err for err in errors])
         if n_args == 0 and not msg:
             return 0
-        raise ex.excError(msg)
+        raise ex.Error(msg)
 
     def rebuild_services(self, paths):
         """
@@ -963,7 +963,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                       "--discard to edit from the current configuration, "
                       "or --recover to open the unapplied config" % \
                       self.paths.tmp_cf, file=sys.stderr)
-                raise ex.excError
+                raise ex.Error
         else:
             shutil.copy(rcEnv.paths.nodeconf, self.paths.tmp_cf)
         return self.paths.tmp_cf
@@ -1003,7 +1003,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         try:
             editor = find_editor()
-        except ex.excError as err:
+        except ex.Error as err:
             print(err, file=sys.stderr)
             return 1
         from rcUtilities import fsum
@@ -1172,7 +1172,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             m = __import__('rcAsset'+rcEnv.sysname)
         except ImportError:
-            raise ex.excError("pushasset methods not implemented on %s"
+            raise ex.Error("pushasset methods not implemented on %s"
                               "" % rcEnv.sysname)
         return m.Asset(self)
 
@@ -1693,13 +1693,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.log.info("execute trigger %s", trigger)
             try:
                 self.do_trigger(trigger)
-            except ex.excError:
+            except ex.Error:
                 pass
         if blocking_trigger:
             self.log.info("execute blocking trigger %s", blocking_trigger)
             try:
                 self.do_trigger(blocking_trigger)
-            except ex.excError:
+            except ex.Error:
                 if when == "pre":
                     self.log.error("blocking pre trigger error: abort %s", action)
                 raise
@@ -1711,7 +1711,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         _cmd = shlex.split(cmd)
         ret, out, err = self.vcall(_cmd, err_to_warn=err_to_warn)
         if ret != 0:
-            raise ex.excError((ret, out, err))
+            raise ex.Error((ret, out, err))
 
     def sys_reboot(self, delay=0):
         pass
@@ -1755,7 +1755,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if hostid:
             if len(hostid) > 18 or not hostid.startswith("0x") or \
                len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
-                raise ex.excError("prkey in node.conf must have 16 significant"
+                raise ex.Error("prkey in node.conf must have 16 significant"
                                   " hex digits max (ex: 0x90520a45138e85)")
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
@@ -1853,14 +1853,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         data = self.collector.call('register_node')
         if data is None:
-            raise ex.excError("failed to obtain a registration number")
+            raise ex.Error("failed to obtain a registration number")
         elif isinstance(data, dict) and "ret" in data and data["ret"] != 0:
             msg = "failed to obtain a registration number"
             if "msg" in data and len(data["msg"]) > 0:
                 msg += "\n" + data["msg"]
-            raise ex.excError(msg)
+            raise ex.Error(msg)
         elif isinstance(data, list):
-            raise ex.excError(data[0])
+            raise ex.Error(data[0])
         return data
 
     def snooze(self):
@@ -1869,15 +1869,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if self.options.duration is None:
             print("set --duration", file=sys.stderr)
-            raise ex.excError
+            raise ex.Error
         try:
             data = self.collector_rest_post("/nodes/self/snooze", {
                 "duration": self.options.duration,
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         print(data.get("info", ""))
 
     def unsnooze(self):
@@ -1887,9 +1887,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             data = self.collector_rest_post("/nodes/self/snooze")
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         print(data.get("info", ""))
 
     def register_as_user(self):
@@ -1903,9 +1903,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "app": self.options.app
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data["data"]["uuid"]
 
     def register(self):
@@ -1920,7 +1920,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             register_fn = "register_as_node"
         try:
             uuid = getattr(self, register_fn)()
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc, file=sys.stderr)
             return 1
 
@@ -1929,7 +1929,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.unset_lazy("private_cd")
             self.unset_lazy("cd")
             self.unset_lazy("collector_env")
-        except ex.excError:
+        except ex.Error:
             print("failed to write registration number: %s" % uuid,
                   file=sys.stderr)
             return 1
@@ -2214,7 +2214,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 break
 
         if array_name is None:
-            raise ex.excError("can not determine array driver (no --array)")
+            raise ex.Error("can not determine array driver (no --array)")
 
         ref_section = "array#" + array_name
         section = None
@@ -2230,18 +2230,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 section = s
                 break
         if section is None:
-            raise ex.excError("array '%s' not found in configuration" % array_name)
+            raise ex.Error("array '%s' not found in configuration" % array_name)
 
         try:
             driver = self.oget(section, "type")
         except Exception:
-            raise ex.excError("'%s.type' keyword must be set" % section)
+            raise ex.Error("'%s.type' keyword must be set" % section)
 
         driver = driver.lower()
         try:
             mod = mimport("array", driver)
         except ImportError as exc:
-            raise ex.excError("array driver %s load error: %s" % (driver, str(exc)))
+            raise ex.Error("array driver %s load error: %s" % (driver, str(exc)))
         return mod.main(self.options.extra_argv, node=self)
 
     def get_ruser(self, node):
@@ -2278,7 +2278,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         while True:
             actions = self.collector.call('collector_get_action_queue')
             if actions is None:
-                raise ex.excError("unable to fetch actions scheduled by the collector")
+                raise ex.Error("unable to fetch actions scheduled by the collector")
             n_actions = len(actions)
             if n_actions == 0:
                 break
@@ -2363,10 +2363,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             mod = __import__("rcDiskInfo"+rcEnv.sysname)
         except ImportError:
-            raise ex.excError("scanscsi is not supported on %s" % rcEnv.sysname)
+            raise ex.Error("scanscsi is not supported on %s" % rcEnv.sysname)
         diskinfo = mod.diskInfo()
         if not hasattr(diskinfo, 'scanscsi'):
-            raise ex.excError("scanscsi is not implemented on %s" % rcEnv.sysname)
+            raise ex.Error("scanscsi is not implemented on %s" % rcEnv.sysname)
         return diskinfo.scanscsi(
             hba=hba,
             target=target,
@@ -2535,7 +2535,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                         if ret > 0:
                             err += ret
                         errs[svc.path] = ret
-                except ex.excError as exc:
+                except ex.Error as exc:
                     ret = 1
                     err += ret
                     if not need_aggregate:
@@ -2596,7 +2596,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 data["save"] = False
             if self.options.api is None:
                 if self.collector_env.dbopensvc is None:
-                    raise ex.excError("node.dbopensvc is not set in node.conf")
+                    raise ex.Error("node.dbopensvc is not set in node.conf")
                 data["api"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         else:
             data["user"] = self.options.user
@@ -2655,13 +2655,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             except:
                 kwargs = {}
         else:
-            raise ex.excError("refuse to submit auth tokens through a non-encrypted transport")
+            raise ex.Error("refuse to submit auth tokens through a non-encrypted transport")
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
             try:
                 err = json.loads(e.read())["error"]
-                e = ex.excError(err)
+                e = ex.Error(err)
             except ValueError:
                 pass
             raise e
@@ -2684,9 +2684,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Fetch and cache the collector's exposed rest api metadata.
         """
         if self.collector_env.dbopensvc is None:
-            raise ex.excError("node.dbopensvc is not set in node.conf")
+            raise ex.Error("node.dbopensvc is not set in node.conf")
         elif self.collector_env.dbopensvc_host == "none":
-            raise ex.excError("node.dbopensvc is set to 'none' in node.conf")
+            raise ex.Error("node.dbopensvc is set to 'none' in node.conf")
         data = {}
         if self.options.user is None:
             username, password = self.collector_auth_node()
@@ -2708,7 +2708,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         username = rcEnv.nodename
         node_uuid = self.oget("node", "uuid")
         if not node_uuid:
-            raise ex.excError("the node is not registered yet. use 'nodemgr register [--user <user>]'")
+            raise ex.Error("the node is not registered yet. use 'nodemgr register [--user <user>]'")
         return username, node_uuid
 
     def collector_auth_user(self):
@@ -2735,7 +2735,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         api = self.collector_api(path=path)
         url = api["url"]
         if not url.startswith("https"):
-            raise ex.excError("refuse to submit auth tokens through a "
+            raise ex.Error("refuse to submit auth tokens through a "
                               "non-encrypted transport")
         request = Request(url+rpath)
         auth_string = '%s:%s' % (api["username"], api["password"])
@@ -2826,14 +2826,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except HTTPError as exc:
             try:
                 err = json.loads(exc.read())["error"]
-                exc = ex.excError(err)
+                exc = ex.Error(err)
             except (ValueError, TypeError):
                 pass
             raise exc
         except IOError as exc:
             if hasattr(exc, "reason"):
-                raise ex.excError(getattr(exc, "reason"))
-            raise ex.excError(str(exc))
+                raise ex.Error(getattr(exc, "reason"))
+            raise ex.Error(str(exc))
         data = json.loads(ufile.read().decode("utf-8"))
         ufile.close()
         return data
@@ -2850,7 +2850,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except HTTPError as exc:
             try:
                 err = json.loads(exc.read())["error"]
-                exc = ex.excError(err)
+                exc = ex.Error(err)
             except ValueError:
                 pass
             raise exc
@@ -2876,11 +2876,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             url = "/provisioning_templates?filters=tpl_name="+template+"&props=tpl_definition&meta=0"
         data = self.collector_rest_get(url)
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         if len(data["data"]) == 0:
-            raise ex.excError("service not found on the collector")
+            raise ex.Error("service not found on the collector")
         if len(data["data"][0]["tpl_definition"]) == 0:
-            raise ex.excError("service has an empty configuration")
+            raise ex.Error("service has an empty configuration")
         try:
             return json.loads(data["data"][0]["tpl_definition"])
         except Exception:
@@ -2930,7 +2930,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Installs a local template as the service configuration file.
         """
         if not os.path.exists(fpath):
-            raise ex.excError("%s does not exists" % fpath)
+            raise ex.Error("%s does not exists" % fpath)
         try:
             return json.loads(fpath)
         except Exception:
@@ -2951,9 +2951,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             try:
                 data = json.loads("".join(feed))
             except ValueError:
-                raise ex.excError("invalid json feed")
+                raise ex.Error("invalid json feed")
         else:
-            raise ex.excError("empty feed")
+            raise ex.Error("empty feed")
         return data
 
     def svc_conf_from_selector(self, selector):
@@ -3052,7 +3052,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return env
 
         if not os.isatty(0):
-            raise ex.excError("--interactive is set but input fd is not a tty")
+            raise ex.Error("--interactive is set but input fd is not a tty")
 
         def get_href(ref):
             ref = ref.strip("[]")
@@ -3095,7 +3095,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         service symlinks and launchers directory.
         """
         if fpath is not None and template is not None:
-            raise ex.excError("--config and --template can't both be specified")
+            raise ex.Error("--config and --template can't both be specified")
 
         data = None
         installed = []
@@ -3128,7 +3128,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             result = self.daemon_post(req)
             status, error, info = self.parse_result(result)
             if status:
-                raise ex.excError(error)
+                raise ex.Error(error)
             return
 
         # convert to a pivotal dataset: dict of configs, indexed by path
@@ -3162,7 +3162,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     try:
                         split_path(tmppath)
                     except ValueError:
-                        raise ex.excError("invalid injected data format: %s is not a path" % tmppath)
+                        raise ex.Error("invalid injected data format: %s is not a path" % tmppath)
                     if "metadata" in __data:
                         del __data["metadata"]
                     _data[tmppath] = __data
@@ -3171,19 +3171,19 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                  try:
                      tmppath = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
                  except (ValueError, KeyError):
-                     raise ex.excError("invalid injected data format: list need a metadata section in each entry")
+                     raise ex.Error("invalid injected data format: list need a metadata section in each entry")
                  del __data["metadata"]
                  _data[tmppath] = __data
 
         if _data:
             if path:
                  if len(_data) > 1:
-                     raise ex.excError("multiple configs available to create a single service")
+                     raise ex.Error("multiple configs available to create a single service")
                  # force the new path
                  for tmppath, __data in _data.items():
                      break
                  if tmppath.endswith("svc/dummy"):
-                     raise ex.excError("no path in deployment data")
+                     raise ex.Error("no path in deployment data")
                  _data = {
                      path: __data,
                  }
@@ -3223,13 +3223,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             result = self.daemon_post(req)
             status, error, info = self.parse_result(result)
             if status:
-                raise ex.excError(error)
+                raise ex.Error(error)
             return
 
         if path and not data:
             info = self.install_service_info(name, namespace, kind)
         elif not data:
-            raise ex.excError("feed service configurations to stdin and set --config=-")
+            raise ex.Error("feed service configurations to stdin and set --config=-")
         else:
             for _path, _data in data.items():
                 if namespace:
@@ -3288,14 +3288,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             try:
                 d = json.loads(r)
             except:
-                raise ex.excError("can not parse resource: %s" % r)
+                raise ex.Error("can not parse resource: %s" % r)
             if "rid" in d:
                 section = d["rid"]
                 if "#" not in section:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                    raise ex.Error("%s must be formatted as 'rtype#n'" % section)
                 l = section.split('#')
                 if len(l) != 2:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                    raise ex.Error("%s must be formatted as 'rtype#n'" % section)
                 rtype = l[1]
                 if rtype in rtypes:
                     rtypes[rtype] += 1
@@ -3338,7 +3338,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             for section, d in sections.items():
                 sections[section].update(obj.kwstore.update(section, d))
         except (MissKeyNoDefault, KeyInvalidValue):
-            raise ex.excError
+            raise ex.Error
         del obj
 
         sections["DEFAULT"] = defaults
@@ -3347,13 +3347,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def create_path(self, paths, namespace):
         if isinstance(paths, list):
             if len(paths) != 1:
-                raise ex.excError("only one service must be specified")
+                raise ex.Error("only one service must be specified")
             path = paths[0]
 
         try:
            path.encode("ascii")
         except Exception:
-           raise ex.excError("the service name must be ascii-encodable")
+           raise ex.Error("the service name must be ascii-encodable")
 
         path = resolve_path(path, namespace)
         return path
@@ -3388,7 +3388,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         # force a refresh of self.svcs
         try:
             self.rebuild_services(paths)
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc, file=sys.stderr)
             ret = 1
 
@@ -3456,7 +3456,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             )
             status, error, info = self.parse_result(result)
             if status == 501:
-                raise ex.excError(error)
+                raise ex.Error(error)
             if result.get("data", {}).get("satisfied"):
                 break
             if left is not None:
@@ -3714,21 +3714,21 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def _stonith(self, node):
         if node in (None, ""):
-            raise ex.excError("--node is mandatory")
+            raise ex.Error("--node is mandatory")
         if node == rcEnv.nodename:
-            raise ex.excError("refuse to stonith ourself")
+            raise ex.Error("refuse to stonith ourself")
         if node not in self.cluster_nodes:
-            raise ex.excError("refuse to stonith node %s not member of our cluster" % node)
+            raise ex.Error("refuse to stonith node %s not member of our cluster" % node)
         try:
             cmd = self._get("stonith#%s.cmd" % node)
-        except (ex.OptNotFound, ex.excError) as exc:
-            raise ex.excError("the stonith#%s.cmd keyword must be set in "
+        except (ex.OptNotFound, ex.Error) as exc:
+            raise ex.Error("the stonith#%s.cmd keyword must be set in "
                               "node.conf" % node)
         cmd = shlex.split(cmd)
         self.log.info("stonith node %s", node)
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError()
+            raise ex.Error()
 
     def prepare_async_options(self):
         options = {}
@@ -3755,7 +3755,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if ret == 0:
                 raise ex.AbortAction()
             else:
-                raise ex.excError()
+                raise ex.Error()
         if self.options.local:
             return
         if action not in ACTION_ASYNC:
@@ -3780,7 +3780,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             elif global_expect == "thawed":
                 self._wait(path="monitor.frozen=thawed", duration=timeout)
         except KeyboardInterrupt:
-            raise ex.excError
+            raise ex.Error
 
     #
     # daemon actions
@@ -3912,7 +3912,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         lock_id = data.get("data", {}).get("id")
         if not lock_id and on_error == "raise":
-            raise ex.excError("cluster lock error")
+            raise ex.Error("cluster lock error")
         return lock_id
 
     def _daemon_unlock(self, name, lock_id, silent=False):
@@ -4058,7 +4058,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 data = json.loads(response)["result"]
             except ValueError:
                 print("invalid response format", file=sys.stderr)
-                raise ex.excError
+                raise ex.Error
             if self.options.format in ("json", "flat_json"):
                 self.print_data(data)
                 return
@@ -4154,7 +4154,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         status, error, info = self.parse_result(data)
         if status:
-            raise ex.excError(error)
+            raise ex.Error(error)
         print(json.dumps(data, indent=4, sort_keys=True))
 
     def _ping(self, node, timeout=5):
@@ -4169,11 +4169,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             try:
                 secret = self.conf_get("cluster", "secret", impersonate=node)
             except ex.OptNotFound:
-                raise ex.excError("unable to find the node %(node)s cluster secret. set cluster.secret@drpnodes or cluster.secret@%(node)s" % dict(node=node))
+                raise ex.Error("unable to find the node %(node)s cluster secret. set cluster.secret@drpnodes or cluster.secret@%(node)s" % dict(node=node))
             try:
                 cluster_name = self.conf_get("cluster", "name", impersonate=node)
             except ex.OptNotFound:
-                raise ex.excError("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
+                raise ex.Error("unable to find the node %(node)s cluster name. set cluster.name@drpnodes or cluster.name@%(node)s" % dict(node=node))
         elif want_context():
             # relay must be tested from a cluster node
             data = self.daemon_node_action(action="ping", options={"node": node}, node="ANY", action_mode=False)
@@ -4197,7 +4197,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     self.log.warning("missing 'secret' in configuration section %s" % section)
                     continue
             if secret is None:
-                raise ex.excError("unable to find a secret for node '%s': neither in cluster.nodes, cluster.drpnodes nor arbitrator#*.name" % node)
+                raise ex.Error("unable to find a secret for node '%s': neither in cluster.nodes, cluster.drpnodes nor arbitrator#*.name" % node)
         data = self.daemon_get(
             {"action": "daemon_blacklist_status"},
             server=node,
@@ -4225,7 +4225,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def ping_node(self, node):
         try:
             ret = self._ping(node)
-        except ex.excError as exc:
+        except ex.Error as exc:
             print(exc)
             ret = 2
         if not node:
@@ -4298,7 +4298,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
         if data.get("status") == 0:
             return
-        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
+        raise ex.Error(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_start(self):
         if self.options.thr_id:
@@ -4323,13 +4323,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         if data.get("status") == 0:
             return
-        raise ex.excError(json.dumps(data, indent=4, sort_keys=True))
+        raise ex.Error(json.dumps(data, indent=4, sort_keys=True))
 
     def daemon_running(self):
         if self._daemon_running():
             return
         else:
-            raise ex.excError
+            raise ex.Error
 
     def _daemon_running(self):
         if self.options.thr_id:
@@ -4469,14 +4469,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def daemon_join(self):
         if self.options.secret is None:
-            raise ex.excError("--secret must be set")
+            raise ex.Error("--secret must be set")
         if self.options.node is None:
-            raise ex.excError("--node must be set")
+            raise ex.Error("--node must be set")
         self._daemon_join(self.options.node, self.options.secret)
 
     def daemon_rejoin(self):
         if self.options.node is None:
-            raise ex.excError("--node must be set")
+            raise ex.Error("--node must be set")
         self._daemon_join(self.options.node, self.cluster_key)
 
     def _daemon_join(self, *args):
@@ -4506,11 +4506,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout=5,
         )
         if data is None:
-            raise ex.excError("join node %s failed" % joined)
+            raise ex.Error("join node %s failed" % joined)
 
         data = data.get("data")
         if data is None:
-            raise ex.excError("join failed: no data in response")
+            raise ex.Error("join failed: no data in response")
         ndata = data.get("node", {}).get("data", {})
         toadd = []
         toremove = []
@@ -4695,16 +4695,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 timeout=5,
             )
             if data is None:
-                raise ex.excError("the daemon is not running")
+                raise ex.Error("the daemon is not running")
             if data and data["status"] != 0:
                 if data.get("error"):
-                    raise ex.excError("set monitor status failed: %s" % data.get("error"))
+                    raise ex.Error("set monitor status failed: %s" % data.get("error"))
                 else:
-                    raise ex.excError("set monitor status failed")
-        except ex.excError:
+                    raise ex.Error("set monitor status failed")
+        except ex.Error:
             raise
         except Exception as exc:
-            raise ex.excError("set monitor status failed: %s" % str(exc))
+            raise ex.Error("set monitor status failed: %s" % str(exc))
         return data
 
     def daemon_node_action(self, action=None, options=None, server=None, node=None, sync=True, collect=False, action_mode=True):
@@ -4719,7 +4719,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 if action in ACTION_ANY_NODE:
                     node = "ANY"
                 else:
-                    raise ex.excError("the --node <selector> option is required")
+                    raise ex.Error("the --node <selector> option is required")
         if action_mode:
             self.log.info("request node action '%s' on node %s", action, node)
         req = {
@@ -5030,9 +5030,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             section = "pool#"+poolname
         except TypeError:
-            raise ex.excError("invalid pool name: %s" % poolname)
+            raise ex.Error("invalid pool name: %s" % poolname)
         if poolname not in ("shm", "default") and not section in self.cd:
-            raise ex.excError("pool not found: %s" % poolname)
+            raise ex.Error("pool not found: %s" % poolname)
         if poolname == "shm":
             ptype = "shm"
         else:
@@ -5058,7 +5058,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             pool = self.get_pool(poolname)
         except ImportError as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         pool.create_volume(**kwargs)
 
     ##########################################################################

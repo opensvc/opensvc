@@ -19,7 +19,7 @@ def rcmd(cmd, manager, username, key):
     if ret != 0:
         print(_cmd)
         print(out)
-        raise ex.excError("ssh command execution error")
+        raise ex.Error("ssh command execution error")
     return out, err
 
 class IbmSvcs(object):

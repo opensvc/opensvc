@@ -415,7 +415,7 @@ def _slave_action(func):
             return
         if self.options.master or self.options.slaves or self.options.slave is not None:
             return
-        raise ex.excError("specify either --master, --slave(s) or both (%s)" % func.__name__)
+        raise ex.Error("specify either --master, --slave(s) or both (%s)" % func.__name__)
 
     def _func(self):
         if self.encap or not self.has_encap_resources:
@@ -432,7 +432,7 @@ def _slave_action(func):
             try:
                 func(self)
             except Exception as exc:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
     return _func
 
 def _master_action(func):
@@ -450,7 +450,7 @@ def _master_action(func):
             return
         if self.options.master or self.options.slaves or self.options.slave is not None:
             return
-        raise ex.excError("specify either --master, --slave(s) or both (%s)" % func.__name__)
+        raise ex.Error("specify either --master, --slave(s) or both (%s)" % func.__name__)
 
     def _func(self):
         need_specifier(self)
@@ -816,18 +816,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 intent=action
             )
         except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+            raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+            raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
+            raise ex.Error("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+            raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
-            raise ex.excError("interrupted by signal %s" % details)
+            raise ex.Error("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+            raise ex.Error("unexpected locking error %s: %s" % (details, str(exc)))
 
         if lockfd is not None:
             self.lockfd = lockfd
@@ -860,7 +860,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             ret = self.async_action(action)
             if ret is not None:
                 return ret
-        except ex.excError as exc:
+        except ex.Error as exc:
             msg = str(exc)
             if msg:
                 self.log.error(msg)
@@ -880,7 +880,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             return self._action(action, options=options)
         except lock.LOCK_EXCEPTIONS as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def barrier_sanity_check(self, barrier):
         """
@@ -894,7 +894,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if self.get_resources(barrier):
             return
-        raise ex.excError("barrier '%s' does not match any resource" % barrier)
+        raise ex.Error("barrier '%s' does not match any resource" % barrier)
 
     @sched_action
     def _action(self, action, options=None):
@@ -1034,10 +1034,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             else:
                 func = getattr(self, action)
         except AttributeError:
-            raise ex.excError("%s is not implemented" % action)
+            raise ex.Error("%s is not implemented" % action)
 
         if not hasattr(func, "__call__"):
-            raise ex.excError("%s is not callable" % action)
+            raise ex.Error("%s is not callable" % action)
 
         try:
             data = func()
@@ -1056,7 +1056,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
 
         if action not in ACTIONS_NO_LOCK and self.topology not in TOPOLOGIES:
-            raise ex.excError("invalid cluster type '%s'. allowed: %s" % (
+            raise ex.Error("invalid cluster type '%s'. allowed: %s" % (
                 self.topology,
                 ', '.join(TOPOLOGIES),
             ))
@@ -1073,13 +1073,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     continue
                 try:
                     resource.reslock(action=action, suffix="sync")
-                except ex.excError as exc:
+                except ex.Error as exc:
                     self.log.error(str(exc))
                     return 1
         else:
             try:
                 self.svclock(action, timeout=waitlock)
-            except ex.excError as exc:
+            except ex.Error as exc:
                 self.log.error(str(exc))
                 return 1
 
@@ -1113,7 +1113,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 msg += ": %s" % str(exc)
             self.log.info(msg)
             err = 0
-        except ex.excError as exc:
+        except ex.Error as exc:
             msg = "'%s' action stopped on execution error" % action
             self.log.debug(msg)
             msg = str(exc)
@@ -1248,7 +1248,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.log.info("trying to rollback %s on %s", action, ', '.join(rids))
         try:
             self.rollback()
-        except ex.excError:
+        except ex.Error:
             self.log.error("rollback %s failed", action)
 
     def dblogger(self, action, begin, end, actionlogfile):
@@ -1355,7 +1355,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 try:
                     options.resource[idx] = json.loads(resource)
                 except ValueError:
-                    raise ex.excError("invalid json in resource definition: "
+                    raise ex.Error("invalid json in resource definition: "
                                       "%s" % options.resource[idx])
 
         self.options.update(options)
@@ -1412,7 +1412,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if ret == 0:
                 raise ex.AbortAction()
             else:
-                raise ex.excError()
+                raise ex.Error()
         if self.options.local or self.options.slave or self.options.slaves or \
            self.options.master:
             return
@@ -1450,10 +1450,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 continue
             self.log.error(line)
         if errors:
-            raise ex.excError
+            raise ex.Error
         status = ret.get("status")
         if status not in (None, 0):
-            raise ex.excError
+            raise ex.Error
 
     def daemon_mon_action(self, action, wait=None, timeout=None):
         global_expect = self.prepare_global_expect(action)
@@ -1470,7 +1470,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if " already " in line:
                     raise ex.AlreadyDone
             if data.get("error", []):
-                raise ex.excError
+                raise ex.Error
         try:
             # the daemon may have changed and return global expect
             # (placed@<peer>)
@@ -1488,7 +1488,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             action = "purge"
         elif action == "move":
             if self.options.to is None:
-                raise ex.excError("the --to <node>[,<node>,...] option is required")
+                raise ex.Error("the --to <node>[,<node>,...] option is required")
             global_expect += self.options.to
         elif action == "switch":
             dst = self.destination_node_sanity_checks() # pylint: disable=assignment-from-none
@@ -1537,12 +1537,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
                  node = global_expect[7:]
                  self.node._wait(path="monitor.nodes.'%s'.services.status.'%s'.avail~(up|n/a)" % (node, self.path), duration=timeout)
         except KeyboardInterrupt:
-            raise ex.excError
+            raise ex.Error
 
     def current_node(self):
         data = self.node._daemon_status()
         if not data:
-            raise ex.excError("can not migrate when daemon is down")
+            raise ex.Error("can not migrate when daemon is down")
         for nodename, _data in data["monitor"]["nodes"].items():
             try:
                 __data = _data["services"]["status"][self.path]
@@ -1631,10 +1631,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if 'rid' in data:
                 section = data['rid']
                 if '#' not in section:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                    raise ex.Error("%s must be formatted as 'rtype#n'" % section)
                 elements = section.split('#')
                 if len(elements) != 2:
-                    raise ex.excError("%s must be formatted as 'rtype#n'" % section)
+                    raise ex.Error("%s must be formatted as 'rtype#n'" % section)
                 del data['rid']
                 if section in self.cd:
                     self.cd[section].update(data)
@@ -1677,7 +1677,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def allow_on_this_node(self, action):
         """
-        Raise excError if the service is not allowed to run on this node.
+        Raise Error if the service is not allowed to run on this node.
         In other words, the nodename is not a service node or drpnode, nor the
         service mode is cloud proxy.
         """
@@ -1686,12 +1686,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if action in ACTIONS_ALLOW_ON_INVALID_NODE:
             return
         if self.svc_env != 'PRD' and self.node.env == 'PRD':
-            raise ex.excError('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, self.node.env))
+            raise ex.Error('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, self.node.env))
         if rcEnv.nodename in self.nodes:
             return
         if rcEnv.nodename in self.drpnodes:
             return
-        raise ex.excError("action '%s' aborted because this node's hostname "
+        raise ex.Error("action '%s' aborted because this node's hostname "
                           "'%s' is not a member of DEFAULT.nodes, "
                           "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
                           (action, rcEnv.nodename))
@@ -1730,7 +1730,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if want_context() or not os.path.exists(self.paths.cf):
             buff = self.remote_service_config(self.options.node)
             if buff is None:
-                raise ex.excError("could not fetch remote config")
+                raise ex.Error("could not fetch remote config")
             import tempfile
             try:
                 tmpfile = tempfile.NamedTemporaryFile()
@@ -1775,7 +1775,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                       "--discard to edit from the current configuration, "
                       "or --recover to open the unapplied config" % \
                       self.paths.tmp_cf, file=sys.stderr)
-                raise ex.excError
+                raise ex.Error
         else:
             shutil.copy(self.paths.cf, self.paths.tmp_cf)
         return self.paths.tmp_cf
@@ -1815,7 +1815,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         try:
             editor = find_editor()
-        except ex.excError as error:
+        except ex.Error as error:
             print(error, file=sys.stderr)
             return 1
         from rcUtilities import fsum
@@ -1923,7 +1923,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if info:
             print(info)
         if status:
-            raise ex.excError(error)
+            raise ex.Error(error)
 
     def notify_done(self, action, rids=None):
         if not self.options.cron:
@@ -2007,9 +2007,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     for line in error.splitlines():
                         log(line)
                 if not best_effort:
-                    raise ex.excError
+                    raise ex.Error
             return data
-        except ex.excError:
+        except ex.Error:
             raise
         except Exception as exc:
             log("set monitor status failed: %s", str(exc))
@@ -2019,7 +2019,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def remote_service_config_fetch(self, nodename=None):
         buff = self.remote_service_config(nodename=nodename)
         if not buff:
-            raise ex.excError
+            raise ex.Error
         import tempfile
         tmpfile = tempfile.NamedTemporaryFile()
         fname = tmpfile.name
@@ -2042,7 +2042,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 err = data.get("error", "")
             except Exception:
                 err = ""
-            raise ex.excError(err)
+            raise ex.Error(err)
         if "nodes" in data:
             for node in data["nodes"]:
                 break
@@ -2618,9 +2618,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if "info" in data:
                 self.log.info(data["info"])
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def collector_rest_get(self, *args, **kwargs):
         kwargs["path"] = self.path
@@ -2974,7 +2974,7 @@ class Svc(BaseSvc):
             return convert_boolean(self.conf_get("DEFAULT", "constraints"))
         except ex.OptNotFound:
             return True
-        except ex.excError:
+        except ex.Error:
             return True
 
     @lazy
@@ -3492,10 +3492,10 @@ class Svc(BaseSvc):
             Excecute a <when> trigger on each resource of the set,
             if the action allows triggers.
             If a trigger raises,
-            * excError, stop looping over the resources and propagate up
+            * Error, stop looping over the resources and propagate up
               to the caller.
             * any other exception, save the traceback in the debug log
-              and stop looping over the resources and raise an excError
+              and stop looping over the resources and raise an Error
             """
             aborted = []
             for rset in rsets:
@@ -3504,11 +3504,11 @@ class Svc(BaseSvc):
                 try:
                     rset.log.debug("start %s %s_action", rset.rid, when)
                     aborted += getattr(rset, when + "_action")(action, types=_type, tags=tags, xtags=xtags)
-                except ex.excError:
+                except ex.Error:
                     raise
                 except:
                     self.save_exc()
-                    raise ex.excError
+                    raise ex.Error
             return aborted
 
         def do_snap_trigger(when):
@@ -3522,7 +3522,7 @@ class Svc(BaseSvc):
                 return
             results = self.vcall(trigger)
             if results[0] != 0:
-                raise ex.excError(results[2])
+                raise ex.Error(results[2])
 
         need_snap = self.need_snap_trigger(rsets, action)
 
@@ -3966,7 +3966,7 @@ class Svc(BaseSvc):
                 elif verbose:
                     self.log.warning("container %s is not joinable to execute "
                                      "action '%s'", container.name, ' '.join(cmd))
-            except ex.excError as exc:
+            except ex.Error as exc:
                 if error != "continue":
                     raise
 
@@ -3975,7 +3975,7 @@ class Svc(BaseSvc):
         Execute a command in a service container.
         """
         if container.pg_frozen():
-            raise ex.excError("can't join a frozen container. abort encap "
+            raise ex.Error("can't join a frozen container. abort encap "
                               "command.")
         if cmd == ["start"] and container.booted:
             return '', '', 0
@@ -4003,7 +4003,7 @@ class Svc(BaseSvc):
         if push_config:
             try:
                 self._push_encap_config(container)
-            except ex.excError:
+            except ex.Error:
                 pass
 
         # wait for the container multi-user state
@@ -4075,16 +4075,16 @@ class Svc(BaseSvc):
         if "resource_monitor" in cmd:
             try:
                 self.encap_json_status(container, refresh=True, push_config=False, cache=False)
-            except (ex.NotAvailable, ex.EncapUnjoinable, ex.excError):
+            except (ex.NotAvailable, ex.EncapUnjoinable, ex.Error):
                 pass
         elif "print" not in cmd and "create" not in cmd:
             self.log.info("refresh encap json status after action")
             try:
                 self.encap_json_status(container, refresh=True, push_config=push_config)
-            except (ex.NotAvailable, ex.EncapUnjoinable, ex.excError):
+            except (ex.NotAvailable, ex.EncapUnjoinable, ex.Error):
                 pass
         if ret != 0:
-            raise ex.excError("error from encap service command '%s': "
+            raise ex.Error("error from encap service command '%s': "
                               "%d\n%s\n%s"%(' '.join(cmd), ret, out, err))
         return out, err, ret
 
@@ -4228,7 +4228,7 @@ class Svc(BaseSvc):
             cmd.append('--refresh')
         try:
             results = self._encap_cmd(cmd, container, fwd_options=False, push_config=push_config)
-        except ex.excError as exc:
+        except ex.Error as exc:
             return group_status
         except Exception as exc:
             print(exc, file=sys.stderr)
@@ -4515,7 +4515,7 @@ class Svc(BaseSvc):
         for resource in resources:
             if not parallel:
                 if resource.abort_start():
-                    raise ex.excError("start aborted due to resource %s "
+                    raise ex.Error("start aborted due to resource %s "
                                       "conflict" % resource.rid)
             else:
                 proc = Process(target=wrapper, args=[resource.abort_start])
@@ -4529,7 +4529,7 @@ class Svc(BaseSvc):
                 if proc.exitcode > 0:
                     err.append(rid)
             if len(err) > 0:
-                raise ex.excError("start aborted due to resource %s "
+                raise ex.Error("start aborted due to resource %s "
                                   "conflict" % ",".join(err))
 
     def refresh_ip_status(self):
@@ -4713,7 +4713,7 @@ class Svc(BaseSvc):
                 try:
                     ret |= resource.can_sync(target)
                     self.log.debug("resource %s can sync: %s" % (resource.rid, str(ret)))
-                except ex.excError as exc:
+                except ex.Error as exc:
                     return False
                 if ret:
                     return True
@@ -4889,7 +4889,7 @@ class Svc(BaseSvc):
             cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
             out = cmd_results[0]
             ret = cmd_results[2]
-        except (ex.EncapUnjoinable, ex.excError) as exc:
+        except (ex.EncapUnjoinable, ex.Error) as exc:
             out = None
             ret = 1
 
@@ -4913,7 +4913,7 @@ class Svc(BaseSvc):
                 os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s", encap_cf, container.name)
                 if cmd_results[2] != 0:
-                    raise ex.excError()
+                    raise ex.Error()
                 return
             elif encap_mtime == local_mtime:
                 return
@@ -4928,14 +4928,14 @@ class Svc(BaseSvc):
             cmd = rcEnv.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
             cmd_results = justcall(cmd)
         if cmd_results[2] != 0:
-            raise ex.excError("failed to send %s to %s" % (self.paths.cf, container.name))
+            raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
         self.log.info("send %s to %s", self.paths.cf, container.name)
 
         cmd = ["create", "--restore", "--config", encap_cf]
         try:
             cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
-        except ex.excError:
-            raise ex.excError("failed to create %s slave service" % container.name)
+        except ex.Error:
+            raise ex.Error("failed to create %s slave service" % container.name)
         self.log.info("create %s slave service", container.name)
 
     @staticmethod
@@ -5188,7 +5188,7 @@ class Svc(BaseSvc):
 
     def destination_node_sanity_checks(self, destination_node=None):
         """
-        Raise an excError if
+        Raise an Error if
         * the destination node --to arg not set
         * the specified destination is the current node
         * the specified destination is not a service candidate node
@@ -5246,12 +5246,12 @@ class Svc(BaseSvc):
         Set the scale keyword.
         """
         if self.scale_target is None:
-            raise ex.excError("can't scale: not a scaler")
+            raise ex.Error("can't scale: not a scaler")
         try:
             value = int(self.options.to)
             assert value >= 0
         except Exception:
-            raise ex.excError("invalid scale target: set '--to <n>' where n>=0")
+            raise ex.Error("invalid scale target: set '--to <n>' where n>=0")
         self._set("DEFAULT", "scale", str(value), validation=False)
         self.set_service_monitor()
 
@@ -5437,9 +5437,9 @@ class Svc(BaseSvc):
     def _enter(self, rid):
         res = self.get_resource(rid)
         if res is None:
-            raise ex.excError("rid %s not found" % rid)
+            raise ex.Error("rid %s not found" % rid)
         if not hasattr(res, "enter"):
-            raise ex.excError("rid %s does not support enter" % rid)
+            raise ex.Error("rid %s does not support enter" % rid)
         res.enter()
 
     def docker(self):
@@ -5566,13 +5566,13 @@ class Svc(BaseSvc):
         """
         data = self.node.collector_rest_get("/services/"+self.path+"?props=svc_config&meta=0")
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         if len(data["data"]) == 0:
-            raise ex.excError("service not found on the collector")
+            raise ex.Error("service not found on the collector")
         if data["data"][0]["svc_config"] is None:
-            raise ex.excError("service has an empty configuration on the collector")
+            raise ex.Error("service has an empty configuration on the collector")
         if len(data["data"][0]["svc_config"]) == 0:
-            raise ex.excError("service has an empty configuration on the collector")
+            raise ex.Error("service has an empty configuration on the collector")
         buff = data["data"][0]["svc_config"].replace("\\n", "\n").replace("\\t", "\t")
         import codecs
         with codecs.open(self.paths.cf, "w", "utf8") as ofile:
@@ -5625,7 +5625,7 @@ class Svc(BaseSvc):
         """
         if self.options.duration is None:
             print("set --duration", file=sys.stderr)
-            raise ex.excError
+            raise ex.Error
         data = self._snooze(self.options.duration)
         print(data.get("info", ""))
 
@@ -5642,9 +5642,9 @@ class Svc(BaseSvc):
                 "duration": self.options.duration,
             })
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data
 
     def _unsnooze(self):
@@ -5654,9 +5654,9 @@ class Svc(BaseSvc):
         try:
             data = self.collector_rest_post("/services/self/snooze")
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if "error" in data:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data
 
     def mount_point(self):
@@ -5690,13 +5690,13 @@ class Svc(BaseSvc):
     def get_volume(self, name):
         """
         Return the volume resource matching name.
-        Raise excError if not found or found more than one matching resource.
+        Raise Error if not found or found more than one matching resource.
         """
         candidates = [res for res in self.get_resources("volume") if res.name == name]
         if not candidates:
-            raise ex.excError("volume %s not found" % name)
+            raise ex.Error("volume %s not found" % name)
         if not candidates or len(candidates) > 1:
-            raise ex.excError("found multiple volumes names" % name)
+            raise ex.Error("found multiple volumes names" % name)
         return candidates[0]
 
     def get_volume_rid(self, volname):
@@ -5711,19 +5711,19 @@ class Svc(BaseSvc):
         volname = l[0]
         if not volname:
             if strict and errors != "ignore":
-                raise ex.excError("a volume path can't start with /")
+                raise ex.Error("a volume path can't start with /")
             else:
                 return buff, None
         vol = self.get_volume(volname)
         if mode == "file" and vol.mount_point is None:
             if errors == "ignore":
                 return buff, None
-            raise ex.excError("referenced volume %s has no "
+            raise ex.Error("referenced volume %s has no "
                               "mount point" % l[0])
         volstatus = vol.status()
         if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
             if errors != "ignore":
-                raise ex.excError("volume %s is %s" % (volname, rcStatus.Status(volstatus)))
+                raise ex.Error("volume %s is %s" % (volname, rcStatus.Status(volstatus)))
         if mode == "blk":
             l[0] = vol.device
         else:

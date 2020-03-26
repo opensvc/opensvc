@@ -26,13 +26,13 @@ class Pool(pool.Pool):
 
     def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None, env=None):
         if self.template is None:
-            raise ex.excError("pool#%s.template is not set" % self.name)
+            raise ex.Error("pool#%s.template is not set" % self.name)
         if not is_service(self.template):
-            raise ex.excError("%s template volume not found" % self.template)
+            raise ex.Error("%s template volume not found" % self.template)
         name = self.default_disk_name(volume)
         tname, tnamespace, tkind = split_path(self.template)
         if tkind != "vol":
-            raise ex.excError("%s template kind is not vol")
+            raise ex.Error("%s template kind is not vol")
         svc = factory(tkind)(tname, tnamespace, volatile=True, node=self.node)
         config = svc.print_config_data()
         try:

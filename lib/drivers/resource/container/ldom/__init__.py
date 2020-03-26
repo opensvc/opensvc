@@ -87,7 +87,7 @@ class ContainerLdom(BaseContainer):
         cmd = ['/usr/sbin/ldm', action, self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         return None
 
     def container_start(self):
@@ -96,7 +96,7 @@ class ContainerLdom(BaseContainer):
         """
         state = self.state()
         if state == 'None':
-            raise ex.excError
+            raise ex.Error
         if state == 'inactive':
             self.container_action('bind')
             self.container_action('start')
@@ -110,7 +110,7 @@ class ContainerLdom(BaseContainer):
         if self.state == 'active':
             try:
                 self.container_action('stop')
-            except ex.excError:
+            except ex.Error:
                 pass
         self.container_action('unbind')
 
@@ -122,7 +122,7 @@ class ContainerLdom(BaseContainer):
         """
         state = self.state()
         if state == 'None':
-            raise ex.excError
+            raise ex.Error
         if state == 'inactive':
             return None
         if state == 'bound' :
@@ -134,7 +134,7 @@ class ContainerLdom(BaseContainer):
                 try:
                     self.log.info("wait for container shutdown")
                     self.wait_for_fn(self.is_shutdown, self.stop_timeout, 2)
-                except ex.excError:
+                except ex.Error:
                     pass
             self.container_forcestop()
 

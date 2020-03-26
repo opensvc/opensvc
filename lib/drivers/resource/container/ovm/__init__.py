@@ -97,33 +97,33 @@ class ContainerOvm(BaseContainer):
         if len(l) > 1:
             self.log.warning("%d configuration files found in repositories (%s)"%(len(l), str(l)))
         elif len(l) == 0:
-            raise ex.excError("no configuration file found in repositories")
+            raise ex.Error("no configuration file found in repositories")
         return l[0]
 
     def _migrate(self):
         cmd = ['xm', 'migrate', '-l', self.uuid, self.svc.options.to]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_start(self):
         cf = self.find_vmcf()
         cmd = ['xm', 'create', cf]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_stop(self):
         cmd = ['xm', 'shutdown', self.uuid]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_forcestop(self):
         cmd = ['xm', 'destroy', self.uuid]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def is_up_on(self, nodename):
         return self.is_up(nodename)

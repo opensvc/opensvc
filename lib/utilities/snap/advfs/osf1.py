@@ -43,7 +43,7 @@ class Snap(utilities.snap.Snap):
             cmd = ['umount', snap_mount_point]
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
         if clonefset in d.fsets:
             (ret, buff, err) = self.vcall(['rmfset', '-f', dom, clonefset])
             if ret != 0:
@@ -72,13 +72,13 @@ class Snap(utilities.snap.Snap):
 
         if protected_mount(self.snaps[snap_key]['snap_mnt']):
             self.log.error("the clone fset is no longer mounted in %s. panic."%self.snaps[snap_key]['snap_mnt'])
-            raise ex.excError
+            raise ex.Error
         cmd = ['fuser', '-kcv', self.snaps[snap_key]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
         cmd = ['umount', self.snaps[snap_key]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         (ret, buff, err) = self.vcall(['rmfset', '-f', dom, clonefset])
         if ret != 0:

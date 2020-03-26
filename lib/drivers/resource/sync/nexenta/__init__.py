@@ -93,9 +93,9 @@ class SyncNexenta(Sync):
     def can_sync(self, target=None):
         try:
             self.get_endpoints()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
         if self.ts is None:
             self.get_props()
@@ -111,9 +111,9 @@ class SyncNexenta(Sync):
     def sync_update(self):
         try:
             self.get_endpoints()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
         if not self.can_sync() and not self.svc.options.force:
             return
@@ -163,9 +163,9 @@ class SyncNexenta(Sync):
             self.bind()
             self.master.autosync_enable(self.autosync)
             self.log.info("autosync enable submitted")
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
     def sync_break(self):
         try:
@@ -174,9 +174,9 @@ class SyncNexenta(Sync):
             self.master.autosync_disable(self.autosync)
             self.log.info("autosync disable submitted")
             self.wait_break()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
     def wait_break(self):
         import time
@@ -188,16 +188,16 @@ class SyncNexenta(Sync):
             if i > 1:
                 time.sleep(2)
         self.log.error("timed out waiting for disable to finish")
-        raise ex.excError
+        raise ex.Error
 
     def start(self):
         try:
             self.get_endpoints()
             self.local.set_can_mount(self.path)
             self.log.info("set 'canmount = on' on %s"%self.path)
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error(str(e))
-            raise ex.excError
+            raise ex.Error
 
     def stop(self):
         pass
@@ -212,7 +212,7 @@ class SyncNexenta(Sync):
             if now < self.ts:
                 self.ts = datetime.datetime.strptime(str(now.year-1)+' '+self.props['zfs/time_started'], "%Y %H:%M:%S,%b%d")
         except ValueError:
-            raise ex.excError("can not parse last sync date: %s"%self.props['zfs/time_started'])
+            raise ex.Error("can not parse last sync date: %s"%self.props['zfs/time_started'])
         self.age = now - self.ts
 
     def _status(self, verbose=False):
@@ -221,7 +221,7 @@ class SyncNexenta(Sync):
             self.get_endpoints()
             self.status_log("master head is %s"%self.master.head)
             self.get_props()
-        except ex.excError as e:
+        except ex.Error as e:
             if 'message' in e.value:
                 msg = e.value['message']
             else:
@@ -254,7 +254,7 @@ class SyncNexenta(Sync):
 
         heads = list(set(self.filers.values()) - set([self.filer]))
         if len(heads) != 1:
-            raise ex.excError("two heads need to be setup")
+            raise ex.Error("two heads need to be setup")
 
         self.local = array_driver.Nexenta(self.filer, self.log)
         self.remote = array_driver.Nexenta(heads[0], self.log)
@@ -270,11 +270,11 @@ class SyncNexenta(Sync):
                 self.slave = self.remote
                 self.master = self.local
             return
-        except ex.excError as e:
+        except ex.Error as e:
             if 'does not exist' in str(e):
                 path_props = self.local.get_props(self.path)
                 if path_props is None:
-                    raise ex.excError("path '%s' not found on local head '%s'"%(self.path, self.filer))
+                    raise ex.Error("path '%s' not found on local head '%s'"%(self.path, self.filer))
                 self.slave = self.local
                 self.master = self.remote
             else:
@@ -290,13 +290,13 @@ class SyncNexenta(Sync):
                 self.slave = self.remote
                 self.master = self.local
             return
-        except ex.excError as e:
+        except ex.Error as e:
             if 'does not exist' in str(e):
                 path_props = self.remote.get_props(self.path)
                 if path_props is None:
-                    raise ex.excError("path '%s' not found on remote head '%s'"%(self.path, self.filer))
+                    raise ex.Error("path '%s' not found on remote head '%s'"%(self.path, self.filer))
                 self.slave = self.remote
                 self.master = self.local
             elif localdown:
-                raise ex.excError("both heads unreachable")
+                raise ex.Error("both heads unreachable")
 

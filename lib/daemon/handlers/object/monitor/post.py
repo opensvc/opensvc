@@ -112,7 +112,7 @@ class Handler(handler.Handler):
                 new_ge = self.validate_destination_node(path, options.global_expect, thr=thr)
             except ex.AbortAction as exc:
                 info.append(str(exc))
-            except ex.excError as exc:
+            except ex.Error as exc:
                 errors.append(str(exc))
             else:
                 if new_ge:
@@ -178,7 +178,7 @@ class Handler(handler.Handler):
                 break
             time.sleep(1)
         if not instances:
-            raise ex.excError("object does not exist")
+            raise ex.Error("object does not exist")
 
         ges = set()
         for nodename, _data in instances.items():
@@ -193,7 +193,7 @@ class Handler(handler.Handler):
                 # to change status from "tocing" to "start failed".
                 pass
             elif status != "idle" and "failed" not in status and "wait" not in status:
-                raise ex.excError("%s instance on node %s in %s state"
+                raise ex.Error("%s instance on node %s in %s state"
                                   "" % (path, nodename, status))
 
         if ges == set([global_expect]):
@@ -213,7 +213,7 @@ class Handler(handler.Handler):
         """
         For a placed@<dst> <global_expect> (move action) on <path>,
 
-        Raise an excError if
+        Raise an Error if
         * the object <path> does not exist
         * the object <path> topology is failover and more than 1
           destination node was specified
@@ -235,34 +235,34 @@ class Handler(handler.Handler):
             return
         instances = thr.get_service_instances(path)
         if not instances:
-            raise ex.excError("object does not exist")
+            raise ex.Error("object does not exist")
         if destination_nodes == "<peer>":
             instance = list(instances.values())[0]
             if instance.get("topology") == "flex":
-                raise ex.excError("no destination node specified")
+                raise ex.Error("no destination node specified")
             else:
                 nodes = [node for node, inst in instances.items() \
                               if inst.get("avail") not in ("up", "warn", "n/a") and \
                               inst.get("monitor", {}).get("status") != "started"]
                 count = len(nodes)
                 if count == 0:
-                    raise ex.excError("no candidate destination node")
+                    raise ex.Error("no candidate destination node")
                 svc = thr.get_service(path)
                 return "placed@%s" % thr.placement_ranks(svc, nodes)[0]
         else:
             destination_nodes = destination_nodes.split(",")
             count = len(destination_nodes)
             if count == 0:
-                raise ex.excError("no destination node specified")
+                raise ex.Error("no destination node specified")
             instance = list(instances.values())[0]
             if count > 1 and instance.get("topology") == "failover":
-                raise ex.excError("only one destination node can be specified for "
+                raise ex.Error("only one destination node can be specified for "
                                   "a failover service")
             for destination_node in destination_nodes:
                 if not destination_node:
-                    raise ex.excError("empty destination node")
+                    raise ex.Error("empty destination node")
                 if destination_node not in instances:
-                    raise ex.excError("destination node %s has no %s instance" % \
+                    raise ex.Error("destination node %s has no %s instance" % \
                                       (destination_node, path))
                 instance = instances[destination_node]
                 if instance["avail"] == "up":

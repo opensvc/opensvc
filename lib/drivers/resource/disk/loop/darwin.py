@@ -45,7 +45,7 @@ class DiskLoop(BaseDiskLoop):
         cmd = ['hdiutil', 'attach', '-imagekey', 'diskimage-class=CRawDiskImage', '-nomount', self.loopFile]
         (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.loop = utilities.devices.darwin.file_to_loop(self.loopFile)
         self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
         self.can_rollback = True
@@ -58,7 +58,7 @@ class DiskLoop(BaseDiskLoop):
             cmd = ['hdiutil', 'detach', loop.strip('md')]
             (ret, out, err) = self.vcall(cmd)
             if ret != 0:
-                raise ex.excError
+                raise ex.Error
 
     def _status(self, verbose=False):
         if self.is_up():
@@ -76,7 +76,7 @@ class DiskLoop(BaseDiskLoop):
         try:
             self.loopFile
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
         if not self.provisioned():
             return
@@ -97,5 +97,5 @@ class DiskLoop(BaseDiskLoop):
                 f.seek(convert_size(self.size, _to='b', _round=512)-1)
                 f.write('\0')
         except Exception as e:
-            raise ex.excError("failed to create %s: %s"% (self.loopFile, str(e)))
+            raise ex.Error("failed to create %s: %s"% (self.loopFile, str(e)))
         self.svc.node.unset_lazy("devtree")

@@ -58,7 +58,7 @@ class SyncSymclone(BaseSyncSymclone):
         cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def dev_ready(self, dev):
         cmd = ['sg_turs', dev]
@@ -77,14 +77,14 @@ class SyncSymclone(BaseSyncSymclone):
                 self.log.info("waiting for device %s to become ready (max %i secs)"%(dev,timeout))
             time.sleep(delay)
         self.log.error("timed out waiting for device %s to become ready (max %i secs)"%(dev,timeout))
-        raise ex.excError
+        raise ex.Error
 
     def wait_for_devs_ready(self):
         for pair in self.pairs:
             src, dst = self.split_pair(pair)
             dev = self.showdevs_etree[dst].find('Dev_Info/pd_name').text
             if "Not Visible" in dev:
-                raise ex.excError("pd name is 'Not Visible'. please scan scsi buses and run symcfg discover")
+                raise ex.Error("pd name is 'Not Visible'. please scan scsi buses and run symcfg discover")
             self.dev_rescan(dev)
             self.wait_for_dev_ready(dev)
             self.refresh_multipath(dev)

@@ -17,7 +17,7 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
         elif os.path.exists(os.path.join(rcEnv.paths.pathbin, "sssu")):
             sssubin = os.path.join(rcEnv.paths.pathbin, "sssu")
         else:
-            raise ex.excError("sssu command not found. set 'array#%s.bin' in the node or cluster configuration." % array)
+            raise ex.Error("sssu command not found. set 'array#%s.bin' in the node or cluster configuration." % array)
     os.chdir(rcEnv.paths.pathtmp)
     _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
@@ -29,7 +29,7 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if "Error" in out:
         print(_cmd)
         print(out)
-        raise ex.excError("sssu command execution error")
+        raise ex.Error("sssu command execution error")
     return out, err
 
 class Evas(object):

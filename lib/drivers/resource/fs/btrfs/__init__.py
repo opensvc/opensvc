@@ -86,7 +86,7 @@ class FsBtrfs(Fs):
                 return
             self.log.info("label is not usable yet (%s)" % err.strip())
             time.sleep(2)
-        raise ex.excError("timeout waiting for label to become usable")
+        raise ex.Error("timeout waiting for label to become usable")
 
     def mount(self, mnt):
         self.set_loopdevice()
@@ -97,7 +97,7 @@ class FsBtrfs(Fs):
         cmd = ["mount", "-t", "btrfs", "-o", "subvolid=0", device, mnt]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def create_subvol(self):
         if self.subvol is None:
@@ -119,7 +119,7 @@ class FsBtrfs(Fs):
         cmd = ["btrfs", "subvol", "create", path]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def provisioner(self):
         if self.device.startswith("LABEL=") or self.device.startswith("UUID="):

@@ -43,9 +43,9 @@ class Sec(DataMixin, BaseSvc):
 
     def _add_key(self, key, data):
         if not key:
-            raise ex.excError("secret key name can not be empty")
+            raise ex.Error("secret key name can not be empty")
         if data is None:
-            raise ex.excError("secret value can not be empty")
+            raise ex.Error("secret value can not be empty")
         data = "crypt:"+base64.urlsafe_b64encode(self.encrypt(data, cluster_name="join", encode=True)).decode()
         self.set_multi(["data.%s=%s" % (key, data)])
         self.log.info("secret key '%s' added (%s)", key, print_size(len(data), compact=True, unit="b"))
@@ -54,10 +54,10 @@ class Sec(DataMixin, BaseSvc):
 
     def decode_key(self, key):
         if not key:
-            raise ex.excError("secret key name can not be empty")
+            raise ex.Error("secret key name can not be empty")
         data = self.oget("data", key)
         if not data:
-            raise ex.excError("secret %s key %s does not exist or has no value" % (self.path, key))
+            raise ex.Error("secret %s key %s does not exist or has no value" % (self.path, key))
         if data.startswith("crypt:"):
             data = data[6:]
             return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")))[2]
@@ -75,7 +75,7 @@ class Sec(DataMixin, BaseSvc):
             casecname, canamespace, _ = split_path(ca)
             casec = factory("sec")(casecname, namespace=canamespace, log=self.log, volatile=True)
             if not casec.exists():
-                raise ex.excError("ca secret %s does not exist" % ca)
+                raise ex.Error("ca secret %s does not exist" % ca)
 
         for key in ("crt", "key", "csr"):
             data[key] = self.tempfilename()

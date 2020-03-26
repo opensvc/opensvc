@@ -114,13 +114,13 @@ class BaseDiskLv(BaseDisk):
         cmd = ['lvchange', '-a', 'y', self.fullname]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def deactivate_lv(self):
         cmd = ['lvchange', '-a', 'n', self.fullname]
         ret, out, err = self.vcall(cmd, err_to_info=True)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_start(self):
         if self.is_up():
@@ -138,7 +138,7 @@ class BaseDiskLv(BaseDisk):
         holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.sub_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
-            raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
+            raise ex.Error("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
             holder_dev.remove(self)
 

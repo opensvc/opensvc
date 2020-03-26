@@ -53,7 +53,7 @@ class DiskHpvm(DiskVg):
         cmd = ['/opt/hpvm/bin/hpvmdevmgmt', '-l', 'all']
         (ret, buff, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         if len(buff) == 0:
             return []
         a = {}
@@ -101,7 +101,7 @@ class DiskHpvm(DiskVg):
                     (ret, out, err) = self.vcall(cmd)
                     if ret != 0:
                         self.log.error("error adding device %s hpvm device table"%dev)
-                        raise ex.excError
+                        raise ex.Error
                 if dev in devs and share == devs[dev]['share']:
                     self.log.debug("skip set sharing of %s: already set to %s"%(dev, devs[dev]['share']))
                     continue
@@ -112,14 +112,14 @@ class DiskHpvm(DiskVg):
                     errors += 1
                     continue
         if errors > 0:
-            raise ex.excError
+            raise ex.Error
 
     def sub_devs(self):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-d', '-P', self.container_name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:
-            raise ex.excError
+            raise ex.Error
 
         devs = set()
         for line in buff[0].split('\n'):

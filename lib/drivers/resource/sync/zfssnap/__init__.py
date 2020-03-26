@@ -122,7 +122,7 @@ class SyncZfssnap(Sync):
             ds.snapshot(snapname=snap, recursive=self.recursive)
             clear_cache("zfs.list.snapshots.name")
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
     @cache("zfs.list.snapshots.name")
     def list_snaps(self):
@@ -161,7 +161,7 @@ class SyncZfssnap(Sync):
                 ds.destroy(options=options)
                 clear_cache("zfs.list.snapshots.name")
             except Exception as e:
-                raise ex.excError(str(e))
+                raise ex.Error(str(e))
 
     def get_snaps(self, dataset):
         snaps = []

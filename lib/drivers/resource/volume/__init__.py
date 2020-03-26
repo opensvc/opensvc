@@ -163,13 +163,13 @@ class Volume(Resource):
         if self.volsvc.topology == "flex":
             return
         if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader}) != 0:
-            raise ex.excError
+            raise ex.Error
 
     def start(self):
         if not self.volsvc.exists():
-            raise ex.excError("volume %s does not exist" % self.volname)
+            raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
-            raise ex.excError
+            raise ex.Error
         self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
         self.install_flag()
         self.install_secrets()
@@ -356,7 +356,7 @@ class Volume(Resource):
                                 volume.path, self.svc.path)
                 return
             if self.claimed(volume):
-                raise ex.excError("shared volume %s is already claimed by %s" % (volume.name, ",".join(volume.children)))
+                raise ex.Error("shared volume %s is already claimed by %s" % (volume.name, ",".join(volume.children)))
         else:
             if self.owned(volume):
                 self.log.info("volume %s is already claimed by %s",
@@ -395,7 +395,7 @@ class Volume(Resource):
             "notify": True,
         }) 
         if ret != 0:
-            raise ex.excError("volume provision returned %d" % ret)
+            raise ex.Error("volume provision returned %d" % ret)
         self.can_rollback = True
         self.unset_lazy("device")
         self.unset_lazy("mount_point")
@@ -409,7 +409,7 @@ class Volume(Resource):
             if not data or "cluster" not in data:
                 return volume
             if not self.svc.node.get_pool(volume.pool):
-                raise ex.excError("pool %s not found on this node" % volume.pool)
+                raise ex.Error("pool %s not found on this node" % volume.pool)
             if self.svc.options.leader and volume.topology == "failover" and \
                (self.owned() or not self.claimed(volume)) and \
                data["avail"] != "up":
@@ -440,7 +440,7 @@ class Volume(Resource):
                                          fmt=self.format,
                                          shared=self.shared)
         if pool is None:
-            raise ex.excError("could not find a pool matching criteria")
+            raise ex.Error("could not find a pool matching criteria")
         pool.log = self.log
         try:
             nodes = self.svc._get("DEFAULT.nodes")
@@ -455,9 +455,9 @@ class Volume(Resource):
             args = src.split(".", 1)
             val = self.svc.oget(*args)
             if val is None:
-                raise ex.excError("missing mapped key in %s: %s" % (self.svc.path, mapping))
+                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
             if is_string(val) and ".." in val:
-                raise ex.excError("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
+                raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
         pool.configure_volume(volume,
                               fmt=self.format,

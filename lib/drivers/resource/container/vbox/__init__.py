@@ -123,12 +123,12 @@ class ContainerVbox(BaseContainer):
         cmd = ['VBoxManage', action, self.name] + add
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def container_start(self):
         state = self.state()
         if state == 'None':
-            raise ex.excError
+            raise ex.Error
         elif state == 'off':
             if self.headless:
                 self.container_action('startvm', ['--type', 'headless'])
@@ -143,7 +143,7 @@ class ContainerVbox(BaseContainer):
     def container_stop(self):
         state = self.state()
         if state == 'None':
-            raise ex.excError
+            raise ex.Error
         elif state == 'off':
             self.log.info("container is already down")
         if state == 'on' :
@@ -151,7 +151,7 @@ class ContainerVbox(BaseContainer):
             try:
                 self.log.info("wait for container shutdown")
                 self.wait_for_fn(self.is_shutdown, self.stop_timeout, 2)
-            except ex.excError:
+            except ex.Error:
                 self.container_forcestop()
 
     def check_manual_boot(self):

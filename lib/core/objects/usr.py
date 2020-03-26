@@ -89,7 +89,7 @@ class Usr(Sec, BaseSvc):
 
     def revoke(self):
         if "certificate" not in self.data_keys():
-            raise ex.excError("can not revoke: this certificate is signed by an external CA, and should be revoked there.")
+            raise ex.Error("can not revoke: this certificate is signed by an external CA, and should be revoked there.")
         p_ca_key = os.path.join(rcEnv.paths.certs, "ca_private_key")
         p_ca_crt = os.path.join(rcEnv.paths.certs, "ca_certiticate")
         p_crl = os.path.join(rcEnv.paths.certs, "ca_crl")

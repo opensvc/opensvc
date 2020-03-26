@@ -178,7 +178,7 @@ class BaseContainer(Resource):
             self.addr = getaddr(self.vm_hostname, cache_fallback=cache_fallback, log=self.log)
         except Exception as e:
             if not self.is_disabled():
-                raise ex.excError("could not resolve name %s: %s" % (self.vm_hostname, str(e)))
+                raise ex.Error("could not resolve name %s: %s" % (self.vm_hostname, str(e)))
 
     def __str__(self):
         return "%s name=%s" % (super(BaseContainer, self).__str__(), self.name)
@@ -224,7 +224,7 @@ class BaseContainer(Resource):
             if hasattr(self, "is_up_clear_cache"):
                 getattr(self, "is_up_clear_cache")()
             if not self.is_up():
-                raise ex.excError("the container went down")
+                raise ex.Error("the container went down")
             return getattr(self, "ping")()
         if hasattr(self, 'ping'):
             self.log.info("wait for container ping")
@@ -240,7 +240,7 @@ class BaseContainer(Resource):
             if hasattr(self, "is_up_clear_cache"):
                 getattr(self, "is_up_clear_cache")()
             if not self.is_up():
-                raise ex.excError("the container went down")
+                raise ex.Error("the container went down")
             return self.operational()
         self.log.info("wait for container operational")
         self.wait_for_fn(fn, self.start_timeout, 2)
@@ -287,7 +287,7 @@ class BaseContainer(Resource):
             if not hasattr(self, 'addr'):
                 BaseContainer.getaddr(self)
             if not hasattr(self, 'addr'):
-                raise ex.excError()
+                raise ex.Error()
         except:
             self.log.info("could not resolve %s to an ip address" % self.vm_hostname)
             return True
@@ -335,7 +335,7 @@ class BaseContainer(Resource):
         self.container_stop()
         try:
             self.wait_for_shutdown()
-        except ex.excError:
+        except ex.Error:
             self.container_forcestop()
             self.wait_for_shutdown()
         if hasattr(self, "post_container_stop"):
@@ -399,7 +399,7 @@ class BaseContainer(Resource):
             try:
                 _name = self.svc.name[self.svc.name.index(".")+1:]
             except ValueError:
-                raise ex.excError("misnamed scaler slave %s: should be <n>.<scalername>" % self.svc.name)
+                raise ex.Error("misnamed scaler slave %s: should be <n>.<scalername>" % self.svc.name)
         else:
             _name = self.svc.name
         namespace = self.svc.namespace.lower() if self.svc.namespace else "root"

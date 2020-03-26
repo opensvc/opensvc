@@ -81,7 +81,7 @@ class DiskVxvol(BaseDisk):
             # no lv
             return {}
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         data = {}
         for line in out.splitlines():
             words = line.split()
@@ -108,13 +108,13 @@ class DiskVxvol(BaseDisk):
         cmd = ['vxvol', '-g', self.vg, 'start', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def deactivate_lv(self):
         cmd = ['vxvol', '-g', self.vg, 'stop', self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def do_start(self):
         if self.is_up():
@@ -135,7 +135,7 @@ class DiskVxvol(BaseDisk):
         holders_devpaths -= set(dev.devpath)
         holders_handled_by_resources = self.svc.sub_devs() & holders_devpaths
         if len(holders_handled_by_resources) > 0:
-            raise ex.excError("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
+            raise ex.Error("resource %s has holders handled by other resources: %s" % (self.rid, ", ".join(holders_handled_by_resources)))
         for holder_dev in holder_devs:
             holder_dev.remove(self)
 
@@ -176,7 +176,7 @@ class DiskVxvol(BaseDisk):
 
     def unprovisioner(self):
         if not which('vxassist'):
-            raise ex.excError("vxassist command not found")
+            raise ex.Error("vxassist command not found")
 
         if not self.has_it():
             self.log.info("skip vxvol unprovision: %s already unprovisioned", self.fullname)
@@ -188,12 +188,12 @@ class DiskVxvol(BaseDisk):
         cmd = ["vxassist", "-g", self.vg, "remove", "volume", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
     def provisioner(self):
         if not which('vxassist'):
-            raise ex.excError("vxassist command not found")
+            raise ex.Error("vxassist command not found")
 
         if self.has_it():
             self.log.info("skip vxvol provision: %s already exists" % self.fullname)
@@ -218,7 +218,7 @@ class DiskVxvol(BaseDisk):
         cmd = ['vxassist', '-g', self.vg, "make", self.name] + size_parm + create_options
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         self.can_rollback = True
         self.svc.node.unset_lazy("devtree")
 

@@ -318,7 +318,7 @@ class ResourceSet(object):
                     # the action_job tells us what to do with it through its exitcode
                     resource.can_rollback = True
             if len(err) > 0:
-                raise ex.excError("%s non-optional resources jobs returned "
+                raise ex.Error("%s non-optional resources jobs returned "
                                   "with error" % ",".join(err))
         else:
             if self.svc.options.dry_run and \
@@ -339,7 +339,7 @@ class ResourceSet(object):
                     if msg != "":
                         resource.log.info(msg)
                     resource.log.info("continue action on resource set")
-                except ex.excError as exc:
+                except ex.Error as exc:
                     msg = str(exc)
                     if msg != "":
                         resource.log.error(msg)

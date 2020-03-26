@@ -126,7 +126,7 @@ class Pool(object):
         data = []
         tgts = self.get_targets()
         if self.node.nodes_info is None:
-            raise ex.excError("nodes info is not available")
+            raise ex.Error("nodes info is not available")
         for nodename, ndata in self.node.nodes_info.items():
             if nodes and nodename not in nodes:
                 continue

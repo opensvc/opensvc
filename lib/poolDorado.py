@@ -89,7 +89,7 @@ class Pool(pool.Pool):
         if nodes:
             mappings = self.get_mappings(nodes)
             if not mappings:
-                raise ex.excError("refuse to create a disk with no mappings")
+                raise ex.Error("refuse to create a disk with no mappings")
         else:
             mappings = None
         lock_id = None
@@ -191,7 +191,7 @@ class Pool(pool.Pool):
         o = Dorados()
         array = o.get_dorado(self.array_name)
         if array is None:
-            raise ex.excError("array %s not found" % self.array_name)
+            raise ex.Error("array %s not found" % self.array_name)
         array.node = self.node
         return array
 
@@ -201,7 +201,7 @@ class Pool(pool.Pool):
         o = Dorados()
         array = o.get_dorado(self.remote_array_name)
         if array is None:
-            raise ex.excError("array %s not found" % self.array_name)
+            raise ex.Error("array %s not found" % self.array_name)
         array.node = self.node
         return array
 

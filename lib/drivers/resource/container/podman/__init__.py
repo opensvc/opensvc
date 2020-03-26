@@ -102,7 +102,7 @@ class ContainerPodman(ContainerDocker):
                 self.wait_for_removed()
             else:
                 self.log.info(" ".join(cmd))
-                raise ex.excError(err)
+                raise ex.Error(err)
         else:
             self.log.info(" ".join(cmd))
         self.is_up_clear_cache()

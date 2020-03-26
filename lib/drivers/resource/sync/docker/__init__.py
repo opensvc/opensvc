@@ -130,7 +130,7 @@ class SyncDocker(Sync):
                 continue
             try:
                 mounted = self.remote_fs_mounted(node)
-            except ex.excError:
+            except ex.Error:
                 mounted = False
             if not mounted:
                 self.targets -= set([node])
@@ -151,7 +151,7 @@ class SyncDocker(Sync):
     def _sync_update(self, action):
         try:
             self.sanity_checks()
-        except ex.excError:
+        except ex.Error:
             return
         self.get_targets(action)
         if len(self.targets) == 0:
@@ -180,7 +180,7 @@ class SyncDocker(Sync):
         else:
             if err is not None and len(err) > 0:
                 self.log.error(err)
-            raise ex.excError("sync update failed")
+            raise ex.Error("sync update failed")
         if out is not None and len(out) > 0:
             self.log.info(out)
 

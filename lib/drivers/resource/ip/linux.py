@@ -42,7 +42,7 @@ class Ip(ParentIp):
             if utilities.ping.check_ping(self.addr, timeout=1, count=1):
                 return ret, out, err
         self.log.error("timed out waiting for ip activation")
-        raise ex.excError
+        raise ex.Error
 
     def stopip_cmd(self):
         if which("ifconfig") and self.alias:

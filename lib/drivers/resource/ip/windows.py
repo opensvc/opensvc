@@ -22,7 +22,7 @@ class Ip(ParentIp):
         if ":" in self.addr:
             if "." in self.mask:
                 self.log.error("netmask parameter is mandatory for ipv6 adresses")
-                raise ex.excError
+                raise ex.Error
             cmd = ["netsh", "interface", "ipv6", "add", "address", self.ipdev, self.addr, self.mask]
         else:
             cmd = ["netsh", "interface", "ipv4", "add", "address", self.ipdev, self.addr, self.mask]
@@ -38,7 +38,7 @@ class Ip(ParentIp):
                 return ret, out, err
             time.sleep(1)
         self.log.error("timed out waiting for ip activation")
-        raise ex.excError
+        raise ex.Error
 
     def stopip_cmd(self):
         if ":" in self.addr:

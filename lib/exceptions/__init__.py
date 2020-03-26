@@ -11,7 +11,7 @@ class HTTP(OsvcException):
 class EncapUnjoinable(OsvcException):
     pass
 
-class excError(OsvcException):
+class Error(OsvcException):
     """ Failed action
     """
     def __init__(self, value=""):
@@ -124,12 +124,6 @@ class NotAvailable(OsvcException):
 class NotSupported(OsvcException):
     """ Not supported
     """
-
-class excBug(OsvcException):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
 
 class MissImpl(OsvcException):
     def __init__(self, value):

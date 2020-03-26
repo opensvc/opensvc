@@ -85,7 +85,7 @@ class IpAmazon(Ip, AmazonMixin):
     def get_instance_private_addresses(self):
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
-            raise ex.excError("can't find instance data")
+            raise ex.Error("can't find instance data")
 
         ips = []
         for eni in instance_data["NetworkInterfaces"]:
@@ -98,7 +98,7 @@ class IpAmazon(Ip, AmazonMixin):
         ips = set(intf.ipaddr + intf.ip6addr)
         instance_data = self.get_instance_data(refresh=True)
         if instance_data is None:
-            raise ex.excError("can't find instance data")
+            raise ex.Error("can't find instance data")
 
         for eni in instance_data["NetworkInterfaces"]:
             _ips = set([ pa["PrivateIpAddress"] for pa in eni["PrivateIpAddresses"] ])
@@ -117,7 +117,7 @@ class IpAmazon(Ip, AmazonMixin):
     def _status(self, verbose=False):
         try:
             s = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if s:
@@ -134,7 +134,7 @@ class IpAmazon(Ip, AmazonMixin):
             return
         eni = self.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
+            raise ex.Error("could not find ec2 network interface for %s" % self.ipdev)
         data = self.aws([
          "ec2", "assign-private-ip-addresses",
          "--network-interface-id", eni,
@@ -149,7 +149,7 @@ class IpAmazon(Ip, AmazonMixin):
 
         eip = self.get_eip()
         if eip is None:
-            raise ex.excError("eip %s is not allocated" % self.eip)
+            raise ex.Error("eip %s is not allocated" % self.eip)
         if "PrivateIpAddress" in eip and eip["PrivateIpAddress"] == self.addr:
             self.log.info("eip %s is already associated to private ip %s" % (eip["PublicIp"], self.addr))
             return
@@ -171,7 +171,7 @@ class IpAmazon(Ip, AmazonMixin):
             return
         eni = self.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
+            raise ex.Error("could not find ec2 network interface for %s" % self.ipdev)
         data = self.aws([
          "ec2", "unassign-private-ip-addresses",
          "--network-interface-id", eni,
@@ -228,7 +228,7 @@ class IpAmazon(Ip, AmazonMixin):
 
         eni = self.get_network_interface()
         if eni is None:
-            raise ex.excError("could not find ec2 network interface for %s" % self.ipdev)
+            raise ex.Error("could not find ec2 network interface for %s" % self.ipdev)
 
         ips1 = set(self.get_instance_private_addresses())
         data = self.aws([

@@ -11,7 +11,7 @@ class FsZfsMixin():
     def unprovisioner(self):
         if not which(rcEnv.syspaths.zfs):
             self.log.error("zfs command not found")
-            raise ex.excError
+            raise ex.Error
         dataset = Dataset(self.device, log=self.log)
         if dataset.exists():
             dataset.destroy(["-r"])
@@ -25,7 +25,7 @@ class FsZfsMixin():
     def provisioner(self):
         if not which(rcEnv.syspaths.zfs):
             self.log.error("zfs command not found")
-            raise ex.excError
+            raise ex.Error
         dataset = Dataset(self.device, log=self.log)
         mkfs_opt = ["-p"]
         mkfs_opt += self.oget("mkfs_opt")

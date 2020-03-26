@@ -125,7 +125,7 @@ class DiskAdvfs(BaseDisk):
                 return set(json.load(f))
         except:
             self.log.error("corrupted sub_devs cache file %s"%self.sub_devs_name())
-            raise ex.excError
+            raise ex.Error
 
     def _sub_devs(self):
         # return cache if initialized

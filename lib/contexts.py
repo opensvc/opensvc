@@ -33,7 +33,7 @@ def get_context(context=None):
         with open(fpath, "r") as ofile:
             data = json.load(ofile)
     except ValueError as exc:
-        raise ex.excError("invalid context: %s: %s" % (fpath, str(exc)))
+        raise ex.Error("invalid context: %s: %s" % (fpath, str(exc)))
     except (IOError, OSError):
         data = {}
 
@@ -44,25 +44,25 @@ def get_context(context=None):
             user = context_data["user"]
             cluster = context_data["cluster"]
         except KeyError as exc:
-            raise ex.excError("invalid context: %s: key %s not found" % (context, str(exc)))
+            raise ex.Error("invalid context: %s: key %s not found" % (context, str(exc)))
         namespace = context_data.get("namespace")
     else:
         try:
             user, cluster, namespace = split_context(context)
         except Exception:
-            raise ex.excError("invalid context '%s'. should be <user>/<cluster>[/<namespace>] or the name of a context defined in %s" % (context, fpath))
+            raise ex.Error("invalid context '%s'. should be <user>/<cluster>[/<namespace>] or the name of a context defined in %s" % (context, fpath))
 
     # cluster data
     cdata = data.get("clusters", {}).get(cluster)
     if cdata is None:
-        raise ex.excError("invalid context '%s'. cluster not found in %s" % (context, fpath))
+        raise ex.Error("invalid context '%s'. cluster not found in %s" % (context, fpath))
     info["cluster"] = cdata
     
     certificate_authority = cdata.get("certificate_authority")
 
     server = cdata.get("server")
     if server is None:
-        raise ex.excError("invalid context '%s'. cluster.%s.server not found in %s" % (context, cluster, fpath))
+        raise ex.Error("invalid context '%s'. cluster.%s.server not found in %s" % (context, cluster, fpath))
 
     server = server.replace("tls://", "").strip("/")
     server = server.replace("https://", "").strip("/")
@@ -75,27 +75,27 @@ def get_context(context=None):
     try:
         info["cluster"]["port"] = int(port)
     except Exception:
-        raise ex.excError("invalid context '%s'. port %s number is not integer" % (context, port))
+        raise ex.Error("invalid context '%s'. port %s number is not integer" % (context, port))
 
     # user data
     udata = data.get("users", {}).get(user)
     if udata is None:
-        raise ex.excError("invalid context '%s'. user not found in %s" % (context, fpath))
+        raise ex.Error("invalid context '%s'. user not found in %s" % (context, fpath))
     info["user"] = udata
     info["namespace"] = namespace
     
     cert = info.get("user", {}).get("client_certificate")
     if cert is None:
-        raise ex.excError("invalid context '%s'. user.%s.client_certificate not found in %s" % (context, user, fpath))
+        raise ex.Error("invalid context '%s'. user.%s.client_certificate not found in %s" % (context, user, fpath))
     if not os.path.exists(cert):
-        raise ex.excError("invalid context '%s'. user.%s.client_certificate %s not found" % (context, user, cert))
+        raise ex.Error("invalid context '%s'. user.%s.client_certificate %s not found" % (context, user, cert))
 
     key = info.get("user", {}).get("client_key")
     if key is None:
         # consider 'client_certificate' points to a full pem
         info["user"]["client_key"] = cert
     elif not os.path.exists(key):
-        raise ex.excError("invalid context '%s'. user.%s.client_key %s not found" % (context, user, key))
+        raise ex.Error("invalid context '%s'. user.%s.client_key %s not found" % (context, user, key))
     #print(json.dumps(info, indent=4))
     return info
 
@@ -121,14 +121,14 @@ def load_context():
         with open(fpath, "r") as ofile:
             data = json.load(ofile)
     except ValueError as exc:
-        raise ex.excError("invalid context: %s: %s" % (fpath, str(exc)))
+        raise ex.Error("invalid context: %s: %s" % (fpath, str(exc)))
     except (IOError, OSError):
         data = {}
     return data
 
 def user_create(name=None, client_certificate=None, client_key=None, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if name in cdata.get("users", {}):
         # preload current values for incremental changes
@@ -146,7 +146,7 @@ def user_create(name=None, client_certificate=None, client_key=None, **kwargs):
 
 def user_delete(name, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if name not in cdata.get("users", {}):
         return
@@ -167,7 +167,7 @@ def user_show(name=None, **kwargs):
 
 def cluster_create(name=None, server=None, certificate_authority=None, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if name in cdata.get("clusters", {}):
         # preload current values for incremental changes
@@ -185,7 +185,7 @@ def cluster_create(name=None, server=None, certificate_authority=None, **kwargs)
 
 def cluster_delete(name=None, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if name not in cdata.get("clusters", {}):
         return
@@ -205,26 +205,26 @@ def cluster_show(name=None, **kwargs):
         print(json.dumps(cdata.get("clusters", {}).get(name, {}), indent=4))
 
 def get(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle ctx get")
+    raise ex.Error("The 'om' alias must be sourced to handle ctx get")
 
 def set(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle ctx set")
+    raise ex.Error("The 'om' alias must be sourced to handle ctx set")
 
 def unset(**kwargs):
-    raise ex.excError("The 'om' alias must be sourced to handle ctx unset")
+    raise ex.Error("The 'om' alias must be sourced to handle ctx unset")
 
 def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if not cluster:
-        raise ex.excError("cluster is mandatory")
+        raise ex.Error("cluster is mandatory")
     if cluster not in cdata.get("clusters", {}):
-        raise ex.excError("unknown cluster %s" % cluster)
+        raise ex.Error("unknown cluster %s" % cluster)
     if not user:
-        raise ex.excError("user is mandatory")
+        raise ex.Error("user is mandatory")
     if user not in cdata.get("users", {}):
-        raise ex.excError("unknown user %s" % user)
+        raise ex.Error("unknown user %s" % user)
     if name in cdata.get("contexts", {}):
         # preload current values for incremental changes
         data = cdata["contexts"][name]
@@ -243,7 +243,7 @@ def create(name=None, cluster=None, user=None, namespace=None, **kwargs):
 
 def delete(name=None, **kwargs):
     if name is None:
-        raise ex.excError("name is mandatory")
+        raise ex.Error("name is mandatory")
     cdata = load_context()
     if name not in cdata.get("contexts", {}):
         return
@@ -391,7 +391,7 @@ def main(argv):
                        global_options=GLOBAL_OPTS)
     try:
         options, action = parser.parse_args(argv[1:])
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         return 1
     kwargs = vars(options)
@@ -400,7 +400,7 @@ def main(argv):
 if __name__ == "__main__":
     try:
         ret = main(sys.argv)
-    except ex.excError as exc:
+    except ex.Error as exc:
         print(exc, file=sys.stderr)
         ret = 1
     sys.exit(ret)
