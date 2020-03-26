@@ -113,7 +113,7 @@ class InitError(OsvcException):
     """ Resource initialisation error
     """
 
-class excScsiPrNotsupported(OsvcException):
+class ScsiPrNotsupported(OsvcException):
     """ Scsi persistent reservation is not supported
     """
 
