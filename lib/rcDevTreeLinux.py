@@ -9,7 +9,7 @@ import math
 
 import rcDevTree
 import rcDevTreeVeritas
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.mounts import Mounts
 from utilities.proc import which

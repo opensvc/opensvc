@@ -1,7 +1,7 @@
 import os
 from subprocess import Popen, PIPE, STDOUT
 
-import exceptions as ex
+import core.exceptions as ex
 from utilities.string import bdecode
 
 

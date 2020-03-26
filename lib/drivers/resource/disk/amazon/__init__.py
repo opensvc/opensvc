@@ -3,7 +3,7 @@ import glob
 import time
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import \
    BaseDisk, \

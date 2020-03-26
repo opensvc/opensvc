@@ -3,7 +3,7 @@ import os
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount
 from utilities.proc import qcall, which
-import exceptions as ex
+import core.exceptions as ex
 import utilities.snap
 
 class Snap(utilities.snap.Snap):

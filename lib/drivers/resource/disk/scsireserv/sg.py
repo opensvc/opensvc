@@ -2,7 +2,7 @@ import os
 import time
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from utilities.proc import which

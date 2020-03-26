@@ -4,7 +4,7 @@ from .. import \
 from drivers.resource.container.docker import \
     KEYWORDS as DOCKER_KEYWORDS, \
     ContainerDocker
-import exceptions as ex
+import core.exceptions as ex
 
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS

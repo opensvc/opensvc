@@ -1,7 +1,7 @@
 import os
 from stat import *
 
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import protected_mount, getmount
 from utilities.mounts.freebsd import Mounts
 from utilities.proc import qcall

@@ -13,7 +13,7 @@ from core.objects.svc import BaseSvc
 from converters import print_size
 from core.objects.data import DataMixin
 from utilities.string import bencode, bdecode, is_string
-import exceptions as ex
+import core.exceptions as ex
 
 DEFAULT_STATUS_GROUPS = [
 ]

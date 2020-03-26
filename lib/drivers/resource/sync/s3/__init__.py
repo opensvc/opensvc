@@ -6,7 +6,7 @@ import time
 from six.moves import configparser as ConfigParser
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from .. import Sync, notify

@@ -6,7 +6,7 @@ import uuid
 
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 from utilities.string import try_decode

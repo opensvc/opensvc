@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 
 import pool
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from converters import convert_size

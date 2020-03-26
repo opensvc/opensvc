@@ -5,7 +5,7 @@ import shutil
 
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv

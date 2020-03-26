@@ -1,7 +1,7 @@
 import os
 from stat import *
 
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import protected_mount
 from utilities.mounts.osf1 import Mounts
 from utilities.proc import qcall

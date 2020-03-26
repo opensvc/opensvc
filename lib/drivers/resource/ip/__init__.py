@@ -10,7 +10,7 @@ import time
 import ipaddress
 import lock
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 import utilities.ifconfig
 
 from arp import send_arp

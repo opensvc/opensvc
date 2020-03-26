@@ -5,7 +5,7 @@ import re
 import six
 import socket
 
-import exceptions as ex
+import core.exceptions as ex
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs

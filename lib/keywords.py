@@ -9,7 +9,7 @@ import copy
 from textwrap import TextWrapper
 
 from rcGlobalEnv import rcEnv
-import exceptions as ex
+import core.exceptions as ex
 
 class MissKeyNoDefault(Exception):
     pass

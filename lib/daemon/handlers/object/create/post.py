@@ -5,7 +5,7 @@ from subprocess import PIPE
 import daemon.handlers.handler as handler
 import daemon.handlers.rbac
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import drop_option, split_path, validate_paths
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode

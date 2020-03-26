@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import App, KEYWORDS as BASE_KEYWORDS, StatusNA, StatusWARN
 from rcGlobalEnv import rcEnv

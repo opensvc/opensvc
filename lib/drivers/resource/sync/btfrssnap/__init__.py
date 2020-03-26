@@ -3,7 +3,7 @@ import os
 import time
 
 import rcBtrfs
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from .. import Sync, notify

@@ -2,7 +2,7 @@ import traceback
 
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import split_path
 from utilities.string import bdecode
 

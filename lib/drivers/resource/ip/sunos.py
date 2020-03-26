@@ -1,6 +1,6 @@
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 import utilities.ping
 
 from . import Ip as ParentIp
