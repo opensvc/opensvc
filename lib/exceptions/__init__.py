@@ -53,7 +53,7 @@ class Signal(OsvcException):
     """ Termination signal received
     """
 
-class excUndefined(OsvcException):
+class Undefined(OsvcException):
     """ Mandatory Undefined action exception
     """
     def __init__(self,action=None,className=None,func=None):
