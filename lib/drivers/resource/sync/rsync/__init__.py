@@ -434,7 +434,7 @@ class SyncRsync(Sync):
         if len(targets) == 0:
             if not self.svc.options.cron:
                 self.rset.log.info("no nodes to sync")
-            raise ex.excAbortAction
+            raise ex.AbortAction
 
         if not need_snap:
             self.rset.log.debug("snap not needed")

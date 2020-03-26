@@ -43,11 +43,11 @@ class HbRelay(Hb):
         try:
             self.relay = shared.NODE.oget(self.name, "relay")
         except Exception:
-            raise ex.excAbortAction("no %s.relay is not set in node.conf" % self.name)
+            raise ex.AbortAction("no %s.relay is not set in node.conf" % self.name)
         try:
             self.secret = shared.NODE.oget(self.name, "secret")
         except Exception:
-            raise ex.excAbortAction("no %s.secret is not set in node.conf" % self.name)
+            raise ex.AbortAction("no %s.secret is not set in node.conf" % self.name)
 
 class HbRelayTx(HbRelay):
     """
@@ -64,7 +64,7 @@ class HbRelayTx(HbRelay):
         self.flags = os.O_RDWR
         try:
             self.configure()
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
             sys.exit(1)
@@ -134,7 +134,7 @@ class HbRelayRx(HbRelay):
         self.flags = os.O_RDWR
         try:
             self.configure()
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
             sys.exit(1)

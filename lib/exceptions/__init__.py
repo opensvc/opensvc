@@ -105,7 +105,7 @@ class ContinueAction(OsvcException):
     """ Abort current resource action, but proceed anyway
     """
 
-class excAbortAction(OsvcException):
+class AbortAction(OsvcException):
     """ Abort multi-resource action
     """
 
