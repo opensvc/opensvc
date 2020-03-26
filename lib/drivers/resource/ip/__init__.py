@@ -17,7 +17,7 @@ from arp import send_arp
 from converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr, lazy, to_cidr
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall, which

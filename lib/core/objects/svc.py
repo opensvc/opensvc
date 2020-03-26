@@ -20,8 +20,8 @@ import hashlib
 import locale
 
 import six
-from resources import Resource
-from resourceset import ResourceSet
+from core.resource import Resource
+from core.resourceset import ResourceSet
 from freezer import Freezer
 import rcStatus
 from rcGlobalEnv import rcEnv, Paths

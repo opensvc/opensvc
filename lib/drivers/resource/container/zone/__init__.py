@@ -11,7 +11,7 @@ import utilities.os.sunos
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from rcZfs import zfs_setprop, Dataset
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.mounts import Mounts
