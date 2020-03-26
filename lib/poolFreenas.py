@@ -4,7 +4,7 @@ import os
 import sys
 
 import pool
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.freenas import Freenass

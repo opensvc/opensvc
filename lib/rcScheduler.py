@@ -10,7 +10,7 @@ import time
 import random
 import logging
 
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from utilities.render.color import formatter, color

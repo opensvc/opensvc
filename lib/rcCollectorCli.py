@@ -23,7 +23,7 @@ import atexit
 import fnmatch
 
 from six.moves import configparser as ConfigParser
-import rcExceptions as ex
+import exceptions as ex
 from six.moves import input
 from storage import Storage
 from rcUtilities import find_editor

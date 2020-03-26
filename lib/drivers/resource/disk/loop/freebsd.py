@@ -1,7 +1,7 @@
 import os
 import re
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from . import \

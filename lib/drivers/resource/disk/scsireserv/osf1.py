@@ -1,7 +1,7 @@
 import os
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 from utilities.proc import which
 from . import BaseDiskScsireserv
 

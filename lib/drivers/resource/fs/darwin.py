@@ -1,7 +1,7 @@
 import os
 from stat import *
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.devices.darwin
 from rcUtilities import protected_mount, getmount
 from utilities.mounts.darwin import Mounts

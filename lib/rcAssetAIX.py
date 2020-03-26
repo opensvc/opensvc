@@ -2,7 +2,7 @@ import os
 import datetime
 
 import rcAsset
-import rcExceptions as ex
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall
 

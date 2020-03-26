@@ -1,7 +1,7 @@
 import os
 import re
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS

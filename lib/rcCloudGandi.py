@@ -1,5 +1,5 @@
 import rcCloud
-import rcExceptions as ex
+import exceptions as ex
 import socket
 
 try:

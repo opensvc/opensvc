@@ -11,7 +11,7 @@ class TestImport:
         All modules syntax check
         """
         mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-        import rcExceptions as ex
+        import exceptions as ex
 
         for fpath in glob.glob(mod_d+"/*.py"):
             if "win" in fpath.lower() or "wmi" in fpath or "osvcd_win" in fpath:

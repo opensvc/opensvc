@@ -40,7 +40,7 @@ from storage import Storage
 from rcUtilities import lazy
 from contexts import get_context, want_context
 from utilities.string import bdecode
-import rcExceptions as ex
+import exceptions as ex
 
 if six.PY3:
     def to_bytes(x):

@@ -7,7 +7,7 @@ import signal
 from itertools import chain
 
 import rcContainer
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from .. import \

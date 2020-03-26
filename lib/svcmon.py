@@ -15,7 +15,7 @@ from six.moves import queue
 #
 prog = "svcmon"
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.render.color
 from core.node import Node
 from utilities.render.cluster import format_cluster
