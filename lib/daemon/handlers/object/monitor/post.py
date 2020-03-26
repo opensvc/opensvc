@@ -110,7 +110,7 @@ class Handler(handler.Handler):
             try:
                 self.validate_global_expect(path, options.global_expect, thr=thr)
                 new_ge = self.validate_destination_node(path, options.global_expect, thr=thr)
-            except ex.excAbortAction as exc:
+            except ex.AbortAction as exc:
                 info.append(str(exc))
             except ex.excError as exc:
                 errors.append(str(exc))
@@ -197,17 +197,17 @@ class Handler(handler.Handler):
                                   "" % (path, nodename, status))
 
         if ges == set([global_expect]):
-            raise ex.excAbortAction("%s is already targeting %s" % (path, global_expect))
+            raise ex.AbortAction("%s is already targeting %s" % (path, global_expect))
 
         if global_expect not in ("started", "stopped"):
             return
         agg = Storage(shared.AGG.get(path, {}))
         if global_expect == "started" and agg.avail == "up":
-            raise ex.excAbortAction("%s is already started" % path)
+            raise ex.AbortAction("%s is already started" % path)
         elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):
-            raise ex.excAbortAction("%s is already stopped" % path)
+            raise ex.AbortAction("%s is already stopped" % path)
         if agg.avail in ("n/a", "undef"):
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
 
     def validate_destination_node(self, path, global_expect, thr=None):
         """
@@ -222,7 +222,7 @@ class Handler(handler.Handler):
         * an empty destination node is specified in a list of destination
           nodes
 
-        Raise an excAbortAction if
+        Raise an AbortAction if
         * the avail status of the instance on the destination node is up
         """
         if global_expect is None:
@@ -266,6 +266,6 @@ class Handler(handler.Handler):
                                       (destination_node, path))
                 instance = instances[destination_node]
                 if instance["avail"] == "up":
-                    raise ex.excAbortAction("instance on destination node %s is "
+                    raise ex.AbortAction("instance on destination node %s is "
                                             "already up" % destination_node)
 

@@ -207,7 +207,7 @@ class SyncDds(Sync):
         try:
             self.pre_sync_check_svc_not_up()
             self.pre_sync_check_flex_primary()
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return False
         return True
 

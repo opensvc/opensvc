@@ -865,7 +865,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if msg:
                 self.log.error(msg)
             return 1
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             msg = str(exc)
             if msg:
                 self.log.info(msg)
@@ -910,7 +910,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         try:
             self.action_rid_before_depends = self.options_to_rids(options, action)
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             self.log.error(exc)
             return 1
 
@@ -1107,7 +1107,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except ex.EndAction as exc:
             self.log.info(exc)
             err = 0
-        except ex.excAbortAction as exc:
+        except ex.AbortAction as exc:
             msg = "'%s' action aborted by last resource" % action
             if len(str(exc)) > 0:
                 msg += ": %s" % str(exc)
@@ -1410,7 +1410,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if isinstance(ret, (dict, list)):
                 return ret
             if ret == 0:
-                raise ex.excAbortAction()
+                raise ex.AbortAction()
             else:
                 raise ex.excError()
         if self.options.local or self.options.slave or self.options.slaves or \
@@ -1423,9 +1423,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.command_is_scoped():
             return
         if self.options.dry_run:
-            raise ex.excAbortAction()
+            raise ex.AbortAction()
         self.daemon_mon_action(action, wait=wait, timeout=timeout)
-        raise ex.excAbortAction()
+        raise ex.AbortAction()
 
     def daemon_log_result(self, ret, raise_on_errors=True):
         if ret is None:
@@ -2351,7 +2351,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     except ValueError:
                         pass
         except lock.LOCK_EXCEPTIONS as exc:
-            raise ex.excAbortAction(str(exc))
+            raise ex.AbortAction(str(exc))
 
         waitlock = convert_duration(self.options.waitlock)
         if waitlock is None or waitlock < 0:
@@ -2364,7 +2364,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
                     data = self.print_status_data_eval(refresh=refresh)
             except lock.LOCK_EXCEPTIONS as exc:
-                raise ex.excAbortAction(str(exc))
+                raise ex.AbortAction(str(exc))
         else:
             running = self.get_running(data.get("resources", {}).keys())
             if running:
@@ -5154,8 +5154,8 @@ class Svc(BaseSvc):
                            ",".join(rids))
 
             if self.command_is_scoped(options) and len(rids) == 0:
-                raise ex.excAbortAction("no resource match the given --rid, --subset "
-                                        "and --tags specifiers")
+                raise ex.AbortAction("no resource match the given --rid, --subset "
+                                     "and --tags specifiers")
         else:
             # let the action go on. 'delete', for one, takes a --rid but does
             # not need resource initialization
