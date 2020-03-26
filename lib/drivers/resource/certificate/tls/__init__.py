@@ -1,4 +1,4 @@
-from resData import Data
+from resources import DataResource
 from svcdict import KEYS
 
 DRIVER_GROUP = "certificate"
@@ -50,7 +50,7 @@ def adder(svc, s):
     r = CertificateTls(**kwargs)
     svc += r
 
-class CertificateTls(Data):
+class CertificateTls(DataResource):
     def __init__(self, **kwargs):
-        Data.__init__(self, type="certificate.tls", **kwargs)
+        super(CertificateTls, self).__init__(type="certificate.tls", **kwargs)
         self.label = "tls certificate"

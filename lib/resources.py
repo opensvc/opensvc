@@ -20,6 +20,8 @@ from rcUtilities import lazy, clear_cache, set_lazy, \
                         action_triggers, mimport, unset_lazy, factory
 from rcGlobalEnv import rcEnv
 from utilities.proc import call, vcall, lcall
+from storage import Storage
+
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",
@@ -1391,3 +1393,20 @@ class Resource(object):
         Used by Svc::configure_scheduler() and Resource::status_info().
         """
         return {}
+
+
+class DataResource(Resource):
+    def __init__(self, rid, type="data", **kwargs):
+        Resource.__init__(self, rid, type=type)
+        self.options = Storage(kwargs)
+
+    def _status_info(self):
+        data = {}
+        for key, val in self.section_kwargs().items():
+            if val not in (None, []):
+                data[key] = val
+        return data
+
+    def _status(self, verbose=False):
+        return rcStatus.NA
+

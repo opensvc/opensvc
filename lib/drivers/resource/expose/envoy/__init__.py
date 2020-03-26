@@ -1,4 +1,4 @@
-from resData import Data
+from resources import DataResource
 from svcdict import KEYS
 
 DRIVER_GROUP = "expose"
@@ -99,7 +99,7 @@ def adder(svc, s):
     r = ExposeEnvoy(**kwargs)
     svc += r
 
-class ExposeEnvoy(Data):
+class ExposeEnvoy(DataResource):
     def __init__(self, **kwargs):
         super(ExposeEnvoy, self).__init__(type="expose.envoy", **kwargs)
         self.label = "envoy expose %s/%s via %s:%d" % (
