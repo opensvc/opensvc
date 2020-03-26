@@ -16,20 +16,20 @@ logging.disable(logging.CRITICAL)
 
 @pytest.fixture(scope='function')
 def has_privs(mocker):
-    mocker.patch('node.check_privs', return_value=None)
+    mocker.patch.object(nodemgr.Node, 'check_privs', return_value=None)
 
 
 @pytest.fixture(scope='function')
 def parse_args(mocker):
-    parse_args = mocker.patch('nodemgr.NodemgrOptParser.parse_args',
-                              return_value=(mocker.Mock(symcli_db_file=None),
-                                            'my_action'))
+    parse_args = mocker.patch.object(nodemgr.NodemgrOptParser,
+                                     'parse_args',
+                                     return_value=(mocker.Mock(symcli_db_file=None), 'my_action'))
     return parse_args
 
 
 @pytest.fixture(scope='function')
 def node(mocker):
-    node = mocker.patch('nodemgr.node_mod.Node', autospec=True).return_value
+    node = mocker.patch.object(nodemgr, 'Node', autospec=True).return_value
     node.options = dict()
     node.action.return_value = 0
     return node
