@@ -5,7 +5,7 @@ import sys
 from xml.etree.ElementTree import XML, fromstring
 
 import rcExceptions as ex
-from node import Node
+from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory, split_path
 from utilities.proc import justcall, which

@@ -36,10 +36,9 @@ from lock import LOCK_EXCEPTIONS
 from network import NetworksMixin
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts, Scheduler, sched_action
-from rcUtilities import (ANSI_ESCAPE, check_privs,
-                         daemon_process_running, drop_option, factory,
-                         find_editor, fmt_path, glob_services_config,
-                         init_locale, is_service, lazy,
+from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
+                         drop_option, factory, find_editor, fmt_path,
+                         glob_services_config, init_locale, is_service, lazy,
                          lazy_initialized, list_services, makedirs,
                          normalize_paths, purge_cache_expired, read_cf,
                          resolve_path, set_lazy, split_path, strip_path,
@@ -48,7 +47,7 @@ from rcUtilities import (ANSI_ESCAPE, check_privs,
 from storage import Storage
 from utilities.proc import call, justcall, vcall, which
 from utilities.render.color import formatter
-from utilities.string import bencode, bdecode, is_string, try_decode
+from utilities.string import bdecode, bencode, is_string, try_decode
 
 try:
     from six.moves.urllib.request import Request, urlopen
@@ -2637,14 +2636,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if os.path.exists(fpath):
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
-            clustername, nodename, data = self.decrypt(buff)
-            if data is None:
-                raise ex.excError("no data")
-            data = data["data"]
             try:
-                return base64.urlsafe_b64decode(data)
-            except TypeError:
-                return base64.urlsafe_b64decode(data.encode())
+                clustername, nodename, data = self.decrypt(buff)
+                data = data["data"]
+                try:
+                    return base64.urlsafe_b64decode(data)
+                except TypeError:
+                    return base64.urlsafe_b64decode(data.encode())
+            except Exception:
+                pass
         rpath = "/safe/%s/download" % safe_id
         api = self.collector_api(path=path)
         request = self.collector_request(rpath)

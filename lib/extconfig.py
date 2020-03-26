@@ -588,10 +588,9 @@ class ExtConfigMixin(object):
 
         if _section == "node" and hasattr(self, "path"):
             # go fetch the reference in the node.conf [node] section
-            if not hasattr(self, "node") or getattr(self, "node") is None:
-                from node import Node
-                self.node = Node()
             try:
+                # set BaseSvc::node if not already set
+                self.get_node()
                 return self.node.conf_get("node", _v)
             except Exception as exc:
                 raise ex.excError("%s: unresolved reference (%s)"

@@ -14,9 +14,10 @@ import os
 import rcStatus
 import utilities.render.color
 import rcExceptions as ex
-from rcUtilities import ximport, check_privs, split_path, get_option, validate_kind
+from rcUtilities import check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
 from storage import Storage
+from core.node import Node
 
 
 class Mgr(object):
@@ -335,9 +336,8 @@ class Mgr(object):
         ret = 0
 
         if self.node is None:
-            node_mod = ximport('node')
             try:
-                self.node = node_mod.Node()
+                self.node = Node()
             except Exception as exc:
                 print(exc, file=sys.stderr)
                 return 1

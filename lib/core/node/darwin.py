@@ -1,6 +1,7 @@
-import node
+from .node import Node as BaseNode
 
-class Node(node.Node):
+
+class Node(BaseNode):
     def shutdown(self):
         cmd = ["shutdown", "-h", "now"]
         ret, out, err = self.vcall(cmd)

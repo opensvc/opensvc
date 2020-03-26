@@ -1,10 +1,10 @@
 """
 nodemgr command line actions and options
 """
-import node
 from storage import Storage
 from rcOptParser import OptParser
 from optparse import Option
+from core.node.node import ACTION_ASYNC
 
 PROG = "nodemgr"
 
@@ -1159,5 +1159,5 @@ class NodemgrOptParser(OptParser):
                            actions_translations=ACTIONS_TRANSLATIONS,
                            global_options=GLOBAL_OPTS,
                            colorize=colorize, width=width,
-                           formatter=formatter, indent=indent, async_actions=node.ACTION_ASYNC)
+                           formatter=formatter, indent=indent, async_actions=ACTION_ASYNC)
 

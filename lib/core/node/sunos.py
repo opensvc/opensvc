@@ -1,9 +1,11 @@
 import time
 
-import node
 from utilities.proc import justcall
 
-class Node(node.Node):
+from .node import Node as BaseNode
+
+
+class Node(BaseNode):
     def sys_reboot(self, delay=0):
         if delay:
             self.log.info("sysrq reboot in %s seconds", delay)
@@ -61,4 +63,3 @@ class Node(node.Node):
         data["mem_total"] = int(raw_data["unix:0:system_pages:physmem"]) * mmap.PAGESIZE // 1024 // 1024
         data["mem_avail"] = 100 * int(raw_data["unix:0:system_pages:availrmem"]) // int(raw_data["unix:0:system_pages:physmem"])
         return data
-

@@ -1,9 +1,11 @@
 import time
 
-import node
 from utilities.proc import justcall
 
-class Node(node.Node):
+from .node import Node as BaseNode
+
+
+class Node(BaseNode):
     def sys_reboot(self, delay=0):
         if delay:
             self.log.info("reboot -q in %s seconds", delay)
@@ -23,5 +25,3 @@ class Node(node.Node):
     def _reboot(self):
         cmd = ["shutdown", "-r", "-y", "0"]
         ret, out, err = self.vcall(cmd)
-
-

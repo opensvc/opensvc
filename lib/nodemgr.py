@@ -14,10 +14,8 @@ import rcStatus
 import utilities.render.color
 import rcExceptions as ex
 from rcGlobalEnv import *
-from rcUtilities import ximport
 from nodemgr_parser import NodemgrOptParser
-
-node_mod = ximport('node')
+from core.node import Node
 
 def get_extra_argv(argv=None):
     """
@@ -96,7 +94,7 @@ def _main(node, argv=None):
     return err
 
 def main(argv=None):
-    node = node_mod.Node()
+    node = Node()
 
     try:
         return _main(node, argv=argv)
