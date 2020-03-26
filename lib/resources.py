@@ -4,24 +4,21 @@ resource driver.
 """
 from __future__ import print_function
 
-import os
+import json
 import logging
+import os
 import sys
 import time
-import json
 
 import lock
 import rcExceptions as ex
 import rcStatus
 import utilities.devices
 import utilities.render.color
-
-from rcUtilities import lazy, clear_cache, set_lazy, \
-                        action_triggers, mimport, unset_lazy, factory
 from rcGlobalEnv import rcEnv
-from utilities.proc import call, vcall, lcall
+from rcUtilities import action_triggers, clear_cache, factory, lazy, set_lazy, unset_lazy
 from storage import Storage
-
+from utilities.proc import call, lcall, vcall
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",
