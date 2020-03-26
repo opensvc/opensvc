@@ -528,7 +528,7 @@ class Ip(Resource):
             raise ex.excError("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
             raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
-        except ex.excSignal:
+        except ex.Signal:
             raise ex.excError("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()

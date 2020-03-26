@@ -49,7 +49,7 @@ class RequiredOptNotFound(OsvcException):
     """
     pass
 
-class excSignal(OsvcException):
+class Signal(OsvcException):
     """ Termination signal received
     """
 
