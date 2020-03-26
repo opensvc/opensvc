@@ -8,7 +8,7 @@ import rcStatus
 
 from .. import BaseDisk, BASE_KEYWORDS
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "ldom"

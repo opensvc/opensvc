@@ -9,7 +9,7 @@ from .. import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import to_cidr, lazy
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
 DRIVER_GROUP = "ip"

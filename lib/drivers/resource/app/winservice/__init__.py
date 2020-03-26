@@ -13,7 +13,7 @@ import rcExceptions as ex
 from .. import App, KEYWORDS as BASE_KEYWORDS, StatusNA, StatusWARN
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 
 DEFAULT_TIMEOUT = 300

@@ -8,7 +8,7 @@ from .. import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from resources import Resource
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vdisk"

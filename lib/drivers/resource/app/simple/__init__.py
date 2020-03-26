@@ -13,7 +13,7 @@ import rcExceptions as ex
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
 DRIVER_GROUP = "app"

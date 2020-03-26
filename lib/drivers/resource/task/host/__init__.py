@@ -5,7 +5,7 @@ import rcExceptions as ex
 from .. import BaseTask, KEYWORDS as BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "host"

@@ -13,7 +13,7 @@ from rcUtilities import lazy, cache, clear_cache, drop_option
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
 from converters import convert_duration
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, qcall, which
 
 DRIVER_GROUP = "disk"
