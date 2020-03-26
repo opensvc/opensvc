@@ -1,13 +1,12 @@
 import os
-import logging
 import glob
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import datetime
 
 from .. import Sync, notify
-from converters import convert_speed, convert_size
+from converters import convert_speed
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, drop_option
 from svcBuilder import sync_kwargs
@@ -504,42 +503,42 @@ class SyncRsync(Sync):
         """
         if len(self.src) == 0:
             self.status_log("no files to sync", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         target = set()
         for i in self.target:
             target |= self.target_nodes(i)
         if len(target - set([rcEnv.nodename])) == 0:
             self.status_log("no destination nodes", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         try:
             options = [] + self.full_options
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         """ sync state on nodes where the service is not UP
         """
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if s['avail'].status != rcStatus.UP or \
+        if s['avail'].status != core.status.UP or \
            (self.svc.topology == 'flex' and \
             rcEnv.nodename != self.svc.flex_primary and \
-            s['avail'].status == rcStatus.UP):
+            s['avail'].status == core.status.UP):
             if rcEnv.nodename not in target:
                 self.status_log("passive node not in destination nodes", "info")
-                return rcStatus.NA
+                return core.status.NA
             if self.node_need_sync(rcEnv.nodename):
                 self.status_log("passive node needs update")
-                return rcStatus.WARN
+                return core.status.WARN
             else:
-                return rcStatus.UP
+                return core.status.UP
 
         """ sync state on DRP nodes where the service is UP
         """
         if 'drpnodes' in self.target and rcEnv.nodename in self.target_nodes('drpnodes'):
             self.status_log("service up on drp node, sync disabled", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         """ sync state on nodes where the service is UP
         """
@@ -547,10 +546,10 @@ class SyncRsync(Sync):
         nodes += self.nodes_to_sync('nodes', state="late", status=True)
         nodes += self.nodes_to_sync('drpnodes', state="late", status=True)
         if len(nodes) == 0:
-            return rcStatus.UP
+            return core.status.UP
 
         self.status_log("%s need update"%', '.join(sorted(nodes)))
-        return rcStatus.DOWN
+        return core.status.DOWN
 
     @cache("rsync.version")
     def rsync_version(self):

@@ -1,4 +1,4 @@
-import rcStatus
+import core.status
 import utilities.devices.linux
 
 from .sg import DiskScsireservSg
@@ -10,12 +10,12 @@ class DiskScsireserv(DiskScsireservSg):
 
     def _status(self, verbose=False):
         ret = super(DiskScsireserv, self)._status(verbose=verbose)
-        if ret != rcStatus.UP:
+        if ret != core.status.UP:
             return ret
         self.get_devs()
         for dev, paths in self.devs.items():
             for path in paths:
                 if utilities.devices.linux.dev_is_ro(path):
                     self.status_log("resv held on ro dev %s in %s" % (path, dev), "info")
-                    return rcStatus.NA
+                    return core.status.NA
         return ret

@@ -1,7 +1,6 @@
 """ Module providing device path remapping for libvirt VMs
 """
-
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from .. import BASE_KEYWORDS
@@ -68,7 +67,7 @@ class DiskVdisk(Resource):
     def remap(self):
         path = self.devpath[rcEnv.nodename]
         paths = set(self.devpath.values()) - set(self.devpath[rcEnv.nodename])
-        from xml.etree.ElementTree import ElementTree, SubElement
+        from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
         try:
             tree.parse(self.svc.resources_by_id['container'].cf)
@@ -96,5 +95,5 @@ class DiskVdisk(Resource):
         self.remap()
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        return core.status.NA
 

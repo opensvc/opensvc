@@ -7,11 +7,9 @@ try:
 except ImportError:
     pass
 
-import rcStatus
 import core.exceptions as ex
 
 from .. import App, KEYWORDS as BASE_KEYWORDS, StatusNA, StatusWARN
-from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 

@@ -1,9 +1,7 @@
 import os
-import re
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from . import \
     BaseDiskLoop, \
     adder as base_loop_adder, \
@@ -11,7 +9,6 @@ from . import \
     DRIVER_GROUP, \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
-from rcGlobalEnv import rcEnv
 from core.objects.svcdict import KEYS
 from utilities.proc import call, which
 
@@ -86,6 +83,6 @@ class DiskLoop(BaseDiskLoop):
 
     def _status(self, verbose=False):
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN

@@ -1,16 +1,13 @@
 import datetime
 import glob
 import os
-import time
 
 from six.moves import configparser as ConfigParser
 from subprocess import *
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
@@ -133,34 +130,34 @@ class SyncS3(Sync):
             self.check_bin()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         try:
             l = self.ls(refresh=True)
             n = self.get_n_incr()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         if n is None:
             self.status_log("no backup found")
-            return rcStatus.WARN
+            return core.status.WARN
 
         if n > 0 and not os.path.exists(self.snar):
             self.status_log("snar file not found at %s" % self.snar)
-            return rcStatus.WARN
+            return core.status.WARN
 
         try:
             last = self.sync_date(n)
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         if self.sync_date(n) < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
             self.status_log("last backup too old (%s)" % last.strftime("%Y-%m-%d %H:%M:%S"))
-            return rcStatus.WARN
+            return core.status.WARN
 
         self.status_log("last backup on %s" % last.strftime("%Y-%m-%d %H:%M:%S"))
-        return rcStatus.UP
+        return core.status.UP
 
     def check_bin(self):
         if not which("gof3r"):

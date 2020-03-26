@@ -1,12 +1,9 @@
-import os
-
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.ifconfig
 
 from .. import Ip, COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcAmazon import AmazonMixin
-from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -119,11 +116,11 @@ class IpAmazon(Ip, AmazonMixin):
             s = self.is_up()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if s:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def check_ping(self, count=1, timeout=5):
         pass

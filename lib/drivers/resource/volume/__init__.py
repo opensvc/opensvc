@@ -4,10 +4,9 @@ Volume resource driver module.
 import os
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from converters import print_size
-from rcUtilities import lazy, factory, fmt_path, split_path, makedirs, factory
+from rcUtilities import lazy, fmt_path, split_path, makedirs, factory
 from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -202,11 +201,11 @@ class Volume(Resource):
         self.data_status()
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
-            return rcStatus.DOWN
-        status = rcStatus.Status(self.volsvc.print_status_data()["avail"])
+            return core.status.DOWN
+        status = core.status.Status(self.volsvc.print_status_data()["avail"])
         if not self.flag_installed():
             self.status_log("%s is %s" % (self.volsvc.path, status), "info")
-            return rcStatus.DOWN
+            return core.status.DOWN
         return status
 
     def exposed_devs(self):

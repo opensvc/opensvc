@@ -1,23 +1,16 @@
 """
 Docker container resource driver module.
 """
-import os
-import shlex
-import signal
-from itertools import chain
-
+import core.status
 import rcContainer
 import core.exceptions as ex
-import rcStatus
-
 from .. import \
     BaseContainer
 from ..docker import \
     KEYWORDS, \
     ContainerDocker, \
     adder as docker_adder
-from rcUtilities import lazy, drop_option, has_option, get_option, get_options
-from rcGlobalEnv import rcEnv
+from rcUtilities import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -119,12 +112,12 @@ class ContainerPodman(ContainerDocker):
 
     def _status(self, verbose=False):
         if not self.detach:
-            return rcStatus.NA
+            return core.status.NA
         try:
             self.lib.docker_exe
         except ex.InitError as exc:
             self.status_log(str(exc), "warn")
-            return rcStatus.DOWN
+            return core.status.DOWN
         sta = BaseContainer._status(self, verbose)
         self._status_inspect()
         return sta

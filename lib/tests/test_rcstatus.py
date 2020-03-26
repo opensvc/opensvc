@@ -1,6 +1,6 @@
 import pytest
 
-from rcStatus import Status, colorize_status, status_value, status_str, UP
+from core.status import UP, colorize_status, status_value, status_str, Status
 
 color = "no"
 

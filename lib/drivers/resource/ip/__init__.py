@@ -7,9 +7,9 @@ import os
 import re
 import time
 
+import core.status
 import ipaddress
 import lock
-import rcStatus
 import core.exceptions as ex
 import utilities.ifconfig
 
@@ -20,7 +20,6 @@ from rcUtilities import getaddr, lazy, to_cidr
 from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import qcall, which
 
 KW_IPNAME = {
     "keyword": "ipname",
@@ -347,26 +346,26 @@ class Ip(Resource):
         except Exception as exc:
             self.status_log(str(exc))
             if "not allocated" in str(exc):
-                return rcStatus.DOWN
+                return core.status.DOWN
             else:
-                return rcStatus.WARN
+                return core.status.WARN
         ifconfig = utilities.ifconfig.Ifconfig()
         intf = ifconfig.interface(self.ipdev)
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
         if intf is None and "dedicated" not in self.tags and mode != "dedicated":
             self.status_log("interface %s not found" % self.ipdev)
-            return rcStatus.DOWN
+            return core.status.DOWN
         try:
             if self.is_up() and self.has_carrier(intf) is not False:
-                return rcStatus.UP
+                return core.status.UP
             else:
-                return rcStatus.DOWN
+                return core.status.DOWN
         except ex.NotSupported:
             self.status_log("not supported", "info")
-            return rcStatus.NA
+            return core.status.NA
         except ex.Error as exc:
             self.status_log(str(exc), "error")
-            return rcStatus.WARN
+            return core.status.WARN
 
     def arp_announce(self):
         """

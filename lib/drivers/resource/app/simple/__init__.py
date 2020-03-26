@@ -4,12 +4,9 @@ The module defining the app.simple resource class.
 
 import os
 import subprocess
-import hashlib
 import time
-from datetime import datetime
 
-import rcStatus
-import core.exceptions as ex
+import core.status
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
@@ -207,12 +204,12 @@ class AppSimple(BaseApp):
         match = self.get_running()
         count = len(match)
         if count == 0:
-            return rcStatus.DOWN
+            return core.status.DOWN
         elif count > 1:
             self.status_log("more than one process runs (pid %s)" % ", ".join(match))
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.UP
+            return core.status.UP
 
     def ps_pids_e(self, pids):
         """

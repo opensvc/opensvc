@@ -1,16 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import sys
-import os
-import optparse
-
 #
 # add project lib to path
 #
 prog = "nodemgr"
 
-import rcStatus
 import utilities.render.color
 import core.exceptions as ex
 from rcGlobalEnv import *

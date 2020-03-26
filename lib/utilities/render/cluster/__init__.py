@@ -6,7 +6,7 @@ import re
 from converters import print_duration, print_size
 from utilities.render.color import colorize, color, unicons
 from rcGlobalEnv import rcEnv
-from rcStatus import colorize_status
+from core.status import colorize_status
 from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, abbrev
 from storage import Storage
 

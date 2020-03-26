@@ -1,8 +1,4 @@
-import os
-import time
-
 import core.exceptions as ex
-import rcStatus
 import utilities.ping
 
 from .. import \
@@ -25,7 +21,6 @@ from rcUtilities import lazy
 from core.resource import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import qcall
 
 try:
     from libcloud.utils.py3 import urlparse

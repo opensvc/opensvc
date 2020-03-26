@@ -1,10 +1,9 @@
 import grp
 import os
 import pwd
-import re
 import stat
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
@@ -172,11 +171,11 @@ class DiskGandi(BaseDisk):
             s = self.is_up()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if s:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def get_node(self):
         if self.node is not None:
