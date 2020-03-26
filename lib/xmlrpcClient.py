@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import importlib
 import logging
 import logging.handlers
 import os
@@ -8,12 +7,11 @@ import random
 import socket
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import six
 
 import core.exceptions as ex
-import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import split_path
 

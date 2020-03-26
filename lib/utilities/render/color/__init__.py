@@ -7,7 +7,6 @@ import re
 
 import six
 import core.exceptions as ex
-from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from utilities.string import is_string
 
@@ -111,7 +110,7 @@ colorize = ansi_colorize
 
 def colorize_json(s):
     import re
-    from rcStatus import colorize_status
+    from core.status import colorize_status
     s = re.sub(r'(")(error|ok|err|up|down|warn|n/a|stdby up|stdby down)(")', lambda m: m.group(1)+colorize_status(m.group(2), lpad=0)+m.group(3), s)
     s = re.sub(r'((?!"DEFAULT":)("[\w: ,@-]+":))', colorize(r'\1', color.LIGHTBLUE), s)
     s = re.sub(r'("DEFAULT":)( {)', colorize(r'\1', color.BROWN)+r'\2', s)

@@ -4,8 +4,7 @@ import os
 from subprocess import *
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from rcZfs import a2pool_dataset, Dataset
@@ -448,17 +447,17 @@ class SyncZfs(Sync):
             delay = datetime.timedelta(seconds=self.sync_max_delay)
         except IOError:
             self.status_log("zfs state file not found")
-            return rcStatus.WARN
+            return core.status.WARN
         except:
             import sys
             import traceback
             e = sys.exc_info()
             print(e[0], e[1], traceback.print_tb(e[2]))
-            return rcStatus.WARN
+            return core.status.WARN
         if last < now - delay:
             self.status_log("Last sync on %s older than %s" % (last, print_duration(self.sync_max_delay)))
-            return rcStatus.WARN
-        return rcStatus.UP
+            return core.status.WARN
+        return core.status.UP
 
     def check_remote(self, node):
         rs = self.get_remote_state(node)

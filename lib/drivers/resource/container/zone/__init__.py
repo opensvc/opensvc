@@ -3,9 +3,9 @@ import stat
 import time
 from datetime import datetime
 
+import core.status
 import lock
 import core.exceptions as ex
-import rcStatus
 import rcZone
 import utilities.os.sunos
 from rcGlobalEnv import rcEnv
@@ -386,8 +386,8 @@ class ContainerZone(BaseContainer):
 
     def _status(self, verbose=False):
         if self.state == "running":
-            return rcStatus.UP
-        return rcStatus.DOWN
+            return core.status.UP
+        return core.status.DOWN
 
     def zone_refresh(self):
         self.unset_lazy("zone_data")

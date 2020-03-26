@@ -1,14 +1,13 @@
 import os
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from . import BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import which
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"
@@ -111,14 +110,14 @@ class NfsShare(Resource):
             up = self.is_up()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if len(self.issues) > 0:
             self.status_log(self.issues)
-            return rcStatus.WARN
+            return core.status.WARN
         if up:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def parse_opts(self, opts):
         o = sorted(opts.split(','))

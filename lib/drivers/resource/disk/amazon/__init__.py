@@ -2,13 +2,12 @@ import os
 import glob
 import time
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from .. import \
    BaseDisk, \
    BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
 from rcAmazon import AmazonMixin
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -182,17 +181,17 @@ class DiskAmazon(BaseDisk, AmazonMixin):
             self.validate_volumes()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         l = self.up_count()
         n = len(l)
         unmapped = sorted(list(set(self.volumes) - set(l)))
         if n == len(self.volumes):
-            return rcStatus.UP
+            return core.status.UP
         elif n == 0:
-            return rcStatus.DOWN
+            return core.status.DOWN
         else:
             self.status_log("unattached: "+", ".join(unmapped))
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def get_dev_prefix(self):
         if self.dev_prefix is not None:

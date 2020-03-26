@@ -1,16 +1,9 @@
 import os
-import re
 import time
-import uuid
-
-from subprocess import *
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
-from utilities.proc import which
 
 
 class BaseDiskScsireserv(Resource):
@@ -238,20 +231,20 @@ class BaseDiskScsireserv(Resource):
     def checkreserv(self):
         self.log.debug("starting checkreserv. prkey %s"%self.hostid)
         if self.ack_all_unit_attention() != 0:
-            return rcStatus.WARN
-        r = rcStatus.Status()
+            return core.status.WARN
+        r = core.status.Status()
         for d in self.devs:
             try:
                 key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
                 if key is None:
                     self.log.debug("disk %s is not reserved" % d)
-                    r += rcStatus.DOWN
+                    r += core.status.DOWN
                 elif key != self.hostid:
                     self.log.debug("disk %s is reserved by another host whose key is %s" % (d, key))
-                    r += rcStatus.DOWN
+                    r += core.status.DOWN
                 else:
                     self.log.debug("disk %s is correctly reserved" % d)
-                    r += rcStatus.UP
+                    r += core.status.UP
             except ex.ScsiPrNotsupported as exc:
                 self.log.warning(str(exc))
                 continue
@@ -291,17 +284,17 @@ class BaseDiskScsireserv(Resource):
             self.get_hostid()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if not self.scsireserv_supported():
             self.status_log("scsi reservation is not supported")
-            return rcStatus.NA
+            return core.status.NA
         try:
             self.check_all_paths_registered()
         except ex.Signal as exc:
             self.status_log(str(exc))
         except ex.Error as exc:
             self.status_log(str(exc))
-            return rcStatus.WARN
+            return core.status.WARN
         return self.checkreserv()
 
 
@@ -309,7 +302,7 @@ class BaseDiskScsireserv(Resource):
         self.get_hostid()
         if not self.scsireserv_supported():
             return
-        if self._status() == rcStatus.UP:
+        if self._status() == core.status.UP:
             self.log.info("already started")
             return
         self.can_rollback = True

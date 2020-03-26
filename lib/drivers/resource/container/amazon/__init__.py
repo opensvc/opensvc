@@ -1,8 +1,6 @@
 import os
-import time
 
 import core.exceptions as ex
-import rcStatus
 import utilities.ping
 
 from .. import \

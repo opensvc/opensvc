@@ -1,10 +1,8 @@
 import datetime
-import os
 
 import core.exceptions as ex
+import core.status
 import drivers.array.hp3par as array_driver
-import rcStatus
-
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
@@ -311,43 +309,43 @@ class SyncHp3par(Sync):
     def sync_status(self, verbose=False):
         if self.array_obj is None:
             self.status_log("array %s is not accessible" % self.array)
-            return rcStatus.WARN
+            return core.status.WARN
 
         try:
             data = self.showrcopy()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         elapsed = datetime.datetime.utcnow() - datetime.timedelta(seconds=self.sync_max_delay)
         r = None
         if data['rcg']['Status'] != "Started":
             self.status_log("rcopy group status is not Started (%s)"%data['rcg']['Status'])
-            r = rcStatus.WARN
+            r = core.status.WARN
         if self.mode == "async" and data['rcg']['Mode'] != "Periodic":
             self.status_log("rcopy group mode is not Periodic (%s)"%data['rcg']['Mode'])
-            r = rcStatus.WARN
+            r = core.status.WARN
         if self.mode == "sync" and data['rcg']['Mode'] != "Sync":
             self.status_log("rcopy group mode is not Sync (%s)"%data['rcg']['Mode'])
-            r = rcStatus.WARN
+            r = core.status.WARN
         if self.mode == "async":
             l = [o for o in data['rcg']['Options'] if o.startswith('Period ')]
             if len(l) == 0:
                 self.status_log("rcopy group period option is not set")
-                r = rcStatus.WARN
+                r = core.status.WARN
         if 'auto_recover' not in data['rcg']['Options']:
             self.status_log("rcopy group auto_recover option is not set")
-            r = rcStatus.WARN
+            r = core.status.WARN
         for vv in data['vv']:
             if vv['SyncStatus'] != 'Synced':
                 self.status_log("vv %s SyncStatus is not Synced (%s)"%(vv['LocalVV'], vv['SyncStatus']))
-                r = rcStatus.WARN
+                r = core.status.WARN
             if vv['LastSyncTime'] < elapsed:
                 self.status_log("vv %s last sync too old (%s)"%(vv['LocalVV'], vv['LastSyncTime'].strftime("%Y-%m-%d %H:%M")))
-                r = rcStatus.WARN
+                r = core.status.WARN
 
         if r is not None:
             return r
 
-        return rcStatus.UP
+        return core.status.UP
 

@@ -1,12 +1,9 @@
 import datetime
 import json
-import logging
 import os
-import time
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from converters import convert_speed, print_size
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts
@@ -135,14 +132,14 @@ class Sync(Resource):
 
     def pre_sync_check_svc_not_up(self):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if s['avail'].status == rcStatus.UP:
+        if s['avail'].status == core.status.UP:
             return
-        if s['avail'].status == rcStatus.NA and \
-           s['overall'].status == rcStatus.UP:
+        if s['avail'].status == core.status.NA and \
+           s['overall'].status == core.status.UP:
             return
         if self.svc.options.force and \
-           s['avail'].status not in (rcStatus.DOWN, rcStatus.NA) and \
-           s['overall'].status not in (rcStatus.DOWN, rcStatus.NA):
+           s['avail'].status not in (core.status.DOWN, core.status.NA) and \
+           s['overall'].status not in (core.status.DOWN, core.status.NA):
             self.log.info("allow sync, even though reference resources "
                           "aggregated status is %s/%s, because --force is set"
                           "" % (s['avail'], s['overall']))
@@ -175,14 +172,14 @@ class Sync(Resource):
         """
         Placeholder
         """
-        return rcStatus.UNDEF
+        return core.status.UNDEF
 
     def _status(self, **kwargs):
         if self.svc.running_action in ("stop", "shutdown"):
-            return rcStatus.NA
+            return core.status.NA
         if not self.svc.running_action and self.paused():
             # status eval
-            return rcStatus.NA
+            return core.status.NA
         return self.sync_status(**kwargs)
 
     def paused(self):
