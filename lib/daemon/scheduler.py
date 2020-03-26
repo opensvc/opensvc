@@ -328,7 +328,7 @@ class Scheduler(shared.OsvcThread):
                 # deleted during previous iterations
                 drop.append(sig)
                 continue
-            except (ex.excError, ex.excContinueAction) as exc:
+            except (ex.excError, ex.ContinueAction) as exc:
                 self.log.info("drop queued %s on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue

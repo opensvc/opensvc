@@ -260,7 +260,7 @@ class BaseTask(Resource):
         elif self.checker == "last_run":
             try:
                 self.check_requires("run")
-            except (ex.excError, ex.excContinueAction):
+            except (ex.excError, ex.ContinueAction):
                 return rcStatus.NA
             ret = self.read_last_run_retcode()
             if ret is None:
