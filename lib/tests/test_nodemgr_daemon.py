@@ -2,7 +2,7 @@ import os
 import time
 import json
 import nodemgr
-from node import Node
+from core.node import Node
 from osvcd import main
 import pytest
 

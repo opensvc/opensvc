@@ -294,8 +294,6 @@ def build_services(status=None, paths=None, create_instance=False,
     Returns a list of all services of status matching the specified status.
     If no status is specified, returns all services.
     """
-    import svc
-
     if paths is None:
         paths = []
 

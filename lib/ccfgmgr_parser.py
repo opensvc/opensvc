@@ -1,10 +1,10 @@
 """
 ccfgmgr command line actions and options
 """
-import svc
 import mgr_parser as mp
 from rcOptParser import OptParser
 from optparse import Option
+from core.objects.svc import ACTION_ASYNC
 
 PROG = "ccfgmgr"
 
@@ -34,5 +34,5 @@ class CcfgmgrOptParser(OptParser):
                            global_options=mp.GLOBAL_OPTS,
                            svc_select_options=mp.SVC_SELECT_OPTS,
                            colorize=colorize, width=width,
-                           formatter=formatter, indent=indent, async_actions=svc.ACTION_ASYNC)
+                           formatter=formatter, indent=indent, async_actions=ACTION_ASYNC)
 
