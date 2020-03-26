@@ -178,8 +178,8 @@ class NetworksMixin(object):
                     kw = "network#%s.subnet@%s=%s" % (name, route["node"], route["dst"])
                     kws.append(kw)
                     self.log.info(" %s", kw)
-                from cluster import ClusterSvc
-                svc = ClusterSvc()
+                from core.objects.ccfg import Ccfg
+                svc = Ccfg()
                 svc.set_multi(kws, validation=False)
                 self.unset_lazy("cd")
                 config["subnets"] = self.oget_scopes(section, "subnet", rtype="routed_bridge")
