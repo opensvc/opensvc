@@ -10,7 +10,7 @@ from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, clear_cache, drop_option
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 

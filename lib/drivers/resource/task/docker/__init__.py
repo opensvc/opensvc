@@ -6,7 +6,7 @@ from drivers.resource.container.docker import \
     ContainerDocker
 import core.exceptions as ex
 
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "task"
