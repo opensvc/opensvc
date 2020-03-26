@@ -3,7 +3,7 @@ import os
 import time
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.devices.linux
 
 from . import DiskDisk as BaseDiskDisk, KEYWORDS
@@ -11,7 +11,7 @@ from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"
@@ -53,12 +53,12 @@ class DiskDisk(BaseDiskDisk):
 
     def _status(self, verbose=False):
         if self.disk_id is None:
-            return rcStatus.NA
+            return core.status.NA
         if not self.devpath or not os.path.exists(self.devpath):
             if self.devpath:
                 self.status_log("%s does not exist" % self.devpath, "warn")
-            return rcStatus.DOWN
-        return rcStatus.NA
+            return core.status.DOWN
+        return core.status.NA
 
     def exposed_devs(self):
         self.unset_lazy("devpath")

@@ -1,11 +1,9 @@
-import os
 import re
 
 from subprocess import *
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -66,7 +64,7 @@ class DiskLdom(BaseDisk):
         return True
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        return core.status.NA
 
     def do_start(self):
         pass

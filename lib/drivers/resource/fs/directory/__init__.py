@@ -5,9 +5,7 @@ import shutil
 import stat
 
 import core.exceptions as ex
-import rcStatus
-
-from rcGlobalEnv import rcEnv
+import core.status
 from rcUtilities import lazy, protected_dir
 from core.resource import Resource
 from svcBuilder import init_kwargs
@@ -177,17 +175,17 @@ class FsDirectory(Resource):
     def _status(self, verbose=False):
         if self.path is None:
             self.status_log("path is not defined", "error")
-            return rcStatus.UNDEF
+            return core.status.UNDEF
         if not os.path.exists(self.path):
             self.log.debug("dir %s does not exist" % self.path)
-            return rcStatus.DOWN
+            return core.status.DOWN
         self.check_uid()
         self.check_gid()
         self.check_perm()
         if self.status_logs_count(["warn", "error"]) > 0:
-            return rcStatus.WARN
+            return core.status.WARN
         else:
-            return rcStatus.NA
+            return core.status.NA
 
     def __str__(self):
         return "%s path=%s user=%s group=%s perm=%s" % (

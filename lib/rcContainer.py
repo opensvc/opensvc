@@ -3,14 +3,13 @@
 """
 The module implementing the DockerLib class.
 """
-import distutils
 import errno
 import json
 import os
 import re
 from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from rcUtilities import lazy, unset_lazy, set_lazy
@@ -657,10 +656,10 @@ class DockerLib(ContainerLib):
         resource = self._container_data_dir_resource()
         if resource is not None:
             state = resource._status()
-            if state not in (rcStatus.UP, rcStatus.STDBY_UP):
+            if state not in (core.status.UP, core.status.STDBY_UP):
                 self.svc.log.warning("the docker daemon data dir is handled by the %s "
                                      "resource in %s state. can't start the docker "
-                                     "daemon", resource.rid, rcStatus.Status(state))
+                                     "daemon", resource.rid, core.status.Status(state))
                 lock.unlock(lockfd)
                 return
 

@@ -1,9 +1,8 @@
 import os
-import re
 import time
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.devices.linux
 
 from . import \
@@ -18,7 +17,6 @@ from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import clear_cache
 from core.objects.svcdict import KEYS
-from utilities.proc import call, which
 
 KEYS.register_driver(
     DRIVER_GROUP,
@@ -81,12 +79,12 @@ class DiskLoop(BaseDiskLoop):
     def _status(self, verbose=False):
         r = self.resource_handling_file()
         if self.is_provisioned() and not os.path.exists(self.loopFile):
-            if r is None or (r and r.status() in (rcStatus.UP, rcStatus.STDBY_UP)):
+            if r is None or (r and r.status() in (core.status.UP, core.status.STDBY_UP)):
                 self.status_log("%s does not exist" % self.loopFile)
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def exposed_devs(self):
         self.loop = utilities.devices.linux.file_to_loop(self.loopFile)

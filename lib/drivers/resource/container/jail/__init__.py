@@ -1,9 +1,7 @@
 import os
 
-from datetime import datetime
-
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.ping
 
 from .. import \
@@ -159,8 +157,8 @@ class ContainerJail(BaseContainer):
 
     def _status(self, verbose=False):
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
 

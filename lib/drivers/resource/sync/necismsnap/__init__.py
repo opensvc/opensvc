@@ -1,13 +1,10 @@
 import datetime
-import os
 import time
 
 import core.exceptions as ex
+import core.status
 import drivers.array.necism as array_driver
-import rcStatus
-
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
 
@@ -118,8 +115,8 @@ class SyncNecismsnap(Sync):
         ret += self._status_ts()
         ret += self._status_link()
         if ret > 0:
-            return rcStatus.WARN
-        return rcStatus.UP
+            return core.status.WARN
+        return core.status.UP
 
     def _status_ts(self):
         ts = self.get_oldest_ts()
@@ -129,7 +126,7 @@ class SyncNecismsnap(Sync):
         limit = now - datetime.timedelta(minutes=self.sync_max_delay)
         if ts < limit:
             self.status_log("snap too old (%s)" % ts.strftime("%Y-%m-%d %H:%M"))
-            return rcStatus.WARN
+            return core.status.WARN
         self.status_log("snap at %s" % ts.strftime("%Y-%m-%d %H:%M"))
         return 0
 

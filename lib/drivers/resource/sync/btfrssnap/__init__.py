@@ -1,11 +1,9 @@
 import datetime
 import os
-import time
 
+import core.status
 import rcBtrfs
 import core.exceptions as ex
-import rcStatus
-
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
@@ -221,10 +219,10 @@ class SyncBtrfssnap(Sync):
         issues = messages - not_writable
 
         if len(not_writable) > 0 and len(not_writable) == len(messages):
-            return rcStatus.NA
+            return core.status.NA
         if len(issues) == 0:
-            return rcStatus.UP
-        return rcStatus.WARN
+            return core.status.UP
+        return core.status.WARN
 
     def _sync_update(self, s):
         try:

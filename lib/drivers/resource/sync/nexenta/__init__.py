@@ -1,8 +1,7 @@
 import datetime
-import os
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import drivers.array.nexenta as array_driver
 
 from .. import Sync, notify
@@ -216,7 +215,7 @@ class SyncNexenta(Sync):
         self.age = now - self.ts
 
     def _status(self, verbose=False):
-        ret = rcStatus.UP
+        ret = core.status.UP
         try:
             self.get_endpoints()
             self.status_log("master head is %s"%self.master.head)
@@ -227,21 +226,21 @@ class SyncNexenta(Sync):
             else:
                 msg = str(e)
             self.status_log(msg)
-            return rcStatus.WARN
+            return core.status.WARN
         except:
             self.status_log("unexpected error")
             self.save_exc()
-            return rcStatus.WARN
+            return core.status.WARN
 
         limit = datetime.timedelta(seconds=self.sync_max_delay)
         if self.age > limit:
             self.status_log("last sync too old: %s ago"%str(self.age))
-            ret = rcStatus.WARN
+            ret = core.status.WARN
         s = self.master.autosync_get_state(self.autosync)
         if s not in ['online', 'running']:
             self.status_log("runner in '%s' state"%s)
-            ret = rcStatus.WARN
-        if ret == rcStatus.UP:
+            ret = core.status.WARN
+        if ret == core.status.UP:
             self.status_log("last sync %s ago"%str(self.age))
         return ret
 

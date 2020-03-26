@@ -1,13 +1,10 @@
 import datetime
-import json
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from ..radossnap import SyncRadossnap
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "radosclone"
@@ -113,13 +110,13 @@ class SyncRadosclone(SyncRadossnap):
             self.validate_pair_fmt()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         try:
             data = self.get_last()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         nosnap = []
         noclone = []
@@ -145,19 +142,19 @@ class SyncRadosclone(SyncRadossnap):
             elif not list_data[clone].get("parent"):
                 invclone.append(pair)
 
-        r = rcStatus.UP
+        r = core.status.UP
 
         if len(nosnap) > 0:
             self.status_log("no snap found for images: "+", ".join(nosnap))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(expired) > 0:
             self.status_log("snap too old for images: "+", ".join(expired))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(noclone) > 0:
             self.status_log("no clone found for pairs: "+", ".join(noclone))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(invclone) > 0:
             self.status_log("clone invalid for pairs: "+", ".join(invclone))
-            r = rcStatus.WARN
+            r = core.status.WARN
 
         return r

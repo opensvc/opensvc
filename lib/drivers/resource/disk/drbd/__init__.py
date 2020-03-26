@@ -1,8 +1,7 @@
 import os
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from core.resource import Resource
@@ -84,7 +83,7 @@ class DiskDrbd(Resource):
         if ret != 0:
             raise ex.Error
 
-        from xml.etree.ElementTree import XML, fromstring
+        from xml.etree.ElementTree import fromstring
         tree = fromstring(out)
 
         for res in tree.getiterator('resource'):
@@ -111,7 +110,7 @@ class DiskDrbd(Resource):
         if ret != 0:
             raise ex.Error
 
-        from xml.etree.ElementTree import XML, fromstring
+        from xml.etree.ElementTree import fromstring
         tree = fromstring(out)
 
         for res in tree.getiterator('resource'):
@@ -264,13 +263,13 @@ class DiskDrbd(Resource):
             role = self.get_role()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.DOWN
+            return core.status.DOWN
         self.status_log(str(role), "info")
         try:
             dstates = self.get_dstate()
         except ex.Error:
             self.status_log("drbdadm dstate %s failed"%self.res)
-            return rcStatus.WARN
+            return core.status.WARN
         if self.dstate_uptodate(dstates):
             pass
         else:
@@ -278,16 +277,16 @@ class DiskDrbd(Resource):
             for idx, dstate in enumerate(dstates):
                 if dstate == "Diskless/DUnknown":
                     self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
-                    status = rcStatus.DOWN
+                    status = core.status.DOWN
                 elif dstate == "Unconfigured":
-                    status = rcStatus.DOWN
+                    status = core.status.DOWN
                 else:
                     self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
             if status is not None:
                 return status
         if role == "Primary":
-            return rcStatus.UP
+            return core.status.UP
         elif role == "Secondary" and self.standby:
-            return rcStatus.STDBY_UP
+            return core.status.STDBY_UP
         else:
-            return rcStatus.WARN
+            return core.status.WARN

@@ -1,11 +1,10 @@
 import json
 import os
-import re
 
 import core.exceptions as ex
+import core.status
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -113,8 +112,7 @@ class DiskAdvfs(BaseDisk):
     def sub_devs(self):
         if not os.path.exists(self.sub_devs_name()):
             s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-            import rcStatus
-            if s['overall'].status == rcStatus.UP:
+            if s['overall'].status == core.status.UP:
                 self.log.debug("no sub_devs cache file and service up ... refresh sub_devs cache")
                 self.presync()
             else:

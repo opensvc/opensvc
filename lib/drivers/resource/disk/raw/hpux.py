@@ -1,8 +1,3 @@
-import os
-import re
-
-import rcStatus
-
 from . import \
     BaseDiskRaw, \
     adder as base_raw_adder, \

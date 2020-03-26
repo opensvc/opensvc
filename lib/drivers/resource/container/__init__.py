@@ -1,6 +1,4 @@
-import time
-
-import rcStatus
+import core.status
 import core.exceptions as ex
 import utilities.ping
 
@@ -196,7 +194,6 @@ class BaseContainer(Resource):
                                  self.name, "pwd"]
         else:
             cmd = self.runmethod + ["pwd"]
-        import subprocess
         out, err, ret = justcall(cmd, stdin=self.svc.node.devnull)
         if ret == 0:
             return True
@@ -366,24 +363,24 @@ class BaseContainer(Resource):
 
     def _status(self, verbose=False):
         if self.pg_frozen():
-            return rcStatus.NA
+            return core.status.NA
         if not self.check_manual_boot():
             self.status_log("container auto boot is on")
         try:
             self.getaddr()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if not self.check_capabilities():
             self.status_log("insufficient node capabilities")
-            return rcStatus.WARN
+            return core.status.WARN
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         if self.is_down():
-            return rcStatus.DOWN
+            return core.status.DOWN
         else:
             self.status_log("container status is neither up nor down")
-            return rcStatus.WARN
+            return core.status.WARN
 
     def get_container_info(self):
         print("TODO: get_container_info(self)")

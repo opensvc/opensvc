@@ -1,11 +1,8 @@
-import glob
 import json
 import os
-import re
-import time
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
@@ -185,7 +182,7 @@ class DiskMd(BaseDisk):
         if not self.is_shared:
             return
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if self.svc.options.force or s['avail'].status == rcStatus.UP:
+        if self.svc.options.force or s['avail'].status == core.status.UP:
             self.md_config_export()
 
     def files_to_sync(self):
@@ -314,10 +311,10 @@ class DiskMd(BaseDisk):
 
     def _status(self, verbose=False):
         if self.uuid is None:
-            return rcStatus.NA
+            return core.status.NA
         self.auto_assemble_disabled()
         s = super(DiskMd, self)._status(verbose=verbose)
-        if s == rcStatus.DOWN:
+        if s == core.status.DOWN:
              self.down_state_alerts()
         return s
 
