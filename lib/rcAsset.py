@@ -2,7 +2,7 @@ import codecs
 import datetime
 import os
 
-import exceptions as ex
+import core.exceptions as ex
 from converters import print_size
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which

@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 from . import AppSimple as ParentAppSimple, adder as parent_adder
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall

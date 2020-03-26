@@ -1,4 +1,4 @@
-import exceptions as ex
+import core.exceptions as ex
 import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder

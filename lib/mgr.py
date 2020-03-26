@@ -13,7 +13,7 @@ import os
 
 import rcStatus
 import utilities.render.color
-import exceptions as ex
+import core.exceptions as ex
 from rcUtilities import check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
 from storage import Storage

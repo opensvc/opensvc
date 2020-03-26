@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import adder as base_adder
 from ..linux import Fs

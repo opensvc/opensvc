@@ -5,7 +5,7 @@ import json
 import sys
 from optparse import Option
 
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 

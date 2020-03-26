@@ -2,7 +2,7 @@ import re
 import os
 from collections import namedtuple
 
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size

@@ -9,7 +9,7 @@ from stat import *
 from subprocess import *
 
 import six
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from storage import Storage
 from rcUtilities import fcache, ANSI_ESCAPE

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 import six
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 from rcGlobalEnv import rcEnv
 from rcUtilities import split_path
