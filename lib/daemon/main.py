@@ -485,7 +485,7 @@ def main(args=None):
     try:
         shared.DAEMON = Daemon()
         shared.DAEMON.run(daemon=options.daemon)
-    except (KeyboardInterrupt, ex.excSignal):
+    except (KeyboardInterrupt, ex.Signal):
         shared.DAEMON.log.info("interrupted")
         shared.DAEMON.stop()
     except Exception as exc:
