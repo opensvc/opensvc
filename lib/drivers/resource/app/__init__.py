@@ -12,7 +12,7 @@ import six
 from rcUtilities import lazy
 from converters import convert_boolean
 from rcGlobalEnv import rcEnv
-from resources import Resource
+from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
 import rcStatus

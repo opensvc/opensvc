@@ -6,7 +6,7 @@ import exceptions as ex
 from . import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
