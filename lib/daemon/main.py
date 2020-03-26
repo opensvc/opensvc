@@ -3,7 +3,6 @@ The opensvc daemon.
 """
 from __future__ import print_function
 
-import codecs
 import logging
 import os
 import sys
@@ -462,7 +461,7 @@ class Daemon(object):
 # Main
 #
 #############################################################################
-def optparse():
+def optparse(args=None):
     """
     Parse command line options for main().
     """
@@ -475,14 +474,14 @@ def optparse():
         "-f", "--foreground", action="store_false",
         default=True, dest="daemon"
     )
-    return parser.parse_args()
+    return parser.parse_args(args=args)
 
 
-def main():
+def main(args=None):
     """
     Start the daemon and catch Exceptions to reap it down cleanly.
     """
-    options, _ = optparse()
+    options, _ = optparse(args=args)
     try:
         shared.DAEMON = Daemon()
         shared.DAEMON.run(daemon=options.daemon)
@@ -492,7 +491,3 @@ def main():
     except Exception as exc:
         shared.DAEMON.log.exception(exc)
         shared.DAEMON.stop()
-
-
-if __name__ == "__main__":
-    main()
