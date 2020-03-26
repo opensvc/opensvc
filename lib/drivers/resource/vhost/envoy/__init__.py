@@ -1,4 +1,4 @@
-from resData import Data
+from resources import DataResource
 from svcdict import KEYS
 
 DRIVER_GROUP = "vhost"
@@ -34,7 +34,7 @@ def adder(svc, s):
     r = VhostEnvoy(**kwargs)
     svc += r
 
-class VhostEnvoy(Data):
+class VhostEnvoy(DataResource):
     def __init__(self, **kwargs):
         super(VhostEnvoy, self).__init__(type="vhost.envoy", **kwargs)
         if self.options.domains:
