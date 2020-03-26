@@ -101,7 +101,7 @@ class EndAction(OsvcException):
     """ End multi-resource action. Not an error.
     """
 
-class excContinueAction(OsvcException):
+class ContinueAction(OsvcException):
     """ Abort current resource action, but proceed anyway
     """
 
