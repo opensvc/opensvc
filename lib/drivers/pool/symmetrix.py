@@ -3,16 +3,16 @@ from __future__ import print_function
 import os
 import sys
 
-import pool
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import Arrays
 from utilities.proc import justcall
+from .pool import BasePool
 
 LOCK_NAME = "symmetrix_create_disk"
 
-class Pool(pool.Pool):
+class Pool(BasePool):
     type = "symmetrix"
     capabilities = ["roo", "rwo", "shared", "blk", "fc"]
 
