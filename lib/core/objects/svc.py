@@ -1104,7 +1104,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             else:
                 self.log.info("action '%s' is not applicable to '%s' kind objects", action, self.kind)
                 err = 0
-        except ex.excEndAction as exc:
+        except ex.EndAction as exc:
             self.log.info(exc)
             err = 0
         except ex.excAbortAction as exc:
