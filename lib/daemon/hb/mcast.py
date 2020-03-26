@@ -139,13 +139,13 @@ class HbMcastTx(HbMcast):
             self.group = (self.addr, self.port)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
-            raise ex.excAbortAction
+            raise ex.AbortAction
 
     def run(self):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
         try:
             while True:
@@ -226,7 +226,7 @@ class HbMcastRx(HbMcast):
                 time.sleep(1)
                 err = str(exc)
         self.log.error("init error: %s", err)
-        raise ex.excAbortAction
+        raise ex.AbortAction
 
     def configure_listener(self):
         addrinfo = socket.getaddrinfo(self.addr, None)[0]
@@ -243,7 +243,7 @@ class HbMcastRx(HbMcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.excAbortAction:
+        except ex.AbortAction:
             return
 
         while True:
