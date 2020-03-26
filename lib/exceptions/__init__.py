@@ -1,14 +1,17 @@
-class HTTP(Exception):
+class OsvcException(Exception):
+    pass
+
+class HTTP(OsvcException):
     def __init__(self, status, msg=""):
         self.status = status
         self.msg = msg
     def __str__(self):
         return "status %s: %s" % (self.status, self.msg)
 
-class excEncapUnjoinable(Exception):
+class excEncapUnjoinable(OsvcException):
     pass
 
-class excError(Exception):
+class excError(OsvcException):
     """ Failed action
     """
     def __init__(self, value=""):
@@ -16,7 +19,7 @@ class excError(Exception):
     def __str__(self):
         return str(self.value)
 
-class excVersion(Exception):
+class excVersion(OsvcException):
     """ propagate the version string
     """
     def __init__(self, value=""):
@@ -24,10 +27,10 @@ class excVersion(Exception):
     def __str__(self):
         return str(self.value)
 
-class excAlreadyDone(Exception):
+class excAlreadyDone(OsvcException):
     pass
 
-class OptNotFound(Exception):
+class OptNotFound(OsvcException):
     """
     Service config file option not found.
     Raised by Svc::conf_get().
@@ -39,18 +42,18 @@ class OptNotFound(Exception):
     def __str__(self):
         return "%s default: %s" % (str(self.value), repr(self.default))
 
-class RequiredOptNotFound(Exception):
+class RequiredOptNotFound(OsvcException):
     """
     Required service config file option not found.
     Raised by Svc::conf_get().
     """
     pass
 
-class excSignal(Exception):
+class excSignal(OsvcException):
     """ Termination signal received
     """
 
-class excUndefined(Exception):
+class excUndefined(OsvcException):
     """ Mandatory Undefined action exception
     """
     def __init__(self,action=None,className=None,func=None):
@@ -61,98 +64,98 @@ class excUndefined(Exception):
         return "Undefined mandatory Action %s for className %s in function %s" % \
                 (self.action,self.className,self.func)
 
-class syncNoNodesToSync(Exception):
+class syncNoNodesToSync(OsvcException):
     """ No nodes to sync => abort stacked syncs resource actions
     """
 
-class syncNoFilesToSync(Exception):
+class syncNoFilesToSync(OsvcException):
     """ No files to sync => move on to the next stacked syncs resource actions
     """
 
-class syncConfigSyntaxError(Exception):
+class syncConfigSyntaxError(OsvcException):
     """ Bogus configuration syntax => abort all
     """
 
-class syncNotSnapable(Exception):
+class syncNotSnapable(OsvcException):
     """ A dir/file specified as source of a sync with snap is not included in a
         snapable resource mount => abort all
     """
 
-class syncSnapExists(Exception):
+class syncSnapExists(OsvcException):
     """ The snapshot already exists
     """
 
-class syncSnapCreateError(Exception):
+class syncSnapCreateError(OsvcException):
     """ Error in snapshot creation => clean up
     """
 
-class syncSnapDestroyError(Exception):
+class syncSnapDestroyError(OsvcException):
     """ Error in snapshot destroy => clean up
     """
 
-class syncSnapMountError(Exception):
+class syncSnapMountError(OsvcException):
     """ Error mounting fs => clean up
     """
 
-class excEndAction(Exception):
+class excEndAction(OsvcException):
     """ End multi-resource action. Not an error.
     """
 
-class excContinueAction(Exception):
+class excContinueAction(OsvcException):
     """ Abort current resource action, but proceed anyway
     """
 
-class excAbortAction(Exception):
+class excAbortAction(OsvcException):
     """ Abort multi-resource action
     """
 
-class excInitError(Exception):
+class excInitError(OsvcException):
     """ Resource initialisation error
     """
 
-class excScsiPrNotsupported(Exception):
+class excScsiPrNotsupported(OsvcException):
     """ Scsi persistent reservation is not supported
     """
 
-class excNotAvailable(Exception):
+class excNotAvailable(OsvcException):
     """ Not available
     """
 
-class excNotSupported(Exception):
+class excNotSupported(OsvcException):
     """ Not supported
     """
 
-class excBug(Exception):
+class excBug(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
-class MissImpl(Exception):
+class MissImpl(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
-class IpDevDown(Exception):
+class IpDevDown(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
-class IpConflict(Exception):
+class IpConflict(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
-class IpAlreadyUp(Exception):
+class IpAlreadyUp(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
-class IpNoActions(Exception):
+class IpNoActions(OsvcException):
     def __init__(self, value):
         self.value = value
     def __str__(self):
