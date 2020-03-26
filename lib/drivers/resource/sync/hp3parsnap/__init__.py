@@ -70,7 +70,7 @@ class SyncHp3parsnap(Sync):
         try:
             arrays = array_driver.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
-            raise ex.excInitError(str(e))
+            raise ex.InitError(str(e))
         if len(arrays.arrays) == 1:
             self.array_obj = arrays.arrays[0]
         else:

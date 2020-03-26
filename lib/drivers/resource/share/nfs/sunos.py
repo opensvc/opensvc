@@ -33,13 +33,13 @@ class NfsShare(Resource):
         Resource.__init__(self, type="share.nfs", **kwargs)
 
         if not which("share"):
-            raise ex.excInitError("share is not installed")
+            raise ex.InitError("share is not installed")
         self.label = "nfs:"+path
         self.path = path
         try:
             self.opts = self.parse_opts(opts)
         except ex.excError as e:
-            raise ex.excInitError(str(e))
+            raise ex.InitError(str(e))
 
     def get_opts(self):
         cmd = ["share", "-F", "nfs", "-A"]

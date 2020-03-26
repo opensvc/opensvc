@@ -66,7 +66,7 @@ HYPERMETRO_PATH_OPTIMIZED_YES = 1
 try:
     import requests
 except ImportError:
-    raise ex.excInitError("the requests module must be installed")
+    raise ex.InitError("the requests module must be installed")
 
 try:
     requests.packages.urllib3.disable_warnings()

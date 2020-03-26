@@ -87,9 +87,9 @@ class SyncBtrfs(Sync):
         self.recursive = recursive
 
         if ":" not in src or src.index(":") == len(src) - 1:
-            raise ex.excInitError("malformed src value")
+            raise ex.InitError("malformed src value")
         if ":" not in dst or dst.index(":") == len(dst) - 1:
-            raise ex.excInitError("malformed dst value")
+            raise ex.InitError("malformed dst value")
 
         self.src_label = src[:src.index(":")]
         self.src_subvol = src[src.index(":")+1:]
