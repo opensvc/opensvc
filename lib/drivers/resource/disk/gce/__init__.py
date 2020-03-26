@@ -5,7 +5,7 @@ import rcGce
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import *
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
