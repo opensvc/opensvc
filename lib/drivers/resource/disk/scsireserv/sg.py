@@ -96,7 +96,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if n_registered == 0:
             return
         if n_registered > n_paths:
-            raise ex.excSignal("%d/%d paths registered" % (n_registered, n_paths))
+            raise ex.Signal("%d/%d paths registered" % (n_registered, n_paths))
         raise ex.excError("%d/%d paths registered" % (n_registered, n_paths))
 
     def disk_registered(self, disk):
