@@ -2,7 +2,6 @@ import os
 import socket
 
 import core.exceptions as ex
-import rcStatus
 
 from .. import \
     BaseContainer, \

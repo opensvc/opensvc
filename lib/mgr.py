@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import sys
 import os
 
-import rcStatus
+import core.status
 import utilities.render.color
 import core.exceptions as ex
 from rcUtilities import check_privs, split_path, get_option, validate_kind
@@ -63,7 +63,7 @@ class Mgr(object):
                 build_kwargs["paths"] = options.svcs
 
         if hasattr(options, "status") and options.status is not None:
-            build_kwargs["status"] = [rcStatus.status_value(s) for s in options.status.split(",")]
+            build_kwargs["status"] = [core.status.status_value(s) for s in options.status.split(",")]
 
         build_kwargs["create_instance"] = action in ("create", "pull")
 

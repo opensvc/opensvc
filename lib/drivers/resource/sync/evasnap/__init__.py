@@ -2,12 +2,10 @@ import datetime
 import json
 import os
 import subprocess
-import time
 import xml.etree.ElementTree as ET
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
@@ -120,7 +118,7 @@ class SyncEvasnap(Sync):
         if not self.can_sync():
             return
 
-        if not self.svc.options.force and status == rcStatus.UP:
+        if not self.svc.options.force and status == core.status.UP:
             self.log.info("snapshots are already fresh. use --force to bypass")
             return
 
@@ -242,7 +240,7 @@ class SyncEvasnap(Sync):
                 self.prereq()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         for pair in self.pairs:
             info_s = self.lun_info(pair['src'])
             info_d = self.lun_info(pair['dst'])
@@ -277,8 +275,8 @@ class SyncEvasnap(Sync):
                     pass
         if err:
             self.status_log('. '.join(errlog))
-            return rcStatus.WARN
-        return rcStatus.UP
+            return core.status.WARN
+        return core.status.UP
 
     def sync_resync(self):
         self.recreate()

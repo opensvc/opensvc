@@ -4,10 +4,7 @@ Base disk resource driver module.
 
 import os
 
-import core.exceptions as exc
-import rcStatus
-
-from rcGlobalEnv import rcEnv
+import core.status
 from core.resource import Resource
 
 KW_PRKEY = {
@@ -71,9 +68,9 @@ class BaseDisk(Resource):
 
     def _status(self, verbose=False):
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def create_static_name(self, dev, suffix="0"):
         d = self.create_dev_dir()

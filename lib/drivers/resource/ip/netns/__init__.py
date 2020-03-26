@@ -1,7 +1,7 @@
 import os
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.ifconfig
 
 from ..linux import Ip
@@ -287,7 +287,7 @@ class IpNetns(Ip):
         self.unset_lazy("netns")
         if self.container_running_elsewhere():
             self.status_log("%s is hosted by another host" % self.container_rid, "info")
-            return rcStatus.NA
+            return core.status.NA
         ret = super(IpNetns, self)._status()
         return ret
 

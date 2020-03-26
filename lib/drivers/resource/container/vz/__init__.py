@@ -1,6 +1,5 @@
 import os
 
-import rcStatus
 import core.exceptions as ex
 
 from .. import \

@@ -10,9 +10,9 @@ import os
 import sys
 import time
 
+import core.status
 import lock
 import core.exceptions as ex
-import rcStatus
 import utilities.devices
 import utilities.render.color
 from rcGlobalEnv import rcEnv
@@ -457,10 +457,10 @@ class Resource(object):
         """
         if not self.standby:
             return status
-        if status == rcStatus.UP:
-            return rcStatus.STDBY_UP
-        elif status == rcStatus.DOWN:
-            return rcStatus.STDBY_DOWN
+        if status == core.status.UP:
+            return core.status.STDBY_UP
+        elif status == core.status.DOWN:
+            return core.status.STDBY_DOWN
         return status
 
     def try_status(self, verbose=False):
@@ -474,7 +474,7 @@ class Resource(object):
             return self._status(verbose=verbose)
         except Exception as exc:
             self.status_log(str(exc), "error")
-            return rcStatus.UNDEF
+            return core.status.UNDEF
 
     def _status(self, verbose=False):
         """
@@ -483,7 +483,7 @@ class Resource(object):
         """
         if verbose:
             self.log.debug("default resource status: undef")
-        return rcStatus.UNDEF
+        return core.status.UNDEF
 
     def force_status(self, status):
         """
@@ -503,11 +503,11 @@ class Resource(object):
         ignore_nostatus = kwargs.get("ignore_nostatus", False)
 
         if self.is_disabled():
-            return rcStatus.NA
+            return core.status.NA
 
         if not ignore_nostatus and "nostatus" in self.tags:
             self.status_log("nostatus tag", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         if self.rstatus is not None and not refresh:
             return self.rstatus
@@ -520,16 +520,16 @@ class Resource(object):
             self.rstatus = last_status
 
         # now the rstatus can no longer be None
-        if self.rstatus == rcStatus.UNDEF or refresh:
+        if self.rstatus == core.status.UNDEF or refresh:
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.rstatus = self.status_stdby(self.rstatus)
             self.log.debug("refresh status: %s => %s",
-                           rcStatus.Status(last_status),
-                           rcStatus.Status(self.rstatus))
+                           core.status.Status(last_status),
+                           core.status.Status(self.rstatus))
             self.write_status()
 
-        if self.rstatus in (rcStatus.UP, rcStatus.STDBY_UP) and \
+        if self.rstatus in (core.status.UP, core.status.STDBY_UP) and \
            self.is_provisioned_flag() is False:
             self.write_is_provisioned_flag(True)
 
@@ -599,18 +599,18 @@ class Resource(object):
             with open(self.fpath_status_last, 'r') as ofile:
                 data = json.load(ofile)
         except ValueError:
-            return rcStatus.UNDEF
+            return core.status.UNDEF
         except (OSError, IOError) as exc:
             if exc.errno != 2:
                 # not EEXISTS
                 self.log.debug(exc)
-            return rcStatus.UNDEF
+            return core.status.UNDEF
 
         try:
-            status = rcStatus.Status(data["status"])
+            status = core.status.Status(data["status"])
         except (IndexError, AttributeError, ValueError) as exc:
             self.log.debug(exc)
-            return rcStatus.UNDEF
+            return core.status.UNDEF
 
         if not refresh and hasattr(self, "set_label"):
             if hasattr(self, "_lazy_label"):
@@ -631,7 +631,7 @@ class Resource(object):
         Write the in-memory resource status to the on-disk cache.
         """
         data = {
-            "status": str(rcStatus.Status(self.rstatus)),
+            "status": str(core.status.Status(self.rstatus)),
             "label": self.label,
             "log": self.status_logs,
         }
@@ -653,7 +653,7 @@ class Resource(object):
                 last = lines[-1].split(" | ")[-1].strip("\n")
         except:
             last = None
-        current = rcStatus.Status(self.rstatus)
+        current = core.status.Status(self.rstatus)
         if current == last:
             return
         log = logging.getLogger("status_history")
@@ -974,7 +974,7 @@ class Resource(object):
                 current_state = "undef"
         else:
             resource = self.svc.resources_by_id[rid]
-            current_state = rcStatus.Status(resource.status())
+            current_state = core.status.Status(resource.status())
         if current_state not in states:
             msg = "requires on resource %s in state %s, current state %s" % \
                   (rid, " or ".join(states), current_state)
@@ -1407,5 +1407,5 @@ class DataResource(Resource):
         return data
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        return core.status.NA
 

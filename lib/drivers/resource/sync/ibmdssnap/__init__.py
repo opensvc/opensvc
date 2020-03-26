@@ -1,16 +1,12 @@
 import datetime
-import os
 
 import core.exceptions as ex
+import core.status
 import drivers.array.ibmds as array_driver
-import rcStatus
-
 from .. import Sync, notify
 from converters import print_duration
-from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import which
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "ibmdssnap"
@@ -186,8 +182,8 @@ class SyncIbmdssnap(Sync):
             self.get_last(data)
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
-        r = rcStatus.UP
+            return core.status.WARN
+        r = core.status.UP
 
         record_disabled = []
         persist_disabled = []
@@ -206,16 +202,16 @@ class SyncIbmdssnap(Sync):
 
         if self.recording and len(record_disabled) > 0:
             self.status_log("Recording disabled on %s"%','.join(record_disabled))
-            r = rcStatus.WARN
+            r = core.status.WARN
         elif not self.recording and len(record_enabled) > 0:
             self.status_log("Recording enabled on %s"%','.join(record_enabled))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(state_invalid) > 0:
             self.status_log("State not valid on %s"%','.join(state_invalid))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(persist_disabled) > 0:
             self.status_log("Persistent disabled on %s"%','.join(persist_disabled))
-            r = rcStatus.WARN
+            r = core.status.WARN
 
         pairs = []
         for d in data:
@@ -226,17 +222,17 @@ class SyncIbmdssnap(Sync):
         missing = sorted(list(missing))
         if len(missing) > 0:
             self.status_log("Missing flashcopy on %s"%','.join(missing))
-            r = rcStatus.WARN
+            r = core.status.WARN
 
         if self.last is None:
-            return rcStatus.WARN
+            return core.status.WARN
         elif self.last < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
             self.status_log("Last sync on %s older than %s"%(self.last, print_duration(self.sync_max_delay)))
-            return rcStatus.WARN
-        elif r == rcStatus.WARN:
-            return rcStatus.WARN
+            return core.status.WARN
+        elif r == core.status.WARN:
+            return core.status.WARN
         self.status_log("Last sync on %s"%self.last)
-        return rcStatus.UP
+        return core.status.UP
 
     def sync_break(self):
         pass

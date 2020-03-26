@@ -1,12 +1,9 @@
 import datetime
-import os
 
 import core.exceptions as ex
+import core.status
 import drivers.array.hp3par as array_driver
-import rcStatus
-
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -113,32 +110,32 @@ class SyncHp3parsnap(Sync):
     def _status(self, verbose=False):
         if self.array_obj is None:
             self.status_log("array %s is not accessible" % self.array)
-            return rcStatus.WARN
+            return core.status.WARN
         if not self.array_obj.has_virtualcopy():
             self.status_log("array %s has no virtual copy license" % self.array)
-            return rcStatus.WARN
+            return core.status.WARN
 
         try:
             data = self.showvv()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         r = None
         if len(data) < len(self.vv_names):
             missing = set(self.vv_names) - set([d["Name"] for d in data])
             for m in missing:
                 self.status_log("missing vv: %s" % m)
-            r = rcStatus.WARN
+            r = core.status.WARN
 
         elapsed = datetime.datetime.utcnow() - datetime.timedelta(seconds=self.sync_max_delay)
         for vv in data:
             if self.lastsync_s_to_datetime(vv['CreationTime']) < elapsed:
                 self.status_log("vv %s last sync too old (%s)"%(vv['Name'], vv['CreationTime']))
-                r = rcStatus.WARN
+                r = core.status.WARN
 
         if r is not None:
             return r
 
-        return rcStatus.UP
+        return core.status.UP
 

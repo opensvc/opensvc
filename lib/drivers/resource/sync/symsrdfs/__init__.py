@@ -1,20 +1,19 @@
 import datetime
 import json
 import os
-from xml.etree.ElementTree import ElementTree, XML
+from xml.etree.ElementTree import XML
 
+import core.status
 from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import set_sym_env
 from rcUtilities import lazy
 
 import core.exceptions as ex
-import rcStatus
 import utilities.devices.linux
 
-from .. import Sync, notify
+from .. import Sync
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import which
 
 os.environ['PATH'] += ":/usr/symcli/bin"
 set_sym_env()
@@ -185,7 +184,7 @@ class SyncSymsrdfs(Sync):
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if self.svc.options.force or s['avail'].status == rcStatus.UP:
+        if self.svc.options.force or s['avail'].status == core.status.UP:
             self.do_rdf_dgexport()
             self.do_local_dgexport()
             self.do_dg_wwn_map()
@@ -562,13 +561,13 @@ class SyncSymsrdfs(Sync):
             self.get_syminfo()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         state = self.get_dg_state()
         self.status_log("current state %s"%state, "info")
         if self.is_synchronous_and_synchronized_state():
-            return rcStatus.UP
+            return core.status.UP
         self.status_log("expecting Synchronous/Synchronized")
-        return rcStatus.WARN
+        return core.status.WARN
 
     # SRDF split
     def sync_split(self):

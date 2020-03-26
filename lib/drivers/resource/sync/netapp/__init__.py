@@ -1,15 +1,13 @@
 import datetime
-import os
 import time
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "netapp"
@@ -317,14 +315,14 @@ class SyncNetapp(Sync):
             s = self.snapmirror_status(self.slave())
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if s['state'] == "Snapmirrored":
             if "Transferring" in s['status']:
                 self.log.debug("snapmirror transfer in progress")
-                return rcStatus.WARN
+                return core.status.WARN
             elif self.lagged(s['lag']):
                 self.log.debug("snapmirror lag beyond sync_max_delay")
-                return rcStatus.WARN
+                return core.status.WARN
             else:
-                return rcStatus.UP
-        return rcStatus.DOWN
+                return core.status.UP
+        return core.status.DOWN

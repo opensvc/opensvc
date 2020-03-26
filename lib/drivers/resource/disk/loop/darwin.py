@@ -1,7 +1,6 @@
 import os
-import re
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 import utilities.devices.darwin
 
@@ -13,9 +12,7 @@ from . import \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
 from converters import convert_size
-from rcGlobalEnv import rcEnv
 from core.objects.svcdict import KEYS
-from utilities.proc import call, which
 
 KEYS.register_driver(
     DRIVER_GROUP,
@@ -62,9 +59,9 @@ class DiskLoop(BaseDiskLoop):
 
     def _status(self, verbose=False):
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def provisioned(self):
         try:

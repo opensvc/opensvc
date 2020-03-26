@@ -4,15 +4,13 @@ import time
 import xml.etree.ElementTree as ElementTree
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
 from converters import print_duration
-from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symclone"
@@ -334,16 +332,16 @@ class SyncSymclone(Sync):
 
     def _status(self, verbose=False):
         if self.last is None:
-            return rcStatus.DOWN
+            return core.status.DOWN
         if len(self.active_pairs) not in (len(self.pairs), 0):
             self.status_log("cloneset has %d/%d active devs" % (len(self.active_pairs), len(self.pairs)))
-            return rcStatus.WARN
+            return core.status.WARN
         elif self.last < datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay):
             self.status_log("Last sync on %s older than %s"%(self.last, print_duration(self.sync_max_delay)))
-            return rcStatus.WARN
+            return core.status.WARN
         else:
             self.status_log("Last sync on %s" % self.last, "info")
-            return rcStatus.UP
+            return core.status.UP
 
     def sync_break(self):
         self.activate()

@@ -1,8 +1,6 @@
-import os
-
 from subprocess import Popen, PIPE
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 import rcContainer
 
@@ -188,7 +186,7 @@ class SyncDocker(Sync):
         self.get_targets()
         if len(self.targets) == 0:
             self.status_log("no target nodes")
-            return rcStatus.NA
+            return core.status.NA
         self.get_images()
         total_missing = 0
         for node in self.targets:
@@ -203,8 +201,8 @@ class SyncDocker(Sync):
                     plural = ""
                 self.status_log("target node %s miss image%s %s" % (node, plural, ','.join(missing)))
         if total_missing > 0:
-            return rcStatus.WARN
-        return rcStatus.UP
+            return core.status.WARN
+        return core.status.UP
 
     @notify
     def sync_all(self):

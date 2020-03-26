@@ -1,12 +1,12 @@
 """
 The module defining the App resource class.
 """
-from subprocess import Popen
 from datetime import datetime
 import os
-import time
 import stat
 import shlex
+
+import core.status
 import six
 
 from rcUtilities import lazy
@@ -15,7 +15,6 @@ from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
-import rcStatus
 import core.exceptions as ex
 import lock
 
@@ -315,7 +314,6 @@ class App(Resource):
         Contribute app resource standard and script-provided key/val pairs
         to the service's resinfo.
         """
-        import re
         keyvals = [
             ["script", self.script if self.script else ""],
             ["start", str(self.start_seq) if self.start_seq else ""],
@@ -412,7 +410,7 @@ class App(Resource):
             raise
 
         status = self.status()
-        if status == rcStatus.DOWN:
+        if status == core.status.DOWN:
             self.log.info("%s is already stopped", self.label)
             return
 
@@ -485,29 +483,29 @@ class App(Resource):
         if n_ref_res > 0 and str(status["avail"]) not in ("up", "n/a"):
             self.log.debug("abort resApp status because needed resources avail status is %s", status["avail"])
             self.status_log("not evaluated (instance not up)", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         try:
             ret = self.is_up()
         except StatusWARN:
-            return rcStatus.WARN
+            return core.status.WARN
         except StatusNA:
-            return rcStatus.NA
+            return core.status.NA
         except ex.Error as exc:
             msg = str(exc)
             if "intent '" in msg:
                 action = msg.split("intent '")[-1].split("'")[0]
                 self.status_log("%s in progress" % action, "info")
             self.log.debug("resource status forced to n/a: an action is running")
-            return rcStatus.NA
+            return core.status.NA
 
         if ret == 0:
-            return rcStatus.UP
+            return core.status.UP
         elif ret == 1:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
         self.status_log("check reports errors (%d)" % ret)
-        return rcStatus.WARN
+        return core.status.WARN
 
     def set_executable(self, fpath):
         """

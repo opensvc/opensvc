@@ -2,12 +2,11 @@ import datetime
 import json
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import Sync, notify
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "radossnap"
@@ -178,13 +177,13 @@ class SyncRadossnap(Sync):
             self.validate_image_fmt()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         try:
             data = self.get_last()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
 
         nosnap = []
         expired = []
@@ -200,14 +199,14 @@ class SyncRadossnap(Sync):
             else:
                 ok.append(image)
 
-        r = rcStatus.UP
+        r = core.status.UP
 
         if len(nosnap) > 0:
             self.status_log("no snap found for images: "+", ".join(nosnap))
-            r = rcStatus.WARN
+            r = core.status.WARN
         if len(expired) > 0:
             self.status_log("snap too old for images: "+", ".join(expired))
-            r = rcStatus.WARN
+            r = core.status.WARN
 
         return r
 

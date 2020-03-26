@@ -1,7 +1,6 @@
 import os
 
-import rcStatus
-
+import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs
@@ -38,7 +37,7 @@ class BaseFsFlag(Resource):
         return os.path.exists(self.flag_f)
 
     def _status(self, verbose=False):
-        return rcStatus.UP if self.has_it() else rcStatus.DOWN
+        return core.status.UP if self.has_it() else core.status.DOWN
 
     def start(self):
         if not self.has_it():

@@ -1,10 +1,6 @@
-import os
-
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from . import BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -106,14 +102,14 @@ class NfsShare(Resource):
             up = self.is_up()
         except ex.Error as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         if len(self.issues) > 0:
             self.status_log(self.issues)
-            return rcStatus.WARN
+            return core.status.WARN
         if up:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def parse_opts(self, opts):
         o = sorted(opts.split(','))

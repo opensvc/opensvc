@@ -1,14 +1,11 @@
 import os
-import re
 
 from subprocess import *
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from ..vg.hpux import DiskVg
-from rcGlobalEnv import rcEnv
-from utilities.proc import qcall
+
 
 class DiskHpvm(DiskVg):
     def __init__(self, container_name=None, **kwargs):
@@ -23,7 +20,7 @@ class DiskHpvm(DiskVg):
         return True
 
     def _status(self, verbose=False):
-        return rcStatus.NA
+        return core.status.NA
 
     def do_start(self):
         self.do_mksf()
@@ -36,13 +33,13 @@ class DiskHpvm(DiskVg):
 
     def postsync(self):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if s['overall'].status != rcStatus.UP:
+        if s['overall'].status != core.status.UP:
             self.do_mksf()
             self.do_share()
 
     def presync(self):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
-        if self.svc.options.force or s['overall'].status == rcStatus.UP:
+        if self.svc.options.force or s['overall'].status == core.status.UP:
             self.write_mksf()
             self.write_share()
 
