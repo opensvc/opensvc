@@ -75,7 +75,7 @@ class SyncRadossnap(Sync):
         cmd = self.rbd_cmd()+['snap', 'create', image, '--snap', snapname]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
         for snapname in snapnames:
             self.rm(snapname)
@@ -88,7 +88,7 @@ class SyncRadossnap(Sync):
         cmd = self.rbd_cmd()+['snap', 'unprotect', image]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def get_all(self):
         data = {}
@@ -224,7 +224,7 @@ class SyncRadossnap(Sync):
             if image.count("/") != 1:
                 l.append(image)
         if len(l) > 0:
-            raise ex.excError("wrong format (expected pool/image): "+", ".join(l))
+            raise ex.Error("wrong format (expected pool/image): "+", ".join(l))
 
     def fmt_label(self, t, l):
         self.label = t+" rados %s"%', '.join(l)

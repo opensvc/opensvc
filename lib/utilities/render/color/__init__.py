@@ -332,7 +332,7 @@ def formatter(fn):
         elif hasattr(fmt, "__call__"):
             _fmt = fmt
         else:
-            raise ex.excError("unsupported output format: %s" % str(fmt))
+            raise ex.Error("unsupported output format: %s" % str(fmt))
 
         data = fn(*args, **kwargs)
 
@@ -358,7 +358,7 @@ def formatter(fn):
                 jsonpath_expr = parse(path)
                 data = [match.value for match in jsonpath_expr.find(data)]
             except Exception as exc:
-                raise ex.excError(str(exc))
+                raise ex.Error(str(exc))
 
         if not isinstance(data, (dict, list)):
             print(data)
@@ -410,7 +410,7 @@ def print_color_config(fpath):
             for line in ofile.readlines():
                 print(highlighter(line))
     except Exception as exc:
-        raise ex.excError(exc)
+        raise ex.Error(exc)
 
 def colorize_log_line(line, last=None, auto=None):
     """

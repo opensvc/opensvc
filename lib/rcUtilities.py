@@ -453,7 +453,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
     try:
         cmdv = get_trigger_cmdv(cmd, kwargs)
     except ValueError as exc:
-        raise ex.excError(str(exc))
+        raise ex.Error(str(exc))
 
     if not hasattr(self, "log_outputs") or getattr(self, "log_outputs"):
         self.log.info("%s: %s", attr, cmd)
@@ -475,9 +475,9 @@ def action_triggers(self, trigger="", action=None, **kwargs):
 
     if blocking and ret != 0:
         if action == "command":
-            raise ex.excError("command return code [%d]" % ret)
+            raise ex.Error("command return code [%d]" % ret)
         else:
-            raise ex.excError("%s: %s blocking error [%d]" % (attr, cmd, ret))
+            raise ex.Error("%s: %s blocking error [%d]" % (attr, cmd, ret))
 
     if not blocking and ret != 0:
         if action == "command":
@@ -667,7 +667,7 @@ def cache_get(fpath, log=None):
         with open(fpath, "r") as f:
             data = json.load(f)
     except Exception as e:
-        raise ex.excError("cache read error: %s" % str(e))
+        raise ex.Error("cache read error: %s" % str(e))
     return data
 
 
@@ -886,7 +886,7 @@ def init_locale():
         os.environ["LC_TIME"] = "C"
         if locale.getlocale()[1] == "UTF-8":
             return
-    # raise ex.excError("can not set a C lang with utf8 encoding")
+    # raise ex.Error("can not set a C lang with utf8 encoding")
     os.environ["LANG"] = "C"
     os.environ["LC_NUMERIC"] = "C"
     os.environ["LC_TIME"] = "C"
@@ -1159,11 +1159,11 @@ def validate_name(name):
     # strip scaler slice prefix
     name = re.sub(r"^[0-9]+\.", "", name)
     if name in rcEnv.kinds:
-        raise ex.excError("invalid name '%s'. names must not clash with kinds"
+        raise ex.Error("invalid name '%s'. names must not clash with kinds"
                           " %s." % (name, ", ".join(rcEnv.kinds)))
     if re.match(VALID_NAME_RFC952, name):
         return
-    raise ex.excError("invalid name '%s'. names must contain only dots, letters, "
+    raise ex.Error("invalid name '%s'. names must contain only dots, letters, "
                       "digits and hyphens, start with a letter and end with "
                       "a digit or letter (rfc 952)." % name)
 
@@ -1302,7 +1302,7 @@ def find_editor():
     else:
         editor = "vi"
     if not which(editor):
-        raise ex.excError("%s not found" % editor)
+        raise ex.Error("%s not found" % editor)
     return editor
 
 

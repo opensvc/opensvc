@@ -35,7 +35,7 @@ def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
             log.error(err)
     if p.returncode != 0:
         #print >>sys.stderr, out, err
-        raise ex.excError("dscli command execution error")
+        raise ex.Error("dscli command execution error")
     return out, err
 
 class IbmDss(object):
@@ -62,7 +62,7 @@ class IbmDss(object):
                 continue
             pwfile = os.path.join(rcEnv.paths.pathvar, s+'.pwfile')
             if not os.path.exists(pwfile):
-                raise ex.excError("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
+                raise ex.Error("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
 
             try:
                 username = self.node.oget(s, "username")
@@ -82,7 +82,7 @@ class IbmDss(object):
         for o in self.arrays:
             if o.name == array:
                 return o
-        raise ex.excError("%s not defined in the node/cluster configuration, or is not usable" % array)
+        raise ex.Error("%s not defined in the node/cluster configuration, or is not usable" % array)
 
 class IbmDs(object):
     def __init__(self, name, hmc1, hmc2, username, pwfile, node=None):

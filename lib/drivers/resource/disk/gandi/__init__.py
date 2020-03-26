@@ -92,7 +92,7 @@ class DiskGandi(BaseDisk):
         try:
             cloud = self.svc.node.cloud_get(self.cloud_id)
         except ex.InitError as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         return cloud
 
     def get_uid(self):
@@ -153,8 +153,8 @@ class DiskGandi(BaseDisk):
         """
         try:
             node = self.get_node()
-        except ex.excError as e:
-            raise ex.excError("can't find cloud node to list volumes (%s)"%str(e))
+        except ex.Error as e:
+            raise ex.Error("can't find cloud node to list volumes (%s)"%str(e))
 
         disks = self.cloud.driver._node_info(node.id)['disks']
         for disk in disks:
@@ -170,7 +170,7 @@ class DiskGandi(BaseDisk):
     def _status(self, verbose=False):
         try:
             s = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         if s:
@@ -186,11 +186,11 @@ class DiskGandi(BaseDisk):
         try:
             nodes = self.cloud.driver.list_nodes()
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
         for node in nodes:
             if node.name == n:
                 return node
-        raise ex.excError()
+        raise ex.Error()
 
     def get_disk(self):
         disks = self.cloud.driver.ex_list_disks()
@@ -199,23 +199,23 @@ class DiskGandi(BaseDisk):
             if disk.name == self.name:
                 _disk = disk
         if _disk is None:
-            raise ex.excError()
+            raise ex.Error()
         return _disk
 
     def do_start(self):
         try:
             node = self.get_node()
-        except ex.excError as e:
-            raise ex.excError("can't find cloud node to attach volume %s to (%s)"%(self.name, str(e)))
+        except ex.Error as e:
+            raise ex.Error("can't find cloud node to attach volume %s to (%s)"%(self.name, str(e)))
 
         try:
             disk = self.get_disk()
         except:
-            raise ex.excError("volume %s not found in %s"%(self.name, self.cloud_id))
+            raise ex.Error("volume %s not found in %s"%(self.name, self.cloud_id))
 
         try:
             status = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("abort gandi volume %s attach: %s"%(self.name, str(e)))
 
         if status:
@@ -229,17 +229,17 @@ class DiskGandi(BaseDisk):
     def do_stop(self):
         try:
             node = self.get_node()
-        except ex.excError as e:
-            raise ex.excError("can't find cloud node to detach volume %s from: %s"%(self.name, str(e)))
+        except ex.Error as e:
+            raise ex.Error("can't find cloud node to detach volume %s from: %s"%(self.name, str(e)))
 
         try:
             disk = self.get_disk()
         except:
-            raise ex.excError("volume %s not found in %s"%(self.name, self.cloud_id))
+            raise ex.Error("volume %s not found in %s"%(self.name, self.cloud_id))
 
         try:
             status = self.is_up()
-        except ex.excError as e:
+        except ex.Error as e:
             self.log.error("abort gandi volume %s detach: %s"%(self.name, str(e)))
 
         if not status:

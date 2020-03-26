@@ -52,12 +52,12 @@ class DiskLoop(BaseDiskLoop):
                 cmd = ['lofiadm', '-a', self.loopFile]
                 ret, out, err = self.vcall(cmd)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.loop = utilities.devices.sunos.file_to_loop(self.loopFile)
         if len(self.loop) == 0:
-            raise ex.excError("loop device did not appear or disappeared")
+            raise ex.Error("loop device did not appear or disappeared")
         time.sleep(1)
         self.log.info("%s now loops to %s" % (self.loop, self.loopFile))
         self.can_rollback = True
@@ -69,7 +69,7 @@ class DiskLoop(BaseDiskLoop):
         cmd = ['lofiadm', '-d', self.loop]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def resource_handling_file(self):
         path = os.path.dirname(self.loopFile)
@@ -99,7 +99,7 @@ class DiskLoop(BaseDiskLoop):
         try:
             self.loopFile
         except Exception as e:
-            raise ex.excError(str(e))
+            raise ex.Error(str(e))
 
         if not self.provisioned():
             return
@@ -120,5 +120,5 @@ class DiskLoop(BaseDiskLoop):
                 f.seek(convert_size(self.size, _to='b', _round=512)-1)
                 f.write('\0')
         except Exception as e:
-            raise ex.excError("failed to create %s: %s"% (self.loopFile, str(e)))
+            raise ex.Error("failed to create %s: %s"% (self.loopFile, str(e)))
         self.svc.node.unset_lazy("devtree")

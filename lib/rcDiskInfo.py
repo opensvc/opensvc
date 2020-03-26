@@ -39,6 +39,6 @@ class diskInfo(object):
 
 
     def scanscsi(self, hba=None, target=None, lun=None):
-        raise ex.excError("not implemented")
+        raise ex.Error("not implemented")
 
 

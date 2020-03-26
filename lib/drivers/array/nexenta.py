@@ -47,23 +47,23 @@ class Nexenta(object):
         try:
             stype = self.node.oget(s, "type")
         except Exception:
-            raise ex.excError("no array configuration for head %s"%self.head)
+            raise ex.Error("no array configuration for head %s"%self.head)
         if stype != "nexenta":
-            raise ex.excError("array %s type is not nexanta" % self.head)
+            raise ex.Error("array %s type is not nexanta" % self.head)
         try:
             self.username = self.node.oget(s, "username")
         except Exception:
-            raise ex.excError("no username information for head %s"%self.head)
+            raise ex.Error("no username information for head %s"%self.head)
         try:
             self.password = self.node.oget(s, "password")
         except Exception:
-            raise ex.excError("no password information for head %s"%self.head)
+            raise ex.Error("no password information for head %s"%self.head)
         self.port = self.node.oget(s, "port")
         try:
             secname, namespace, _ = split_path(self.password)
             self.password = factory("sec")(secname, namespace=namespace, volatile=True).decode_key("password")
         except Exception as exc:
-            raise ex.excError("error decoding password: %s" % exc)
+            raise ex.Error("error decoding password: %s" % exc)
         self.url = 'https://%(head)s:%(port)d/rest/nms/ <https://%(head)s:%(port)d/rest/nms/>'%dict(head=self.head, port=self.port)
 
     def rest(self, obj, method, params):
@@ -77,38 +77,38 @@ class Nexenta(object):
         try:
             response = urlopen(request)
         except URLError:
-            raise ex.excError("unreachable head %s"%self.head)
+            raise ex.Error("unreachable head %s"%self.head)
         response = json.loads(response.read())
         return response
 
     def dbus_auth_keys_list(self):
         data = self.rest("appliance", "dbus_auth_keys_list", [])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def ssh_list_bindings(self):
         data = self.rest("appliance", "ssh_list_bindings", [])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def ssh_unbind(self, user, hostport, force="0"):
         data = self.rest("appliance", "ssh_unbind", [user, hostport, force])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def ssh_bind(self, user, hostport, password):
         data = self.rest("appliance", "ssh_bind", [user, hostport, password])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_get_names(self):
         data = self.rest("autosync", "get_names", [''])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_disable(self, name):
@@ -116,7 +116,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "disable", [name])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_enable(self, name):
@@ -124,7 +124,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "enable", [name])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_execute(self, name):
@@ -132,7 +132,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "execute", [name])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_get_state(self, name):
@@ -140,7 +140,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "get_state", [name])
         if data['error'] is not None:
-            raise ex.excError(data['error'])
+            raise ex.Error(data['error'])
         return data['result']
 
     def autosync_set_prop(self, name, prop, value):
@@ -148,7 +148,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "set_child_prop", [name, prop, value])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def autosync_get_props(self, name):
@@ -156,7 +156,7 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("autosync", "get_child_props", [name, ''])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def autosync_register(self, name):
@@ -164,18 +164,18 @@ class Nexenta(object):
             name = self.auto_prefix+name
         data = self.rest("runner", "register", [name, {}, {}])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def zvol_clone(self, src, dst):
         data = self.rest("zvol", "clone", [src, dst])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def folder_clone(self, src, dst):
         data = self.rest("folder", "clone", [src, dst])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def clone(self, src, dst):
         snap = "@".join([src, dst.replace('/','_')])
@@ -185,7 +185,7 @@ class Nexenta(object):
         elif object_type == "zvol":
             self.zvol_clone(snap, dst)
         else:
-            raise ex.excError("object type %s is not cloneable"%str(object_type))
+            raise ex.Error("object type %s is not cloneable"%str(object_type))
 
     def snapshot_create(self, src, dst, recursive=0):
         dst = dst.replace('/','_')
@@ -195,35 +195,35 @@ class Nexenta(object):
         elif object_type == "zvol":
             self.zvol_snapshot(src, dst, recursive)
         else:
-            raise ex.excError("object type %s is not snapable"%str(object_type))
+            raise ex.Error("object type %s is not snapable"%str(object_type))
 
     def zvol_snapshot(self, src, dst, recursive=0):
         data = self.rest("zvol", "create_snapshot", [src, dst, recursive])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def folder_snapshot(self, src, dst, recursive=0):
         snap = "@".join([src, dst])
         data = self.rest("snapshot", "create", [snap, recursive])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def snapshot_destroy(self, src, dst, recursive=''):
         snap = "@".join([src, dst])
         data = self.rest("snapshot", "destroy", [snap, recursive])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
 
     def snapshot_get_names(self):
         data = self.rest("snapshot", "get_names", [''])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def folder_get_names(self):
         data = self.rest("folder", "get_names", [''])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         for folder in data['result']:
             self.object_type_cache[folder] = "folder"
         return data['result']
@@ -231,7 +231,7 @@ class Nexenta(object):
     def zvol_get_names(self):
         data = self.rest("zvol", "get_names", [''])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         for zvol in data['result']:
             self.object_type_cache[zvol] = "zvol"
         return data['result']
@@ -246,7 +246,7 @@ class Nexenta(object):
             self.object_type_cache[o] = "zvol"
             return "zvol"
         else:
-            raise ex.excError("can not determine type of object %s"%o)
+            raise ex.Error("can not determine type of object %s"%o)
 
     def set_prop(self, name, prop, val):
         otype = self.object_type(name)
@@ -255,7 +255,7 @@ class Nexenta(object):
     def _set_prop(self, otype, name, prop, val):
         data = self.rest(otype, "set_child_prop", [name, prop, val])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def get_props(self, name):
@@ -265,7 +265,7 @@ class Nexenta(object):
     def _get_props(self, otype, name):
         data = self.rest(otype, "get_child_props", [name, ''])
         if data['error'] is not None:
-            raise ex.excError(data["error"])
+            raise ex.Error(data["error"])
         return data['result']
 
     def set_can_mount(self, name):

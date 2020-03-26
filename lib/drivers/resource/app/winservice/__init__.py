@@ -99,7 +99,7 @@ class AppWinservice(App):
             if state == target:
                 return True
             if state != transition:
-                raise ex.excError("unexpected state: %s" % STATUS_STR[state])
+                raise ex.Error("unexpected state: %s" % STATUS_STR[state])
             return False
         self.wait_for_fn(fn, timeout, 1)
 

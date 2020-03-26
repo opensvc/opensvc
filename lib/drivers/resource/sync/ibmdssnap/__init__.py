@@ -105,7 +105,7 @@ class SyncIbmdssnap(Sync):
         missing_pairs = list(set(self.pairs) - present_pairs)
         if len(missing_pairs) > 0:
             missing_pairs.sort()
-            raise ex.excError("refuse to resync as %s pairs are not currently configured"%', '.join(missing_pairs))
+            raise ex.Error("refuse to resync as %s pairs are not currently configured"%', '.join(missing_pairs))
 
         self._resyncflash(ese_pairs, '-tgtse')
         self._resyncflash(other_pairs)
@@ -125,7 +125,7 @@ class SyncIbmdssnap(Sync):
         cmd = ' '.join(l)
         out, err = self.array.dscli(cmd, log=self.log)
         if len(err) > 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
         s = 'mkflash -dev %s -persist' % self.arrayname
         if self.bgcopy:
             s += ' -cp'
@@ -138,7 +138,7 @@ class SyncIbmdssnap(Sync):
         cmd = ' '.join(l)
         out, err = self.array.dscli(cmd, log=self.log)
         if len(err) > 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def _resyncflash_recording(self, pairs, options=None):
         s = 'resyncflash -dev %s -persist -record' % self.arrayname
@@ -153,7 +153,7 @@ class SyncIbmdssnap(Sync):
         cmd = ' '.join(l)
         out, err = self.array.dscli(cmd, log=self.log)
         if len(err) > 0:
-            raise ex.excError(err)
+            raise ex.Error(err)
 
     def can_sync(self, target=None):
         self.get_last()
@@ -184,7 +184,7 @@ class SyncIbmdssnap(Sync):
         try:
             data = self.lsflash()
             self.get_last(data)
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
         r = rcStatus.UP
@@ -302,7 +302,7 @@ class SyncIbmdssnap(Sync):
             l = line.split(',')
             for i, key in enumerate(headers):
                 if i >= len(l):
-                    raise ex.excError("the command dataset does not match its advertized columning")
+                    raise ex.Error("the command dataset does not match its advertized columning")
                 key = key.strip()
                 if headers_multipliers[i] is not None:
                     try:

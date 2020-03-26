@@ -124,7 +124,7 @@ class SyncDds(Sync):
                         self.targets -= set([n])
                 if nb != len(tgts):
                     self.log.error('all destination nodes must be present for dds-based synchronization to proceed')
-                    raise ex.excError
+                    raise ex.Error
                 r.create_snap2()
 
     def snap_exists(self, dev):
@@ -143,14 +143,14 @@ class SyncDds(Sync):
     def create_snap(self, dev, lv):
         if self.snap_exists(dev):
             self.log.error('%s should not exist'%dev)
-            raise ex.excError
+            raise ex.Error
         cmd = ['lvcreate', '-s', '-n', lv,
                '-L', str(self.snap_size)+'M',
                os.path.join(os.sep, 'dev', self.src_vg, self.src_lv)
               ]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def set_statefile(self):
         self.statefile = os.path.join(self.var_d, 'dds_state')
@@ -158,7 +158,7 @@ class SyncDds(Sync):
     def create_snap1(self):
         if self.snap_exists(self.snap2):
             self.log.error('%s should not exist'%self.snap2)
-            raise ex.excError
+            raise ex.Error
         self.create_snap(self.snap1, self.snap1_lv)
         self.write_statefile()
 
@@ -172,7 +172,7 @@ class SyncDds(Sync):
         (self.src_vg, self.src_lv, self.src_size) = utilities.devices.linux.lv_info(self, self.src)
         if self.src_lv is None:
             self.log.error("unable to fetch source logical volume information")
-            raise ex.excError
+            raise ex.Error
         if self.snap_size == 0:
             self.snap_size = self.src_size//10
         self.snap1_lv = self.snap_name('snap1')
@@ -233,14 +233,14 @@ class SyncDds(Sync):
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("full sync failed")
-            raise ex.excError
+            raise ex.Error
         self.push_statefile(node)
 
     def get_snap1_uuid(self):
         cmd = [rcEnv.syspaths.lvs, '--noheadings', '-o', 'uuid', self.snap1]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
         self.snap1_uuid = out.strip()
 
     def write_statefile(self):
@@ -254,7 +254,7 @@ class SyncDds(Sync):
         cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def push_statefile(self, node):
         self.set_statefile()
@@ -265,7 +265,7 @@ class SyncDds(Sync):
 
     def apply_delta(self, node):
         if not which('dds'):
-            raise ex.excError("dds executable not found")
+            raise ex.Error("dds executable not found")
         dst = self.dsts[node]
         extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
                        self.snap2]
@@ -284,7 +284,7 @@ class SyncDds(Sync):
             if buff[1] is not None and len(buff[1]) > 0:
                 self.log.error(buff[1])
             self.log.error("sync update failed")
-            raise ex.excError
+            raise ex.Error
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
@@ -297,19 +297,19 @@ class SyncDds(Sync):
         cmd = ['lvremove', '-f', self.snap1]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def rename_snap2(self):
         if not self.snap_exists(self.snap2):
             self.log.error("%s should exist"%self.snap2)
-            raise ex.excError
+            raise ex.Error
         if self.snap_exists(self.snap1):
             self.log.error("%s should not exist"%self.snap1)
-            raise ex.excError
+            raise ex.Error
         cmd = ['lvrename', self.src_vg, self.snap2_lv, self.snap1_lv]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def rotate_snaps(self):
         self.remove_snap1()
@@ -319,7 +319,7 @@ class SyncDds(Sync):
         rs = self.get_remote_state(node)
         if self.snap1_uuid != rs['uuid']:
             self.log.error("%s last update uuid doesn't match snap1 uuid"%(node))
-            raise ex.excError
+            raise ex.Error
 
     def get_remote_state(self, node):
         self.set_statefile()
@@ -328,7 +328,7 @@ class SyncDds(Sync):
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
-            raise ex.excError
+            raise ex.Error
         return self.parse_statefile(out, node=node)
 
     def get_local_state(self):
@@ -344,11 +344,11 @@ class SyncDds(Sync):
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         fields = lines[0].split(';')
         if len(fields) != 2:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.excError
+            raise ex.Error
         return dict(date=fields[0], uuid=fields[1])
 
     def sync_nodes(self):
@@ -409,7 +409,7 @@ class SyncDds(Sync):
             self.log.info("md5 %s: %s"%(n, self.checksums[n]))
         if len(self.checksums) < 2:
             self.log.error("not enough checksums collected")
-            raise ex.excError
+            raise ex.Error
         err = False
         for n in self.targets:
             if self.checksums[rcEnv.nodename] != self.checksums[n]:
@@ -438,7 +438,7 @@ class SyncDds(Sync):
             now = datetime.datetime.now()
             last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
             delay = datetime.timedelta(seconds=self.sync_max_delay)
-        except ex.excError:
+        except ex.Error:
             self.status_log("failed to get status")
             return rcStatus.WARN
         except IOError:

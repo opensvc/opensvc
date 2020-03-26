@@ -86,7 +86,7 @@ class TaskPodman(ContainerPodman, BaseTask):
         try:
             ContainerPodman.start(self)
             self.write_last_run_retcode(0)
-        except ex.excError:
+        except ex.Error:
             self.write_last_run_retcode(1)
             raise
         if self.rm:

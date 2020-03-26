@@ -429,7 +429,7 @@ class KeywordStore(dict):
                         })
                         self += Keyword(**data)
                     except KeyError as exc:
-                        raise ex.excError("misformatted keyword definition: %s: %s" % (exc, data))
+                        raise ex.Error("misformatted keyword definition: %s: %s" % (exc, data))
 
     def __str__(self):
         return "<KeywordStore name:%s sections:%d keywords:%d>" % (self.name, len(self.sections), self.keywords_count())

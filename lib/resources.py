@@ -442,7 +442,7 @@ class Resource(object):
                 self.log.debug(str(exc))
             else:
                 self.log.info(str(exc))
-        except ex.excError as exc:
+        except ex.Error as exc:
             if self.optional:
                 if len(str(exc)) > 0:
                     self.log.error(str(exc))
@@ -754,7 +754,7 @@ class Resource(object):
             if func():
                 return
             time.sleep(delay)
-        raise ex.excError(errmsg)
+        raise ex.Error(errmsg)
 
     def base_devs(self):
         """
@@ -951,7 +951,7 @@ class Resource(object):
 
     def _check_requires(self, element, cluster_data=None):
         """
-        Validate a requires element, raising excError if the requirement is
+        Validate a requires element, raising Error if the requirement is
         not met.
         """
         if element is None:
@@ -981,7 +981,7 @@ class Resource(object):
             if self.svc.options.cron:
                 raise ex.ContinueAction(msg)
             else:
-                raise ex.excError(msg)
+                raise ex.Error(msg)
 
     def dns_update(self):
         """
@@ -1311,18 +1311,18 @@ class Resource(object):
                 intent=action
             )
         except lock.LockTimeout as exc:
-            raise ex.excError("timed out waiting for lock %s: %s" % (details, str(exc)))
+            raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
         except lock.LockNoLockFile:
-            raise ex.excError("lock_nowait: set the 'lockfile' param %s" % details)
+            raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
         except lock.LockCreateError:
-            raise ex.excError("can not create lock file %s" % details)
+            raise ex.Error("can not create lock file %s" % details)
         except lock.LockAcquire as exc:
-            raise ex.excError("another action is currently running %s: %s" % (details, str(exc)))
+            raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
-            raise ex.excError("interrupted by signal %s" % details)
+            raise ex.Error("interrupted by signal %s" % details)
         except Exception as exc:
             self.save_exc()
-            raise ex.excError("unexpected locking error %s: %s" % (details, str(exc)))
+            raise ex.Error("unexpected locking error %s: %s" % (details, str(exc)))
 
         if lockfd is not None:
             self.lockfd = lockfd

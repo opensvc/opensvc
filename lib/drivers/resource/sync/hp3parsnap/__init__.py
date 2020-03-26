@@ -90,7 +90,7 @@ class SyncHp3parsnap(Sync):
             return False
         try:
             self.check_requires("sync_update")
-        except ex.excError:
+        except ex.Error:
             return False
         return True
 
@@ -120,7 +120,7 @@ class SyncHp3parsnap(Sync):
 
         try:
             data = self.showvv()
-        except ex.excError as e:
+        except ex.Error as e:
             self.status_log(str(e))
             return rcStatus.WARN
 

@@ -253,22 +253,22 @@ class ContainerLxc(BaseContainer):
 
     def rcp_from(self, src, dst):
         if not self.rootfs:
-            raise ex.excError
+            raise ex.Error
         src = self.rootfs + src
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def rcp(self, src, dst):
         if not self.rootfs:
-            raise ex.excError
+            raise ex.Error
         dst = self.rootfs + dst
         cmd = ['cp', src, dst]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ex.excError("'%s' execution error:\n%s"%(' '.join(cmd), err))
+            raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
     def lxc(self, action):
@@ -292,7 +292,7 @@ class ContainerLxc(BaseContainer):
             cmd = ['lxc-stop', '--kill', '--name', self.name]
             cmd += self.lxcpath_args
         else:
-            raise ex.excError("unsupported lxc action: %s" % action)
+            raise ex.Error("unsupported lxc action: %s" % action)
 
         def prex():
             os.umask(0o022)
@@ -305,7 +305,7 @@ class ContainerLxc(BaseContainer):
             loginfo += ' - logs in %s'%outf
         self.log.info(loginfo)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def get_cf_value(self, param):
         self.find_cf()
@@ -340,7 +340,7 @@ class ContainerLxc(BaseContainer):
         if rootfs is None:
             rootfs = self.get_cf_value("lxc.rootfs.path")
         if rootfs is None:
-            raise ex.excError("could not determine lxc container rootfs")
+            raise ex.Error("could not determine lxc container rootfs")
         if ":" in rootfs:
             # zfs:/tank/svc1, nbd:file1, dir:/foo ...
             rootfs = rootfs.split(":", 1)[-1]
@@ -549,13 +549,13 @@ class ContainerLxc(BaseContainer):
             try:
                 os.makedirs(cfg_d)
             except Exception as exc:
-                raise ex.excError("failed to create directory %s: %s"%(cfg_d, str(exc)))
+                raise ex.Error("failed to create directory %s: %s"%(cfg_d, str(exc)))
         self.log.info("install %s as %s", self.cf, cfg)
         try:
             import shutil
             shutil.copy(self.cf, cfg)
         except Exception as exc:
-            raise ex.excError(str(exc))
+            raise ex.Error(str(exc))
 
     def get_cf_path(self):
         if self.lxcpath:
@@ -627,7 +627,7 @@ class ContainerLxc(BaseContainer):
             return
 
         self.cf = None
-        raise ex.excError("unable to find the container configuration file")
+        raise ex.Error("unable to find the container configuration file")
 
     @lazy
     def prefix(self):
@@ -637,7 +637,7 @@ class ContainerLxc(BaseContainer):
         for prefix in prefixes:
             if os.path.exists(os.path.join(prefix, 'bin', 'lxc-start')):
                 return prefix
-        raise ex.excError("lxc install prefix not found")
+        raise ex.Error("lxc install prefix not found")
 
     def dummy(self, cache_fallback=False):
         pass
@@ -744,7 +744,7 @@ class ContainerLxc(BaseContainer):
             cmd += self.lxcpath_args
         ret, out, err = self.vcall(cmd)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def check_hostname(self):
         if not os.path.exists(self.p_hostname):
@@ -755,7 +755,7 @@ class ContainerLxc(BaseContainer):
                 h = f.read().strip()
         except:
             self.log.error("can not get container hostname")
-            raise ex.excError
+            raise ex.Error
 
         if h != self.vm_hostname:
             self.log.info("container hostname is not %s"%self.vm_hostname)
@@ -786,7 +786,7 @@ class ContainerLxc(BaseContainer):
                 os.unlink(self.template_local)
             except:
                 pass
-            raise ex.excError
+            raise ex.Error
 
     def unpack_template(self):
         import tarfile
@@ -917,7 +917,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         self.log.info(" ".join(cmd))
         ret = self.lcall(cmd, env=env)
         if ret != 0:
-            raise ex.excError
+            raise ex.Error
 
     def provisioner_archive(self):
         # container config file
