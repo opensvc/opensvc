@@ -15,4 +15,8 @@ try:
     globals().update({"devs_to_disks": _os.devs_to_disks})
 except AttributeError:
     pass
+try:
+    globals().update({"promote_dev_rw": _os.devs_to_disks})
+except AttributeError:
+    pass
 

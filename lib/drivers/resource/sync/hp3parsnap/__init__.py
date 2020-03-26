@@ -2,7 +2,7 @@ import datetime
 import os
 
 import rcExceptions as ex
-import rcHp3par as rc
+import drivers.array.hp3par as array_driver
 import rcStatus
 
 from .. import Sync, notify
@@ -68,7 +68,7 @@ class SyncHp3parsnap(Sync):
 
     def on_add(self):
         try:
-            arrays = rc.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
+            arrays = array_driver.Hp3pars(objects=[self.array], log=self.log, node=self.svc.node)
         except Exception as e:
             raise ex.excInitError(str(e))
         if len(arrays.arrays) == 1:

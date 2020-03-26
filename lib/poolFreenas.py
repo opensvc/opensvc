@@ -7,7 +7,7 @@ import pool
 import rcExceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
-from rcFreenas import Freenass
+from drivers.array.freenas import Freenass
 from utilities.proc import justcall
 
 LOCK_NAME = "freenas_create_disk"

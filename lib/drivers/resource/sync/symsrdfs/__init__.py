@@ -4,7 +4,7 @@ import os
 from xml.etree.ElementTree import ElementTree, XML
 
 from rcGlobalEnv import rcEnv
-from rcSymmetrix import set_sym_env
+from drivers.array.symmetrix import set_sym_env
 from rcUtilities import lazy
 
 import rcExceptions as ex
