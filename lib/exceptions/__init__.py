@@ -117,7 +117,7 @@ class ScsiPrNotsupported(OsvcException):
     """ Scsi persistent reservation is not supported
     """
 
-class excNotAvailable(OsvcException):
+class NotAvailable(OsvcException):
     """ Not available
     """
 
