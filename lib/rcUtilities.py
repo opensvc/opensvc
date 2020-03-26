@@ -343,12 +343,6 @@ def check_privs():
     sys.exit(1)
 
 
-def banner(text, ch='=', length=78):
-    spaced_text = ' %s ' % text
-    banner = spaced_text.center(length, ch)
-    return banner
-
-
 def getmount(path):
     path = os.path.abspath(path)
     while path != os.path.sep:
