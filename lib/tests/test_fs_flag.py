@@ -1,10 +1,8 @@
 import pytest
 
-from rcUtilities import driver_import
-from svc import Svc
-
-FsFlagLinux = driver_import('resource.fs.flag.linux').FsFlag
-FsFlagSunOS = driver_import('resource.fs.flag.sunos').FsFlag
+from core.objects.svc import Svc
+from drivers.resource.fs.flag.linux import FsFlag as FsFlagLinux
+from drivers.resource.fs.flag.sunos import FsFlag as FsFlagSunOS
 
 
 @pytest.mark.ci
