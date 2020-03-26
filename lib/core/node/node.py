@@ -39,7 +39,7 @@ from rcScheduler import SchedOpts, Scheduler, sched_action
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor, fmt_path,
                          glob_services_config, init_locale, is_service, lazy,
-                         lazy_initialized, list_services, makedirs,
+                         lazy_initialized, list_services, makedirs, mimport,
                          normalize_paths, purge_cache_expired, read_cf,
                          resolve_path, set_lazy, split_path, strip_path,
                          svc_pathetc, unset_all_lazy, unset_lazy,
@@ -2237,12 +2237,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except Exception:
             raise ex.excError("'%s.type' keyword must be set" % section)
 
-        rtype = driver[0].upper() + driver[1:].lower()
-        modname = "rc" + rtype
+        driver = driver.lower()
         try:
-            mod = __import__(modname)
+            mod = mimport("array", driver)
         except ImportError as exc:
-            raise ex.excError("driver %s load error: %s" % (modname, str(exc)))
+            raise ex.excError("array driver %s load error: %s" % (driver, str(exc)))
         return mod.main(self.options.extra_argv, node=self)
 
     def get_ruser(self, node):

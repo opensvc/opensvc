@@ -576,7 +576,7 @@ class Collector(object):
         self.proxy.insert_stats_fs_u(*args)
 
     def push_pkg(self, sync=True):
-        p = importlib.import_module('utilities.packages.list.'+rcEnv.module_sysname)
+        import utilities.packages.list as p
         vars = ['pkg_nodename',
                 'pkg_name',
                 'pkg_version',
@@ -600,7 +600,7 @@ class Collector(object):
         self.proxy.insert_pkg(*args)
 
     def push_patch(self, sync=True):
-        p = __import__('rcPkg'+rcEnv.sysname)
+        import utilities.packages.list as p
         vars = ['patch_nodename',
                 'patch_num',
                 'patch_rev']
@@ -745,7 +745,7 @@ class Collector(object):
         if 'update_brocade' not in self.proxy_methods:
             print("'update_brocade' method is not exported by the collector")
             return
-        m = __import__('rcBrocade')
+        import rcBrocade as m
         try:
             brocades = m.Brocades(objects)
         except:
@@ -766,7 +766,7 @@ class Collector(object):
         if 'update_vioserver' not in self.proxy_methods:
             print("'update_vioserver' method is not exported by the collector")
             return
-        m = __import__('rcVioServer')
+        import drivers.array.vioserver as m
         try:
             vioservers = m.VioServers(objects)
         except:
@@ -783,7 +783,7 @@ class Collector(object):
         if 'update_hds' not in self.proxy_methods:
             print("'update_hds' method is not exported by the collector")
             return
-        m = __import__('rcHds')
+        import drivers.array.hds as m
         try:
             hdss = m.Arrays(objects)
         except Exception as e:
@@ -801,7 +801,7 @@ class Collector(object):
         if 'update_necism' not in self.proxy_methods:
             print("'update_necism' method is not exported by the collector")
             return
-        m = __import__('rcNecIsm')
+        import drivers.array.necism as m
         try:
             necisms = m.NecIsms(objects)
         except:
@@ -818,7 +818,7 @@ class Collector(object):
         if 'update_hp3par' not in self.proxy_methods:
             print("'update_hp3par' method is not exported by the collector")
             return
-        m = __import__('rcHp3par')
+        import drivers.array.hp3par as m
         try:
             hp3pars = m.Hp3pars(objects)
         except:
@@ -835,7 +835,7 @@ class Collector(object):
         if 'update_centera' not in self.proxy_methods:
             print("'update_centera' method is not exported by the collector")
             return
-        m = __import__('rcCentera')
+        import drivers.array.centera as m
         try:
             centeras = m.Centeras(objects)
         except:
@@ -854,7 +854,7 @@ class Collector(object):
         if 'update_emcvnx' not in self.proxy_methods:
             print("'update_emcvnx' method is not exported by the collector")
             return
-        m = __import__('rcEmcVnx')
+        import drivers.array.emcvnx as m
         try:
             emcvnxs = m.EmcVnxs(objects)
         except:
@@ -873,7 +873,7 @@ class Collector(object):
         if 'update_netapp' not in self.proxy_methods:
             print("'update_netapp' method is not exported by the collector")
             return
-        m = __import__('rcNetapp')
+        import drivers.array.netapp as m
         try:
             netapps = m.Netapps(objects)
         except:
@@ -892,7 +892,7 @@ class Collector(object):
         if 'update_ibmsvc' not in self.proxy_methods:
             print("'update_ibmsvc' method is not exported by the collector")
             return
-        m = __import__('rcIbmSvc')
+        import drivers.array.ibmsvc as m
         try:
             ibmsvcs = m.IbmSvcs(objects)
         except:
@@ -909,7 +909,7 @@ class Collector(object):
         if 'update_nsr' not in self.proxy_methods:
            print("'update_nsr' method is not exported by the collector")
            return
-        m = __import__('rcNsr')
+        import rcNsr as m
         try:
             nsr = m.Nsr()
         except:
@@ -928,7 +928,7 @@ class Collector(object):
         if 'update_ibmds' not in self.proxy_methods:
            print("'update_ibmds' method is not exported by the collector")
            return
-        m = __import__('rcIbmDs')
+        import drivers.array.ibmds as m
         try:
             ibmdss = m.IbmDss(objects)
         except:
@@ -948,7 +948,7 @@ class Collector(object):
         if 'update_gcedisks' not in self.proxy_methods:
            print("'update_gcedisks' method is not exported by the collector")
            return
-        m = __import__('rcGceDisks')
+        import drivers.array.gce as m
         try:
             arrays = m.GceDiskss(objects)
         except:
@@ -968,7 +968,7 @@ class Collector(object):
         if 'update_freenas' not in self.proxy_methods:
            print("'update_freenas' method is not exported by the collector")
            return
-        m = __import__('rcFreenas')
+        import drivers.array.freenas as m
         try:
             arrays = m.Freenass(objects)
         except:
@@ -988,7 +988,7 @@ class Collector(object):
         if 'update_xtremio' not in self.proxy_methods:
            print("'update_xtremio' method is not exported by the collector")
            return
-        m = __import__('rcXtremio')
+        import drivers.array.xtremio as m
         try:
             arrays = m.Arrays(objects)
         except:
@@ -1010,7 +1010,7 @@ class Collector(object):
         if 'update_eva_xml' not in self.proxy_methods:
             print("'update_eva_xml' method is not exported by the collector")
             return
-        m = __import__('rcEva')
+        import drivers.array.eva as m
         try:
             evas = m.Evas(objects)
         except:
@@ -1025,7 +1025,7 @@ class Collector(object):
 
     def push_dorado(self, objects=[], sync=True):
         import json
-        m = __import__('rcDorado')
+        import drivers.array.dorado as m
         try:
             arrays = m.Dorados(objects)
         except Exception as e:
@@ -1068,7 +1068,7 @@ class Collector(object):
         if 'update_sym_xml' not in self.proxy_methods:
             print("'update_sym_xml' method is not exported by the collector")
             return 1
-        m = __import__('rcSymmetrix')
+        import drivers.array.symmetrix as m
         try:
             syms = m.Arrays(objects)
         except Exception as e:
