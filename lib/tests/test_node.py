@@ -1,6 +1,6 @@
 import os
 import logging
-import exceptions as ex
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from core.node import Node
 import pytest

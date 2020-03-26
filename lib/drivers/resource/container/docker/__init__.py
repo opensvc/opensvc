@@ -9,7 +9,7 @@ import signal
 from itertools import chain
 
 import rcContainer
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 import utilities.ping
 

@@ -34,7 +34,7 @@ from rcUtilities import lazy, unset_lazy, \
                         svc_pathcf, find_editor, mimport
 from contexts import want_context
 from converters import *
-import exceptions as ex
+import core.exceptions as ex
 import rcLogger
 from core.node import Node
 from rcScheduler import Scheduler, SchedOpts, sched_action

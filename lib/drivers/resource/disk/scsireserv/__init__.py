@@ -5,7 +5,7 @@ import uuid
 
 from subprocess import *
 
-import exceptions as ex
+import core.exceptions as ex
 import rcStatus
 
 from core.resource import Resource

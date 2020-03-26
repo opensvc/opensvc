@@ -5,7 +5,7 @@ import re
 import stat
 
 import rcStatus
-import exceptions as ex
+import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
