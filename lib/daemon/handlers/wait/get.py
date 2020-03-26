@@ -5,7 +5,7 @@ import time
 from six.moves import queue
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import normalize_jsonpath
 from rcGlobalEnv import rcEnv
 from jsonpath_ng import jsonpath

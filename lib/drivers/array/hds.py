@@ -7,7 +7,7 @@ import json
 from optparse import Option
 from xml.etree.ElementTree import XML, fromstring
 
-import rcExceptions as ex
+import exceptions as ex
 from converters import convert_size
 from core.node import Node
 from rcGlobalEnv import rcEnv

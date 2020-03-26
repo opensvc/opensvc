@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 
 from .node import Node as BaseNode
 

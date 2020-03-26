@@ -3,7 +3,7 @@ import os
 import time
 import xml.etree.ElementTree as ElementTree
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from .. import Sync, notify

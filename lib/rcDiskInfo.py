@@ -1,4 +1,4 @@
-import rcExceptions as ex
+import exceptions as ex
 
 class diskInfo(object):
     """

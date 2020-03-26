@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 import drivers.array.necism as array_driver
 import rcStatus
 

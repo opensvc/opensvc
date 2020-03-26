@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 import rcStatus
-import rcExceptions as ex
+import exceptions as ex
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
 from rcGlobalEnv import rcEnv
 from svcBuilder import init_kwargs

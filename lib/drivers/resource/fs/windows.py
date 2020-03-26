@@ -1,6 +1,6 @@
 import os
 
-import rcExceptions as ex
+import exceptions as ex
 from rcUtilities import lazy
 from utilities.mounts.windows import Mounts
 from . import BaseFs, adder as base_adder

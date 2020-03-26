@@ -40,8 +40,7 @@ except Exception:
 
 import six
 import daemon.shared as shared
-import rcExceptions as ex
-from rcExceptions import HTTP
+import exceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from storage import Storage
@@ -1139,7 +1138,7 @@ class ClientHandler(shared.OsvcThread):
             status = 200
         except DontClose:
             raise
-        except HTTP as exc:
+        except ex.HTTP as exc:
             status = exc.status
             result = {"status": exc.status, "error": exc.msg}
         except ex.excError as exc:
@@ -1372,7 +1371,7 @@ class ClientHandler(shared.OsvcThread):
             raise
         except ex.excError as exc:
             result = {"status": 400, "error": str(exc)}
-        except HTTP as exc:
+        except ex.HTTP as exc:
             result = {"status": exc.status, "error": exc.msg}
         except Exception as exc:
             result = {"status": 500, "error": str(exc), "traceback": traceback.format_exc()}
@@ -1426,7 +1425,7 @@ class ClientHandler(shared.OsvcThread):
             except KeyError:
                 pass
         if required:
-            raise HTTP(400, "object path not set")
+            raise ex.HTTP(400, "object path not set")
         return None
 
     #########################################################################
@@ -1508,7 +1507,7 @@ class ClientHandler(shared.OsvcThread):
             namespaces = set([ns if ns is not None else "root" for ns in namespaces])
         elif namespaces == "FROM:path":
             if path is None:
-                raise HTTP(400, "handler '%s' rbac access namespaces FROM:path but no path passed" % action)
+                raise ex.HTTP(400, "handler '%s' rbac access namespaces FROM:path but no path passed" % action)
             namespaces = set([split_path(path)[1] or "root"])
         for role in roles:
             if role not in grants:
@@ -1527,8 +1526,8 @@ class ClientHandler(shared.OsvcThread):
             if not len(namespaces - role_namespaces):
                 # role granted on all namespaces
                 return
-        raise HTTP(403, "Forbidden: handler '%s' requested by user '%s' with "
-                        "grants '%s' requires role '%s'" % (
+        raise ex.HTTP(403, "Forbidden: handler '%s' requested by user '%s' with "
+                           "grants '%s' requires role '%s'" % (
                 action,
                 self.usr.name if self.usr else self.usr,
                 self.format_grants(grants),
@@ -1557,7 +1556,7 @@ class ClientHandler(shared.OsvcThread):
             return self.parent.handlers[(method, pathname)]
         except KeyError:
             pass
-        raise HTTP(501, "handler %s %s is not supported" % (method, pathname))
+        raise ex.HTTP(501, "handler %s %s is not supported" % (method, pathname))
 
     def multiplex(self, node, handler, options, data, original_nodename, action, stream_id=None):
         method = handler.routes[0][0]
@@ -1592,7 +1591,7 @@ class ClientHandler(shared.OsvcThread):
             if nodename == rcEnv.nodename:
                 try:
                     _result = handler.action(nodename, action=action, options=options, stream_id=stream_id, thr=self)
-                except HTTP as exc:
+                except ex.HTTP as exc:
                     status = exc.status
                     _result = {"status": exc.status, "error": exc.msg}
                 except ex.excError as exc:
