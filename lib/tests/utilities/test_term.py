@@ -29,7 +29,7 @@ class TestTermWidth:
     def test_fallback_to_env_columns(mocker):
         if getattr(os, 'get_terminal_size', None) is not None:
             mocker.patch.object(os, 'get_terminal_size', side_effect=OSError, autospec=True)
-        mocker.patch('rcUtilities.justcall', return_value=('', '', 1), autospec=True)
+        mocker.patch('utilities.proc.justcall', return_value=('', '', 1), autospec=True)
         mocker.patch.dict(os.environ, {'COLUMNS': '102'})
         assert term_width() == 102
 
@@ -37,6 +37,6 @@ class TestTermWidth:
     def test_return_default_78_when_no_other_values_are_possible(mocker):
         if getattr(os, 'get_terminal_size', None) is not None:
             mocker.patch.object(os, 'get_terminal_size', side_effect=OSError, autospec=True)
-        mocker.patch('rcUtilities.justcall', return_value=('columns 0;', '', 0), autospec=True)
+        mocker.patch('utilities.proc.justcall', return_value=('columns 0;', '', 0), autospec=True)
         mocker.patch.dict(os.environ, {'COLUMNS': '0'})
         assert term_width() == 78
