@@ -322,7 +322,7 @@ def build_services(status=None, paths=None, create_instance=False,
         name, namespace, kind = split_path(path)
         try:
             svc = factory(kind)(name, namespace, node=node)
-        except (ex.excError, ex.excInitError, ValueError, rcConfigParser.Error) as e:
+        except (ex.excError, ex.InitError, ValueError, rcConfigParser.Error) as e:
             errors.append("%s: %s" % (path, str(e)))
             node.log.error(str(e))
             continue

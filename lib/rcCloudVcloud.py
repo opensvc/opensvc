@@ -7,7 +7,7 @@ try:
     from libcloud.compute.providers import get_driver
     import libcloud.security
 except ImportError:
-    raise ex.excInitError("apache-libcloud module must be installed")
+    raise ex.InitError("apache-libcloud module must be installed")
 
 class Cloud(rcCloud.Cloud):
     mode = 'vcloud'
@@ -15,11 +15,11 @@ class Cloud(rcCloud.Cloud):
     def __init__(self, s, auth):
         rcCloud.Cloud.__init__(self, s, auth)
         if 'username' not in auth:
-            raise ex.excInitError("option 'username' is mandatory in vcloud section")
+            raise ex.InitError("option 'username' is mandatory in vcloud section")
         if 'password' not in auth:
-            raise ex.excInitError("option 'password' is mandatory in vcloud section")
+            raise ex.InitError("option 'password' is mandatory in vcloud section")
         if 'manager' not in auth:
-            raise ex.excInitError("option 'manager' is mandatory in vcloud section")
+            raise ex.InitError("option 'manager' is mandatory in vcloud section")
         if 'api_version' not in auth:
             auth['api_version'] = '1.5'
         vcloud = get_driver(Provider.VCLOUD)

@@ -33,7 +33,7 @@ class NfsShare(Resource):
     def __init__(self, path, opts, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
         if not which("exportfs"):
-            raise ex.excInitError("exportfs is not installed")
+            raise ex.InitError("exportfs is not installed")
         self.label = "nfs:"+path
         self.path = path
         l = opts.replace('\\', '').split()
@@ -42,7 +42,7 @@ class NfsShare(Resource):
             try:
                 client, opts = self.parse_entry(e)
             except ex.excError as e:
-                raise ex.excInitError(str(e))
+                raise ex.InitError(str(e))
             self.opts[client] = opts
 
     @cache("showmount.e")

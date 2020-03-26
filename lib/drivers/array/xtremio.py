@@ -18,7 +18,7 @@ from utilities.proc import justcall
 try:
     import requests
 except ImportError:
-    raise ex.excInitError("the requests module must be installed")
+    raise ex.InitError("the requests module must be installed")
 
 try:
     requests.packages.urllib3.disable_warnings()

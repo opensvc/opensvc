@@ -109,7 +109,7 @@ class AbortAction(OsvcException):
     """ Abort multi-resource action
     """
 
-class excInitError(OsvcException):
+class InitError(OsvcException):
     """ Resource initialisation error
     """
 
