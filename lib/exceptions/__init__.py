@@ -27,7 +27,7 @@ class Version(OsvcException):
     def __str__(self):
         return str(self.value)
 
-class excAlreadyDone(OsvcException):
+class AlreadyDone(OsvcException):
     pass
 
 class OptNotFound(OsvcException):
