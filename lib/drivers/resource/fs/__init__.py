@@ -6,7 +6,7 @@ import time
 import exceptions as ex
 import rcStatus
 
-from resources import Resource
+from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import mimport, lazy, protected_dir
 from svcBuilder import init_kwargs

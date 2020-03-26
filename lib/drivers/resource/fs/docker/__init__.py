@@ -7,7 +7,7 @@ import rcStatus
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
 
