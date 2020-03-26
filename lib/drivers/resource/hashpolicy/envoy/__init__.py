@@ -1,5 +1,5 @@
 from resources import DataResource
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "hashpolicy"
 DRIVER_BASENAME = "envoy"

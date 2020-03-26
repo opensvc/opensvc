@@ -2764,11 +2764,13 @@ class Svc(BaseSvc):
 
     @lazy
     def kwstore(self):
-        return __import__("svcdict").KEYS
+        from .svcdict import KEYS
+        return KEYS
 
     @lazy
     def full_kwstore(self):
-        return __import__("svcdict").full_kwstore()
+        from .svcdict import full_kwstore
+        return full_kwstore()
 
     def load_driver(self, driver_group, driver_basename):
         try:
@@ -4139,7 +4141,7 @@ class Svc(BaseSvc):
 
     @lazy
     def encap_groups(self):
-        from svcdict import DEPRECATED_SECTIONS
+        from .svcdict import DEPRECATED_SECTIONS
         egroups = set()
         for rid in self.encap_resources:
             egroup = rid.split('#')[0]

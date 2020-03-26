@@ -7,7 +7,7 @@ from .. import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from resources import Resource
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.render.color import format_str_flat_json
 
 DRIVER_GROUP = "disk"

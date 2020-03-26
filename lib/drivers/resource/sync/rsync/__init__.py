@@ -11,7 +11,7 @@ from converters import convert_speed, convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, drop_option
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 from utilities.string import bdecode
 

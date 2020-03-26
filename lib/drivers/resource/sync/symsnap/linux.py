@@ -1,6 +1,6 @@
 from ..symclone.linux import SyncSymclone, adder as base_adder
 from . import KEYWORDS, DRIVER_GROUP, DRIVER_BASENAME
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 KEYS.register_driver(
     DRIVER_GROUP,

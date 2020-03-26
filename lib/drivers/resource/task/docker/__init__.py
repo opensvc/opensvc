@@ -7,7 +7,7 @@ from drivers.resource.container.docker import \
 import rcExceptions as ex
 
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "docker"
