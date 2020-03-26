@@ -8,6 +8,7 @@ import logging
 import pytest
 
 import nodemgr
+from utilities.string import try_decode
 
 UNICODE_STRING = "bêh"
 logging.disable(logging.CRITICAL)
@@ -126,7 +127,6 @@ class TestNodemgr:
         with capture_stdout(tmp_file):
             ret = nodemgr.main(argv=["get", get_set_arg, "env.this_is_test"])
             assert ret == 0
-        from rcUtilities import try_decode
         with open(tmp_file) as output_file:
             assert try_decode(output_file.read()).strip() == "true"
 
@@ -159,7 +159,6 @@ class TestNodemgr:
             ret = nodemgr.main(argv=["get", "--param", "env.comment"])
 
         assert ret == 0
-        from rcUtilities import try_decode
         with open(tmp_file) as output_file:
             assert try_decode(output_file.read()) == UNICODE_STRING
             # assert try_decode(output_file.read()).strip() == UNICODE_STRING
