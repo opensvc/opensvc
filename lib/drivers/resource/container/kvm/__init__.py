@@ -1,8 +1,6 @@
 import os
-import time
 
 import core.exceptions as ex
-import rcStatus
 import utilities.ping
 
 from .. import \
@@ -222,7 +220,7 @@ class ContainerKvm(BaseContainer):
         return out.strip()
 
     def unset_partition(self):
-        from xml.etree.ElementTree import ElementTree, SubElement
+        from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
         try:
             tree.parse(self.cf)
@@ -318,7 +316,7 @@ class ContainerKvm(BaseContainer):
             return []
         data = []
 
-        from xml.etree.ElementTree import ElementTree, SubElement
+        from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
         try:
             tree.parse(self.cf)

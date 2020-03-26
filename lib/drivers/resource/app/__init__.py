@@ -1,12 +1,12 @@
 """
 The module defining the App resource class.
 """
-from subprocess import Popen
 from datetime import datetime
 import os
-import time
 import stat
 import shlex
+
+import core.status
 import six
 
 from rcUtilities import lazy
@@ -15,7 +15,6 @@ from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
-import rcStatus
 import core.exceptions as ex
 import lock
 
@@ -212,7 +211,6 @@ class App(Resource):
                  environment=None,
                  configs_environment=None,
                  secrets_environment=None,
-                 retcodes=None,
                  **kwargs):
 
         Resource.__init__(self, **kwargs)
@@ -234,7 +232,6 @@ class App(Resource):
         self.environment = environment
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
-        self.retcodes = retcodes
         if script:
             self.label += ": " + os.path.basename(script)
         elif start:
@@ -245,19 +242,6 @@ class App(Resource):
             self.sort_key = "app#%d" % int(self.start_seq)
         except (TypeError, ValueError):
             pass
-
-    @lazy
-    def retcodes_map(self):
-        data = {}
-        for element in self.retcodes.split():
-            try:
-                retcode, status = element.split(":")
-                value = rcStatus.status_value(status)
-                if value is not None:
-                    data[int(retcode)] = value
-            except Exception:
-                pass
-        return data
 
     @lazy
     def lockfile(self):
@@ -330,7 +314,6 @@ class App(Resource):
         Contribute app resource standard and script-provided key/val pairs
         to the service's resinfo.
         """
-        import re
         keyvals = [
             ["script", self.script if self.script else ""],
             ["start", str(self.start_seq) if self.start_seq else ""],
@@ -361,11 +344,6 @@ class App(Resource):
             keyvals.append([elements[0].strip(), elements[1].strip()])
         return keyvals
 
-    def replace_volname(self, buff, **kwargs):
-        if os.sep not in buff:
-            return buff, None
-        return Resource.replace_volname(self, buff, **kwargs)
-
     def get_cmd(self, action, script_arg=None, validate=True):
         key = action + "_seq"
         val = getattr(self, key)
@@ -388,9 +366,7 @@ class App(Resource):
                 else:
                     cmd = shlex.split(val)
                 if "|" in cmd or "||" in cmd or "&&" in cmd or any([True for w in cmd if w.endswith(";")]):
-                    val, vol = self.replace_volname(val, strict=False, errors="ignore")
                     return val
-        cmd[0], vol = self.replace_volname(cmd[0], strict=False, errors="ignore")
         if validate:
             cmd = self.validate_on_action(cmd)
         return cmd
@@ -434,7 +410,7 @@ class App(Resource):
             raise
 
         status = self.status()
-        if status == rcStatus.DOWN:
+        if status == core.status.DOWN:
             self.log.info("%s is already stopped", self.label)
             return
 
@@ -507,27 +483,29 @@ class App(Resource):
         if n_ref_res > 0 and str(status["avail"]) not in ("up", "n/a"):
             self.log.debug("abort resApp status because needed resources avail status is %s", status["avail"])
             self.status_log("not evaluated (instance not up)", "info")
-            return rcStatus.NA
+            return core.status.NA
 
         try:
             ret = self.is_up()
         except StatusWARN:
-            return rcStatus.WARN
+            return core.status.WARN
         except StatusNA:
-            return rcStatus.NA
+            return core.status.NA
         except ex.Error as exc:
             msg = str(exc)
             if "intent '" in msg:
                 action = msg.split("intent '")[-1].split("'")[0]
                 self.status_log("%s in progress" % action, "info")
             self.log.debug("resource status forced to n/a: an action is running")
-            return rcStatus.NA
+            return core.status.NA
 
-        if ret in self.retcodes_map:
-            return self.retcodes_map[ret]
-        else:
-            self.status_log("check reports errors (%d)" % ret)
-            return rcStatus.WARN
+        if ret == 0:
+            return core.status.UP
+        elif ret == 1:
+            return core.status.DOWN
+
+        self.status_log("check reports errors (%d)" % ret)
+        return core.status.WARN
 
     def set_executable(self, fpath):
         """

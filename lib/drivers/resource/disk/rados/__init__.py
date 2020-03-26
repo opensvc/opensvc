@@ -1,7 +1,7 @@
 import json
 import os
 
-import rcStatus
+import core.status
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
@@ -179,17 +179,17 @@ class DiskRados(BaseDisk):
             self.validate_image_fmt()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         l = self.up_count()
         n = len(l)
         unmapped = sorted(list(set(self.images) - set(l)))
         if n == len(self.images):
-            return rcStatus.UP
+            return core.status.UP
         elif n == 0:
-            return rcStatus.DOWN
+            return core.status.DOWN
         else:
             self.status_log("unmapped: "+", ".join(unmapped))
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def devname(self, image):
         return os.path.join(os.sep, "dev", "rbd", image)
@@ -287,12 +287,12 @@ class DiskRadoslock(DiskRados):
     def _status(self, verbose=False):
         n = self.up_count()
         if n == len(self.images):
-            return rcStatus.UP
+            return core.status.UP
         elif n == 0:
-            return rcStatus.DOWN
+            return core.status.DOWN
         else:
             self.status_log("unlocked: "+", ".join(self.unlocked))
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def do_stop_one(self, image):
         data = self.locklist(image)

@@ -1,10 +1,7 @@
-import os
 import json
 
-import core.exceptions as ex
+import core.status
 import rcGce
-import rcStatus
-
 from .. import BaseDisk, BASE_KEYWORDS
 from converters import convert_size
 from rcGlobalEnv import *
@@ -160,17 +157,17 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
             self.validate_volumes()
         except Exception as e:
             self.status_log(str(e))
-            return rcStatus.WARN
+            return core.status.WARN
         l = self.up_count()
         n = len(l)
         unattached = sorted(list(set(self.names) - set(l)))
         if n == len(self.names):
-            return rcStatus.UP
+            return core.status.UP
         elif n == 0:
-            return rcStatus.DOWN
+            return core.status.DOWN
         else:
             self.status_log("unattached: "+", ".join(unattached))
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def detach_other(self, name):
         existing = self.get_disks()

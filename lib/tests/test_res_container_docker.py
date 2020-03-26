@@ -1,7 +1,7 @@
 # coding: utf-8
 from __future__ import print_function
 
-import rcStatus
+import core.status
 from core.node import Node
 from poolDirectory import Pool
 from rcUtilities import factory
@@ -50,7 +50,7 @@ class TestVolumeOptions:
             vol_options,
             container_options,
             expected_options):
-        mocker.patch.object(Volume, 'status', return_value=rcStatus.UP)
+        mocker.patch.object(Volume, 'status', return_value=core.status.UP)
 
         vol_name = 'vol-' + vol_options + '-' + container_options
         Pool(name="dir1", node=Node()).configure_volume(factory("vol")(name=vol_name),
@@ -71,7 +71,7 @@ class TestVolumeOptions:
         ['vol1/src:/dst:ro', '/tmp:/dst:rw'],
     ])
     def test_raises_on_dup_destinations(mocker, osvc_path_tests, volume_mounts):
-        mocker.patch.object(Volume, 'status', return_value=rcStatus.UP)
+        mocker.patch.object(Volume, 'status', return_value=core.status.UP)
 
         svc1 = Svc('svc1')
         pool = Pool(name="dir1", node=Node())

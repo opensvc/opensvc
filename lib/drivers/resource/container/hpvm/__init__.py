@@ -1,7 +1,5 @@
 import os
-import time
 
-import rcStatus
 import core.exceptions as ex
 import utilities.ping
 
@@ -21,7 +19,6 @@ from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import qcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "hpvm"
@@ -67,7 +64,6 @@ class ContainerHpvm(BaseContainer):
         return "%s name=%s" % (Resource.__str__(self), self.name)
 
     def files_to_sync(self):
-        import glob
         a = self.vg.files_to_sync()
         guest = os.path.join(os.sep, 'var', 'opt', 'hpvm', 'guests', self.name)
         uuid = os.path.realpath(guest)

@@ -4,8 +4,7 @@ import shutil
 import time
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import mimport, lazy, protected_dir
@@ -260,13 +259,13 @@ class BaseFs(Resource):
         if self.is_up():
             if not self.check_stat():
                 self.status_log("fs is not responding to stat")
-                return rcStatus.WARN
+                return core.status.WARN
             if self.need_check_writable() and not self.check_writable():
                 self.status_log("fs is not writable")
-                return rcStatus.WARN
-            return rcStatus.UP
+                return core.status.WARN
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def sub_devs(self):
         pseudofs = [

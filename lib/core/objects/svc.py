@@ -8,26 +8,21 @@ import sys
 import os
 import signal
 import logging
-import datetime
 import itertools
 import time
 from errno import ECONNREFUSED
 
+import core.status
 import lock
-import json
-import re
 import hashlib
-import locale
 
-import six
 from core.resource import Resource
 from core.resourceset import ResourceSet
 from freezer import Freezer
-import rcStatus
 from rcGlobalEnv import rcEnv, Paths
 from storage import Storage
 from rcUtilities import lazy, unset_lazy, \
-                        action_triggers, read_cf, set_lazy, \
+                        action_triggers, set_lazy, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
@@ -41,7 +36,7 @@ from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
 from extconfig import ExtConfigMixin
 from utilities.proc import justcall, vcall, lcall
-from utilities.string import is_string, try_decode
+from utilities.string import is_string
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -1610,7 +1605,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Add resources to the service configuration, and provision them if
         instructed to do so.
         """
-        from keywords import MissKeyNoDefault, KeyInvalidValue
 
         rtypes = {}
         for section in self.cd:
@@ -2289,7 +2283,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         refresh = self.options.refresh or (not self.encap and self.options.cron)
         data = self.print_status_data(mon_data=False, refresh=refresh)
-        return rcStatus.Status(data.get("overall", "n/a")).value()
+        return core.status.Status(data.get("overall", "n/a")).value()
 
     @fcache
     def get_mon_data(self):
@@ -3559,7 +3553,7 @@ class Svc(BaseSvc):
         return output
 
     def prstatus(self):
-        status = rcStatus.Status()
+        status = core.status.Status()
         for resource in self.get_resources("disk.scsireserv"):
             status += resource.status()
         return int(status)
@@ -3607,7 +3601,7 @@ class Svc(BaseSvc):
             if resource is None:
                 print("resource %s not found" % rid)
                 continue
-            print(rcStatus.colorize_status(str(resource.status(refresh=self.options.refresh))))
+            print(core.status.colorize_status(str(resource.status(refresh=self.options.refresh))))
         return 0
 
     def print_status_data_eval(self, refresh=False, write_data=True, clear_rstatus=False):
@@ -3690,8 +3684,8 @@ class Svc(BaseSvc):
                     data["encap"][container.rid] = self.encap_json_status(container, refresh=refresh)
                     # merge container overall status, so we propagate encap alerts
                     # up to instance and service level.
-                    group_status["overall"] += rcStatus.Status(data["encap"][container.rid]["overall"] if "overall" in data["encap"][container.rid] else "n/a")
-                    group_status["avail"] += rcStatus.Status(data["encap"][container.rid]["avail"] if "avail" in data["encap"][container.rid] else "n/a")
+                    group_status["overall"] += core.status.Status(data["encap"][container.rid]["overall"] if "overall" in data["encap"][container.rid] else "n/a")
+                    group_status["avail"] += core.status.Status(data["encap"][container.rid]["avail"] if "avail" in data["encap"][container.rid] else "n/a")
                 except:
                     data["encap"][container.rid] = {"resources": {}}
                 if hasattr(container, "vm_hostname"):
@@ -3699,7 +3693,7 @@ class Svc(BaseSvc):
 
         for rset in self.get_resourcesets(strict=True):
             for resource in rset.resources:
-                status = rcStatus.Status(resource.status(verbose=True))
+                status = core.status.Status(resource.status(verbose=True))
                 log = resource.status_logs_strlist()
                 info = resource.status_info()
                 tags = sorted(list(resource.tags))
@@ -4158,7 +4152,7 @@ class Svc(BaseSvc):
         if container.guestos == 'windows':
             raise ex.NotAvailable
 
-        if container.status(ignore_nostatus=True, refresh=refresh) == rcStatus.DOWN:
+        if container.status(ignore_nostatus=True, refresh=refresh) == core.status.DOWN:
             #
             #  passive node for the vservice => forge encap resource status
             #    - encap sync are n/a
@@ -4259,9 +4253,9 @@ class Svc(BaseSvc):
 
         # initialise status of each group
         for group in TOP_STATUS_GROUPS:
-            status[group] = rcStatus.Status(rcStatus.NA)
+            status[group] = core.status.Status(core.status.NA)
         for group in groups:
-            status["status_group"][group] = rcStatus.Status(rcStatus.NA)
+            status["status_group"][group] = core.status.Status(core.status.NA)
 
         for group in DEFAULT_STATUS_GROUPS:
             if group not in groups:
@@ -4271,35 +4265,35 @@ class Svc(BaseSvc):
                     continue
                 rstatus = resource.status()
                 if resource.type.startswith("sync"):
-                    if rstatus == rcStatus.UP:
-                        rstatus = rcStatus.NA
-                    elif rstatus == rcStatus.DOWN:
-                        rstatus = rcStatus.WARN
+                    if rstatus == core.status.UP:
+                        rstatus = core.status.NA
+                    elif rstatus == core.status.DOWN:
+                        rstatus = core.status.WARN
                 status["status_group"][group] += rstatus
                 if resource.is_optional():
                     status["optional"] += rstatus
                 else:
                     status["avail"] += rstatus
                 if resource.status_logs_count(levels=["warn", "error"]) > 0:
-                    status["overall"] += rcStatus.WARN
+                    status["overall"] += core.status.WARN
 
-        if status["avail"].status == rcStatus.STDBY_UP_WITH_UP:
+        if status["avail"].status == core.status.STDBY_UP_WITH_UP:
             # now we know the avail status we can promote
             # stdbyup to up
-            status["avail"].status = rcStatus.UP
+            status["avail"].status = core.status.UP
             for group in status:
-                if status[group] == rcStatus.STDBY_UP:
-                    status[group].status = rcStatus.UP
-        elif status["avail"].status == rcStatus.STDBY_UP_WITH_DOWN:
-            status["avail"].status = rcStatus.STDBY_UP
+                if status[group] == core.status.STDBY_UP:
+                    status[group].status = core.status.UP
+        elif status["avail"].status == core.status.STDBY_UP_WITH_DOWN:
+            status["avail"].status = core.status.STDBY_UP
 
-        if status["optional"].status == rcStatus.STDBY_UP_WITH_UP:
-            status["optional"].status = rcStatus.UP
-        elif status["optional"].status == rcStatus.STDBY_UP_WITH_DOWN:
-            status["optional"].status = rcStatus.STDBY_UP
+        if status["optional"].status == core.status.STDBY_UP_WITH_UP:
+            status["optional"].status = core.status.UP
+        elif status["optional"].status == core.status.STDBY_UP_WITH_DOWN:
+            status["optional"].status = core.status.STDBY_UP
 
-        status["overall"] += rcStatus.Status(status["avail"])
-        status["overall"] += rcStatus.Status(status["optional"])
+        status["overall"] += core.status.Status(status["avail"])
+        status["overall"] += core.status.Status(status["optional"])
 
         return status
 
@@ -4864,7 +4858,7 @@ class Svc(BaseSvc):
             return
 
         for resource in self.get_resources('container'):
-            if resource.status(ignore_nostatus=True) not in (rcStatus.STDBY_UP, rcStatus.UP):
+            if resource.status(ignore_nostatus=True) not in (core.status.STDBY_UP, core.status.UP):
                 continue
             self._push_encap_config(resource)
 
@@ -5720,9 +5714,9 @@ class Svc(BaseSvc):
             raise ex.Error("referenced volume %s has no "
                               "mount point" % l[0])
         volstatus = vol.status()
-        if volstatus not in (rcStatus.UP, rcStatus.STDBY_UP, rcStatus.NA):
+        if volstatus not in (core.status.UP, core.status.STDBY_UP, core.status.NA):
             if errors != "ignore":
-                raise ex.Error("volume %s is %s" % (volname, rcStatus.Status(volstatus)))
+                raise ex.Error("volume %s is %s" % (volname, core.status.Status(volstatus)))
         if mode == "blk":
             l[0] = vol.device
         else:

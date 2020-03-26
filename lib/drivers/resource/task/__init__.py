@@ -1,13 +1,9 @@
 import os
-import pwd
-import sys
 
+import core.status
 import lock
 import core.exceptions as ex
-import rcStatus
-
 from rcScheduler import SchedOpts
-from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from core.resource import Resource
 from six.moves import input
@@ -256,19 +252,19 @@ class BaseTask(Resource):
 
     def _status(self, verbose=False):
         if not self.checker:
-            return rcStatus.NA
+            return core.status.NA
         elif self.checker == "last_run":
             try:
                 self.check_requires("run")
             except (ex.Error, ex.ContinueAction):
-                return rcStatus.NA
+                return core.status.NA
             ret = self.read_last_run_retcode()
             if ret is None:
-                return rcStatus.NA
+                return core.status.NA
             if ret:
                 self.status_log("last run failed", "error")
-                return rcStatus.DOWN
-            return rcStatus.UP
+                return core.status.DOWN
+            return core.status.UP
 
     def is_provisioned(self, refresh=False):
         return True

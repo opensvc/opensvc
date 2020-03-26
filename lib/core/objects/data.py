@@ -6,7 +6,7 @@ import glob
 import tempfile
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 from rcUtilities import create_protected_file, factory, find_editor, makedirs, split_path, want_context
 from utilities.string import bencode
 
@@ -315,5 +315,5 @@ class DataMixin(object):
             name, _, _ = split_path(path)
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
-                if vol.has_data(self.kind, self.path, key) and vol._status() == rcStatus.UP:
+                if vol.has_data(self.kind, self.path, key) and vol._status() == core.status.UP:
                     vol._install_data(self.kind)

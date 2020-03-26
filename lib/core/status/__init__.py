@@ -2,7 +2,8 @@
 This module defines the Status class and the functions
 to convert a Status to its printable form or integer form.
 """
-from utilities.render.color import color, colorize
+
+from utilities.render.color import colorize, color
 
 UP = 0
 DOWN = 1
@@ -13,7 +14,6 @@ STDBY_UP = 6
 STDBY_DOWN = 7
 STDBY_UP_WITH_UP = 8
 STDBY_UP_WITH_DOWN = 9
-
 STATUS_VALUE = {
     'up': UP,
     'down': DOWN,
@@ -24,7 +24,6 @@ STATUS_VALUE = {
     'stdby up': STDBY_UP,
     'stdby down': STDBY_DOWN,
 }
-
 STATUS_STR = {
     UP: 'up',
     DOWN: 'down',

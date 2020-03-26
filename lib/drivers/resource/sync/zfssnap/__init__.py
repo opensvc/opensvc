@@ -1,13 +1,10 @@
 import datetime
-import os
-import time
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import rcZfs
 
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache
 from svcBuilder import sync_kwargs
 from core.objects.svcdict import KEYS
@@ -216,13 +213,13 @@ class SyncZfssnap(Sync):
             self._status_one(dataset)
         issues = set(self.status_logs_get(["warn"])) - set([''])
         if len(issues) == 0:
-            return rcStatus.UP
-        return rcStatus.WARN
+            return core.status.UP
+        return core.status.WARN
 
     def can_update(self, dataset):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if not self.svc.options.force and \
-           s['avail'].status not in [rcStatus.UP, rcStatus.NA]:
+           s['avail'].status not in [core.status.UP, core.status.NA]:
             if not self.svc.options.cron:
                 self.log.info("skip snapshot creation on instance not up")
             return False

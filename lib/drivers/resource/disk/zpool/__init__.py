@@ -4,17 +4,15 @@ import os
 import time
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, clear_cache, drop_option
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop
-from converters import convert_duration
 from svcBuilder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, qcall, which
+from utilities.proc import justcall, which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "zpool"
@@ -168,12 +166,12 @@ class ZpoolDisk(BaseDisk):
             for error in errors:
                 if "pool I/O is currently suspended" in error:
                     self.status_log("pool I/O is currently suspended")
-                    return rcStatus.WARN
+                    return core.status.WARN
                 self.status_log(error)
         if self.is_up():
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def is_up(self):
         """Returns True if the pool is present and activated

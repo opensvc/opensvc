@@ -4,11 +4,9 @@ import os
 import pwd
 import re
 import stat
-import sys
 
 import core.exceptions as ex
-import rcStatus
-
+import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from rcUtilities import lazy
 from svcBuilder import init_kwargs
@@ -392,11 +390,11 @@ class BaseDiskRaw(BaseDisk):
         self.mangle_devs_map()
         r = self.is_up()
         if not self.create_char_devices and len(self.devs_map) == 0:
-            return rcStatus.NA
+            return core.status.NA
         if r:
-            return rcStatus.UP
+            return core.status.UP
         else:
-            return rcStatus.DOWN
+            return core.status.DOWN
 
     def do_start(self):
         self.reload_config()

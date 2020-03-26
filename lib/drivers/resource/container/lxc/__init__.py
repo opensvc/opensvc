@@ -7,7 +7,7 @@ import shutil
 from datetime import datetime
 
 import core.exceptions as ex
-import rcStatus
+import core.status
 import utilities.ping
 
 from .. import \
@@ -580,7 +580,7 @@ class ContainerLxc(BaseContainer):
         if not self.is_provisioned():
             return True
         res = self.svc.resource_handling_file(cfg)
-        if res and res.status() not in (rcStatus.NA, rcStatus.UP, rcStatus.STDBY_UP):
+        if res and res.status() not in (core.status.NA, core.status.UP, core.status.STDBY_UP):
             return True
         if cfg is None:
             self.status_log("could not determine the config file standard hosting directory")
@@ -777,7 +777,6 @@ class ContainerLxc(BaseContainer):
         if os.path.exists(self.template_local):
             self.log.info("template %s already downloaded"%self.template_fname)
             return
-        import sys
         try:
             self.svc.node.urlretrieve(self.template, self.template_local)
         except IOError as e:
