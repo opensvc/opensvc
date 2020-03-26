@@ -19,7 +19,7 @@ from .. import \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
 from rcUtilities import fcache
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 
