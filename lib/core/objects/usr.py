@@ -10,9 +10,9 @@ import tempfile
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs, split_path, factory
 from core.objects.svc import BaseSvc
-from rcSsl import gen_cert
-from .sec import Sec
+from utilities.ssl import gen_cert
 from utilities.string import bdecode
+from .sec import Sec
 import rcExceptions as ex
 
 DEFAULT_STATUS_GROUPS = [
