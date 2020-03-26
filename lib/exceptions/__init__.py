@@ -8,7 +8,7 @@ class HTTP(OsvcException):
     def __str__(self):
         return "status %s: %s" % (self.status, self.msg)
 
-class excEncapUnjoinable(OsvcException):
+class EncapUnjoinable(OsvcException):
     pass
 
 class excError(OsvcException):
