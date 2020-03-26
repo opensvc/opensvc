@@ -19,7 +19,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr, lazy, to_cidr
 from resources import Resource
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import qcall, which
 
 KW_IPNAME = {

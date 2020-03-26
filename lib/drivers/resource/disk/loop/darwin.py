@@ -14,7 +14,7 @@ from . import \
     DEPRECATED_SECTIONS
 from converters import convert_size
 from rcGlobalEnv import rcEnv
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import call, which
 
 KEYS.register_driver(

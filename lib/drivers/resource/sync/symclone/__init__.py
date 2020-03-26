@@ -11,7 +11,7 @@ from converters import print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
 DRIVER_GROUP = "sync"
