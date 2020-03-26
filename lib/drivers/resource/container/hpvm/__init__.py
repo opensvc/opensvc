@@ -18,7 +18,7 @@ from .. import \
     KW_SCSIRESERV
 from drivers.resource.disk.hpvm import DiskHpvm
 from rcGlobalEnv import rcEnv
-from resources import Resource
+from core.resource import Resource
 from svcBuilder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall

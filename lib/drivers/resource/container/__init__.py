@@ -6,7 +6,7 @@ import utilities.ping
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr, lazy
-from resources import Resource
+from core.resource import Resource
 from utilities.proc import justcall
 
 KW_START_TIMEOUT = {   

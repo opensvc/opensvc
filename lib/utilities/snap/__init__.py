@@ -2,7 +2,7 @@ import os
 
 import exceptions as ex
 
-from resources import Resource
+from core.resource import Resource
 
 
 def find_mount(rs, dir):

@@ -19,7 +19,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from resources import Resource
+from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache, lazy
 from svcBuilder import init_kwargs, container_kwargs
