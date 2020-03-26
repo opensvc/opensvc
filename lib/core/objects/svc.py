@@ -3957,7 +3957,7 @@ class Svc(BaseSvc):
         for container in self.get_resources('container'):
             try:
                 self._encap_cmd(cmd, container, verbose=verbose)
-            except ex.excEncapUnjoinable:
+            except ex.EncapUnjoinable:
                 if unjoinable != "continue":
                     self.log.error("container %s is not joinable to execute "
                                    "action '%s'", container.name, ' '.join(cmd))
@@ -4058,7 +4058,7 @@ class Svc(BaseSvc):
             cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd, stdin=self.node.devnull)
         else:
-            raise ex.excEncapUnjoinable("undefined rcmd/runmethod in "
+            raise ex.EncapUnjoinable("undefined rcmd/runmethod in "
                                          "resource %s"%container.rid)
 
         if verbose:
@@ -4068,19 +4068,19 @@ class Svc(BaseSvc):
                 print(err)
         if ret == 127:
             # opensvc is not installed
-            raise ex.excEncapUnjoinable
+            raise ex.EncapUnjoinable
         if ret == 255:
-            raise ex.excEncapUnjoinable
+            raise ex.EncapUnjoinable
         if "resource_monitor" in cmd:
             try:
                 self.encap_json_status(container, refresh=True, push_config=False, cache=False)
-            except (ex.excNotAvailable, ex.excEncapUnjoinable, ex.excError):
+            except (ex.excNotAvailable, ex.EncapUnjoinable, ex.excError):
                 pass
         elif "print" not in cmd and "create" not in cmd:
             self.log.info("refresh encap json status after action")
             try:
                 self.encap_json_status(container, refresh=True, push_config=push_config)
-            except (ex.excNotAvailable, ex.excEncapUnjoinable, ex.excError):
+            except (ex.excNotAvailable, ex.EncapUnjoinable, ex.excError):
                 pass
         if ret != 0:
             raise ex.excError("error from encap service command '%s': "
@@ -4888,7 +4888,7 @@ class Svc(BaseSvc):
             cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
             out = cmd_results[0]
             ret = cmd_results[2]
-        except (ex.excEncapUnjoinable, ex.excError) as exc:
+        except (ex.EncapUnjoinable, ex.excError) as exc:
             out = None
             ret = 1
 
