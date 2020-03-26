@@ -121,7 +121,7 @@ class NotAvailable(OsvcException):
     """ Not available
     """
 
-class excNotSupported(OsvcException):
+class NotSupported(OsvcException):
     """ Not supported
     """
 
