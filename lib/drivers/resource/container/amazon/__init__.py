@@ -99,7 +99,7 @@ class ContainerAmazon(BaseContainer):
         if self.guestos == "windows":
             """ Windows has no sshd.
             """
-            raise ex.excNotSupported("remote copy not supported on Windows")
+            raise ex.NotSupported("remote copy not supported on Windows")
 
         self.getaddr()
         if self.addr is None:
@@ -119,7 +119,7 @@ class ContainerAmazon(BaseContainer):
         if self.guestos == "windows":
             """ Windows has no sshd.
             """
-            raise ex.excNotSupported("remote copy not supported on Windows")
+            raise ex.NotSupported("remote copy not supported on Windows")
 
         self.getaddr()
         if self.addr is None:
@@ -139,7 +139,7 @@ class ContainerAmazon(BaseContainer):
         if self.guestos == "windows":
             """ Windows has no sshd.
             """
-            raise ex.excNotSupported("remote commands not supported on Windows")
+            raise ex.NotSupported("remote commands not supported on Windows")
 
         self.getaddr()
         if self.addr is None:
