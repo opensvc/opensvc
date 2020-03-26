@@ -351,7 +351,7 @@ class Mgr(object):
         except ex.excError as exc:
             print(exc, file=sys.stderr)
             return 1
-        except ex.excVersion as exc:
+        except ex.Version as exc:
             print(exc)
             return 0
         except KeyboardInterrupt:
