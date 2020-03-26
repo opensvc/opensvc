@@ -14,7 +14,7 @@ from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
 from optparse import Option
-from node import Node
+from core.node import Node
 from utilities.proc import justcall, which
 
 PROG = "om array"

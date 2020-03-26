@@ -7,7 +7,7 @@ from subprocess import *
 
 import rcExceptions as ex
 from rcGlobalEnv import rcEnv
-from node import Node
+from core.node import Node
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

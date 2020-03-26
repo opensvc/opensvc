@@ -323,15 +323,6 @@ def mimport(*args, **kwargs):
         raise ImportError("no module found: %s" % kwargs["head"])
 
 
-def ximport(base):
-    mod = base + rcEnv.sysname
-    fpath = os.path.join(rcEnv.paths.pathlib, mod + ".py")
-    if not os.path.exists(fpath):
-        return __import__(base)
-    m = __import__(mod)
-    return m
-
-
 def check_privs():
     if "OSVC_CONTEXT" in os.environ or "OSVC_CLUSTER" in os.environ:
         return
@@ -1182,8 +1173,8 @@ def factory(kind):
     Return a Svc or Node object
     """
     if kind == "node":
-        mod = ximport('node')
-        return mod.Node
+        from core.node import Node
+        return Node
     if kind == "ccfg":
         from cluster import ClusterSvc
         return ClusterSvc

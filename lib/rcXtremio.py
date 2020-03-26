@@ -12,7 +12,7 @@ from storage import Storage
 from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
-from node import Node
+from core.node import Node
 from utilities.proc import justcall
 
 try:
