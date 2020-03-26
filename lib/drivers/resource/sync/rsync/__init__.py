@@ -2,7 +2,7 @@ import os
 import logging
 import glob
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 import datetime
 

@@ -4,7 +4,7 @@ import os
 import sys
 from xml.etree.ElementTree import XML, fromstring
 
-import rcExceptions as ex
+import exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory, split_path

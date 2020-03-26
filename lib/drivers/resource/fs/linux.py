@@ -4,7 +4,7 @@ Linux Fs resource driver module
 import os
 from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.devices.linux
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount, getmount, lazy, cache

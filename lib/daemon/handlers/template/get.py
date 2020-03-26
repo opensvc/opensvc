@@ -1,6 +1,6 @@
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-from rcExceptions import HTTP
+import exceptions as ex
 
 class Handler(handler.Handler):
     """
@@ -33,7 +33,7 @@ class Handler(handler.Handler):
         options = self.parse_options(kwargs)
         if options.catalog == "collector":
             if options.template is None:
-                raise HTTP(400, "template is not set")
+                raise ex.HTTP(400, "template is not set")
             request_options = {
                 "props": "tpl_definition"
             }
@@ -41,6 +41,6 @@ class Handler(handler.Handler):
                 data = shared.NODE.collector_rest_get("/provisioning_templates/%s" % options.template, request_options)
                 return data["data"][0]["tpl_definition"]
             except IndexError:
-                raise HTTP(404, "template not found")
-        raise HTTP(400, "unknown catalog %s" % options.catalog)
+                raise ex.HTTP(404, "template not found")
+        raise ex.HTTP(400, "unknown catalog %s" % options.catalog)
 

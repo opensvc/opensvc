@@ -2,7 +2,7 @@ import time
 
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.ifconfig
 
 from ..sunos import Ip, adder as parent_adder

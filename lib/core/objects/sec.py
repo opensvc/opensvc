@@ -17,7 +17,7 @@ from converters import print_size
 from core.objects.data import DataMixin
 from utilities.ssl import gen_cert, get_expire
 from utilities.string import bencode, bdecode
-import rcExceptions as ex
+import exceptions as ex
 
 DEFAULT_STATUS_GROUPS = [
 ]

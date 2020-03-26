@@ -5,7 +5,7 @@ import re
 
 from stat import *
 
-import rcExceptions as ex
+import exceptions as ex
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS

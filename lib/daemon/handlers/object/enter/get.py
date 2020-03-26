@@ -6,7 +6,7 @@ import uuid
 
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-from rcExceptions import HTTP
+import exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 from utilities.string import try_decode
@@ -57,7 +57,7 @@ class Handler(handler.Handler):
         options = self.parse_options(kwargs)
         timeout = options.timeout if options.timeout and options.timeout < MAX_TIMEOUT else MAX_TIMEOUT
         if not which("gotty"):
-            raise HTTP(500, "The gotty executable is not installed")
+            raise ex.HTTP(500, "The gotty executable is not installed")
         creds = "user:" + str(uuid.uuid4())
         private_key = os.path.join(rcEnv.paths.certs, "private_key")
         cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")

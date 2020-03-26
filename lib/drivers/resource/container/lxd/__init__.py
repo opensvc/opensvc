@@ -3,7 +3,7 @@ import os
 
 from subprocess import PIPE
 
-import rcExceptions as ex
+import exceptions as ex
 
 from .. import \
     BaseContainer, \

@@ -2,7 +2,7 @@ import os
 import socket
 import six
 
-import rcExceptions as ex
+import exceptions as ex
 from utilities.proc import justcall, which
 
 class Nsr(object):

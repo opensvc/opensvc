@@ -3,7 +3,7 @@ import re
 
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from ..vg.hpux import DiskVg

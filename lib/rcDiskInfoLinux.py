@@ -8,11 +8,11 @@ import re
 import sys
 import time
 
+import exceptions as ex
 import rcDevTreeVeritas
 import rcDiskInfo
 import utilities.devices.linux
 
-from rcExceptions import excError
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from utilities.proc import justcall, which
@@ -365,7 +365,7 @@ class diskInfo(rcDiskInfo.diskInfo):
             if os.path.exists(dev):
                 return
             time.sleep(1)
-        raise excError("time out waiting for %s to appear" % dev)
+        raise ex.excError("time out waiting for %s to appear" % dev)
 
 if __name__ == "__main__":
     diskinfo = diskInfo()

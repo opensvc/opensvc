@@ -1,7 +1,7 @@
 import os
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 
 from . import \
     SyncSymclone as BaseSyncSymclone, \

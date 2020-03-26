@@ -1,6 +1,6 @@
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-from rcExceptions import HTTP
+import exceptions as ex
 from rcUtilities import factory
 
 class Handler(handler.Handler):
@@ -28,6 +28,6 @@ class Handler(handler.Handler):
         elif options.kind:
             obj = factory(options.kind)(name="dummy", node=shared.NODE, volatile=True)
         else:
-            raise HTTP(400, "A kind must be specified.")
+            raise ex.HTTP(400, "A kind must be specified.")
         return obj.full_kwstore.dump()
 

@@ -11,7 +11,7 @@ import re
 from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
 
 import rcStatus
-import rcExceptions as ex
+import exceptions as ex
 
 from rcUtilities import lazy, unset_lazy, set_lazy
 from rcGlobalEnv import rcEnv

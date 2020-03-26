@@ -1,6 +1,6 @@
 from subprocess import *
 
-import rcExceptions as ex
+import exceptions as ex
 
 from .ifconfig import BaseIfconfig, Interface
 

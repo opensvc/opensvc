@@ -1,7 +1,7 @@
 import time
 
 import rcStatus
-import rcExceptions as ex
+import exceptions as ex
 import utilities.ping
 
 from rcGlobalEnv import rcEnv

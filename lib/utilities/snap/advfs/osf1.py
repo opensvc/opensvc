@@ -1,7 +1,7 @@
 import os
 
 import rcAdvfs
-import rcExceptions as ex
+import exceptions as ex
 import utilities.snap
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount

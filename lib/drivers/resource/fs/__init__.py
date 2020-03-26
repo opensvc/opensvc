@@ -3,7 +3,7 @@ import subprocess
 import shutil
 import time
 
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from resources import Resource

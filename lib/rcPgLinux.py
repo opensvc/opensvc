@@ -1,7 +1,7 @@
 import os
 import re
 import glob
-import rcExceptions as ex
+import exceptions as ex
 from converters import convert_size
 from utilities.proc import justcall
 

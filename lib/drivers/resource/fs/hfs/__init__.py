@@ -1,4 +1,4 @@
-import rcExceptions as ex
+import exceptions as ex
 
 from .. import adder as base_adder
 from ..darwin import Fs

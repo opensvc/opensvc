@@ -1,7 +1,7 @@
 import daemon.handlers.clusterlock
 import daemon.handlers.handler as handler
 import daemon.shared as shared
-import rcExceptions as ex
+import exceptions as ex
 
 class Handler(handler.Handler, daemon.handlers.clusterlock.LockMixin):
     """

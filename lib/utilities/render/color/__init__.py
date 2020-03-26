@@ -6,7 +6,7 @@ import datetime
 import re
 
 import six
-import rcExceptions as ex
+import exceptions as ex
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from utilities.string import is_string

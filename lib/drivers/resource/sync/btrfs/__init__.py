@@ -4,7 +4,7 @@ import datetime
 from subprocess import *
 
 import rcBtrfs
-import rcExceptions as ex
+import exceptions as ex
 import rcStatus
 
 from .. import Sync, notify
