@@ -8,7 +8,7 @@ from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from rcNexenta import Nexenta
 from svcBuilder import sync_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "nexenta"

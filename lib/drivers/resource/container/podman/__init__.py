@@ -18,7 +18,7 @@ from ..docker import \
     adder as docker_adder
 from rcUtilities import lazy, drop_option, has_option, get_option, get_options
 from rcGlobalEnv import rcEnv
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
 DRIVER_GROUP = "container"

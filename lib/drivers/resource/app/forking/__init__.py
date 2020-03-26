@@ -4,7 +4,7 @@ The module defining the app.forking resource class.
 
 from .. import App, KEYWORDS as BASE_KEYWORDS
 from svcBuilder import init_kwargs
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "app"
 DRIVER_BASENAME = "forking"

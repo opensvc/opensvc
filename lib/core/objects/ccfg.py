@@ -17,9 +17,11 @@ class Ccfg(BaseSvc):
 
     @lazy
     def kwstore(self):
-        return __import__("clusterdict").KEYS
+        from .ccfgdict import KEYS
+        return KEYS
 
     @lazy
     def full_kwstore(self):
-        return __import__("clusterdict").full_kwstore()
+        from .ccfgdict import full_kwstore
+        return full_kwstore()
 

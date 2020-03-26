@@ -1,7 +1,7 @@
 import sys
 from rcGlobalEnv import rcEnv
 from keywords import KeywordStore
-from nodedict import KEYWORDS
+from core.node.nodedict import KEYWORDS
 
 # deprecated => supported
 DEPRECATED_KEYWORDS = {

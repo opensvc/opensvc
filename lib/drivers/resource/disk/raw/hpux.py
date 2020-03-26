@@ -7,7 +7,7 @@ from . import \
     BaseDiskRaw, \
     adder as base_raw_adder, \
     BASE_RAW_KEYWORDS
-from svcdict import KEYS
+from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
