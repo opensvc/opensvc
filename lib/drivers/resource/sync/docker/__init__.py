@@ -7,7 +7,7 @@ import rcContainer
 from .. import Sync, notify
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 

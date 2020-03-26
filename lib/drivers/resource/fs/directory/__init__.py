@@ -8,7 +8,7 @@ import core.exceptions as ex
 import core.status
 from rcUtilities import lazy, protected_dir
 from core.resource import Resource
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.string import is_string
 

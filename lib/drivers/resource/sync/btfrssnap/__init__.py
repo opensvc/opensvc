@@ -6,7 +6,7 @@ import rcBtrfs
 import core.exceptions as ex
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 

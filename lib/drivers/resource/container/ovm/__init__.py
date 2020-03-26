@@ -20,7 +20,7 @@ from .. import \
 from rcGlobalEnv import rcEnv
 from rcUtilities import fcache
 from core.resource import Resource
-from svcBuilder import init_kwargs, container_kwargs
+from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "container"

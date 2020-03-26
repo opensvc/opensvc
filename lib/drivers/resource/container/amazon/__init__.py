@@ -22,7 +22,7 @@ from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from core.objects.svcdict import KEYS
-from svcBuilder import init_kwargs, container_kwargs
+from core.objects.builder import init_kwargs, container_kwargs
 from utilities.proc import justcall
 
 

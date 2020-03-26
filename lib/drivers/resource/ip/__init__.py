@@ -18,7 +18,7 @@ from converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import getaddr, lazy, to_cidr
 from core.resource import Resource
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 KW_IPNAME = {

@@ -11,7 +11,7 @@ from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, qcall
 

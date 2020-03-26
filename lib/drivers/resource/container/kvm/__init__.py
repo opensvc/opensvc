@@ -20,7 +20,7 @@ from .. import \
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache, clear_cache, lazy
-from svcBuilder import init_kwargs, container_kwargs
+from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
