@@ -782,8 +782,8 @@ class OsvcThread(threading.Thread, Crypt):
         if "nodes" in NODE.private_cd.get("cluster", {}):
             NODE.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
         else:
-            from cluster import ClusterSvc
-            svc = ClusterSvc()
+            from core.objects.ccfg import Ccfg
+            svc = Ccfg()
             svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
             del svc
 
@@ -794,8 +794,8 @@ class OsvcThread(threading.Thread, Crypt):
         if nodename not in self.cluster_nodes:
             return
         nodes = [node for node in self.cluster_nodes if node != nodename]
-        from cluster import ClusterSvc
-        svc = ClusterSvc()
+        from core.objects.ccfg import Ccfg
+        svc = Ccfg()
         buff = "cluster.nodes="+" ".join(nodes)
         self.log.info("set %s in cluster config" % buff)
         svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)

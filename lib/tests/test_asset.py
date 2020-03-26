@@ -1,7 +1,7 @@
 from __future__ import print_function
 import json
 import rcAsset
-from node import Node
+from core.node import Node
 import pytest
 
 

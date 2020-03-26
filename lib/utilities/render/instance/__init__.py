@@ -7,7 +7,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import split_path, strip_path, resolve_path, is_service
 from utilities.render.color import color, colorize, STATUS_COLOR
 from storage import Storage
-from svc import DEFAULT_STATUS_GROUPS
+from core.objects.svc import DEFAULT_STATUS_GROUPS
 
 def fmt_flags(resource, idata):
     """
