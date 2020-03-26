@@ -5,7 +5,7 @@ import core.status
 import drivers.array.hp3par as array_driver
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"

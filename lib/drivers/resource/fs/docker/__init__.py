@@ -5,7 +5,7 @@ import rcContainer
 import core.exceptions as ex
 from rcUtilities import lazy
 from core.resource import Resource
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "fs"

@@ -5,7 +5,7 @@ import core.exceptions as ex
 import core.status
 import drivers.array.necism as array_driver
 from .. import Sync, notify
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"

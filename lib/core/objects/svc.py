@@ -1616,7 +1616,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     rtypes[rtype] = set()
                 rtypes[rtype].add(ridx)
 
-        import svcBuilder
+        import core.objects.builder
 
         rid = []
 
@@ -1662,7 +1662,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         for section in rid:
             group = section.split("#")[0]
-            svcBuilder.add_resource(self, group, section)
+            core.objects.builder.add_resource(self, group, section)
 
         if provision and len(rid) > 0:
             options = Storage(self.options)
@@ -3349,7 +3349,7 @@ class Svc(BaseSvc):
         if self.scale_target is not None:
             # scalers can't have resources
             return 0
-        from svcBuilder import add_resources
+        from core.objects.builder import add_resources
         self.init_resources_errors = add_resources(self)
         self.log.debug("resources initialized")
         return self.init_resources_errors

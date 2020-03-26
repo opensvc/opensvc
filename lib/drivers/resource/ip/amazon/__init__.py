@@ -5,7 +5,7 @@ import utilities.ifconfig
 from .. import Ip, COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcAmazon import AmazonMixin
 from rcUtilities import getaddr
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "ip"

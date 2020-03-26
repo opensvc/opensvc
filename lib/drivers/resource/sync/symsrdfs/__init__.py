@@ -12,7 +12,7 @@ import core.exceptions as ex
 import utilities.devices.linux
 
 from .. import Sync
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 os.environ['PATH'] += ":/usr/symcli/bin"

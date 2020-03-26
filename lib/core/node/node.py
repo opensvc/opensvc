@@ -25,7 +25,7 @@ import six
 
 import core.exceptions as ex
 import rcLogger
-import svcBuilder
+import core.objects.builder
 import xmlrpcClient
 from comm import Crypt
 from contexts import want_context
@@ -884,7 +884,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
 
         kwargs["node"] = self
-        svcs, errors = svcBuilder.build_services(*args, **kwargs)
+        svcs, errors = core.objects.builder.build_services(*args, **kwargs)
         if 'paths' in kwargs:
             self.check_build_errors(kwargs['paths'], svcs, errors)
 

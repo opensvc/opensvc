@@ -6,7 +6,7 @@ from .. import \
 from drivers.resource.container.podman import \
     ContainerPodman, \
     KEYWORDS as PODMAN_KEYWORDS
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "task"

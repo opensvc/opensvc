@@ -5,7 +5,7 @@ from subprocess import *
 import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"

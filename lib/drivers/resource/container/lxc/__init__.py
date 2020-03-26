@@ -23,7 +23,7 @@ from .. import \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs, protected_dir
-from svcBuilder import init_kwargs, container_kwargs, get_rcmd
+from core.objects.builder import init_kwargs, container_kwargs, get_rcmd
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
