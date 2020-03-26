@@ -1,4 +1,4 @@
-from resData import Data
+from resources import DataResource
 from svcdict import KEYS
 
 DRIVER_GROUP = "route"
@@ -102,7 +102,7 @@ def adder(svc, s):
     r = RouteEnvoy(**kwargs)
     svc += r
 
-class RouteEnvoy(Data):
+class RouteEnvoy(DataResource):
     def __init__(self, **kwargs):
         super(RouteEnvoy, self).__init__(type="route.envoy", **kwargs)
         self.label = "envoy route"
