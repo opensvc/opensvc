@@ -39,10 +39,10 @@ class DiskScsireservSg(BaseDiskScsireserv):
             err = bdecode(err)
             ret = p.returncode
             if "unsupported service action" in err:
-                raise ex.excScsiPrNotsupported("disk %s does not support persistent reservation" % d)
+                raise ex.ScsiPrNotsupported("disk %s does not support persistent reservation" % d)
             if "Not ready" in err:
                 # huawei dorado hypermetropair paused member set that.
-                raise ex.excScsiPrNotsupported("disk %s Not Ready" % d)
+                raise ex.ScsiPrNotsupported("disk %s Not Ready" % d)
             if "error opening file" in err:
                 return 0
             if "Unit Attention" in out or ret != 0:
