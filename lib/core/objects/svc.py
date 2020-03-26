@@ -870,7 +870,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if msg:
                 self.log.info(msg)
             return 0
-        except ex.excAlreadyDone as exc:
+        except ex.AlreadyDone as exc:
             # so do_svcs_action() can decide not to wait for the
             # service to reach the global_expect
             return -1
@@ -1468,7 +1468,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             for line in data.get("info", []):
                 self.log.info(line)
                 if " already " in line:
-                    raise ex.excAlreadyDone
+                    raise ex.AlreadyDone
             if data.get("error", []):
                 raise ex.excError
         try:
