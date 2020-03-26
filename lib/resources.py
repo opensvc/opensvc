@@ -433,7 +433,7 @@ class Resource(object):
         try:
             self.progress()
             self.do_action(action)
-        except ex.excUndefined as exc:
+        except ex.Undefined as exc:
             print(exc)
             return False
         except ex.excContinueAction as exc:
