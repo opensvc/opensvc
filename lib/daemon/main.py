@@ -20,7 +20,7 @@ from comm import CRYPTO_MODULE
 from lock import LockTimeout, cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import (daemon_process_running, lazy, process_args,
-                         unset_lazy, ximport)
+                         unset_lazy)
 from .hb.disk import HbDiskRx, HbDiskTx
 from .hb.mcast import HbMcastRx, HbMcastTx
 from .hb.relay import HbRelayRx, HbRelayTx
@@ -30,9 +30,7 @@ from .dns import Dns
 from .listener import Listener
 from .monitor import Monitor
 from .scheduler import Scheduler
-
-
-node_mod = ximport('node')
+from core.node import Node
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
@@ -186,7 +184,7 @@ class Daemon(object):
             ofile.write(pid_args)
 
     def init(self):
-        shared.NODE = node_mod.Node()
+        shared.NODE = Node()
         self.log.info("daemon started, version %s, crypto mod %s, api version %s",
                       shared.NODE.agent_version, CRYPTO_MODULE, shared.API_VERSION)
 
@@ -399,7 +397,7 @@ class Daemon(object):
             with shared.NODE_LOCK:
                 if shared.NODE:
                     shared.NODE.close()
-                shared.NODE = node_mod.Node()
+                shared.NODE = Node()
                 shared.NODE.set_rlimit()
                 shared.NODE.network_setup()
             unset_lazy(self, "config_hbs")

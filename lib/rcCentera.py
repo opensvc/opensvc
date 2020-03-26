@@ -7,7 +7,7 @@ from subprocess import *
 import rcExceptions as ex
 from rcUtilities import factory, split_path
 from rcGlobalEnv import rcEnv
-from node import Node
+from core.node import Node
 from utilities.proc import which
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:

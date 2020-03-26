@@ -17,7 +17,7 @@ prog = "svcmon"
 
 import rcExceptions as ex
 import utilities.render.color
-from node import Node
+from core.node import Node
 from utilities.render.cluster import format_cluster
 
 CLEAREOL = "\x1b[K"

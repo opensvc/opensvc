@@ -1,15 +1,15 @@
 import os
 import time
-
 from itertools import islice
 
-import node
 import utilities.os.linux
-
 from rcUtilities import lazy
 from utilities.proc import justcall
 
-class Node(node.Node):
+from .node import Node as BaseNode
+
+
+class Node(BaseNode):
     def still_alive(self, action):
         try:
             with open("/proc/sys/kernel/sysrq", "r") as ofile:
@@ -248,4 +248,3 @@ class Node(node.Node):
         self.log.info(" ".join(cmd))
         if ret != 0:
             self.log.error(err)
-

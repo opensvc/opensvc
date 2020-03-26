@@ -1,7 +1,9 @@
-import node
 from utilities.proc import justcall
 
-class Node(node.Node):
+from .node import Node as BaseNode
+
+
+class Node(BaseNode):
     def shutdown(self):
         cmd = ["halt"]
         ret, out, err = self.vcall(cmd)
