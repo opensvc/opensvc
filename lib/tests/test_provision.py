@@ -3,13 +3,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
-import json
-import socket
 import logging
 import uuid
 
@@ -18,14 +11,12 @@ try:
 except ImportError:
     from io import StringIO
 
-from rcUtilities import try_decode
-
 import svcmgr
-import nodemgr
 
 logging.disable(logging.CRITICAL)
 
 SVCNAME = "unittest-" + str(uuid.uuid4())
+
 
 class Test:
 
