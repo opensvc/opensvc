@@ -17,7 +17,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from core.resource import Resource
-from svcBuilder import init_kwargs, container_kwargs
+from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 

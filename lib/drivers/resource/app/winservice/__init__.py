@@ -10,7 +10,7 @@ except ImportError:
 import core.exceptions as ex
 
 from .. import App, KEYWORDS as BASE_KEYWORDS, StatusNA, StatusWARN
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 

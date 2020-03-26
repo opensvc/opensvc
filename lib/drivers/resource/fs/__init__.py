@@ -8,7 +8,7 @@ import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
 from rcUtilities import mimport, lazy, protected_dir
-from svcBuilder import init_kwargs
+from core.objects.builder import init_kwargs
 from utilities.proc import justcall, which
 
 

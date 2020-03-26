@@ -6,7 +6,7 @@ import rcZfs
 
 from .. import Sync, notify
 from rcUtilities import cache, clear_cache
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 

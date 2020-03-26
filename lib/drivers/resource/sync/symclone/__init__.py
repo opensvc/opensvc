@@ -8,7 +8,7 @@ import core.status
 from .. import Sync, notify
 from converters import print_duration
 from rcUtilities import lazy
-from svcBuilder import sync_kwargs
+from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
