@@ -436,7 +436,7 @@ class Resource(object):
         except ex.Undefined as exc:
             print(exc)
             return False
-        except ex.excContinueAction as exc:
+        except ex.ContinueAction as exc:
             if self.svc.options.cron:
                 # no need to flood the logs for scheduled tasks
                 self.log.debug(str(exc))
@@ -957,7 +957,7 @@ class Resource(object):
         if element is None:
             return
         if element == "impossible":
-            raise ex.excContinueAction("skip impossible requirement")
+            raise ex.ContinueAction("skip impossible requirement")
         if element.count("(") == 1:
             rid, states = element.rstrip(")").split("(")
             states = states.split(",")
@@ -979,7 +979,7 @@ class Resource(object):
             msg = "requires on resource %s in state %s, current state %s" % \
                   (rid, " or ".join(states), current_state)
             if self.svc.options.cron:
-                raise ex.excContinueAction(msg)
+                raise ex.ContinueAction(msg)
             else:
                 raise ex.excError(msg)
 
