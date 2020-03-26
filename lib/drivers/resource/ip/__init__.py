@@ -361,7 +361,7 @@ class Ip(Resource):
                 return rcStatus.UP
             else:
                 return rcStatus.DOWN
-        except ex.excNotSupported:
+        except ex.NotSupported:
             self.status_log("not supported", "info")
             return rcStatus.NA
         except ex.excError as exc:
@@ -623,7 +623,7 @@ class Ip(Resource):
         try:
             ret = self.startip_cmd()[0]
             self.can_rollback = True
-        except ex.excNotSupported:
+        except ex.NotSupported:
             self.log.info("start ip not supported")
             ret = 0
             arp_announce = False
@@ -709,7 +709,7 @@ class Ip(Resource):
 
         try:
             ret = self.stopip_cmd()[0]
-        except ex.excNotSupported:
+        except ex.NotSupported:
             self.log.info("stop ip not supported")
             return
 
