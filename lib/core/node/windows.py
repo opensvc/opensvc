@@ -1,7 +1,12 @@
 from __future__ import print_function
+
 import os
 import sys
 import time
+
+import rcExceptions as ex
+
+from .node import Node as BaseNode
 
 try:
     import pythoncom
@@ -11,12 +16,10 @@ try:
 except ImportError:
     raise
 
-import node
-import rcExceptions as ex
 
 WINSVCNAME = "OsvcAgent"
 
-class Node(node.Node):
+class Node(BaseNode):
     def shutdown(self):
         cmd = ["shutdown", "/s", "/f"]
         ret, out, err = self.vcall(cmd)

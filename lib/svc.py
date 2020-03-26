@@ -36,7 +36,7 @@ from contexts import want_context
 from converters import *
 import rcExceptions as ex
 import rcLogger
-import node
+from core.node import Node
 from rcScheduler import Scheduler, SchedOpts, sched_action
 from comm import Crypt
 from extconfig import ExtConfigMixin
@@ -564,7 +564,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         its configuration.
         """
         if self.node is None:
-            self.node = node.Node()
+            self.node = Node()
         return self.node
 
     def init_nodes(self):
@@ -928,7 +928,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.action_start_date = datetime.datetime.now()
 
         if self.node is None:
-            self.node = node.Node()
+            self.node = Node()
 
         if action not in ACTIONS_NO_STATUS_CHANGE and \
            'compliance' not in action and \
