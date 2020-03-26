@@ -101,7 +101,7 @@ class SyncSymclone(Sync):
             self.active_states = ["copyonwrite"]
             self.activable_states = ["recreated", "created"]
         else:
-            raise ex.excInitError("unsupported symclone driver type %s", self.type)
+            raise ex.InitError("unsupported symclone driver type %s", self.type)
         self.activate_timeout = 20
         self.recreate_timeout = recreate_timeout
         self.restore_timeout = restore_timeout

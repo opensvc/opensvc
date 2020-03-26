@@ -134,10 +134,10 @@ class Listener(shared.OsvcThread):
             self.certfs.start()
             os.chmod(rcEnv.paths.certs, 0o0755)
         if not self.ca.exists():
-            raise ex.excInitError("secret %s does not exist" % self.ca.path)
+            raise ex.InitError("secret %s does not exist" % self.ca.path)
         data = self.ca.decode_key("certificate_chain")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.ca.path, "certificate_chain"))
+            raise ex.InitError("secret key %s.%s is not set" % (self.ca.path, "certificate_chain"))
         ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
         self.log.info("write %s", ca_cert_chain)
         with open(ca_cert_chain, "w") as fo:
@@ -145,14 +145,14 @@ class Listener(shared.OsvcThread):
         crl_path = self.fetch_crl()
         data = self.cert.decode_key("certificate_chain")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "certificate_chain"))
+            raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "certificate_chain"))
         cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
         with open(cert_chain, "w") as fo:
             fo.write(bdecode(data))
         data = self.cert.decode_key("private_key")
         if data is None:
-            raise ex.excInitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
+            raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
         private_key = os.path.join(rcEnv.paths.certs, "private_key")
         self.log.info("write %s", private_key)
         with open(private_key, "w+") as fo:
@@ -642,7 +642,7 @@ class Listener(shared.OsvcThread):
         except socket.error as exc:
             self.alert("error", "bind tls listener %s:%d error: %s", self.tls_addr, self.tls_port, exc)
             return
-        except ex.excInitError as exc:
+        except ex.InitError as exc:
             self.log.info("skip tls listener init: %s", exc)
             return
         except Exception as exc:

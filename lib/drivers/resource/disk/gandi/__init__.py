@@ -91,7 +91,7 @@ class DiskGandi(BaseDisk):
     def cloud(self):
         try:
             cloud = self.svc.node.cloud_get(self.cloud_id)
-        except ex.excInitError as e:
+        except ex.InitError as e:
             raise ex.excError(str(e))
         return cloud
 
