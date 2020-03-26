@@ -19,7 +19,7 @@ class excError(OsvcException):
     def __str__(self):
         return str(self.value)
 
-class excVersion(OsvcException):
+class Version(OsvcException):
     """ propagate the version string
     """
     def __init__(self, value=""):
