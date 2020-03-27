@@ -7,7 +7,6 @@ import datetime
 import socket
 import threading
 import json
-import json_delta
 from six.moves import queue
 
 #
@@ -16,6 +15,7 @@ from six.moves import queue
 prog = "svcmon"
 
 import core.exceptions as ex
+import foreign.json_delta as json_delta
 import utilities.render.color
 from core.node import Node
 from utilities.render.cluster import format_cluster

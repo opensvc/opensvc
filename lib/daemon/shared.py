@@ -7,7 +7,6 @@ import time
 import fnmatch
 import hashlib
 import json
-import json_delta
 import re
 import tempfile
 import shutil
@@ -18,7 +17,8 @@ import six
 from six.moves import queue
 
 import core.exceptions as ex
-from jsonpath_ng.ext import parse
+import foreign.json_delta as json_delta
+from foreign.jsonpath_ng.ext import parse
 from rcUtilities import lazy, unset_lazy, factory, split_path, normalize_paths
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage

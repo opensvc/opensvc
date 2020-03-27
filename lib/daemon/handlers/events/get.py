@@ -7,7 +7,7 @@ from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
 
 try:
-    from hyper.common.headers import HTTPHeaderMap
+    from foreign.hyper.common.headers import HTTPHeaderMap
 except Exception:
     HTTPHeaderMap = dict
 

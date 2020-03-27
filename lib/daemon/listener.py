@@ -24,16 +24,17 @@ from errno import EADDRINUSE, ECONNRESET, EPIPE
 
 try:
     import ssl
-    import h2.config
-    import h2.connection
-    from hyper.common.headers import HTTPHeaderMap
+    import foreign.h2 as h2
+    from foreign.h2.config import H2Configuration
+    from foreign.h2.connection import H2Connection
+    from foreign.hyper.common.headers import HTTPHeaderMap
     has_ssl = True
 except Exception:
     has_ssl = False
 
 try:
-    import jwt
-    from jwt.algorithms import RSAAlgorithm
+    import foreign.jwt as jwt
+    from foreign.jwt.algorithms import RSAAlgorithm
     has_jwt = True
 except Exception:
     has_jwt = False
@@ -51,8 +52,8 @@ from rcUtilities import drop_option, chunker, svc_pathcf, \
                         unset_lazy
 from utilities.converters import convert_size, print_duration
 from utilities.string import bencode, bdecode
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
+from foreign.jsonpath_ng import jsonpath
+from foreign.jsonpath_ng.ext import parse
 
 if six.PY2:
     class _ConnectionResetError(Exception):
@@ -1245,8 +1246,8 @@ class ClientHandler(shared.OsvcThread):
         self.negotiate_tls()
 
         # init h2 connection
-        h2config = h2.config.H2Configuration(client_side=False)
-        self.h2conn = h2.connection.H2Connection(config=h2config)
+        h2config = H2Configuration(client_side=False)
+        self.h2conn = H2Connection(config=h2config)
         self.h2conn.initiate_connection()
         try:
             self.tls_conn.sendall(self.h2conn.data_to_send())

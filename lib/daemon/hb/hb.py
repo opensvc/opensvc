@@ -6,7 +6,7 @@ import time
 import socket
 import struct
 
-import json_delta
+import foreign.json_delta as json_delta
 import daemon.shared as shared
 import core.exceptions as ex
 import utilities.ifconfig

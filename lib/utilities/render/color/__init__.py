@@ -7,7 +7,7 @@ import re
 
 import six
 import core.exceptions as ex
-from jsonpath_ng.ext import parse
+from foreign.jsonpath_ng.ext import parse
 from utilities.string import is_string
 
 try:
@@ -16,7 +16,7 @@ except ImportError:
     OrderedDict = dict
 
 if os.name == "nt":
-    import colorama
+    import foreign.colorama as colorama
     colorama.init()
 
 use_color = "auto"
