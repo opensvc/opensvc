@@ -33,7 +33,7 @@ class TestNodemgrDaemonActions:
         mocker.patch.object(nodemgr.Node, 'check_privs', return_value=None)
         mocker.patch.object(nodemgr.Node, 'daemon_start_native', daemon_start_native)
         mocker.patch.object(nodemgr.Node, 'daemon_handled_by_systemd', return_value=False)
-        mocker.patch('rcAsset.Asset.get_boot_id', side_effect='fake_boot_id')
+        mocker.patch('utilities.asset.Asset.get_boot_id', side_effect='fake_boot_id')
 
         print('daemon is not running')
         assert nodemgr.main(argv=["daemon", "running", "--debug"]) > 0

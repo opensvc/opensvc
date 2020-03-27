@@ -1,15 +1,15 @@
 import os
 import re
 
-import rcAsset
+from .asset import BaseAsset
 from utilities.proc import justcall, which
 
 sim = False
 regex = re.compile("^\W*[0-9]*:")
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node):
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
 
     def convert(self, s, unit):
         if unit == "M":
