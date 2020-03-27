@@ -4,7 +4,7 @@ secmgr command line actions and options
 import mgr_parser as mp
 from rcOptParser import OptParser
 from optparse import Option
-from storage import Storage
+from utilities.storage import Storage
 from core.objects.svc import ACTION_ASYNC
 
 PROG = "usrmgr"

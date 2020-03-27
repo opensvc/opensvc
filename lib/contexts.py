@@ -7,7 +7,7 @@ from optparse import Option
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 
 def split_context(buff):
     user, buff = buff.rsplit("@", 1)

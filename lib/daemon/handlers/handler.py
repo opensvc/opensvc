@@ -1,6 +1,6 @@
 import converters
 import core.exceptions as ex
-from rcGlobalEnv import Storage
+from utilities.storage import Storage
 
 class Handler(object):
     """

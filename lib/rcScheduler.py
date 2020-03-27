@@ -12,7 +12,7 @@ import logging
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from utilities.render.color import formatter, color
 from utilities.string import is_string
 from converters import convert_duration

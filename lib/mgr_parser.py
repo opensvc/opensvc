@@ -1,6 +1,6 @@
 from optparse import Option
 
-from storage import Storage
+from utilities.storage import Storage
 
 OPT = Storage({
     "add": Option(

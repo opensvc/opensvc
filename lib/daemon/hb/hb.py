@@ -11,7 +11,7 @@ import daemon.shared as shared
 import core.exceptions as ex
 import utilities.ifconfig
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 
 class Hb(shared.OsvcThread):
     """

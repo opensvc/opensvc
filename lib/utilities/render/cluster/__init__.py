@@ -8,7 +8,7 @@ from utilities.render.color import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from core.status import colorize_status
 from rcUtilities import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, abbrev
-from storage import Storage
+from utilities.storage import Storage
 
 DEFAULT_SECTIONS = [
     "threads",

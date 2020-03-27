@@ -1,6 +1,6 @@
 import pytest
 
-from storage import Storage
+from utilities.storage import Storage
 
 
 @pytest.mark.ci

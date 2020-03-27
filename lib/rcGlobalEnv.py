@@ -14,7 +14,7 @@ import platform
 import socket
 import time
 from uuid import uuid4
-from storage import Storage
+from utilities.storage import Storage
 
 def create_or_update_dir(d):
     if not os.path.exists(d):
