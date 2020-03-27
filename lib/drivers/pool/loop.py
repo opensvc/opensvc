@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 
 import core.exceptions as ex
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.proc import justcall
 from core.pool import BasePool
 

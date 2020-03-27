@@ -9,7 +9,7 @@ import logging
 
 import core.exceptions as ex
 import core.status
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from core.resource import Resource
 

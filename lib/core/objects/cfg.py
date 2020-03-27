@@ -8,7 +8,8 @@ import glob
 import six
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy, makedirs
+from rcUtilities import makedirs
+from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 from utilities.converters import print_size
 from core.objects.data import DataMixin

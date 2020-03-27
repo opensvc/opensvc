@@ -7,9 +7,9 @@ import utilities.ifconfig
 from drivers.resource.ip.linux import Ip
 from drivers.resource.ip import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 from utilities.proc import justcall, which
 from utilities.net.converters import to_cidr
 

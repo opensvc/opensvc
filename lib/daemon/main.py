@@ -18,8 +18,7 @@ import core.logger
 from core.comm import CRYPTO_MODULE
 from utilities.lock import LockTimeout, cmlock
 from rcGlobalEnv import rcEnv
-from rcUtilities import (daemon_process_running, lazy, process_args,
-                         unset_lazy)
+from rcUtilities import daemon_process_running, process_args
 from .hb.disk import HbDiskRx, HbDiskTx
 from .hb.mcast import HbMcastRx, HbMcastTx
 from .hb.relay import HbRelayRx, HbRelayTx
@@ -30,6 +29,7 @@ from .listener import Listener
 from .monitor import Monitor
 from .scheduler import Scheduler
 from core.node import Node
+from utilities.lazy import lazy, unset_lazy
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2

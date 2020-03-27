@@ -2,8 +2,7 @@
 nodemgr command line actions and options
 """
 from utilities.storage import Storage
-from rcOptParser import OptParser
-from optparse import Option
+from utilities.optparser import OptParser, Option
 from core.node.node import ACTION_ASYNC
 
 PROG = "nodemgr"
