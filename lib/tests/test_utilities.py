@@ -137,21 +137,21 @@ class TestUtilities:
         assert empty_string("fêo") is False
 
     @staticmethod
-    def test_mimport():
+    def test_driver_import():
         """
-        mimport()
+        driver_import()
         """
-        mod = mimport("res", "fs", "linux")
+        mod = driver_import("res", "fs", "linux")
         assert hasattr(mod, "Fs") is True
-        mod = mimport("res", "fs", "linux", "")
+        mod = driver_import("res", "fs", "linux", "")
         assert hasattr(mod, "Fs") is True
-        mod = mimport("resource", "fs", "linux")
+        mod = driver_import("resource", "fs", "linux")
         assert hasattr(mod, "Fs") is True
-        mod = mimport("resource", "fs", "xfs")
+        mod = driver_import("resource", "fs", "xfs")
         assert hasattr(mod, "FsXfs") is True
 
         try:
-            _ = mimport("aa", "bb", "cc")
+            _ = driver_import("aa", "bb", "cc")
         except ImportError:
             pass
         else:
