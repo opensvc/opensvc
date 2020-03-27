@@ -1,7 +1,7 @@
 import math
 import os
 
-import rcDevTreeVeritas
+import utilities.devtree.veritas
 import rcDiskInfo
 import utilities.devices.sunos
 
@@ -118,7 +118,7 @@ class diskInfo(rcDiskInfo.diskInfo):
     def scan_dev(self, dev):
         dev = dev.replace("/dev/vx/dmp/", "/dev/vx/rdmp/")
         if "dmp/" in dev:
-            tree = rcDevTreeVeritas.DevTreeVeritas()
+            tree = utilities.devtree.veritas.DevTreeVeritas()
             wwid = tree.vx_inq(dev)
             vid = tree.vx_vid(dev)
             pid = tree.vx_pid(dev)

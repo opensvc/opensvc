@@ -1,7 +1,8 @@
-import rcDevTree
 import wmi
 
-class DevTree(rcDevTree.DevTree):
+from .devtree import DevTree as BaseDevTree
+
+class DevTree(BaseDevTree):
 
     def load_diskdrive(self):
         if not hasattr(self, 'wmi'):
