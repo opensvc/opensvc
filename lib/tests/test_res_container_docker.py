@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import core.status
 from core.node import Node
-from poolDirectory import Pool
+from drivers.pool.directory import Pool
 from rcUtilities import factory
 from core.objects.svc import Svc
 import core.exceptions as ex
