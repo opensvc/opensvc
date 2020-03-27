@@ -26,7 +26,7 @@ from rcUtilities import lazy, unset_lazy, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, unset_all_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, find_editor, mimport
+                        svc_pathcf, find_editor, driver_import
 from core.contexts import want_context
 from utilities.converters import *
 import core.exceptions as ex
@@ -2779,7 +2779,7 @@ class Svc(BaseSvc):
             driver_basename = "vg"
         elif driver_group == "disk" and driver_basename == "veritas":
             driver_basename = "vxdg"
-        return mimport("res", driver_group, driver_basename)
+        return driver_import("resource", driver_group, driver_basename)
 
     @lazy
     def ha(self):
