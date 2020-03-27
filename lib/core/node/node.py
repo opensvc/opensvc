@@ -31,7 +31,7 @@ from comm import Crypt
 from contexts import want_context
 from converters import *
 from core.extconfig import ExtConfigMixin
-from freezer import Freezer
+from core.freezer import Freezer
 from utilities.lock import LOCK_EXCEPTIONS
 from core.network import NetworksMixin
 from rcGlobalEnv import rcEnv

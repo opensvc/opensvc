@@ -1,6 +1,6 @@
 import pytest
 
-from freezer import Freezer
+from core.freezer import Freezer
 
 
 @pytest.fixture(scope='function')
