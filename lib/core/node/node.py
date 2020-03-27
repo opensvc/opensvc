@@ -30,7 +30,7 @@ import xmlrpcClient
 from comm import Crypt
 from contexts import want_context
 from converters import *
-from extconfig import ExtConfigMixin
+from core.extconfig import ExtConfigMixin
 from freezer import Freezer
 from lock import LOCK_EXCEPTIONS
 from core.network import NetworksMixin
