@@ -9,7 +9,7 @@ import signal
 from itertools import chain
 
 import core.status
-import rcContainer
+import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 import utilities.ping
 
@@ -385,7 +385,7 @@ class ContainerDocker(BaseContainer):
         try:
             return self.svc.dockerlib
         except AttributeError:
-            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            self.svc.dockerlib = dockerlib.DockerLib(self.svc)
             return self.svc.dockerlib
 
     def on_add(self):

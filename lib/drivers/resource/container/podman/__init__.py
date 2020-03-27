@@ -2,7 +2,7 @@
 Docker container resource driver module.
 """
 import core.status
-import rcContainer
+import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 from .. import \
     BaseContainer
@@ -67,7 +67,7 @@ class ContainerPodman(ContainerDocker):
         try:
             return self.svc.podmanlib
         except AttributeError:
-            self.svc.podmanlib = rcContainer.PodmanLib(self.svc)
+            self.svc.podmanlib = dockerlib.PodmanLib(self.svc)
             return self.svc.podmanlib
 
     @lazy
