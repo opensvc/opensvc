@@ -10,7 +10,7 @@ import six
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, makedirs
 from core.objects.svc import BaseSvc
-from converters import print_size
+from utilities.converters import print_size
 from core.objects.data import DataMixin
 from utilities.string import bencode, bdecode, is_string
 import core.exceptions as ex

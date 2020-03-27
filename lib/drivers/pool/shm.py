@@ -5,7 +5,7 @@ import os
 import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
-from converters import convert_size
+from utilities.converters import convert_size
 from utilities.proc import justcall
 from core.pool import BasePool
 
@@ -48,7 +48,7 @@ class Pool(BasePool):
         return data
 
     def pool_status(self):
-        from converters import convert_size
+        from utilities.converters import convert_size
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         data = {

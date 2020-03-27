@@ -12,7 +12,7 @@ from . import \
     DRIVER_GROUP, \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
-from converters import convert_size
+from utilities.converters import convert_size
 from utilities.lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import clear_cache

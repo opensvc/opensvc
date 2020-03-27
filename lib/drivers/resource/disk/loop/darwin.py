@@ -11,7 +11,7 @@ from . import \
     DRIVER_GROUP, \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
-from converters import convert_size
+from utilities.converters import convert_size
 from core.objects.svcdict import KEYS
 
 KEYS.register_driver(

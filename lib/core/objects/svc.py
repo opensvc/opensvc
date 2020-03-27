@@ -28,7 +28,7 @@ from rcUtilities import lazy, unset_lazy, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
                         svc_pathcf, find_editor, mimport
 from core.contexts import want_context
-from converters import *
+from utilities.converters import *
 import core.exceptions as ex
 import rcLogger
 from core.node import Node

@@ -8,7 +8,7 @@ import time
 import datetime
 import subprocess
 from rcGlobalEnv import rcEnv
-from converters import convert_size
+from utilities.converters import convert_size
 from utilities.proc import justcall, which
 
 def collect(node):

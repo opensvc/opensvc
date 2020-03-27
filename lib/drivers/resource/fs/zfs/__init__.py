@@ -2,7 +2,7 @@ import os
 
 import core.exceptions as ex
 
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcZfs import Dataset
 from utilities.proc import which
