@@ -7,7 +7,7 @@ import core.status
 import utilities.devices.linux
 
 from . import DiskDisk as BaseDiskDisk, KEYWORDS
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

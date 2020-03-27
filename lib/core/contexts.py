@@ -3,10 +3,10 @@ from __future__ import print_function
 import os
 import json
 import sys
-from optparse import Option
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
+from utilities.optparser import OptParser, Option
 from utilities.storage import Storage
 
 def split_context(buff):
@@ -385,7 +385,6 @@ DEPRECATED_ACTIONS = {}
 GLOBAL_OPTS = {}
 
 def main(argv):
-    from rcOptParser import OptParser
     parser = OptParser(prog=PROG, options=OPT, actions=ACTIONS,
                        deprecated_actions=DEPRECATED_ACTIONS,
                        global_options=GLOBAL_OPTS)

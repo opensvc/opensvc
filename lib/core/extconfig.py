@@ -9,8 +9,9 @@ import codecs
 import six
 import core.exceptions as ex
 from utilities.converters import *
-from rcUtilities import read_cf, eval_expr, unset_lazy, \
-                        lazy, makedirs, factory, read_cf_comments
+from rcUtilities import read_cf, eval_expr, \
+                        makedirs, factory, read_cf_comments
+from utilities.lazy import lazy, unset_lazy
 from rcGlobalEnv import rcEnv
 from utilities.string import is_string, try_decode
 

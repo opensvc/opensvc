@@ -8,7 +8,7 @@ import core.status
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from rcZfs import a2pool_dataset, Dataset
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.converters import print_duration
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS

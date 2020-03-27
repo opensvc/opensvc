@@ -9,7 +9,7 @@ import core.exceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcZfs import dataset_exists, zpool_devs
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

@@ -16,10 +16,20 @@ import utilities.render.color
 import core.exceptions as ex
 import re
 
-from core.node import Node
-from rcUtilities import wipe_rest_markup
 from utilities.render.term import term_width
 from utilities.string import is_string
+from utilities.version import agent_version
+
+
+def wipe_rest_markup(payload):
+    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'" + pat.group(2) + "'", payload, re.MULTILINE)
+    payload = re.sub(r'``(.*?)``', lambda pat: "'" + pat.group(1) + "'", payload, re.MULTILINE)
+    return payload
+
+
+class Option(optparse.Option):
+    pass
+
 
 class OsvcHelpFormatter(optparse.TitledHelpFormatter):
     def format_option(self, option):
@@ -341,7 +351,7 @@ class OptParser(object):
             from version import version
         except ImportError:
             try:
-                version = Node().agent_version
+                version = agent_version
             except IndexError:
                 version = "dev"
 

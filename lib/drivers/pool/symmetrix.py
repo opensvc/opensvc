@@ -4,7 +4,7 @@ import os
 import sys
 
 import core.exceptions as ex
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import Arrays
 from utilities.proc import justcall
