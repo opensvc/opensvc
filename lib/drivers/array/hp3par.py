@@ -11,7 +11,7 @@ from subprocess import *
 import core.exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, clear_cache
+from utilities.cache import cache, clear_cache
 from six.moves.urllib.request import Request, urlopen, build_opener # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError # pylint: disable=import-error
 from six.moves.urllib.parse import urlencode # pylint: disable=import-error
