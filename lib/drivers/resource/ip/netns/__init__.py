@@ -4,13 +4,14 @@ import core.exceptions as ex
 import core.status
 import utilities.ifconfig
 
-from ..linux import Ip
-from .. import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
+from drivers.resource.ip.linux import Ip
+from drivers.resource.ip import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import to_cidr, lazy
+from rcUtilities import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
+from utilities.net.converters import to_cidr
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "netns"

@@ -8,6 +8,7 @@ import core.exceptions as ex
 from rcUtilities import makedirs
 from utilities.proc import justcall
 from utilities.string import is_string
+from utilities.net.ipaddress import ip_address
 
 keymap = [
     ("C", "c"),
@@ -47,7 +48,6 @@ def format_alt_names(**data):
         return
     if len(data["alt_names"]) == 0:
         return
-    from ipaddress import ip_address
     l = []
     for i, d in enumerate(data["alt_names"]):
         try:

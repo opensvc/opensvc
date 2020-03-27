@@ -1,5 +1,6 @@
-from subprocess import *
-from rcUtilities import hexmask_to_dotted, cache
+from subprocess import Popen, PIPE
+from rcUtilities import cache
+from utilities.net.converters import hexmask_to_dotted
 
 from .ifconfig import BaseIfconfig, Interface
 
