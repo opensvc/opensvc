@@ -4,12 +4,12 @@ from subprocess import *
 
 import core.exceptions as ex
 
-from ..sunos import Ip
-from .. import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
+from drivers.resource.ip.sunos import Ip
+from drivers.resource.ip import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from rcGlobalEnv import rcEnv
-from rcUtilities import to_cidr
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.net.converters import to_cidr
 from utilities.proc import justcall, which
 
 DRIVER_GROUP = "ip"

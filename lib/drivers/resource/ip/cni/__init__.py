@@ -21,10 +21,11 @@ from .. import \
     KW_EXPOSE
 from ..linux import Ip
 from rcGlobalEnv import rcEnv
-from rcUtilities import to_cidr, lazy
+from rcUtilities import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
+from utilities.net.converters import to_cidr
 from utilities.render.color import format_str_flat_json
 from utilities.string import bencode, bdecode
 

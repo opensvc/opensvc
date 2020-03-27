@@ -1,6 +1,6 @@
 import copy
 
-from rcUtilities import cidr_to_dotted
+from utilities.net.converters import cidr_to_dotted
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 

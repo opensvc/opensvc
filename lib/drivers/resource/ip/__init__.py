@@ -8,7 +8,7 @@ import re
 import time
 
 import core.status
-import ipaddress
+import utilities.net.ipaddress
 import utilities.lock
 import core.exceptions as ex
 import utilities.ifconfig
@@ -16,10 +16,12 @@ import utilities.ifconfig
 from arp import send_arp
 from converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
-from rcUtilities import getaddr, lazy, to_cidr
+from rcUtilities import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.net.converters import to_cidr
+from utilities.net.getaddr import getaddr
 
 KW_IPNAME = {
     "keyword": "ipname",
@@ -762,7 +764,7 @@ class Ip(Resource):
                     baseaddr = intf.ipaddr[0]
                 else:
                     baseaddr = intf.ipaddr
-                network = str(ipaddress.IPv4Interface(baseaddr).network.network_address)
+                network = str(utilities.net.ipaddress.IPv4Interface(baseaddr).network.network_address)
             except (ValueError, IndexError):
                 self.log.info("skip allocate: ipdev %s has no configured address "
                               "and network is not set", self.ipdev)
