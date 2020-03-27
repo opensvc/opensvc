@@ -2,7 +2,7 @@ from subprocess import Popen, PIPE
 
 import core.status
 import core.exceptions as ex
-import rcContainer
+import utilities.subsystems.docker as dockerlib
 
 from .. import Sync, notify
 from utilities.lazy import lazy
@@ -61,7 +61,7 @@ class SyncDocker(Sync):
         try:
             return self.svc.dockerlib
         except AttributeError:
-            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            self.svc.dockerlib = dockerlib.DockerLib(self.svc)
             return self.svc.dockerlib
 
     def handled_resources(self):

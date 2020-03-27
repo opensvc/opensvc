@@ -1,7 +1,7 @@
 import os
 
 import core.status
-import rcContainer
+import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 from utilities.lazy import lazy
 from core.resource import Resource
@@ -56,7 +56,7 @@ class FsDocker(Resource):
         try:
             return self.svc.dockerlib
         except AttributeError:
-            self.svc.dockerlib = rcContainer.DockerLib(self.svc)
+            self.svc.dockerlib = dockerlib.DockerLib(self.svc)
             return self.svc.dockerlib
 
     @lazy
