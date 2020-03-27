@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 
-import rcAsset
+from .asset import BaseAsset
 from rcUtilities import lazy
 from utilities.storage import Storage
 from utilities.proc import justcall, which
@@ -18,9 +18,9 @@ def is_container():
         return True
     return False
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node):
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
         self.container = is_container()
         self.detect_xen()
         if self.container:
@@ -726,7 +726,7 @@ class Asset(rcAsset.Asset):
                 for line in f.readlines():
                     if line.startswith("btime "):
                         return line.split()[-1]
-        return rcAsset.Asset.get_boot_id(self)
+        return super(Asset, self).get_boot_id()
 
 if __name__ == "__main__":
     from rcGlobalEnv import rcEnv

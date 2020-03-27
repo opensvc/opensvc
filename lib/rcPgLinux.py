@@ -153,8 +153,8 @@ def set_cpu_quota(o):
         quota = v
 
     if threads == "all":
-        import rcAssetLinux
-        threads = int(rcAssetLinux.Asset(None)._get_cpu_threads())
+        from utilities.asset import Asset
+        threads = int(Asset(None)._get_cpu_threads())
     else:
         threads = int(threads)
 
