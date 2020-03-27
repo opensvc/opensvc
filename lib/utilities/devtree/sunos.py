@@ -298,8 +298,8 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         if di is not None:
             self.di = di
         if self.di is None:
-            from rcDiskInfoSunOS import diskInfo
-            self.di = diskInfo(deferred=True)
+            from utilities.diskinfo import DiskInfo
+            self.di = DiskInfo(deferred=True)
         self.load_disks()
         self.load_zpool()
         self.load_sds()

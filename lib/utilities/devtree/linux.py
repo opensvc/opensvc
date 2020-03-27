@@ -608,8 +608,8 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         if di is not None:
             self.di = di
         if self.di is None:
-            from rcDiskInfoLinux import diskInfo
-            self.di = diskInfo()
+            from utilities.diskinfo import DiskInfo
+            self.di = DiskInfo()
 
         if len(glob.glob("/sys/block/*/slaves")) == 0:
             self.load_fdisk()

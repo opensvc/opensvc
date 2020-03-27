@@ -1557,7 +1557,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if self.svcs is None:
             self.build_services()
 
-        di = __import__('rcDiskInfo'+rcEnv.sysname)
         data = {
             "disks": {},
             "served_disks": {},
@@ -1959,8 +1958,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def diskinfo(self):
-        di = __import__('rcDiskInfo'+rcEnv.sysname)
-        return di.diskInfo()
+        from utilities.diskinfo import DiskInfo
+        return DiskInfo()
 
     @lazy
     def devtree(self):
@@ -2357,14 +2356,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def _scanscsi(self, hba=None, target=None, lun=None, log=None):
         log = log if log else self.log
-        try:
-            mod = __import__("rcDiskInfo"+rcEnv.sysname)
-        except ImportError:
-            raise ex.Error("scanscsi is not supported on %s" % rcEnv.sysname)
-        diskinfo = mod.diskInfo()
-        if not hasattr(diskinfo, 'scanscsi'):
+        if not hasattr(self.diskinfo, 'scanscsi'):
             raise ex.Error("scanscsi is not implemented on %s" % rcEnv.sysname)
-        return diskinfo.scanscsi(
+        return self.diskinfo.scanscsi(
             hba=hba,
             target=target,
             lun=lun,

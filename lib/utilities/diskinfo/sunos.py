@@ -2,14 +2,13 @@ import math
 import os
 
 import utilities.devtree.veritas
-import rcDiskInfo
 import utilities.devices.sunos
-
+from utilities.proc import justcall
 from rcGlobalEnv import rcEnv
 from rcZone import is_zone
-from utilities.proc import justcall
+from .diskinfo import BaseDiskInfo
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
     h = {}
     done = []
 
