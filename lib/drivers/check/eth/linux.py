@@ -1,9 +1,9 @@
 import glob
 import os
 
-import rcEthtool
 import drivers.check
 import utilities.ifconfig
+import utilities.subsystems.ethtool
 
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
@@ -53,9 +53,9 @@ class Check(drivers.check.Check):
     def do_check_intf(self, intf):
         r = []
         try:
-            ethtool = rcEthtool.Ethtool(intf)
+            ethtool = utilities.subsystems.ethtool.Ethtool(intf)
             ethtool.load()
-        except rcEthtool.LoadError:
+        except utilities.subsystems.ethtool.LoadError:
             return []
 
         inst = intf + ".speed"
