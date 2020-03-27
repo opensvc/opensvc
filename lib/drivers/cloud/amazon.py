@@ -1,4 +1,4 @@
-import rcCloud
+import core.cloud
 import core.exceptions as ex
 import socket
 
@@ -9,11 +9,11 @@ try:
 except ImportError:
     raise ex.InitError("apache-libcloud module must be installed")
 
-class Cloud(rcCloud.Cloud):
+class Cloud(core.cloud.BaseCloud):
     mode = 'amazon'
 
     def __init__(self, s, auth):
-        rcCloud.Cloud.__init__(self, s, auth)
+        super(Cloud, self).__init__(s, auth)
         if 'access_key_id' not in auth:
             raise ex.InitError("option 'access_key_id' is mandatory in amazon section")
         if 'provider' not in auth:

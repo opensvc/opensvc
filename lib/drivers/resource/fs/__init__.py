@@ -7,7 +7,7 @@ import core.exceptions as ex
 import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import mimport, lazy, protected_dir
+from rcUtilities import driver_import, lazy, protected_dir
 from core.objects.builder import init_kwargs
 from utilities.proc import justcall, which
 
@@ -301,16 +301,6 @@ class BaseFs(Resource):
             return self.rid < other.rid
         return (smnt, self.rid) < (omnt, other.rid)
 
-    @lazy
-    def prov(self):
-        try:
-            mod = mimport("prov", "fs", self.fs_type, fallback=True)
-        except ImportError:
-            return
-        if not hasattr(mod, "Prov"):
-            raise ex.Error("missing Prov class in module %s" % str(mod))
-        return getattr(mod, "Prov")(self)
-
     """
     Provisioning:
     
@@ -343,7 +333,7 @@ class BaseFs(Resource):
         vg = self.oget("vg")
         size = self.oget("size")
         try:
-            mod = mimport("resource", "disk", "lv")
+            mod = driver_import("resource", "disk", "lv")
             if mod is None:
                 return
         except ImportError:
