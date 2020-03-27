@@ -1,4 +1,4 @@
-from rcUtilities import cache
+from utilities.cache import cache
 from utilities.proc import justcall
 
 @cache("prtvtoc.{args[0]}")
