@@ -10,6 +10,7 @@ from utilities.net.converters import *
 from utilities.proc import is_exe, justcall, lcall, qcall, vcall
 from utilities.render.banner import banner
 from utilities.string import bencode, bdecode, empty_string
+from core.extconfig import read_cf
 
 
 @pytest.mark.ci
