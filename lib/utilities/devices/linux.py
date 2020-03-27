@@ -197,7 +197,7 @@ def label_to_dev(label, tree=None):
         return devps[0]
 
     if tree is None:
-        from rcDevTreeLinux import DevTree
+        from utilities.devtree import DevTree
         tree = DevTree()
         tree.load()
     devs = tree.get_devs_by_devpaths(devps)

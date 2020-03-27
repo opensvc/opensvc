@@ -4,15 +4,14 @@ import re
 
 from subprocess import PIPE
 
-import rcDevTree
-import rcDevTreeVeritas
-import utilities.devices.sunos
-
+from .devtree import DevTree as BaseDevTree
+from .veritas import DevTreeVeritas
+from utilities.devices.sunos import prtvtoc
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache
 from utilities.proc import justcall, which
 
-class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
+class DevTree(DevTreeVeritas, BaseDevTree):
     di = None
     zpool_members = {}
     zpool_used = {}
@@ -30,7 +29,7 @@ class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
                2      5    00          0  71127180  71127179
                7      0    00   71060733     66447  71127179
         """
-        out = utilities.devices.sunos.prtvtoc(d.devpath[0])
+        out = prtvtoc(d.devpath[0])
         if out is None:
             return
         for line in out.splitlines():
