@@ -1,7 +1,7 @@
 """Module containing the implementation of the URIMixin class."""
 import warnings
 
-from . import core.exceptions as exc
+from . import exceptions as exc
 from . import misc
 from . import normalizers
 from . import validators

@@ -3774,7 +3774,7 @@ class Svc(BaseSvc):
         if self.need_encap_resource_monitor():
             self.encap_cmd(["resource_monitor"])
         data2 = self.print_status_data_eval(write_data=False)
-        import json_delta
+        import foreign.json_delta as json_delta
         diff = json_delta.diff(data1, data2, verbose=False, array_align=False, compare_lengths=False)
         significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
         if significant_changes:
