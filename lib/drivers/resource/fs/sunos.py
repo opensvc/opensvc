@@ -4,7 +4,7 @@ import time
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from rcZfs import zfs_getprop, zfs_setprop
+from utilities.subsystems.zfs import zfs_getprop, zfs_setprop
 from utilities.mounts.sunos import Mounts
 from . import BaseFs, adder as base_adder
 from utilities.proc import justcall
