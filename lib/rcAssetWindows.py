@@ -15,7 +15,7 @@ import rcAsset
 from converters import convert_size
 from rcUtilities import lazy
 from rcDiskInfoWindows import diskInfo
-from storage import Storage
+from utilities.storage import Storage
 from utilities.proc import justcall, which
 from utilities.string import try_decode
 

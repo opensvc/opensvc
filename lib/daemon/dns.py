@@ -14,7 +14,7 @@ import re
 import six
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import lazy, split_path
 from utilities.string import bdecode
 

@@ -13,7 +13,7 @@ from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcOptParser import OptParser
 from rcUtilities import lazy, factory, split_path
-from storage import Storage
+from utilities.storage import Storage
 from utilities.proc import justcall, which
 
 PROG = "om array"

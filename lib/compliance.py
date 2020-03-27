@@ -11,7 +11,7 @@ from subprocess import *
 import six
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import fcache, ANSI_ESCAPE
 from utilities.render.banner import banner
 from utilities.render.color import color, colorize, formatter

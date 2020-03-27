@@ -4,7 +4,7 @@ import re
 
 import rcAsset
 from rcUtilities import lazy
-from storage import Storage
+from utilities.storage import Storage
 from utilities.proc import justcall, which
 from utilities.string import bdecode
 
