@@ -7,7 +7,6 @@ import pkgutil
 import sys
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import mimport
 
 class Check(object):
     undef = [{
