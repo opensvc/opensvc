@@ -1790,7 +1790,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Send a Wake-On-LAN packet to a mac address on the broadcast address.
         """
-        import rcWakeOnLan
+        import utilities.wakeonlan
         if self.options.mac is None:
             print("missing parameter. set --mac argument. multiple mac "
                   "addresses must be separated by comma", file=sys.stderr)
@@ -1811,7 +1811,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for brdcast in broadcasts:
             for mac in macs:
                 for port in udpports:
-                    req = rcWakeOnLan.wolrequest(macaddress=mac, broadcast=brdcast, udpport=port)
+                    req = utilities.wakeonlan.wolrequest(macaddress=mac, broadcast=brdcast, udpport=port)
                     if not req.check_broadcast():
                         print("Error : skipping broadcast address <%s>, not in "
                               "the expected format 123.123.123.123" % req.broadcast,
