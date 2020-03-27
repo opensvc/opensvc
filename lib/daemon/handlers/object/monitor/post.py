@@ -1,12 +1,12 @@
 import time
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from utilities.storage import Storage
 from rcUtilities import split_path, fmt_path, is_service
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Set or unset properties of an object instance monitor.
     These properties are used by the monitor in the orchestration policies and object management by target state.

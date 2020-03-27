@@ -1,7 +1,7 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return a hash indexed by nodename, containing the info
     required by the node selector algorithm.

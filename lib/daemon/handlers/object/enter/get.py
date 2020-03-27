@@ -4,7 +4,7 @@ import time
 import traceback
 import uuid
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
@@ -13,7 +13,7 @@ from utilities.string import try_decode
 
 MAX_TIMEOUT = 60
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return a url a client browser can connect to for 5 seconds to enter the
     container specified by <rid> of the object specified by <path>.
