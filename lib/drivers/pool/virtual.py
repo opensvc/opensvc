@@ -6,7 +6,7 @@ import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import is_service, split_path, factory, lazy
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 class Pool(BasePool):
     type = "virtual"
