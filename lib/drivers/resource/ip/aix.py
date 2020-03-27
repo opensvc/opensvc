@@ -1,10 +1,8 @@
 import core.exceptions as ex
 import utilities.ping
 
-from . import \
-    Ip as ParentIp, \
-    adder as parent_adder
-from rcUtilities import to_cidr, to_dotted
+from . import Ip as ParentIp, adder as parent_adder
+from utilities.net.converters import to_cidr, to_dotted
 
 def adder(svc, s):
     parent_adder(svc, s, drv=Ip)
