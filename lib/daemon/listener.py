@@ -44,7 +44,7 @@ import core.exceptions as ex
 from six.moves import queue
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from comm import Headers
+from core.comm import Headers
 from rcUtilities import drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
