@@ -1,8 +1,8 @@
 import os
 
-import rcAdvfs
 import core.exceptions as ex
 import utilities.snap
+import utilities.subsystems.advfs
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount
 from utilities.mounts.osf1 import Mounts
@@ -18,10 +18,10 @@ class Snap(utilities.snap.Snap):
             dict(snapinfo key val)
         """
         dom, fset = m.device.split('#')
-        o = rcAdvfs.Fdmns()
+        o = utilities.subsystems.advfs.Fdmns()
         try:
             d = o.get_fdmn(dom)
-        except rcAdvfs.ExInit:
+        except utilities.subsystems.advfs.ExInit:
             raise ex.syncNotSnapable
         if fset not in d.fsets:
             raise ex.syncNotSnapable
@@ -62,10 +62,10 @@ class Snap(utilities.snap.Snap):
         """
         clonedev = self.snaps[snap_key]['snapdev']
         dom, clonefset = clonedev.split('#')
-        o = rcAdvfs.Fdmns()
+        o = utilities.subsystems.advfs.Fdmns()
         try:
             d = o.get_fdmn(dom)
-        except rcAdvfs.ExInit:
+        except utilities.subsystems.advfs.ExInit:
             raise ex.syncSnapDestroyError
         if clonefset not in d.fsets:
             return
