@@ -272,7 +272,7 @@ class SyncS3(Sync):
             self.vcall(cmd + ["s3://"+self.bucket+os.path.dirname(self.prefix)+"/"+key])
 
     def in_full_schedule(self):
-        from rcScheduler import Scheduler, SchedNotAllowed, SchedSyntaxError
+        from core.scheduler import Scheduler, SchedNotAllowed, SchedSyntaxError
         sched = Scheduler()
         schedule = sched.sched_get_schedule("dummy", "dummy", schedules=self.full_schedule)
         try:
