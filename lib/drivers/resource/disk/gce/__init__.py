@@ -3,7 +3,7 @@ import json
 import core.status
 import rcGce
 from .. import BaseDisk, BASE_KEYWORDS
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import *
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

@@ -15,7 +15,7 @@ from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from utilities.render.color import formatter, color
 from utilities.string import is_string
-from converters import convert_duration
+from utilities.converters import convert_duration
 
 SCHED_FMT = "%s: %s"
 CALENDAR_NAMES = {

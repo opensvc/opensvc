@@ -22,7 +22,7 @@ from .. import \
     BaseContainer
 from rcUtilities import unset_lazy, lazy, drop_option, has_option, get_option, get_options
 from core.resource import Resource
-from converters import print_duration
+from utilities.converters import print_duration
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall

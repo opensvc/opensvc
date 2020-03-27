@@ -10,7 +10,7 @@ from subprocess import Popen, PIPE
 import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from converters import print_duration
+from utilities.converters import print_duration
 
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2

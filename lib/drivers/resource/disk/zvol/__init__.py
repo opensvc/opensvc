@@ -7,7 +7,7 @@ from subprocess import *
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from rcZfs import dataset_exists, zpool_devs

@@ -8,7 +8,7 @@ from optparse import Option
 from xml.etree.ElementTree import XML, fromstring
 
 import core.exceptions as ex
-from converters import convert_size
+from utilities.converters import convert_size
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from rcOptParser import OptParser

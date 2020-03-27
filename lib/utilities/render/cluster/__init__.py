@@ -3,7 +3,7 @@ import six
 import time
 import re
 
-from converters import print_duration, print_size
+from utilities.converters import print_duration, print_size
 from utilities.render.color import colorize, color, unicons
 from rcGlobalEnv import rcEnv
 from core.status import colorize_status

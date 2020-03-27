@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ElementTree
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from converters import print_duration
+from utilities.converters import print_duration
 from rcUtilities import lazy
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS

@@ -29,7 +29,7 @@ import core.objects.builder
 import xmlrpcClient
 from core.comm import Crypt
 from core.contexts import want_context
-from converters import *
+from utilities.converters import *
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
 from utilities.lock import LOCK_EXCEPTIONS

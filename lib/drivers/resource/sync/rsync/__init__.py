@@ -6,7 +6,7 @@ import core.status
 import datetime
 
 from .. import Sync, notify
-from converters import convert_speed
+from utilities.converters import convert_speed
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, drop_option
 from core.objects.builder import sync_kwargs

@@ -4,7 +4,7 @@ import os
 
 import core.exceptions as ex
 import core.status
-from converters import convert_speed, print_size
+from utilities.converters import convert_speed, print_size
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts
 from rcUtilities import lazy
