@@ -369,7 +369,7 @@ class Fs(BaseFs):
 
     def sub_devs(self):
         if self.fs_type == "btrfs":
-            from rcBtrfs import btrfs_devs
+            from utilities.subsystems.btrfs import btrfs_devs
             return set(btrfs_devs(self.mount_point))
         if self.fs_type == "zfs":
             try:

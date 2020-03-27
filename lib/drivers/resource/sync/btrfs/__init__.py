@@ -4,7 +4,7 @@ import datetime
 from subprocess import *
 
 import core.status
-import rcBtrfs
+import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
@@ -122,8 +122,8 @@ class SyncBtrfs(Sync):
         if self.src_btrfs is not None:
             return
         try:
-            self.src_btrfs = rcBtrfs.Btrfs(label=self.src_label, resource=self)
-        except rcBtrfs.ExecError as e:
+            self.src_btrfs = utilities.subsystems.btrfs.Btrfs(label=self.src_label, resource=self)
+        except utilities.subsystems.btrfs.ExecError as e:
             raise ex.Error(str(e))
 
     def pre_action(self, action):
@@ -163,10 +163,10 @@ class SyncBtrfs(Sync):
         self.init_src_btrfs()
         try:
             self.src_btrfs.snapshot(snap_orig, snap, readonly=True, recursive=self.recursive)
-        except rcBtrfs.ExistError:
+        except utilities.subsystems.btrfs.ExistError:
             self.log.error('%s should not exist'%snap)
             raise ex.Error
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             raise ex.Error
 
     def get_src_info(self):
@@ -180,8 +180,8 @@ class SyncBtrfs(Sync):
     def get_dst_info(self, node):
         if node not in self.dst_btrfs:
             try:
-                self.dst_btrfs[node] = rcBtrfs.Btrfs(label=self.dst_label, resource=self, node=node)
-            except rcBtrfs.ExecError as e:
+                self.dst_btrfs[node] = utilities.subsystems.btrfs.Btrfs(label=self.dst_label, resource=self, node=node)
+            except utilities.subsystems.btrfs.ExecError as e:
                 raise ex.Error(str(e))
             #self.dst_btrfs[node].setup_snap()
         subvol = self.src_subvol.replace('/','_')
@@ -308,7 +308,7 @@ class SyncBtrfs(Sync):
 
         try:
             o.subvol_delete(subvol, recursive=self.recursive)
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             raise ex.Error()
 
     def remove_snap(self, node=None):
@@ -325,7 +325,7 @@ class SyncBtrfs(Sync):
 
         try:
             o.subvol_delete(subvol, recursive=self.recursive)
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             raise ex.Error()
 
     def rename_snap(self, node=None):
@@ -364,7 +364,7 @@ class SyncBtrfs(Sync):
 
         try:
             self.dst_btrfs[node].subvol_delete(subvols)
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             raise ex.Error()
 
     def install_dst(self, node=None):
@@ -372,10 +372,10 @@ class SyncBtrfs(Sync):
             return
         try:
             self.dst_btrfs[node].snapshot(self.dst_snap_sent, self.dst, readonly=False)
-        except rcBtrfs.ExistError:
+        except utilities.subsystems.btrfs.ExistError:
             self.log.error("%s should not exist on node %s", self.dst_snap_sent, node)
             raise ex.Error()
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             self.log.error("failed to install snapshot %s on node %s"%(self.dst, node))
             raise ex.Error()
 
