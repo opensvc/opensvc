@@ -1,15 +1,16 @@
-import rcDevTree
 import glob
 import os
 import re
 from subprocess import *
+
+from .devtree import DevTree as BaseDevTree
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 
 dim = __import__("rcDiskInfoHP-UX")
 di = dim.diskInfo()
 
-class DevTree(rcDevTree.DevTree):
+class DevTree(BaseDevTree):
     pe_size = {}
 
     def add_part(self, parent_devpath, child_devpath):

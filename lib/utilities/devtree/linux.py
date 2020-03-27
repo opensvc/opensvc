@@ -7,15 +7,16 @@ from subprocess import *
 
 import math
 
-import rcDevTree
-import rcDevTreeVeritas
+from .devtree import DevTree as BaseDevTree, Dev as BaseDev
+from .veritas import DevTreeVeritas
+import utilities.devtree.veritas
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.mounts import Mounts
 from utilities.proc import which
 
 
-class Dev(rcDevTree.Dev):
+class Dev(BaseDev):
     def remove_loop(self, r):
         cmd = [rcEnv.syspaths.losetup, "-d", self.devpath[0]]
         ret, out, err = r.vcall(cmd)
@@ -38,7 +39,7 @@ class Dev(rcDevTree.Dev):
         if self.devname.startswith("dm-"):
             return self.remove_dm(r)
 
-class DevTree(rcDevTreeVeritas.DevTreeVeritas, rcDevTree.DevTree):
+class DevTree(DevTreeVeritas, BaseDevTree):
     di = None
     dev_h = {}
     dev_class = Dev

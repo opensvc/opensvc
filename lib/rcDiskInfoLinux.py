@@ -9,7 +9,7 @@ import sys
 import time
 
 import core.exceptions as ex
-import rcDevTreeVeritas
+import utilities.devtree.veritas
 import rcDiskInfo
 import utilities.devices.linux
 
@@ -40,7 +40,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         elif dev.startswith('/dev/mapper/2'):
             id = dev.replace('/dev/mapper/2', '')
         elif "dmp/" in dev:
-            id = rcDevTreeVeritas.DevTreeVeritas().vx_inq(dev)
+            id = utilities.devtree.veritas.DevTreeVeritas().vx_inq(dev)
         elif "Google_PersistentDisk_" in dev or "google-" in dev:
             id = self.gce_disk_id(dev)
         else:
