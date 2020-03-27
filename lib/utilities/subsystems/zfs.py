@@ -1,9 +1,9 @@
 import logging
 import sys
 
-from rcUtilities import cache
 from rcGlobalEnv import rcEnv
 import core.exceptions as ex
+from utilities.cache import cache
 from utilities.proc import call, vcall, justcall
 
 def dataset_exists(device, dstype):
