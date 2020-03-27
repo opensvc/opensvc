@@ -8,7 +8,7 @@ from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.freenas import Freenass
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 LOCK_NAME = "freenas_create_disk"
 
