@@ -14,7 +14,7 @@ import six
 
 import daemon.shared as shared
 import core.exceptions as ex
-import rcLogger
+import core.logger
 from core.comm import CRYPTO_MODULE
 from utilities.lock import LockTimeout, cmlock
 from rcGlobalEnv import rcEnv
@@ -120,7 +120,7 @@ class Daemon(object):
         self.threads = {}
         self.last_config_mtime = None
         log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        rcLogger.initLogger(rcEnv.nodename, log_file, handlers=self.handlers, sid=False)
+        core.logger.initLogger(rcEnv.nodename, log_file, handlers=self.handlers, sid=False)
         self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd"), {"node": rcEnv.nodename, "component": "main"})
         self.pid = os.getpid()
         self.stats_data = None
