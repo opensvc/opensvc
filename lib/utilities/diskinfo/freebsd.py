@@ -1,7 +1,7 @@
-import rcDiskInfo
 from utilities.proc import call, which
+from .diskinfo import BaseDiskInfo
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
     disk_ids = {}
 
     def __init__(self, deferred=False):

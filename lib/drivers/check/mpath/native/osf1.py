@@ -1,6 +1,6 @@
 import drivers.check
 
-from rcDiskInfoOSF1 import diskInfo
+from utilities.diskinfo import DiskInfo
 from utilities.proc import justcall
 
 class Check(drivers.check.Check):
@@ -21,7 +21,7 @@ class Check(drivers.check.Check):
         return ''
 
     def do_check(self):
-        di = diskInfo()
+        di = DiskInfo()
         r = []
         for dev, data in di.h.items():
             r.append({"instance": data['wwid'],
