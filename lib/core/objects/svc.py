@@ -20,7 +20,7 @@ from core.resource import Resource
 from core.resourceset import ResourceSet
 from freezer import Freezer
 from rcGlobalEnv import rcEnv, Paths
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import lazy, unset_lazy, \
                         action_triggers, set_lazy, \
                         drop_option, fcache, init_locale, makedirs, \

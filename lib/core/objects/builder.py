@@ -6,7 +6,7 @@ import glob
 import logging
 
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 import rcLogger
 import core.exceptions as ex
 import rcConfigParser
