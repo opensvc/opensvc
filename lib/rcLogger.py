@@ -21,7 +21,7 @@ except:
 import platform
 import re
 
-import extconfig
+import core.extconfig
 from utilities.render.color import colorize, color
 
 DEFAULT_HANDLERS = ["file", "stream", "syslog"]
@@ -94,7 +94,7 @@ class OsvcFormatter(logging.Formatter):
             except AttributeError:
                 pass
         record.context = record.context.rstrip()
-        for pattern in extconfig.SECRETS:
+        for pattern in core.extconfig.SECRETS:
             record.message = record.message.replace(pattern, "xxxx")
 
         if not self.human:
