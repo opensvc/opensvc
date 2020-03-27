@@ -1,27 +1,109 @@
 from __future__ import print_function
 
-import sys
-import re
-import os
-import copy
+import ast
 import codecs
+import copy
+import operator as op
+import os
+import re
+import sys
 
 import six
+
 import core.exceptions as ex
-from utilities.converters import *
-from rcUtilities import eval_expr, makedirs, factory
-from utilities.lazy import lazy, unset_lazy
 from rcGlobalEnv import rcEnv
+from rcUtilities import factory, makedirs
+from utilities.configparser import RawConfigParser, NoOptionError
+from utilities.converters import *
+from utilities.lazy import lazy, unset_lazy
 from utilities.string import is_string, try_decode
 
 SECRETS = []
+
+# supported operators in arithmetic expressions
+operators = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.Pow: op.pow,
+    ast.BitOr: op.or_,
+    ast.BitAnd: op.and_,
+    ast.BitXor: op.xor,
+    ast.USub: op.neg,
+    ast.FloorDiv: op.floordiv,
+    ast.Mod: op.mod,
+    ast.Not: op.not_,
+    ast.Eq: op.eq,
+    ast.NotEq: op.ne,
+    ast.Lt: op.lt,
+    ast.LtE: op.le,
+    ast.Gt: op.gt,
+    ast.GtE: op.ge,
+    ast.In: op.contains,
+}
+
+
+def eval_expr(expr):
+    """ arithmetic expressions evaluator
+    """
+
+    def eval_(node):
+        _safe_names = {'None': None, 'True': True, 'False': False}
+        if isinstance(node, ast.Num):  # <number>
+            return node.n
+        elif isinstance(node, ast.Str):
+            return node.s
+        elif isinstance(node, ast.Name):
+            if node.id in _safe_names:
+                return _safe_names[node.id]
+            return node.id
+        elif isinstance(node, ast.Tuple):
+            return tuple(node.elts)
+        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
+            return operators[type(node.op)](eval_(node.left), eval_(node.right))
+        elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
+            return operators[type(node.op)](eval_(node.operand))
+        elif isinstance(node, ast.BoolOp):  # Boolean operator: either "and" or "or" with two or more values
+            if type(node.op) == ast.And:
+                return all(eval_(val) for val in node.values)
+            else:  # Or:
+                for val in node.values:
+                    result = eval_(val)
+                    if result:
+                        return result
+                    return result  # or returns the final value even if it's falsy
+        elif isinstance(node, ast.Compare):  # A comparison expression, e.g. "3 > 2" or "5 < x < 10"
+            left = eval_(node.left)
+            for comparison_op, right_expr in zip(node.ops, node.comparators):
+                right = eval_(right_expr)
+                if type(comparison_op) == ast.In:
+                    if isinstance(right, tuple):
+                        if not any(q.id == left for q in right if isinstance(q, ast.Name)):
+                            return False
+                    else:
+                        if not operators[type(comparison_op)](right, left):
+                            return False
+                else:
+                    if not operators[type(comparison_op)](left, right):
+                        return False
+                left = right
+                return True
+        elif isinstance(node, ast.Attribute):
+            raise TypeError("strings with dots need quoting")
+        elif hasattr(ast, "NameConstant") and isinstance(node, getattr(ast, "NameConstant")):
+            return node.value
+        else:
+            raise TypeError("unsupported node type %s" % type(node))
+
+    return eval_(ast.parse(expr, mode='eval').body)
+
 
 def read_cf(fpaths, defaults=None):
     """
     Read and parse an arbitrary ini-formatted config file, and return
     the RawConfigParser object.
     """
-    from rcConfigParser import RawConfigParser
     try:
         from collections import OrderedDict
         config = RawConfigParser(dict_type=OrderedDict)
@@ -355,12 +437,11 @@ class ExtConfigMixin(object):
 
     def set_mangle(self, keyword, op, value, index, eval):
         def list_value(keyword):
-            import rcConfigParser
             if keyword in self.set_multi_cache:
                 return self.set_multi_cache[keyword].split()
             try:
                 _value = self._get(keyword, eval).split()
-            except (ex.Error, rcConfigParser.NoOptionError) as exc:
+            except (ex.Error, NoOptionError) as exc:
                 _value = []
             except ex.OptNotFound as exc:
                 _value = copy.copy(exc.default)
@@ -1505,4 +1586,3 @@ class ExtConfigMixin(object):
             raise ex.Error("failed to write %s: %s" % (cf, exc))
         self.unset_all_lazy()
         self.clear_ref_cache()
-
