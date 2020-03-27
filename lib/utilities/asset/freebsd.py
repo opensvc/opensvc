@@ -1,11 +1,11 @@
 import datetime
 import os
 
-import rcAssetLinux
+from .linux import Asset as BaseAsset
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
-class Asset(rcAssetLinux.Asset):
+class Asset(BaseAsset):
     def _get_mem_bytes(self):
         cmd = ['sysctl', 'hw.realmem']
         (out, err, ret) = justcall(cmd)
@@ -80,7 +80,7 @@ class Asset(rcAssetLinux.Asset):
 
     def get_boot_id(self):
         try:
-            return rcAssetLinux.Asset.get_boot_id(self)
+            return super(Asset, self).get_boot_id()
         except:
             # /proc might not be mounted
             return str(os.path.getmtime("/dev"))
