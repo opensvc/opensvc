@@ -648,7 +648,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def compliance(self):
-        from compliance import Compliance
+        from core.compliance import Compliance
         comp = Compliance(self)
         return comp
 
@@ -1023,7 +1023,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         try:
             if action.startswith("collector_"):
-                from collector import Collector
+                from core.collector import Collector
                 collector = Collector(options, self.node, self.path)
                 func = getattr(collector, action)
             else:
