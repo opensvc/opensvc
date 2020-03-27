@@ -8,7 +8,7 @@ from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 from utilities.string import try_decode
 
-class Asset(object):
+class BaseAsset(object):
     s_config = "config"
     s_probe = "probe"
     s_default = "default"

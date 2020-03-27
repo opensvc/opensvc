@@ -3,15 +3,15 @@ import json
 import os
 import re
 
-import rcAsset
+from .asset import BaseAsset
 from six.moves.urllib.parse import quote # pylint: disable=import-error
 from rcGlobalEnv import rcEnv
 from rcZone import is_zone
 from utilities.proc import justcall, which
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node=None):
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
         self.osver = 0.
         self.zone = is_zone()
 
@@ -289,7 +289,7 @@ class Asset(rcAsset.Asset):
         if self.zone:
             return self.get_boot_id_zone()
         else:
-            return rcAsset.Asset.get_boot_id(self)
+            return super(Asset, self).get_boot_id()
 
 if __name__ == "__main__":
     print(Asset()._get_cpu_model())
