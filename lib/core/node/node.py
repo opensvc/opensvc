@@ -32,7 +32,7 @@ from contexts import want_context
 from converters import *
 from core.extconfig import ExtConfigMixin
 from freezer import Freezer
-from lock import LOCK_EXCEPTIONS
+from utilities.lock import LOCK_EXCEPTIONS
 from core.network import NetworksMixin
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts, Scheduler, sched_action

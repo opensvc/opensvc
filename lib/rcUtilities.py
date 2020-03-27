@@ -18,7 +18,7 @@ from itertools import chain
 
 import six
 
-import lock
+import utilities.lock
 import core.exceptions as ex
 from contexts import want_context
 from rcGlobalEnv import rcEnv
@@ -616,7 +616,7 @@ def cache(sig):
             fpath = cache_fpath(_sig)
 
             try:
-                lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock', intent="cache")
+                lfd = utilities.lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock', intent="cache")
             except Exception as e:
                 if log:
                     log.warning("cache locking error: %s. run command uncached." % str(e))
@@ -628,7 +628,7 @@ def cache(sig):
                     log.debug(str(e))
                 data = fn(*args, **kwargs)
                 cache_put(fpath, data, log=log)
-            lock.unlock(lfd)
+            utilities.lock.unlock(lfd)
             return data
 
         return decorator
@@ -679,12 +679,12 @@ def clear_cache(sig, o=None):
         return
     if o and hasattr(o, "log"):
         o.log.debug("cache CLEAR: %s" % fpath)
-    lfd = lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock')
+    lfd = utilities.lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock')
     try:
         os.unlink(fpath)
     except:
         pass
-    lock.unlock(lfd)
+    utilities.lock.unlock(lfd)
 
 
 def purge_cache():

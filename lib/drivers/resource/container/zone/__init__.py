@@ -4,9 +4,9 @@ import time
 from datetime import datetime
 
 import core.status
-import lock
 import core.exceptions as ex
 import rcZone
+import utilities.lock
 import utilities.os.sunos
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
@@ -961,15 +961,15 @@ class ContainerZone(BaseContainer):
             lockfile = os.path.join(rcEnv.paths.pathlock, lockname)
             self.log.info("wait get lock %s"%(lockname))
             try:
-                lockfd = lock.lock(timeout=1200, delay=5, lockfile=lockfile)
+                lockfd = utilities.lock.lock(timeout=1200, delay=5, lockfile=lockfile)
             except:
                 raise(ex.Error("failure in get lock %s"%(lockname)))
             try:
                 self.create_zone2clone()
             except:
-                lock.unlock(lockfd)
+                utilities.lock.unlock(lockfd)
                 raise
-            lock.unlock(lockfd)
+            utilities.lock.unlock(lockfd)
             self.create_cloned_zone()
 
         if self.osver < 11:

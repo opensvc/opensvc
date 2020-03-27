@@ -6,6 +6,7 @@ import os
 from stat import *
 
 import core.exceptions as ex
+import utilities.lock
 
 from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
@@ -393,21 +394,20 @@ class DiskVg(BaseDisk):
         return devs
 
     def lock(self, timeout=30, delay=1):
-        import lock
         lockfile = os.path.join(rcEnv.paths.pathlock, 'vgimport')
         lockfd = None
         try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
-        except lock.LockTimeout:
+            lockfd = utilities.lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except utilities.lock.LockTimeout:
             self.log.error("timed out waiting for lock (%s)"%lockfile)
             raise ex.Error
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             self.log.error("lock_nowait: set the 'lockfile' param")
             raise ex.Error
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             self.log.error("can not create lock file %s"%lockfile)
             raise ex.Error
-        except lock.LockAcquire as e:
+        except utilities.lock.LockAcquire as e:
             self.log.warning("another action is currently running (pid=%s)"%e.pid)
             raise ex.Error
         except ex.Signal:
@@ -419,8 +419,7 @@ class DiskVg(BaseDisk):
         self.lockfd = lockfd
 
     def unlock(self):
-        import lock
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
 
     @lazy
     def options(self):

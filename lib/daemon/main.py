@@ -16,7 +16,7 @@ import daemon.shared as shared
 import core.exceptions as ex
 import rcLogger
 from comm import CRYPTO_MODULE
-from lock import LockTimeout, cmlock
+from utilities.lock import LockTimeout, cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import (daemon_process_running, lazy, process_args,
                          unset_lazy)

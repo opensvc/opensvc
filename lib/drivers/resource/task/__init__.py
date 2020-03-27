@@ -1,8 +1,8 @@
 import os
 
 import core.status
-import lock
 import core.exceptions as ex
+import utilities.lock
 from rcScheduler import SchedOpts
 from rcUtilities import lazy
 from core.resource import Resource
@@ -220,9 +220,9 @@ class BaseTask(Resource):
 
     def run(self):
         try:
-            with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
+            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
                 self._run()
-        except lock.LOCK_EXCEPTIONS:
+        except utilities.lock.LOCK_EXCEPTIONS:
             raise ex.Error("task is already running (maybe too long for the schedule)")
         finally:
             self.svc.notify_done("run", rids=[self.rid])
