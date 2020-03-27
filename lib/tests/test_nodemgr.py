@@ -187,9 +187,12 @@ class TestNodemgr:
         assert ret == 0
 
     @staticmethod
-    def test_sysreport():
+    def test_sysreport(mocker):
+        from core.sysreport.sysreport import BaseSysReport
+        send_sysreport = mocker.patch.object(BaseSysReport, 'sysreport')
         ret = nodemgr.main(argv=["sysreport"])
         assert ret == 0
+        assert send_sysreport.call_count == 12
 
     @staticmethod
     @pytest.mark.skip
