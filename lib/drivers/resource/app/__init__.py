@@ -6,6 +6,8 @@ import os
 import stat
 import shlex
 
+import core.exceptions as ex
+import utilities.lock
 import core.status
 import six
 
@@ -15,8 +17,6 @@ from rcGlobalEnv import rcEnv
 from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
-import core.exceptions as ex
-import lock
 
 KEYWORDS = [
     {
@@ -426,7 +426,7 @@ class App(Resource):
         if not self.lockfd:
             return
         self.log.debug("release app lock")
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
         try:
             os.unlink(self.lockfile)
         except OSError:
@@ -445,19 +445,19 @@ class App(Resource):
         self.log.debug("acquire app lock %s", details)
         lockfd = None
         try:
-            lockfd = lock.lock(
+            lockfd = utilities.lock.lock(
                 timeout=timeout,
                 delay=delay,
                 lockfile=self.lockfile,
                 intent=action
             )
-        except lock.LockTimeout as exc:
+        except utilities.lock.LockTimeout as exc:
             raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             raise ex.Error("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
+        except utilities.lock.LockAcquire as exc:
             raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
             self.log.info("interrupted by signal %s" % details)

@@ -1,8 +1,8 @@
 import os
 
 import core.status
-import lock
 import core.exceptions as ex
+import utilities.lock
 from rcScheduler import SchedOpts
 from rcUtilities import lazy
 from core.resource import Resource
@@ -201,9 +201,6 @@ class BaseTask(Resource):
         """
         if not self.confirmation:
             return
-        if self.svc.options.confirm:
-            self.log.info("confirmed by command line option")
-            return
         import signal
         signal.signal(signal.SIGALRM, self.alarm_handler)
         signal.alarm(30)
@@ -223,9 +220,9 @@ class BaseTask(Resource):
 
     def run(self):
         try:
-            with lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
+            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
                 self._run()
-        except lock.LOCK_EXCEPTIONS:
+        except utilities.lock.LOCK_EXCEPTIONS:
             raise ex.Error("task is already running (maybe too long for the schedule)")
         finally:
             self.svc.notify_done("run", rids=[self.rid])

@@ -4,17 +4,17 @@ The module defining the Svc class.
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
+import itertools
+import hashlib
+import logging
 import os
 import signal
-import logging
-import itertools
+import sys
 import time
 from errno import ECONNREFUSED
 
 import core.status
-import lock
-import hashlib
+import utilities.lock
 
 from core.resource import Resource
 from core.resourceset import ResourceSet
@@ -787,7 +787,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         # compatible
         if action in ACTIONS_LOCK_COMPAT:
             try:
-                lockfd = lock.lock(
+                lockfd = utilities.lock.lock(
                     timeout=0,
                     delay=delay,
                     lockfile=lockfile,
@@ -796,7 +796,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 if lockfd is not None:
                     self.lockfd = lockfd
                 return
-            except lock.LockTimeout as exc:
+            except utilities.lock.LockTimeout as exc:
                 if exc.intent in ACTIONS_LOCK_COMPAT[action]:
                     return
                 # not compatible, continue with the normal acquire
@@ -804,19 +804,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 pass
 
         try:
-            lockfd = lock.lock(
+            lockfd = utilities.lock.lock(
                 timeout=timeout,
                 delay=delay,
                 lockfile=lockfile,
                 intent=action
             )
-        except lock.LockTimeout as exc:
+        except utilities.lock.LockTimeout as exc:
             raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             raise ex.Error("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
+        except utilities.lock.LockAcquire as exc:
             raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
             raise ex.Error("interrupted by signal %s" % details)
@@ -831,7 +831,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Release the service action lock.
         """
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
         self.lockfd = None
 
     @staticmethod
@@ -874,7 +874,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.configure_scheduler()
         try:
             return self._action(action, options=options)
-        except lock.LOCK_EXCEPTIONS as exc:
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
             raise ex.Error(str(exc))
 
     def barrier_sanity_check(self, barrier):
@@ -2334,7 +2334,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         data = None
         try:
             lockfile = os.path.join(self.var_d, "lock.json.status")
-            with lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
+            with utilities.lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
                 if not from_resource_status_cache and \
                    not refresh and \
                    os.path.exists(self.status_data_dump) and \
@@ -2344,7 +2344,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                             data = json.load(filep)
                     except ValueError:
                         pass
-        except lock.LOCK_EXCEPTIONS as exc:
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
             raise ex.AbortAction(str(exc))
 
         waitlock = convert_duration(self.options.waitlock)
@@ -2355,9 +2355,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             # use a different lock to not block the faster "from cache" codepath
             lockfile = os.path.join(self.var_d, "lock.status")
             try:
-                with lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
+                with utilities.lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
                     data = self.print_status_data_eval(refresh=refresh)
-            except lock.LOCK_EXCEPTIONS as exc:
+            except utilities.lock.LOCK_EXCEPTIONS as exc:
                 raise ex.AbortAction(str(exc))
         else:
             running = self.get_running(data.get("resources", {}).keys())
@@ -3562,30 +3562,31 @@ class Svc(BaseSvc):
         lockfile = os.path.join(self.var_d, "lock.generic")
         running = []
         running += [self._get_running(lockfile).get("rid")]
-
-        # sync
         lockfile = os.path.join(self.var_d, "lock.sync")
         running += [self._get_running(lockfile).get("rid")]
-
-        # tasks
         if rids is None:
             rids = [r.rid for r in self.get_resources("task")]
         else:
             rids = [rid for rid in rids if rid.startswith("task")]
         for rid in rids:
             lockfile = os.path.join(self.var_d, rid, "run.lock")
-            if self._get_running(lockfile).get("intent") == "run":
-                running.append(rid)
+            running += [self._get_running(lockfile).get("rid")]
         return [rid for rid in running if rid]
 
     def _get_running(self, lockfile):
         try:
-            with open(lockfile, "r") as ofile:
-                #ofile.seek(0)
-                lock_data = json.load(ofile)
-                return lock_data
+            with utilities.lock.cmlock(lockfile=lockfile, timeout=0):
+                return {}
         except Exception as exc:
-            pass
+            # failing to open "w+", action in progress
+            try:
+                with open(lockfile, "r") as ofile:
+                    #ofile.seek(0)
+                    lock_data = json.load(ofile)
+                    return lock_data.get("progress", {})
+            except Exception:
+                pass
+            return {}
         return {}
 
     def print_resource_status(self):
