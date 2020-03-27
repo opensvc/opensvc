@@ -5,7 +5,7 @@ from collections import namedtuple
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import cache
 from core.objects.builder import init_kwargs

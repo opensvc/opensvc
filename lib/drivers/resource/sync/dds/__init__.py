@@ -8,7 +8,7 @@ import core.status
 import utilities.devices.linux
 
 from .. import Sync, notify
-from converters import print_duration
+from utilities.converters import print_duration
 from rcGlobalEnv import rcEnv
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS

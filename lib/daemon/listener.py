@@ -49,7 +49,7 @@ from rcUtilities import drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
                         makedirs, mimport, set_lazy, lazy, split_fullname, \
                         unset_lazy
-from converters import convert_size, print_duration
+from utilities.converters import convert_size, print_duration
 from utilities.string import bencode, bdecode
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse

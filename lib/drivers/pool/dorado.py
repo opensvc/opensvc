@@ -208,7 +208,7 @@ class Pool(BasePool):
 
     @session
     def pool_status(self):
-        from converters import convert_size
+        from utilities.converters import convert_size
         data = {
             "type": self.type,
             "name": self.name,

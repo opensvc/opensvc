@@ -10,7 +10,7 @@ from rcUtilities import normalize_jsonpath
 from rcGlobalEnv import rcEnv
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
-from converters import convert_boolean
+from utilities.converters import convert_boolean
 from utilities.string import bdecode, is_string
 
 

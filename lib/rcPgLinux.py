@@ -2,7 +2,7 @@ import os
 import re
 import glob
 import core.exceptions as ex
-from converters import convert_size
+from utilities.converters import convert_size
 from utilities.proc import justcall
 
 UNIFIED_MNT = "/sys/fs/cgroup/unified"

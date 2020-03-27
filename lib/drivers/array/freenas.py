@@ -9,7 +9,7 @@ import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import factory, split_path
-from converters import convert_size
+from utilities.converters import convert_size
 from rcOptParser import OptParser
 from utilities.string import bencode, bdecode, is_string
 from core.node import Node
