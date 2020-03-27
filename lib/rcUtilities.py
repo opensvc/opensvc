@@ -18,7 +18,7 @@ import six
 
 import utilities.lock
 import core.exceptions as ex
-from contexts import want_context
+from core.contexts import want_context
 from rcGlobalEnv import rcEnv
 from utilities.proc import which, call
 from utilities.string import is_string

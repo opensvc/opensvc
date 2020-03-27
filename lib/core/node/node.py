@@ -28,7 +28,7 @@ import rcLogger
 import core.objects.builder
 import xmlrpcClient
 from core.comm import Crypt
-from contexts import want_context
+from core.contexts import want_context
 from converters import *
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
