@@ -40,7 +40,7 @@ from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor, fmt_path,
                          glob_services_config, init_locale, is_service,
                          list_services, makedirs, driver_import,
-                         normalize_paths, purge_cache_expired, read_cf,
+                         normalize_paths, purge_cache_expired,
                          resolve_path, split_path, strip_path,
                          svc_pathetc,
                          validate_kind, validate_name, validate_ns_name)
