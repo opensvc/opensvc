@@ -5,7 +5,7 @@ import core.status
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

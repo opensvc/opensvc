@@ -3,7 +3,7 @@ import datetime
 import os
 
 import core.exceptions as ex
-from converters import print_size
+from utilities.converters import print_size
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 from utilities.string import try_decode

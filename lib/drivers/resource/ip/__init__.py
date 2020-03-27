@@ -14,7 +14,7 @@ import core.exceptions as ex
 import utilities.ifconfig
 
 from arp import send_arp
-from converters import convert_duration, print_duration
+from utilities.converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from core.resource import Resource
