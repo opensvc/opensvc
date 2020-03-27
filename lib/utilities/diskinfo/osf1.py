@@ -2,13 +2,13 @@ from __future__ import print_function
 
 import re
 
-import rcDiskInfo
+from .diskinfo import BaseDiskInfo
 from utilities.proc import justcall
 
 regex = re.compile("^\W*[0-9]*:")
 regex_path = re.compile('\W*[0-9]*\W+')
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
 
     def __init__(self):
         self.load_cache()
@@ -100,5 +100,5 @@ class diskInfo(rcDiskInfo.diskInfo):
         return self.get(dev, 'size')
 
 if __name__ == "__main__":
-    di = diskInfo()
+    di = DiskInfo()
     print(di.h.items())
