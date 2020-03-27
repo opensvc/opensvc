@@ -2,7 +2,6 @@ import glob
 import os
 
 import drivers.check
-import rcEthtool
 
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
