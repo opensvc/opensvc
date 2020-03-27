@@ -6,7 +6,7 @@ import time
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache
+from utilities.cache import cache
 from utilities.proc import justcall, call, qcall, which
 
 label_to_dev_cache = {}

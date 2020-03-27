@@ -15,7 +15,7 @@ from . import \
 from utilities.converters import convert_size
 from utilities.lock import cmlock
 from rcGlobalEnv import rcEnv
-from rcUtilities import clear_cache
+from utilities.cache import clear_cache
 from core.objects.svcdict import KEYS
 
 KEYS.register_driver(

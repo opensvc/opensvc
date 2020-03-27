@@ -6,9 +6,9 @@ import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.cache import cache
 from utilities.proc import justcall, which
 
 DRIVER_GROUP = "disk"

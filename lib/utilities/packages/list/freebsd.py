@@ -1,5 +1,5 @@
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache
+from utilities.cache import cache
 from utilities.proc import justcall, which
 
 

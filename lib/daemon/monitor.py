@@ -1,32 +1,32 @@
 """
 Monitor Thread
 """
-import copy
-import os
-import sys
-import time
 import codecs
+import copy
 import glob
-import logging
 import hashlib
 import json
-import tempfile
-import shutil
+import logging
+import os
 import re
+import shutil
+import sys
+import tempfile
 import threading
-from subprocess import Popen, PIPE
+import time
 from itertools import chain
+from subprocess import PIPE, Popen
 
-import daemon.shared as shared
 import core.exceptions as ex
+import daemon.shared as shared
 import foreign.json_delta as json_delta
-from rcGlobalEnv import rcEnv
-from utilities.storage import Storage
-from rcUtilities import purge_cache, fsum, \
-                        svc_pathetc, svc_pathvar, makedirs, split_path, \
-                        list_services, svc_pathcf, fmt_path, \
-                        resolve_path, factory
 from core.freezer import Freezer
+from rcGlobalEnv import rcEnv
+from rcUtilities import (factory, fmt_path, fsum, list_services, makedirs,
+                         resolve_path, split_path, svc_pathcf, svc_pathetc,
+                         svc_pathvar)
+from utilities.cache import purge_cache
+from utilities.storage import Storage
 from utilities.string import bdecode
 
 STARTED_STATES = [
@@ -3684,4 +3684,3 @@ class Monitor(shared.OsvcThread):
             except Exception as exc:
                 return True
         return False
-
