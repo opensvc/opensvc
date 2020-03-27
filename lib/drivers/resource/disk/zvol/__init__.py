@@ -10,7 +10,7 @@ from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from utilities.lazy import lazy
-from rcZfs import dataset_exists, zpool_devs
+from utilities.subsystems.zfs import dataset_exists, zpool_devs
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
