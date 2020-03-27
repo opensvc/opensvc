@@ -7,7 +7,7 @@ from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from converters import convert_size
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 class Pool(BasePool):
     type = "shm"

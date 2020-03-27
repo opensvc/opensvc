@@ -8,7 +8,7 @@ from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import Arrays
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 LOCK_NAME = "symmetrix_create_disk"
 

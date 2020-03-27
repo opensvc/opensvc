@@ -6,7 +6,7 @@ import core.exceptions as ex
 from rcUtilities import lazy
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 class Pool(BasePool):
     type = "share"
