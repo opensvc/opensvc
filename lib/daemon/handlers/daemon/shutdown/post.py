@@ -1,10 +1,10 @@
 import time
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 from rcUtilities import split_path
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Shutdown the agent daemon and return only when done.
 

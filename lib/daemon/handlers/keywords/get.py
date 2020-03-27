@@ -1,9 +1,9 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcUtilities import factory
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the supported <kind> object keywords.
     """

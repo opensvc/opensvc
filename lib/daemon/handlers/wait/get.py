@@ -3,7 +3,7 @@ import re
 import time
 
 from six.moves import queue
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcUtilities import normalize_jsonpath
@@ -17,7 +17,7 @@ from utilities.string import bdecode, is_string
 OPERATORS = (">=", "<=", "=", ">", "<", "~", " in ")
 MAX_DURATION = 30
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Wait <duration> for <condition> to become true.
     The <duration> is capped to 30 seconds.

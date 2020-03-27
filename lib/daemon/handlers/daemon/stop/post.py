@@ -1,10 +1,10 @@
 import time
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 from rcUtilities import split_path
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Stop the agent daemon, leaving objects in their current state.
     If a thr_id is specified, stop only this daemon thread.

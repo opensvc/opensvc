@@ -1,7 +1,7 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the relay's list of clients, with their last update time, payload size, ip address and cluster id/name.
     """
