@@ -2,7 +2,7 @@ import sys
 
 from core.keywords import KeywordStore
 from rcGlobalEnv import rcEnv
-from rcUtilities import iter_drivers, mimport
+from rcUtilities import iter_drivers
 
 SECTIONS = [
     "DEFAULT",

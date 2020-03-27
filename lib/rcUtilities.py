@@ -278,49 +278,6 @@ def driver_import(*args, **kwargs):
         raise ImportError("no module found: %s" % kwargs["head"])
 
 
-def mimport(*args, **kwargs):
-    try:
-        return driver_import(*args, **kwargs)
-    except ImportError:
-        pass
-    def fmt_element(s):
-        if s is None:
-            return ""
-        if len(s) >= 1:
-            return s[0].upper() + s[1:].lower()
-        else:
-            return ""
-
-    def fmt_modname(args):
-        modname = ""
-        for i, e in enumerate(args):
-            if e in ("res", "prov", "check", "pool") and i == 0:
-                modname += e
-            else:
-                modname += fmt_element(e)
-        return modname
-
-    def import_mod(modname):
-        for mn in (modname + rcEnv.sysname, modname):
-            try:
-                return __import__(mn)
-            except ImportError:
-                pass
-
-    modname = fmt_modname(args)
-    mod = import_mod(modname)
-
-    if mod:
-        return mod
-    if not kwargs.get("head"):
-        kwargs["head"] = modname
-    if kwargs.get("fallback", True) and len(args) > 1:
-        args = args[:-1]
-        return mimport(*args, **kwargs)
-    else:
-        raise ImportError("no module found: %s" % kwargs["head"])
-
-
 def check_privs():
     if "OSVC_CONTEXT" in os.environ or "OSVC_CLUSTER" in os.environ:
         return
@@ -1214,4 +1171,4 @@ def iter_drivers(groups=None):
         for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
             if not ispkg:
                 continue
-            yield mimport("resource", group, modname)
+            yield driver_import("resource", group, modname)

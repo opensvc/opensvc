@@ -39,7 +39,7 @@ from rcScheduler import SchedOpts, Scheduler, sched_action
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor, fmt_path,
                          glob_services_config, init_locale, is_service, lazy,
-                         lazy_initialized, list_services, makedirs, mimport,
+                         lazy_initialized, list_services, makedirs, driver_import,
                          normalize_paths, purge_cache_expired, read_cf,
                          resolve_path, set_lazy, split_path, strip_path,
                          svc_pathetc, unset_all_lazy, unset_lazy,
@@ -2239,7 +2239,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         driver = driver.lower()
         try:
-            mod = mimport("array", driver)
+            mod = driver_import("array", driver)
         except ImportError as exc:
             raise ex.Error("array driver %s load error: %s" % (driver, str(exc)))
         return mod.main(self.options.extra_argv, node=self)
@@ -2397,10 +2397,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                                "in %s" % rcEnv.paths.nodeconf)
 
         auth_dict = self.section_kwargs(section, cloud_type)
-        mod_name = "rcCloud" + cloud_type[0].upper() + cloud_type[1:].lower()
 
         try:
-            mod = __import__(mod_name)
+            mod = driver_import("cloud", cloud_type.lower())
         except ImportError:
             raise ex.InitError("cloud type '%s' is not supported"%cloud_type)
 
@@ -5040,8 +5039,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 ptype = self.conf_get(section, "type")
             except ex.OptNotFound as exc:
                 ptype = exc.default
-        from rcUtilities import mimport
-        mod = mimport("pool", ptype)
+        mod = driver_import("pool", ptype)
         return mod.Pool(node=self, name=poolname, log=self.log)
 
     def pool_create_volume(self):
