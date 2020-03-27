@@ -1,6 +1,6 @@
 import sys
 from rcGlobalEnv import rcEnv
-from keywords import KeywordStore
+from core.keywords import KeywordStore
 
 # deprecated => supported
 DEPRECATED_KEYWORDS = {
