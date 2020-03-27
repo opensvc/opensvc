@@ -304,13 +304,11 @@ class TestNodemgr:
             assert isinstance(json.load(std_out), dict)
 
     @staticmethod
-    @pytest.mark.skip
-    def test_161_nodemgr_print_devs():
+    def test_nodemgr_print_devs():
         """
         Print node device tree
         """
-        ret = nodemgr.main(argv=["print", "devs"])
-        assert ret == 0
+        assert nodemgr.main(argv=["print", "devs"]) == 0
 
     @staticmethod
     def test_prkey_create_initial_value_when_absent(tmp_file, capture_stdout):
