@@ -19,7 +19,7 @@ from itertools import chain
 
 import daemon.shared as shared
 import core.exceptions as ex
-import json_delta
+import foreign.json_delta as json_delta
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import purge_cache, fsum, \
