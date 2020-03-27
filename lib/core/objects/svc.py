@@ -30,7 +30,7 @@ from rcUtilities import lazy, unset_lazy, \
 from core.contexts import want_context
 from utilities.converters import *
 import core.exceptions as ex
-import rcLogger
+import core.logger
 from core.node import Node
 from core.scheduler import Scheduler, SchedOpts, sched_action
 from core.comm import Crypt
@@ -644,7 +644,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         else:
             handlers = None
         log_file = os.path.join(self.log_d, self.name+".log")
-        return rcLogger.initLogger(self.loggerpath, log_file, handlers=handlers)
+        return core.logger.initLogger(self.loggerpath, log_file, handlers=handlers)
 
     @lazy
     def compliance(self):
