@@ -48,7 +48,7 @@ from utilities.storage import Storage
 from core.comm import Headers
 from rcUtilities import drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
-                        makedirs, mimport, set_lazy, lazy, split_fullname, \
+                        makedirs, driver_import, set_lazy, lazy, split_fullname, \
                         unset_lazy
 from utilities.converters import convert_size, print_duration
 from utilities.string import bencode, bdecode
@@ -108,7 +108,7 @@ class Listener(shared.OsvcThread):
 
     @lazy
     def certfs(self):
-        mod = mimport("res", "fs")
+        mod = driver_import("resource", "fs")
         res = mod.Fs(rid="fs#certs", mount_point=rcEnv.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
         set_lazy(res, "log",  self.log)
         return res
