@@ -27,7 +27,7 @@ import core.exceptions as ex
 import rcLogger
 import core.objects.builder
 import xmlrpcClient
-from comm import Crypt
+from core.comm import Crypt
 from contexts import want_context
 from converters import *
 from core.extconfig import ExtConfigMixin
