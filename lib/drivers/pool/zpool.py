@@ -5,7 +5,7 @@ import os
 import core.exceptions as ex
 from rcUtilities import lazy
 from utilities.proc import justcall
-from .pool import BasePool
+from core.pool import BasePool
 
 class Pool(BasePool):
     type = "zpool"
