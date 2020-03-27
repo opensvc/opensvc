@@ -15,12 +15,13 @@ from utilities.proc import which
 
 POSIX = os.name == "posix"
 
-class SysReport(object):
+
+class BaseSysReport(object):
     def __init__(self, node=None, collect_d=None, compress=False):
         self.todo = [
-          ("INC", os.path.join(rcEnv.paths.pathetc, "*.conf")),
-          ("INC", os.path.join(rcEnv.paths.pathetc, "namespaces", "*", "*", "*.conf")),
-          ("INC", os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")),
+            ("INC", os.path.join(rcEnv.paths.pathetc, "*.conf")),
+            ("INC", os.path.join(rcEnv.paths.pathetc, "namespaces", "*", "*", "*.conf")),
+            ("INC", os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")),
         ]
 
         self.changed = []
@@ -69,20 +70,20 @@ class SysReport(object):
 
     def init_collect_d(self, fpath):
         if not os.path.exists(fpath):
-            #print("create dir", fpath)
+            # print("create dir", fpath)
             os.makedirs(fpath)
 
     def init_collect_d_perms(self, fpath):
         s = os.stat(fpath)
         mode = s[ST_MODE]
         if mode != 16768:
-            #print("set dir", fpath, "mode to 0600")
+            # print("set dir", fpath, "mode to 0600")
             os.chmod(fpath, 0o0600)
 
     def init_collect_d_ownership(self, fpath):
         s = os.stat(fpath)
         if s.st_uid != self.root_uid or s.st_gid != self.root_gid:
-            #print("set dir", self.collect_d, "ownership to", self.root_uid, self.root_gid)
+            # print("set dir", self.collect_d, "ownership to", self.root_uid, self.root_gid)
             os.chown(self.collect_d, self.root_uid, self.root_gid)
 
     def load_stat(self):
@@ -187,7 +188,7 @@ class SysReport(object):
         dst_files = self.find_files(self.collect_file_d)
         dst_files = self.rel_paths(self.collect_file_d, dst_files, posix=False)
         files = self.rel_paths("", self.files, posix=False)
-        self.deleted = set(dst_files) - set(files) - set([os.sep+"stat"])
+        self.deleted = set(dst_files) - set(files) - set([os.sep + "stat"])
 
         # order file lists
         self.files = sorted(list(self.files))
@@ -196,7 +197,7 @@ class SysReport(object):
         # purge stat info of deleted files
         for fpath in self.deleted:
             if fpath in self.stat:
-                del(self.stat[fpath])
+                del (self.stat[fpath])
                 self.stat_changed = True
                 if self.collect_stat not in self.changed:
                     self.changed.append(self.collect_stat)
@@ -206,24 +207,24 @@ class SysReport(object):
 
     def cmdlist2fname(self, l):
         fname = '(space)'.join(l)
-        fname = fname.replace('|','(pipe)')
-        fname = fname.replace('&','(amp)')
-        fname = fname.replace('$','(dollar)')
-        fname = fname.replace('^','(caret)')
-        fname = fname.replace('/','(slash)')
-        fname = fname.replace(':','(colon)')
-        fname = fname.replace(';','(semicolon)')
-        fname = fname.replace('<','(lt)')
-        fname = fname.replace('>','(gt)')
-        fname = fname.replace('=','(eq)')
-        fname = fname.replace('?','(question)')
-        fname = fname.replace('@','(at)')
-        fname = fname.replace('!','(excl)')
-        fname = fname.replace('#','(num)')
-        fname = fname.replace('%','(pct)')
-        fname = fname.replace('"','(dquote)')
-        fname = fname.replace("'",'(squote)')
-        fname = fname.replace("\\",'(bslash)')
+        fname = fname.replace('|', '(pipe)')
+        fname = fname.replace('&', '(amp)')
+        fname = fname.replace('$', '(dollar)')
+        fname = fname.replace('^', '(caret)')
+        fname = fname.replace('/', '(slash)')
+        fname = fname.replace(':', '(colon)')
+        fname = fname.replace(';', '(semicolon)')
+        fname = fname.replace('<', '(lt)')
+        fname = fname.replace('>', '(gt)')
+        fname = fname.replace('=', '(eq)')
+        fname = fname.replace('?', '(question)')
+        fname = fname.replace('@', '(at)')
+        fname = fname.replace('!', '(excl)')
+        fname = fname.replace('#', '(num)')
+        fname = fname.replace('%', '(pct)')
+        fname = fname.replace('"', '(dquote)')
+        fname = fname.replace("'", '(squote)')
+        fname = fname.replace("\\", '(bslash)')
         return fname
 
     def write(self, fpath, buff):
@@ -274,15 +275,15 @@ class SysReport(object):
     def get_stat(self, fpath):
         st = os.stat(fpath)
         stat = {
-          "fpath": fpath,
-          "realpath": os.path.realpath(fpath),
-          "mode": oct(st[ST_MODE]),
-          "uid": st[ST_UID],
-          "gid": st[ST_GID],
-          "dev": st[ST_DEV],
-          "nlink": st[ST_NLINK],
-          "mtime": st[ST_MTIME],
-          "ctime": st[ST_CTIME],
+            "fpath": fpath,
+            "realpath": os.path.realpath(fpath),
+            "mode": oct(st[ST_MODE]),
+            "uid": st[ST_UID],
+            "gid": st[ST_GID],
+            "dev": st[ST_DEV],
+            "nlink": st[ST_NLINK],
+            "mtime": st[ST_MTIME],
+            "ctime": st[ST_CTIME],
         }
         return stat
 
@@ -298,7 +299,7 @@ class SysReport(object):
                 self.changed.append(self.collect_stat)
             if self.collect_stat not in self.full:
                 self.full.append(self.collect_stat)
-            #print("  add %s stat info"%fpath)
+            # print("  add %s stat info"%fpath)
             return
         for p in ("realpath", "mode", "uid", "gid", "dev", "nlink", "mtime", "ctime"):
             if stat[p] != cached_stat[p]:
@@ -308,7 +309,7 @@ class SysReport(object):
                     self.changed.append(self.collect_stat)
                 if self.collect_stat not in self.full:
                     self.full.append(self.collect_stat)
-                #print("  change %s stat info"%fpath)
+                # print("  change %s stat info"%fpath)
                 return
 
     def dst_d(self, base_d, fpath):
@@ -387,11 +388,11 @@ class SysReport(object):
             self.collect_file(fpath)
         for cmd in self.cmds:
             self.collect_cmd(cmd)
- 
+
     def deleted_report(self):
         print("files deleted:")
         for fpath in sorted(self.deleted):
-            print("  "+fpath)
+            print("  " + fpath)
 
     def collected(self):
         return self.rel_paths(self.collect_d, self.full)
@@ -411,7 +412,7 @@ class SysReport(object):
                 raise ex.Error("can not get lstree from collector")
             lstree_data = self.rel_paths("", lstree_data, posix=True)
             collected = self.rel_paths("", self.collected(), posix=True)
-            self.deleted = sorted(list(set(lstree_data) - set(os.sep+"stat") - set(collected)))
+            self.deleted = sorted(list(set(lstree_data) - set(os.sep + "stat") - set(collected)))
         else:
             to_send = self.changed
             self.changed_report()
@@ -463,4 +464,3 @@ class SysReport(object):
             print("changed files:")
             for fpath in self.changed:
                 print(" ", fpath)
-
