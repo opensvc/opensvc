@@ -19,7 +19,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS

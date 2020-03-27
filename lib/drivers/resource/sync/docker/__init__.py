@@ -5,7 +5,7 @@ import core.exceptions as ex
 import rcContainer
 
 from .. import Sync, notify
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS

@@ -5,7 +5,7 @@ import core.exceptions as ex
 
 from .. import BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.render.color import format_str_flat_json

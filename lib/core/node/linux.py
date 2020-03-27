@@ -3,7 +3,7 @@ import time
 from itertools import islice
 
 import utilities.os.linux
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.proc import justcall
 
 from .node import Node as BaseNode

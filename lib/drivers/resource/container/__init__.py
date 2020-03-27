@@ -3,7 +3,7 @@ import core.exceptions as ex
 import utilities.ping
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.resource import Resource
 from utilities.proc import justcall
 from utilities.net.getaddr import getaddr

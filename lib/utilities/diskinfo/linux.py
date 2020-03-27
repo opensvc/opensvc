@@ -14,7 +14,7 @@ import utilities.devices.linux
 from .diskinfo import BaseDiskInfo
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.proc import justcall, which
 
 class DiskInfo(BaseDiskInfo):

@@ -8,7 +8,7 @@ import stat
 import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which

@@ -7,7 +7,7 @@ import core.exceptions as ex
 import core.status
 from .. import Sync, notify
 from utilities.converters import print_duration
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall

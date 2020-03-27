@@ -9,7 +9,8 @@ from . import \
     adder as base_raw_adder, \
     BASE_RAW_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, lazy
+from rcUtilities import cache
+from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 

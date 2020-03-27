@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 
 import core.exceptions as ex
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from utilities.converters import convert_size
 from utilities.proc import justcall

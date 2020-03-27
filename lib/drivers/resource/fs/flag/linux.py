@@ -1,7 +1,7 @@
 import os
 
 from . import BaseFsFlag
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 

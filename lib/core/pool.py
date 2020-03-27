@@ -3,7 +3,8 @@ from __future__ import print_function
 import os
 
 import core.exceptions as ex
-from rcUtilities import lazy, factory
+from rcUtilities import factory
+from utilities.lazy import lazy
 from utilities.converters import convert_size
 
 class BasePool(object):

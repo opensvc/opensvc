@@ -9,7 +9,7 @@ import rcZone
 import utilities.lock
 import utilities.os.sunos
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcZfs import zfs_setprop, Dataset
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs

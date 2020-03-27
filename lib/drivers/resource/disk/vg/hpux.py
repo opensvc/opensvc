@@ -10,7 +10,7 @@ import utilities.lock
 
 from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

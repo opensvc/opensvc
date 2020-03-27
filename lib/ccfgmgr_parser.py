@@ -2,9 +2,8 @@
 ccfgmgr command line actions and options
 """
 import mgr_parser as mp
-from rcOptParser import OptParser
-from optparse import Option
 from core.objects.svc import ACTION_ASYNC
+from utilities.optparser import OptParser, Option
 
 PROG = "ccfgmgr"
 

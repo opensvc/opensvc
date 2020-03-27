@@ -178,62 +178,6 @@ def unset_fcache(self, attr):
         delattr(self, attr_name)
 
 
-#############################################################################
-#
-# Lazy properties
-#
-#############################################################################
-def lazy(fn):
-    """
-    A decorator for on-demand initialization of a property
-    """
-    attr_name = '_lazy_' + fn.__name__
-
-    @property
-    def _lazyprop(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, fn(self))
-        return getattr(self, attr_name)
-
-    return _lazyprop
-
-
-def lazy_initialized(self, attr):
-    """
-    Return True if the lazy property has been initialized
-    """
-    attr_name = '_lazy_' + attr
-    if hasattr(self, attr_name):
-        return True
-    return False
-
-
-def set_lazy(self, attr, value):
-    """
-    Set a <value> as the <self> object lazy property hidden property value
-    """
-    attr_name = '_lazy_' + attr
-    setattr(self, attr_name, value)
-
-
-def unset_all_lazy(self):
-    """
-    Unset all lazy property hidden property, iow flush the cache
-    """
-    for attr in [attr for attr in self.__dict__]:
-        if attr.startswith("_lazy_"):
-            delattr(self, attr)
-
-
-def unset_lazy(self, attr):
-    """
-    Unset <attr> lazy property hidden property, iow flush the cache
-    """
-    attr_name = '_lazy_' + attr
-    if hasattr(self, attr_name):
-        delattr(self, attr_name)
-
-
 def driver_import(*args, **kwargs):
     def fmt_element(s):
         if s is None:
@@ -736,12 +680,6 @@ def init_locale():
     os.environ["LANG"] = "C"
     os.environ["LC_NUMERIC"] = "C"
     os.environ["LC_TIME"] = "C"
-
-
-def wipe_rest_markup(payload):
-    payload = re.sub(r':(cmd|kw|opt|c-.*?):`(.*?)`', lambda pat: "'" + pat.group(2) + "'", payload, re.MULTILINE)
-    payload = re.sub(r'``(.*?)``', lambda pat: "'" + pat.group(1) + "'", payload, re.MULTILINE)
-    return payload
 
 
 #############################################################################

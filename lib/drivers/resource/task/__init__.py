@@ -4,7 +4,7 @@ import core.status
 import core.exceptions as ex
 import utilities.lock
 from core.scheduler import SchedOpts
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.resource import Resource
 from six.moves import input
 from utilities.proc import lcall

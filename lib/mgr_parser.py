@@ -1,5 +1,4 @@
-from optparse import Option
-
+from utilities.optparser import Option
 from utilities.storage import Storage
 
 OPT = Storage({

@@ -20,7 +20,8 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV, \
     BaseContainer
-from rcUtilities import unset_lazy, lazy, drop_option, has_option, get_option, get_options
+from rcUtilities import drop_option, has_option, get_option, get_options
+from utilities.lazy import unset_lazy, lazy
 from core.resource import Resource
 from utilities.converters import print_duration
 from core.objects.builder import init_kwargs, container_kwargs

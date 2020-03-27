@@ -11,7 +11,7 @@ import utilities.lock
 import core.status
 import six
 
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.converters import convert_boolean
 from rcGlobalEnv import rcEnv
 from core.resource import Resource

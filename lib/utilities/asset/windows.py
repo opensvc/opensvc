@@ -13,7 +13,7 @@ except ImportError:
 from .asset import BaseAsset
 
 from utilities.converters import convert_size
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.diskinfo import DiskInfo
 from utilities.storage import Storage
 from utilities.proc import justcall, which

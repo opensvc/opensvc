@@ -10,7 +10,8 @@ import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import cache, lazy
+from rcUtilities import cache
+from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
