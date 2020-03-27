@@ -22,7 +22,7 @@ from jsonpath_ng.ext import parse
 from rcUtilities import lazy, unset_lazy, factory, split_path, normalize_paths
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from freezer import Freezer
+from core.freezer import Freezer
 from comm import Crypt
 from .events import EVENTS
 
