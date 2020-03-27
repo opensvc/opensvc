@@ -4,7 +4,7 @@ import os
 
 import core.exceptions as ex
 from rcUtilities import lazy, factory
-from converters import convert_size
+from utilities.converters import convert_size
 
 class BasePool(object):
     type = None

@@ -6,7 +6,7 @@ import core.status
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
-from converters import convert_size
+from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, fcache
 from core.objects.builder import init_kwargs

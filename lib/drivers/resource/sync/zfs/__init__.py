@@ -9,7 +9,7 @@ from .. import Sync, notify
 from rcGlobalEnv import rcEnv
 from rcZfs import a2pool_dataset, Dataset
 from rcUtilities import lazy
-from converters import print_duration
+from utilities.converters import print_duration
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall

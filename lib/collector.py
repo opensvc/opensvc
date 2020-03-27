@@ -8,7 +8,7 @@ import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from utilities.proc import justcall
-from converters import convert_duration
+from utilities.converters import convert_duration
 from subprocess import *
 
 class Collector(object):

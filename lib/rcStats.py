@@ -2,7 +2,7 @@ import os
 import datetime
 
 from rcGlobalEnv import rcEnv
-from converters import convert_datetime
+from utilities.converters import convert_datetime
 
 class StatsProvider(object):
     one_minute = datetime.timedelta(minutes=1)
