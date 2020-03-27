@@ -2,7 +2,7 @@ import datetime
 import os
 
 import core.status
-import rcBtrfs
+import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
@@ -115,8 +115,8 @@ class SyncBtrfssnap(Sync):
         if label in self.btrfs:
             return self.btrfs[label]
         try:
-            self.btrfs[label] = rcBtrfs.Btrfs(label=label, resource=self)
-        except rcBtrfs.ExecError as e:
+            self.btrfs[label] = utilities.subsystems.btrfs.Btrfs(label=label, resource=self)
+        except utilities.subsystems.btrfs.ExecError as e:
             raise ex.Error(str(e))
         return self.btrfs[label]
 
@@ -132,9 +132,9 @@ class SyncBtrfssnap(Sync):
         snap += datetime.datetime.now().strftime(suffix)
         try:
             btrfs.snapshot(orig, snap, readonly=True, recursive=False)
-        except rcBtrfs.ExistError:
+        except utilities.subsystems.btrfs.ExistError:
             raise ex.Error('%s should not exist'%snap)
-        except rcBtrfs.ExecError:
+        except utilities.subsystems.btrfs.ExecError:
             raise ex.Error
 
     def remove_snap(self, label, subvol):
@@ -164,7 +164,7 @@ class SyncBtrfssnap(Sync):
         for path in sorted_snaps[self.keep:]:
             try:
                 btrfs.subvol_delete(os.path.join(btrfs.rootdir, path), recursive=False)
-            except rcBtrfs.ExecError:
+            except utilities.subsystems.btrfs.ExecError:
                 raise ex.Error
 
     def _status_one(self, label, subvol):
