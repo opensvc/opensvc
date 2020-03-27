@@ -5,7 +5,7 @@ import utilities.devtree.veritas
 import utilities.devices.sunos
 from utilities.proc import justcall
 from rcGlobalEnv import rcEnv
-from rcZone import is_zone
+from utilities.subsystems.zone import is_zone
 from .diskinfo import BaseDiskInfo
 
 class DiskInfo(BaseDiskInfo):

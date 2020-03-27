@@ -2,13 +2,13 @@ import datetime
 
 import core.exceptions as ex
 import core.status
-import rcZfs
 
 from .. import Sync, notify
 from rcUtilities import cache, clear_cache
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.subsystems.zfs import Dataset
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "zfssnap"
@@ -107,7 +107,7 @@ class SyncZfssnap(Sync):
         pass
 
     def create_snap(self, dataset):
-        ds = rcZfs.Dataset(dataset, log=self.log)
+        ds = Dataset(dataset, log=self.log)
         snap = ""
         if self.name:
             suffix = self.name
@@ -150,7 +150,7 @@ class SyncZfssnap(Sync):
             sorted_snaps.append(snaps[ds])
         for path in sorted_snaps[self.keep:]:
             try:
-                ds = rcZfs.Dataset(path, log=self.log)
+                ds = Dataset(path, log=self.log)
                 if self.recursive:
                     options = ["-r"]
                 else:
@@ -187,7 +187,7 @@ class SyncZfssnap(Sync):
         if not self.has_pool(dataset):
             return
         try:
-            ds = rcZfs.Dataset(dataset, log=self.log)
+            ds = Dataset(dataset, log=self.log)
         except Exception as e:
             self.status_log("%s %s" % (dataset, str(e)))
             return
