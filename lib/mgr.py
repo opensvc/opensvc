@@ -16,7 +16,7 @@ import utilities.render.color
 import core.exceptions as ex
 from rcUtilities import check_privs, split_path, get_option, validate_kind
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from core.node import Node
 
 

@@ -1,7 +1,7 @@
 """
 nodemgr command line actions and options
 """
-from storage import Storage
+from utilities.storage import Storage
 from rcOptParser import OptParser
 from optparse import Option
 from core.node.node import ACTION_ASYNC

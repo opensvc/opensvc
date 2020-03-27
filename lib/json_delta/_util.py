@@ -32,7 +32,7 @@ try:
 except ImportError:
     zip = zip
 
-from rcGlobalEnv import Storage
+from utilities.storage import Storage
 
 try:
     Basestring = basestring
