@@ -38,7 +38,7 @@ import pyaes
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import lazy
-from contexts import get_context, want_context
+from core.contexts import get_context, want_context
 from utilities.string import bdecode
 import core.exceptions as ex
 
