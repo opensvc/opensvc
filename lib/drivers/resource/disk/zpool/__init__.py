@@ -6,7 +6,7 @@ import time
 import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
-from lock import cmlock
+from utilities.lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy, cache, clear_cache, drop_option
 from rcZfs import zpool_devs, zpool_getprop, zpool_setprop

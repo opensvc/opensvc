@@ -13,7 +13,7 @@ from . import \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
 from converters import convert_size
-from lock import cmlock
+from utilities.lock import cmlock
 from rcGlobalEnv import rcEnv
 from rcUtilities import clear_cache
 from core.objects.svcdict import KEYS
