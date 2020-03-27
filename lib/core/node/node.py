@@ -1169,12 +1169,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def asset(self):
-        try:
-            m = __import__('rcAsset'+rcEnv.sysname)
-        except ImportError:
-            raise ex.Error("pushasset methods not implemented on %s"
-                              "" % rcEnv.sysname)
-        return m.Asset(self)
+        from utilities.asset import Asset
+        return Asset(self)
 
     def pushpkg(self):
         """

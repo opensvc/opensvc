@@ -2,15 +2,15 @@ import datetime
 import os
 from subprocess import Popen, PIPE
 
-import rcAsset
+from .asset import BaseAsset
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
 os.environ['PATH'] += ":/opt/ignite/bin:/opt/propplus/bin"
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node):
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
 
         out, err, ret = justcall(['print_manifest'])
         if ret != 0:
