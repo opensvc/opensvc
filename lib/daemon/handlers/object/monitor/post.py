@@ -3,7 +3,7 @@ import time
 import daemon.handlers.handler as handler
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import Storage
+from utilities.storage import Storage
 from rcUtilities import split_path, fmt_path, is_service
 
 class Handler(handler.Handler):

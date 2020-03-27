@@ -7,7 +7,7 @@ from optparse import Option
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser
