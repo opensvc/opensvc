@@ -278,7 +278,7 @@ class BaseFs(Resource):
         if self.fs_type in pseudofs + self.netfs:
             return set()
         if self.fs_type == "zfs":
-            from rcZfs import zpool_devs
+            from utilities.subsystems.zfs import zpool_devs
             return set(zpool_devs(self.device.split("/")[0], self.svc.node))
         for res in self.svc.get_resources():
             if hasattr(res, "is_child_dev") and res.is_child_dev(self.device):

@@ -1,7 +1,7 @@
 import core.exceptions as ex
 import utilities.snap
 from rcGlobalEnv import rcEnv
-from rcZfs import dataset_exists
+from utilities.subsystems.zfs import dataset_exists
 from utilities.proc import justcall
 
 class Snap(utilities.snap.Snap):

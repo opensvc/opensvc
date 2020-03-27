@@ -9,7 +9,7 @@ import utilities.devices.linux
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount, getmount, cache
 from utilities.lazy import lazy
-from rcZfs import zfs_getprop, zfs_setprop
+from utilities.subsystems.zfs import zfs_getprop, zfs_setprop, zpool_devs
 from utilities.mounts.linux import Mounts
 from . import BaseFs, adder as base_adder
 from utilities.proc import justcall, qcall
@@ -372,7 +372,6 @@ class Fs(BaseFs):
             from rcBtrfs import btrfs_devs
             return set(btrfs_devs(self.mount_point))
         if self.fs_type == "zfs":
-            from rcZfs import zpool_devs
             try:
                 return set(zpool_devs(self.device.split("/")[0], self.svc.node))
             except Exception:

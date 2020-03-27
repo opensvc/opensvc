@@ -5,12 +5,12 @@ from datetime import datetime
 
 import core.status
 import core.exceptions as ex
-import rcZone
+import utilities.subsystems.zone
 import utilities.lock
 import utilities.os.sunos
 from rcGlobalEnv import rcEnv
 from utilities.lazy import lazy
-from rcZfs import zfs_setprop, Dataset
+from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
@@ -950,7 +950,7 @@ class ContainerZone(BaseContainer):
                 self.create_zonepath()
                 self.zoneadm("attach", ["-F"])
             elif self.snapof is not None and self.brand == 'ipkg':
-                zones = rcZone.Zones()
+                zones = utilities.subsystems.zone.Zones()
                 src_dataset = Dataset(self.snapof)
                 zonepath = src_dataset.getprop('mountpoint')
                 self.container_origin = zones.zonename_from_zonepath(zonepath).zonename

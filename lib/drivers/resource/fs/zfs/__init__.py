@@ -4,7 +4,7 @@ import core.exceptions as ex
 
 from utilities.converters import convert_size
 from rcGlobalEnv import rcEnv
-from rcZfs import Dataset
+from utilities.subsystems.zfs import Dataset
 from utilities.proc import which
 
 class FsZfsMixin():

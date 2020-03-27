@@ -7,7 +7,7 @@ import core.exceptions as ex
 import core.status
 from .. import Sync, notify
 from rcGlobalEnv import rcEnv
-from rcZfs import a2pool_dataset, Dataset
+from utilities.subsystems.zfs import a2pool_dataset, Dataset
 from utilities.lazy import lazy
 from utilities.converters import print_duration
 from core.objects.builder import sync_kwargs
