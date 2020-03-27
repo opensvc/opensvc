@@ -3,13 +3,13 @@ import re
 import time
 
 from six.moves import queue
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Wait for the current data generation number to reach all live nodes.
     """

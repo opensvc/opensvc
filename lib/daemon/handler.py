@@ -2,7 +2,7 @@ import utilities.converters
 import core.exceptions as ex
 from utilities.storage import Storage
 
-class Handler(object):
+class BaseHandler(object):
     """
     Base handler class. Defines some defaults.
     """

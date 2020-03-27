@@ -1,6 +1,6 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the object list expanded from the <selector> expression.
     """

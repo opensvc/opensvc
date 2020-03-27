@@ -1,7 +1,7 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Clear the object monitor status. For example, a "start failed".
     Transient status are not clearable (those ending with 'ing', like starting).

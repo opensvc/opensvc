@@ -1,11 +1,11 @@
 import traceback
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcUtilities import split_path
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Add or update the value of a usr, cfg or sec object key.
     """

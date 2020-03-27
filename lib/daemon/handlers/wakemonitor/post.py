@@ -1,8 +1,8 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 from rcUtilities import split_path
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Wake the monitor thread loop as soon as possible.
     Used by the CRM commands to signal an instance status change is ready to be processed by the daemon.

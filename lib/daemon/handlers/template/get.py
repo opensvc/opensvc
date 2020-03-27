@@ -1,8 +1,8 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the <template> data from the trusted <catalog>.
     """

@@ -1,7 +1,7 @@
 import time
 
 from six.moves import queue
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
@@ -11,7 +11,7 @@ try:
 except Exception:
     HTTPHeaderMap = dict
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Subscribe to the daemon events stream.
     """
