@@ -1,9 +1,9 @@
 import re
 
-import rcDiskInfo
 from utilities.proc import call, justcall
+from .diskinfo import BaseDiskInfo
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
 
     def __init__(self):
         self.h = {}

@@ -3,7 +3,7 @@ import re
 
 from .devtree import DevTree as BaseDevTree
 from rcGlobalEnv import rcEnv
-from rcDiskInfoOSF1 import diskInfo
+from utilities.diskinfo import DiskInfo
 from utilities.proc import justcall, which
 
 regex = re.compile('\W*[a-h]:')
@@ -78,7 +78,7 @@ drivedata: 0
             self.get_parts(devname, d)
 
     def load(self, di=None):
-        self.di = diskInfo()
+        self.di = DiskInfo()
         self.get_disks()
 
     def blacklist(self, devname):
