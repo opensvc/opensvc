@@ -1,12 +1,10 @@
 import os
-import rcSysReport
 
+from core.sysreport.sysreport import BaseSysReport
 from utilities.proc import which
 
-class SysReport(rcSysReport.SysReport):
-    def __init__(self, node=None, **kwargs):
-        rcSysReport.SysReport.__init__(self, node=node, **kwargs)
 
+class SysReport(BaseSysReport):
     @staticmethod
     def mangle_drive(fpath):
         try:
@@ -20,13 +18,14 @@ class SysReport(rcSysReport.SysReport):
     def mangle_sep(fpath):
         def mangle(_fp):
             return _fp.replace("\\", "/")
+
         if isinstance(fpath, list):
             return [mangle(_fp) for _fp in fpath]
         return mangle(fpath)
 
     def rel_paths(self, base, fpaths, posix=True):
         if base:
-            n = len(base)+1
+            n = len(base) + 1
         else:
             n = 0
         if posix:
@@ -47,9 +46,9 @@ class SysReport(rcSysReport.SysReport):
 
     def get_exe(self, fpath):
         for suffix in ("", ".exe", ".bat", ".cmd", ".lnk"):
-             candidate = fpath + suffix
-             if not os.path.exists(candidate):
-                 continue
-             if which(candidate):
-                 return candidate
+            candidate = fpath + suffix
+            if not os.path.exists(candidate):
+                continue
+            if which(candidate):
+                return candidate
         raise ValueError("not found or not executable (%s)" % fpath)

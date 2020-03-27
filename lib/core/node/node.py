@@ -1723,7 +1723,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     @lazy
     def sysreport_mod(self):
         try:
-            return __import__('rcSysReport'+rcEnv.sysname)
+            import core.sysreport
+            return core.sysreport
         except ImportError:
             print("sysreport is not supported on this os")
             return
