@@ -9,7 +9,7 @@ import time
 
 import core.status
 import ipaddress
-import lock
+import utilities.lock
 import core.exceptions as ex
 import utilities.ifconfig
 
@@ -518,14 +518,14 @@ class Ip(Resource):
         self.log.debug("acquire startip lock %s", details)
 
         try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
-        except lock.LockTimeout as exc:
+            lockfd = utilities.lock.lock(timeout=timeout, delay=delay, lockfile=lockfile, intent="startip")
+        except utilities.lock.LockTimeout as exc:
             raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             raise ex.Error("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
+        except utilities.lock.LockAcquire as exc:
             raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
             raise ex.Error("interrupted by signal %s" % details)
@@ -540,7 +540,7 @@ class Ip(Resource):
         """
         Release the startip lock.
         """
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
 
     @staticmethod
     def get_ifconfig():

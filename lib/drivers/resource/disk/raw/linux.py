@@ -1,6 +1,7 @@
 import os
 
 import core.exceptions as ex
+import utilities.lock
 import utilities.devices
 
 from . import \
@@ -152,21 +153,20 @@ class DiskRaw(BaseDiskRaw):
         return None
 
     def lock(self, timeout=30, delay=1):
-        import lock
         lockfile = os.path.join(rcEnv.paths.pathlock, 'startvgraw')
         lockfd = None
         try:
-            lockfd = lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
-        except lock.LockTimeout:
+            lockfd = utilities.lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)
+        except utilities.lock.LockTimeout:
             self.log.error("timed out waiting for lock")
             raise ex.Error
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             self.log.error("lock_nowait: set the 'lockfile' param")
             raise ex.Error
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             self.log.error("can not create lock file %s"%lockfile)
             raise ex.Error
-        except lock.LockAcquire as e:
+        except utilities.lock.LockAcquire as e:
             self.log.warning("another action is currently running (pid=%s)"%e.pid)
             raise ex.Error
         except ex.Signal:
@@ -178,8 +178,7 @@ class DiskRaw(BaseDiskRaw):
         self.lockfd = lockfd
 
     def unlock(self):
-        import lock
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
 
     def has_it_char_devices(self):
         r = True

@@ -11,7 +11,7 @@ import sys
 import time
 
 import core.status
-import lock
+import utilities.lock
 import core.exceptions as ex
 import utilities.devices
 import utilities.render.color
@@ -1278,7 +1278,7 @@ class Resource(object):
             promote_dev_rw(dev, log=self.log)
 
     def progress(self):
-        lock.progress(self.svc.lockfd, {"rid": self.rid})
+        utilities.lock.progress(self.svc.lockfd, {"rid": self.rid})
 
     def unset_lazy(self, prop):
         """
@@ -1304,19 +1304,19 @@ class Resource(object):
         self.log.debug("acquire resource lock %s", details)
 
         try:
-            lockfd = lock.lock(
+            lockfd = utilities.lock.lock(
                 timeout=timeout,
                 delay=delay,
                 lockfile=lockfile,
                 intent=action
             )
-        except lock.LockTimeout as exc:
+        except utilities.lock.LockTimeout as exc:
             raise ex.Error("timed out waiting for lock %s: %s" % (details, str(exc)))
-        except lock.LockNoLockFile:
+        except utilities.lock.LockNoLockFile:
             raise ex.Error("lock_nowait: set the 'lockfile' param %s" % details)
-        except lock.LockCreateError:
+        except utilities.lock.LockCreateError:
             raise ex.Error("can not create lock file %s" % details)
-        except lock.LockAcquire as exc:
+        except utilities.lock.LockAcquire as exc:
             raise ex.Error("another action is currently running %s: %s" % (details, str(exc)))
         except ex.Signal:
             raise ex.Error("interrupted by signal %s" % details)
@@ -1331,7 +1331,7 @@ class Resource(object):
         """
         Release the service action lock.
         """
-        lock.unlock(self.lockfd)
+        utilities.lock.unlock(self.lockfd)
         self.lockfd = None
 
     def section_kwargs(self):

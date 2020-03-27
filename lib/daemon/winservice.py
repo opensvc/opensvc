@@ -29,7 +29,7 @@ import os
 import sys
 
 from daemon.main import Daemon
-from lock import lock, unlock
+from utilities.lock import lock, unlock
 from rcGlobalEnv import rcEnv
 
 
