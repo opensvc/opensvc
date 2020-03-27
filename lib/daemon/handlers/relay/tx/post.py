@@ -1,9 +1,9 @@
 import time
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Store a relay heartbeat payload emitted by <nodename>.
     """

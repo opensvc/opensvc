@@ -1,6 +1,6 @@
 import os
 
-import daemon.handlers.handler as handler
+import daemon.handler
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
 
@@ -9,7 +9,7 @@ try:
 except Exception:
     HTTPHeaderMap = dict
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Feed node logs.
     """

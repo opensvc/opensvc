@@ -2,8 +2,8 @@ import json
 import os
 from subprocess import Popen, PIPE
 
-import daemon.handlers.handler as handler
-import daemon.handlers.rbac
+import daemon.handler
+import daemon.rbac
 import daemon.shared as shared
 import core.exceptions as ex
 from rcUtilities import drop_option, split_path
@@ -62,7 +62,7 @@ ADMIN_ACTIONS = (
     "unset",
 )
 
-class Handler(handler.Handler, daemon.handlers.rbac.ObjectCreateMixin):
+class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
     """
     Execute an object instance action.
     """

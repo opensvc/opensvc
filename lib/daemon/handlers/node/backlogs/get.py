@@ -1,9 +1,9 @@
 import os
 
-import daemon.handlers.handler as handler
+import daemon.handler
 from rcGlobalEnv import rcEnv
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the object logs back to <backlog> bytes.
     """
