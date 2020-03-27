@@ -1964,11 +1964,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def devtree(self):
-        try:
-            mod = __import__("rcDevTree"+rcEnv.sysname)
-        except ImportError:
-            return
-        tree = mod.DevTree()
+        from utilities.devtree import DevTree
+        tree = DevTree()
         tree.load()
         return tree
 

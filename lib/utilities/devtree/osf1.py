@@ -1,14 +1,14 @@
 import os
 import re
 
-import rcDevTree
+from .devtree import DevTree as BaseDevTree
 from rcGlobalEnv import rcEnv
 from rcDiskInfoOSF1 import diskInfo
 from utilities.proc import justcall, which
 
 regex = re.compile('\W*[a-h]:')
 
-class DevTree(rcDevTree.DevTree):
+class DevTree(BaseDevTree):
     def get_parts(self, devname, d):
         if d is None:
             return

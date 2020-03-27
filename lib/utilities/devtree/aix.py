@@ -1,12 +1,13 @@
-import rcDevTree
-import rcLvmAIX
 import os
 import re
 from subprocess import *
+
+from .devtree import DevTree as BaseDevTree
+import rcLvmAIX
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 
-class DevTree(rcDevTree.DevTree):
+class DevTree(BaseDevTree):
     def load_lvm(self):
         lvm = rcLvmAIX.Lvm()
         for vg in lvm.vg.values():
