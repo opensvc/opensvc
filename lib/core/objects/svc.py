@@ -32,7 +32,7 @@ from utilities.converters import *
 import core.exceptions as ex
 import rcLogger
 from core.node import Node
-from rcScheduler import Scheduler, SchedOpts, sched_action
+from core.scheduler import Scheduler, SchedOpts, sched_action
 from core.comm import Crypt
 from core.extconfig import ExtConfigMixin
 from utilities.proc import justcall, vcall, lcall

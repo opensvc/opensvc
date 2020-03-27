@@ -1,4 +1,4 @@
-import rcScheduler
+import core.scheduler
 
 
 class TestSchedules:
@@ -70,6 +70,6 @@ class TestSchedules:
             ("23:00-23:59:00@61 * * %2%3", "2016-09-01 23:00", None, None),
             ("23:00-23:59@61@10", "2016-09-01 23:00", None, None),
         ]
-        sched = rcScheduler.Scheduler()
+        sched = core.scheduler.Scheduler()
         for test in tests:
             assert sched.test_schedule(*test)

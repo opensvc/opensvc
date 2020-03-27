@@ -35,7 +35,7 @@ from core.freezer import Freezer
 from utilities.lock import LOCK_EXCEPTIONS
 from core.network import NetworksMixin
 from rcGlobalEnv import rcEnv
-from rcScheduler import SchedOpts, Scheduler, sched_action
+from core.scheduler import SchedOpts, Scheduler, sched_action
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor, fmt_path,
                          glob_services_config, init_locale, is_service, lazy,

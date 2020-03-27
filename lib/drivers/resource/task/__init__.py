@@ -3,7 +3,7 @@ import os
 import core.status
 import core.exceptions as ex
 import utilities.lock
-from rcScheduler import SchedOpts
+from core.scheduler import SchedOpts
 from rcUtilities import lazy
 from core.resource import Resource
 from six.moves import input
