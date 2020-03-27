@@ -6,7 +6,7 @@ import core.exceptions as ex
 
 from .. import adder as base_adder
 from ..linux import Fs
-from rcBtrfs import Btrfs
+from utilities.subsystems.btrfs import Btrfs
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
 
