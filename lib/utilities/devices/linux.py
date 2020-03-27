@@ -30,7 +30,7 @@ def dev_to_paths(dev, log=None):
     if dev.startswith("/dev/sd"):
         return [dev]
     if dev.startswith("/dev/vx"):
-        from rcVeritas import vx_dev_to_paths
+        from utilities.subsystems.veritas import vx_dev_to_paths
         return vx_dev_to_paths(dev)
     if not dev.startswith("/dev/dm-"):
         return []
