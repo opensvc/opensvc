@@ -44,7 +44,7 @@ from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          resolve_path, set_lazy, split_path, strip_path,
                          svc_pathetc, unset_all_lazy, unset_lazy,
                          validate_kind, validate_name, validate_ns_name)
-from storage import Storage
+from utilities.storage import Storage
 from utilities.proc import call, justcall, vcall, which
 from utilities.render.color import formatter
 from utilities.string import bdecode, bencode, is_string, try_decode

@@ -17,7 +17,7 @@ import utilities.devices
 import utilities.render.color
 from rcGlobalEnv import rcEnv
 from rcUtilities import action_triggers, clear_cache, factory, lazy, set_lazy, unset_lazy
-from storage import Storage
+from utilities.storage import Storage
 from utilities.proc import call, lcall, vcall
 
 ALLOW_ACTION_WITH_NOACTION = [

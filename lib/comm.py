@@ -36,7 +36,7 @@ except Exception:
 import six
 import pyaes
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import lazy
 from contexts import get_context, want_context
 from utilities.string import bdecode

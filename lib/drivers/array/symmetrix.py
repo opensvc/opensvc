@@ -9,7 +9,7 @@ import time
 import core.exceptions as ex
 from xml.etree.ElementTree import XML, fromstring
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import factory, split_path
 from converters import convert_size
 from rcOptParser import OptParser

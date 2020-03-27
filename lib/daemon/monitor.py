@@ -21,7 +21,7 @@ import daemon.shared as shared
 import core.exceptions as ex
 import json_delta
 from rcGlobalEnv import rcEnv
-from storage import Storage
+from utilities.storage import Storage
 from rcUtilities import purge_cache, fsum, \
                         svc_pathetc, svc_pathvar, makedirs, split_path, \
                         list_services, svc_pathcf, fmt_path, \
