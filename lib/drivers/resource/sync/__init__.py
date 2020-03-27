@@ -6,7 +6,7 @@ import core.exceptions as ex
 import core.status
 from utilities.converters import convert_speed, print_size
 from rcGlobalEnv import rcEnv
-from rcScheduler import SchedOpts
+from core.scheduler import SchedOpts
 from rcUtilities import lazy
 from core.resource import Resource
 from utilities.string import bdecode
