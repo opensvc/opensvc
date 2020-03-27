@@ -12,7 +12,7 @@ except ImportError:
 
 import rcAsset
 
-from converters import convert_size
+from utilities.converters import convert_size
 from rcUtilities import lazy
 from rcDiskInfoWindows import diskInfo
 from utilities.storage import Storage

@@ -43,7 +43,7 @@ class Pool(BasePool):
         return [fs]
 
     def pool_status(self):
-        from converters import convert_size
+        from utilities.converters import convert_size
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         data = {

@@ -4,7 +4,7 @@ import core.exceptions as ex
 import core.status
 import drivers.array.ibmds as array_driver
 from .. import Sync, notify
-from converters import print_duration
+from utilities.converters import print_duration
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 

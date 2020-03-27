@@ -71,7 +71,7 @@ class Asset(rcAsset.Asset):
             return '0'
 
     def _get_mem_bytes_virsh(self):
-        from converters import convert_size
+        from utilities.converters import convert_size
         cmd = ['virsh', 'nodeinfo']
         out, err, ret = justcall(cmd)
         if ret != 0:
