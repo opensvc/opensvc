@@ -33,7 +33,7 @@ import core.exceptions as ex
 import rcLogger
 from core.node import Node
 from rcScheduler import Scheduler, SchedOpts, sched_action
-from comm import Crypt
+from core.comm import Crypt
 from core.extconfig import ExtConfigMixin
 from utilities.proc import justcall, vcall, lcall
 from utilities.string import is_string
