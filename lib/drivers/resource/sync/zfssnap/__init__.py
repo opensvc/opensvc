@@ -4,7 +4,7 @@ import core.exceptions as ex
 import core.status
 
 from .. import Sync, notify
-from rcUtilities import cache, clear_cache
+from utilities.cache import cache, clear_cache
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
