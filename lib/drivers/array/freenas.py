@@ -3,14 +3,13 @@ from __future__ import print_function
 import sys
 import os
 import json
-from optparse import Option
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import factory, split_path
 from utilities.converters import convert_size
-from rcOptParser import OptParser
+from utilities.optparser import OptParser, Option
 from utilities.string import bencode, bdecode, is_string
 from core.node import Node
 

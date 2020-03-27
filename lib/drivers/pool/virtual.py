@@ -4,7 +4,8 @@ import os
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import is_service, split_path, factory, lazy
+from rcUtilities import is_service, split_path, factory
+from utilities.lazy import lazy
 from utilities.proc import justcall
 from core.pool import BasePool
 

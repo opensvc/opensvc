@@ -8,7 +8,7 @@ import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.string import is_string
