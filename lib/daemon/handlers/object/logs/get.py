@@ -1,6 +1,6 @@
 import os
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import core.exceptions as ex
 from rcUtilities import split_path
 from rcGlobalEnv import rcEnv
@@ -11,7 +11,7 @@ try:
 except Exception:
     HTTPHeaderMap = dict
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Feed the <path> object logs.
     """

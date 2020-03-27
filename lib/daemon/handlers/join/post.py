@@ -1,12 +1,12 @@
 import os
 
-import daemon.handlers.clusterlock
-import daemon.handlers.handler as handler
+import daemon.clusterlock
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 
-class Handler(handler.Handler, daemon.handlers.clusterlock.LockMixin):
+class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     """
     Join the cluster.
     """

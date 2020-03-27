@@ -3,11 +3,11 @@ import os
 import time
 import traceback
 
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the node private configuration.
     """
