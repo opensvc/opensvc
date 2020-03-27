@@ -3332,7 +3332,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 defaults.update(d)
 
         obj = factory(kind)("dummy", namespace="dummy", volatile=True, node=self)
-        from keywords import MissKeyNoDefault, KeyInvalidValue
+        from core.keywords import MissKeyNoDefault, KeyInvalidValue
         try:
             defaults.update(obj.kwstore.update("DEFAULT", defaults))
             for section, d in sections.items():
