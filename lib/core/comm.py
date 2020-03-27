@@ -20,9 +20,9 @@ class DummyException(Exception):
 
 try:
     import ssl
-    import h2.connection
-    import hyper
-    from hyper.common.headers import HTTPHeaderMap
+    import foreign.h2.connection
+    import foreign.hyper as hyper
+    from foreign.hyper.common.headers import HTTPHeaderMap
     SSLWantReadError = ssl.SSLWantReadError
     SSLError = ssl.SSLError
     ssl.HAS_ALPN # stack on Attribute error on py <3.5 and <2.7.10
@@ -34,7 +34,7 @@ except Exception:
     has_ssl = False
 
 import six
-import pyaes
+import foreign.pyaes as pyaes
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import lazy
