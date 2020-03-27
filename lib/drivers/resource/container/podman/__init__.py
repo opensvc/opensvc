@@ -10,7 +10,7 @@ from ..docker import \
     KEYWORDS, \
     ContainerDocker, \
     adder as docker_adder
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 

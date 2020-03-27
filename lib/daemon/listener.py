@@ -48,8 +48,8 @@ from utilities.storage import Storage
 from core.comm import Headers
 from rcUtilities import drop_option, chunker, svc_pathcf, \
                         split_path, fmt_path, is_service, factory, \
-                        makedirs, driver_import, set_lazy, lazy, split_fullname, \
-                        unset_lazy
+                        makedirs, driver_import, split_fullname
+from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import convert_size, print_duration
 from utilities.string import bencode, bdecode
 from foreign.jsonpath_ng import jsonpath

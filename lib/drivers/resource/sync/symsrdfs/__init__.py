@@ -6,7 +6,7 @@ from xml.etree.ElementTree import XML
 import core.status
 from rcGlobalEnv import rcEnv
 from drivers.array.symmetrix import set_sym_env
-from rcUtilities import lazy
+from utilities.lazy import lazy
 
 import core.exceptions as ex
 import utilities.devices.linux

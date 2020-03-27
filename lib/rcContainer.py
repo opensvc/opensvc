@@ -14,8 +14,8 @@ import utilities.lock
 import core.status
 import core.exceptions as ex
 
-from rcUtilities import lazy, unset_lazy, set_lazy
 from rcGlobalEnv import rcEnv
+from utilities.lazy import lazy, unset_lazy, set_lazy
 from utilities.proc import justcall, which
 
 class ContainerLib(object):

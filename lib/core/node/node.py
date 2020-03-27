@@ -38,16 +38,17 @@ from rcGlobalEnv import rcEnv
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor, fmt_path,
-                         glob_services_config, init_locale, is_service, lazy,
-                         lazy_initialized, list_services, makedirs, driver_import,
+                         glob_services_config, init_locale, is_service,
+                         list_services, makedirs, driver_import,
                          normalize_paths, purge_cache_expired, read_cf,
-                         resolve_path, set_lazy, split_path, strip_path,
-                         svc_pathetc, unset_all_lazy, unset_lazy,
+                         resolve_path, split_path, strip_path,
+                         svc_pathetc,
                          validate_kind, validate_name, validate_ns_name)
 from utilities.storage import Storage
 from utilities.proc import call, justcall, vcall, which
 from utilities.render.color import formatter
 from utilities.string import bdecode, bencode, is_string, try_decode
+from utilities.lazy import lazy, lazy_initialized, set_lazy, unset_all_lazy, unset_lazy
 
 try:
     from six.moves.urllib.request import Request, urlopen
@@ -3637,46 +3638,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def agent_version(self):
-        try:
-            import version
-        except ImportError:
-            pass
-
-        try:
-            reload(version)
-            return version.version
-        except (NameError, AttributeError):
-            pass
-
-        try:
-            import imp
-            imp.reload(version)
-            return version.version
-        except (AttributeError, UnboundLocalError):
-            pass
-
-        try:
-            import importlib
-            importlib.reload(version)
-            return version.version
-        except (ImportError, AttributeError, UnboundLocalError):
-            pass
-        if which("git"):
-            cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
-                   "describe", "--tags", "--abbrev=0"]
-            out, err, ret = justcall(cmd)
-            if ret != 0:
-                return "dev"
-            _version = out.strip()
-            cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
-                   "describe", "--tags"]
-            out, err, ret = justcall(cmd)
-            if ret != 0:
-                return "dev"
-            _release = out.strip().split("-")[1]
-            return "-".join((_version, _release+"dev"))
-
-        return "dev"
+        import utilities.version
+        return utilities.version.agent_version()
 
     def frozen(self):
         """

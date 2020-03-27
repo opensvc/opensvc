@@ -1,4 +1,4 @@
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 
 DEFAULT_STATUS_GROUPS = [

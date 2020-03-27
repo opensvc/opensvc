@@ -37,7 +37,7 @@ import six
 import foreign.pyaes as pyaes
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.contexts import get_context, want_context
 from utilities.string import bdecode
 import core.exceptions as ex
