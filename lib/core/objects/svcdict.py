@@ -1,6 +1,6 @@
 import sys
 
-from keywords import KeywordStore
+from core.keywords import KeywordStore
 from rcGlobalEnv import rcEnv
 from rcUtilities import iter_drivers, mimport
 
