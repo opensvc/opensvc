@@ -81,11 +81,11 @@ class Fs(BaseFs):
                 if r.name == dom:
                     # no need to compute device list: the vg resource will do the job
                     return set()
-            import rcAdvfs
+            import utilities.subsystems.advfs
             try:
-                o = rcAdvfs.Fdmns()
+                o = utilities.subsystems.advfs.Fdmns()
                 d = o.get_fdmn(dom)
-            except rcAdvfs.ExInit as e:
+            except utilities.subsystems.advfs.ExInit as e:
                 return set()
             if d is None:
                 return set()

@@ -1,11 +1,11 @@
 import drivers.check
-import rcAdvfs
+import utilities.subsystems.advfs
 
 class Check(drivers.check.Check):
     chk_type = "fs_u"
 
     def __init__(self, svcs=[]):
-        checks.check.__init__(self, svcs)
+        super(Check, self).__init__(self, svcs)
 
     def find_svc(self, name):
         for svc in self.svcs:
@@ -17,7 +17,7 @@ class Check(drivers.check.Check):
         return ""
 
     def do_check(self):
-        o = rcAdvfs.Fdmns()
+        o = utilities.subsystems.advfs.Fdmns()
         r = []
         for dom in o.list_fdmns():
             try:
@@ -27,6 +27,6 @@ class Check(drivers.check.Check):
                           "value": str(d.used_pct),
                           "path": self.find_svc(dom),
                          })
-            except rcAdvfs.ExInit:
+            except utilities.subsystems.advfs.ExInit:
                 pass
         return r
