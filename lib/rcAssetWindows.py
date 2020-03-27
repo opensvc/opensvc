@@ -14,7 +14,7 @@ import rcAsset
 
 from utilities.converters import convert_size
 from rcUtilities import lazy
-from rcDiskInfoWindows import diskInfo
+from utilities.diskinfo import DiskInfo
 from utilities.storage import Storage
 from utilities.proc import justcall, which
 from utilities.string import try_decode
@@ -142,7 +142,7 @@ class Asset(rcAsset.Asset):
 
     def _get_hba(self):
         hbas = []
-        self.di = diskInfo()
+        self.di = DiskInfo()
         for index, portwwn, host in self.di._get_fc_hbas():
             hbas.append((portwwn, 'fc'))
         return hbas

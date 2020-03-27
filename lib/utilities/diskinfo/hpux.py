@@ -1,9 +1,9 @@
 import os
 
-import rcDiskInfo
 from utilities.proc import justcall, which
+from .diskinfo import BaseDiskInfo
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
     legacy_size_cache = {}
     legacy_wwid_cache = {}
 

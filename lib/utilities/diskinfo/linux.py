@@ -10,14 +10,14 @@ import time
 
 import core.exceptions as ex
 import utilities.devtree.veritas
-import rcDiskInfo
 import utilities.devices.linux
+from .diskinfo import BaseDiskInfo
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import lazy
 from utilities.proc import justcall, which
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
     disk_ids = {}
 
     def __init__(self, deferred=False):
@@ -368,7 +368,7 @@ class diskInfo(rcDiskInfo.diskInfo):
         raise ex.Error("time out waiting for %s to appear" % dev)
 
 if __name__ == "__main__":
-    diskinfo = diskInfo()
+    diskinfo = DiskInfo()
     disks = glob.glob('/sys/block/sd*')
     disks += glob.glob('/sys/block/vd*')
     diskinfo.print_diskinfo_header()

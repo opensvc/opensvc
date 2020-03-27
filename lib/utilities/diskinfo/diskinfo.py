@@ -1,6 +1,6 @@
 import core.exceptions as ex
 
-class diskInfo(object):
+class BaseDiskInfo(object):
     """
     Parent class for diskInfo OS
     """

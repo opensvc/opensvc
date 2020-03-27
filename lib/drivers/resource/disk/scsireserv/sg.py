@@ -294,8 +294,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret
 
     def _disk_preempt_reservation(self, disk, oldkey):
-        m = __import__("rcDiskInfo" + rcEnv.sysname)
-        if self.no_preempt_abort or m.diskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
+        from utilities.diskinfo import DiskInfo
+        if self.no_preempt_abort or DiskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = "--preempt"
         else:
             preempt_opt = "--preempt-abort"

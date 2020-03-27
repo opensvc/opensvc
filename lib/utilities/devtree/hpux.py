@@ -6,9 +6,9 @@ from subprocess import *
 from .devtree import DevTree as BaseDevTree
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
+from utilities.diskinfo import DiskInfo
 
-dim = __import__("rcDiskInfoHP-UX")
-di = dim.diskInfo()
+di = DiskInfo()
 
 class DevTree(BaseDevTree):
     pe_size = {}

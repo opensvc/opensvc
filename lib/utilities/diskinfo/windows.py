@@ -1,8 +1,8 @@
-import rcDiskInfo
 import wmi
 from utilities.proc import justcall, which
+from .diskinfo import BaseDiskInfo
 
-class diskInfo(rcDiskInfo.diskInfo):
+class DiskInfo(BaseDiskInfo):
 
     def __init__(self):
         self.h = {}

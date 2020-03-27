@@ -2,9 +2,9 @@ import drivers.check
 
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
+from utilities.diskinfo import DiskInfo
 
-di = __import__("rcDiskInfo"+rcEnv.sysname)
-_di = di.diskInfo()
+_di = DiskInfo()
 
 class Check(drivers.check.Check):
     chk_type = "mpath"
