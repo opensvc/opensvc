@@ -1,15 +1,18 @@
 from __future__ import print_function
-import os
-import sys
-import re
+
 import glob
 import logging
+import os
+import re
+import sys
 
-from rcGlobalEnv import rcEnv
-from utilities.storage import Storage
 import core.exceptions as ex
-import rcConfigParser
-from rcUtilities import list_services, svc_pathetc, split_path, makedirs, factory
+import utilities.configparser
+from rcGlobalEnv import rcEnv
+from rcUtilities import (factory, list_services, makedirs, split_path,
+                         svc_pathetc)
+from utilities.storage import Storage
+
 
 def get_tags(svc, section):
     try:
@@ -320,7 +323,7 @@ def build_services(status=None, paths=None, create_instance=False,
         name, namespace, kind = split_path(path)
         try:
             svc = factory(kind)(name, namespace, node=node)
-        except (ex.Error, ex.InitError, ValueError, rcConfigParser.Error) as e:
+        except (ex.Error, ex.InitError, ValueError, utilities.configparser.Error) as e:
             errors.append("%s: %s" % (path, str(e)))
             node.log.error(str(e))
             continue
@@ -332,5 +335,3 @@ def build_services(status=None, paths=None, create_instance=False,
             continue
         services[svc.path] = svc
     return [s for _, s in sorted(services.items())], errors
-
-
