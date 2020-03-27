@@ -7,8 +7,10 @@ import errno
 import json
 import os
 import re
+import time
 from distutils.version import LooseVersion as V # pylint: disable=no-name-in-module,import-error
 
+import utilities.lock
 import core.status
 import core.exceptions as ex
 
@@ -635,22 +637,21 @@ class DockerLib(ContainerLib):
             return
         if self.docker_cmd is None:
             raise ex.Error("docker executable not found")
-        import lock
         lockfile = os.path.join(self.svc.var_d, "lock.docker_start")
         try:
-            lockfd = lock.lock(timeout=15, delay=1, lockfile=lockfile)
-        except lock.LOCK_EXCEPTIONS as exc:
+            lockfd = utilities.lock.lock(timeout=15, delay=1, lockfile=lockfile)
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
             self.svc.log.error("dockerd start lock acquire failed: %s",
                                str(exc))
             return
 
         # Sanity checks before deciding to start the daemon
         if self.docker_running():
-            lock.unlock(lockfd)
+            utilities.lock.unlock(lockfd)
             return
 
         if self.container_data_dir is None:
-            lock.unlock(lockfd)
+            utilities.lock.unlock(lockfd)
             return
 
         resource = self._container_data_dir_resource()
@@ -660,7 +661,7 @@ class DockerLib(ContainerLib):
                 self.svc.log.warning("the docker daemon data dir is handled by the %s "
                                      "resource in %s state. can't start the docker "
                                      "daemon", resource.rid, core.status.Status(state))
-                lock.unlock(lockfd)
+                utilities.lock.unlock(lockfd)
                 return
 
         if os.path.exists(self.docker_pid_file):
@@ -682,7 +683,6 @@ class DockerLib(ContainerLib):
             close_fds=True,
         )
 
-        import time
         try:
             for _ in range(self.max_wait_for_dockerd):
                 if self._docker_working():
@@ -690,7 +690,7 @@ class DockerLib(ContainerLib):
                     return
                 time.sleep(1)
         finally:
-            lock.unlock(lockfd)
+            utilities.lock.unlock(lockfd)
 
     def clear_daemon_caches(self):
         unset_lazy(self, "container_ps")

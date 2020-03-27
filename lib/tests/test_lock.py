@@ -1,12 +1,12 @@
 import os
 
-import lock
+import utilities.lock
 import pytest
 
 
 @pytest.fixture(scope='function')
 def sleep(mocker):
-    mocker.patch('lock.time.sleep')
+    mocker.patch('utilities.lock.time.sleep')
 
 
 @pytest.mark.ci
@@ -16,26 +16,26 @@ class TestLockUnlock:
     @staticmethod
     def test_lock_unlock(tmp_file, timeout):
         assert os.path.exists(tmp_file) is False
-        lock_fd = lock.lock(lockfile=tmp_file, timeout=timeout, intent="test")
+        lock_fd = utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test")
         assert os.path.exists(tmp_file) is True
-        lock.unlock(lock_fd)
+        utilities.lock.unlock(lock_fd)
 
     @staticmethod
     def test_can_lock_again(tmp_file, timeout):
-        assert lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") > 0
+        assert utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") > 0
         for _ in range(timeout):
-            assert lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") is None
+            assert utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") is None
 
     @staticmethod
     def test_lock_raise_lock_timeout_if_held_by_another_pid_real_multiprocess(tmp_file, timeout):
         def worker():
             import sys
             try:
-                sys.exit(lock.lock(lockfile=tmp_file, timeout=timeout, intent="test"))
-            except lock.LockTimeout:
+                sys.exit(utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test"))
+            except utilities.lock.LockTimeout:
                 sys.exit(255)
 
-        assert lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") > 0
+        assert utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") > 0
         from multiprocessing import Process
         proc = Process(target=worker)
         proc.start()
@@ -47,7 +47,7 @@ class TestLockUnlock:
 class TestCmlockWhenNoLockDir:
     @staticmethod
     def test_create_lock_dir_if_absent(tmp_path):
-        assert lock.lock(lockfile=os.path.join(str(tmp_path), 'lockdir', 'lockfile')) > 0
+        assert utilities.lock.lock(lockfile=os.path.join(str(tmp_path), 'lockdir', 'lockfile')) > 0
 
 
 @pytest.mark.ci
@@ -61,15 +61,15 @@ class TestCmlock:
             side_effects = [None]
             expected_lock_nowait = 1
         else:
-            side_effects = [lock.LockAcquire({"pid": 0, "intent": ""})] * (timeout - 1)
+            side_effects = [utilities.lock.LockAcquire({"pid": 0, "intent": ""})] * (timeout - 1)
             # noinspection PyTypeChecker
             side_effects.append(None)
             expected_lock_nowait = timeout
 
-        # mocker.patch('lock.os.getpid', return_value=-1)
-        lock_nowait = mocker.patch('lock.lock_nowait', side_effect=side_effects)
+        # mocker.patch('utilities.lock.os.getpid', return_value=-1)
+        lock_nowait = mocker.patch('utilities.lock.lock_nowait', side_effect=side_effects)
 
-        with lock.cmlock(lockfile=tmp_file, timeout=timeout):
+        with utilities.lock.cmlock(lockfile=tmp_file, timeout=timeout):
             runs.append(1)
 
         assert len(runs) == 1
@@ -77,13 +77,13 @@ class TestCmlock:
 
     @staticmethod
     def test_no_run_x_acquired_fails(mocker, tmp_file, timeout):
-        side_effects = [lock.LockAcquire({"pid": 0, "intent": ""})] * (timeout + 1)
-        mocker.patch('lock.os.getpid', return_value=-1)
-        lock_nowait = mocker.patch('lock.lock_nowait', side_effect=side_effects)
+        side_effects = [utilities.lock.LockAcquire({"pid": 0, "intent": ""})] * (timeout + 1)
+        mocker.patch('utilities.lock.os.getpid', return_value=-1)
+        lock_nowait = mocker.patch('utilities.lock.lock_nowait', side_effect=side_effects)
 
         runs = []
-        with pytest.raises(lock.LockTimeout):
-            with lock.cmlock(lockfile=tmp_file, timeout=timeout):
+        with pytest.raises(utilities.lock.LockTimeout):
+            with utilities.lock.cmlock(lockfile=tmp_file, timeout=timeout):
                 runs.append(1)
 
         assert len(runs) == 0
@@ -98,8 +98,8 @@ class TestLockExceptions:
         LockTimeOut exception
         """
         try:
-            raise lock.LockTimeout(intent="test", pid=20000)
-        except lock.LockTimeout as exc:
+            raise utilities.lock.LockTimeout(intent="test", pid=20000)
+        except utilities.lock.LockTimeout as exc:
             assert exc.intent == "test"
             assert exc.pid == 20000
 
@@ -109,7 +109,7 @@ class TestLockExceptions:
         LockAcquire exception
         """
         try:
-            raise lock.LockAcquire(intent="test", pid=20000)
-        except lock.LockAcquire as exc:
+            raise utilities.lock.LockAcquire(intent="test", pid=20000)
+        except utilities.lock.LockAcquire as exc:
             assert exc.intent == "test"
             assert exc.pid == 20000
