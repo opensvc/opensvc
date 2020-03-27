@@ -1,14 +1,14 @@
 import os
 import datetime
 
-import rcAsset
+from .asset import BaseAsset
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node):
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
         self.info = {}
         (out, err, ret) = justcall(['system_profiler', 'SPHardwareDataType', 'SPSoftwareDataType'])
         if ret == 0:

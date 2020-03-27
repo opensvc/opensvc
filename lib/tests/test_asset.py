@@ -1,6 +1,6 @@
 from __future__ import print_function
 import json
-import rcAsset
+import utilities.asset
 from core.node import Node
 import pytest
 
@@ -32,7 +32,7 @@ class TestAsset:
                 }
             ]
         })
-        asset = rcAsset.Asset(node)
+        asset = utilities.asset.Asset(node)
         ret = asset._parse_connect_to(data_s)
         assert ret == "23.251.137.71"
 
@@ -45,7 +45,7 @@ class TestAsset:
             "networkInterfaces": [
             ]
         })
-        asset = rcAsset.Asset(node)
+        asset = utilities.asset.Asset(node)
         ret = asset._parse_connect_to(data_s)
         assert ret is None
 
@@ -55,6 +55,6 @@ class TestAsset:
         asset connect_to on GCE, corrupt data
         """
         data_s = "{corrupted}"
-        asset = rcAsset.Asset(node)
+        asset = utilities.asset.Asset(node)
         ret = asset._parse_connect_to(data_s)
         assert ret is None

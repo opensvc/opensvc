@@ -10,7 +10,7 @@ try:
 except ImportError:
     raise
 
-import rcAsset
+from .asset import BaseAsset
 
 from utilities.converters import convert_size
 from rcUtilities import lazy
@@ -35,10 +35,10 @@ class MEMORYSTATUSEX(ctypes.Structure):
         self.dwLength = 2*4 + 7*8     # size = 2 ints, 7 longs
         super(MEMORYSTATUSEX, self).__init__()
 
-class Asset(rcAsset.Asset):
+class Asset(BaseAsset):
     def __init__(self, node):
         self.node = node
-        rcAsset.Asset.__init__(self, node)
+        super(Asset, self).__init__(node)
         self.memstat = MEMORYSTATUSEX()
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(self.memstat))
         self.init()
