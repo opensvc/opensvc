@@ -1,11 +1,9 @@
 from __future__ import print_function
 
-import ast
 import glob
 import importlib
 import json
 import locale
-import operator as op
 import os
 import re
 import shlex
@@ -16,11 +14,11 @@ from itertools import chain
 
 import six
 
-import utilities.lock
 import core.exceptions as ex
+import utilities.lock
 from core.contexts import want_context
 from rcGlobalEnv import rcEnv
-from utilities.proc import which, call
+from utilities.proc import call, which
 from utilities.string import is_string
 
 VALID_NAME_RFC952_NO_DOT = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]))*"
@@ -37,85 +35,6 @@ GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(br"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]")
-
-# supported operators in arithmetic expressions
-operators = {
-    ast.Add: op.add,
-    ast.Sub: op.sub,
-    ast.Mult: op.mul,
-    ast.Div: op.truediv,
-    ast.Pow: op.pow,
-    ast.BitOr: op.or_,
-    ast.BitAnd: op.and_,
-    ast.BitXor: op.xor,
-    ast.USub: op.neg,
-    ast.FloorDiv: op.floordiv,
-    ast.Mod: op.mod,
-    ast.Not: op.not_,
-    ast.Eq: op.eq,
-    ast.NotEq: op.ne,
-    ast.Lt: op.lt,
-    ast.LtE: op.le,
-    ast.Gt: op.gt,
-    ast.GtE: op.ge,
-    ast.In: op.contains,
-}
-
-
-def eval_expr(expr):
-    """ arithmetic expressions evaluator
-    """
-
-    def eval_(node):
-        _safe_names = {'None': None, 'True': True, 'False': False}
-        if isinstance(node, ast.Num):  # <number>
-            return node.n
-        elif isinstance(node, ast.Str):
-            return node.s
-        elif isinstance(node, ast.Name):
-            if node.id in _safe_names:
-                return _safe_names[node.id]
-            return node.id
-        elif isinstance(node, ast.Tuple):
-            return tuple(node.elts)
-        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-            return operators[type(node.op)](eval_(node.left), eval_(node.right))
-        elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
-            return operators[type(node.op)](eval_(node.operand))
-        elif isinstance(node, ast.BoolOp):  # Boolean operator: either "and" or "or" with two or more values
-            if type(node.op) == ast.And:
-                return all(eval_(val) for val in node.values)
-            else:  # Or:
-                for val in node.values:
-                    result = eval_(val)
-                    if result:
-                        return result
-                    return result  # or returns the final value even if it's falsy
-        elif isinstance(node, ast.Compare):  # A comparison expression, e.g. "3 > 2" or "5 < x < 10"
-            left = eval_(node.left)
-            for comparison_op, right_expr in zip(node.ops, node.comparators):
-                right = eval_(right_expr)
-                if type(comparison_op) == ast.In:
-                    if isinstance(right, tuple):
-                        if not any(q.id == left for q in right if isinstance(q, ast.Name)):
-                            return False
-                    else:
-                        if not operators[type(comparison_op)](right, left):
-                            return False
-                else:
-                    if not operators[type(comparison_op)](left, right):
-                        return False
-                left = right
-                return True
-        elif isinstance(node, ast.Attribute):
-            raise TypeError("strings with dots need quoting")
-        elif hasattr(ast, "NameConstant") and isinstance(node, getattr(ast, "NameConstant")):
-            return node.value
-        else:
-            raise TypeError("unsupported node type %s" % type(node))
-
-    return eval_(ast.parse(expr, mode='eval').body)
-
 
 PROTECTED_DIRS = [
     '/',
