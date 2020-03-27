@@ -3,7 +3,7 @@ import os
 import re
 
 from .asset import BaseAsset
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from utilities.storage import Storage
 from utilities.proc import justcall, which
 from utilities.string import bdecode

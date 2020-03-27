@@ -15,8 +15,9 @@ import six
 import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from rcUtilities import lazy, split_path
+from rcUtilities import split_path
 from utilities.string import bdecode
+from utilities.lazy import lazy
 
 PTR_SUFFIX = ".in-addr.arpa."
 PTR_SUFFIX_LEN = 14

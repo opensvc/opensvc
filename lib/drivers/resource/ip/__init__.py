@@ -16,7 +16,7 @@ import utilities.ifconfig
 from arp import send_arp
 from utilities.converters import convert_duration, print_duration
 from rcGlobalEnv import rcEnv
-from rcUtilities import lazy
+from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

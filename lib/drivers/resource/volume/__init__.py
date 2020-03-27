@@ -6,7 +6,8 @@ import os
 import core.exceptions as ex
 import core.status
 from utilities.converters import print_size
-from rcUtilities import lazy, fmt_path, split_path, makedirs, factory
+from rcUtilities import fmt_path, split_path, makedirs, factory
+from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

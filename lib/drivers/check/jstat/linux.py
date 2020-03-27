@@ -1,7 +1,13 @@
 from __future__ import print_function
 
-import drivers.check
+import datetime
+import json
+import os
+import sys
+from optparse import Option, OptionParser
+from subprocess import Popen, PIPE
 
+import drivers.check
 from utilities.proc import justcall
 from utilities.storage import Storage
 
@@ -40,13 +46,6 @@ class Check(drivers.check.Check):
                     })
         #print(json.dumps(data, indent=4))
         return data
-
-import sys
-import os
-import json
-import datetime
-from optparse import Option, OptionParser
-from subprocess import Popen, PIPE
 
 VERSION = "1.0"
 USAGE = ""
