@@ -3,13 +3,13 @@ import re
 from subprocess import *
 
 from .devtree import DevTree as BaseDevTree
-import rcLvmAIX
+import utilities.subsystems.lvm.aix
 from rcGlobalEnv import rcEnv
 from utilities.proc import which
 
 class DevTree(BaseDevTree):
     def load_lvm(self):
-        lvm = rcLvmAIX.Lvm()
+        lvm = utilities.subsystems.lvm.aix.Lvm()
         for vg in lvm.vg.values():
             for lv in vg.lv.values():
                 d = self.add_dev(lv.name, self.disk_size(lv.name), "linear")
