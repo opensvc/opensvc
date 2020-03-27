@@ -400,7 +400,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def compliance(self):
-        from compliance import Compliance
+        from core.compliance import Compliance
         comp = Compliance(self)
         return comp
 
@@ -1075,7 +1075,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 self.compliance.node = self
             ret = getattr(self.compliance, action)()
         elif action.startswith("collector_") and action != "collector_cli":
-            from collector import Collector
+            from core.collector import Collector
             coll = Collector(self.options, self)
             data = getattr(coll, action)()
             self.print_data(data)
@@ -2320,7 +2320,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         passwd = self.genpw()
 
-        from collector import Collector
+        from core.collector import Collector
         coll = Collector(self.options, self)
         try:
             getattr(coll, 'rotate_root_pw')(passwd)
