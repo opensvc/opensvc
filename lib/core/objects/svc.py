@@ -18,7 +18,7 @@ import utilities.lock
 
 from core.resource import Resource
 from core.resourceset import ResourceSet
-from freezer import Freezer
+from core.freezer import Freezer
 from rcGlobalEnv import rcEnv, Paths
 from utilities.storage import Storage
 from rcUtilities import lazy, unset_lazy, \
