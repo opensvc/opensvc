@@ -33,7 +33,7 @@ from converters import *
 from extconfig import ExtConfigMixin
 from freezer import Freezer
 from lock import LOCK_EXCEPTIONS
-from network import NetworksMixin
+from core.network import NetworksMixin
 from rcGlobalEnv import rcEnv
 from rcScheduler import SchedOpts, Scheduler, sched_action
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
