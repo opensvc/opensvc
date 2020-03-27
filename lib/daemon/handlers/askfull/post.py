@@ -1,9 +1,9 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Reset the generation number of the dataset of a peer node to force him
     to resend a full.

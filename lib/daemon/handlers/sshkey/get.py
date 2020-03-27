@@ -1,7 +1,7 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return the a public key of the specified system's user, so a
     peer node can add it to its authorizations.

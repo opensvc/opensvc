@@ -1,7 +1,7 @@
-import daemon.handlers.handler as handler
+import daemon.handler
 import daemon.shared as shared
 
-class Handler(handler.Handler):
+class Handler(daemon.handler.BaseHandler):
     """
     Return a hash indexed by thead id, containing the status data
     structure of each thread.
