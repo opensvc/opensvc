@@ -24,7 +24,7 @@ from errno import ECONNREFUSED, EPIPE
 import six
 
 import core.exceptions as ex
-import rcLogger
+import core.logger
 import core.objects.builder
 import xmlrpcClient
 from core.comm import Crypt
@@ -184,7 +184,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = {}
         self.stats_updated = 0
         log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        self.logger = rcLogger.initLogger(rcEnv.nodename, log_file)
+        self.logger = core.logger.initLogger(rcEnv.nodename, log_file)
         extra = {"node": rcEnv.nodename, "sid": rcEnv.session_uuid}
         self.log = logging.LoggerAdapter(self.logger, extra)
 
