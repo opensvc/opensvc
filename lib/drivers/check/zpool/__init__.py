@@ -2,7 +2,7 @@ import os
 
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 class Check(drivers.check.Check):

@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.converters import convert_datetime
 
 class StatsProvider(object):
@@ -12,7 +12,7 @@ class StatsProvider(object):
         self.stats_dir = stats_dir
         self.interval = interval
         self.init_period(stats_start, stats_end, interval)
-        self.nodename = rcEnv.nodename
+        self.nodename = Env.nodename
 
         self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
 

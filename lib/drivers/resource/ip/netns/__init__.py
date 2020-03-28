@@ -6,7 +6,7 @@ import utilities.ifconfig
 
 from drivers.resource.ip.linux import Ip
 from drivers.resource.ip import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
@@ -160,7 +160,7 @@ class IpNetns(Ip):
         if not self.macaddr:
             return
         try:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "address", self.macaddr]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "address", self.macaddr]
             ret, out, err = self.vcall(cmd)
         except ex.Error:
              pass
@@ -190,7 +190,7 @@ class IpNetns(Ip):
         with open("/proc/net/dev", "r") as filep:
             local_devs = [line.split(":", 1)[0] for line in filep.readlines() if ":" in line]
 
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip" , "link"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip" , "link"]
         out, err, ret = justcall(cmd)
         used = []
         for line in out.splitlines():
@@ -250,7 +250,7 @@ class IpNetns(Ip):
             return
         if nspid is None:
             return
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -329,32 +329,32 @@ class IpNetns(Ip):
         nspid = self.get_nspid()
         if nspid is None:
             raise ex.Error("could not determine nspid")
-        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.final_guest_dev]
+        cmd = [Env.syspaths.ip, "link", "set", self.ipdev, "netns", nspid, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # add default route
         if self.gateway:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.final_guest_dev]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
@@ -380,7 +380,7 @@ class IpNetns(Ip):
             raise Exception("ovs-vsctl must be installed")
 
         # create peer devs
-        cmd = [rcEnv.syspaths.ip, "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
+        cmd = [Env.syspaths.ip, "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -392,25 +392,25 @@ class IpNetns(Ip):
         if ret != 0:
             return ret, out, err
 
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_local_dev, "up"]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_local_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # assign the interface to the container namespace
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -427,29 +427,29 @@ class IpNetns(Ip):
         mtu = self.ip_get_mtu()
 
         # create peer devs
-        cmd = [rcEnv.syspaths.ip, "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
+        cmd = [Env.syspaths.ip, "link", "add", "name", tmp_local_dev, "mtu", mtu, "type", "veth", "peer", "name", tmp_guest_dev, "mtu", mtu]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate the parent dev
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_local_dev, "master", self.ipdev]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_local_dev, "master", self.ipdev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_local_dev, "up"]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_local_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # assign the macvlan interface to the container namespace
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -458,7 +458,7 @@ class IpNetns(Ip):
         self.set_macaddr()
 
         # plumb ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -475,31 +475,31 @@ class IpNetns(Ip):
         mtu = self.ip_get_mtu()
 
         # create a macvlan interface
-        cmd = [rcEnv.syspaths.ip, "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "ipvlan", "mode", mode]
+        cmd = [Env.syspaths.ip, "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "ipvlan", "mode", mode]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate the parent dev
-        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "up"]
+        cmd = [Env.syspaths.ip, "link", "set", self.ipdev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # assign the macvlan interface to the container namespace
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -516,25 +516,25 @@ class IpNetns(Ip):
         mtu = self.ip_get_mtu()
 
         # create a macvlan interface
-        cmd = [rcEnv.syspaths.ip, "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "macvlan", "mode", "bridge"]
+        cmd = [Env.syspaths.ip, "link", "add", "link", self.ipdev, "dev", tmp_guest_dev, "mtu", mtu, "type", "macvlan", "mode", "bridge"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # activate the parent dev
-        cmd = [rcEnv.syspaths.ip, "link", "set", self.ipdev, "up"]
+        cmd = [Env.syspaths.ip, "link", "set", self.ipdev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # assign the macvlan interface to the container namespace
-        cmd = [rcEnv.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
+        cmd = [Env.syspaths.ip, "link", "set", tmp_guest_dev, "netns", nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
         # rename the tmp guest dev
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", tmp_guest_dev, "name", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -543,7 +543,7 @@ class IpNetns(Ip):
         self.set_macaddr()
 
         # plumb the ip
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -555,7 +555,7 @@ class IpNetns(Ip):
 
     def ip_get_mtu(self):
         # get mtu
-        cmd = [rcEnv.syspaths.ip, "link", "show", self.ipdev]
+        cmd = [Env.syspaths.ip, "link", "show", self.ipdev]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.Error("failed to get %s mtu: %s" % (self.ipdev, err))
@@ -563,36 +563,36 @@ class IpNetns(Ip):
         return mtu
 
     def ip_setup_route(self):
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "set", self.final_guest_dev, "up"]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
 
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "list", "default"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "list", "default"]
         ret, out, err = self.call(cmd, errlog=False)
         if out.startswith("default via"):
             pass
         elif out.startswith("default dev") and not self.gateway:
             pass
         elif self.gateway:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "via", self.gateway]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "via", self.gateway]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
         else:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "dev", self.final_guest_dev]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
 
         # announce
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns] + rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
@@ -648,9 +648,9 @@ class IpNetns(Ip):
             raise ex.ContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
         if self.mask is None:
             raise ex.ContinueAction("netmask is not set")
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
         ret, out, err = self.vcall(cmd)
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "link", "del", "dev", intf]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "del", "dev", intf]
         ret, out, err = self.vcall(cmd)
 
         if self.mode == "ovs":

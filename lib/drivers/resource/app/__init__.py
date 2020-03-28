@@ -13,7 +13,7 @@ import six
 
 from utilities.lazy import lazy
 from utilities.converters import convert_boolean
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from utilities.proc import which, lcall
 from utilities.string import is_string
@@ -71,12 +71,12 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
     Setup the Popen keyword args to execute <fpath> with the
     privileges demoted to those of the owner of <fpath>.
     """
-    if rcEnv.sysname == "Windows":
+    if Env.sysname == "Windows":
         return {}
 
     import pwd
     if cwd is None:
-        cwd = rcEnv.paths.pathtmp
+        cwd = Env.paths.pathtmp
 
     pwd_user = None
     user_name = "unknown"
@@ -138,7 +138,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
         pw_record = pwd.getpwnam(user_name)
         user_home_dir = pw_record.pw_dir
     except KeyError:
-        user_home_dir = rcEnv.paths.pathtmp
+        user_home_dir = Env.paths.pathtmp
 
     env = os.environ.copy()
     env['HOME'] = user_home_dir
@@ -149,7 +149,7 @@ def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
 
 def preexec(user_uid, user_gid, limits):
     def result():
-        if rcEnv.sysname != "Windows":
+        if Env.sysname != "Windows":
             os.setsid()
         set_rlimits(limits)
         demote(user_uid, user_gid)
@@ -560,7 +560,7 @@ class App(Resource):
             return 1
 
     def netns_formatter(self, cmd):
-        if rcEnv.sysname != "Linux":
+        if Env.sysname != "Linux":
             return cmd
         if which("ip") is None:
             return cmd

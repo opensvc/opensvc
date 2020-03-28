@@ -13,7 +13,7 @@ relations : lv0-pv1 and lv0-pv2
 """
 from utilities.render.forest import Forest
 from utilities.converters import print_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.render.color import color
 from utilities.hash.md5 import hexdigest
 
@@ -280,7 +280,7 @@ class DevTree(object):
     def print_tree(self, devices=None, verbose=False):
         ftree = Forest()
         node = ftree.add_node()
-        node.add_column(rcEnv.nodename, color.BOLD)
+        node.add_column(Env.nodename, color.BOLD)
         node.add_column("Type", color.BOLD)
         node.add_column("Size", color.BOLD, align="right")
         node.add_column("Pct of Parent", color.BOLD, align="right")
@@ -300,7 +300,7 @@ class DevTree(object):
     def print_tree_bottom_up(self, devices=None, verbose=False):
         ftree = Forest()
         node = ftree.add_node()
-        node.add_column(rcEnv.nodename, color.BOLD)
+        node.add_column(Env.nodename, color.BOLD)
         node.add_column("Type", color.BOLD)
         node.add_column("Parent Use", color.BOLD, align="right")
         node.add_column("Size", color.BOLD, align="right")

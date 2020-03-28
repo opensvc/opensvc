@@ -14,7 +14,7 @@ import utilities.lock
 import core.status
 import core.exceptions as ex
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy, unset_lazy, set_lazy
 from utilities.proc import justcall, which
 
@@ -232,12 +232,12 @@ class ContainerLib(object):
 
     def login_as_service_args(self):
         uuid = self.svc.node.conf_get("node", "uuid")
-        args = ["-u", self.svc.path+"@"+rcEnv.nodename]
+        args = ["-u", self.svc.path+"@"+Env.nodename]
         args += ["-p", uuid]
         if self.docker_min_version("1.12"):
             pass
         elif self.docker_min_version("1.10"):
-            args += ["--email", self.svc.path+"@"+rcEnv.nodename]
+            args += ["--email", self.svc.path+"@"+Env.nodename]
         return args
 
     def docker_login(self, ref):
@@ -445,7 +445,7 @@ class DockerLib(ContainerLib):
                 self.docker_daemon_private = True
             else:
                 self.docker_daemon_private = False
-        if rcEnv.sysname != "Linux":
+        if Env.sysname != "Linux":
             self.docker_daemon_private = False
 
         try:
@@ -472,13 +472,13 @@ class DockerLib(ContainerLib):
 
         if self.docker_daemon_private:
             self.docker_socket = os.path.join(self.svc.var_d, "docker.sock")
-            self.compat_docker_socket = os.path.join(rcEnv.paths.pathvar, self.svc.name, "docker.sock")
+            self.compat_docker_socket = os.path.join(Env.paths.pathvar, self.svc.name, "docker.sock")
         else:
             self.docker_socket = None
 
         if self.docker_daemon_private:
             self.docker_pid_file = os.path.join(self.svc.var_d, "docker.pid")
-            self.compat_docker_pid_file = os.path.join(rcEnv.paths.pathvar, self.svc.name, "docker.pid")
+            self.compat_docker_pid_file = os.path.join(Env.paths.pathvar, self.svc.name, "docker.pid")
         else:
             self.docker_pid_file = None
             try:
@@ -570,7 +570,7 @@ class DockerLib(ContainerLib):
             ]
         if self.docker_min_version("1.9") and "--exec-root" not in str(self.docker_daemon_args):
             # keep <104 length to please dockerd
-            cmd += ["--exec-root", os.path.join(rcEnv.paths.pathvar, "dockerx", self.svc.id)]
+            cmd += ["--exec-root", os.path.join(Env.paths.pathvar, "dockerx", self.svc.id)]
         cmd += self.docker_daemon_args
         return cmd
 
@@ -788,7 +788,7 @@ class PodmanLib(ContainerLib):
             self.docker_daemon_args += ["--runroot", self.container_data_dir+"/run"]
         else:
             self.docker_daemon_private = False
-        if rcEnv.sysname != "Linux":
+        if Env.sysname != "Linux":
             self.docker_daemon_private = False
 
         self.docker_cmd = [self.docker_exe] + self.docker_daemon_args
@@ -818,7 +818,7 @@ class PodmanLib(ContainerLib):
         uuid = self.svc.node.oget("node", "uuid")
         if not uuid:
             return []
-        args = ["-u", self.svc.path+"@"+rcEnv.nodename]
+        args = ["-u", self.svc.path+"@"+Env.nodename]
         args += ["-p", uuid]
         return args
 

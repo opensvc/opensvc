@@ -5,7 +5,7 @@ import core.status
 import drivers.array.nexenta as array_driver
 
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
@@ -74,7 +74,7 @@ class SyncNexenta(Sync):
         self.filers = filers
         self.path = path
         self.reversible = reversible
-        self.filer = filers[rcEnv.nodename]
+        self.filer = filers[Env.nodename]
         self.master = None
         self.slave = None
         self.ts = None

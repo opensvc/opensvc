@@ -19,7 +19,7 @@ from six.moves import queue
 import core.exceptions as ex
 import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, normalize_paths, factory
 from utilities.storage import Storage
@@ -154,7 +154,7 @@ LOCKS_LOCK = RLock()
 
 # The per-threads configuration, stats and states store
 # The monitor thread states include cluster-wide aggregated data
-CLUSTER_DATA = {rcEnv.nodename: {}}
+CLUSTER_DATA = {Env.nodename: {}}
 CLUSTER_DATA_LOCK = RLock()
 
 # The lock to serialize CLUSTER_DATA updates from rx threads
@@ -583,7 +583,7 @@ class OsvcThread(threading.Thread, Crypt):
                  global_expect=None, reset_retries=False,
                  stonith=None, expected_status=None):
         global SMON_DATA
-        instance = self.get_service_instance(path, rcEnv.nodename)
+        instance = self.get_service_instance(path, Env.nodename)
         if instance and not instance.get("resources", {}) \
                 and not status \
                 and ((global_expect is None and local_expect is None and status == "idle")  # TODO refactor this
@@ -743,8 +743,8 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + rcEnv.python_cmd
-        _cmd += [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")]
+        _cmd = [] + Env.python_cmd
+        _cmd += [os.path.join(Env.paths.pathlib, "nodemgr.py")]
         self.log.info("execute: nodemgr %s", " ".join(cmd))
         proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
                      close_fds=True, env=env)
@@ -756,8 +756,8 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + rcEnv.python_cmd
-        _cmd += [os.path.join(rcEnv.paths.pathlib, "svcmgr.py")]
+        _cmd = [] + Env.python_cmd
+        _cmd += [os.path.join(Env.paths.pathlib, "svcmgr.py")]
         if path:
             cmd = ["-s", path] + cmd
         if local:
@@ -1046,7 +1046,7 @@ class OsvcThread(threading.Thread, Crypt):
         try:
             return getattr(self, self.rankers[svc.placement])(svc, candidates)
         except AttributeError:
-            return [rcEnv.nodename]
+            return [Env.nodename]
 
     def duplog(self, lvl, msg, **kwargs):
         sig = str(kwargs.items())
@@ -1086,7 +1086,7 @@ class OsvcThread(threading.Thread, Crypt):
                             "service %(path)s on any node",
                             path=svc.path)
             return False
-        if rcEnv.nodename not in candidates:
+        if Env.nodename not in candidates:
             if not silent:
                 self.duplog("info",
                             "placement constraints prevent us from starting "
@@ -1105,7 +1105,7 @@ class OsvcThread(threading.Thread, Crypt):
         if ranks == []:
             return False
         elif svc.topology == "failover":
-            if rcEnv.nodename == ranks[0]:
+            if Env.nodename == ranks[0]:
                 if not silent:
                     self.duplog("info",
                                 "we have the highest '%(placement)s' "
@@ -1123,7 +1123,7 @@ class OsvcThread(threading.Thread, Crypt):
                                 path=svc.path)
                 return False
         elif svc.topology == "flex":
-            index = ranks.index(rcEnv.nodename) + 1
+            index = ranks.index(Env.nodename) + 1
             if not silent:
                 self.duplog("info",
                             "we have the %(idx)d/%(tgt)d '%(placement)s' "
@@ -1249,13 +1249,13 @@ class OsvcThread(threading.Thread, Crypt):
         global GEN
         if inc:
             GEN += 1
-        gen = {rcEnv.nodename: GEN}
+        gen = {Env.nodename: GEN}
         gen.update(REMOTE_GEN)
         return gen
 
     def node_overloaded(self, nodename=None):
         if nodename is None:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
         node_data = CLUSTER_DATA.get(nodename)
         if node_data is None:
             return False
@@ -1281,7 +1281,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def dump_nodes_info(self):
         try:
-            with open(rcEnv.paths.nodes_info, "r") as ofile:
+            with open(Env.paths.nodes_info, "r") as ofile:
                 data = json.load(ofile)
         except Exception:
             data = {}
@@ -1299,15 +1299,15 @@ class OsvcThread(threading.Thread, Crypt):
         if new_data == data:
             return
         try:
-            tmpf = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp)
+            tmpf = tempfile.NamedTemporaryFile(delete=False, dir=Env.paths.pathtmp)
             fpath = tmpf.name
             tmpf.close()
             with open(fpath, "w") as ofile:
                 json.dump(new_data, ofile)
-            shutil.move(fpath, rcEnv.paths.nodes_info)
+            shutil.move(fpath, Env.paths.nodes_info)
         except Exception as exc:
-            self.alert("warning", "failed to refresh %s: %s", rcEnv.paths.nodes_info, exc)
-        self.log.info("%s updated", rcEnv.paths.nodes_info)
+            self.alert("warning", "failed to refresh %s: %s", Env.paths.nodes_info, exc)
+        self.log.info("%s updated", Env.paths.nodes_info)
 
     def on_nodes_info_change(self):
         """
@@ -1335,7 +1335,7 @@ class OsvcThread(threading.Thread, Crypt):
                 svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
                 try:
                     # trigger status.json reload by the mon thread
-                    CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]["updated"] = 0
+                    CLUSTER_DATA[Env.nodename]["services"]["status"][path]["updated"] = 0
                 except KeyError:
                     pass
         wake_monitor(reason="nodes info change")
@@ -1346,7 +1346,7 @@ class OsvcThread(threading.Thread, Crypt):
             if nodename in CLUSTER_DATA and \
                CLUSTER_DATA[nodename] != "unknown":
                 break
-        if nodename == rcEnv.nodename:
+        if nodename == Env.nodename:
             return True
         return False
 
@@ -1358,7 +1358,7 @@ class OsvcThread(threading.Thread, Crypt):
         to log.
         """
         evt = {
-            "nodename": rcEnv.nodename,
+            "nodename": Env.nodename,
             "ts": time.time(),
             "kind": "event",
         }
@@ -1374,7 +1374,7 @@ class OsvcThread(threading.Thread, Crypt):
                 data["service"] = Storage()
             try:
                 data["instance"] = Storage(
-                    self.get_service_instance(path, rcEnv.nodename)
+                    self.get_service_instance(path, Env.nodename)
                 )
             except TypeError:
                 data["instance"] = Storage()

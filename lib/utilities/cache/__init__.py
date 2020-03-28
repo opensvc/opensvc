@@ -5,12 +5,12 @@ from functools import wraps
 
 import core.exceptions as ex
 import utilities.lock
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs
 
 
 def get_cache_d():
-    return os.path.join(rcEnv.paths.pathvar, "cache", rcEnv.session_uuid)
+    return os.path.join(Env.paths.pathvar, "cache", Env.session_uuid)
 
 
 def cache(sig):
@@ -112,7 +112,7 @@ def purge_cache():
 
 def purge_cache_expired():
     import shutil
-    cache_d = os.path.join(rcEnv.paths.pathvar, "cache")
+    cache_d = os.path.join(Env.paths.pathvar, "cache")
     if not os.path.exists(cache_d) or not os.path.isdir(cache_d):
         return
     for d in os.listdir(cache_d):

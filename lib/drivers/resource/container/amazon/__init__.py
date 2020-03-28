@@ -19,7 +19,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from core.objects.builder import init_kwargs, container_kwargs
@@ -84,10 +84,10 @@ class ContainerAmazon(BaseContainer):
         self.addr = None
 
     def keyfile(self):
-        kf = [os.path.join(rcEnv.paths.pathetc, self.key_name+'.pem'),
-              os.path.join(rcEnv.paths.pathetc, self.key_name+'.pub'),
-              os.path.join(rcEnv.paths.pathvar, self.key_name+'.pem'),
-              os.path.join(rcEnv.paths.pathvar, self.key_name+'.pub')]
+        kf = [os.path.join(Env.paths.pathetc, self.key_name+'.pem'),
+              os.path.join(Env.paths.pathetc, self.key_name+'.pub'),
+              os.path.join(Env.paths.pathvar, self.key_name+'.pem'),
+              os.path.join(Env.paths.pathvar, self.key_name+'.pub')]
         for k in kf:
             if os.path.exists(k):
                 return k
@@ -232,7 +232,7 @@ class ContainerAmazon(BaseContainer):
         if self.is_up():
             self.log.info("container %s already started" % self.name)
             return
-        if rcEnv.nodename in self.svc.drpnodes:
+        if Env.nodename in self.svc.drpnodes:
             self.install_drp_flag()
         self.container_start()
         self.can_rollback = True

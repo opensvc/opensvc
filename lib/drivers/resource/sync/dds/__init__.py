@@ -9,7 +9,7 @@ import utilities.devices.linux
 
 from .. import Sync, notify
 from utilities.converters import print_duration
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
@@ -131,7 +131,7 @@ class SyncDds(Sync):
         if not os.path.exists(dev):
             self.log.debug('dev path does not exist')
             return False
-        cmd = [rcEnv.syspaths.lvs, '--noheadings', '-o', 'snap_percent', dev]
+        cmd = [Env.syspaths.lvs, '--noheadings', '-o', 'snap_percent', dev]
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False
@@ -189,7 +189,7 @@ class SyncDds(Sync):
         self.peersenders = set()
         if 'nodes' not in self.target:
             self.peersenders |= self.svc.nodes
-            self.peersenders -= set([rcEnv.nodename])
+            self.peersenders -= set([Env.nodename])
 
     def get_targets(self):
         self.targets = set()
@@ -197,7 +197,7 @@ class SyncDds(Sync):
             self.targets |= self.svc.nodes
         if 'drpnodes' in self.target:
             self.targets |= self.svc.drpnodes
-        self.targets -= set([rcEnv.nodename])
+        self.targets -= set([Env.nodename])
 
     def get_info(self):
         self.get_targets()
@@ -220,7 +220,7 @@ class SyncDds(Sync):
     def do_fullsync(self, node):
         dst = self.dsts[node]
         cmd1 = ['dd', 'if='+self.snap1, 'bs=1M']
-        cmd2 = rcEnv.rsh.split() + [node, 'dd', 'bs=1M', 'of='+dst]
+        cmd2 = Env.rsh.split() + [node, 'dd', 'bs=1M', 'of='+dst]
         self.log.info(' '.join(cmd1 + ["|"] + cmd2))
         p1 = Popen(cmd1, stdout=PIPE)
         p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE)
@@ -237,7 +237,7 @@ class SyncDds(Sync):
         self.push_statefile(node)
 
     def get_snap1_uuid(self):
-        cmd = [rcEnv.syspaths.lvs, '--noheadings', '-o', 'uuid', self.snap1]
+        cmd = [Env.syspaths.lvs, '--noheadings', '-o', 'uuid', self.snap1]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.Error
@@ -251,7 +251,7 @@ class SyncDds(Sync):
              f.write(str(datetime.datetime.now())+';'+self.snap1_uuid+'\n')
 
     def _push_statefile(self, node):
-        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile]
+        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -270,7 +270,7 @@ class SyncDds(Sync):
         extract_cmd = ['dds', '--extract', '--cow', self.snap1_cow, '--source',
                        self.snap2]
         merge_cmd = ['dds', '--merge', '--dest', dst, '-v']
-        merge_cmd = rcEnv.rsh.split() + [node] + merge_cmd
+        merge_cmd = Env.rsh.split() + [node] + merge_cmd
         self.log.info(' '.join(extract_cmd + ["|"] + merge_cmd))
         p1 = Popen(extract_cmd, stdout=PIPE)
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
@@ -324,7 +324,7 @@ class SyncDds(Sync):
     def get_remote_state(self, node):
         self.set_statefile()
         cmd1 = ['env', 'LANG=C', 'cat', self.statefile]
-        cmd = rcEnv.rsh.split() + [node] + cmd1
+        cmd = Env.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
@@ -340,7 +340,7 @@ class SyncDds(Sync):
     def parse_statefile(self, out, node=None):
         self.set_statefile()
         if node is None:
-            node = rcEnv.nodename
+            node = Env.nodename
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))
@@ -374,8 +374,8 @@ class SyncDds(Sync):
 
     def checksum(self, node, bdev, q=None):
         cmd = ['md5sum', bdev]
-        if node != rcEnv.nodename:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+        if node != Env.nodename:
+            cmd = Env.rsh.split() + [node] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             return ""
@@ -400,8 +400,8 @@ class SyncDds(Sync):
             p = Process(target=self.checksum, args=(n, dst, queues[n]))
             p.start()
             ps.append(p)
-        self.checksum(rcEnv.nodename, self.snap1)
-        self.log.info("md5 %s: %s"%(rcEnv.nodename, self.checksums[rcEnv.nodename]))
+        self.checksum(Env.nodename, self.snap1)
+        self.log.info("md5 %s: %s"%(Env.nodename, self.checksums[Env.nodename]))
         for p in ps:
             p.join()
         for n in self.targets:
@@ -412,8 +412,8 @@ class SyncDds(Sync):
             raise ex.Error
         err = False
         for n in self.targets:
-            if self.checksums[rcEnv.nodename] != self.checksums[n]:
-                self.log.error("src/dst checksums differ for %s/%s"%(rcEnv.nodename, n))
+            if self.checksums[Env.nodename] != self.checksums[n]:
+                self.log.error("src/dst checksums differ for %s/%s"%(Env.nodename, n))
                 err = True
         if not err:
             self.log.info("src/dst checksums verified")

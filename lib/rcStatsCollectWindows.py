@@ -5,7 +5,7 @@ import datetime
 import time
 import json
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from winstats import *
 
 def collect(node=None):
@@ -66,7 +66,7 @@ def collect(node=None):
         "w": mon[3],
     }
 
-    stats_d = os.path.join(rcEnv.paths.pathvar, "stats")
+    stats_d = os.path.join(Env.paths.pathvar, "stats")
     stats_p = os.path.join(stats_d, 'sa%d' % now.day)
 
     if not os.path.exists(stats_d):

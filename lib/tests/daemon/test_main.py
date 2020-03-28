@@ -1,7 +1,7 @@
 import pytest
 
 from daemon.main import Daemon, main, cmlock
-from rcGlobalEnv import rcEnv
+from env import Env
 
 
 @pytest.fixture(scope='function')
@@ -33,7 +33,7 @@ class TestDaemonRun:
 
         def lock_holder():
             # need lock holder in separate process
-            with cmlock(lockfile=rcEnv.paths.daemon_lock):
+            with cmlock(lockfile=Env.paths.daemon_lock):
                 sleep(50)
 
         from multiprocessing import Process
@@ -55,7 +55,7 @@ class TestDaemonRun:
 
     @staticmethod
     def test_run_loop_forever_when_daemon_is_dead(loop_forever):
-        with open(rcEnv.paths.daemon_pid, 'w') as pid_file:
+        with open(Env.paths.daemon_pid, 'w') as pid_file:
             pid_file.write('1')
         main(['--debug', '-f'])
         assert loop_forever.call_count == 1

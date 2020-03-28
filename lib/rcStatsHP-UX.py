@@ -1,11 +1,11 @@
 import os
 
 import rcStats
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class StatsProvider(rcStats.StatsProvider):
     def glancefile(self, day):
-        f = os.path.join(rcEnv.paths.pathvar, 'stats', 'glance'+day)
+        f = os.path.join(Env.paths.pathvar, 'stats', 'glance'+day)
         if os.path.exists(f):
             return f
         return None

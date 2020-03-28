@@ -8,7 +8,7 @@ import core.exceptions as ex
 import utilities.subsystems.zone
 import utilities.lock
 import utilities.os.sunos
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
@@ -638,7 +638,7 @@ class ContainerZone(BaseContainer):
           protocol_ipv6=no
           default_route=172.30.5.1}
         """
-        cf = os.path.join(rcEnv.paths.pathetc, self.svc.name+'.conf')
+        cf = os.path.join(Env.paths.pathetc, self.svc.name+'.conf')
         s = ""
 
         for r in self.svc.get_resources(["ip"]):
@@ -958,7 +958,7 @@ class ContainerZone(BaseContainer):
 
         if self.container_origin is not None:
             lockname='create_zone2clone-' + self.container_origin
-            lockfile = os.path.join(rcEnv.paths.pathlock, lockname)
+            lockfile = os.path.join(Env.paths.pathlock, lockname)
             self.log.info("wait get lock %s"%(lockname))
             try:
                 lockfd = utilities.lock.lock(timeout=1200, delay=5, lockfile=lockfile)

@@ -14,7 +14,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
@@ -219,7 +219,7 @@ class ContainerSrp(BaseContainer):
         """
         cmd = ['srp', '-status', self.name]
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
 
         out, err, ret = justcall(cmd)
         if ret != 0:

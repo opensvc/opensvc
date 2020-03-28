@@ -7,7 +7,7 @@ from subprocess import PIPE
 from .devtree import DevTree as BaseDevTree
 from .veritas import DevTreeVeritas
 from utilities.devices.sunos import prtvtoc
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.proc import justcall
 
@@ -198,7 +198,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
             devname = l[0]
 
             # -d mode import ?
-            if devname.startswith(rcEnv.paths.pathvar):
+            if devname.startswith(Env.paths.pathvar):
                 devname = devname.split('/')[-1]
             d = self.get_dev(devname)
             if d is None:

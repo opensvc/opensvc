@@ -5,11 +5,11 @@ import tempfile
 from subprocess import *
 
 from utilities.naming import factory, split_path
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.node import Node
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 class Centeras(object):
     def __init__(self, objects=[], node=None):
@@ -84,7 +84,7 @@ class Centera(object):
         return out, err
 
     def get_discover(self):
-        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=rcEnv.paths.pathtmp)
+        f = tempfile.NamedTemporaryFile(prefix="centera.discover.", suffix=".xml", dir=Env.paths.pathtmp)
         tmp_fpath = f.name
         f.close()
         buff = "monitorDiscoverToFile %s" % tmp_fpath
