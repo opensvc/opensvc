@@ -26,7 +26,7 @@ import six
 import core.exceptions as ex
 import core.logger
 import core.objects.builder
-import xmlrpcClient
+from core.collector.rpc import CollectorRpc
 from core.comm import Crypt
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
@@ -389,7 +389,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Lazy initialization of the node Collector object.
         """
         self.log.debug("initialize node::collector")
-        return xmlrpcClient.Collector(node=self)
+        return CollectorRpc(node=self)
 
     @lazy
     def nodename(self):
@@ -1076,8 +1076,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 self.compliance.node = self
             ret = getattr(self.compliance, action)()
         elif action.startswith("collector_") and action != "collector_cli":
-            from core.collector import Collector
-            coll = Collector(self.options, self)
+            from core.collector.actions import CollectorActions
+            coll = CollectorActions(self.options, self)
             data = getattr(coll, action)()
             self.print_data(data)
             ret = 0
@@ -2314,8 +2314,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         passwd = self.genpw()
 
-        from core.collector import Collector
-        coll = Collector(self.options, self)
+        from core.collector.actions import CollectorActions
+        coll = CollectorActions(self.options, self)
         try:
             getattr(coll, 'rotate_root_pw')(passwd)
         except Exception as exc:
