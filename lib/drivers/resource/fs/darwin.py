@@ -3,7 +3,7 @@ from stat import *
 
 import core.exceptions as ex
 import utilities.devices.darwin
-from rcUtilities import protected_mount, getmount
+from utilities.files import protected_mount, getmount
 from utilities.mounts.darwin import Mounts
 from utilities.proc import qcall
 from . import BaseFs, adder as base_adder

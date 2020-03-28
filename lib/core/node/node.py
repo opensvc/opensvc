@@ -34,19 +34,18 @@ from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from rcGlobalEnv import rcEnv
-from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
-                         drop_option, factory, find_editor,
-                         fmt_path, glob_services_config, init_locale,
-                         is_service, makedirs, normalize_paths,
-                         resolve_path, split_path, strip_path, svc_pathetc,
-                         validate_kind, validate_name, validate_ns_name)
+from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
+                              is_service, normalize_paths,
+                              resolve_path, split_path, strip_path, svc_pathetc,
+                              validate_kind, validate_name, validate_ns_name)
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
 from utilities.drivers import driver_import
 from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
-from utilities.proc import call, justcall, vcall, which
+from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, init_locale
+from utilities.files import makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
 from utilities.string import bdecode, bencode
@@ -628,14 +627,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def call(self, *args, **kwargs):
         """
-        Wrap rcUtilities call function, setting the node logger.
+        Wrap utilities call function, setting the node logger.
         """
         kwargs["log"] = self.log
         return call(*args, **kwargs)
 
     def vcall(self, *args, **kwargs):
         """
-        Wrap rcUtilities vcall function, setting the node logger.
+        Wrap utilities vcall function, setting the node logger.
         """
         kwargs["log"] = self.log
         return vcall(*args, **kwargs)
@@ -1008,7 +1007,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except ex.Error as err:
             print(err, file=sys.stderr)
             return 1
-        from rcUtilities import fsum
+        from utilities.files import fsum
         path = self.make_temp_config()
         os.system(' '.join((editor, path)))
         if fsum(path) == fsum(rcEnv.paths.nodeconf):
@@ -5077,14 +5076,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def set_lazy(self, prop, val):
         """
         Expose the set_lazy(self, ...) utility function as a method,
-        so Node() users don't have to import it from rcUtilities.
+        so Node() users don't have to import it from utilities.
         """
         set_lazy(self, prop, val)
 
     def unset_lazy(self, prop):
         """
         Expose the unset_lazy(self, ...) utility function as a method,
-        so Node() users don't have to import it from rcUtilities.
+        so Node() users don't have to import it from utilities.
         """
         unset_lazy(self, prop)
 

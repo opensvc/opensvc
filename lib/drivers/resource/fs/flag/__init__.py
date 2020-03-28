@@ -3,7 +3,7 @@ import os
 import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs
+from utilities.files import makedirs
 from utilities.lazy import lazy
 from utilities.proc import justcall
 

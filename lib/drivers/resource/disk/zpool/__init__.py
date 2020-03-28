@@ -8,13 +8,12 @@ import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.lock import cmlock
 from rcGlobalEnv import rcEnv
-from rcUtilities import drop_option
 from utilities.cache import cache, clear_cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zpool_devs, zpool_getprop, zpool_setprop
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall, which, drop_option
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "zpool"

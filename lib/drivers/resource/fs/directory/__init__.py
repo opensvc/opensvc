@@ -6,7 +6,7 @@ import stat
 
 import core.exceptions as ex
 import core.status
-from rcUtilities import protected_dir
+from utilities.files import protected_dir
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs

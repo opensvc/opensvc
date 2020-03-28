@@ -45,9 +45,9 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from core.comm import Headers
-from rcUtilities import chunker, \
-                        split_path, fmt_path, factory, \
-                        makedirs, split_fullname
+from utilities.chunker import chunker
+from utilities.naming import split_path, fmt_path, factory, split_fullname
+from utilities.files import makedirs
 from utilities.drivers import driver_import
 from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import print_duration

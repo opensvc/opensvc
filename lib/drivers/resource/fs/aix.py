@@ -2,7 +2,7 @@ import os
 from stat import *
 
 import core.exceptions as ex
-from rcUtilities import protected_mount, getmount
+from utilities.files import protected_mount, getmount
 from utilities.mounts.aix import Mounts
 from utilities.proc import qcall
 from . import BaseFs, adder as base_adder
