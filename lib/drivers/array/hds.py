@@ -9,7 +9,7 @@ from xml.etree.ElementTree import fromstring
 import core.exceptions as ex
 from utilities.converters import convert_size
 from core.node import Node
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.optparser import OptParser, Option
 from utilities.naming import factory, split_path
 from utilities.lazy import lazy
@@ -196,7 +196,7 @@ class Array(object):
             self.bin = bin
         self.domain_portname = {}
         self.port_portname = {}
-        self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.name)
+        self.log = logging.getLogger(Env.nodename+".array.sym."+self.name)
         self.journal = []
 
     def cmd(self, cmd, scoped=True, xml=True, log=False):

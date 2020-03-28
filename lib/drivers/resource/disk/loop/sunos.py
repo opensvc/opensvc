@@ -14,7 +14,7 @@ from . import \
     DEPRECATED_SECTIONS
 from utilities.converters import convert_size
 from utilities.lock import cmlock
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.svcdict import KEYS
 
 KEYS.register_driver(
@@ -39,7 +39,7 @@ class DiskLoop(BaseDiskLoop):
         return True
 
     def start(self):
-        lockfile = os.path.join(rcEnv.paths.pathlock, "disk.loop")
+        lockfile = os.path.join(Env.paths.pathlock, "disk.loop")
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return

@@ -5,7 +5,7 @@ import os
 import core.exceptions as ex
 import core.status
 from utilities.converters import convert_speed, print_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.scheduler import SchedOpts
 from utilities.lazy import lazy
 from core.resource import Resource
@@ -109,7 +109,7 @@ class Sync(Resource):
             # No dstfs check has been configured. Assume the admin knows better.
             return True
         ruser = self.svc.node.get_ruser(node)
-        cmd = rcEnv.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', dstfs]
+        cmd = Env.rsh.split(' ')+['-l', ruser, node, '--', 'LANG=C', 'df', dstfs]
         (ret, out, err) = self.call(cmd, cache=True, errlog=False)
         if ret != 0:
             raise ex.Error
@@ -153,7 +153,7 @@ class Sync(Resource):
         """ Refuse to sync from a flex non-primary node
         """
         if self.svc.topology == "flex" and \
-           self.svc.flex_primary != rcEnv.nodename:
+           self.svc.flex_primary != Env.nodename:
             if self.svc.options.cron:
                 self.log.debug("won't sync this resource from a flex non-primary node")
             else:

@@ -3,7 +3,7 @@ import os
 import core.exceptions as ex
 import core.status
 from .. import BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -90,7 +90,7 @@ class DiskDrbd(Resource):
             if res.attrib['name'] != self.res:
                 continue
             for host in res.getiterator('host'):
-                if host.attrib['name'] != rcEnv.nodename:
+                if host.attrib['name'] != Env.nodename:
                     continue
                 d = host.find('device')
                 if d is not None:
@@ -117,7 +117,7 @@ class DiskDrbd(Resource):
             if res.attrib['name'] != self.res:
                 continue
             for host in res.getiterator('host'):
-                if host.attrib['name'] != rcEnv.nodename:
+                if host.attrib['name'] != Env.nodename:
                     continue
                 d = host.find('disk')
                 if d is None:

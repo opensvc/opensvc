@@ -3,13 +3,13 @@ from __future__ import print_function
 import os
 from subprocess import *
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import factory, split_path
 from core.node import Node
 from utilities.proc import justcall
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 class Netapps(object):
     def __init__(self, objects=[], node=None):

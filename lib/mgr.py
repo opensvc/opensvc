@@ -16,7 +16,7 @@ import utilities.render.color
 import core.exceptions as ex
 from utilities.naming import split_path, validate_kind
 from utilities.proc import get_option, check_privs
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from core.node import Node
 
@@ -81,7 +81,7 @@ class Mgr(object):
         env = {}
         env.update(os.environ)
         env["OSVC_DETACHED"] = "1"
-        env["OSVC_PARENT_SESSION_UUID"] = rcEnv.session_uuid
+        env["OSVC_PARENT_SESSION_UUID"] = Env.session_uuid
         try:
             import subprocess
             import signal

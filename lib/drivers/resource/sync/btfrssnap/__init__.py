@@ -5,7 +5,7 @@ import core.status
 import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -82,7 +82,7 @@ class SyncBtrfssnap(Sync):
         )
 
     def test_btrfs(self, label):
-        cmd = [rcEnv.syspaths.blkid, "-L", label]
+        cmd = [Env.syspaths.blkid, "-L", label]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return ret

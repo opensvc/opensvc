@@ -5,7 +5,7 @@ import json
 import logging
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.naming import factory, split_path
 from utilities.converters import convert_size
@@ -271,7 +271,7 @@ class Array(object):
 
         self.tg_portname = {}
         self.ig_portname = {}
-        self.log = logging.getLogger(rcEnv.nodename+".array.xtremio."+self.name)
+        self.log = logging.getLogger(Env.nodename+".array.xtremio."+self.name)
 
     def convert_ids(self, data):
         if data is None:

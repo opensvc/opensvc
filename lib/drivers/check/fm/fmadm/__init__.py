@@ -2,7 +2,7 @@ import os
 
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
@@ -28,7 +28,7 @@ class Check(drivers.check.Check):
         fmadm = self.find_fmadm()
         if fmadm is None:
             return self.undef
-        os.chdir(rcEnv.paths.pathtmp)
+        os.chdir(Env.paths.pathtmp)
         cmd = [fmadm, 'faulty']
         out, err, ret = justcall(cmd)
         if ret != 0:

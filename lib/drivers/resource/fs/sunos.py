@@ -3,7 +3,7 @@ import re
 import time
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.subsystems.zfs import zfs_getprop, zfs_setprop
 from utilities.mounts.sunos import Mounts
 from . import BaseFs, adder as base_adder
@@ -87,9 +87,9 @@ class Fs(BaseFs):
             os.unlink(self.mount_point+"/.opensvc")
         except:
             pass
-        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device])
+        ret, out, err = self.vcall([Env.syspaths.zfs, 'mount', self.device])
         if ret != 0:
-            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
+            ret, out, err = self.vcall([Env.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
                 raise ex.Error
         self.can_rollback = True
@@ -125,7 +125,7 @@ class Fs(BaseFs):
         if self.fs_type != 'zfs':
             return True
         pool = self.device.split("/")[0]
-        cmd = [rcEnv.syspaths.zpool, "status", pool]
+        cmd = [Env.syspaths.zpool, "status", pool]
         out, err, ret = justcall(cmd)
         if "state: SUSPENDED" in out:
             self.status_log("pool %s is suspended")

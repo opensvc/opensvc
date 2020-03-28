@@ -5,7 +5,7 @@ import core.exceptions as ex
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
@@ -104,7 +104,7 @@ class BaseDiskLv(BaseDisk):
         return False
 
     def get_lv_attr(self):
-        cmd = [rcEnv.syspaths.lvs, '-o', 'lv_attr', '--noheadings', '--separator=;', self.fullname]
+        cmd = [Env.syspaths.lvs, '-o', 'lv_attr', '--noheadings', '--separator=;', self.fullname]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return

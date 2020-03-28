@@ -7,7 +7,7 @@ import socket
 
 import core.exceptions as ex
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs
 from utilities.lazy import lazy
 from utilities.net.ipaddress import ip_network, ip_address, summarize_address_range
@@ -200,7 +200,7 @@ class NetworksMixin(object):
 
     def node_subnet(self, name, nodename=None, config=None):
         if nodename is None:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
         if not config:
             config = self.network_data(name)["config"]
         persistent_subnet = config.get("subnets", {}).get(nodename)
@@ -235,7 +235,7 @@ class NetworksMixin(object):
             local_ip = None
         if local_ip is None:
             try:
-                for result in socket.getaddrinfo(rcEnv.nodename, None):
+                for result in socket.getaddrinfo(Env.nodename, None):
                     addr = result[4][0]
                     if ":" in addr or addr in ("127.0.0.1", "127.0.1.1"):
                         # discard ipv6 and loopback address
@@ -243,11 +243,11 @@ class NetworksMixin(object):
                     local_ip = addr
                     break
             except socket.gaierror:
-                self.log.warning("node %s is not resolvable", rcEnv.nodename)
+                self.log.warning("node %s is not resolvable", Env.nodename)
                 return routes
         for nodename in self.cluster_nodes:
             for table in config["tables"]:
-                if nodename == rcEnv.nodename:
+                if nodename == Env.nodename:
                     routes.append({
                         "node": nodename,
                         "dst": str(self.node_subnet(name, nodename, config=config)),

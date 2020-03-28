@@ -2,7 +2,7 @@ import os
 import json
 
 import rcStats
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.converters import convert_datetime
 
 class StatsProvider(rcStats.StatsProvider):
@@ -41,7 +41,7 @@ class StatsProvider(rcStats.StatsProvider):
         return getattr(self, group)()
 
     def sarfile(self, day):
-        f = os.path.join(rcEnv.paths.pathvar, 'stats', 'sa%s' % day)
+        f = os.path.join(Env.paths.pathvar, 'stats', 'sa%s' % day)
         if os.path.exists(f):
             return f
         return None
@@ -100,7 +100,7 @@ class StatsProvider(rcStats.StatsProvider):
                0,
                0,
                idle,
-               rcEnv.nodename
+               Env.nodename
            ])
         return cols, lines
 
@@ -134,7 +134,7 @@ class StatsProvider(rcStats.StatsProvider):
                kbmemfree,
                kbmemused,
                pct_memused,
-               rcEnv.nodename
+               Env.nodename
            ])
         return cols, lines
 
@@ -168,7 +168,7 @@ class StatsProvider(rcStats.StatsProvider):
            lines.append([
                data["ts"],
                plist_sz,
-               rcEnv.nodename
+               Env.nodename
            ])
         return cols, lines
 
@@ -196,7 +196,7 @@ class StatsProvider(rcStats.StatsProvider):
                kbswpfree,
                kbswpused,
                pct_swpused,
-               rcEnv.nodename
+               Env.nodename
            ])
         return cols, lines
 
@@ -228,7 +228,7 @@ class StatsProvider(rcStats.StatsProvider):
                wtps,
                rbps,
                wbps,
-               rcEnv.nodename
+               Env.nodename
            ])
         return cols, lines
 

@@ -6,7 +6,7 @@ import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -113,7 +113,7 @@ class DiskRados(BaseDisk):
     def modprobe(self):
         if self.modprobe_done:
             return
-        cmd = [rcEnv.syspaths.lsmod]
+        cmd = [Env.syspaths.lsmod]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.Error("lsmod failed")
@@ -272,7 +272,7 @@ class DiskRadoslock(DiskRados):
 
     def has_lock(self, image):
         data = self.locklist(image)
-        if rcEnv.nodename in data:
+        if Env.nodename in data:
             return True
         self.unlocked.append(image)
         return False
@@ -296,13 +296,13 @@ class DiskRadoslock(DiskRados):
 
     def do_stop_one(self, image):
         data = self.locklist(image)
-        if rcEnv.nodename not in data:
+        if Env.nodename not in data:
             self.log.info(image+" is already unlocked")
             return
         i = 0
         while len(data) > 0 or i>20:
             i += 1
-            cmd = self.rbd_rcmd()+["lock", "remove", image, rcEnv.nodename, data[rcEnv.nodename]["locker"]]
+            cmd = self.rbd_rcmd()+["lock", "remove", image, Env.nodename, data[Env.nodename]["locker"]]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 raise ex.Error("failed to unlock %s"%self.devname(image))
@@ -310,10 +310,10 @@ class DiskRadoslock(DiskRados):
 
     def do_start_one(self, image):
         data = self.locklist(image)
-        if rcEnv.nodename in data:
+        if Env.nodename in data:
             self.log.info(image+" is already locked")
             return
-        cmd = self.rbd_rcmd()+["lock", "add", image, rcEnv.nodename]
+        cmd = self.rbd_rcmd()+["lock", "add", image, Env.nodename]
         if self.lock_shared_tag:
             cmd += ["--shared", self.lock_shared_tag]
         ret, out, err = self.vcall(cmd)

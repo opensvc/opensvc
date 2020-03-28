@@ -20,7 +20,7 @@ from .. import \
     KW_ALIAS, \
     KW_EXPOSE
 from ..linux import Ip
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
@@ -175,7 +175,7 @@ class IpCni(Ip):
         if self.netns is None:
             return
 
-        cmd = [rcEnv.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -191,7 +191,7 @@ class IpCni(Ip):
         if nspid is None:
             return
 
-        cmd = [rcEnv.syspaths.ip, "netns", "exec", self.nspid, "ip", "addr"]
+        cmd = [Env.syspaths.ip, "netns", "exec", self.nspid, "ip", "addr"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -296,7 +296,7 @@ class IpCni(Ip):
             raise ex.Error("%s not found" % cmd[0])
         self.log_cmd(_env, data, cmd)
         env = {}
-        env.update(rcEnv.initial_env)
+        env.update(Env.initial_env)
         env.update(_env)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE, env=env)
         out, err = proc.communicate(input=bencode(json.dumps(data)))
@@ -331,7 +331,7 @@ class IpCni(Ip):
         if self.has_netns():
             self.log.info("netns %s already added" % self.nspid)
             return
-        cmd = [rcEnv.syspaths.ip, "netns", "add", self.nspid]
+        cmd = [Env.syspaths.ip, "netns", "add", self.nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error(err)
@@ -343,7 +343,7 @@ class IpCni(Ip):
         if not self.has_netns():
             self.log.info("netns %s already deleted" % self.nspid)
             return
-        cmd = [rcEnv.syspaths.ip, "netns", "del", self.nspid]
+        cmd = [Env.syspaths.ip, "netns", "del", self.nspid]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error()

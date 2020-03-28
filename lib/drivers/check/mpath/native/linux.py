@@ -1,6 +1,6 @@
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 class Check(drivers.check.Check):
@@ -34,7 +34,7 @@ class Check(drivers.check.Check):
 	 \_ 1:0:3:2 sdh 8:112 [active]
 	 \_ 1:0:2:2 sdb 8:16  [active]
         """
-        cmd = [rcEnv.syspaths.multipath, '-l']
+        cmd = [Env.syspaths.multipath, '-l']
         (out, err, ret) = justcall(cmd)
         lines = out.split('\n')
         if len(lines) < 1:
@@ -74,7 +74,7 @@ class Check(drivers.check.Check):
         return r
 
     def do_check(self):
-        cmd = [rcEnv.syspaths.multipathd, '-kshow topo']
+        cmd = [Env.syspaths.multipathd, '-kshow topo']
         (out, err, ret) = justcall(cmd)
         if 'list|show' in out:
             # multipathd does not support 'show topo'

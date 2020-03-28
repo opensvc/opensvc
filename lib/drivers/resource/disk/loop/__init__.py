@@ -1,5 +1,5 @@
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS

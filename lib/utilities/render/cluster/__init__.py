@@ -5,7 +5,7 @@ import re
 
 from utilities.converters import print_duration, print_size
 from utilities.render.color import colorize, color, unicons
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.status import colorize_status
 from utilities.naming import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, abbrev
 from utilities.storage import Storage
@@ -38,7 +38,7 @@ def get_nodes(data):
     try:
         return data["cluster"]["nodes"]
     except:
-        return [rcEnv.nodename]
+        return [Env.nodename]
 
 def fmt_svc_uptime(key, stats_data):
     if stats_data is None:

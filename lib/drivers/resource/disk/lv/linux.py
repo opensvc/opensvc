@@ -8,7 +8,7 @@ import core.exceptions as ex
 
 from . import BaseDiskLv, adder as base_adder
 from utilities.converters import convert_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 from utilities.string import bdecode
 
@@ -143,7 +143,7 @@ class DiskLv(BaseDiskLv):
 
         # /dev/mapper/$vg-$lv and /dev/$vg/$lv creation is delayed ... refresh
         try:
-            cmd = [rcEnv.syspaths.dmsetup, 'mknodes']
+            cmd = [Env.syspaths.dmsetup, 'mknodes']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             p.communicate()
         except:

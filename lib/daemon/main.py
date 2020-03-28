@@ -15,7 +15,7 @@ import core.exceptions as ex
 import core.logger
 from core.comm import CRYPTO_MODULE
 from utilities.lock import LockTimeout, cmlock
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import daemon_process_running, process_args
 from .hb.disk import HbDiskRx, HbDiskTx
 from .hb.mcast import HbMcastRx, HbMcastTx
@@ -117,9 +117,9 @@ class Daemon(object):
         self.handlers = None
         self.threads = {}
         self.last_config_mtime = None
-        log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        core.logger.initLogger(rcEnv.nodename, log_file, handlers=self.handlers, sid=False)
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd"), {"node": rcEnv.nodename, "component": "main"})
+        log_file = os.path.join(Env.paths.pathlog, "node.log")
+        core.logger.initLogger(Env.nodename, log_file, handlers=self.handlers, sid=False)
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd"), {"node": Env.nodename, "component": "main"})
         self.pid = os.getpid()
         self.stats_data = None
         self.last_stats_refresh = 0
@@ -151,7 +151,7 @@ class Daemon(object):
         self._run()
 
     def set_last_shutdown(self):
-        with open(rcEnv.paths.last_shutdown, "w") as filep:
+        with open(Env.paths.last_shutdown, "w") as filep:
             filep.write("")
 
     def _run(self):
@@ -161,7 +161,7 @@ class Daemon(object):
         """
 
         try:
-            with cmlock(lockfile=rcEnv.paths.daemon_lock, timeout=1, delay=1):
+            with cmlock(lockfile=Env.paths.daemon_lock, timeout=1, delay=1):
                 if daemon_process_running():
                     self.log.error("a daemon process is already running")
                     sys.exit(1)
@@ -174,10 +174,10 @@ class Daemon(object):
 
     def write_pid(self):
         pid = str(self.pid)+"\n"
-        with open(rcEnv.paths.daemon_pid, "w") as ofile:
+        with open(Env.paths.daemon_pid, "w") as ofile:
             ofile.write(pid)
         _, pid_args = process_args(self.pid)
-        with open(rcEnv.paths.daemon_pid_args, "w") as ofile:
+        with open(Env.paths.daemon_pid_args, "w") as ofile:
             ofile.write(pid_args)
 
     def init(self):
@@ -346,26 +346,26 @@ class Daemon(object):
                 shared.THREADS = self.threads
 
     def init_nodeconf(self):
-        if not os.path.exists(rcEnv.paths.pathetc):
-            self.log.info("create dir %s", rcEnv.paths.pathetc)
-            os.makedirs(rcEnv.paths.pathetc)
-        if not os.path.exists(rcEnv.paths.nodeconf):
-            self.log.info("create %s", rcEnv.paths.nodeconf)
-            with open(rcEnv.paths.nodeconf, "a") as ofile:
+        if not os.path.exists(Env.paths.pathetc):
+            self.log.info("create dir %s", Env.paths.pathetc)
+            os.makedirs(Env.paths.pathetc)
+        if not os.path.exists(Env.paths.nodeconf):
+            self.log.info("create %s", Env.paths.nodeconf)
+            with open(Env.paths.nodeconf, "a") as ofile:
                 ofile.write("")
-            os.chmod(rcEnv.paths.nodeconf, 0o0600)
+            os.chmod(Env.paths.nodeconf, 0o0600)
 
     def get_config_mtime(self):
         try:
-            mtime = os.path.getmtime(rcEnv.paths.nodeconf)
+            mtime = os.path.getmtime(Env.paths.nodeconf)
         except (OSError, IOError):
             self.init_nodeconf()
-            mtime = os.path.getmtime(rcEnv.paths.nodeconf)
+            mtime = os.path.getmtime(Env.paths.nodeconf)
         except Exception as exc:
             self.log.warning("failed to get node config mtime: %s", exc)
             mtime = 0
         try:
-            cmtime = os.path.getmtime(rcEnv.paths.clusterconf)
+            cmtime = os.path.getmtime(Env.paths.clusterconf)
         except Exception as exc:
             cmtime = 0
         return mtime if mtime > cmtime else cmtime
@@ -438,7 +438,7 @@ class Daemon(object):
                 continue
             try:
                 hb_nodes = shared.NODE.conf_get(section, "nodes")
-                if rcEnv.nodename not in hb_nodes:
+                if Env.nodename not in hb_nodes:
                     continue
             except ex.OptNotFound as exc:
                 pass

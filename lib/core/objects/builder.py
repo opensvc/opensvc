@@ -5,7 +5,7 @@ import re
 
 import core.exceptions as ex
 import utilities.configparser
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import factory, list_services, split_path
 from utilities.storage import Storage
 
@@ -133,11 +133,11 @@ def container_kwargs(svc, s, default_name="name"):
 
 def standby_from_always_on(svc, section):
     always_on_opt = svc.conf_get(section, "always_on")
-    if rcEnv.nodename in always_on_opt:
+    if Env.nodename in always_on_opt:
         return True
-    if "nodes" in always_on_opt and rcEnv.nodename in svc.nodes:
+    if "nodes" in always_on_opt and Env.nodename in svc.nodes:
         return True
-    if "drpnodes" in always_on_opt and rcEnv.nodename in svc.drpnodes:
+    if "drpnodes" in always_on_opt and Env.nodename in svc.drpnodes:
         return True
     return False
 
@@ -211,9 +211,9 @@ def add_mandatory_syncs(svc):
     if svc.scale_target is not None or len(svc.nodes) < 2 or \
        len(svc.resources_by_id) == 0:
         target.remove("nodes")
-    if rcEnv.nodename in svc.nodes and len(svc.drpnodes) == 0:
+    if Env.nodename in svc.nodes and len(svc.drpnodes) == 0:
         target.remove("drpnodes")
-    if rcEnv.nodename in svc.drpnodes and len(svc.drpnodes) < 2:
+    if Env.nodename in svc.drpnodes and len(svc.drpnodes) < 2:
         target.remove("drpnodes")
     if len(target) == 0:
         return

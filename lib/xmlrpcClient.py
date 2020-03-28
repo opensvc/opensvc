@@ -12,7 +12,7 @@ from datetime import datetime
 import six
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import split_path
 
 socket.setdefaulttimeout(5)
@@ -39,9 +39,9 @@ def get_proxy(uri):
 
 
 
-rcEnv.warned = False
+Env.warned = False
 
-logfile = os.path.join(rcEnv.paths.pathlog, 'xmlrpc.log')
+logfile = os.path.join(Env.paths.pathlog, 'xmlrpc.log')
 log = logging.getLogger("xmlrpc")
 log.setLevel(logging.INFO)
 
@@ -119,11 +119,11 @@ class Collector(object):
             return
         if self.node.collector_env.uuid == "" and \
            self.node.collector_env.dbopensvc is not None and \
-           not rcEnv.warned and \
+           not Env.warned and \
            fn != "register_node":
             print("this node is not registered. try 'nodemgr register'", file=sys.stderr)
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
-            rcEnv.warned = True
+            Env.warned = True
             return
         return do_call(fn, args, kwargs, self.log, self, mode="synchronous")
 
@@ -265,12 +265,12 @@ class Collector(object):
              'cron'],
             [str(svcname),
              str(action),
-             str(rcEnv.nodename),
+             str(Env.nodename),
              str(version),
              str(begin),
              '1' if cron else '0']
         ]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.begin_action(*args)
 
     def end_action(self, path, action, begin, end, cron, alogfile):
@@ -311,7 +311,7 @@ class Collector(object):
 
             res_err = "ok"
             date, res, lvl, msg, pid = line.split(";;")
-            res = res.lower().replace(rcEnv.nodename+"."+kind+"."+name, "").replace(rcEnv.nodename, "").lstrip(".")
+            res = res.lower().replace(Env.nodename+"."+kind+"."+name, "").replace(Env.nodename, "").lstrip(".")
             res_action = res + " " + action
             res_action = res_action.strip()
             date = date.split(",")[0]
@@ -349,7 +349,7 @@ class Collector(object):
             last = [
                 path,
                 res_action,
-                rcEnv.nodename,
+                Env.nodename,
                 pid,
                 date,
                 "",
@@ -363,7 +363,7 @@ class Collector(object):
 
         if len(vals) > 0:
             args = [vars, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.res_action_batch(*args)
 
         """Complete the wrap-up database entry
@@ -388,7 +388,7 @@ class Collector(object):
              'cron'],
             [str(path),
              str(action),
-             str(rcEnv.nodename),
+             str(Env.nodename),
              ','.join(map(str, pids)),
              begin,
              end,
@@ -396,12 +396,12 @@ class Collector(object):
              str(err),
              '1' if cron else '0']
         ]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.end_action(*args)
 
     def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):
         args = [g_vars, g_vals, r_vars, r_vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.svcmon_update_combo(*args)
 
     def push_resinfo(self, vals, sync=False):
@@ -416,7 +416,7 @@ class Collector(object):
         if len(vals) == 0:
             return
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         if sync:
             self.proxy.update_resinfo_sync(*args)
         else:
@@ -467,7 +467,7 @@ class Collector(object):
                 '1' if svc.ha else '0']
 
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.update_service(*args)
 
     def push_containerinfo(self, svc, sync=True):
@@ -483,7 +483,7 @@ class Collector(object):
         for container in svc.get_resources('container'):
             container_info = container.get_container_info()
             vals += [[svc.path,
-                      rcEnv.nodename,
+                      Env.nodename,
                       container.vm_hostname,
                       container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
                       container_info['vmem'],
@@ -492,7 +492,7 @@ class Collector(object):
 
         if len(vals) > 0:
             args = [vars, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.svcmon_update(*args)
 
     def push_disks(self, data, sync=True):
@@ -518,7 +518,7 @@ class Collector(object):
                  disk["vendor"],
                  disk["model"],
                  disk["dg"],
-                 rcEnv.nodename,
+                 Env.nodename,
                  service["region"],
             ])
             if disk["used"] < disk["size"]:
@@ -530,12 +530,12 @@ class Collector(object):
                  disk["vendor"],
                  disk["model"],
                  disk["dg"],
-                 rcEnv.nodename,
+                 Env.nodename,
                  0,
             ])
 
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.register_disks(*args)
 
         #
@@ -560,12 +560,12 @@ class Collector(object):
             ])
 
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.register_diskinfo(*args)
 
     def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.insert_stats_fs_u(*args)
 
     def push_pkg(self, sync=True):
@@ -589,7 +589,7 @@ class Collector(object):
         if n_fields >= 7:
             vars.append('pkg_sig')
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.insert_pkg(*args)
 
     def push_patch(self, sync=True):
@@ -603,13 +603,13 @@ class Collector(object):
         if len(vals[0]) == 4:
             vars.append('patch_install_date')
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.insert_patch(*args)
 
     def push_stats(self, interval=None, stats_dir=None,
                    stats_start=None, stats_end=None, sync=True, disable=None):
         try:
-            s = __import__('rcStats'+rcEnv.sysname)
+            s = __import__('rcStats'+Env.sysname)
         except ImportError:
             return
 
@@ -634,13 +634,13 @@ class Collector(object):
             print("%s stats: %d samples" % (stat, len(h[stat][1])))
         import json
         args = [json.dumps(h)]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         print("pushing")
         self.proxy.insert_stats(*args)
 
     def sysreport_lstree(self, sync=True):
         args = []
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         data = self.proxy.sysreport_lstree(*args)
         return data
 
@@ -654,7 +654,7 @@ class Collector(object):
             args = [os.path.basename(fpath), binary]
             print("archive length:", len(binary.data))
         args += [deleted]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.send_sysreport(*args)
 
     def push_asset(self, node, data=None, sync=True):
@@ -670,7 +670,7 @@ class Collector(object):
 
         if 'hba' in d:
             vars = ['nodename', 'hba_id', 'hba_type']
-            vals = [(rcEnv.nodename, _d["hba_id"], _d["hba_type"]) for _d in d['hba']]
+            vals = [(Env.nodename, _d["hba_id"], _d["hba_type"]) for _d in d['hba']]
             del(d['hba'])
             gen.update({'hba': [vars, vals]})
 
@@ -703,7 +703,7 @@ class Collector(object):
 
         if len(gen) > 0:
             args = [gen]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.insert_generic(*args)
 
         _vars = []
@@ -714,24 +714,24 @@ class Collector(object):
                 _d["value"] = ""
             _vals.append(_d["value"])
         args = [_vars, _vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         if node.options.syncrpc:
             self.proxy.update_asset_sync(*args)
         else:
             self.proxy.update_asset(*args)
 
     def daemon_ping(self, sync=True):
-        args = [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.daemon_ping(*args)
 
     def push_status(self, svcname, data, sync=True):
         import json
-        args = [svcname, json.dumps(data), (self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [svcname, json.dumps(data), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_status(*args)
 
     def push_daemon_status(self, data, changes=None, sync=True):
         import json
-        args = [json.dumps(data), json.dumps(changes), (self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [json.dumps(data), json.dumps(changes), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_daemon_status(*args)
 
     def push_brocade(self, objects=[], sync=True):
@@ -752,7 +752,7 @@ class Collector(object):
                     print("error fetching", key)
                     continue
             args = [brocade.name, brocade.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_brocade(*args)
 
     def push_vioserver(self, objects=[], sync=True):
@@ -769,7 +769,7 @@ class Collector(object):
             for key in vioserver.keys:
                 vals.append(getattr(vioserver, 'get_'+key)())
             args = [vioserver.name, vioserver.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_vioserver(*args)
 
     def push_hds(self, objects=[], sync=True):
@@ -787,7 +787,7 @@ class Collector(object):
             for key in hds.keys:
                 vals.append(getattr(hds, 'get_'+key)())
             args = [hds.name, hds.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_hds(*args)
 
     def push_necism(self, objects=[], sync=True):
@@ -804,7 +804,7 @@ class Collector(object):
             for key in necism.keys:
                 vals.append(getattr(necism, 'get_'+key)())
             args = [necism.name, necism.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_necism(*args)
 
     def push_hp3par(self, objects=[], sync=True):
@@ -821,7 +821,7 @@ class Collector(object):
             for key in hp3par.keys:
                 vals.append(getattr(hp3par, 'get_'+key)())
             args = [hp3par.name, hp3par.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_hp3par(*args)
 
     def push_centera(self, objects=[], sync=True):
@@ -840,7 +840,7 @@ class Collector(object):
                 print(" extract", key)
                 vals.append(getattr(centera, 'get_'+key)())
             args = [centera.name, [k+".xml" for k in centera.keys], vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_centera(*args)
 
     def push_emcvnx(self, objects=[], sync=True):
@@ -859,7 +859,7 @@ class Collector(object):
                 print(" extract", key)
                 vals.append(getattr(emcvnx, 'get_'+key)())
             args = [emcvnx.name, emcvnx.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_emcvnx(*args)
 
     def push_netapp(self, objects=[], sync=True):
@@ -878,7 +878,7 @@ class Collector(object):
                 print(" extract", key)
                 vals.append(getattr(netapp, 'get_'+key)())
             args = [netapp.name, netapp.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_netapp(*args)
 
     def push_ibmsvc(self, objects=[], sync=True):
@@ -895,7 +895,7 @@ class Collector(object):
             for key in ibmsvc.keys:
                 vals.append(getattr(ibmsvc, 'get_'+key)())
             args = [ibmsvc.name, ibmsvc.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_ibmsvc(*args)
 
     def push_nsr(self, sync=True):
@@ -910,8 +910,8 @@ class Collector(object):
         vals = []
         for key in nsr.keys:
             vals.append(getattr(nsr, 'get_'+key)())
-        args = [rcEnv.nodename, nsr.keys, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, nsr.keys, vals]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         try:
             self.proxy.update_nsr(*args)
         except:
@@ -931,7 +931,7 @@ class Collector(object):
             for key in ibmds.keys:
                 vals.append(getattr(ibmds, 'get_'+key)())
             args = [ibmds.name, ibmds.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_ibmds(*args)
             except:
@@ -951,7 +951,7 @@ class Collector(object):
             for key in array.keys:
                 vals.append(getattr(array, 'get_'+key)())
             args = [array.name, array.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_gcedisks(*args)
             except Exception as e:
@@ -971,7 +971,7 @@ class Collector(object):
             for key in array.keys:
                 vals.append(getattr(array, 'get_'+key)())
             args = [array.name, array.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_freenas(*args)
             except:
@@ -991,7 +991,7 @@ class Collector(object):
             for key in array.keys:
                 vals.append(getattr(array, 'get_'+key)())
             args = [array.name, array.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_xtremio(*args)
             except Exception as exc:
@@ -1013,7 +1013,7 @@ class Collector(object):
             for key in eva.keys:
                 vals.append(getattr(eva, 'get_'+key)())
             args = [eva.name, eva.keys, vals]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_eva_xml(*args)
 
     def push_dorado(self, objects=[], sync=True):
@@ -1039,7 +1039,7 @@ class Collector(object):
                         print(e)
                         continue
                     args = [array.name, vars, vals]
-                    args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+                    args += [(self.node.collector_env.uuid, Env.nodename)]
                     try:
                         print(" send   ", key)
                         self.proxy.update_dorado_xml(*args)
@@ -1049,7 +1049,7 @@ class Collector(object):
                         continue
                 # signal all files are received
                 args = [array.name, [], []]
-                args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+                args += [(self.node.collector_env.uuid, Env.nodename)]
                 self.proxy.update_dorado_xml(*args)
         finally:
             for array in arrays:
@@ -1083,7 +1083,7 @@ class Collector(object):
                     print(e)
                     continue
                 args = [sym.sid, vars, vals]
-                args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+                args += [(self.node.collector_env.uuid, Env.nodename)]
                 try:
                     print(" send   ", key)
                     self.proxy.update_sym_xml(*args)
@@ -1093,7 +1093,7 @@ class Collector(object):
                     continue
             # signal all files are received
             args = [sym.sid, [], []]
-            args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_sym_xml(*args)
         return r
 
@@ -1102,220 +1102,220 @@ class Collector(object):
             print("'push_checks' method is not exported by the collector")
             return
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_checks(*args)
 
     def register_node(self, sync=True):
-        return self.proxy.register_node(rcEnv.nodename)
+        return self.proxy.register_node(Env.nodename)
 
     def comp_get_data(self, modulesets=[], sync=True):
-        args = [rcEnv.nodename, modulesets]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, modulesets]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_data_v2(*args)
 
     def comp_get_svc_data(self, svcname, modulesets=[], sync=True):
-        args = [rcEnv.nodename, svcname, modulesets]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, svcname, modulesets]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_svc_data_v2(*args)
 
     def comp_get_data_moduleset(self, sync=True):
-        args = [rcEnv.nodename]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_data_moduleset(*args)
 
     def comp_get_svc_data_moduleset(self, svc, sync=True):
         args = [svc]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_svc_data_moduleset(*args)
 
     def comp_attach_moduleset(self, moduleset, sync=True):
-        args = [rcEnv.nodename, moduleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, moduleset]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_attach_moduleset(*args)
 
     def comp_attach_svc_moduleset(self, svc, moduleset, sync=True):
         args = [svc, moduleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_attach_svc_moduleset(*args)
 
     def comp_detach_svc_moduleset(self, svcname, moduleset, sync=True):
         args = [svcname, moduleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_detach_svc_moduleset(*args)
 
     def comp_detach_moduleset(self, moduleset, sync=True):
-        args = [rcEnv.nodename, moduleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, moduleset]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_detach_moduleset(*args)
 
     def comp_get_svc_ruleset(self, svcname, sync=True):
         args = [svcname]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_svc_ruleset(*args)
 
     def comp_get_ruleset(self, sync=True):
-        args = [rcEnv.nodename]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_ruleset(*args)
 
     def comp_get_ruleset_md5(self, rset_md5, sync=True):
         args = [rset_md5]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_ruleset_md5(*args)
 
     def comp_attach_ruleset(self, ruleset, sync=True):
-        args = [rcEnv.nodename, ruleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, ruleset]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_attach_ruleset(*args)
 
     def comp_detach_svc_ruleset(self, svcname, ruleset, sync=True):
         args = [svcname, ruleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_detach_svc_ruleset(*args)
 
     def comp_attach_svc_ruleset(self, svcname, ruleset, sync=True):
         args = [svcname, ruleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_attach_svc_ruleset(*args)
 
     def comp_detach_ruleset(self, ruleset, sync=True):
-        args = [rcEnv.nodename, ruleset]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename, ruleset]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_detach_ruleset(*args)
 
     def comp_list_ruleset(self, pattern='%', sync=True):
-        args = [pattern, rcEnv.nodename]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [pattern, Env.nodename]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_list_rulesets(*args)
 
     def comp_list_moduleset(self, pattern='%', sync=True):
         args = [pattern]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_list_modulesets(*args)
 
     def comp_log_actions(self, vars, vals, sync=True):
         args = [vars, vals]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_log_actions(*args)
 
     def comp_show_status(self, svcname, pattern='%', sync=True):
         args = [svcname, pattern]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_show_status(*args)
 
     def collector_update_root_pw(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_update_root_pw(*args)
 
     def collector_ack_unavailability(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_ack_unavailability(*args)
 
     def collector_list_unavailability_ack(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_unavailability_ack(*args)
 
     def collector_list_actions(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_actions(*args)
 
     def collector_ack_action(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_ack_action(*args)
 
     def collector_status(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_status(*args)
 
     def collector_asset(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_asset(*args)
 
     def collector_networks(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_networks(*args)
 
     def collector_checks(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_checks(*args)
 
     def collector_disks(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_disks(*args)
 
     def collector_alerts(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_alerts(*args)
 
     def collector_show_actions(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_show_actions(*args)
 
     def collector_events(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_events(*args)
 
     def collector_tag(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_tag(*args)
 
     def collector_untag(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_untag(*args)
 
     def collector_create_tag(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_create_tag(*args)
 
     def collector_show_tags(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_show_tags(*args)
 
     def collector_list_tags(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_tags(*args)
 
     def collector_list_nodes(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_nodes(*args)
 
     def collector_list_services(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_services(*args)
 
     def collector_list_filtersets(self, opts, sync=True):
         args = [opts]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_list_filtersets(*args)
 
     def collector_get_action_queue(self, sync=True):
-        args = [rcEnv.nodename]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args = [Env.nodename]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_get_action_queue(*args)
 
     def collector_update_action_queue(self, data, sync=True):
         args = [data]
-        args += [(self.node.collector_env.uuid, rcEnv.nodename)]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_update_action_queue(*args)
 
 

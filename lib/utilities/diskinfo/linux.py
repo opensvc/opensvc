@@ -13,7 +13,7 @@ import utilities.devtree.veritas
 import utilities.devices.linux
 from .diskinfo import BaseDiskInfo
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
 
@@ -24,7 +24,7 @@ class DiskInfo(BaseDiskInfo):
         pass
 
     def prefix_local(self, id):
-        return '.'.join((rcEnv.nodename, id))
+        return '.'.join((Env.nodename, id))
 
     def disk_id(self, dev):
         if 'cciss' in dev:
@@ -51,7 +51,7 @@ class DiskInfo(BaseDiskInfo):
 
     @lazy
     def gce_instance_data(self):
-        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
+        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", Env.nodename]
         out, err, ret = justcall(cmd)
         return json.loads(out)
 
@@ -92,7 +92,7 @@ class DiskInfo(BaseDiskInfo):
         return self.mpath_h(dev)
 
     def load_mpath_native(self):
-        cmd = [rcEnv.syspaths.multipath, '-l']
+        cmd = [Env.syspaths.multipath, '-l']
         out, err, ret = justcall(cmd)
         if ret != 0:
             return
@@ -127,7 +127,7 @@ class DiskInfo(BaseDiskInfo):
         if hasattr(self, "mpath_h"):
             return self.mpath_h
         self.mpath_h = {}
-        if which(rcEnv.syspaths.multipath):
+        if which(Env.syspaths.multipath):
             self.load_mpath_native()
         return self.mpath_h
 

@@ -5,7 +5,7 @@ import glob
 import time
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.proc import justcall, call, qcall, which
 
@@ -101,13 +101,13 @@ def dev_delete(dev, log=None):
         s.write("1")
 
 def refresh_multipath(dev, log=None):
-    cmd = [rcEnv.syspaths.multipath, "-v0", "-r", dev]
+    cmd = [Env.syspaths.multipath, "-v0", "-r", dev]
     (ret, out, err) = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
         raise ex.Error
 
 def multipath_flush(dev, log=None):
-    cmd = [rcEnv.syspaths.multipath, "-f", dev]
+    cmd = [Env.syspaths.multipath, "-f", dev]
     ret, out, err = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
         raise ex.Error
@@ -161,9 +161,9 @@ def promote_dev_rw(dev, log=None):
             pass
 
 def loop_is_deleted(dev):
-    if not which(rcEnv.syspaths.losetup):
+    if not which(Env.syspaths.losetup):
         raise ex.Error("losetup must be installed")
-    out, err, ret = justcall([rcEnv.syspaths.losetup, dev])
+    out, err, ret = justcall([Env.syspaths.losetup, dev])
     if "(deleted)" in out:
         return True
     return False
@@ -177,9 +177,9 @@ def label_to_dev(label, tree=None):
     if label in label_to_dev_cache:
         return label_to_dev_cache[label]
 
-    if not which(rcEnv.syspaths.blkid):
+    if not which(Env.syspaths.blkid):
         return
-    out, err, ret = justcall([rcEnv.syspaths.blkid, "-t", label])
+    out, err, ret = justcall([Env.syspaths.blkid, "-t", label])
     if ret != 0:
         return
     devps = []
@@ -244,13 +244,13 @@ def get_blockdev_sd_slaves(syspath):
     return slaves
 
 def lv_exists(self, device):
-    if qcall([rcEnv.syspaths.lvs, device]) == 0:
+    if qcall([Env.syspaths.lvs, device]) == 0:
         return True
     return False
 
 def lv_info(self, device):
     cmd = [
-        rcEnv.syspaths.lvs,
+        Env.syspaths.lvs,
         '-o', 'vg_name,lv_name,lv_size',
         '--noheadings', '--units', 'm',
         device
@@ -331,7 +331,7 @@ def file_to_loop(f):
     if data:
         return [_data["name"] for _data in data if _data["back-file"] == f]
 
-    out, err, ret = justcall([rcEnv.syspaths.losetup, '-j', f])
+    out, err, ret = justcall([Env.syspaths.losetup, '-j', f])
     if len(out) == 0:
         return []
 
@@ -360,7 +360,7 @@ def loop_to_file(f):
                 return _data["back-file"]
         return
 
-    out, err, ret = justcall([rcEnv.syspaths.losetup, f])
+    out, err, ret = justcall([Env.syspaths.losetup, f])
     if len(out) == 0:
         return
 

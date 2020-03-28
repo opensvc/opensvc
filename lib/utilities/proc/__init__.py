@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 
 import six
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.string import bencode, bdecode, empty_string, is_string
 
 # Os where os.access is invalid
@@ -54,7 +54,7 @@ def justcall(argv=None, stdin=None, input=None):
     Returns (stdout, stderr, returncode)
     """
     if argv is None:
-        argv = [rcEnv.syspaths.false]
+        argv = [Env.syspaths.false]
     if input:
         stdin = PIPE
         input = bencode(input)
@@ -76,7 +76,7 @@ def is_exe(fpath, realpath=False):
         fpath = os.path.realpath(fpath)
     if os.path.isdir(fpath) or not os.path.exists(fpath):
         return False
-    if rcEnv.sysname not in OS_WITHOUT_OS_ACCESS:
+    if Env.sysname not in OS_WITHOUT_OS_ACCESS:
         return os.access(fpath, os.X_OK)
     else:
         return os_access_owner_ixusr(fpath)
@@ -235,13 +235,13 @@ def call(argv,
     else:
         log.debug(cmd)
 
-    if not hasattr(rcEnv, "call_cache"):
-        rcEnv.call_cache = {}
+    if not hasattr(Env, "call_cache"):
+        Env.call_cache = {}
 
-    if cache and cmd not in rcEnv.call_cache:
+    if cache and cmd not in Env.call_cache:
         log.debug("cache miss for '%s'" % cmd)
 
-    if not cache or cmd not in rcEnv.call_cache:
+    if not cache or cmd not in Env.call_cache:
         process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell,
                         preexec_fn=preexec_fn, cwd=cwd, env=env)
         buff = process.communicate()
@@ -250,15 +250,15 @@ def call(argv,
         if ret == 0:
             if cache:
                 log.debug("store '%s' output in cache" % cmd)
-                rcEnv.call_cache[cmd] = buff
-        elif cmd in rcEnv.call_cache:
+                Env.call_cache[cmd] = buff
+        elif cmd in Env.call_cache:
             log.debug("discard '%s' output from cache because ret!=0" % cmd)
-            del rcEnv.call_cache[cmd]
+            del Env.call_cache[cmd]
         elif cache:
             log.debug("skip store '%s' output in cache because ret!=0" % cmd)
     else:
         log.debug("serve '%s' output from cache" % cmd)
-        buff = rcEnv.call_cache[cmd]
+        buff = Env.call_cache[cmd]
         ret = 0
     if not empty_string(buff[1]):
         if err_to_info:
@@ -315,7 +315,7 @@ def qcall(argv=None):
     Execute command using Popen with no additional args, disgarding stdout and stderr.
     """
     if argv is None:
-        argv = [rcEnv.syspaths.false]
+        argv = [Env.syspaths.false]
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode
@@ -578,9 +578,9 @@ def process_match_args(pid, search_args=None):
 
 def daemon_process_running():
     try:
-        with open(rcEnv.paths.daemon_pid, 'r') as pid_file:
+        with open(Env.paths.daemon_pid, 'r') as pid_file:
             pid = int(pid_file.read())
-        with open(rcEnv.paths.daemon_pid_args, 'r') as pid_args_file:
+        with open(Env.paths.daemon_pid_args, 'r') as pid_args_file:
             search_args = pid_args_file.read()
         return process_match_args(pid, search_args=search_args)
     except:

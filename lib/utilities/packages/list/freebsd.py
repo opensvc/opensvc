@@ -1,4 +1,4 @@
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.proc import justcall, which
 
@@ -22,7 +22,7 @@ def list_pkg_info():
         nv = l[0].split('-')
         version = nv[-1]
         pkgname = '-'.join(nv[0:-1])
-        x = [rcEnv.nodename, pkgname, version, '']
+        x = [Env.nodename, pkgname, version, '']
         lines.append(x)
     return lines
 
@@ -37,7 +37,7 @@ def list_pkg_query():
         l = line.split(';;')
         if len(l) < 3:
             continue
-        x = [rcEnv.nodename] + l
+        x = [Env.nodename] + l
         lines.append(x)
     return lines
 

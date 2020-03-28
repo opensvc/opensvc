@@ -5,7 +5,7 @@ import os
 import drivers.check
 import utilities.ifconfig
 
-from rcGlobalEnv import rcEnv
+from env import Env
 
 """
 Ethernet Channel Bonding Driver: v3.4.0 (October 7, 2008)
@@ -73,7 +73,7 @@ class Check(drivers.check.Check):
         return uptime_seconds
 
     def cache_path(self, bond, slave):
-        cache_p = os.path.join(rcEnv.paths.pathtmp, "checkLagLinux.cache."+os.path.basename(bond)+"."+slave)
+        cache_p = os.path.join(Env.paths.pathtmp, "checkLagLinux.cache."+os.path.basename(bond)+"."+slave)
         return cache_p
 
     def write_cache(self, bond, slave, val, uptime):

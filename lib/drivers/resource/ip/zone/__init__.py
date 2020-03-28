@@ -6,7 +6,7 @@ import core.exceptions as ex
 import utilities.ifconfig
 
 from ..sunos import Ip, adder as parent_adder
-from rcGlobalEnv import rcEnv
+from env import Env
 
 
 def adder(svc, s):
