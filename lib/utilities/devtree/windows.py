@@ -1,4 +1,4 @@
-import wmi
+import foreign.wmi as wmi
 
 from .devtree import DevTree as BaseDevTree
 

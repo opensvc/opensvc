@@ -1,4 +1,4 @@
-import wmi
+import foreign.wmi as wmi
 
 from subprocess import *
 
