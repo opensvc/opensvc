@@ -2,7 +2,7 @@ import os
 
 import rcStats
 from rcGlobalEnv import rcEnv
-from utilities.proc import call, which
+from utilities.proc import call
 
 class StatsProvider(rcStats.StatsProvider):
     def customfile(self, metric, day):

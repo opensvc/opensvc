@@ -1,6 +1,4 @@
 import glob
-import json
-import re
 import os
 
 from stat import *
@@ -14,7 +12,7 @@ from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, qcall
+from utilities.proc import qcall
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"

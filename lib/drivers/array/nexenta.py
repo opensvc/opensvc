@@ -1,12 +1,9 @@
-import sys
 import json
 import base64
-import os
 
 import core.exceptions as ex
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
-from six.moves.urllib.error import HTTPError, URLError # pylint: disable=import-error
-from rcGlobalEnv import rcEnv
+from six.moves.urllib.error import URLError # pylint: disable=import-error
 from rcUtilities import factory, split_path
 from core.node import Node
 

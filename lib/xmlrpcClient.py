@@ -30,11 +30,6 @@ try:
 except ImportError:
     import xmlrpc.client as xmlrpclib
 
-try:
-    import httplib
-except ImportError:
-    import http.client as httplib
-
 def get_proxy(uri):
     try:
         return xmlrpclib.ServerProxy(uri, **kwargs)

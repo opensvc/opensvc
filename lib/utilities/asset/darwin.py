@@ -1,10 +1,6 @@
-import os
-import datetime
-
 from .asset import BaseAsset
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class Asset(BaseAsset):
     def __init__(self, node):

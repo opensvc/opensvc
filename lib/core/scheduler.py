@@ -8,7 +8,6 @@ import datetime
 import json
 import time
 import random
-import logging
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv

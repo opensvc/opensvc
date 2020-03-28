@@ -1,5 +1,4 @@
 import daemon.handler
-import daemon.shared as shared
 
 class Handler(daemon.handler.BaseHandler):
     """
