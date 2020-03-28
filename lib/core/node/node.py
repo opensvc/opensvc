@@ -2612,7 +2612,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return self._collector_cli(data, argv)
 
     def _collector_cli(self, data, argv):
-        from rcCollectorCli import Cli
+        from core.collector.cli import Cli
         cli = Cli(**data)
         return cli.run(argv=argv)
 
