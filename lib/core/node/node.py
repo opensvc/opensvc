@@ -35,13 +35,14 @@ from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from rcGlobalEnv import rcEnv
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
-                         driver_import, drop_option, factory, find_editor,
+                         drop_option, factory, find_editor,
                          fmt_path, glob_services_config, init_locale,
                          is_service, list_services, makedirs, normalize_paths,
                          resolve_path, split_path, strip_path, svc_pathetc,
                          validate_kind, validate_name, validate_ns_name)
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
+from utilities.drivers import driver_import
 from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS

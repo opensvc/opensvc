@@ -9,7 +9,7 @@ from core.objects.svc import Svc
 import core.exceptions as ex
 import pytest
 
-from rcUtilities import driver_import
+from utilities.drivers import driver_import
 
 
 ContainerDocker = driver_import('res', 'container.docker').ContainerDocker
