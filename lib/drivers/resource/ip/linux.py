@@ -2,7 +2,7 @@ import core.exceptions as ex
 import utilities.ping
 
 from . import Ip as ParentIp, adder as parent_adder
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.net.converters import to_cidr, to_dotted
 from utilities.proc import which
 
@@ -15,8 +15,8 @@ class Ip(ParentIp):
         return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
 
     def start_link(self):
-        if which(rcEnv.syspaths.ip):
-           cmd = [rcEnv.syspaths.ip, 'link', 'set', 'dev', self.ipdev, 'up']
+        if which(Env.syspaths.ip):
+           cmd = [Env.syspaths.ip, 'link', 'set', 'dev', self.ipdev, 'up']
         else:
            cmd = ['ifconfig', self.ipdev, 'up']
         ret, out, err = self.vcall(cmd)
@@ -30,7 +30,7 @@ class Ip(ParentIp):
             else:
                 cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']
         else:
-            cmd = [rcEnv.syspaths.ip, "addr", "add", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+            cmd = [Env.syspaths.ip, "addr", "add", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -54,8 +54,8 @@ class Ip(ParentIp):
                 if ":" in self.stacked_dev:
                     cmd = ['ifconfig', self.stacked_dev, 'down']
                 else:
-                    cmd = [rcEnv.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+                    cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
         else:
-            cmd = [rcEnv.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+            cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
         return self.vcall(cmd)
 

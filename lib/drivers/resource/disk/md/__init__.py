@@ -6,7 +6,7 @@ import core.status
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.converters import convert_size
@@ -505,8 +505,8 @@ class DiskMd(BaseDisk):
             self.log.info("set %s.uuid = %s", self.rid, uuid)
             self.svc._set(self.rid, "uuid", uuid)
         else:
-            self.log.info("set %s.uuid@%s = %s", self.rid, rcEnv.nodename, uuid)
-            self.svc._set(self.rid, "uuid@"+rcEnv.nodename, uuid)
+            self.log.info("set %s.uuid@%s = %s", self.rid, Env.nodename, uuid)
+            self.svc._set(self.rid, "uuid@"+Env.nodename, uuid)
         self.svc.node.unset_lazy("devtree")
 
     def get_real_uuid(self, name):
@@ -526,7 +526,7 @@ class DiskMd(BaseDisk):
             self.log.info("reset %s.uuid", self.rid)
             self.svc._set(self.rid, "uuid", "")
         else:
-            self.log.info("reset %s.uuid@%s", self.rid, rcEnv.nodename)
-            self.svc._set(self.rid, "uuid@"+rcEnv.nodename, "")
+            self.log.info("reset %s.uuid@%s", self.rid, Env.nodename)
+            self.svc._set(self.rid, "uuid@"+Env.nodename, "")
         self.svc.node.unset_lazy("devtree")
 

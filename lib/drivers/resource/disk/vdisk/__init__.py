@@ -4,7 +4,7 @@ import core.status
 import core.exceptions as ex
 
 from .. import BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -65,8 +65,8 @@ class DiskVdisk(Resource):
         return self.devpath.keys()
 
     def remap(self):
-        path = self.devpath[rcEnv.nodename]
-        paths = set(self.devpath.values()) - set(self.devpath[rcEnv.nodename])
+        path = self.devpath[Env.nodename]
+        paths = set(self.devpath.values()) - set(self.devpath[Env.nodename])
         from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
         try:

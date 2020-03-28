@@ -7,7 +7,7 @@ import core.status
 import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.converters import print_duration
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
@@ -194,7 +194,7 @@ class SyncBtrfs(Sync):
         self.peersenders = set()
         if 'nodes' == self.sender:
             self.peersenders |= self.svc.nodes
-            self.peersenders -= set([rcEnv.nodename])
+            self.peersenders -= set([Env.nodename])
 
     def get_targets(self, action=None):
         self.targets = set()
@@ -202,7 +202,7 @@ class SyncBtrfs(Sync):
             self.targets |= self.svc.nodes
         if 'drpnodes' in self.target and action in (None, 'sync_drp'):
             self.targets |= self.svc.drpnodes
-        self.targets -= set([rcEnv.nodename])
+        self.targets -= set([Env.nodename])
 
     def sync_nodes(self):
         self._sync_update('sync_nodes')
@@ -248,7 +248,7 @@ class SyncBtrfs(Sync):
 
         receive_cmd = ['btrfs', 'receive', self.dst_btrfs[node].snapdir]
         if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+            receive_cmd = Env.rsh.strip(' -n').split() + [node] + receive_cmd
 
         self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
         p1 = Popen(send_cmd, stdout=PIPE)
@@ -275,7 +275,7 @@ class SyncBtrfs(Sync):
 
         receive_cmd = ['btrfs', 'receive', self.dst_btrfs[node].snapdir]
         if node is not None:
-            receive_cmd = rcEnv.rsh.strip(' -n').split() + [node] + receive_cmd
+            receive_cmd = Env.rsh.strip(' -n').split() + [node] + receive_cmd
 
         self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
         p1 = Popen(send_cmd, stdout=PIPE)
@@ -350,7 +350,7 @@ class SyncBtrfs(Sync):
             cmd = ['mv', src, dst]
 
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         ret, out, err = self.vcall(cmd)
 
         if ret != 0:
@@ -465,7 +465,7 @@ class SyncBtrfs(Sync):
     def get_remote_state(self, node):
         self.set_statefile()
         cmd1 = ['cat', self.statefile]
-        cmd = rcEnv.rsh.split() + [node] + cmd1
+        cmd = Env.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
@@ -493,7 +493,7 @@ class SyncBtrfs(Sync):
              f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
 
     def _push_statefile(self, node):
-        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
+        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -508,7 +508,7 @@ class SyncBtrfs(Sync):
     def parse_statefile(self, out, node=None):
         self.set_statefile()
         if node is None:
-            node = rcEnv.nodename
+            node = Env.nodename
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))

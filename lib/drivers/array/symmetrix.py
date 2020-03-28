@@ -8,7 +8,7 @@ import time
 
 import core.exceptions as ex
 from xml.etree.ElementTree import fromstring
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.naming import factory, split_path
 from utilities.converters import convert_size
@@ -331,7 +331,7 @@ class SymMixin(object):
         self.symcli_connect = symcli_connect
         self.username = username
         self.password = password
-        self.log = logging.getLogger(rcEnv.nodename+".array.sym."+self.sid)
+        self.log = logging.getLogger(Env.nodename+".array.sym."+self.sid)
 
         if 'SYMCLI_DB_FILE' in os.environ:
             dir = os.path.dirname(os.environ['SYMCLI_DB_FILE'])

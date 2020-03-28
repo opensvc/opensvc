@@ -218,7 +218,7 @@ class TestUtilities:
         assert ret > 0
         ret = qcall()
         assert ret > 0
-        ret = qcall(rcEnv.syspaths.true)
+        ret = qcall(Env.syspaths.true)
         assert ret == 0
 
     @staticmethod
@@ -303,11 +303,11 @@ class TestUtilities:
         assert protected_mount("/bin") is True
         assert protected_mount("/bin/") is True
         assert protected_mount("/mysvc") is True
-        if rcEnv.sysname == 'Darwin':
+        if Env.sysname == 'Darwin':
             location = "/Volumes/RAMDiskOpensvcTest"
             create_mount = 'diskutil erasevolume HFS+ "RAMDiskOpensvcTest" `hdiutil attach -nomount ram://524288`'
             delete_mount = "diskutil eject RAMDiskOpensvcTest"
-        elif rcEnv.sysname == 'SunOS':
+        elif Env.sysname == 'SunOS':
             if os.geteuid() != 0:
                 # Only tries mount when geteuid is 0
                 return

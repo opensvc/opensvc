@@ -9,7 +9,7 @@ from stat import *
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -192,7 +192,7 @@ class DiskVxdg(BaseDisk):
             return self.sub_devs_cache
 
         devs = ["/dev/vx/dsk/"+dev for dev in self.vxdisk_list()]
-        if rcEnv.sysname == "SunOS":
+        if Env.sysname == "SunOS":
             for idx, dev in enumerate(devs):
                 if re.match('^.*s[0-9]$', dev) is None:
                     devs[idx] += "s2"

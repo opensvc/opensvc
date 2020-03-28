@@ -8,7 +8,7 @@ import core.exceptions as ex
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
@@ -76,7 +76,7 @@ class DiskVg(BaseDisk):
         super(DiskVg, self).__init__(type='disk.vg', **kwargs)
         self.label = "vg %s" % self.name
         self.pvs = pvs or []
-        self.tag = rcEnv.nodename
+        self.tag = Env.nodename
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
 
@@ -130,7 +130,7 @@ class DiskVg(BaseDisk):
 
     @cache("vg.lvs.attr")
     def get_lvs_attr(self):
-        cmd = [rcEnv.syspaths.lvs, '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
+        cmd = [Env.syspaths.lvs, '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -147,7 +147,7 @@ class DiskVg(BaseDisk):
 
     @cache("vg.tags")
     def get_tags(self):
-        cmd = [rcEnv.syspaths.vgs, '-o', 'vg_name,tags', '--noheadings', '--separator=;']
+        cmd = [Env.syspaths.vgs, '-o', 'vg_name,tags', '--noheadings', '--separator=;']
         out, err, ret = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -281,7 +281,7 @@ class DiskVg(BaseDisk):
 
     @cache("vg.lvs")
     def vg_lvs(self):
-        cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
+        cmd = [Env.syspaths.vgs, '--noheadings', '-o', 'vg_name,lv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -298,7 +298,7 @@ class DiskVg(BaseDisk):
 
     @cache("vg.pvs")
     def vg_pvs(self):
-        cmd = [rcEnv.syspaths.vgs, '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
+        cmd = [Env.syspaths.vgs, '--noheadings', '-o', 'vg_name,pv_name', '--separator', ';']
         out, err, ret = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -361,13 +361,13 @@ class DiskVg(BaseDisk):
         self.svc.node.unset_lazy("devtree")
 
     def vgscan(self):
-        cmd = [rcEnv.syspaths.vgscan, "--cache"]
+        cmd = [Env.syspaths.vgscan, "--cache"]
         justcall(cmd)
 
     def has_pv(self, pv):
-        cmd = [rcEnv.syspaths.pvscan, "--cache", pv]
+        cmd = [Env.syspaths.pvscan, "--cache", pv]
         justcall(cmd)
-        cmd = [rcEnv.syspaths.pvs, "-o", "vg_name", "--noheadings", pv]
+        cmd = [Env.syspaths.pvs, "-o", "vg_name", "--noheadings", pv]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return False
@@ -402,7 +402,7 @@ class DiskVg(BaseDisk):
             if S_ISBLK(mode):
                 continue
             elif S_ISREG(mode):
-                cmd = [rcEnv.syspaths.losetup, '-j', pv]
+                cmd = [Env.syspaths.losetup, '-j', pv]
                 out, err, ret = justcall(cmd)
                 if ret != 0 or not out.startswith('/dev/loop'):
                     self.log.error("pv %s is a regular file but not a loop"%pv)

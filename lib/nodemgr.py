@@ -1,16 +1,16 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-#
-# add project lib to path
-#
-prog = "nodemgr"
+import os
+import sys
 
 import utilities.render.color
 import core.exceptions as ex
-from rcGlobalEnv import *
+from env import Env
 from nodemgr_parser import NodemgrOptParser
 from core.node import Node
+
+prog = "nodemgr"
 
 def get_extra_argv(argv=None):
     """

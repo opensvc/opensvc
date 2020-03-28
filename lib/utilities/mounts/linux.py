@@ -1,13 +1,13 @@
 import os
 
 import utilities.devices.linux
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 from .mounts import BaseMounts, Mount
 
 
 class Mounts(BaseMounts):
-    df_one_cmd = [rcEnv.syspaths.df, '-l']
+    df_one_cmd = [Env.syspaths.df, '-l']
 
     def match_mount(self, i, dev, mnt):
         """Given a line of 'mount' output, returns True if (dev, mnt) matches
@@ -29,7 +29,7 @@ class Mounts(BaseMounts):
         return False
 
     def parse_mounts(self):
-        out, err, ret = justcall([rcEnv.syspaths.mount])
+        out, err, ret = justcall([Env.syspaths.mount])
         out = out.replace(" (deleted)", "")
         mounts = []
         for l in out.split('\n'):

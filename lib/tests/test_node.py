@@ -1,7 +1,7 @@
 import os
 import logging
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.node import Node
 import pytest
 
@@ -20,7 +20,7 @@ class TestNode:
         """
         Eval the Node::kwdict lazy attr
         """
-        assert str(node) == rcEnv.nodename
+        assert str(node) == Env.nodename
 
     @staticmethod
     def test_011_kwdict(node):

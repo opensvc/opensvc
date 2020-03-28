@@ -2,7 +2,7 @@ import datetime
 import os
 from stat import ST_MTIME
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 
@@ -37,7 +37,7 @@ def listpkg_ips():
         elems = line.split()
         if len(elems) != 3:
             continue
-        data = [rcEnv.nodename, elems[0], elems[1], arc, "ips", ""]
+        data = [Env.nodename, elems[0], elems[1], arc, "ips", ""]
         lines.append(data)
     return lines
 
@@ -56,7 +56,7 @@ def listpkg_legacy():
             continue
         key, val = [elem.strip() for elem in elems]
         if key == "PKGINST":
-            data = [rcEnv.nodename, val, "", "", "pkg", ""]
+            data = [Env.nodename, val, "", "", "pkg", ""]
         elif key == "VERSION":
             data[2] = val
         elif key == "ARCH":
@@ -91,7 +91,7 @@ def listpatch():
     cmd = ['showrev', '-p']
     out, _, _ = justcall(cmd)
     lines = []
-    nodename = rcEnv.nodename
+    nodename = Env.nodename
     for line in out.splitlines():
         elems = line.split(' ')
         if len(elems) > 3:

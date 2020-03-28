@@ -10,7 +10,7 @@ from subprocess import *
 
 import six
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.naming import ANSI_ESCAPE
 from utilities.fcache import fcache
@@ -19,7 +19,7 @@ from utilities.render.color import color, colorize, formatter
 from utilities.proc import is_exe
 from utilities.string import is_string
 
-comp_dir = os.path.join(rcEnv.paths.pathvar, 'compliance')
+comp_dir = os.path.join(Env.paths.pathvar, 'compliance')
 
 class Module(object):
     pattern = '^S*[0-9]+-*%(name)s$'
@@ -95,7 +95,7 @@ class Module(object):
             return s.decode('utf8', 'ignore')
 
     def log_action(self, out, ret, action):
-        vals = [rcEnv.nodename,
+        vals = [Env.nodename,
                 self.name,
                 str(ret),
                 self.strip_unprintable(out),
@@ -110,14 +110,14 @@ class Module(object):
     def set_env_path(self):
         if self.python_link_d == sys.path[0]:
             return
-        if rcEnv.sysname == "Windows":
+        if Env.sysname == "Windows":
             return
         if "PATH" in os.environ:
             os.environ["PATH"] = self.python_link_d + ":" + os.environ["PATH"]
         else:
             os.environ["PATH"] = self.python_link_d
-        if rcEnv.paths.pathbin != "/usr/bin":
-            os.environ["PATH"] = os.environ["PATH"] + ":" + rcEnv.paths.pathbin
+        if Env.paths.pathbin != "/usr/bin":
+            os.environ["PATH"] = os.environ["PATH"] + ":" + Env.paths.pathbin
 
     def set_locale(self):
         """
@@ -141,13 +141,13 @@ class Module(object):
         os.environ.update({
           "PYTHONIOENCODING": "utf-8",
           "OSVC_PYTHON": sys.executable,
-          "OSVC_PATH_ETC": rcEnv.paths.pathetc,
-          "OSVC_PATH_VAR": rcEnv.paths.pathvar,
-          "OSVC_PATH_COMP": rcEnv.paths.pathcomp,
-          "OSVC_PATH_TMP": rcEnv.paths.pathtmp,
-          "OSVC_PATH_LOG": rcEnv.paths.pathlog,
-          "OSVC_NODEMGR": rcEnv.paths.nodemgr,
-          "OSVC_SVCMGR": rcEnv.paths.svcmgr,
+          "OSVC_PATH_ETC": Env.paths.pathetc,
+          "OSVC_PATH_VAR": Env.paths.pathvar,
+          "OSVC_PATH_COMP": Env.paths.pathcomp,
+          "OSVC_PATH_TMP": Env.paths.pathtmp,
+          "OSVC_PATH_LOG": Env.paths.pathlog,
+          "OSVC_NODEMGR": Env.paths.nodemgr,
+          "OSVC_SVCMGR": Env.paths.svcmgr,
         })
         self.set_locale()
         self.set_env_path()
@@ -239,7 +239,7 @@ class Module(object):
                     log += err + "\n"
                     print(err, file=sys.stderr)
                     continue
-                _ret, _log = self.do_action_exe(action, rcEnv.python_cmd + [obj, self.context.format_rule_var(var)])
+                _ret, _log = self.do_action_exe(action, Env.python_cmd + [obj, self.context.format_rule_var(var)])
                 rets.add(_ret)
                 log += _log
                 if action == "fix" and _ret not in (0, 2):

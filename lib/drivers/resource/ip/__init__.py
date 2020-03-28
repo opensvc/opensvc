@@ -15,7 +15,7 @@ import utilities.ifconfig
 
 from arp import send_arp
 from utilities.converters import convert_duration, print_duration
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs
@@ -207,7 +207,7 @@ class Ip(Resource):
         timeout = time.time() + left
         self.svc.print_status_data_eval()
         self.log.info("wait address propagation to peers")
-        path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (rcEnv.nodename, self.svc.path, self.rid)
+        path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (Env.nodename, self.svc.path, self.rid)
         try:
             result = self.svc.node._wait(path=path, duration=left)
         except KeyboardInterrupt:
@@ -514,7 +514,7 @@ class Ip(Resource):
         delay = 1
         lockfd = None
         action = "startip"
-        lockfile = os.path.join(rcEnv.paths.pathlock, action)
+        lockfile = os.path.join(Env.paths.pathlock, action)
         details = "(timeout %d, delay %d, action %s, lockfile %s)" % \
                   (timeout, delay, action, lockfile)
         self.log.debug("acquire startip lock %s", details)

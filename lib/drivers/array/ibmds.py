@@ -5,11 +5,11 @@ import os
 from subprocess import *
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.node import Node
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
     if len(hmc1) != 0:
@@ -59,7 +59,7 @@ class IbmDss(object):
                 continue
             if stype != "ibmds":
                 continue
-            pwfile = os.path.join(rcEnv.paths.pathvar, s+'.pwfile')
+            pwfile = os.path.join(Env.paths.pathvar, s+'.pwfile')
             if not os.path.exists(pwfile):
                 raise ex.Error("%s does not exists. create it with 'dscli managepwfile ...'"%pwfile)
 

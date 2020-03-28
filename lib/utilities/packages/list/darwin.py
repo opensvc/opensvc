@@ -1,4 +1,4 @@
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import call, which
 
 
@@ -33,7 +33,7 @@ def listpkg():
     for line in out.split('\n'):
         if len(line) == 0:
             continue
-        x = [rcEnv.nodename, line, pkgversion(line), ""]
+        x = [Env.nodename, line, pkgversion(line), ""]
         lines.append(x)
     return lines
 

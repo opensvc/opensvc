@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                  "..")))
-import rcGlobalEnv  # nopep8
+import env  # nopep8
 import pytest  # nopep8
 
 
@@ -16,22 +16,22 @@ def which(mocker):
 @pytest.fixture(scope='function', name='osvc_path_tests')
 def osvc_path_tests_fixture(tmpdir):
     test_dir = str(tmpdir)
-    rcGlobalEnv.rcEnv.paths.pathetc = os.path.join(test_dir, 'etc')
-    rcGlobalEnv.rcEnv.paths.pathetcns = os.path.join(test_dir, 'etc', 'namespaces')
-    rcGlobalEnv.rcEnv.paths.pathlog = os.path.join(test_dir, 'log')
-    rcGlobalEnv.rcEnv.paths.pathtmpv = os.path.join(test_dir, 'tmp')
-    rcGlobalEnv.rcEnv.paths.pathvar = os.path.join(test_dir, 'var')
-    rcGlobalEnv.rcEnv.paths.pathlock = os.path.join(test_dir, 'lock')
-    rcGlobalEnv.rcEnv.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
-    rcGlobalEnv.rcEnv.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
-    rcGlobalEnv.rcEnv.paths.lsnruxsock = os.path.join(test_dir, 'var', 'lsnr', 'lsnr.sock')
-    rcGlobalEnv.rcEnv.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
-    rcGlobalEnv.rcEnv.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
-    rcGlobalEnv.rcEnv.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
-    os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'lsnr'))
-    os.makedirs(os.path.join(rcGlobalEnv.rcEnv.paths.pathvar, 'node'))
-    os.makedirs(rcGlobalEnv.rcEnv.paths.pathtmpv)
-    os.makedirs(rcGlobalEnv.rcEnv.paths.pathlog)
+    env.Env.paths.pathetc = os.path.join(test_dir, 'etc')
+    env.Env.paths.pathetcns = os.path.join(test_dir, 'etc', 'namespaces')
+    env.Env.paths.pathlog = os.path.join(test_dir, 'log')
+    env.Env.paths.pathtmpv = os.path.join(test_dir, 'tmp')
+    env.Env.paths.pathvar = os.path.join(test_dir, 'var')
+    env.Env.paths.pathlock = os.path.join(test_dir, 'lock')
+    env.Env.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
+    env.Env.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
+    env.Env.paths.lsnruxsock = os.path.join(test_dir, 'var', 'lsnr', 'lsnr.sock')
+    env.Env.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
+    env.Env.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
+    env.Env.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
+    os.makedirs(os.path.join(env.Env.paths.pathvar, 'lsnr'))
+    os.makedirs(os.path.join(env.Env.paths.pathvar, 'node'))
+    os.makedirs(env.Env.paths.pathtmpv)
+    os.makedirs(env.Env.paths.pathlog)
     return tmpdir
 
 
@@ -71,7 +71,7 @@ def capture_stdout():
 @pytest.fixture(scope='function', name='mock_sysname')
 def mock_sysname_fixture(mocker):
     def func(sysname):
-        mocker.patch.object(rcGlobalEnv.rcEnv, 'sysname', sysname)
+        mocker.patch.object(env.Env, 'sysname', sysname)
 
     return func
 
@@ -91,7 +91,7 @@ def create_driver_resource(mock_sysname):
 @pytest.fixture(scope='function')
 def has_node_config(osvc_path_tests):
 
-    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
     with open(os.path.join(pathetc, 'node.conf'), mode='w+') as node_config_file:
         """This fixture set non default port and tls_port for listener.
@@ -110,7 +110,7 @@ tls_port = 1225
 @pytest.fixture(scope='function')
 def has_service_lvm(osvc_path_tests, mock_sysname):
     mock_sysname('Linux')
-    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
     with open(os.path.join(pathetc, 'svc.conf'), mode='w+') as svc_file:
         config_txt = """
@@ -142,7 +142,7 @@ optional = true
 
 @pytest.fixture(scope='function')
 def has_service_with_fs_flag(osvc_path_tests):
-    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
     with open(os.path.join(pathetc, 'svc.conf'), mode='w+') as svc_file:
         config_txt = """
@@ -160,7 +160,7 @@ def has_service_with_vol_and_cfg(osvc_path_tests):
     """
     Add config with a cfg object and a service that uses this config on a volume
     """
-    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
     with open(os.path.join(pathetc, 'svc.conf'), mode='w+') as svc_file:
         config_txt = """
@@ -212,7 +212,7 @@ camelCase/Foo/baR = literal:cfg content of key camelCase/Foo/baR
 
 @pytest.fixture(scope='function')
 def has_service_with_cfg(osvc_path_tests):
-    pathetc = rcGlobalEnv.rcEnv.paths.pathetc
+    pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
     os.mkdir(os.path.join(pathetc, 'cfg'))
     with open(os.path.join(pathetc, 'cfg', 'cfg1.conf'), mode='w+') as svc_file:

@@ -7,7 +7,7 @@ import core.status
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
@@ -181,7 +181,7 @@ class DiskGandi(BaseDisk):
         if self.node is not None:
             n = self.node
         else:
-            n = rcEnv.nodename
+            n = Env.nodename
         try:
             nodes = self.cloud.driver.list_nodes()
         except Exception as e:

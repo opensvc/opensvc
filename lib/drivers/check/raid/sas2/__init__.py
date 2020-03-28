@@ -2,7 +2,7 @@ import os
 
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
@@ -28,8 +28,8 @@ class Check(drivers.check.Check):
         sas2ircu = self.find_sas2ircu()
         if sas2ircu is None:
             return self.undef
-        os.chdir(rcEnv.paths.pathtmp)
-        logs = [os.path.join(rcEnv.paths.pathtmp, 'sas2ircu.log')]
+        os.chdir(Env.paths.pathtmp)
+        logs = [os.path.join(Env.paths.pathtmp, 'sas2ircu.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue

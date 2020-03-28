@@ -8,7 +8,7 @@ import foreign.json_delta as json_delta
 import daemon.shared as shared
 import core.exceptions as ex
 import utilities.ifconfig
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 
 class Hb(shared.OsvcThread):
@@ -22,7 +22,7 @@ class Hb(shared.OsvcThread):
         shared.OsvcThread.__init__(self)
         self.name = name
         self.id = name + "." + role
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd."+self.id), {"node": rcEnv.nodename, "component": self.id})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd."+self.id), {"node": Env.nodename, "component": self.id})
         self.peers = {}
         self.reset_stats()
         self.hb_nodes = self.cluster_nodes
@@ -54,7 +54,7 @@ class Hb(shared.OsvcThread):
         running = data.get("state") == "running"
         data["peers"] = {}
         for nodename in self.hb_nodes:
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 data["peers"][nodename] = {}
                 continue
             if "*" in self.peers:
@@ -164,7 +164,7 @@ class Hb(shared.OsvcThread):
         if begin == 0 or begin > shared.GEN:
             self.log.debug("send full node data to %s", nodename if nodename else "*")
             try:
-                shared.CLUSTER_DATA[rcEnv.nodename]["monitor"]["status"]
+                shared.CLUSTER_DATA[Env.nodename]["monitor"]["status"]
             except KeyError:
                 # no pertinent data to send yet (pre-init)
                 self.log.debug("no pertinent data to send yet (pre-init)")
@@ -173,7 +173,7 @@ class Hb(shared.OsvcThread):
                 return shared.HB_MSG, shared.HB_MSG_LEN
             with shared.HB_MSG_LOCK:
                 with shared.CLUSTER_DATA_LOCK:
-                    shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[rcEnv.nodename], encode=False)
+                    shared.HB_MSG = self.encrypt(shared.CLUSTER_DATA[Env.nodename], encode=False)
                 if shared.HB_MSG is None:
                     shared.HB_MSG_LEN = 0
                 else:
@@ -202,7 +202,7 @@ class Hb(shared.OsvcThread):
 
     def _store_rx_data(self, data, nodename):
         current_gen = shared.REMOTE_GEN.get(nodename, 0)
-        our_gen_on_peer = data.get("gen", {}).get(rcEnv.nodename, 0)
+        our_gen_on_peer = data.get("gen", {}).get(Env.nodename, 0)
         kind = data.get("kind", "full")
         change = False
         if kind == "patch":
@@ -221,7 +221,7 @@ class Hb(shared.OsvcThread):
                 #self.log.info("no more recent gen in received deltas")
                 if our_gen_on_peer > shared.LOCAL_GEN[nodename]:
                     shared.LOCAL_GEN[nodename] = our_gen_on_peer
-                    shared.CLUSTER_DATA[nodename]["gen"][rcEnv.nodename] = our_gen_on_peer
+                    shared.CLUSTER_DATA[nodename]["gen"][Env.nodename] = our_gen_on_peer
                 return
             with shared.CLUSTER_DATA_LOCK:
                 for gen in gens:
@@ -233,7 +233,7 @@ class Hb(shared.OsvcThread):
                         shared.LOCAL_GEN[nodename] = our_gen_on_peer
                         shared.CLUSTER_DATA[nodename]["gen"] = {
                             nodename: gen,
-                            rcEnv.nodename: our_gen_on_peer,
+                            Env.nodename: our_gen_on_peer,
                         }
                         break
                     try:
@@ -243,7 +243,7 @@ class Hb(shared.OsvcThread):
                         shared.LOCAL_GEN[nodename] = our_gen_on_peer
                         shared.CLUSTER_DATA[nodename]["gen"] = {
                             nodename: gen,
-                            rcEnv.nodename: our_gen_on_peer,
+                            Env.nodename: our_gen_on_peer,
                         }
                         self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
                                        nodename, shared.REMOTE_GEN[nodename],
@@ -258,7 +258,7 @@ class Hb(shared.OsvcThread):
                         shared.LOCAL_GEN[nodename] = our_gen_on_peer
                         shared.CLUSTER_DATA[nodename]["gen"] = {
                             nodename: gen,
-                            rcEnv.nodename: our_gen_on_peer,
+                            Env.nodename: our_gen_on_peer,
                         }
                         return
         elif kind == "ping":
@@ -269,7 +269,7 @@ class Hb(shared.OsvcThread):
                     shared.CLUSTER_DATA[nodename] = {}
                 shared.CLUSTER_DATA[nodename]["gen"] = {
                     nodename: 0,
-                    rcEnv.nodename: our_gen_on_peer,
+                    Env.nodename: our_gen_on_peer,
                 }
                 shared.CLUSTER_DATA[nodename]["monitor"] = data["monitor"]
                 self.log.debug("reset node %s dataset gen, peer has gen %d of our dataset",
@@ -298,7 +298,7 @@ class Hb(shared.OsvcThread):
                 shared.REMOTE_GEN[nodename] = new_gen
                 shared.CLUSTER_DATA[nodename]["gen"] = {
                     nodename: new_gen,
-                    rcEnv.nodename: our_gen_on_peer,
+                    Env.nodename: our_gen_on_peer,
                 }
                 self.log.debug("install node %s dataset gen %d, peer has gen %d of our dataset",
                               nodename, shared.REMOTE_GEN[nodename],

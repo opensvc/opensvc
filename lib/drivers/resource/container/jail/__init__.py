@@ -16,7 +16,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall
@@ -139,7 +139,7 @@ class ContainerJail(BaseContainer):
     def is_up(self, nodename=None):
         cmd = ['jls']
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.Error

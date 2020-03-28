@@ -7,7 +7,7 @@ from . import \
     KEYWORDS, \
     DRIVER_GROUP, \
     DRIVER_BASENAME
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
@@ -52,9 +52,9 @@ class SyncSymclone(BaseSyncSymclone):
             s.write("1")
 
     def refresh_multipath(self, dev):
-        if which(rcEnv.syspaths.multipath) is None:
+        if which(Env.syspaths.multipath) is None:
             return
-        cmd = [rcEnv.syspaths.multipath, '-v0', '-r', dev]
+        cmd = [Env.syspaths.multipath, '-v0', '-r', dev]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error

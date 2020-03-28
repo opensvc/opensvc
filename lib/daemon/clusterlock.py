@@ -2,7 +2,7 @@ import time
 import uuid
 
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class LockMixin(object):
     """
@@ -12,7 +12,7 @@ class LockMixin(object):
         if timeout is None:
             timeout = 10
         if not nodename:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
         elif nodename not in thr.cluster_nodes:
             return
         lock_id = None

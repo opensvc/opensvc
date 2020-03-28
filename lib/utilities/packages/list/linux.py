@@ -3,7 +3,7 @@ import os
 from collections import namedtuple
 from stat import *
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 
@@ -33,7 +33,7 @@ def listpkg_snap():
             continue
         _data = header._make(line.split())
         lines.append([
-            rcEnv.nodename,
+            Env.nodename,
             _data.Name,
             "%s rev %s" % (_data.Version, _data.Rev),
             "",
@@ -62,7 +62,7 @@ def listpkg_rpm():
             l[4] = datetime.datetime.fromtimestamp(int(l[4])).strftime("%Y-%m-%d %H:%M:%S")
         except:
             l[4] = ""
-        x = [rcEnv.nodename] + l + [sig]
+        x = [Env.nodename] + l + [sig]
         lines.append(x)
     return lines
 
@@ -79,7 +79,7 @@ def listpkg_deb():
             continue
         if l[0] != "ii":
             continue
-        x = [rcEnv.nodename] + l[1:3] + [arch, "deb"]
+        x = [Env.nodename] + l[1:3] + [arch, "deb"]
         try:
             t = os.stat("/var/lib/dpkg/info/"+l[1]+".list")[ST_MTIME]
             t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")

@@ -3,7 +3,7 @@ import time
 from subprocess import *
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from utilities.proc import which
 from utilities.string import bdecode
@@ -18,7 +18,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return True
 
     def set_read_only(self, val):
-        if rcEnv.sysname != "Linux":
+        if Env.sysname != "Linux":
             return
         os.environ["SG_PERSIST_O_RDONLY"] = str(val)
         os.environ["SG_PERSIST_IN_RDONLY"] = str(val)
@@ -166,9 +166,9 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret
 
     def dev_to_mpath_dev(self, devpath):
-        if which(rcEnv.syspaths.multipath) is None:
+        if which(Env.syspaths.multipath) is None:
             return devpath
-        cmd = [rcEnv.syspaths.multipath, "-l", "-v1", devpath]
+        cmd = [Env.syspaths.multipath, "-l", "-v1", devpath]
         ret, out, err = self.call(cmd)
         if ret != 0:
             raise ex.Error(err)

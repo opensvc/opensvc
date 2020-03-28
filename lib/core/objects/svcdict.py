@@ -1,7 +1,7 @@
 import sys
 
 from core.keywords import KeywordStore
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.drivers import iter_drivers
 
 SECTIONS = [
@@ -242,7 +242,7 @@ KEYWORDS = [
         "keyword": "type",
         "inheritance": "leaf",
         "at": True,
-        "candidates": rcEnv.vt_supported,
+        "candidates": Env.vt_supported,
         "text": "The type of container.",
         "required": False,
         "default": "oci",
@@ -432,7 +432,7 @@ KEYWORDS = [
         "keyword": "env",
         "inheritance": "head",
         "default_text": "<same as node env>",
-        "candidates": rcEnv.allowed_svc_envs,
+        "candidates": Env.allowed_svc_envs,
         "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node :kw:`env`."
     },
     {
@@ -470,7 +470,7 @@ KEYWORDS = [
         "inheritance": "head",
         "at": True,
         "convert": "nodes_selector",
-        "default": rcEnv.nodename,
+        "default": Env.nodename,
         "default_text": "<hostname of the current node>",
         "text": "A node selector expression specifying the list of cluster nodes hosting service instances."
     },
@@ -643,7 +643,7 @@ KEYWORDS = [
     },
     {
         "section": "fs",
-        "rtype": rcEnv.fs_non_pooling,
+        "rtype": Env.fs_non_pooling,
         "keyword": "create_options",
         "convert": "shlex",
         "default": [],
@@ -693,7 +693,7 @@ KEYWORDS = [
     {
         "section": "fs",
         "keyword": "vg",
-        "rtype": rcEnv.fs_non_pooling,
+        "rtype": Env.fs_non_pooling,
         "required": False,
         "at": True,
         "text": "The name of the disk group the filesystem device should be provisioned from.",
@@ -701,7 +701,7 @@ KEYWORDS = [
     },
     {
         "section": "fs",
-        "rtype": rcEnv.fs_non_pooling,
+        "rtype": Env.fs_non_pooling,
         "keyword": "size",
         "required": False,
         "convert": "size",
@@ -756,7 +756,7 @@ KEYWORDS = [
         "at": True,
         "required": True,
         "strict_candidates": False,
-        "candidates": ["zfs", "flag"]+rcEnv.fs_non_pooling,
+        "candidates": ["zfs", "flag"]+Env.fs_non_pooling,
         "text": "The filesystem type or 'directory'. Used to determine the fsck command to use."
     },
     {

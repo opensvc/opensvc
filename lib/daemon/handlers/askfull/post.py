@@ -1,7 +1,7 @@
 import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -25,7 +25,7 @@ class Handler(daemon.handler.BaseHandler):
         options = self.parse_options(kwargs)
         if options.peer is None:
             raise ex.Error("The 'peer' option must be set")
-        if options.peer == rcEnv.nodename:
+        if options.peer == Env.nodename:
             raise ex.Error("Can't ask a full from ourself")
         if options.peer not in thr.cluster_nodes:
             raise ex.Error("Can't ask a full from %s: not in cluster.nodes" % options.peer)

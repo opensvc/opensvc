@@ -1,12 +1,12 @@
 import os
 import datetime
 import rcStats
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 class StatsProvider(rcStats.StatsProvider):
     def xentopfile(self, day):
-        f = os.path.join(rcEnv.paths.pathlog, 'xentop', 'xentop'+day)
+        f = os.path.join(Env.paths.pathlog, 'xentop', 'xentop'+day)
         if os.path.exists(f):
             return f
         return None
@@ -219,7 +219,7 @@ class StatsProvider(rcStats.StatsProvider):
         _start = _start.hour * 3600 + _start.minute * 60 + _start.second
         _end = datetime.datetime.strptime(end, "%H:%M:%S")
         _end = _end.hour * 3600 + _end.minute * 60 + _end.second
-        d = os.path.join(rcEnv.paths.pathvar, 'stats')
+        d = os.path.join(Env.paths.pathvar, 'stats')
         f = os.path.join(d, 'fs_u.%s' % day.lstrip("0"))
         cols = ['date',
                 'nodename',

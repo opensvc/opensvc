@@ -42,7 +42,7 @@ import six
 import daemon.shared as shared
 import core.exceptions as ex
 from six.moves import queue
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from core.comm import Headers
 from utilities.chunker import chunker
@@ -107,7 +107,7 @@ class Listener(shared.OsvcThread):
     @lazy
     def certfs(self):
         mod = driver_import("resource", "fs")
-        res = mod.Fs(rid="fs#certs", mount_point=rcEnv.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
+        res = mod.Fs(rid="fs#certs", mount_point=Env.paths.certs, device="tmpfs", fs_type="tmpfs", mount_options="rw,nosuid,nodev,noexec,relatime,size=1m")
         set_lazy(res, "log",  self.log)
         return res
 
@@ -128,16 +128,16 @@ class Listener(shared.OsvcThread):
         return factory("sec")(secname, namespace=namespace, volatile=True)
 
     def prepare_certs(self):
-        makedirs(rcEnv.paths.certs)
-        if rcEnv.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
+        makedirs(Env.paths.certs)
+        if Env.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
             self.certfs.start()
-            os.chmod(rcEnv.paths.certs, 0o0755)
+            os.chmod(Env.paths.certs, 0o0755)
         if not self.ca.exists():
             raise ex.InitError("secret %s does not exist" % self.ca.path)
         data = self.ca.decode_key("certificate_chain")
         if data is None:
             raise ex.InitError("secret key %s.%s is not set" % (self.ca.path, "certificate_chain"))
-        ca_cert_chain = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
+        ca_cert_chain = os.path.join(Env.paths.certs, "ca_certificate_chain")
         self.log.info("write %s", ca_cert_chain)
         with open(ca_cert_chain, "w") as fo:
             fo.write(bdecode(data))
@@ -145,14 +145,14 @@ class Listener(shared.OsvcThread):
         data = self.cert.decode_key("certificate_chain")
         if data is None:
             raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "certificate_chain"))
-        cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
+        cert_chain = os.path.join(Env.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
         with open(cert_chain, "w") as fo:
             fo.write(bdecode(data))
         data = self.cert.decode_key("private_key")
         if data is None:
             raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
-        private_key = os.path.join(rcEnv.paths.certs, "private_key")
+        private_key = os.path.join(Env.paths.certs, "private_key")
         self.log.info("write %s", private_key)
         with open(private_key, "w+") as fo:
             pass
@@ -165,7 +165,7 @@ class Listener(shared.OsvcThread):
         crl = shared.NODE.oget("listener", "crl")
         if not crl:
             return
-        if crl == rcEnv.paths.crl:
+        if crl == Env.paths.crl:
             self.crl_mode = "internal"
             try:
                 buff = self.ca.decode_key("crl")
@@ -182,7 +182,7 @@ class Listener(shared.OsvcThread):
         self.crl_mode = "external"
         if os.path.exists(crl):
             return crl
-        crl_path = os.path.join(rcEnv.paths.certs, "certificate_revocation_list")
+        crl_path = os.path.join(Env.paths.certs, "certificate_revocation_list")
         try:
             shared.NODE.urlretrieve(crl, crl_path)
             # TODO: extract expire from crl
@@ -242,7 +242,7 @@ class Listener(shared.OsvcThread):
         shared.NODE.listener = self
         self.set_tid()
         self.last_relay_janitor = 0
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.listener"), {"node": rcEnv.nodename, "component": self.name})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.listener"), {"node": Env.nodename, "component": self.name})
         self.events_clients = []
         self.stats = Storage({
             "sessions": Storage({
@@ -270,7 +270,7 @@ class Listener(shared.OsvcThread):
                 for sock in self.sockmap.values():
                     sock.close()
                 self.join_threads()
-                if rcEnv.sysname == "Linux":
+                if Env.sysname == "Linux":
                     self.certfs.stop()
                 sys.exit(0)
 
@@ -394,18 +394,18 @@ class Listener(shared.OsvcThread):
         if not self.crl_mode:
             return
         try:
-            mtime = os.path.getmtime(rcEnv.paths.crl)
+            mtime = os.path.getmtime(Env.paths.crl)
         except Exception:
             mtime = 0
 
         if self.crl_mode == "internal":
             if not "crl" in self.ca.data_keys():
-                if os.path.exists(rcEnv.paths.crl):
+                if os.path.exists(Env.paths.crl):
                     try:
-                        self.log.info("remove %s", rcEnv.paths.crl)
-                        os.unlink(rcEnv.paths.crl)
+                        self.log.info("remove %s", Env.paths.crl)
+                        os.unlink(Env.paths.crl)
                     except Exception as exc:
-                        self.log.warning("remove %s: %s", rcEnv.paths.crl, exc)
+                        self.log.warning("remove %s: %s", Env.paths.crl, exc)
                         return
                 else:
                     return
@@ -689,52 +689,52 @@ class Listener(shared.OsvcThread):
         if os.name == "nt":
             return
         if self.sockuxh2:
-            self.log.info("raw listener %s config unchanged", rcEnv.paths.lsnruxsock)
+            self.log.info("raw listener %s config unchanged", Env.paths.lsnruxsock)
             return
-        if not os.path.exists(rcEnv.paths.lsnruxsockd):
-            os.makedirs(rcEnv.paths.lsnruxsockd)
+        if not os.path.exists(Env.paths.lsnruxsockd):
+            os.makedirs(Env.paths.lsnruxsockd)
         try:
-            if os.path.isdir(rcEnv.paths.lsnruxh2sock):
-                shutil.rmtree(rcEnv.paths.lsnruxh2sock)
+            if os.path.isdir(Env.paths.lsnruxh2sock):
+                shutil.rmtree(Env.paths.lsnruxh2sock)
             else:
-                os.unlink(rcEnv.paths.lsnruxh2sock)
+                os.unlink(Env.paths.lsnruxh2sock)
         except Exception:
             pass
         try:
             self.sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sockuxh2.bind(rcEnv.paths.lsnruxh2sock)
+            self.sockuxh2.bind(Env.paths.lsnruxh2sock)
             self.sockuxh2.listen(1)
             self.sockuxh2.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind http/2 listener %s error: %s", rcEnv.paths.lsnruxh2sock, exc)
+            self.alert("error", "bind http/2 listener %s error: %s", Env.paths.lsnruxh2sock, exc)
             return
-        self.log.info("listening on %s using http/2", rcEnv.paths.lsnruxh2sock)
+        self.log.info("listening on %s using http/2", Env.paths.lsnruxh2sock)
         self.sockmap[self.sockuxh2.fileno()] = self.sockuxh2
 
     def setup_sockux(self):
         if os.name == "nt":
             return
         if self.sockux:
-            self.log.info("raw listener %s config unchanged", rcEnv.paths.lsnruxsock)
+            self.log.info("raw listener %s config unchanged", Env.paths.lsnruxsock)
             return
-        if not os.path.exists(rcEnv.paths.lsnruxsockd):
-            os.makedirs(rcEnv.paths.lsnruxsockd)
+        if not os.path.exists(Env.paths.lsnruxsockd):
+            os.makedirs(Env.paths.lsnruxsockd)
         try:
-            if os.path.isdir(rcEnv.paths.lsnruxsock):
-                shutil.rmtree(rcEnv.paths.lsnruxsock)
+            if os.path.isdir(Env.paths.lsnruxsock):
+                shutil.rmtree(Env.paths.lsnruxsock)
             else:
-                os.unlink(rcEnv.paths.lsnruxsock)
+                os.unlink(Env.paths.lsnruxsock)
         except Exception:
             pass
         try:
             self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sockux.bind(rcEnv.paths.lsnruxsock)
+            self.sockux.bind(Env.paths.lsnruxsock)
             self.sockux.listen(1)
             self.sockux.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind raw listener %s error: %s", rcEnv.paths.lsnruxsock, exc)
+            self.alert("error", "bind raw listener %s error: %s", Env.paths.lsnruxsock, exc)
             return
-        self.log.info("listening on %s", rcEnv.paths.lsnruxsock)
+        self.log.info("listening on %s", Env.paths.lsnruxsock)
         self.sockmap[self.sockux.fileno()] = self.sockux
 
     def setup_socks(self):
@@ -755,7 +755,7 @@ class ClientHandler(shared.OsvcThread):
         self.scheme = scheme
         self.tls = tls
         self.tls_context = tls_context
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.listener"), {"node": rcEnv.nodename, "component": "%s/%s" % (self.parent.name, addr[0])})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.listener"), {"node": Env.nodename, "component": "%s/%s" % (self.parent.name, addr[0])})
         self.streams = {}
         self.h2conn = None
         self.events_stream_ids = []
@@ -854,7 +854,7 @@ class ClientHandler(shared.OsvcThread):
 
     def current_usr_cf_sum(self):
         try:
-            return shared.CLUSTER_DATA[rcEnv.nodename]["services"]["config"][self.usr.path]["csum"]
+            return shared.CLUSTER_DATA[Env.nodename]["services"]["config"][self.usr.path]["csum"]
         except:
             return "unknown"
 
@@ -1337,7 +1337,7 @@ class ClientHandler(shared.OsvcThread):
             dequ = data == "dequeue_actions"
         if dequ:
             self.parent.stats.sessions.alive[self.sid].progress = "dequeue_actions"
-            p = Popen([rcEnv.paths.nodemgr, 'dequeue_actions'],
+            p = Popen([Env.paths.nodemgr, 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
             return
@@ -1357,7 +1357,7 @@ class ClientHandler(shared.OsvcThread):
                 data = self.msg_decode(data)
             except ValueError:
                 pass
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
 
         #self.log.info("received %s from %s", str(data), nodename)
         self.parent.stats.sessions.auth_validated += 1
@@ -1435,7 +1435,7 @@ class ClientHandler(shared.OsvcThread):
     def get_all_ns(self):
         data = set()
         try:
-            for path in shared.CLUSTER_DATA[rcEnv.nodename].get("services", {}).get("config", {}):
+            for path in shared.CLUSTER_DATA[Env.nodename].get("services", {}).get("config", {}):
                 _, ns, _ = split_path(path)
                 if ns is None:
                     ns = "root"
@@ -1466,7 +1466,7 @@ class ClientHandler(shared.OsvcThread):
             if ":" in _grant:
                 role_sel, ns_sel = _grant.split(":", 1)
                 for role in role_sel.split(","):
-                    if role not in rcEnv.ns_roles:
+                    if role not in Env.ns_roles:
                         continue
                     if role not in data:
                         data[role] = set()
@@ -1474,19 +1474,19 @@ class ClientHandler(shared.OsvcThread):
                         for _ns in all_ns:
                             if fnmatch.fnmatch(_ns, ns):
                                 data[role].add(_ns)
-                                for equiv in rcEnv.roles_equiv.get(role, ()):
+                                for equiv in Env.roles_equiv.get(role, ()):
                                     if equiv not in data:
                                         data[equiv] = set([_ns])
                                     else:
                                         data[equiv].add(_ns)
             else:
                 role = _grant
-                if role not in rcEnv.cluster_roles:
+                if role not in Env.cluster_roles:
                     continue
                 if role not in data:
                     data[role] = None
         # make sure all ns roles have a key, to avoid checking the key existance
-        for role in rcEnv.ns_roles:
+        for role in Env.ns_roles:
             if role not in data:
                 data[role] = set()
         return data
@@ -1511,7 +1511,7 @@ class ClientHandler(shared.OsvcThread):
         for role in roles:
             if role not in grants:
                 continue
-            if role in rcEnv.cluster_roles:
+            if role in Env.cluster_roles:
                 return
 
             # namespaced role
@@ -1569,15 +1569,15 @@ class ClientHandler(shared.OsvcThread):
         if node == "ANY" and path:
             svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
             try:
-                if rcEnv.nodename in svcnodes:
+                if Env.nodename in svcnodes:
                     # prefer to not relay, if possible
-                    nodenames = [rcEnv.nodename]
+                    nodenames = [Env.nodename]
                 else:
                     nodenames = [svcnodes[0]]
             except IndexError:
                 return {"error": "unknown service", "status": 1}
         elif node == "ANY":
-            nodenames = [rcEnv.nodename]
+            nodenames = [Env.nodename]
         else:
             nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
             if not nodenames:
@@ -1587,7 +1587,7 @@ class ClientHandler(shared.OsvcThread):
                 nodenames = [n for n in nodenames if n in svcnodes]
 
         def do_node(nodename):
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 try:
                     _result = handler.action(nodename, action=action, options=options, stream_id=stream_id, thr=self)
                 except ex.HTTP as exc:
@@ -1661,12 +1661,12 @@ class ClientHandler(shared.OsvcThread):
             else:
                 nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
             if nodes:
-                if rcEnv.nodename in nodes:
-                    node = rcEnv.nodename
+                if Env.nodename in nodes:
+                    node = Env.nodename
                 else:
                     node = nodes[0]
             else:
-                node = rcEnv.nodename
+                node = Env.nodename
             if node not in h:
                 h[node] = {}
             h[node][path] = svcdata
@@ -1675,7 +1675,7 @@ class ClientHandler(shared.OsvcThread):
             _options = {}
             _options.update(options)
             _options["data"] = optdata
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 _result = handler.action(nodename, action=action, options=_options, stream_id=stream_id, thr=self)
                 result["nodes"][nodename] = _result
                 result["status"] += _result.get("status", 0)
@@ -1702,10 +1702,10 @@ class ClientHandler(shared.OsvcThread):
             node = l[1]
             action = "/".join(l[2:])
         elif l[0] == "object":
-            if l[2] in rcEnv.kinds:
+            if l[2] in Env.kinds:
                 path = fmt_path(l[3], l[1], l[2])
                 action = "/".join(l[4:])
-            elif l[1] in rcEnv.kinds:
+            elif l[1] in Env.kinds:
                 path = fmt_path(l[2], None, l[1])
                 action = "/".join(l[3:])
             else:
@@ -1713,10 +1713,10 @@ class ClientHandler(shared.OsvcThread):
                 action = "/".join(l[2:])
         elif l[0] == "instance":
             node = l[1]
-            if l[3] in rcEnv.kinds:
+            if l[3] in Env.kinds:
                 path = fmt_path(l[4], l[2], l[3])
                 action = "/".join(l[4:])
-            elif l[2] in rcEnv.kinds:
+            elif l[2] in Env.kinds:
                 path = fmt_path(l[3], None, l[2])
                 action = "/".join(l[4:])
             else:
@@ -1930,7 +1930,7 @@ class ClientHandler(shared.OsvcThread):
         self.prepare_response(promised_stream_id, 200, data)
 
     def load_file(self, path):
-        fpath = os.path.join(rcEnv.paths.pathhtml, path)
+        fpath = os.path.join(Env.paths.pathhtml, path)
         with open(fpath, "r") as f:
             buff = f.read()
         return buff

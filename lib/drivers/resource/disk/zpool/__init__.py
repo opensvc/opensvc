@@ -7,7 +7,7 @@ import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.lock import cmlock
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache, clear_cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zpool_devs, zpool_getprop, zpool_setprop
@@ -193,7 +193,7 @@ class ZpoolDisk(BaseDisk):
 
     @lazy
     def zpool_cache(self):
-        return os.path.join(rcEnv.paths.pathvar, 'zpool.cache')
+        return os.path.join(Env.paths.pathvar, 'zpool.cache')
 
     def import_pool_no_cachefile(self):
         cmd = ['zpool', 'import', '-f', '-o', 'cachefile='+self.zpool_cache,
@@ -307,7 +307,7 @@ class ZpoolDisk(BaseDisk):
                     raise ex.Error("corrupted sub devs cache file %s"%self.sub_devs_name)
 
     def remap_cached_sub_devs_controller(self, dl):
-        if rcEnv.sysname != "SunOS":
+        if Env.sysname != "SunOS":
             return dl
         mapping = self.get_wwn_map()
         vdl = []
@@ -429,7 +429,7 @@ class ZpoolDisk(BaseDisk):
             "-m", "legacy",
             "-o", "cachefile="+self.zpool_cache,
         ] + args
-        if self.multihost and rcEnv.sysname == "Linux":
+        if self.multihost and Env.sysname == "Linux":
             args = ["-o", "multihost=on"] + args
             self.zgenhostid()
         cmd = ["zpool", "create"] + args

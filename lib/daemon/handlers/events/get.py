@@ -2,7 +2,7 @@ import time
 
 from six.moves import queue
 import daemon.handler
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.string import bdecode
 
 try:
@@ -52,7 +52,7 @@ class Handler(daemon.handler.BaseHandler):
             data = thr.daemon_status()
             namespaces = thr.get_namespaces()
             fevent = {
-                "nodename": rcEnv.nodename,
+                "nodename": Env.nodename,
                 "ts": time.time(),
                 "kind": "full",
                 "data": thr.filter_daemon_status(

@@ -15,7 +15,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from drivers.resource.disk.hpvm import DiskHpvm
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
@@ -122,7 +122,7 @@ class ContainerHpvm(BaseContainer):
     def is_up(self, nodename=None):
         cmd = ['/opt/hpvm/bin/hpvmstatus', '-M', '-P', self.name]
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             return False

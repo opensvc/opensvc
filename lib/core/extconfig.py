@@ -11,7 +11,7 @@ import sys
 import six
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import factory
 from utilities.files import makedirs
 from utilities.configparser import RawConfigParser, NoOptionError
@@ -573,9 +573,9 @@ class ExtConfigMixin(object):
 
         # hardcoded references
         if _ref == "nodename":
-            val = rcEnv.nodename
+            val = Env.nodename
         elif _ref == "short_nodename":
-            val = rcEnv.nodename.split(".")[0]
+            val = Env.nodename.split(".")[0]
         elif _ref == "namespace" and is_svc:
             val = self.namespace if self.namespace else "root"
         elif _ref == "kind" and is_svc:
@@ -634,13 +634,13 @@ class ExtConfigMixin(object):
             else:
                 val = " ".join(self.dnsnodes)
         elif _ref == "svcmgr":
-            val = rcEnv.paths.svcmgr
+            val = Env.paths.svcmgr
         elif _ref == "nodemgr":
-            val = rcEnv.paths.nodemgr
+            val = Env.paths.nodemgr
         elif _ref == "etc":
-            val = rcEnv.paths.pathetc
+            val = Env.paths.pathetc
         elif _ref == "var":
-            val = rcEnv.paths.pathvar
+            val = Env.paths.pathvar
         elif _ref == "private_var":
             val = self.var_d
         elif _ref == "collector_api":
@@ -653,9 +653,9 @@ class ExtConfigMixin(object):
             else:
                 val = ""
         elif _ref == "dnsuxsockd":
-            val = rcEnv.paths.dnsuxsockd
+            val = Env.paths.dnsuxsockd
         elif _ref == "dnsuxsock":
-            val = rcEnv.paths.dnsuxsock
+            val = Env.paths.dnsuxsock
         elif _ref.startswith("safe://"):
             try:
                 if has_node:
@@ -1071,7 +1071,7 @@ class ExtConfigMixin(object):
             except AttributeError:
                 cd = self.cd
         if impersonate is None:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
         else:
             nodename = impersonate
 
@@ -1127,7 +1127,7 @@ class ExtConfigMixin(object):
             except AttributeError:
                 cd = self.cd
         if impersonate is None:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
         else:
             nodename = impersonate
 

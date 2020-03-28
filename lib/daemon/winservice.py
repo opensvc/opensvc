@@ -28,7 +28,7 @@ import sys
 
 from daemon.main import Daemon
 from utilities.lock import lock, unlock
-from rcGlobalEnv import rcEnv
+from env import Env
 
 
 class OsvcAgent(win32serviceutil.ServiceFramework):
@@ -43,7 +43,7 @@ class OsvcAgent(win32serviceutil.ServiceFramework):
 
     def lock(self):
         try:
-            self.lockfd = lock(lockfile=rcEnv.paths.daemon_lock, timeout=1,
+            self.lockfd = lock(lockfile=Env.paths.daemon_lock, timeout=1,
                                delay=0.1)
         except Exception:
             self.log.error("a daemon is already running, and holding the "

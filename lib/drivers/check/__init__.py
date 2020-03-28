@@ -6,7 +6,7 @@ import os
 import pkgutil
 import sys
 
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class Check(object):
     undef = [{
@@ -53,18 +53,18 @@ class Checks(Check):
                 ispkg = modinfo[2]
             if ispkg:
                 continue
-            if name.split(".")[-1] != rcEnv.module_sysname:
+            if name.split(".")[-1] != Env.module_sysname:
                 continue
             mod = importlib.import_module(name)
             self += mod.Check(svcs=self.svcs)
 
     def register_local_checkers(self):
-        check_d = os.path.join(rcEnv.paths.pathvar, 'check')
+        check_d = os.path.join(Env.paths.pathvar, 'check')
         if not os.path.exists(check_d):
             return
         sys.path.append(check_d)
         for f in glob.glob(os.path.join(check_d, 'check*.py')):
-            if rcEnv.sysname not in f:
+            if Env.sysname not in f:
                 continue
             cname = os.path.basename(f).replace('.py', '')
             try:
@@ -118,7 +118,7 @@ class Checks(Check):
                 }
 
                 vals.append([\
-                    rcEnv.nodename,
+                    Env.nodename,
                     _instance["path"],
                     chk.chk_type,
                     _instance['instance'],
@@ -145,7 +145,7 @@ class Checks(Check):
         from utilities.render.color import color
         tree = Forest()
         head_node = tree.add_node()
-        head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column(Env.nodename, color.BOLD)
         for chk_type, instances in data.items():
             node = head_node.add_node()
             node.add_column(chk_type, color.BROWN)

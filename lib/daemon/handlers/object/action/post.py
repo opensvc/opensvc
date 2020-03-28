@@ -7,7 +7,7 @@ import daemon.rbac
 import daemon.shared as shared
 import core.exceptions as ex
 from utilities.naming import split_path
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.string import bdecode
 
 GUEST_ACTIONS = (
@@ -217,7 +217,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                     opt += "=" + str(val)
                     cmd.append(opt)
 
-        fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, kind+"mgr.py"), "-s", options.path] + cmd
+        fullcmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, kind+"mgr.py"), "-s", options.path] + cmd
         thr.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
         if options.sync:
             proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)

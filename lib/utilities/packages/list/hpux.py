@@ -1,6 +1,6 @@
 import datetime
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import call, which
 
 
@@ -26,7 +26,7 @@ def listpkg_t(t):
             l[2] = datetime.datetime.fromtimestamp(int(l[2])).strftime("%Y-%m-%d %H:%M:%S")
         except:
             l[2] = ""
-        x = [rcEnv.nodename, l[0], l[1], '', t, l[2]]
+        x = [Env.nodename, l[0], l[1], '', t, l[2]]
         lines.append(x)
     return lines
 

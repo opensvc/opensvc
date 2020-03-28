@@ -4,7 +4,7 @@ providing the methods to freeze, thaw a service and to test if
 a service is frozen.
 """
 import os
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import split_path
 
 
@@ -85,12 +85,12 @@ class Freezer(object):
         os.unlink(self.node_flag)
 
     def __init__(self, name):
-        self.node_flag = os.path.join(rcEnv.paths.pathvar, "node", "frozen")
+        self.node_flag = os.path.join(Env.paths.pathvar, "node", "frozen")
         if name == "node":
             self.flag = self.node_flag
         else:
             name, namespace, kind = split_path(name)
             if namespace:
-                self.flag = os.path.join(rcEnv.paths.pathvar, "namespaces", namespace, kind, name, "frozen")
+                self.flag = os.path.join(Env.paths.pathvar, "namespaces", namespace, kind, name, "frozen")
             else:
-                self.flag = os.path.join(rcEnv.paths.pathvar, kind, name, "frozen")
+                self.flag = os.path.join(Env.paths.pathvar, kind, name, "frozen")

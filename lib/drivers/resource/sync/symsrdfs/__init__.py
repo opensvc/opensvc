@@ -4,7 +4,7 @@ import os
 from xml.etree.ElementTree import XML
 
 import core.status
-from rcGlobalEnv import rcEnv
+from env import Env
 from drivers.array.symmetrix import set_sym_env
 from utilities.lazy import lazy
 
@@ -160,7 +160,7 @@ class SyncSymsrdfs(Sync):
         return devs
 
     def promote_devs_rw(self):
-        if rcEnv.sysname != "Linux":
+        if Env.sysname != "Linux":
             return
         devs = [d for d in self.list_pd() if d.startswith("/dev/mapper/") or d.startswith("/dev/rdsk/")]
         for dev in devs:
@@ -592,7 +592,7 @@ class SyncSymsrdfs(Sync):
         self.establish()
 
     def start(self):
-        if rcEnv.nodename in self.svc.drpnodes:
+        if Env.nodename in self.svc.drpnodes:
             if self.is_rdf2_dg():
                 if self.is_synchronous_and_synchronized_state():
                     self.split()
@@ -613,7 +613,7 @@ class SyncSymsrdfs(Sync):
                     pass
                 else:
                     raise ex.Error("symrdf dg %s is RDF1 on drp node, you have to manually return to a sane SRDF status.")
-        elif rcEnv.nodename in self.svc.nodes:
+        elif Env.nodename in self.svc.nodes:
             if self.is_rdf1_dg():
                 if self.is_synchronous_and_synchronized_state():
                     self.log.info("symrdf dg %s is RDF1 and synchronous/synchronized."%self.symdg)

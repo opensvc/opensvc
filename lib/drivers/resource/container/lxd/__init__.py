@@ -16,7 +16,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from utilities.storage import Storage
@@ -300,7 +300,7 @@ class ContainerLxd(BaseContainer):
 
     def abort_start(self):
         for nodename in self.svc.peers:
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 continue
             if self.is_up_on(nodename):
                 self.log.error("already up on %s", nodename)

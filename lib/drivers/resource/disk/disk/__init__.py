@@ -4,7 +4,7 @@ import time
 import core.exceptions as ex
 
 from .. import BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.svcdict import KEYS
@@ -135,9 +135,9 @@ class DiskDisk(Resource):
             disk_id_kw = "disk_id"
             result = pool.create_disk(name, size=size, nodes=self.svc.nodes)
         else:
-            disk_id_kw = "disk_id@" + rcEnv.nodename
-            name += "." + rcEnv.nodename
-            result = pool.create_disk(name, size=size, nodes=[rcEnv.nodename])
+            disk_id_kw = "disk_id@" + Env.nodename
+            name += "." + Env.nodename
+            result = pool.create_disk(name, size=size, nodes=[Env.nodename])
         if not result:
             raise ex.Error("invalid create disk result: %s" % result)
         for line in format_str_flat_json(result).splitlines():
@@ -175,8 +175,8 @@ class DiskDisk(Resource):
         if self.shared:
             disk_id_kw = "disk_id"
         else:
-            disk_id_kw = "disk_id@" + rcEnv.nodename
-            name += "." + rcEnv.nodename
+            disk_id_kw = "disk_id@" + Env.nodename
+            name += "." + Env.nodename
         result = pool.delete_disk(name=name, disk_id=self.disk_id)
         for line in format_str_flat_json(result).splitlines():
             self.log.info(line)

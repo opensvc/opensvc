@@ -8,7 +8,7 @@ import time
 
 import core.status
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -216,7 +216,7 @@ class AppSimple(BaseApp):
         When a lot of services and/or a lot of app.simple resources run the
         same program, caching effective.
         """
-        cmd = [rcEnv.syspaths.ps, "-p", pids, "e"]
+        cmd = [Env.syspaths.ps, "-p", pids, "e"]
         out, _, _ = justcall(cmd)
         return out
 

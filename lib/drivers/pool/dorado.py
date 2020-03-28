@@ -4,7 +4,7 @@ import sys
 
 import core.exceptions as ex
 from utilities.lazy import lazy
-from rcGlobalEnv import rcEnv
+from env import Env
 from drivers.array.dorado import Dorados
 from core.pool import BasePool
 
@@ -167,7 +167,7 @@ class Pool(BasePool):
     @lazy
     def remote_array_name(self):
         for node in self.node.cluster_nodes:
-             if node == rcEnv.nodename:
+             if node == Env.nodename:
                  continue
              an = self.oget("array", impersonate=node)
              if an and an != self.array_name:

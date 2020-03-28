@@ -8,7 +8,7 @@ import utilities.devices.linux
 
 from . import DiskDisk as BaseDiskDisk, KEYWORDS
 from utilities.lazy import lazy
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
@@ -95,9 +95,9 @@ class DiskDisk(BaseDiskDisk):
         self.svc.node._scanscsi(log=self.log)
         self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
-        if self.devpath and which(rcEnv.syspaths.multipath):
+        if self.devpath and which(Env.syspaths.multipath):
             dev = os.path.realpath(self.devpath)
-            cmd = [rcEnv.syspaths.multipath, "-v1", dev]
+            cmd = [Env.syspaths.multipath, "-v1", dev]
             ret, out, err = self.vcall(cmd)
         self.wait_devpath()
 

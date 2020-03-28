@@ -3,13 +3,13 @@ import os
 
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import which
 
 class Check(drivers.check.Check):
     chk_type = "mcelog"
     mcelog_p = "/var/log/mcelog"
-    marker_p = os.path.join(rcEnv.paths.pathtmp, "checkMceLinunx.marker")
+    marker_p = os.path.join(Env.paths.pathtmp, "checkMceLinunx.marker")
 
     def get_last_marker(self):
         try:

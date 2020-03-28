@@ -3,7 +3,7 @@ import os
 
 import utilities.render.forest
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import split_path, strip_path, resolve_path, is_service
 from utilities.render.color import color, colorize, STATUS_COLOR
 from utilities.storage import Storage
@@ -329,7 +329,7 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
 def service_nodes(path, mon_data):
     nodes = set()
     if not mon_data and is_service(path, local=True):
-        return set([rcEnv.nodename])
+        return set([Env.nodename])
     for nodename, data in mon_data.get("nodes", {}).items():
         _nodes = set(data.get("services", {}).get("config", {}).get(path, {}).get("scope", []))
         nodes |= _nodes
