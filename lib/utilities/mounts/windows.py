@@ -18,7 +18,7 @@ class Mounts(BaseMounts):
 
     def parse_mounts(self, wmi=None):
         if self.wmi is None:
-            import wmi
+            import foreign.wmi as wmi
             self.wmi = wmi.WMI()
         mounts = []
         for volume in self.wmi.Win32_Volume():
