@@ -1,5 +1,3 @@
-from ctypes import windll
-
 try:
     from six.moves import winreg
 except ImportError:

@@ -4,7 +4,6 @@ import json
 import rcStats
 from rcGlobalEnv import rcEnv
 from utilities.converters import convert_datetime
-from utilities.proc import justcall, which
 
 class StatsProvider(rcStats.StatsProvider):
     """

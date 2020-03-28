@@ -1,6 +1,5 @@
 import core.cloud
 import core.exceptions as ex
-import socket
 
 try:
     from libcloud.compute.types import Provider

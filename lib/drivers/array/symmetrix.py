@@ -7,7 +7,7 @@ import json
 import time
 
 import core.exceptions as ex
-from xml.etree.ElementTree import XML, fromstring
+from xml.etree.ElementTree import fromstring
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import factory, split_path

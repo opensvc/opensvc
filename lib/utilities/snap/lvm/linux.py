@@ -6,7 +6,7 @@ import utilities.devices.linux
 
 from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class Snap(utilities.snap.Snap):
     def mntopt_and_ro(self, m):

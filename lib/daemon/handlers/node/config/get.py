@@ -1,6 +1,5 @@
 import codecs
 import os
-import time
 import traceback
 
 import daemon.handler
