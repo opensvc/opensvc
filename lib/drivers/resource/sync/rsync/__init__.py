@@ -7,7 +7,7 @@ import datetime
 
 from .. import Sync, notify
 from utilities.converters import convert_speed
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.builder import sync_kwargs
@@ -117,15 +117,15 @@ def adder(svc, s):
 
 
 def lookup_snap_mod():
-    if rcEnv.sysname == 'Linux':
+    if Env.sysname == 'Linux':
         return __import__('utilities.snap.lvm.linux')
-    elif rcEnv.sysname == 'HP-UX':
+    elif Env.sysname == 'HP-UX':
         return __import__('utilities.snap.vxfs.hpux')
-    elif rcEnv.sysname == 'AIX':
+    elif Env.sysname == 'AIX':
         return __import__('utilities.snap.jfs2.aix')
-    elif rcEnv.sysname in ['SunOS', 'FreeBSD']:
+    elif Env.sysname in ['SunOS', 'FreeBSD']:
         return __import__('utilities.snap.zfs.sunos')
-    elif rcEnv.sysname in ['OSF1']:
+    elif Env.sysname in ['OSF1']:
         return __import__('utilities.snap.advfs.osf1')
     else:
         raise ex.Error
@@ -198,7 +198,7 @@ class SyncRsync(Sync):
         super(SyncRsync, self).__init__(type="sync.rsync", **kwargs)
 
         if internal:
-            if rcEnv.paths.drp_path in dst:
+            if Env.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"
             else:
                 self.label = "rsync svc config to %s"%(', '.join(sorted(sorted(target))))
@@ -253,7 +253,7 @@ class SyncRsync(Sync):
         if self.is_disabled():
             return set()
 
-        if rcEnv.nodename in self.svc.drpnodes:
+        if Env.nodename in self.svc.drpnodes:
             self.log.debug("drp node not allowed to sync nodes nor drpnodes")
             return set()
 
@@ -265,7 +265,7 @@ class SyncRsync(Sync):
             return set()
 
         # Discard the local node from the set
-        targets -= set([rcEnv.nodename])
+        targets -= set([Env.nodename])
 
         if len(targets) == 0:
             return set()
@@ -305,17 +305,17 @@ class SyncRsync(Sync):
         if '-e' in options:
             return options
 
-        if rcEnv.rsh.startswith("/usr/bin/ssh") and rcEnv.sysname == "SunOS":
+        if Env.rsh.startswith("/usr/bin/ssh") and Env.sysname == "SunOS":
             # SunOS "ssh -n" doesn't work with rsync
-            rsh = rcEnv.rsh.replace("-n", "")
+            rsh = Env.rsh.replace("-n", "")
         else:
-            rsh = rcEnv.rsh
+            rsh = Env.rsh
         options += ['-e', rsh]
         return options
 
     def sync_timestamp(self, node):
         sync_timestamp_f = get_timestamp_filename(self, node)
-        sync_timestamp_f_src = get_timestamp_filename(self, rcEnv.nodename)
+        sync_timestamp_f_src = get_timestamp_filename(self, Env.nodename)
         sched_timestamp_f = os.path.join(self.svc.var_d, "scheduler", "last_syncall_"+self.rid)
         dst_d = os.path.dirname(sched_timestamp_f)
         if not os.path.exists(dst_d):
@@ -509,7 +509,7 @@ class SyncRsync(Sync):
         target = set()
         for i in self.target:
             target |= self.target_nodes(i)
-        if len(target - set([rcEnv.nodename])) == 0:
+        if len(target - set([Env.nodename])) == 0:
             self.status_log("no destination nodes", "info")
             return core.status.NA
 
@@ -524,12 +524,12 @@ class SyncRsync(Sync):
         s = self.svc.group_status(excluded_groups=set(["app", "sync", "task", "disk.scsireserv"]))
         if s['avail'].status != core.status.UP or \
            (self.svc.topology == 'flex' and \
-            rcEnv.nodename != self.svc.flex_primary and \
+            Env.nodename != self.svc.flex_primary and \
             s['avail'].status == core.status.UP):
-            if rcEnv.nodename not in target:
+            if Env.nodename not in target:
                 self.status_log("passive node not in destination nodes", "info")
                 return core.status.NA
-            if self.node_need_sync(rcEnv.nodename):
+            if self.node_need_sync(Env.nodename):
                 self.status_log("passive node needs update")
                 return core.status.WARN
             else:
@@ -537,7 +537,7 @@ class SyncRsync(Sync):
 
         """ sync state on DRP nodes where the service is UP
         """
-        if 'drpnodes' in self.target and rcEnv.nodename in self.target_nodes('drpnodes'):
+        if 'drpnodes' in self.target and Env.nodename in self.target_nodes('drpnodes'):
             self.status_log("service up on drp node, sync disabled", "info")
             return core.status.NA
 

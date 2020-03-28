@@ -3,7 +3,7 @@ import os
 import core.exceptions as ex
 import utilities.snap
 import utilities.subsystems.advfs
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import protected_mount
 from utilities.mounts.osf1 import Mounts
 
@@ -27,7 +27,7 @@ class Snap(utilities.snap.Snap):
             raise ex.syncNotSnapable
         clonefset = fset +'@osvc_sync'
         mount_point = m.mount_point
-        snap_mount_point = os.path.join(rcEnv.paths.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.fullname, mount_point))
+        snap_mount_point = os.path.join(Env.paths.pathtmp, 'clonefset/%s/%s/osvc_sync'%(m.svc.fullname, mount_point))
         snap_mount_point = os.path.normpath(snap_mount_point)
         if not os.path.exists(snap_mount_point):
             try:

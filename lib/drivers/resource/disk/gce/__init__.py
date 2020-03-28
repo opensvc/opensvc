@@ -4,7 +4,7 @@ import core.status
 import rcGce
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
-from rcGlobalEnv import *
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -106,7 +106,7 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
         if hasattr(self.svc, "gce_attached_disks") and not refresh:
              return self.svc.gce_attached_disks
         self.wait_gce_auth()
-        cmd = ["gcloud", "compute", "instances", "describe", rcEnv.nodename, "--format", "json", "--zone", self.gce_zone]
+        cmd = ["gcloud", "compute", "instances", "describe", Env.nodename, "--format", "json", "--zone", self.gce_zone]
         out, err, ret = justcall(cmd)
         data = json.loads(out)
         data = data.get("disks", [])
@@ -176,7 +176,7 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
                 continue
             for user in d.get("users", []):
                 instance = user.split('/')[-1]
-                if instance != rcEnv.nodename:
+                if instance != Env.nodename:
                     self.vcall([
                       "gcloud", "compute", "instances", "detach-disk", "-q",
                       instance,
@@ -197,7 +197,7 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
         self.detach_other(name)
         self.vcall([
           "gcloud", "compute", "instances", "attach-disk", "-q",
-          rcEnv.nodename,
+          Env.nodename,
           "--disk", name,
           "--zone", self.gce_zone,
           "--device-name", self.fmt_disk_devname(name),
@@ -220,7 +220,7 @@ class DiskGce(BaseDisk, rcGce.GceMixin):
             return
         self.vcall([
           "gcloud", "compute", "instances", "detach-disk", "-q",
-          rcEnv.nodename,
+          Env.nodename,
           "--disk", name,
           "--zone", self.gce_zone
         ])

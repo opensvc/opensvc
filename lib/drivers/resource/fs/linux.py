@@ -6,7 +6,7 @@ from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 
 import core.exceptions as ex
 import utilities.devices.linux
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import protected_mount, getmount
 from utilities.cache import cache
 from utilities.lazy import lazy
@@ -257,7 +257,7 @@ class Fs(BaseFs):
 
     @cache("dmsetup.ls.multipath")
     def dmsetup_ls_multipath(self):
-        cmd = [rcEnv.syspaths.dmsetup, "ls", "--target", "multipath"]
+        cmd = [Env.syspaths.dmsetup, "ls", "--target", "multipath"]
         out, _, _ = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -277,7 +277,7 @@ class Fs(BaseFs):
 
     @cache("dmsetup.status")
     def dmsetup_status(self):
-        cmd = [rcEnv.syspaths.dmsetup, "status"]
+        cmd = [Env.syspaths.dmsetup, "status"]
         out, _, _ = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -287,7 +287,7 @@ class Fs(BaseFs):
 
     @cache("dmsetup.table")
     def dmsetup_table(self):
-        cmd = [rcEnv.syspaths.dmsetup, "table"]
+        cmd = [Env.syspaths.dmsetup, "table"]
         out, _, _ = justcall(cmd)
         data = {}
         for line in out.splitlines():
@@ -478,7 +478,7 @@ class Fs(BaseFs):
 
     def _can_check_zfs_writable(self):
         pool = self.device.split("/")[0]
-        cmd = [rcEnv.syspaths.zpool, "status", pool]
+        cmd = [Env.syspaths.zpool, "status", pool]
         out, err, ret = justcall(cmd)
         if "state: SUSPENDED" in out:
             self.status_log("pool %s is suspended" % pool)
@@ -503,9 +503,9 @@ class Fs(BaseFs):
             return self.umount_zfs_native(mnt)
 
     def umount_zfs_native(self, mnt):
-        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', mnt], err_to_info=True)
+        ret, out, err = self.vcall([Env.syspaths.zfs, 'umount', mnt], err_to_info=True)
         if ret != 0:
-            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'umount', '-f', mnt], err_to_info=True)
+            ret, out, err = self.vcall([Env.syspaths.zfs, 'umount', '-f', mnt], err_to_info=True)
         return ret, out, err
 
     def mount_zfs(self):
@@ -529,9 +529,9 @@ class Fs(BaseFs):
                 raise ex.Error
             # the prop change has mounted the dataset
             return
-        ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', self.device])
+        ret, out, err = self.vcall([Env.syspaths.zfs, 'mount', self.device])
         if ret != 0:
-            ret, out, err = self.vcall([rcEnv.syspaths.zfs, 'mount', '-O', self.device])
+            ret, out, err = self.vcall([Env.syspaths.zfs, 'mount', '-O', self.device])
             if ret != 0:
                 raise ex.Error
         return ret, out, err

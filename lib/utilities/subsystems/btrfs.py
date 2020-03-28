@@ -5,7 +5,7 @@ import logging
 import core.exceptions as ex
 import utilities.devices.linux
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, vcall
 
 class InitError(Exception):
@@ -246,14 +246,14 @@ class Btrfs(object):
     def vcall(self, cmd):
         if self.node is not None:
             cmd = [' '.join(cmd)]
-            cmd = rcEnv.rsh.split() + [self.node] + cmd
+            cmd = Env.rsh.split() + [self.node] + cmd
 
         return vcall(cmd, log=self.log)
 
     def justcall(self, cmd):
         if self.node is not None:
             cmd = [' '.join(cmd)]
-            cmd = rcEnv.rsh.split() + [self.node] + cmd
+            cmd = Env.rsh.split() + [self.node] + cmd
         return justcall(cmd)
 
     def create_subvol(self, path):
@@ -288,7 +288,7 @@ class Btrfs(object):
         # verify this is the right subvol (missing: path->subvol name fn)
 
     def setup_rootvol(self):
-        self.rootdir = os.path.join(rcEnv.paths.pathvar, 'btrfs', self.label)
+        self.rootdir = os.path.join(Env.paths.pathvar, 'btrfs', self.label)
 
         if not self.dir_exists(self.rootdir):
             cmd = ['mkdir', '-p', self.rootdir]

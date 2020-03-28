@@ -8,7 +8,7 @@ from . import \
     BaseDiskRaw, \
     adder as base_raw_adder, \
     BASE_RAW_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
@@ -76,7 +76,7 @@ class DiskRaw(BaseDiskRaw):
         if ret == 0:
             # no need to load (already loaded or compiled-in)
             return
-        cmd = [rcEnv.syspaths.lsmod]
+        cmd = [Env.syspaths.lsmod]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -154,7 +154,7 @@ class DiskRaw(BaseDiskRaw):
         return None
 
     def lock(self, timeout=30, delay=1):
-        lockfile = os.path.join(rcEnv.paths.pathlock, 'startvgraw')
+        lockfile = os.path.join(Env.paths.pathlock, 'startvgraw')
         lockfd = None
         try:
             lockfd = utilities.lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)

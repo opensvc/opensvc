@@ -6,7 +6,7 @@ from subprocess import *
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.subsystems.zfs import a2pool_dataset, Dataset
 from utilities.lazy import lazy
 from utilities.converters import print_duration
@@ -152,9 +152,9 @@ class SyncZfs(Sync):
                 r.create_snap(r.src_snap_tosend)
 
     def snap_exists(self, snapname, node=None):
-        cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'snapshot', snapname]
+        cmd = [Env.syspaths.zfs, 'list', '-t', 'snapshot', snapname]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         out, err, ret = justcall(cmd)
         if ret == 0:
             return True
@@ -167,9 +167,9 @@ class SyncZfs(Sync):
             self.log.error('%s should not exist'%snap)
             raise ex.Error
         if self.recursive :
-            cmd = [rcEnv.syspaths.zfs, 'snapshot' , '-r' , snap]
+            cmd = [Env.syspaths.zfs, 'snapshot' , '-r' , snap]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'snapshot' , snap]
+            cmd = [Env.syspaths.zfs, 'snapshot' , snap]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -184,9 +184,9 @@ class SyncZfs(Sync):
         return upperfs
 
     def fs_exists(self, fsname, node=None):
-        cmd = [rcEnv.syspaths.zfs, 'list', '-t', 'filesystem', fsname]
+        cmd = [Env.syspaths.zfs, 'list', '-t', 'filesystem', fsname]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         out, err, ret = justcall(cmd)
         if ret == 0:
             return True
@@ -205,9 +205,9 @@ class SyncZfs(Sync):
             upperfs = self.get_upper_fs(fs)
             if not self.fs_exists(upperfs, node):
                 self.create_fs(upperfs, node)
-        cmd = [rcEnv.syspaths.zfs, 'create' , fs]
+        cmd = [Env.syspaths.zfs, 'create' , fs]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -226,10 +226,10 @@ class SyncZfs(Sync):
 
     def get_peersenders(self):
         self.peersenders = set()
-        if rcEnv.nodename not in self.svc.nodes or self.target != ["drpnodes"]:
+        if Env.nodename not in self.svc.nodes or self.target != ["drpnodes"]:
             return
         self.peersenders |= self.svc.nodes
-        self.peersenders -= set([rcEnv.nodename])
+        self.peersenders -= set([Env.nodename])
 
     def get_targets(self):
         self.targets = set()
@@ -238,13 +238,13 @@ class SyncZfs(Sync):
             self.targets = set()
             return
         if 'local' in self.target:
-            self.targets |= set([rcEnv.nodename])
+            self.targets |= set([Env.nodename])
             return
         if 'nodes' in self.target:
             self.targets |= self.svc.nodes
         if 'drpnodes' in self.target:
             self.targets |= self.svc.drpnodes
-        self.targets -= set([rcEnv.nodename])
+        self.targets -= set([Env.nodename])
 
     def get_info(self):
         self.get_targets()
@@ -307,19 +307,19 @@ class SyncZfs(Sync):
         if not self.snap_exists(self.dst_snap_sent, node):
             return self.zfs_send_initial(node)
         if self.recursive:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-R", "-I",
+            send_cmd = [Env.syspaths.zfs, "send", "-R", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
         else:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-I",
+            send_cmd = [Env.syspaths.zfs, "send", "-I",
                         self.src_snap_sent, self.src_snap_tosend]
 
         if self.src_ds == self.dst_ds or ( self.src_ds == self.src_pool and self.dst_ds == self.dst_pool ):
-            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+            receive_cmd = [Env.syspaths.zfs, "receive", "-dF", self.dst_pool]
         else:
             fspath = self.get_upper_fs(self.dst_ds)
-            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-eF", fspath]
+            receive_cmd = [Env.syspaths.zfs, "receive", "-eF", fspath]
         if node is not None and 'local' not in self.target:
-            _receive_cmd = rcEnv.rsh.strip(' -n').split()
+            _receive_cmd = Env.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
                 _receive_cmd.remove("-q")
             receive_cmd = _receive_cmd + [node] + receive_cmd
@@ -328,20 +328,20 @@ class SyncZfs(Sync):
 
     def zfs_send_initial(self, node=None):
         if self.recursive:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-R",
+            send_cmd = [Env.syspaths.zfs, "send", "-R",
                         self.src_snap_tosend]
         else:
-            send_cmd = [rcEnv.syspaths.zfs, "send", "-p",
+            send_cmd = [Env.syspaths.zfs, "send", "-p",
                         self.src_snap_tosend]
 
         if self.src_ds == self.dst_ds or ( self.src_ds == self.src_pool and self.dst_ds == self.dst_pool ):
-            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-dF", self.dst_pool]
+            receive_cmd = [Env.syspaths.zfs, "receive", "-dF", self.dst_pool]
         else:
             fspath = self.get_upper_fs(self.dst_ds)
             self.create_fs(fspath, node)
-            receive_cmd = [rcEnv.syspaths.zfs, "receive", "-eF", fspath]
+            receive_cmd = [Env.syspaths.zfs, "receive", "-eF", fspath]
         if node is not None and 'local' not in self.target:
-            _receive_cmd = rcEnv.rsh.strip(' -n').split()
+            _receive_cmd = Env.rsh.strip(' -n').split()
             if "-q" in _receive_cmd:
                 _receive_cmd.remove("-q")
             receive_cmd = _receive_cmd + [node] + receive_cmd
@@ -358,11 +358,11 @@ class SyncZfs(Sync):
         if check_exists and not self.snap_exists(snap, node=node):
             return
         if self.recursive :
-            cmd = [rcEnv.syspaths.zfs, 'destroy', '-r', snap]
+            cmd = [Env.syspaths.zfs, 'destroy', '-r', snap]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'destroy', snap]
+            cmd = [Env.syspaths.zfs, 'destroy', snap]
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         if check_exists:
             err_to_info = False
         else:
@@ -376,12 +376,12 @@ class SyncZfs(Sync):
             self.log.error("%s should not exist"%dst)
             raise ex.Error
         if self.recursive :
-            cmd = [rcEnv.syspaths.zfs, 'rename', '-r', src, dst]
+            cmd = [Env.syspaths.zfs, 'rename', '-r', src, dst]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'rename', src, dst]
+            cmd = [Env.syspaths.zfs, 'rename', src, dst]
 
         if node is not None:
-            cmd = rcEnv.rsh.split() + [node] + cmd
+            cmd = Env.rsh.split() + [node] + cmd
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -467,7 +467,7 @@ class SyncZfs(Sync):
 
     def get_remote_state(self, node):
         cmd1 = ['cat', self.statefile]
-        cmd = rcEnv.rsh.split() + [node] + cmd1
+        cmd = Env.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
@@ -480,7 +480,7 @@ class SyncZfs(Sync):
         return self.parse_statefile(out)
 
     def get_snap_uuid(self, snap):
-        cmd = ['env', 'LC_ALL=C', rcEnv.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
+        cmd = ['env', 'LC_ALL=C', Env.syspaths.zfs, 'list', '-H', '-o', 'creation', '-t', 'snapshot', snap]
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             raise ex.Error
@@ -497,7 +497,7 @@ class SyncZfs(Sync):
              f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
 
     def _push_statefile(self, node):
-        cmd = rcEnv.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
+        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
         (ret, out, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -510,7 +510,7 @@ class SyncZfs(Sync):
 
     def parse_statefile(self, out, node=None):
         if node is None:
-            node = rcEnv.nodename
+            node = Env.nodename
         lines = out.strip().split('\n')
         if len(lines) != 1:
             self.log.error("%s:%s is corrupted"%(node, self.statefile))

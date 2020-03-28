@@ -1,11 +1,10 @@
 """
 The module defining the Svc class.
 """
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
-import itertools
 import hashlib
+import itertools
 import logging
 import os
 import signal
@@ -13,31 +12,29 @@ import sys
 import time
 from errno import ECONNREFUSED
 
-import core.status
-import utilities.lock
-
-from core.resource import Resource
-from core.resourceset import ResourceSet
-from core.freezer import Freezer
-from rcGlobalEnv import rcEnv, Paths
-from utilities.storage import Storage
-from utilities.files import makedirs
-from utilities.naming import resolve_path, fmt_path, \
-                             svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                             svc_pathcf
-from utilities.fcache import fcache
-from utilities.drivers import driver_import
-from utilities.lazy import lazy, set_lazy, unset_lazy, unset_all_lazy
-from core.contexts import want_context
-from utilities.converters import *
 import core.exceptions as ex
 import core.logger
-from core.node import Node
-from core.scheduler import Scheduler, SchedOpts, sched_action
+import core.status
+import utilities.lock
 from core.comm import Crypt
+from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
-from utilities.proc import justcall, vcall, lcall, \
-                           drop_option, init_locale, action_triggers, find_editor
+from core.freezer import Freezer
+from core.node import Node
+from core.resource import Resource
+from core.resourceset import ResourceSet
+from core.scheduler import SchedOpts, Scheduler, sched_action
+from env import Env, Paths
+from utilities.converters import *
+from utilities.drivers import driver_import
+from utilities.fcache import fcache
+from utilities.files import makedirs
+from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
+from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
+                              svc_pathlog, svc_pathtmp, svc_pathvar)
+from utilities.proc import (action_triggers, drop_option, find_editor,
+                            init_locale, justcall, lcall, vcall)
+from utilities.storage import Storage
 from utilities.string import is_string
 
 if six.PY2:
@@ -484,7 +481,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.name = name
         self.namespace = namespace.strip("/") if namespace else None
         self.node = node
-        self.hostid = rcEnv.nodename
+        self.hostid = Env.nodename
         self.volatile = volatile
         self.path = fmt_path(self.name, self.namespace, self.kind)
 
@@ -510,7 +507,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.stats_updated = 0
 
         # needed for kw scoping
-        self.nodes = set([rcEnv.nodename])
+        self.nodes = set([Env.nodename])
         self.drpnodes = set()
         self.encapnodes = set()
         self.flex_primary = ""
@@ -580,9 +577,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             self.ordered_nodes = self.oget("DEFAULT", "nodes")
         except (AttributeError, ValueError):
-            self.ordered_nodes = [rcEnv.nodename]
-        if self.encap and rcEnv.nodename not in self.ordered_nodes:
-            self.ordered_nodes = [rcEnv.nodename]
+            self.ordered_nodes = [Env.nodename]
+        if self.encap and Env.nodename not in self.ordered_nodes:
+            self.ordered_nodes = [Env.nodename]
         try:
             self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
         except (AttributeError, ValueError):
@@ -627,14 +624,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def loggerpath(self):
-        return rcEnv.nodename+"."+self.path.replace("/", ".")
+        return Env.nodename+"."+self.path.replace("/", ".")
 
     @lazy
     def log(self): # pylint: disable=method-hidden
         extra = {
             "path": self.path,
-            "node": rcEnv.nodename,
-            "sid": rcEnv.session_uuid,
+            "node": Env.nodename,
+            "sid": Env.session_uuid,
             "cron": self.options.cron,
         }
         return logging.LoggerAdapter(self.logger, extra)
@@ -706,18 +703,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def peers(self):
-        if rcEnv.nodename in self.nodes:
+        if Env.nodename in self.nodes:
             return self.nodes
-        elif rcEnv.nodename in self.drpnodes:
+        elif Env.nodename in self.drpnodes:
             return self.drpnodes
         else:
             return []
 
     @lazy
     def ordered_peers(self):
-        if rcEnv.nodename in self.nodes:
+        if Env.nodename in self.nodes:
             return self.ordered_nodes
-        elif rcEnv.nodename in self.drpnodes:
+        elif Env.nodename in self.drpnodes:
             return self.ordered_drpnodes
         else:
             return []
@@ -1277,7 +1274,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                           begin, self.options.cron)
 
         # Per action logfile to push to database at the end of the action
-        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=rcEnv.paths.pathtmp,
+        tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=Env.paths.pathtmp,
                                               prefix=self.name+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
@@ -1493,7 +1490,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 return
             global_expect += dst
         elif action == "takeover":
-            dst = self.destination_node_sanity_checks(rcEnv.nodename) # pylint: disable=assignment-from-none
+            dst = self.destination_node_sanity_checks(Env.nodename) # pylint: disable=assignment-from-none
             if dst is None:
                 return
             global_expect += dst
@@ -1683,14 +1680,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if self.svc_env != 'PRD' and self.node.env == 'PRD':
             raise ex.Error('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, self.node.env))
-        if rcEnv.nodename in self.nodes:
+        if Env.nodename in self.nodes:
             return
-        if rcEnv.nodename in self.drpnodes:
+        if Env.nodename in self.drpnodes:
             return
         raise ex.Error("action '%s' aborted because this node's hostname "
                           "'%s' is not a member of DEFAULT.nodes, "
                           "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
-                          (action, rcEnv.nodename))
+                          (action, Env.nodename))
 
     def setup_environ(self, action=None, options=None):
         """
@@ -2181,14 +2178,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
 
         todo = [
-          ('INC', os.path.join(rcEnv.paths.pathlog, "node.log")),
-          ('INC', os.path.join(rcEnv.paths.pathlog, "xmlrpc.log")),
+          ('INC', os.path.join(Env.paths.pathlog, "node.log")),
+          ('INC', os.path.join(Env.paths.pathlog, "xmlrpc.log")),
           ('INC', os.path.join(self.log_d, self.name+".log")),
           ('INC', self.var_d),
         ]
 
         import shutil
-        collect_d = os.path.join(rcEnv.paths.pathvar, "support")
+        collect_d = os.path.join(Env.paths.pathvar, "support")
         try:
             shutil.rmtree(collect_d)
         except:
@@ -2210,7 +2207,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             files = {"upload": filep}
             headers = {
                 'Content-Type':'application/octet-stream',
-                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.name, rcEnv.nodename),
+                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.name, Env.nodename),
                 'Content-length': '%d' % content_size,
                 'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
                 'Maxlife-Unit':"DAYS",
@@ -2386,7 +2383,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             except:
                 pass
             try:
-                data["monitor"] = mon_data["instances"][rcEnv.nodename]
+                data["monitor"] = mon_data["instances"][Env.nodename]
             except:
                 pass
 
@@ -2491,7 +2488,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             data["cluster"] = mon_data.get("services", {}).get(self.path, {})
             data["cluster"]["compat"] = mon_data.get("compat")
         else:
-            nodename = rcEnv.nodename
+            nodename = Env.nodename
             data = self.print_status_data(mon_data=True, refresh=self.options.refresh)
 
         if self.options.format is not None or self.options.jsonpath_filter:
@@ -2843,7 +2840,7 @@ class Svc(BaseSvc):
 
     @lazy
     def encap(self):
-        return rcEnv.nodename in self.encapnodes
+        return Env.nodename in self.encapnodes
 
     @lazy
     def presnap_trigger(self):
@@ -3465,7 +3462,7 @@ class Svc(BaseSvc):
                 # avoid to run pre/post snap triggers when there is no
                 # resource flagged for snap and on drpnodes
                 if hasattr(resource, "snap") and resource.snap is True and \
-                   rcEnv.nodename in self.nodes:
+                   Env.nodename in self.nodes:
                     return True
         return False
 
@@ -3663,7 +3660,7 @@ class Svc(BaseSvc):
             data["scaler_slave"] = self.scaler_slave
         if self.scaler is not None:
             data["scaler_slaves"] = self.scaler.slaves
-        if rcEnv.nodename in self.drpnodes:
+        if Env.nodename in self.drpnodes:
             data["drp"] = True
         if self.pool:
             data["pool"] = self.pool
@@ -3843,7 +3840,7 @@ class Svc(BaseSvc):
         on-demand and expose it as self.pg
         """
         try:
-            mod = __import__('rcPg'+rcEnv.sysname)
+            mod = __import__('rcPg'+Env.sysname)
         except ImportError:
             return
         except Exception as exc:
@@ -4038,8 +4035,7 @@ class Svc(BaseSvc):
         if self.options.namespace:
             options += ["--namespace", self.options.namespace]
 
-        paths = Paths(osvc_root_path=container.osvc_root_path,
-                      sysname=container.guestos)
+        paths = Paths(osvc_root_path=container.osvc_root_path)
         cmd = [paths.svcmgr, '-s', self.path] + options + cmd
         if verbose:
             self.log.info(" ".join(cmd))
@@ -4492,7 +4488,7 @@ class Svc(BaseSvc):
         resources = [res for res in self.get_resources() if \
                      not res.skip and not res.is_disabled() and \
                      hasattr(res, "abort_start")]
-        if rcEnv.sysname == "Windows" or len(resources) < 2:
+        if Env.sysname == "Windows" or len(resources) < 2:
             parallel = False
         else:
             try:
@@ -4774,7 +4770,7 @@ class Svc(BaseSvc):
                 data["env"] = []
             data["env"].append([
                 self.path,
-                rcEnv.nodename,
+                Env.nodename,
                 self.topology,
                 "env",
                 key if key is not None else "",
@@ -4872,7 +4868,7 @@ class Svc(BaseSvc):
             self.__push_encap_config(container)
         finally:
             if len(self.logger.handlers) > 1:
-                self.logger.handlers[1].setLevel(rcEnv.loglevel)
+                self.logger.handlers[1].setLevel(Env.loglevel)
 
     def __push_encap_config(self, container):
         """
@@ -4897,14 +4893,13 @@ class Svc(BaseSvc):
             encap_mtime = int(float(out.strip()))
             local_mtime = os.path.getmtime(self.paths.cf)
             if encap_mtime > local_mtime:
-                paths = Paths(osvc_root_path=container.osvc_root_path,
-                              sysname=container.guestos)
-                encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(rcEnv.paths.pathetc)+1:])
+                paths = Paths(osvc_root_path=container.osvc_root_path)
+                encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(Env.paths.pathetc)+1:])
 
                 if hasattr(container, 'rcp_from'):
                     cmd_results = container.rcp_from(encap_cf, self.paths.cf)
                 else:
-                    cmd = rcEnv.rcp.split() + [container.name+':'+encap_cf, self.paths.cf]
+                    cmd = Env.rcp.split() + [container.name+':'+encap_cf, self.paths.cf]
                     cmd_results = justcall(cmd)
                 os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s", encap_cf, container.name)
@@ -4915,13 +4910,12 @@ class Svc(BaseSvc):
                 return
 
         # use a tempory conf staging to not have to care about ns dir create
-        paths = Paths(osvc_root_path=container.osvc_root_path,
-                      sysname=container.guestos)
+        paths = Paths(osvc_root_path=container.osvc_root_path)
         encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
         if hasattr(container, 'rcp'):
             cmd_results = container.rcp(self.paths.cf, encap_cf)
         else:
-            cmd = rcEnv.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
+            cmd = Env.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
             cmd_results = justcall(cmd)
         if cmd_results[2] != 0:
             raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
@@ -5207,7 +5201,7 @@ class Svc(BaseSvc):
         """
         dst = self.destination_node_sanity_checks()
         self.svcunlock()
-        self._clear(server=rcEnv.nodename)
+        self._clear(server=Env.nodename)
         self._clear(server=dst)
         self.daemon_mon_action("freeze", wait=True)
         src_node = self.current_node()
@@ -5395,26 +5389,26 @@ class Svc(BaseSvc):
                 # the daemon only delete the whole service, so no
                 # need to remove this node from the nodes list of
                 # remote instances
-                if rcEnv.nodename in self.nodes:
+                if Env.nodename in self.nodes:
                     self.set_multi([
-                       "nodes="+rcEnv.nodename,
+                       "nodes="+Env.nodename,
                        "drpnodes=",
                     ])
-                elif rcEnv.nodename in self.drpnodes:
+                elif Env.nodename in self.drpnodes:
                     self.set_multi([
-                       "drpnodes="+rcEnv.nodename,
+                       "drpnodes="+Env.nodename,
                        "nodes=",
                     ])
                 self.svcunlock()
                 for peer in self.peers:
-                    if peer == rcEnv.nodename:
+                    if peer == Env.nodename:
                         continue
                     self.daemon_service_action(
                         action="set",
                         options={
                             "kw": [
-                                "nodes-=" + rcEnv.nodename,
-                                "drpnodes-=" + rcEnv.nodename,
+                                "nodes-=" + Env.nodename,
+                                "drpnodes-=" + Env.nodename,
                             ],
                             "eval": True
                         },
@@ -5731,5 +5725,3 @@ class Svc(BaseSvc):
             "volume",
         ]
         self.sub_set_action(rtypes, "install_data")
-
-

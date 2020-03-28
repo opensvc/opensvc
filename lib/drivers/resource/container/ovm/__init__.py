@@ -17,7 +17,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
@@ -131,7 +131,7 @@ class ContainerOvm(BaseContainer):
     def is_up(self, nodename=None):
         cmd = ['xm', 'list', '--state=running']
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd, errlog=False)
         if ret != 0:
             return False

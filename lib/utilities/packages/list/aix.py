@@ -1,4 +1,4 @@
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 
@@ -14,7 +14,7 @@ def listpkg():
             continue
         pkgvers = l[2]
         pkgname = l[1].replace('-'+pkgvers, '')
-        x = [rcEnv.nodename, pkgname, pkgvers, '']
+        x = [Env.nodename, pkgname, pkgvers, '']
         lines.append(x)
     return lines
 

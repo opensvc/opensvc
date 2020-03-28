@@ -1,7 +1,7 @@
 import os
 
 import daemon.handler
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -23,7 +23,7 @@ class Handler(daemon.handler.BaseHandler):
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
         options = self.parse_options(kwargs)
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
+        logfile = os.path.join(Env.paths.pathlog, "node.log")
         ofile = thr._action_logs_open(logfile, options.backlog, "node")
         return thr.read_file_lines(ofile)
 

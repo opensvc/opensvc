@@ -1,20 +1,12 @@
-"""module rcGlobalEnv module define rcEnv class
-   rcEnv class attribute may be updated with rcLocalEnv module if present
-   rcLocalEnv module is not provided with opensvc and allow customers to
-   redefine following vars:
-       o dbopensvc_host
-       o dbopensvc_port
-       o rsh
-       o rcp
-   rcLocalEnv.py may be installed into path_opensvc/lib
-"""
-import sys
 import os
 import platform
 import socket
+import sys
 import time
 from uuid import uuid4
+
 from utilities.storage import Storage
+
 
 def create_or_update_dir(d):
     if not os.path.exists(d):
@@ -29,7 +21,7 @@ def create_or_update_dir(d):
             pass
 
 class Paths(object):
-    def __init__(self, osvc_root_path=None, sysname=None, detect=False):
+    def __init__(self, osvc_root_path=None, detect=False):
         if osvc_root_path:
             self.pathsvc = osvc_root_path
         elif detect:
@@ -111,7 +103,7 @@ class Paths(object):
         create_or_update_dir(self.pathtmpv)
         self.tmp_prepared = True
 
-class rcEnv:
+class Env(object):
     """Class to store globals
     """
     uuid = ""
@@ -210,7 +202,7 @@ class rcEnv:
     dbopensvc_host = None
     dbcompliance = None
     dbcompliance_host = None
-    paths = Paths(sysname=sysname, detect=True)
+    paths = Paths(detect=True)
 
     syspaths = Storage(
         df="/bin/df",

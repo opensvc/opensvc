@@ -9,7 +9,7 @@ import utilities.lock
 from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
 from utilities.lazy import lazy
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall
@@ -170,7 +170,7 @@ class DiskVg(BaseDisk):
                 if os.path.exists(a[0]):
                     continue
                 if a[1] not in instance.keys():
-                    self.log.error("expected lun %s not present on node %s"%(a[1], rcEnv.nodename))
+                    self.log.error("expected lun %s not present on node %s"%(a[1], Env.nodename))
                     r += 1
                     continue
                 cmd = ['mksf', '-r', '-C', 'disk', '-I', instance[a[1]], a[0]]
@@ -392,7 +392,7 @@ class DiskVg(BaseDisk):
         return devs
 
     def lock(self, timeout=30, delay=1):
-        lockfile = os.path.join(rcEnv.paths.pathlock, 'vgimport')
+        lockfile = os.path.join(Env.paths.pathlock, 'vgimport')
         lockfd = None
         try:
             lockfd = utilities.lock.lock(timeout=timeout, delay=delay, lockfile=lockfile)

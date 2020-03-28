@@ -1,4 +1,4 @@
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 """
@@ -27,10 +27,10 @@ def _list():
             continue
         name = line.split()[0]
         if "Patch:" in line:
-            x = [rcEnv.nodename, name, pkgvers]
+            x = [Env.nodename, name, pkgvers]
             patch.append(x)
         else:
-            x = [rcEnv.nodename, name, pkgvers, pkgarch]
+            x = [Env.nodename, name, pkgvers, pkgarch]
             pkg.append(x)
     return pkg, patch
 

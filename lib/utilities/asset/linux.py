@@ -562,8 +562,8 @@ class Asset(BaseAsset):
 
         # gce
         if self._get_model() == "Google":
-            from rcGlobalEnv import rcEnv
-            l.append((rcEnv.nodename, "virtual", ''))
+            from env import Env
+            l.append((Env.nodename, "virtual", ''))
 
         return [{"hba_id": e[0], "hba_type": e[1], "host": e[2]} for e in l]
 
@@ -605,9 +605,9 @@ class Asset(BaseAsset):
                 cmd = ["gcloud", "compute", "regions", "list", "-q", "--format", "json"]
                 out, err, ret = justcall(cmd)
                 import json
-                from rcGlobalEnv import rcEnv
+                from env import Env
                 data = json.loads(out)
-                hba_id = rcEnv.nodename
+                hba_id = Env.nodename
                 for region in data:
                     i = region["selfLink"].index("/projects")
                     tgt_id = region["selfLink"][i:].replace("/projects", "").replace("/regions", "")
@@ -728,6 +728,6 @@ class Asset(BaseAsset):
         return super(Asset, self).get_boot_id()
 
 if __name__ == "__main__":
-    from rcGlobalEnv import rcEnv
+    from env import Env
     import json
-    print(json.dumps(Asset(rcEnv.nodename).get_asset_dict(), indent=4))
+    print(json.dumps(Asset(Env.nodename).get_asset_dict(), indent=4))

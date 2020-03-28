@@ -10,7 +10,7 @@ import logging
 import core.exceptions as ex
 import core.status
 from utilities.lazy import lazy
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 
 class ResourceSet(object):
@@ -276,7 +276,7 @@ class ResourceSet(object):
             # verify we can actually do parallel processing, fallback to serialized
             try:
                 from multiprocessing import Process
-                if rcEnv.sysname == "Windows":
+                if Env.sysname == "Windows":
                     from multiprocessing import set_executable
                     set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
             except:
@@ -383,8 +383,8 @@ class ResourceSet(object):
     def log(self):
         extra = {
             "path": self.svc.path,
-            "node": rcEnv.nodename,
-            "sid": rcEnv.session_uuid,
+            "node": Env.nodename,
+            "sid": Env.session_uuid,
             "cron": self.svc.options.cron,
             "subset": self.rid,
         }
@@ -396,7 +396,7 @@ class ResourceSet(object):
         Lazy init for the resource logger.
         """
         l = [
-            rcEnv.nodename,
+            Env.nodename,
             self.svc.name,
             self.rid
         ]

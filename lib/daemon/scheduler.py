@@ -9,7 +9,7 @@ from subprocess import Popen
 
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.converters import print_duration
 
 MIN_PARALLEL = 6
@@ -67,7 +67,7 @@ class Scheduler(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.scheduler"), {"node": rcEnv.nodename, "component": self.name})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.scheduler"), {"node": Env.nodename, "component": self.name})
         self.log.info("scheduler started")
         self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
@@ -128,7 +128,7 @@ class Scheduler(shared.OsvcThread):
     def janitor_certificates(self):
         if self.now < self.last_janitor_certs + JANITOR_CERTS_INTERVAL:
             return
-        if self.first_available_node() != rcEnv.nodename:
+        if self.first_available_node() != Env.nodename:
             return
         self.last_janitor_certs = time.time()
         for path in [p for p in shared.SERVICES]:
@@ -144,7 +144,7 @@ class Scheduler(shared.OsvcThread):
                 continue
             if ca != self.cluster_ca:
                 continue
-            cf_mtime = shared.CLUSTER_DATA.get(rcEnv.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
+            cf_mtime = shared.CLUSTER_DATA.get(Env.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
             if cf_mtime is None:
                 continue
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
@@ -211,13 +211,13 @@ class Scheduler(shared.OsvcThread):
 
     def format_cmd(self, action, path=None, rids=None):
         if path is None:
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py"), action]
+            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "nodemgr.py"), action]
         elif isinstance(path, list):
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5"]
+            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5"]
             if len(path) > 1:
                 cmd.append("--parallel")
         else:
-            cmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "svcmgr.py"), "-s", path, action, "--waitlock=5"]
+            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "svcmgr.py"), "-s", path, action, "--waitlock=5"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")

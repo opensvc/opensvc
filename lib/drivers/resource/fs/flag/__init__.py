@@ -2,7 +2,7 @@ import os
 
 import core.status
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs
 from utilities.lazy import lazy
 from utilities.proc import justcall
@@ -65,9 +65,9 @@ class BaseFsFlag(Resource):
             return
         try:
             for node in self.svc.nodes:
-                if node == rcEnv.nodename:
+                if node == Env.nodename:
                     continue
-                cmd = rcEnv.rsh.split() + [node, "test", "-f", self.flag_f]
+                cmd = Env.rsh.split() + [node, "test", "-f", self.flag_f]
                 out, err, ret = justcall(cmd)
                 if ret == 0:
                     self.log.error("already up on %s", node)

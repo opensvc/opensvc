@@ -4,12 +4,12 @@ import os
 import sys
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.node import Node
 from utilities.proc import justcall
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def rcmd(cmd, manager, username, key):
     _cmd = ['ssh', '-i', key, '@'.join((username, manager))]

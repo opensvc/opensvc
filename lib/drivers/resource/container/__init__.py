@@ -2,7 +2,7 @@ import core.status
 import core.exceptions as ex
 import utilities.ping
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from utilities.proc import justcall
@@ -148,7 +148,7 @@ class BaseContainer(Resource):
         if self.guestos == "windows":
             self.runmethod = None
         else:
-            self.runmethod = rcEnv.rsh.split() + [name]
+            self.runmethod = Env.rsh.split() + [name]
         self.booted = False
 
     def _info(self):
@@ -259,14 +259,14 @@ class BaseContainer(Resource):
             or returns the nodename where the vm is found running
         """
         if self.is_up():
-            return rcEnv.nodename
+            return Env.nodename
         if not hasattr(self, "is_up_on"):
             # to implement in Container child class
             return
-        if rcEnv.nodename in self.svc.nodes:
-            nodes = self.svc.nodes - set([rcEnv.nodename])
-        elif rcEnv.nodename in self.svc.drpnodes:
-            nodes = self.svc.drpnodes - set([rcEnv.nodename])
+        if Env.nodename in self.svc.nodes:
+            nodes = self.svc.nodes - set([Env.nodename])
+        elif Env.nodename in self.svc.drpnodes:
+            nodes = self.svc.drpnodes - set([Env.nodename])
         else:
             nodes = []
         if len(nodes) == 0:
@@ -305,7 +305,7 @@ class BaseContainer(Resource):
             return True
 
         nodename = self.where_up()
-        if nodename is not None and nodename != rcEnv.nodename:
+        if nodename is not None and nodename != Env.nodename:
             return True
 
         return False
@@ -318,7 +318,7 @@ class BaseContainer(Resource):
         if where is not None:
             self.log.info("container %s already started on %s" % (self.label, where))
             return
-        if rcEnv.nodename in self.svc.drpnodes:
+        if Env.nodename in self.svc.drpnodes:
             self.install_drp_flag()
         self.container_start()
         self.can_rollback = True

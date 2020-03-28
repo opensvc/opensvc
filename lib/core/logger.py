@@ -5,7 +5,7 @@ import os
 import sys
 
 import six
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs
 
 min_name_len = 10
@@ -191,17 +191,17 @@ def initLogger(root, logfile, handlers=None, sid=True):
         log.addHandler(streamhandler)
 
         if '--debug' in sys.argv:
-                rcEnv.loglevel = logging.DEBUG
+                Env.loglevel = logging.DEBUG
                 streamhandler.setLevel(logging.DEBUG)
         else:
-                rcEnv.loglevel = logging.INFO
+                Env.loglevel = logging.INFO
                 streamhandler.setLevel(logging.INFO)
 
     if "syslog" in handlers:
         from six.moves import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         try:
-            config.read(rcEnv.paths.nodeconf)
+            config.read(Env.paths.nodeconf)
         except:
             pass
         try:
@@ -236,7 +236,7 @@ def initLogger(root, logfile, handlers=None, sid=True):
 
         syslogformatter = OsvcFormatter("%(context)s %(message)s")
         try:
-            if rcEnv.sysname == "SunOS" and not isinstance(address, tuple):
+            if Env.sysname == "SunOS" and not isinstance(address, tuple):
                 sysloghandler = LoggerHandler(facility=facility)
             else:
                 sysloghandler = logging.handlers.SysLogHandler(address=address, facility=facility)

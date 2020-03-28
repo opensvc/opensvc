@@ -2,11 +2,11 @@ import os
 import datetime
 import socket
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs
 
 def getaddr_cache_set(name, addr):
-    cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
+    cache_d = os.path.join(Env.paths.pathvar, "cache", "addrinfo")
     makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
     with open(cache_f, 'w') as f:
@@ -15,7 +15,7 @@ def getaddr_cache_set(name, addr):
 
 
 def getaddr_cache_get(name):
-    cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")
+    cache_d = os.path.join(Env.paths.pathvar, "cache", "addrinfo")
     makedirs(cache_d)
     cache_f = os.path.join(cache_d, name)
     if not os.path.exists(cache_f):

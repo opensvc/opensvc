@@ -18,7 +18,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache, clear_cache
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs, container_kwargs
@@ -114,7 +114,7 @@ class ContainerKvm(BaseContainer):
         return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def is_up_clear_cache(self):
-        clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
+        clear_cache("virsh.dom_state.%s@%s" % (self.name, Env.nodename))
 
     def virsh_define(self):
         cmd = ['virsh', 'define', self.cf]
@@ -135,7 +135,7 @@ class ContainerKvm(BaseContainer):
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
-        clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
+        clear_cache("virsh.dom_state.%s@%s" % (self.name, Env.nodename))
 
     def start(self):
         super(ContainerKvm, self).start()
@@ -152,7 +152,7 @@ class ContainerKvm(BaseContainer):
         ret, buff, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
-        clear_cache("virsh.dom_state.%s@%s" % (self.name, rcEnv.nodename))
+        clear_cache("virsh.dom_state.%s@%s" % (self.name, Env.nodename))
 
     def stop(self):
         super(ContainerKvm, self).stop()
@@ -178,8 +178,8 @@ class ContainerKvm(BaseContainer):
     def dom_state(self, nodename=None):
         cmd = ['virsh', 'dominfo', self.name]
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
-        return self._dom_state(self.name, nodename if nodename else rcEnv.nodename, cmd)
+            cmd = Env.rsh.split() + [nodename] + cmd
+        return self._dom_state(self.name, nodename if nodename else Env.nodename, cmd)
 
     def is_up(self, nodename=None):
         state = self.dom_state(nodename=nodename)
@@ -268,7 +268,7 @@ class ContainerKvm(BaseContainer):
         tree.write(self.cf)
 
     def install_drp_flag(self):
-        flag_disk_path = os.path.join(rcEnv.paths.pathvar, 'drp_flag.vdisk')
+        flag_disk_path = os.path.join(Env.paths.pathvar, 'drp_flag.vdisk')
 
         from xml.etree.ElementTree import ElementTree, SubElement
         tree = ElementTree()
@@ -441,7 +441,7 @@ class ContainerKvm(BaseContainer):
     def setup_cfdisk(self):
         config = self.get_config()
         block = len(config)//512 + 1
-        cfdisk = os.path.join(rcEnv.paths.pathtmp, self.svc.name+'.cfdisk')
+        cfdisk = os.path.join(Env.paths.pathtmp, self.svc.name+'.cfdisk')
         try:
             with open(cfdisk, 'w') as f:
                 f.write(config)

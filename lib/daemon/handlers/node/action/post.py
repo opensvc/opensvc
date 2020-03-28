@@ -2,7 +2,7 @@ import os
 from subprocess import Popen, PIPE
 
 import daemon.handler
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import drop_option
 from utilities.string import bdecode
 
@@ -111,7 +111,7 @@ class Handler(daemon.handler.BaseHandler):
                 elif po.type == "integer":
                     opt += "=" + str(val)
                     cmd.append(opt)
-            fullcmd = rcEnv.python_cmd + [os.path.join(rcEnv.paths.pathlib, "nodemgr.py")] + cmd
+            fullcmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "nodemgr.py")] + cmd
 
         thr.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
         if options.sync:

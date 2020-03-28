@@ -33,7 +33,7 @@ from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, normalize_paths,
                               resolve_path, split_path, strip_path, svc_pathetc,
@@ -153,10 +153,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.listener = None
         self.clouds = None
         self.paths = Storage(
-            reboot_flag=os.path.join(rcEnv.paths.pathvar, "REBOOT_FLAG"),
-            last_boot_id=os.path.join(rcEnv.paths.pathvar, "node", "last_boot_id"),
-            tmp_cf=os.path.join(rcEnv.paths.pathvar, "node.conf.tmp"),
-            cf=rcEnv.paths.nodeconf,
+            reboot_flag=os.path.join(Env.paths.pathvar, "REBOOT_FLAG"),
+            last_boot_id=os.path.join(Env.paths.pathvar, "node", "last_boot_id"),
+            tmp_cf=os.path.join(Env.paths.pathvar, "node.conf.tmp"),
+            cf=Env.paths.nodeconf,
         )
         self.services = None
         self.options = Storage(
@@ -184,9 +184,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         self.stats_data = {}
         self.stats_updated = 0
-        log_file = os.path.join(rcEnv.paths.pathlog, "node.log")
-        self.logger = core.logger.initLogger(rcEnv.nodename, log_file)
-        extra = {"node": rcEnv.nodename, "sid": rcEnv.session_uuid}
+        log_file = os.path.join(Env.paths.pathlog, "node.log")
+        self.logger = core.logger.initLogger(Env.nodename, log_file)
+        extra = {"node": Env.nodename, "sid": Env.session_uuid}
         self.log = logging.LoggerAdapter(self.logger, extra)
 
     def get_node(self):
@@ -199,10 +199,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     @lazy
     def cd(self):
         configs = []
-        if os.path.exists(rcEnv.paths.clusterconf):
-            configs.append(rcEnv.paths.clusterconf)
-        if os.path.exists(rcEnv.paths.nodeconf):
-            configs.append(rcEnv.paths.nodeconf)
+        if os.path.exists(Env.paths.clusterconf):
+            configs.append(Env.paths.clusterconf)
+        if os.path.exists(Env.paths.nodeconf):
+            configs.append(Env.paths.nodeconf)
         return self.parse_config_file(configs)
 
     @lazy
@@ -220,7 +220,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def var_d(self):
-        var_d = os.path.join(rcEnv.paths.pathvar, "node")
+        var_d = os.path.join(Env.paths.pathvar, "node")
         makedirs(var_d)
         return var_d
 
@@ -957,7 +957,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if self.options.recover:
                 pass
             elif self.options.discard:
-                shutil.copy(rcEnv.paths.nodeconf, self.paths.tmp_cf)
+                shutil.copy(Env.paths.nodeconf, self.paths.tmp_cf)
             else:
                 self.edit_config_diff()
                 print("%s exists: node conf is already being edited. Set "
@@ -966,7 +966,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                       self.paths.tmp_cf, file=sys.stderr)
                 raise ex.Error
         else:
-            shutil.copy(rcEnv.paths.nodeconf, self.paths.tmp_cf)
+            shutil.copy(Env.paths.nodeconf, self.paths.tmp_cf)
         return self.paths.tmp_cf
 
     def edit_config_diff(self):
@@ -977,7 +977,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from subprocess import call
 
         def diff_capable(opts):
-            cmd = ["diff"] + opts + [rcEnv.paths.nodeconf, self.paths.cf]
+            cmd = ["diff"] + opts + [Env.paths.nodeconf, self.paths.cf]
             cmd_results = justcall(cmd)
             if cmd_results[2] == 0:
                 return True
@@ -986,11 +986,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if not os.path.exists(self.paths.tmp_cf):
             return
         if diff_capable(["-u", "--color"]):
-            cmd = ["diff", "-u", "--color", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+            cmd = ["diff", "-u", "--color", Env.paths.nodeconf, self.paths.tmp_cf]
         elif diff_capable(["-u"]):
-            cmd = ["diff", "-u", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+            cmd = ["diff", "-u", Env.paths.nodeconf, self.paths.tmp_cf]
         else:
-            cmd = ["diff", rcEnv.paths.nodeconf, self.paths.tmp_cf]
+            cmd = ["diff", Env.paths.nodeconf, self.paths.tmp_cf]
         call(cmd)
 
     def edit_config(self):
@@ -1010,13 +1010,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.files import fsum
         path = self.make_temp_config()
         os.system(' '.join((editor, path)))
-        if fsum(path) == fsum(rcEnv.paths.nodeconf):
+        if fsum(path) == fsum(Env.paths.nodeconf):
             os.unlink(path)
             return 0
         results = self._validate_config(path=path)
         if results["errors"] == 0:
             import shutil
-            shutil.copy(path, rcEnv.paths.nodeconf)
+            shutil.copy(path, Env.paths.nodeconf)
             os.unlink(path)
         else:
             print("your changes were not applied because of the errors "
@@ -1120,7 +1120,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         method.
         """
         try:
-            mod = __import__("rcStatsCollect"+rcEnv.sysname)
+            mod = __import__("rcStatsCollect"+Env.sysname)
         except ImportError:
             return
         mod.collect(self)
@@ -1206,7 +1206,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.render.color import color
         tree = Forest()
         head_node = tree.add_node()
-        head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column(Env.nodename, color.BOLD)
         head_node.add_column("Value", color.BOLD)
         head_node.add_column("Source", color.BOLD)
         for key in sorted(data):
@@ -1507,7 +1507,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         tree = Forest()
         head_node = tree.add_node()
-        head_node.add_column(rcEnv.nodename, color.BOLD)
+        head_node.add_column(Env.nodename, color.BOLD)
         head_node.add_column("DiskGroup", color.BOLD)
         head_node.add_column("Size.Used", color.BOLD)
         head_node.add_column("Vendor", color.BOLD)
@@ -1537,7 +1537,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
             if disk["used"] < disk["size"]:
                 svc_node = disk_node.add_node()
-                svc_node.add_column(rcEnv.nodename, color.LIGHTBLUE)
+                svc_node.add_column(Env.nodename, color.LIGHTBLUE)
                 svc_node.add_column(disk["dg"])
                 svc_node.add_column(print_size(disk["size"] - disk["used"]))
 
@@ -1591,7 +1591,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                         disk_id = self.diskinfo.disk_id(d)
                         if disk_id is None or disk_id == "":
                             continue
-                        if disk_id.startswith(rcEnv.nodename+".loop"):
+                        if disk_id.startswith(Env.nodename+".loop"):
                             continue
                         dev = self.devtree.get_dev_by_devpath(d)
                         disk_size = dev.size
@@ -1635,7 +1635,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             disk_id = self.diskinfo.disk_id(devpath)
             if disk_id is None or disk_id == "":
                 continue
-            if disk_id.startswith(rcEnv.nodename+".loop"):
+            if disk_id.startswith(Env.nodename+".loop"):
                 continue
             if re.match(r"/dev/rdsk/.*s[01345678]", devpath):
                 # don't report partitions
@@ -1896,7 +1896,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         try:
             data = self.collector_rest_post("/register", {
-                "nodename": rcEnv.nodename,
+                "nodename": Env.nodename,
                 "app": self.options.app
             })
         except Exception as exc:
@@ -2018,19 +2018,19 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if self.options.cron:
                 return 0
             return 1
-        tmpp = os.path.join(rcEnv.paths.pathtmp, 'compliance')
-        backp = os.path.join(rcEnv.paths.pathtmp, 'compliance.bck')
-        compp = os.path.join(rcEnv.paths.pathvar, 'compliance')
+        tmpp = os.path.join(Env.paths.pathtmp, 'compliance')
+        backp = os.path.join(Env.paths.pathtmp, 'compliance.bck')
+        compp = os.path.join(Env.paths.pathvar, 'compliance')
         makedirs(compp)
         import shutil
         try:
             shutil.rmtree(backp)
         except (OSError, IOError):
             pass
-        print("extract compliance in", rcEnv.paths.pathtmp)
+        print("extract compliance in", Env.paths.pathtmp)
         import tarfile
         tar = tarfile.open(fpath)
-        os.chdir(rcEnv.paths.pathtmp)
+        os.chdir(Env.paths.pathtmp)
         try:
             tar.extractall()
             tar.close()
@@ -2072,13 +2072,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if pkg_format == "tar":
             modname = 'utilitities.packages.update.osf1'
         else:
-            modname = 'utilitities.packages.update.'+rcEnv.module_sysname
+            modname = 'utilitities.packages.update.'+Env.module_sysname
 
         import importlib
         try:
             mod = importlib.import_module(modname)
         except ImportError:
-            print("updatepkg not implemented on", rcEnv.sysname, file=sys.stderr)
+            print("updatepkg not implemented on", Env.sysname, file=sys.stderr)
             return 1
         repopkg = self.oget("node", "repopkg")
         repo = self.oget("node", "repo")
@@ -2111,7 +2111,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             os.unlink(fpath)
         except OSError:
             pass
-        os.system("%s pushasset" % rcEnv.paths.nodemgr)
+        os.system("%s pushasset" % Env.paths.nodemgr)
         return 0
 
     def updateclumgr(self):
@@ -2159,9 +2159,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if self.options.cron:
                 return 0
             return 1
-        tmpp = os.path.join(rcEnv.paths.pathtmp, 'html')
-        backp = rcEnv.paths.pathhtml + '.bck'
-        htmlp = rcEnv.paths.pathhtml
+        tmpp = os.path.join(Env.paths.pathtmp, 'html')
+        backp = Env.paths.pathhtml + '.bck'
+        htmlp = Env.paths.pathhtml
         makedirs(htmlp)
         makedirs(tmpp)
 
@@ -2299,9 +2299,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         received from the collector's action queue.
         """
         if action.get("svc_id") in (None, "") or action.get("svcname") in (None, ""):
-            cmd = [rcEnv.paths.nodemgr]
+            cmd = [Env.paths.nodemgr]
         else:
-            cmd = [rcEnv.paths.svcmgr, "-s", action.get("svcname")]
+            cmd = [Env.paths.svcmgr, "-s", action.get("svcname")]
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
         out, err, ret = justcall(cmd)
@@ -2355,7 +2355,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def _scanscsi(self, hba=None, target=None, lun=None, log=None):
         log = log if log else self.log
         if not hasattr(self.diskinfo, 'scanscsi'):
-            raise ex.Error("scanscsi is not implemented on %s" % rcEnv.sysname)
+            raise ex.Error("scanscsi is not implemented on %s" % Env.sysname)
         return self.diskinfo.scanscsi(
             hba=hba,
             target=target,
@@ -2374,7 +2374,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         if not section.startswith("cloud#"):
             raise ex.InitError("cloud sections must have a unique name in "
-                                  "the form '[cloud#n] in %s" % rcEnv.paths.nodeconf)
+                                  "the form '[cloud#n] in %s" % Env.paths.nodeconf)
 
         if self.clouds and section in self.clouds:
             return self.clouds[section]
@@ -2383,7 +2383,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             cloud_type = self.oget(section, 'type')
         except Exception:
             raise ex.InitError("type option is mandatory in cloud section "
-                               "in %s" % rcEnv.paths.nodeconf)
+                               "in %s" % Env.paths.nodeconf)
 
         auth_dict = self.section_kwargs(section, cloud_type)
 
@@ -2402,7 +2402,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Returns True if the action can be run in a subprocess per service
         """
-        if rcEnv.sysname == "Windows":
+        if Env.sysname == "Windows":
             return False
         if len(svcs) < 2:
             return False
@@ -2462,7 +2462,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         # generic cache janitoring
         purge_cache_expired()
-        self.log.debug("session uuid: %s", rcEnv.session_uuid)
+        self.log.debug("session uuid: %s", Env.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(svcs) > 1:
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
@@ -2620,7 +2620,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         import base64
         if safe_id.startswith("safe://"):
             safe_id = safe_id[7:].lstrip("/")
-        fpath = os.path.join(rcEnv.paths.safe, safe_id)
+        fpath = os.path.join(Env.paths.safe, safe_id)
         if os.path.exists(fpath):
             with open(fpath, "r") as ofile:
                 buff = ofile.read()
@@ -2657,7 +2657,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for chunk in iter(lambda: f.read(4096), b""):
             buff += chunk
         data = {"data": bdecode(base64.urlsafe_b64encode(buff))}
-        makedirs(rcEnv.paths.safe)
+        makedirs(Env.paths.safe)
         with open(fpath, 'w') as df:
             pass
         os.chmod(fpath, 0o0600)
@@ -2693,7 +2693,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Returns the authentcation info for login as node
         """
-        username = rcEnv.nodename
+        username = Env.nodename
         node_uuid = self.oget("node", "uuid")
         if not node_uuid:
             raise ex.Error("the node is not registered yet. use 'nodemgr register [--user <user>]'")
@@ -3469,7 +3469,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if self.options.server:
             server = self.options.server
         elif server is None:
-            server = rcEnv.nodename
+            server = Env.nodename
         for msg in self.daemon_events(server):
             if self.options.format == "json":
                 print(json.dumps(msg))
@@ -3546,10 +3546,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if self.options.format is not None:
             return self.print_config_data()
-        if not os.path.exists(rcEnv.paths.nodeconf):
+        if not os.path.exists(Env.paths.nodeconf):
             return
         from utilities.render.color import print_color_config
-        print_color_config(rcEnv.paths.nodeconf)
+        print_color_config(Env.paths.nodeconf)
 
     @formatter
     def ls(self):
@@ -3589,7 +3589,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data = self.nodes_info
         if data is None:
             # daemon down, at least decide if the local node matches
-            data = {rcEnv.nodename: {"labels": self.labels}}
+            data = {Env.nodename: {"labels": self.labels}}
 
         nodes = []
         for selector in selector.split():
@@ -3665,7 +3665,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def _stonith(self, node):
         if node in (None, ""):
             raise ex.Error("--node is mandatory")
-        if node == rcEnv.nodename:
+        if node == Env.nodename:
             raise ex.Error("refuse to stonith ourself")
         if node not in self.cluster_nodes:
             raise ex.Error("refuse to stonith node %s not member of our cluster" % node)
@@ -3757,7 +3757,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def nodes_info(self):
         if not want_context() or os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             try:
-                with open(rcEnv.paths.nodes_info, "r") as ofile:
+                with open(Env.paths.nodes_info, "r") as ofile:
                     return json.load(ofile)
             except Exception as exc:
                 pass
@@ -3990,7 +3990,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for node in dns:
             try:
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                sock.connect(rcEnv.paths.dnsuxsock)
+                sock.connect(Env.paths.dnsuxsock)
                 sock.send(bencode(json.dumps(request)+"\n"))
                 response = ""
                 while True:
@@ -4034,7 +4034,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         secret = None
         cluster_name = None
-        if self.options.server and self.options.server not in (None, rcEnv.nodename):
+        if self.options.server and self.options.server not in (None, Env.nodename):
             cluster_name = "join"
             for section in self.conf_sections("hb"):
                 try:
@@ -4112,7 +4112,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Fetch the daemon senders blacklist as a ping test, from either
         a peer or an arbitrator node, swiching between secrets as appropriate.
         """
-        if not node or node in self.cluster_nodes or node in (rcEnv.nodename, "127.0.0.1"):
+        if not node or node in self.cluster_nodes or node in (Env.nodename, "127.0.0.1"):
             cluster_name = None
             secret = None
         elif node in self.cluster_drpnodes:
@@ -4261,7 +4261,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if self.daemon_handled_by_systemd():
             return self.daemon_start_systemd()
-        return os.system(sys.executable+" "+os.path.join(rcEnv.paths.pathlib, "osvcd.py"))
+        return os.system(sys.executable+" "+os.path.join(Env.paths.pathlib, "osvcd.py"))
 
     def daemon_start_thread(self):
         options = {}
@@ -4362,8 +4362,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if len(self.sorted_cluster_nodes) == 0:
             self.log.info("local node is not member of a cluster")
             return
-        if rcEnv.nodename in cluster_nodes:
-            cluster_nodes.remove(rcEnv.nodename)
+        if Env.nodename in cluster_nodes:
+            cluster_nodes.remove(Env.nodename)
 
         if not self.frozen():
             self.freeze()
@@ -4376,7 +4376,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         options = {"thr_id": "tx", "wait": True}
         data = self.daemon_post(
             {"action": "daemon_stop", "options": options},
-            server=rcEnv.nodename,
+            server=Env.nodename,
             timeout=5,
         )
 
@@ -4600,14 +4600,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.set_lazy("cluster_key", bdecode(secret))
 
             self.install_svc_conf_from_data("cluster", None, "ccfg", cluster_config_data, restore=True)
-            os.utime(rcEnv.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
+            os.utime(Env.paths.clusterconf, (cluster_config_mtime, cluster_config_mtime))
 
 
         errors = 0
         if not cluster_config_data or not cluster_config_data.get("cluster", {}).get("nodes"):
             # join other nodes
             for nodename in cluster_nodes.split():
-                if nodename in (rcEnv.nodename, joined):
+                if nodename in (Env.nodename, joined):
                     continue
                 data = self.daemon_post(
                     {"action": "join"},

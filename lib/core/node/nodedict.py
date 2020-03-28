@@ -1,5 +1,5 @@
 import sys
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.keywords import KeywordStore
 
 # deprecated => supported
@@ -300,7 +300,7 @@ KEYWORDS = [
         "section": "node",
         "keyword": "env",
         "default": "TST",
-        "candidates": rcEnv.allowed_svc_envs,
+        "candidates": Env.allowed_svc_envs,
         "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
     },
     {
@@ -642,7 +642,7 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "section": "listener",
         "keyword": "crl",
         "example": "https://crl.opensvc.com",
-        "default": rcEnv.paths.crl,
+        "default": Env.paths.crl,
         "text": "The url serving the certificate revocation list. The default points to the path of the cluster ca crl in ``{var}/certs/ca_crl``."
     },
     {

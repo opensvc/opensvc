@@ -21,7 +21,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import makedirs, protected_dir
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs, container_kwargs, get_rcmd
@@ -205,7 +205,7 @@ class ContainerLxc(BaseContainer):
             else:
                 self.runmethod = ['lxc-attach', '-n', self.name, '--']
         else:
-            self.runmethod = rcEnv.rsh.split() + [self.name]
+            self.runmethod = Env.rsh.split() + [self.name]
 
         if "lxc-attach" in ' '.join(self.runmethod):
             # override getaddr from parent class with a noop
@@ -499,7 +499,7 @@ class ContainerLxc(BaseContainer):
         cmd = ['lxc-info', '--name', self.name]
         cmd += self.lxcpath_args
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         out, _, ret = justcall(cmd)
         if ret != 0:
             return False
@@ -510,7 +510,7 @@ class ContainerLxc(BaseContainer):
     def is_up_ps(self, nodename=None):
         cmd = ['lxc-ps', '--name', self.name]
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         out, _, ret = justcall(cmd)
         if ret != 0:
             return False
@@ -737,7 +737,7 @@ class ContainerLxc(BaseContainer):
             self.log.info("container is already created")
             return
         self.setup_lxc_config()
-        with open(os.path.join(rcEnv.paths.pathlog, "%s.console.log"%self.name), "a+") as f:
+        with open(os.path.join(Env.paths.pathlog, "%s.console.log"%self.name), "a+") as f:
             f.write("")
         cmd = ['lxc-create', '-n', self.name, '-f', self.config]
         if self.lxcpath:
@@ -774,7 +774,7 @@ class ContainerLxc(BaseContainer):
 
     def get_template(self):
         self.template_fname = os.path.basename(self.template)
-        self.template_local = os.path.join(rcEnv.paths.pathtmp, self.template_fname)
+        self.template_local = os.path.join(Env.paths.pathtmp, self.template_fname)
         if os.path.exists(self.template_local):
             self.log.info("template %s already downloaded"%self.template_fname)
             return

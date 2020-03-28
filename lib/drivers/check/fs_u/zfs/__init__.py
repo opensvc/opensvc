@@ -3,7 +3,7 @@ import re
 import drivers.check
 
 from utilities.converters import convert_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
@@ -37,7 +37,7 @@ class Check(drivers.check.Check):
         return ''
 
     def do_check(self):
-        cmd = [rcEnv.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
+        cmd = [Env.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
             return self.undef

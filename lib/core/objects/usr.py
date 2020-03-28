@@ -1,6 +1,6 @@
 import os
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import split_path, factory
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
@@ -82,13 +82,13 @@ class Usr(Sec, BaseSvc):
     def revoke(self):
         if "certificate" not in self.data_keys():
             raise ex.Error("can not revoke: this certificate is signed by an external CA, and should be revoked there.")
-        p_ca_key = os.path.join(rcEnv.paths.certs, "ca_private_key")
-        p_ca_crt = os.path.join(rcEnv.paths.certs, "ca_certiticate")
-        p_crl = os.path.join(rcEnv.paths.certs, "ca_crl")
-        p_crlconf = os.path.join(rcEnv.paths.certs, "openssl-crl.conf")
-        p_crlnumber = os.path.join(rcEnv.paths.certs, "crlnumber")
-        p_crlindex = os.path.join(rcEnv.paths.certs, "crlindex")
-        p_usr_crt = os.path.join(rcEnv.paths.certs, "%s_certificate" % self.name)
+        p_ca_key = os.path.join(Env.paths.certs, "ca_private_key")
+        p_ca_crt = os.path.join(Env.paths.certs, "ca_certiticate")
+        p_crl = os.path.join(Env.paths.certs, "ca_crl")
+        p_crlconf = os.path.join(Env.paths.certs, "openssl-crl.conf")
+        p_crlnumber = os.path.join(Env.paths.certs, "crlnumber")
+        p_crlindex = os.path.join(Env.paths.certs, "crlindex")
+        p_usr_crt = os.path.join(Env.paths.certs, "%s_certificate" % self.name)
         if "crlnumber" not in self.data_keys():
             self.ca.add_key("crlnumber", "00")
         if "crlconf" not in self.data_keys():

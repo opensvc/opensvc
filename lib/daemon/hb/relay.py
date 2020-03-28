@@ -6,7 +6,7 @@ import os
 
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from .hb import Hb
 
 class HbRelay(Hb):
@@ -149,7 +149,7 @@ class HbRelayRx(HbRelay):
         self.janitor_procs()
         self.reload_config()
         for nodename in self.hb_nodes:
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 continue
             try:
                 updated, slot_data = self.receive(nodename)

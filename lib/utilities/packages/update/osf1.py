@@ -4,12 +4,12 @@ import os
 import sys
 import tarfile
 
-from rcGlobalEnv import rcEnv
+from env import Env
 
 repo_subdir = "tar"
 
 def update(fpath):
-    cmd = sys.executable + ' ' + rcEnv.paths.preinstall
+    cmd = sys.executable + ' ' + Env.paths.preinstall
     ret = os.system(cmd)
     if ret != 0:
         return
@@ -32,5 +32,5 @@ def update(fpath):
     except:
         pass
 
-    cmd = sys.executable + ' ' + rcEnv.paths.postinstall
+    cmd = sys.executable + ' ' + Env.paths.postinstall
     return os.system(cmd)

@@ -1,5 +1,5 @@
 import sys
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.keywords import KeywordStore
 from core.node.nodedict import KEYWORDS
 
@@ -57,7 +57,7 @@ PRIVATE_KEYWORDS = [
         "keyword": "env",
         "inheritance": "head",
         "default_text": "<same as node env>",
-        "candidates": rcEnv.allowed_svc_envs,
+        "candidates": Env.allowed_svc_envs,
         "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
     },
     {

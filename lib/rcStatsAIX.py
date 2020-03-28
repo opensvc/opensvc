@@ -1,6 +1,6 @@
 import os
 import datetime
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import call, which
 
 today = datetime.datetime.today()
@@ -41,7 +41,7 @@ def stats_cpu_day(t):
             continue
         # SunOS:  date    %usr     %sys %wio                       %idle
         # xmlrpc: date cpu usr nice sys iowait steal irq soft guest idle nodename
-        x = ['%s %s'%(d, l[0]), 'all', '0', '0', '0', '0', '0', '0', '0', '0', '0', rcEnv.nodename]
+        x = ['%s %s'%(d, l[0]), 'all', '0', '0', '0', '0', '0', '0', '0', '0', '0', Env.nodename]
         x[1] = l[1].replace('-', 'all')
         x[2] = l[2]
         x[4] = l[3]
@@ -76,7 +76,7 @@ def stats_proc_day(t):
             continue
         """ xmlrpc: date runq_sz plist_sz ldavg_1 ldavg_5 ldavg_15 nodename
         """
-        x = ['%s %s'%(d, l[0]), l[1], '0', '0', '0', '0', rcEnv.nodename]
+        x = ['%s %s'%(d, l[0]), l[1], '0', '0', '0', '0', Env.nodename]
         lines.append(x)
     return lines
 
@@ -107,7 +107,7 @@ def stats_block_day(t):
 
         """ xmlrpc: date tps rtps wtps rbps wbps nodename
         """
-        x = ['%s %s'%(d, l[0]), '0', '0', '0', l[1], l[4], rcEnv.nodename]
+        x = ['%s %s'%(d, l[0]), '0', '0', '0', l[1], l[4], Env.nodename]
 
         lines.append(x)
     return lines
@@ -139,7 +139,7 @@ def stats_blockdev_day(t):
         """ xmlrpc: 22:05:01 DEV tps rd_sec/s wr_sec/s avgrq-sz avgqu-sz await svctm %util
                     00:00:00 device %busy avque r+w/s blks/s avwait avserv
         """
-        x = ['%s %s'%(d, l[0]), l[1], l[4], '0', '0', '0', l[3], l[6], l[7], l[2], rcEnv.nodename]
+        x = ['%s %s'%(d, l[0]), l[1], l[4], '0', '0', '0', l[3], l[6], l[7], l[2], Env.nodename]
         lines.append(x)
     return lines
 

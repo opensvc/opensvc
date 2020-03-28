@@ -4,7 +4,7 @@ import core.exceptions as ex
 import core.status
 import drivers.array.hp3par as array_driver
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
@@ -200,7 +200,7 @@ class SyncHp3par(Sync):
             return
         self.stoprcopygroup()
         self.setrcopygroup_reverse()
-        if rcEnv.nodename in self.svc.nodes:
+        if Env.nodename in self.svc.nodes:
             self.sync_resume()
 
     def start_splitted(self):

@@ -4,7 +4,7 @@ import os
 import utilities.devtree.veritas
 import utilities.devices.sunos
 from utilities.proc import justcall
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.subsystems.zone import is_zone
 from .diskinfo import BaseDiskInfo
 
@@ -130,7 +130,7 @@ class DiskInfo(BaseDiskInfo):
             if "Error: Logical-unit " + dev + " is not found" in err:
                 dsk = dev.replace("/dev/rdsk/", "")
                 dsk = dsk.replace("s2", "")
-                wwid = rcEnv.nodename + "." + dsk
+                wwid = Env.nodename + "." + dsk
                 vid = "LOCAL"
                 pid = ""
                 size = 0
