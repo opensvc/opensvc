@@ -1,6 +1,6 @@
 import pytest
 
-from rcUtilities import driver_import
+from utilities.drivers import driver_import
 
 
 Fs = driver_import('res', 'fs.linux').Fs
