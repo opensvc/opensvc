@@ -1,7 +1,7 @@
 import json
 
 import core.exceptions as ex
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class AmazonMixin(object):
     instance_id = None

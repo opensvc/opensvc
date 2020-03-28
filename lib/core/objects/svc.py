@@ -22,10 +22,11 @@ from core.freezer import Freezer
 from rcGlobalEnv import rcEnv, Paths
 from utilities.storage import Storage
 from rcUtilities import action_triggers, \
-                        drop_option, fcache, init_locale, makedirs, \
+                        drop_option, init_locale, makedirs, \
                         resolve_path, fmt_path, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
                         svc_pathcf, find_editor
+from utilities.fcache import fcache
 from utilities.drivers import driver_import
 from utilities.lazy import lazy, set_lazy, unset_lazy, unset_all_lazy
 from core.contexts import want_context

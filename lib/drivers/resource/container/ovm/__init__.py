@@ -18,10 +18,10 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from rcGlobalEnv import rcEnv
-from rcUtilities import fcache
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
+from utilities.fcache import fcache
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "ovm"
