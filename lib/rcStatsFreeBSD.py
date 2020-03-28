@@ -1,7 +1,5 @@
-import os
-
 import rcStats
-from utilities.proc import call, which
+from utilities.proc import call
 
 class StatsProvider(rcStats.StatsProvider):
     def cpu(self, d, day, start, end):

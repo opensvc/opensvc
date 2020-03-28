@@ -1,5 +1,3 @@
-import time
-
 import daemon.handler
 import daemon.shared as shared
 

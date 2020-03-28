@@ -9,7 +9,7 @@ from .veritas import DevTreeVeritas
 from utilities.devices.sunos import prtvtoc
 from rcGlobalEnv import rcEnv
 from utilities.cache import cache
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class DevTree(DevTreeVeritas, BaseDevTree):
     di = None

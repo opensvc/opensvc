@@ -6,7 +6,6 @@ import sys
 import socket
 import logging
 import threading
-import time
 import shutil
 import json
 import re

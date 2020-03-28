@@ -15,7 +15,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import factory, makedirs
 from utilities.configparser import RawConfigParser, NoOptionError
 from utilities.converters import *
-from utilities.lazy import lazy, unset_lazy
+from utilities.lazy import lazy
 from utilities.string import is_string, try_decode
 
 SECRETS = []

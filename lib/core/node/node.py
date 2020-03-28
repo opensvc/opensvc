@@ -37,7 +37,7 @@ from rcGlobalEnv import rcEnv
 from rcUtilities import (ANSI_ESCAPE, check_privs, daemon_process_running,
                          drop_option, factory, find_editor,
                          fmt_path, glob_services_config, init_locale,
-                         is_service, list_services, makedirs, normalize_paths,
+                         is_service, makedirs, normalize_paths,
                          resolve_path, split_path, strip_path, svc_pathetc,
                          validate_kind, validate_name, validate_ns_name)
 from utilities.cache import purge_cache_expired
@@ -49,7 +49,7 @@ from utilities.lock import LOCK_EXCEPTIONS
 from utilities.proc import call, justcall, vcall, which
 from utilities.render.color import formatter
 from utilities.storage import Storage
-from utilities.string import bdecode, bencode, is_string, try_decode
+from utilities.string import bdecode, bencode
 
 try:
     from six.moves.urllib.request import Request, urlopen

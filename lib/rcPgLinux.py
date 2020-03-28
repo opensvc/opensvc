@@ -3,7 +3,6 @@ import re
 import glob
 import core.exceptions as ex
 from utilities.converters import convert_size
-from utilities.proc import justcall
 
 UNIFIED_MNT = "/sys/fs/cgroup/unified"
 UNIFIED = os.path.exists(UNIFIED_MNT)

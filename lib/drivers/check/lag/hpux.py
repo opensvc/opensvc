@@ -1,9 +1,5 @@
-import glob
-import os
-
 import drivers.check
 
-from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):

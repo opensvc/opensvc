@@ -1,5 +1,4 @@
 import os
-import sys
 import datetime
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall

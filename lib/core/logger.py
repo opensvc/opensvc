@@ -1,7 +1,6 @@
 import sys
 import os
 import gzip
-import errno
 import logging
 import logging.handlers
 import six
@@ -17,9 +16,6 @@ try:
     type(PermissionError)
 except:
     PermissionError = IOError
-
-import platform
-import re
 
 import core.extconfig
 from utilities.render.color import colorize, color

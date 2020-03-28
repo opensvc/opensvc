@@ -1,16 +1,12 @@
 from __future__ import print_function
 
-import glob
-import logging
 import os
 import re
-import sys
 
 import core.exceptions as ex
 import utilities.configparser
 from rcGlobalEnv import rcEnv
-from rcUtilities import (factory, list_services, makedirs, split_path,
-                         svc_pathetc)
+from rcUtilities import factory, list_services, split_path
 from utilities.storage import Storage
 
 

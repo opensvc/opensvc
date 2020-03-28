@@ -2,8 +2,6 @@ import os
 
 import daemon.handler
 import core.exceptions as ex
-from rcUtilities import split_path
-from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
 
 try:

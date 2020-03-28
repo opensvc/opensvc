@@ -6,7 +6,7 @@ import daemon.handler
 import daemon.rbac
 import daemon.shared as shared
 import core.exceptions as ex
-from rcUtilities import drop_option, split_path
+from rcUtilities import split_path
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
 

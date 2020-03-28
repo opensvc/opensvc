@@ -1,14 +1,6 @@
-import os
-import sys
 import base64
-import re
-import fnmatch
-import shutil
-import glob
 import six
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 from utilities.converters import print_size

@@ -3,15 +3,9 @@ from __future__ import print_function
 import os
 import sys
 import base64
-import re
-import fnmatch
-import shutil
-import glob
-import tempfile
 import six
 
-from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs, split_path, fmt_path, factory
+from rcUtilities import split_path, factory
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 from utilities.converters import print_size

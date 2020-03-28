@@ -1,10 +1,8 @@
-import os
 import re
 from subprocess import *
 
 from .devtree import DevTree as BaseDevTree
 import utilities.subsystems.lvm.aix
-from rcGlobalEnv import rcEnv
 from utilities.proc import which
 
 class DevTree(BaseDevTree):
