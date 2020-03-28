@@ -3,7 +3,7 @@ import traceback
 import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
-from rcUtilities import split_path
+from utilities.naming import split_path
 from utilities.string import bdecode
 
 class Handler(daemon.handler.BaseHandler):

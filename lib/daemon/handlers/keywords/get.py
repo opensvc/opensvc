@@ -1,7 +1,7 @@
 import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
-from rcUtilities import factory
+from utilities.naming import factory
 
 class Handler(daemon.handler.BaseHandler):
     """

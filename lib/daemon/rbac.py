@@ -1,5 +1,5 @@
 import daemon.shared as shared
-from rcUtilities import split_path, factory
+from utilities.naming import split_path, factory
 
 class ObjectCreateMixin(object):
     def rbac_create_data(self, payload=None , thr=None, **kwargs):

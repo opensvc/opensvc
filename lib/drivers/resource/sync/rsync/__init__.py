@@ -8,12 +8,11 @@ import datetime
 from .. import Sync, notify
 from utilities.converters import convert_speed
 from rcGlobalEnv import rcEnv
-from rcUtilities import drop_option
 from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall, which, drop_option
 from utilities.string import bdecode
 
 DRIVER_GROUP = "sync"
