@@ -9,7 +9,7 @@ from .node import Node as BaseNode
 
 try:
     import pythoncom
-    import wmi
+    import foreign.wmi as wmi
     import win32serviceutil
     from six.moves import winreg
 except ImportError:

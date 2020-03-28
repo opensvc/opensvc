@@ -117,7 +117,7 @@ def listpkg():
 
 
 def listpatch():
-    import wmi
+    import foreign.wmi as wmi
     import datetime
     wmi = wmi.WMI()
     lines = []
