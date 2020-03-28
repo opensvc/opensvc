@@ -2,7 +2,6 @@ import json
 
 import core.exceptions as ex
 import core.status
-import rcGce
 from .. import \
     Ip, \
     KW_IPNAME, \
@@ -14,6 +13,7 @@ from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.subsystems.gce import GceMixin
 
 
 DRIVER_GROUP = "ip"
@@ -59,7 +59,7 @@ def adder(svc, s):
     svc += r
 
 
-class IpGce(Ip, rcGce.GceMixin):
+class IpGce(Ip, GceMixin):
     def __init__(self,
                  routename=None,
                  gce_zone=None,
