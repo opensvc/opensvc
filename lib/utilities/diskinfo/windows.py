@@ -1,4 +1,4 @@
-import wmi
+import foreign.wmi as wmi
 from utilities.proc import justcall, which
 from .diskinfo import BaseDiskInfo
 
