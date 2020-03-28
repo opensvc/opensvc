@@ -1,6 +1,5 @@
 from .. import adder as base_adder
 from ..sunos import Fs
-from utilities.proc import which
 
 def adder(svc, s):
     base_adder(svc, s, drv=FsVxfs)

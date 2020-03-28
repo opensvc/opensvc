@@ -1,5 +1,3 @@
-import os
-from utilities.subsystems.zfs import Dataset
 from utilities.proc import justcall, which
 
 ZONEADM="/usr/sbin/zoneadm"

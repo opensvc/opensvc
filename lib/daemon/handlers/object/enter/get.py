@@ -1,11 +1,8 @@
 import os
 import subprocess
-import time
-import traceback
 import uuid
 
 import daemon.handler
-import daemon.shared as shared
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.proc import which

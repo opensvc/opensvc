@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import sys
 import os
-import tempfile
 from subprocess import *
 
 import core.exceptions as ex

@@ -7,11 +7,9 @@ import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from rcUtilities import normalize_jsonpath
-from rcGlobalEnv import rcEnv
-from foreign.jsonpath_ng import jsonpath
 from foreign.jsonpath_ng.ext import parse
 from utilities.converters import convert_boolean
-from utilities.string import bdecode, is_string
+from utilities.string import is_string
 
 
 OPERATORS = (">=", "<=", "=", ">", "<", "~", " in ")

@@ -1,4 +1,3 @@
-from utilities.proc import call, which
 from .diskinfo import BaseDiskInfo
 
 class DiskInfo(BaseDiskInfo):

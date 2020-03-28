@@ -2,8 +2,6 @@ import os
 from subprocess import Popen, PIPE
 
 import daemon.handler
-import daemon.shared as shared
-import core.exceptions as ex
 from rcUtilities import drop_option
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode

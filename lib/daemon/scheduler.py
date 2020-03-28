@@ -5,7 +5,7 @@ import os
 import sys
 import logging
 import time
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 import daemon.shared as shared
 import core.exceptions as ex

@@ -10,8 +10,6 @@ import threading
 import time
 from optparse import OptionParser
 
-import six
-
 import daemon.shared as shared
 import core.exceptions as ex
 import core.logger

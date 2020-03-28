@@ -1,4 +1,3 @@
-import os
 import time
 
 import core.exceptions as ex

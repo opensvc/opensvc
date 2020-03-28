@@ -1,8 +1,5 @@
-import time
-
 import daemon.handler
 import daemon.shared as shared
-from rcUtilities import split_path
 
 class Handler(daemon.handler.BaseHandler):
     """

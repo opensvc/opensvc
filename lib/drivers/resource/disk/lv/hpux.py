@@ -1,5 +1,3 @@
-import os
-
 import core.exceptions as ex
 
 from . import BaseDiskLv, adder as base_adder

@@ -3,8 +3,6 @@
 """
 import logging
 import time
-import socket
-import struct
 
 import foreign.json_delta as json_delta
 import daemon.shared as shared

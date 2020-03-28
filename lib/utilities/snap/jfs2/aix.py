@@ -1,8 +1,7 @@
 import os
 
-from rcGlobalEnv import rcEnv
 from rcUtilities import protected_mount
-from utilities.proc import qcall, which
+from utilities.proc import qcall
 import core.exceptions as ex
 import utilities.snap
 

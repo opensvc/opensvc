@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import sys
 import os
 import json
 import time
@@ -12,8 +11,7 @@ import core.exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from utilities.cache import cache, clear_cache
-from six.moves.urllib.request import Request, urlopen, build_opener # pylint: disable=import-error
-from six.moves.urllib.error import HTTPError # pylint: disable=import-error
+from six.moves.urllib.request import Request, build_opener # pylint: disable=import-error
 from six.moves.urllib.parse import urlencode # pylint: disable=import-error
 from utilities.proc import justcall, which
 
@@ -126,7 +124,6 @@ class Hp3par(object):
         try:
             f = build_opener().open(req)
             response = f.read()
-            #response = urlopen(req)
         except Exception as e:
             return "", str(e)
 

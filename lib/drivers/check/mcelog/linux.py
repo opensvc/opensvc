@@ -4,7 +4,7 @@ import os
 import drivers.check
 
 from rcGlobalEnv import rcEnv
-from utilities.proc import justcall, which
+from utilities.proc import which
 
 class Check(drivers.check.Check):
     chk_type = "mcelog"

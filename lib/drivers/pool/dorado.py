@@ -1,13 +1,11 @@
 from __future__ import print_function
 
-import os
 import sys
 
 import core.exceptions as ex
 from utilities.lazy import lazy
 from rcGlobalEnv import rcEnv
 from drivers.array.dorado import Dorados
-from utilities.proc import justcall
 from core.pool import BasePool
 
 def session(fn):

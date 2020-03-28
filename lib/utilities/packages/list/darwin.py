@@ -1,5 +1,3 @@
-import os
-
 from rcGlobalEnv import rcEnv
 from utilities.proc import call, which
 
