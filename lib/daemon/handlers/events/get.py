@@ -2,7 +2,6 @@ import time
 
 from six.moves import queue
 import daemon.handler
-import daemon.shared as shared
 from rcGlobalEnv import rcEnv
 from utilities.string import bdecode
 

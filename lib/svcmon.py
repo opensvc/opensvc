@@ -4,9 +4,7 @@ import sys
 import optparse
 import time
 import datetime
-import socket
 import threading
-import json
 from six.moves import queue
 
 #

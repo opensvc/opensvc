@@ -1,6 +1,5 @@
 import json
 import os
-import logging
 import shutil
 
 from subprocess import *
@@ -8,7 +7,6 @@ from subprocess import *
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 

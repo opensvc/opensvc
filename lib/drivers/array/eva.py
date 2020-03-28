@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import sys
-from xml.etree.ElementTree import XML, fromstring
 
 import core.exceptions as ex
 from core.node import Node

@@ -3,7 +3,7 @@ YYYY-MM-DD hh:mm:ss ZONE SWAP RSS CAP at avgat pg avgpg NPROC mem% cpu% TIME Las
 """
 
 from __future__ import print_function
-import os, sys, platform
+import os, platform
 import time
 import datetime
 import subprocess

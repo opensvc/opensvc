@@ -3,8 +3,6 @@ Relay Heartbeat
 """
 import sys
 import os
-import errno
-import contextlib
 
 import daemon.shared as shared
 import core.exceptions as ex

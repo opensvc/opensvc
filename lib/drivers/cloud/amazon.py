@@ -1,11 +1,10 @@
 import core.cloud
 import core.exceptions as ex
-import socket
 
 try:
-    from libcloud.compute.types import Provider
+    #from libcloud.compute.types import Provider
     from libcloud.compute.providers import get_driver
-    import libcloud.security
+    #import libcloud.security
 except ImportError:
     raise ex.InitError("apache-libcloud module must be installed")
 

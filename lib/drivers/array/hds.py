@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 import json
-from xml.etree.ElementTree import XML, fromstring
+from xml.etree.ElementTree import fromstring
 
 import core.exceptions as ex
 from utilities.converters import convert_size

@@ -1,4 +1,3 @@
-import json
 import glob
 import os
 import re
@@ -14,7 +13,7 @@ from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"

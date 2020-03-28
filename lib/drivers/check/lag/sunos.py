@@ -1,9 +1,6 @@
-import os
-
 import drivers.check
 import utilities.os.sunos
 
-from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
 """

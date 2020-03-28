@@ -1,7 +1,5 @@
 import daemon.clusterlock
 import daemon.handler
-import daemon.shared as shared
-import core.exceptions as ex
 
 class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     """

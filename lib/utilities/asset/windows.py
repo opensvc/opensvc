@@ -1,4 +1,3 @@
-import os
 import sys
 import platform
 import datetime
@@ -17,7 +16,6 @@ from utilities.lazy import lazy
 from utilities.diskinfo import DiskInfo
 from utilities.storage import Storage
 from utilities.proc import justcall, which
-from utilities.string import try_decode
 
 class MEMORYSTATUSEX(ctypes.Structure):
     _fields_ = [("dwLength", ctypes.c_uint),

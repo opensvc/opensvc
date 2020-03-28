@@ -1,10 +1,8 @@
-import datetime
 import os
 from subprocess import Popen, PIPE
 
 from .asset import BaseAsset
-from rcGlobalEnv import rcEnv
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 os.environ['PATH'] += ":/opt/ignite/bin:/opt/propplus/bin"
 

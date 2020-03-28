@@ -1,8 +1,6 @@
 from __future__ import print_function
 
 import os
-import json
-import time
 from subprocess import *
 
 import core.exceptions as ex

@@ -3,7 +3,6 @@ import os
 from subprocess import *
 
 from .devtree import DevTree as BaseDevTree
-from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
 
 class DevTreeVeritas(BaseDevTree):
