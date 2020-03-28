@@ -4,7 +4,7 @@ import core.exceptions as ex
 import utilities.snap
 import utilities.subsystems.advfs
 from rcGlobalEnv import rcEnv
-from rcUtilities import protected_mount
+from utilities.files import protected_mount
 from utilities.mounts.osf1 import Mounts
 
 

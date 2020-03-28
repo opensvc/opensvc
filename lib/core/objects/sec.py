@@ -5,7 +5,7 @@ import sys
 import base64
 import six
 
-from rcUtilities import split_path, factory
+from utilities.naming import split_path, factory
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 from utilities.converters import print_size

@@ -2,8 +2,8 @@ import os
 import datetime
 import socket
 
-from rcUtilities import makedirs
 from rcGlobalEnv import rcEnv
+from utilities.files import makedirs
 
 def getaddr_cache_set(name, addr):
     cache_d = os.path.join(rcEnv.paths.pathvar, "cache", "addrinfo")

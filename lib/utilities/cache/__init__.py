@@ -4,9 +4,9 @@ import time
 from functools import wraps
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs
 import utilities.lock
+from rcGlobalEnv import rcEnv
+from utilities.files import makedirs
 
 
 def get_cache_d():

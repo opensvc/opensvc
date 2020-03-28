@@ -16,11 +16,11 @@ import core.exceptions as ex
 import utilities.devices
 import utilities.render.color
 from rcGlobalEnv import rcEnv
-from rcUtilities import action_triggers, factory
+from utilities.naming import factory
 from utilities.cache import clear_cache
 from utilities.lazy import lazy, set_lazy, unset_lazy
 from utilities.storage import Storage
-from utilities.proc import call, lcall, vcall
+from utilities.proc import action_triggers, call, lcall, vcall
 
 ALLOW_ACTION_WITH_NOACTION = [
     "presync",

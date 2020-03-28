@@ -1,12 +1,12 @@
-import sys
-import os
 import gzip
 import logging
 import logging.handlers
+import os
+import sys
+
 import six
 from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs
-from subprocess import *
+from utilities.files import makedirs
 
 min_name_len = 10
 namelen = 10

@@ -1,9 +1,9 @@
 import os
 
-from rcUtilities import protected_mount
-from utilities.proc import qcall
 import core.exceptions as ex
 import utilities.snap
+from utilities.files import protected_mount
+from utilities.proc import qcall
 
 class Snap(utilities.snap.Snap):
     def lv_exists(self, device):

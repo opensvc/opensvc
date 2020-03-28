@@ -1,7 +1,7 @@
 import os
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import split_path, factory
+from utilities.naming import split_path, factory
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 from .sec import Sec

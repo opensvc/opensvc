@@ -10,7 +10,7 @@ import core.exceptions as ex
 from xml.etree.ElementTree import fromstring
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from utilities.converters import convert_size
 from utilities.optparser import OptParser, Option
 from core.node import Node
