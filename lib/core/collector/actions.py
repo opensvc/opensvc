@@ -8,7 +8,7 @@ from utilities.storage import Storage
 from utilities.converters import convert_duration
 from subprocess import *
 
-class Collector(object):
+class CollectorActions(object):
     def __init__(self, options=None, node=None, path=None):
         if isinstance(options, dict):
             self.options = Storage(options)
