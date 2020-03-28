@@ -112,6 +112,7 @@ class OptParser(object):
         self.parser = None
         self.args = args
         self.prog = prog
+        self.version = prog + " version undef"
         self.options = options
         self.actions = actions
         self.deprecated_options = [self.options[name] for name in deprecated_options] if deprecated_options else []
@@ -351,7 +352,7 @@ class OptParser(object):
             from version import version
         except ImportError:
             try:
-                version = agent_version
+                version = agent_version()
             except IndexError:
                 version = "dev"
 
