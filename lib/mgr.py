@@ -14,7 +14,8 @@ import os
 import core.status
 import utilities.render.color
 import core.exceptions as ex
-from rcUtilities import check_privs, split_path, get_option, validate_kind
+from utilities.naming import split_path, validate_kind
+from utilities.proc import get_option, check_privs
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from core.node import Node

@@ -7,7 +7,10 @@ import tempfile
 
 import core.exceptions as ex
 import core.status
-from rcUtilities import create_protected_file, factory, find_editor, makedirs, split_path, want_context
+from core.contexts import want_context
+from utilities.files import create_protected_file, makedirs
+from utilities.naming import factory, split_path
+from utilities.proc import find_editor
 from utilities.string import bencode
 
 

@@ -26,7 +26,7 @@ from six.moves import configparser as ConfigParser
 import core.exceptions as ex
 from six.moves import input
 from utilities.storage import Storage
-from rcUtilities import find_editor
+from utilities.proc import find_editor
 from utilities.render.color import formatter
 from utilities.string import bdecode, is_glob
 

@@ -5,7 +5,8 @@ import logging
 import pytest
 
 from core.extconfig import read_cf, eval_expr
-from rcUtilities import *
+from utilities.files import *
+from utilities.naming import *
 from utilities.cache import *
 from utilities.drivers import *
 from utilities.fcache import *

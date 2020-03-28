@@ -11,7 +11,7 @@ from utilities.converters import convert_size
 from core.node import Node
 from rcGlobalEnv import rcEnv
 from utilities.optparser import OptParser, Option
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from utilities.lazy import lazy
 from utilities.storage import Storage
 from utilities.proc import justcall, which

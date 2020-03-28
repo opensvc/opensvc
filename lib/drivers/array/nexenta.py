@@ -4,7 +4,7 @@ import base64
 import core.exceptions as ex
 from six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from six.moves.urllib.error import URLError # pylint: disable=import-error
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from core.node import Node
 
 class logger(object):

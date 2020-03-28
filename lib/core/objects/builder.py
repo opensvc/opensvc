@@ -6,7 +6,7 @@ import re
 import core.exceptions as ex
 import utilities.configparser
 from rcGlobalEnv import rcEnv
-from rcUtilities import factory, list_services, split_path
+from utilities.naming import factory, list_services, split_path
 from utilities.storage import Storage
 
 

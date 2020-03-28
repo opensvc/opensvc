@@ -2,8 +2,8 @@ import os
 from subprocess import Popen, PIPE
 
 import daemon.handler
-from rcUtilities import drop_option
 from rcGlobalEnv import rcEnv
+from utilities.proc import drop_option
 from utilities.string import bdecode
 
 class Handler(daemon.handler.BaseHandler):

@@ -8,7 +8,7 @@ import socket
 import core.exceptions as ex
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import makedirs
+from utilities.files import makedirs
 from utilities.lazy import lazy
 from utilities.net.ipaddress import ip_network, ip_address, summarize_address_range
 from utilities.render.color import formatter

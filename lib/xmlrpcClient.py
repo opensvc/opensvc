@@ -13,7 +13,7 @@ import six
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import split_path
+from utilities.naming import split_path
 
 socket.setdefaulttimeout(5)
 

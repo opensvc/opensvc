@@ -12,7 +12,8 @@ import six
 
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from rcUtilities import factory, makedirs
+from utilities.naming import factory
+from utilities.files import makedirs
 from utilities.configparser import RawConfigParser, NoOptionError
 from utilities.converters import *
 from utilities.lazy import lazy

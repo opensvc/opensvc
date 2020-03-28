@@ -5,7 +5,7 @@ import json
 
 import core.exceptions as ex
 from utilities.storage import Storage
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from utilities.converters import convert_size
 from utilities.optparser import OptParser, Option
 from utilities.string import bdecode

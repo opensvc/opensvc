@@ -1,16 +1,19 @@
 from __future__ import print_function
 
+import locale
 import logging
 import os
-import sys
 import select
+import shlex
+import sys
 import time
 from errno import ENOENT
 from subprocess import Popen, PIPE
 
 import six
+import core.exceptions as ex
 from rcGlobalEnv import rcEnv
-from utilities.string import bencode, bdecode, empty_string
+from utilities.string import bencode, bdecode, empty_string, is_string
 
 # Os where os.access is invalid
 OS_WITHOUT_OS_ACCESS = ['SunOS']
@@ -323,5 +326,276 @@ def vcall(args, **kwargs):
     kwargs["outlog"] = True
     return call(args, **kwargs)
 
+
+def check_privs():
+    if "OSVC_CONTEXT" in os.environ or "OSVC_CLUSTER" in os.environ:
+        return
+    if os.name == 'nt':
+        return
+    if os.geteuid() == 0:
+        return
+    print("Insufficient privileges", file=sys.stderr)
+    sys.exit(1)
+
+
+def action_triggers(self, trigger="", action=None, **kwargs):
+    """
+    Executes a service or resource trigger. Guess if the shell mode is needed
+    from the trigger syntax.
+    """
+
+    actions = [
+        'provision',
+        'unprovision',
+        'start',
+        'stop',
+        'shutdown',
+        'sync_nodes',
+        'sync_drp',
+        'sync_all',
+        'sync_resync',
+        'sync_update',
+        'sync_restore',
+        'run',
+        'command',  # tasks use that as an action
+    ]
+
+    compat_triggers = [
+        'pre_syncnodes', 'pre_syncdrp',
+        'post_syncnodes', 'post_syncdrp',
+        'post_syncresync', 'pre_syncresync',
+        'post_syncupdate', 'pre_syncupdate',
+    ]
+
+    def get_trigger_cmdv(cmd, kwargs):
+        """
+        Return the cmd arg useable by subprocess Popen
+        """
+        if not kwargs.get("shell", False):
+            if six.PY2:
+                cmdv = shlex.split(cmd.encode('utf8'))
+                cmdv = [elem.decode('utf8') for elem in cmdv]
+            else:
+                cmdv = shlex.split(cmd)
+        else:
+            cmdv = cmd
+        return cmdv
+
+    if hasattr(self, "svc"):
+        svc = self.svc
+        section = self.rid
+    else:
+        svc = self
+        section = "DEFAULT"
+
+    if action not in actions:
+        return
+    elif action == "startstandby":
+        action = "start"
+    elif action == "shutdown":
+        action = "stop"
+
+    if "blocking" in kwargs:
+        blocking = kwargs["blocking"]
+        del kwargs["blocking"]
+    else:
+        blocking = False
+
+    if trigger == "":
+        attr = action
+    else:
+        attr = trigger + "_" + action
+
+    # translate deprecated actions
+    if attr in compat_triggers:
+        attr = compat_triggers[attr]
+
+    try:
+        if attr in self.skip_triggers:
+            return
+    except AttributeError:
+        pass
+
+    try:
+        cmd = svc.conf_get(section, attr, use_default=False)
+    except ValueError:
+        # no corresponding keyword
+        return
+    except ex.OptNotFound:
+        return
+
+    if not cmd:
+        svc.log.warning("empty trigger: %s.%s", section, attr)
+        return
+
+    if "|" in cmd or "&&" in cmd or ";" in cmd:
+        kwargs["shell"] = True
+
+    try:
+        cmdv = get_trigger_cmdv(cmd, kwargs)
+    except ValueError as exc:
+        raise ex.Error(str(exc))
+
+    if not hasattr(self, "log_outputs") or getattr(self, "log_outputs"):
+        self.log.info("%s: %s", attr, cmd)
+
+    if svc.options.dry_run:
+        return
+
+    try:
+        ret = self.lcall(cmdv, **kwargs)
+    except OSError as osexc:
+        ret = 1
+        if osexc.errno == 8:
+            self.log.error("%s exec format error: check the script shebang", cmd)
+        else:
+            self.log.error("%s error: %s", cmd, str(osexc))
+    except Exception as exc:
+        ret = 1
+        self.log.error("%s error: %s", cmd, str(exc))
+
+    if blocking and ret != 0:
+        if action == "command":
+            raise ex.Error("command return code [%d]" % ret)
+        else:
+            raise ex.Error("%s: %s blocking error [%d]" % (attr, cmd, ret))
+
+    if not blocking and ret != 0:
+        if action == "command":
+            self.log.warning("command return code [%d]" % ret)
+        else:
+            self.log.warning("%s: %s non-blocking error [%d]" % (attr, cmd, ret))
+
+
+def has_option(option, cmd):
+    """
+    Return True if <option> is set in the <cmd> shlex list.
+    """
+    for word in cmd:
+        if word == option:
+            return True
+        if word.startswith(option + "="):
+            return True
+    return False
+
+
+def get_options(option, cmd):
+    """
+    Yield all <option> values in the <cmd> shlex list.
+    """
+    for i, word in enumerate(cmd):
+        if word == option:
+            yield cmd[i + 1]
+        if word.startswith(option + "="):
+            yield word.split("=", 1)[-1]
+
+
+def get_option(option, cmd, boolean=False):
+    """
+    Get an <option> value in the <cmd> shlex list.
+    """
+    if boolean and option not in cmd:
+        return False
+    for i, word in enumerate(cmd):
+        if word == option:
+            if boolean:
+                return True
+            else:
+                return cmd[i + 1]
+        if word.startswith(option + "="):
+            return word.split("=", 1)[-1]
+    return
+
+
+def drop_option(option, cmd, drop_value=False):
+    """
+    Drop an option, and its value if requested, from an argv
+    """
+    to_drop = []
+    for i, word in enumerate(cmd):
+        if word == option:
+            if drop_value is True:
+                to_drop += [i, i + 1]
+            elif is_string(drop_value):
+                if cmd[i + 1].startswith(drop_value):
+                    to_drop += [i, i + 1]
+                else:
+                    # do not drop option
+                    pass
+            else:
+                to_drop += [i]
+            continue
+        if word.startswith(option + "="):
+            to_drop += [i]
+            continue
+    for idx in sorted(to_drop, reverse=True):
+        del cmd[idx]
+    return cmd
+
+
+def init_locale():
+    try:
+        locale.setlocale(locale.LC_ALL, ('C', 'UTF-8'))
+    except locale.Error:
+        pass
+    if os.name != "posix":
+        return
+    locales = ["C.UTF-8", "en_US.UTF-8"]
+    for loc in locales:
+        if loc not in locale.locale_alias.values():
+            continue
+        try:
+            locale.setlocale(locale.LC_ALL, loc)
+        except locale.Error:
+            continue
+        os.environ["LANG"] = loc
+        os.environ["LC_NUMERIC"] = "C"
+        os.environ["LC_TIME"] = "C"
+        if locale.getlocale()[1] == "UTF-8":
+            return
+    # raise ex.Error("can not set a C lang with utf8 encoding")
+    os.environ["LANG"] = "C"
+    os.environ["LC_NUMERIC"] = "C"
+    os.environ["LC_TIME"] = "C"
+
+
+def process_args(pid):
+    cmd_args = ['/bin/ps', '-p', str(pid), '-o', 'args=']
+    ret, stdout, stderr = call(cmd_args)
+    if ret != 0:
+        return False, ''
+    else:
+        return True, stdout
+
+
+def process_match_args(pid, search_args=None):
+    running, args = process_args(pid)
+    if running:
+        return search_args in args
+    else:
+        return False
+
+
+def daemon_process_running():
+    try:
+        with open(rcEnv.paths.daemon_pid, 'r') as pid_file:
+            pid = int(pid_file.read())
+        with open(rcEnv.paths.daemon_pid_args, 'r') as pid_args_file:
+            search_args = pid_args_file.read()
+        return process_match_args(pid, search_args=search_args)
+    except:
+        return False
+
+
+def find_editor():
+    if "EDITOR" in os.environ:
+        editor = os.environ["EDITOR"]
+    elif os.name == "nt":
+        editor = "notepad"
+    else:
+        editor = "vi"
+    if not which(editor):
+        raise ex.Error("%s not found" % editor)
+    return editor
 
 

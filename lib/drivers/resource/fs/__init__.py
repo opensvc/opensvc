@@ -7,7 +7,7 @@ import core.exceptions as ex
 import core.status
 from core.resource import Resource
 from rcGlobalEnv import rcEnv
-from rcUtilities import protected_dir
+from utilities.files import protected_dir
 from utilities.drivers import driver_import
 from utilities.lazy import lazy
 from core.objects.builder import init_kwargs

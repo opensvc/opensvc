@@ -17,9 +17,10 @@ import daemon.shared as shared
 import foreign.json_delta as json_delta
 from core.freezer import Freezer
 from rcGlobalEnv import rcEnv
-from rcUtilities import (factory, fmt_path, fsum, list_services, makedirs,
-                         resolve_path, split_path, svc_pathcf,
-                         svc_pathvar)
+from utilities.naming import (factory, fmt_path, list_services,
+                              resolve_path, split_path, svc_pathcf,
+                              svc_pathvar)
+from utilities.files import makedirs, fsum
 from utilities.cache import purge_cache
 from utilities.storage import Storage
 
