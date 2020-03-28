@@ -738,7 +738,7 @@ class CollectorRpc(object):
         if 'update_brocade' not in self.proxy_methods:
             print("'update_brocade' method is not exported by the collector")
             return
-        import rcBrocade as m
+        import drivers.sanswitch.brocade as m
         try:
             brocades = m.Brocades(objects)
         except:
@@ -902,7 +902,7 @@ class CollectorRpc(object):
         if 'update_nsr' not in self.proxy_methods:
            print("'update_nsr' method is not exported by the collector")
            return
-        import rcNsr as m
+        import drivers.backupsrv.networker as m
         try:
             nsr = m.Nsr()
         except:
