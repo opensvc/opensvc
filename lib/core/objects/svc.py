@@ -1022,8 +1022,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         try:
             if action.startswith("collector_"):
-                from core.collector import Collector
-                collector = Collector(options, self.node, self.path)
+                from core.collector.actions import CollectorActions
+                collector = CollectorActions(options, self.node, self.path)
                 func = getattr(collector, action)
             else:
                 func = getattr(self, action)

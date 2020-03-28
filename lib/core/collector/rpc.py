@@ -101,7 +101,7 @@ def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         else:
             raise ex.Error(str(exc))
 
-class Collector(object):
+class CollectorRpc(object):
     def call(self, *args, **kwargs):
         fn = args[0]
         self.init(fn)
@@ -1320,7 +1320,7 @@ class Collector(object):
 
 
 if __name__ == "__main__":
-    x = Collector()
+    x = CollectorRpc()
     x.init()
     print(x.proxy_methods)
     print(x.comp_proxy_methods)
