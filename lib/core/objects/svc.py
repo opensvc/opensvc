@@ -3840,7 +3840,7 @@ class Svc(BaseSvc):
         on-demand and expose it as self.pg
         """
         try:
-            mod = __import__('rcPg'+Env.sysname)
+            mod = driver_import("pg", fallback=False)
         except ImportError:
             return
         except Exception as exc:
