@@ -4,14 +4,14 @@ import logging
 
 import pytest
 
+from core.extconfig import read_cf, eval_expr
 from rcUtilities import *
+from utilities.cache import *
 from utilities.lazy import *
 from utilities.net.converters import *
 from utilities.proc import is_exe, justcall, lcall, qcall, vcall
 from utilities.render.banner import banner
 from utilities.string import bencode, bdecode, empty_string
-from core.extconfig import read_cf
-from utilities.cache import *
 
 
 @pytest.mark.ci
