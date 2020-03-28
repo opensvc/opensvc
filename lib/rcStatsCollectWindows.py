@@ -6,7 +6,7 @@ import time
 import json
 
 from env import Env
-from winstats import *
+from foreign.winstats import *
 
 def collect(node=None):
     now = datetime.datetime.now()
