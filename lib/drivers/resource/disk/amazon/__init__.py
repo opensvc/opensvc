@@ -5,12 +5,10 @@ import time
 import core.status
 import core.exceptions as ex
 
-from .. import \
-   BaseDisk, \
-   BASE_KEYWORDS
-from rcAmazon import AmazonMixin
+from .. import BaseDisk, BASE_KEYWORDS
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.subsystems.amazon import AmazonMixin
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "amazon"

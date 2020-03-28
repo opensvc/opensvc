@@ -3,10 +3,10 @@ import core.status
 import utilities.ifconfig
 
 from .. import Ip, COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
-from rcAmazon import AmazonMixin
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.net.getaddr import getaddr
+from utilities.subsystems.amazon import AmazonMixin
 
 DRIVER_GROUP = "ip"
 DRIVER_BASENAME = "amazon"
