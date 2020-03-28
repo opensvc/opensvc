@@ -1,13 +1,13 @@
 import json
 
 import core.status
-import rcGce
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.subsystems.gce import GceMixin
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "gce"
@@ -87,7 +87,7 @@ def adder(svc, s):
     svc += r
 
 
-class DiskGce(BaseDisk, rcGce.GceMixin):
+class DiskGce(BaseDisk, GceMixin):
     def __init__(self, names=set(), gce_zone=None, **kwargs):
         BaseDisk.__init__(self, type="disk.gce", **kwargs)
         self.names = names
