@@ -8,6 +8,7 @@ from core.extconfig import read_cf, eval_expr
 from rcUtilities import *
 from utilities.cache import *
 from utilities.drivers import *
+from utilities.fcache import *
 from utilities.lazy import *
 from utilities.net.converters import *
 from utilities.proc import is_exe, justcall, lcall, qcall, vcall
