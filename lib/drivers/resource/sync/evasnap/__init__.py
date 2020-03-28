@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
@@ -160,7 +160,7 @@ class SyncEvasnap(Sync):
         self.sssu(cmd, verbose=True)
 
     def sssu(self, cmd=[], verbose=False, check=True):
-        os.chdir(rcEnv.paths.pathtmp)
+        os.chdir(Env.paths.pathtmp)
         cmd = [self.sssubin,
                "select manager %s username=%s password=%s"%(self.manager, self.username, self.password),
                "select system %s"%self.eva_name] + cmd

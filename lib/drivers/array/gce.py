@@ -1,4 +1,4 @@
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 class GceDiskss(object):
@@ -14,7 +14,7 @@ class GceDiskss(object):
 class GceDisks(object):
     def __init__(self):
         self.keys = ['disks', 'snapshots', 'quotas', 'instances']
-        self.name = "gce project "+rcEnv.fqdn.split(".")[-2]
+        self.name = "gce project "+Env.fqdn.split(".")[-2]
 
     def get_disks(self):
         cmd = ["gcloud", "compute", "disks", "list", "-q", "--format", "json"]

@@ -35,7 +35,7 @@ except Exception:
 
 import six
 import foreign.pyaes as pyaes
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.lazy import lazy
 from core.contexts import get_context, want_context
@@ -229,12 +229,12 @@ class Crypt(object):
         nodes = node.oget("cluster", "nodes")
 
         if nodes:
-            if rcEnv.nodename in nodes:
+            if Env.nodename in nodes:
                 return nodes
             else:
-                nodes.append(rcEnv.nodename)
+                nodes.append(Env.nodename)
         else:
-            nodes = [rcEnv.nodename]
+            nodes = [Env.nodename]
 
         from core.objects.ccfg import Ccfg
         svc = Ccfg()
@@ -413,7 +413,7 @@ class Crypt(object):
             pass
         message = {
             "clustername": cluster_name,
-            "nodename": rcEnv.nodename,
+            "nodename": Env.nodename,
             "iv": bdecode(base64.urlsafe_b64encode(iv)),
             "data": bdecode(
                 base64.urlsafe_b64encode(
@@ -494,7 +494,7 @@ class Crypt(object):
         node = self.get_node()
         addr = node.oget("listener", "tls_addr", impersonate=nodename)
         port = node.oget("listener", "tls_port", impersonate=nodename)
-        if nodename != rcEnv.nodename and addr == "0.0.0.0":
+        if nodename != Env.nodename and addr == "0.0.0.0":
             addr = nodename
             port = 1214
         return addr, port
@@ -564,13 +564,13 @@ class Crypt(object):
     def get_cluster_context(self):
         context = {}
         context["secret"] = True
-        cafile = os.path.join(rcEnv.paths.certs, "ca_certificate_chain")
+        cafile = os.path.join(Env.paths.certs, "ca_certificate_chain")
         if os.path.exists(cafile):
             context["cluster"] = {
                 "certificate_authority": cafile,
             }
-        keyfile = os.path.join(rcEnv.paths.certs, "private_key")
-        certfile = os.path.join(rcEnv.paths.certs, "certificate_chain")
+        keyfile = os.path.join(Env.paths.certs, "private_key")
+        certfile = os.path.join(Env.paths.certs, "certificate_chain")
         if os.path.exists(keyfile) and os.path.exists(certfile):
             context["user"] = {
                 "client_key": keyfile,
@@ -589,8 +589,8 @@ class Crypt(object):
         data = Storage()
         data.scheme = "h2"
         data.af = socket.AF_UNIX
-        data.to = rcEnv.paths.lsnruxh2sock
-        data.to_s = rcEnv.paths.lsnruxh2sock
+        data.to = Env.paths.lsnruxh2sock
+        data.to_s = Env.paths.lsnruxh2sock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -600,8 +600,8 @@ class Crypt(object):
         data = Storage()
         data.scheme = "raw"
         data.af = socket.AF_UNIX
-        data.to = rcEnv.paths.lsnruxsock
-        data.to_s = rcEnv.paths.lsnruxsock
+        data.to = Env.paths.lsnruxsock
+        data.to_s = Env.paths.lsnruxsock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -628,7 +628,7 @@ class Crypt(object):
         data = Storage()
 
         # defaults
-        port = rcEnv.listener_tls_port
+        port = Env.listener_tls_port
         data.scheme = "h2"
         data.tls = True
         data.encrypted = False
@@ -641,7 +641,7 @@ class Crypt(object):
             data.tls = False
             data.scheme = "raw"
             data.encrypted = True
-            port = rcEnv.listener_port
+            port = Env.listener_port
             host = server[6:]
         try:
             addr, port = host.split(":", 1)
@@ -670,7 +670,7 @@ class Crypt(object):
             return self.socket_parms_from_context(server)
         if server is None or server == "":
             return self.socket_parms_ux(server)
-        if server == rcEnv.nodename and os.name != "nt":
+        if server == Env.nodename and os.name != "nt":
             # Local comms
             return self.socket_parms_ux(server)
         if server.startswith("/"):
@@ -801,7 +801,7 @@ class Crypt(object):
         elapsed = 0
         sock = None
         if server is None or server == "":
-            server = rcEnv.nodename
+            server = Env.nodename
         if node:
             data["node"] = node
         data["method"] = method

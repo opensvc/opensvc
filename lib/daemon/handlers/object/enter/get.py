@@ -4,7 +4,7 @@ import uuid
 
 import daemon.handler
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import which
 from utilities.string import try_decode
 
@@ -56,8 +56,8 @@ class Handler(daemon.handler.BaseHandler):
         if not which("gotty"):
             raise ex.HTTP(500, "The gotty executable is not installed")
         creds = "user:" + str(uuid.uuid4())
-        private_key = os.path.join(rcEnv.paths.certs, "private_key")
-        cert_chain = os.path.join(rcEnv.paths.certs, "certificate_chain")
+        private_key = os.path.join(Env.paths.certs, "private_key")
+        cert_chain = os.path.join(Env.paths.certs, "certificate_chain")
         cmd = [
             "gotty",
             "--port", "0",
@@ -81,5 +81,5 @@ class Handler(daemon.handler.BaseHandler):
             if "https://" not in line:
                 continue
             url = line.split("https://::", 1)[-1].strip()
-            url = "https://" + creds + "@" + rcEnv.nodename + url
+            url = "https://" + creds + "@" + Env.nodename + url
             return {"data": {"url": url}}

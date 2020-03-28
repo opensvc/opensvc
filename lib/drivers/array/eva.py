@@ -5,7 +5,7 @@ import sys
 
 import core.exceptions as ex
 from core.node import Node
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import factory, split_path
 from utilities.proc import justcall, which
 
@@ -13,11 +13,11 @@ def sssu(cmd, manager, username, password, array=None, sssubin=None):
     if sssubin is None:
         if which("sssu"):
             sssubin = "sssu"
-        elif os.path.exists(os.path.join(rcEnv.paths.pathbin, "sssu")):
-            sssubin = os.path.join(rcEnv.paths.pathbin, "sssu")
+        elif os.path.exists(os.path.join(Env.paths.pathbin, "sssu")):
+            sssubin = os.path.join(Env.paths.pathbin, "sssu")
         else:
             raise ex.Error("sssu command not found. set 'array#%s.bin' in the node or cluster configuration." % array)
-    os.chdir(rcEnv.paths.pathtmp)
+    os.chdir(Env.paths.pathtmp)
     _cmd = [sssubin,
             "select manager %s username=%s password=%s"%(manager, username, password)]
     if array is not None:

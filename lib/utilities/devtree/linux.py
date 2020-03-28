@@ -10,21 +10,21 @@ import math
 from .devtree import DevTree as BaseDevTree, Dev as BaseDev
 from .veritas import DevTreeVeritas
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.mounts import Mounts
 from utilities.proc import which
 
 
 class Dev(BaseDev):
     def remove_loop(self, r):
-        cmd = [rcEnv.syspaths.losetup, "-d", self.devpath[0]]
+        cmd = [Env.syspaths.losetup, "-d", self.devpath[0]]
         ret, out, err = r.vcall(cmd)
         if ret != 0:
             raise ex.Error(err)
         self.removed = True
 
     def remove_dm(self, r):
-        cmd = [rcEnv.syspaths.dmsetup, "remove", self.alias]
+        cmd = [Env.syspaths.dmsetup, "remove", self.alias]
         ret, out, err = r.vcall(cmd)
         if ret != 0:
             raise ex.Error(err)
@@ -62,7 +62,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         if not os.path.exists("/dev/mapper"):
             return self.dm_h
         try:
-            cmd = [rcEnv.syspaths.dmsetup, 'mknodes']
+            cmd = [Env.syspaths.dmsetup, 'mknodes']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             p.communicate()
         except:
@@ -86,11 +86,11 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return self.dm_h
 
     def get_map_wwid(self, map):
-        if not which(rcEnv.syspaths.multipath):
+        if not which(Env.syspaths.multipath):
             return None
         if not hasattr(self, 'multipath_l'):
             self.multipath_l = []
-            cmd = [rcEnv.syspaths.multipath, '-l']
+            cmd = [Env.syspaths.multipath, '-l']
             p = Popen(cmd, stdout=PIPE, stderr=PIPE)
             out, err = p.communicate()
             if p.returncode != 0:
@@ -117,9 +117,9 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return self.wwid_h
 
     def get_wwid_native(self):
-        if not which(rcEnv.syspaths.multipath):
+        if not which(Env.syspaths.multipath):
             return self.wwid_h
-        cmd = [rcEnv.syspaths.multipath, '-l']
+        cmd = [Env.syspaths.multipath, '-l']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -188,9 +188,9 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return mp_h
 
     def get_mp_native(self):
-        if not which(rcEnv.syspaths.dmsetup):
+        if not which(Env.syspaths.dmsetup):
             return {}
-        cmd = [rcEnv.syspaths.dmsetup, 'ls', '--target', 'multipath']
+        cmd = [Env.syspaths.dmsetup, 'ls', '--target', 'multipath']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -231,9 +231,9 @@ class DevTree(DevTreeVeritas, BaseDevTree):
 
     def load_dm_dev_t(self):
         table = {}
-        if not which(rcEnv.syspaths.dmsetup):
+        if not which(Env.syspaths.dmsetup):
             return
-        cmd = [rcEnv.syspaths.dmsetup, 'ls']
+        cmd = [Env.syspaths.dmsetup, 'ls']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -251,9 +251,9 @@ class DevTree(DevTreeVeritas, BaseDevTree):
     def load_dm(self):
         table = {}
         self.load_dm_dev_t()
-        if not which(rcEnv.syspaths.dmsetup):
+        if not which(Env.syspaths.dmsetup):
             return
-        cmd = [rcEnv.syspaths.dmsetup, 'table']
+        cmd = [Env.syspaths.dmsetup, 'table']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -313,9 +313,9 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         except AttributeError:
             pass
         self.lv_linear = {}
-        if not which(rcEnv.syspaths.dmsetup):
+        if not which(Env.syspaths.dmsetup):
             return self.lv_linear
-        cmd = [rcEnv.syspaths.dmsetup, 'table', '--target', 'linear']
+        cmd = [Env.syspaths.dmsetup, 'table', '--target', 'linear']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -349,7 +349,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
 
     def get_loop(self):
         self.loop = {}
-        cmd = [rcEnv.syspaths.losetup]
+        cmd = [Env.syspaths.losetup]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
         if p.returncode != 0:
@@ -405,7 +405,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         tree = etree.fromstring(out.decode())
         for res in tree.getiterator('resource'):
             for host in res.findall('host'):
-                if host.attrib['name'] != rcEnv.nodename:
+                if host.attrib['name'] != Env.nodename:
                     continue
                 edisk = host.find('disk')
                 edev = host.find('device')

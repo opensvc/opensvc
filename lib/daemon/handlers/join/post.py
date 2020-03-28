@@ -4,7 +4,7 @@ import daemon.clusterlock
 import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     """
@@ -17,7 +17,7 @@ class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     prototype = []
 
     def action(self, nodename, thr=None, **kwargs):
-        lock_id = self.lock_acquire(rcEnv.nodename, "join", 30, thr=thr)
+        lock_id = self.lock_acquire(Env.nodename, "join", 30, thr=thr)
         if not lock_id:
             raise ex.HTTP(503, "Lock not acquired")
         with shared.JOIN_LOCK:

@@ -12,7 +12,7 @@ import re
 
 import six
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.naming import split_path
 from utilities.string import bdecode
@@ -34,27 +34,27 @@ class Dns(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.dns"), {"node": rcEnv.nodename, "component": self.name})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.dns"), {"node": Env.nodename, "component": self.name})
         self.cache = {}
-        if not os.path.exists(rcEnv.paths.dnsuxsockd):
-            os.makedirs(rcEnv.paths.dnsuxsockd)
+        if not os.path.exists(Env.paths.dnsuxsockd):
+            os.makedirs(Env.paths.dnsuxsockd)
         try:
-            if os.path.isdir(rcEnv.paths.dnsuxsock):
-                shutil.rmtree(rcEnv.paths.dnsuxsock)
+            if os.path.isdir(Env.paths.dnsuxsock):
+                shutil.rmtree(Env.paths.dnsuxsock)
             else:
-                os.unlink(rcEnv.paths.dnsuxsock)
+                os.unlink(Env.paths.dnsuxsock)
         except Exception:
             pass
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sock.bind(rcEnv.paths.dnsuxsock)
+            self.sock.bind(Env.paths.dnsuxsock)
             self.sock.listen(1)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind %s error: %s", rcEnv.paths.dnsuxsock, exc)
+            self.alert("error", "bind %s error: %s", Env.paths.dnsuxsock, exc)
             return
 
-        self.log.info("listening on %s", rcEnv.paths.dnsuxsock)
+        self.log.info("listening on %s", Env.paths.dnsuxsock)
 
         self.zone = "%s." % self.cluster_name.strip(".")
         self.suffix = ".%s" % self.zone

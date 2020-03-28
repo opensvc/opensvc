@@ -10,7 +10,7 @@ import time
 import random
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.storage import Storage
 from utilities.render.color import formatter, color
 from utilities.string import is_string
@@ -802,7 +802,7 @@ class Scheduler(object):
         if self.svc:
             timestamp_d = os.path.join(self.svc.var_d, "scheduler")
         else:
-            timestamp_d = os.path.join(rcEnv.paths.pathvar, "node", "scheduler")
+            timestamp_d = os.path.join(Env.paths.pathvar, "node", "scheduler")
         fpath = os.path.join(timestamp_d, fname)
         if success:
             fpath += ".success"

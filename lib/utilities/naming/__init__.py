@@ -9,20 +9,20 @@ from itertools import chain
 
 import core.exceptions as ex
 from core.contexts import want_context
-from rcGlobalEnv import rcEnv
+from env import Env
 
 
 VALID_NAME_RFC952_NO_DOT = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]))*"
                             r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
 VALID_NAME_RFC952 = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*"
                      r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
-GLOB_ROOT_SVC_CONF = os.path.join(rcEnv.paths.pathetc, "*.conf")
-GLOB_ROOT_VOL_CONF = os.path.join(rcEnv.paths.pathetc, "vol", "*.conf")
-GLOB_ROOT_CFG_CONF = os.path.join(rcEnv.paths.pathetc, "cfg", "*.conf")
-GLOB_ROOT_SEC_CONF = os.path.join(rcEnv.paths.pathetc, "sec", "*.conf")
-GLOB_ROOT_USR_CONF = os.path.join(rcEnv.paths.pathetc, "usr", "*.conf")
-GLOB_CONF_NS = os.path.join(rcEnv.paths.pathetcns, "*", "*", "*.conf")
-GLOB_CONF_NS_ONE = os.path.join(rcEnv.paths.pathetcns, "%s", "*", "*.conf")
+GLOB_ROOT_SVC_CONF = os.path.join(Env.paths.pathetc, "*.conf")
+GLOB_ROOT_VOL_CONF = os.path.join(Env.paths.pathetc, "vol", "*.conf")
+GLOB_ROOT_CFG_CONF = os.path.join(Env.paths.pathetc, "cfg", "*.conf")
+GLOB_ROOT_SEC_CONF = os.path.join(Env.paths.pathetc, "sec", "*.conf")
+GLOB_ROOT_USR_CONF = os.path.join(Env.paths.pathetc, "usr", "*.conf")
+GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, "*", "*", "*.conf")
+GLOB_CONF_NS_ONE = os.path.join(Env.paths.pathetcns, "%s", "*", "*.conf")
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(br"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]")
@@ -31,7 +31,7 @@ def is_service(f, namespace=None, data=None, local=False, kinds=None):
     if f is None:
         return
     f = re.sub(r"\.conf$", '', f)
-    f = f.replace(rcEnv.paths.pathetcns + os.sep, "").replace(rcEnv.paths.pathetc + os.sep, "")
+    f = f.replace(Env.paths.pathetcns + os.sep, "").replace(Env.paths.pathetc + os.sep, "")
     try:
         name, _namespace, kind = split_path(f)
     except ValueError:
@@ -65,7 +65,7 @@ def list_services(namespace=None, kinds=None):
             if path is None:
                 continue
             l.append(path)
-    n = len(os.path.join(rcEnv.paths.pathetcns, ""))
+    n = len(os.path.join(Env.paths.pathetcns, ""))
     for path in glob_ns_config(namespace):
         path = path[n:-5]
         if not path or path[-1] == os.sep:
@@ -132,13 +132,13 @@ def split_path(path):
 def svc_pathcf(path, namespace=None):
     name, _namespace, kind = split_path(path)
     if namespace:
-        return os.path.join(rcEnv.paths.pathetcns, namespace, kind, name + ".conf")
+        return os.path.join(Env.paths.pathetcns, namespace, kind, name + ".conf")
     elif _namespace:
-        return os.path.join(rcEnv.paths.pathetcns, _namespace, kind, name + ".conf")
+        return os.path.join(Env.paths.pathetcns, _namespace, kind, name + ".conf")
     elif kind in ("svc", "ccfg"):
-        return os.path.join(rcEnv.paths.pathetc, name + ".conf")
+        return os.path.join(Env.paths.pathetc, name + ".conf")
     else:
-        return os.path.join(rcEnv.paths.pathetc, kind, name + ".conf")
+        return os.path.join(Env.paths.pathetc, kind, name + ".conf")
 
 
 def svc_pathetc(path, namespace=None):
@@ -148,29 +148,29 @@ def svc_pathetc(path, namespace=None):
 def svc_pathtmp(path):
     name, namespace, kind = split_path(path)
     if namespace:
-        return os.path.join(rcEnv.paths.pathtmp, "namespaces", namespace, kind)
+        return os.path.join(Env.paths.pathtmp, "namespaces", namespace, kind)
     elif kind in ("svc", "ccfg"):
-        return os.path.join(rcEnv.paths.pathtmp)
+        return os.path.join(Env.paths.pathtmp)
     else:
-        return os.path.join(rcEnv.paths.pathtmp, kind)
+        return os.path.join(Env.paths.pathtmp, kind)
 
 
 def svc_pathlog(path):
     name, namespace, kind = split_path(path)
     if namespace:
-        return os.path.join(rcEnv.paths.pathlog, "namespaces", namespace, kind)
+        return os.path.join(Env.paths.pathlog, "namespaces", namespace, kind)
     elif kind in ("svc", "ccfg"):
-        return os.path.join(rcEnv.paths.pathlog)
+        return os.path.join(Env.paths.pathlog)
     else:
-        return os.path.join(rcEnv.paths.pathlog, kind)
+        return os.path.join(Env.paths.pathlog, kind)
 
 
 def svc_pathvar(path, relpath=""):
     name, namespace, kind = split_path(path)
     if namespace:
-        l = [rcEnv.paths.pathvar, "namespaces", namespace, kind, name]
+        l = [Env.paths.pathvar, "namespaces", namespace, kind, name]
     else:
-        l = [rcEnv.paths.pathvar, kind, name]
+        l = [Env.paths.pathvar, kind, name]
     if relpath:
         l.append(relpath)
     return os.path.join(*l)
@@ -246,17 +246,17 @@ def validate_path(path):
 
 
 def validate_kind(name):
-    if name not in rcEnv.kinds:
+    if name not in Env.kinds:
         raise ValueError("invalid kind '%s'. kind must be one of"
-                         " %s." % (name, ", ".join(rcEnv.kinds)))
+                         " %s." % (name, ", ".join(Env.kinds)))
 
 
 def validate_ns_name(name):
     if name is None:
         return
-    if name in rcEnv.kinds:
+    if name in Env.kinds:
         raise ValueError("invalid namespace name '%s'. names must not clash with kinds"
-                         " %s." % (name, ", ".join(rcEnv.kinds)))
+                         " %s." % (name, ", ".join(Env.kinds)))
     if re.match(VALID_NAME_RFC952_NO_DOT, name):
         return
     raise ValueError("invalid namespace name '%s'. names must contain only letters, "
@@ -267,9 +267,9 @@ def validate_ns_name(name):
 def validate_name(name):
     # strip scaler slice prefix
     name = re.sub(r"^[0-9]+\.", "", name)
-    if name in rcEnv.kinds:
+    if name in Env.kinds:
         raise ex.Error("invalid name '%s'. names must not clash with kinds"
-                          " %s." % (name, ", ".join(rcEnv.kinds)))
+                          " %s." % (name, ", ".join(Env.kinds)))
     if re.match(VALID_NAME_RFC952, name):
         return
     raise ex.Error("invalid name '%s'. names must contain only dots, letters, "

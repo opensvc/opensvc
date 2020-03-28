@@ -10,7 +10,7 @@ from .. import \
     KW_NETMASK, \
     KW_GATEWAY, \
     COMMON_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -105,21 +105,21 @@ class IpGce(Ip, rcGce.GceMixin):
         if not self.routename:
             return
         if self.has_gce_route():
-            self.log.info("gce route %s, %s to instance %s is already installed" % (self.routename, self.addr, rcEnv.nodename))
+            self.log.info("gce route %s, %s to instance %s is already installed" % (self.routename, self.addr, Env.nodename))
             return
         if self.exist_gce_route():
             self.del_gce_route()
         self.add_gce_route()
         self.svc.gce_routes_cache[self.routename] = {
           "destRange": self.addr+"/32",
-          "nextHopInstance": rcEnv.nodename,
+          "nextHopInstance": Env.nodename,
         }
 
     def stop_gce_route(self):
         if not self.routename:
             return
         if not self.has_gce_route():
-            self.log.info("gce route %s, %s to instance %s is already uninstalled" % (self.routename, self.addr, rcEnv.nodename))
+            self.log.info("gce route %s, %s to instance %s is already uninstalled" % (self.routename, self.addr, Env.nodename))
             return
         self.del_gce_route()
         self.get_gce_routes_list(refresh=True)
@@ -128,7 +128,7 @@ class IpGce(Ip, rcGce.GceMixin):
     def add_gce_route(self):
         cmd = ["gcloud", "compute", "routes", "-q", "create", self.routename,
                "--destination-range", self.addr+"/32",
-               "--next-hop-instance", rcEnv.nodename,
+               "--next-hop-instance", Env.nodename,
                "--next-hop-instance-zone", self.gce_zone]
         self.vcall(cmd)
 
@@ -186,7 +186,7 @@ class IpGce(Ip, rcGce.GceMixin):
             return False
         if data.get("destRange") != self.addr+"/32":
             return False
-        if data.get("nextHopInstance").split("/")[-1] != rcEnv.nodename:
+        if data.get("nextHopInstance").split("/")[-1] != Env.nodename:
             return False
         return True
 

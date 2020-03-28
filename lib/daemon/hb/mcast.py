@@ -11,7 +11,7 @@ import time
 
 import core.exceptions as ex
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.chunker import chunker
 from utilities.string import bdecode
 from .hb import Hb
@@ -328,7 +328,7 @@ class HbMcastRx(HbMcast):
         if clustername != self.cluster_name:
             # surely from drp node
             return
-        if nodename is None or nodename == rcEnv.nodename:
+        if nodename is None or nodename == Env.nodename:
             # ignore hb data we sent ourself
             return
         elif nodename not in self.hb_nodes:

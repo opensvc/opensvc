@@ -2,7 +2,7 @@ import os
 
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
@@ -31,10 +31,10 @@ class Check(drivers.check.Check):
         megacli = self.find_megacli()
         if megacli is None:
             return self.undef
-        os.chdir(rcEnv.paths.pathtmp)
-        logs = [os.path.join(rcEnv.paths.pathtmp, 'MegaSAS.log'),
-                os.path.join(rcEnv.paths.pathtmp, 'MegaCli.log'),
-                os.path.join(rcEnv.paths.pathtmp, 'MegaRaid.log')]
+        os.chdir(Env.paths.pathtmp)
+        logs = [os.path.join(Env.paths.pathtmp, 'MegaSAS.log'),
+                os.path.join(Env.paths.pathtmp, 'MegaCli.log'),
+                os.path.join(Env.paths.pathtmp, 'MegaRaid.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue
@@ -75,10 +75,10 @@ class Check(drivers.check.Check):
         megacli = self.find_megacli()
         if megacli is None:
             return self.undef
-        os.chdir(rcEnv.paths.pathtmp)
-        logs = [os.path.join(rcEnv.paths.pathtmp, 'MegaSAS.log'),
-                os.path.join(rcEnv.paths.pathtmp, 'MegaCli.log'),
-                os.path.join(rcEnv.paths.pathtmp, 'MegaRaid.log')]
+        os.chdir(Env.paths.pathtmp)
+        logs = [os.path.join(Env.paths.pathtmp, 'MegaSAS.log'),
+                os.path.join(Env.paths.pathtmp, 'MegaCli.log'),
+                os.path.join(Env.paths.pathtmp, 'MegaRaid.log')]
         for log in logs:
             if not os.path.exists(log):
                 continue

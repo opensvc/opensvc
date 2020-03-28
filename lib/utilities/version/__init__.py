@@ -25,15 +25,15 @@ def agent_version():
         pass
     import os
     from utilities.proc import which, justcall
-    from rcGlobalEnv import rcEnv
+    from env import Env
     if which("git"):
-        cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
+        cmd = ["git", "--git-dir", os.path.join(Env.paths.pathsvc, ".git"),
                "describe", "--tags", "--abbrev=0"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return "dev"
         _version = out.strip()
-        cmd = ["git", "--git-dir", os.path.join(rcEnv.paths.pathsvc, ".git"),
+        cmd = ["git", "--git-dir", os.path.join(Env.paths.pathsvc, ".git"),
                "describe", "--tags"]
         out, err, ret = justcall(cmd)
         if ret != 0:

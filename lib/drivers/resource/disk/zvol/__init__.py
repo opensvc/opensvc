@@ -8,7 +8,7 @@ import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import dataset_exists, zpool_devs
 from core.objects.builder import init_kwargs
@@ -145,7 +145,7 @@ class DiskZvol(BaseDisk):
         if not self.has_it():
             self.log.info("zvol %s already destroyed", self.name)
             return
-        cmd = [rcEnv.syspaths.zfs, "destroy", "-f", self.name]
+        cmd = [Env.syspaths.zfs, "destroy", "-f", self.name]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -155,7 +155,7 @@ class DiskZvol(BaseDisk):
         if self.has_it():
             self.log.info("zvol %s already exists", self.name)
             return
-        cmd = [rcEnv.syspaths.zfs, "create", "-V"]
+        cmd = [Env.syspaths.zfs, "create", "-V"]
         cmd += self.create_options
         cmd += [str(convert_size(self.size, _to="m"))+'M', self.name]
         ret, out, err = self.vcall(cmd)

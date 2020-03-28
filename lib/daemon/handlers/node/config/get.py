@@ -4,7 +4,7 @@ import traceback
 
 import daemon.handler
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
+from env import Env
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -39,7 +39,7 @@ class Handler(daemon.handler.BaseHandler):
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _node_config_file(self, nodename, thr=None, **kwargs):
-        fpath = os.path.join(rcEnv.paths.pathetc, "node.conf")
+        fpath = os.path.join(Env.paths.pathetc, "node.conf")
         if not os.path.exists(fpath):
             return {"error": "%s does not exist" % fpath, "status": 3}
         mtime = os.path.getmtime(fpath)

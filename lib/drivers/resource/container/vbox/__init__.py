@@ -14,7 +14,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
@@ -104,7 +104,7 @@ class ContainerVbox(BaseContainer):
     def state(self, nodename=None):
         cmd = ['VBoxManage', 'list', 'runningvms']
         if nodename is not None:
-            cmd = rcEnv.rsh.split() + [nodename] + cmd
+            cmd = Env.rsh.split() + [nodename] + cmd
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             return None

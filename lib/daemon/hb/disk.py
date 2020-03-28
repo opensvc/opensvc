@@ -12,7 +12,7 @@ import time
 
 import daemon.shared as shared
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from .hb import Hb
 from utilities.string import bdecode
 
@@ -73,7 +73,7 @@ class HbDisk(Hb):
         new_dev = os.path.realpath(new_dev)
         new_flags = os.O_RDWR
         statinfo = os.stat(new_dev)
-        if rcEnv.sysname == "Linux":
+        if Env.sysname == "Linux":
             if stat.S_ISBLK(statinfo.st_mode):
                 self.log.info("using directio")
                 new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC  # (Darwin, SunOS) pylint: disable=no-member
@@ -195,11 +195,11 @@ class HbDisk(Hb):
                 buff = self.meta_read_slot(slot, fo=fo)
                 if buff is None or buff[0] != "\0":
                     continue
-                self.peer_config[rcEnv.nodename]["slot"] = slot
+                self.peer_config[Env.nodename]["slot"] = slot
                 try:
-                    nodename = bytes(rcEnv.nodename, "utf-8")
+                    nodename = bytes(Env.nodename, "utf-8")
                 except TypeError:
-                    nodename = rcEnv.nodename
+                    nodename = Env.nodename
                 self.meta_write_slot(slot, nodename, fo=fo)
                 self.log.info("allocated slot %d", slot)
             break
@@ -214,7 +214,7 @@ class HbDiskTx(HbDisk):
 
     def _configure(self):
         HbDisk._configure(self)
-        if self.peer_config[rcEnv.nodename]["slot"] < 0:
+        if self.peer_config[Env.nodename]["slot"] < 0:
             self.allocate_slot()
 
     def run(self):
@@ -243,9 +243,9 @@ class HbDiskTx(HbDisk):
 
     def _do(self, fo):
         self.reload_config()
-        if rcEnv.nodename not in self.peer_config:
+        if Env.nodename not in self.peer_config:
             return
-        slot = self.peer_config[rcEnv.nodename]["slot"]
+        slot = self.peer_config[Env.nodename]["slot"]
         if slot < 0:
             return
         message, message_bytes = self.get_message()
@@ -265,7 +265,7 @@ class HbDiskTx(HbDisk):
             self.push_stats()
             if self.get_last().success:
                 self.log.error("write to %s slot %d error: %s", self.dev,
-                               self.peer_config[rcEnv.nodename]["slot"], exc)
+                               self.peer_config[Env.nodename]["slot"], exc)
             self.set_last(success=False)
         finally:
             self.set_beating()
@@ -314,7 +314,7 @@ class HbDiskRx(HbDisk):
     def _do(self, fo):
         self.reload_config()
         for nodename, data in self.peer_config.items():
-            if nodename == rcEnv.nodename:
+            if nodename == Env.nodename:
                 continue
             if data["slot"] < 0:
                 continue

@@ -15,7 +15,7 @@ import utilities.lock
 import core.exceptions as ex
 import utilities.devices
 import utilities.render.color
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.naming import factory
 from utilities.cache import clear_cache
 from utilities.lazy import lazy, set_lazy, unset_lazy
@@ -109,8 +109,8 @@ class Resource(object):
         """
         extra = {
             "path": self.svc.path,
-            "node": rcEnv.nodename,
-            "sid": rcEnv.session_uuid,
+            "node": Env.nodename,
+            "sid": Env.session_uuid,
             "cron": self.svc.options.cron,
             "rid": self.rid,
             "subset": self.subset,
@@ -164,7 +164,7 @@ class Resource(object):
         if hasattr(self, "svc"):
             label = self.svc.loggerpath + '.'
         else:
-            label = rcEnv.nodename + "."
+            label = Env.nodename + "."
 
         if self.rid is None:
             label += self.type
@@ -971,7 +971,7 @@ class Resource(object):
             return
         if cluster_data:
             try:
-                current_state = cluster_data[rcEnv.nodename]["services"]["status"][self.svc.path]["resources"][rid]["status"]
+                current_state = cluster_data[Env.nodename]["services"]["status"][self.svc.path]["resources"][rid]["status"]
             except KeyError:
                 current_state = "undef"
         else:
