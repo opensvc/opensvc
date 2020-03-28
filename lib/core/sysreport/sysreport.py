@@ -10,7 +10,7 @@ from subprocess import *
 
 import six
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import which
 
 POSIX = os.name == "posix"
@@ -19,17 +19,17 @@ POSIX = os.name == "posix"
 class BaseSysReport(object):
     def __init__(self, node=None, collect_d=None, compress=False):
         self.todo = [
-            ("INC", os.path.join(rcEnv.paths.pathetc, "*.conf")),
-            ("INC", os.path.join(rcEnv.paths.pathetc, "namespaces", "*", "*", "*.conf")),
-            ("INC", os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")),
+            ("INC", os.path.join(Env.paths.pathetc, "*.conf")),
+            ("INC", os.path.join(Env.paths.pathetc, "namespaces", "*", "*", "*.conf")),
+            ("INC", os.path.join(Env.paths.pathetc, "sysreport.conf.d")),
         ]
 
         self.changed = []
         self.deleted = []
-        self.sysreport_conf_d = os.path.join(rcEnv.paths.pathetc, "sysreport.conf.d")
+        self.sysreport_conf_d = os.path.join(Env.paths.pathetc, "sysreport.conf.d")
         if collect_d is None:
-            self.sysreport_d = os.path.join(rcEnv.paths.pathvar, "sysreport")
-            self.collect_d = os.path.join(self.sysreport_d, rcEnv.nodename)
+            self.sysreport_d = os.path.join(Env.paths.pathvar, "sysreport")
+            self.collect_d = os.path.join(self.sysreport_d, Env.nodename)
         else:
             self.sysreport_d = collect_d
             self.collect_d = collect_d

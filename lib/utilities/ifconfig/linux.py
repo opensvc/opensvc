@@ -1,7 +1,7 @@
 import copy
 
 from utilities.net.converters import cidr_to_dotted
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 from .ifconfig import BaseIfconfig, Interface
@@ -36,8 +36,8 @@ class Ifconfig(BaseIfconfig):
             self.mcast_data = {}
         if ip_out:
             self.parse_ip(ip_out)
-        elif which(rcEnv.syspaths.ip):
-            cmd = [rcEnv.syspaths.ip, 'addr']
+        elif which(Env.syspaths.ip):
+            cmd = [Env.syspaths.ip, 'addr']
             out, _, _ = justcall(cmd)
             self.parse_ip(out)
         else:
@@ -228,8 +228,8 @@ class Ifconfig(BaseIfconfig):
             cmd = ['netstat', '-gn']
             out, _, _ = justcall(cmd)
             return self.parse_mcast_netstat(out)
-        elif which(rcEnv.syspaths.ip):
-            cmd = [rcEnv.syspaths.ip, 'maddr']
+        elif which(Env.syspaths.ip):
+            cmd = [Env.syspaths.ip, 'maddr']
             out, _, _ = justcall(cmd)
             return self.parse_mcast_ip(out)
 

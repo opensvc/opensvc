@@ -6,7 +6,7 @@ import time
 import core.exceptions as ex
 import core.status
 from core.resource import Resource
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import protected_dir
 from utilities.drivers import driver_import
 from utilities.lazy import lazy
@@ -380,13 +380,13 @@ class BaseFs(Resource):
 
     def get_mkfs_dev(self):
         self.mkfs_dev = self.dev
-        if rcEnv.sysname == 'HP-UX':
+        if Env.sysname == 'HP-UX':
             l = self.dev.split('/')
             l[-1] = 'r'+l[-1]
             self.mkfs_dev = '/'.join(l)
             if not os.path.exists(self.mkfs_dev):
                 raise ex.Error("%s raw device does not exists"%self.mkfs_dev)
-        elif rcEnv.sysname == 'Darwin':
+        elif Env.sysname == 'Darwin':
             if os.path.isfile(self.mkfs_dev):
                 import utilities.devices.darwin
                 devs = utilities.devices.darwin.file_to_loop(self.mkfs_dev)
@@ -394,7 +394,7 @@ class BaseFs(Resource):
                     self.mkfs_dev = devs[0]
                 else:
                     raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
-        elif rcEnv.sysname == 'Linux':
+        elif Env.sysname == 'Linux':
             if os.path.isfile(self.mkfs_dev):
                 import utilities.devices.linux
                 devs = utilities.devices.linux.file_to_loop(self.mkfs_dev)

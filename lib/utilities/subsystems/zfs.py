@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from rcGlobalEnv import rcEnv
+from env import Env
 import core.exceptions as ex
 from utilities.cache import cache
 from utilities.proc import call, vcall, justcall
@@ -16,7 +16,7 @@ def zpool_getprop(pool='undef_pool', propname='undef_prop'):
     """
     Return the zpool property <propname> value
     """
-    cmd = [rcEnv.syspaths.zpool, 'get', '-Hp', '-o', 'value', propname, pool]
+    cmd = [Env.syspaths.zpool, 'get', '-Hp', '-o', 'value', propname, pool]
     out, _, ret = justcall(cmd)
     if ret == 0:
         return out.split("\n")[0]
@@ -33,7 +33,7 @@ def zpool_setprop(pool='undef_pool', propname='undef_prop', propval='undef_val',
         return False
     if current == propval:
         return True
-    cmd = [rcEnv.syspaths.zpool, 'set', propname + '='+ propval, pool]
+    cmd = [Env.syspaths.zpool, 'set', propname + '='+ propval, pool]
     ret, _, _ = vcall(cmd, log=log)
     if ret == 0:
         return True
@@ -44,7 +44,7 @@ def zfs_getprop(dataset='undef_ds', propname='undef_prop'):
     """
     Return the dataset property <propname> value
     """
-    cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, dataset]
+    cmd = [Env.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, dataset]
     out, _, ret = justcall(cmd)
     if ret == 0:
         return out.split("\n")[0]
@@ -61,7 +61,7 @@ def zfs_setprop(dataset='undef_ds', propname='undef_prop', propval='undef_val', 
         return False
     if current == propval:
         return True
-    cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, dataset]
+    cmd = [Env.syspaths.zfs, 'set', propname + '='+ propval, dataset]
     ret, _, _ = vcall(cmd, log=log)
     if ret == 0:
         return True
@@ -80,7 +80,7 @@ def a2pool_dataset(s):
         return ("", "")
     ss = s
     if s[0] == '/':
-        cmd = [rcEnv.syspaths.zfs, 'list', '-H',  '-o', 'name', s]
+        cmd = [Env.syspaths.zfs, 'list', '-H',  '-o', 'name', s]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return ("", "")
@@ -107,9 +107,9 @@ class Dataset(object):
             self.log = log
     def __str__(self, option=None):
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'list', self.name]
+            cmd = [Env.syspaths.zfs, 'list', self.name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'list'] + option + [self.name]
+            cmd = [Env.syspaths.zfs, 'list'] + option + [self.name]
         (retcode, stdout, stderr) = call(cmd, log=self.log)
         if retcode == 0:
             return stdout
@@ -134,9 +134,9 @@ class Dataset(object):
         Rename the dataset.
         """
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'rename', self.name, name]
+            cmd = [Env.syspaths.zfs, 'rename', self.name, name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'rename'] + option + [self.name, name]
+            cmd = [Env.syspaths.zfs, 'rename'] + option + [self.name, name]
         ret, _, _ = vcall(cmd, log=self.log)
         if ret == 0:
             return True
@@ -148,9 +148,9 @@ class Dataset(object):
         Create the dataset with options.
         """
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'create', self.name]
+            cmd = [Env.syspaths.zfs, 'create', self.name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'create'] + option + [self.name]
+            cmd = [Env.syspaths.zfs, 'create'] + option + [self.name]
         ret, _, _ = vcall(cmd, log=self.log)
         if ret == 0:
             return True
@@ -163,7 +163,7 @@ class Dataset(object):
         """
         if not self.exists():
             return True
-        cmd = [rcEnv.syspaths.zfs, 'destroy'] + options + [self.name]
+        cmd = [Env.syspaths.zfs, 'destroy'] + options + [self.name]
         if self.log:
             self.log.info(" ".join(cmd))
         _, err, ret = justcall(cmd)
@@ -180,7 +180,7 @@ class Dataset(object):
         """
         Return a dataset propertie value or '' on error.
         """
-        cmd = [rcEnv.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, self.name]
+        cmd = [Env.syspaths.zfs, 'get', '-Hp', '-o', 'value', propname, self.name]
         out, _, ret = justcall(cmd)
         if ret == 0 :
             return out.rstrip('\n')
@@ -192,7 +192,7 @@ class Dataset(object):
         Set Dataset property value.
         Return True is success else return False.
         """
-        cmd = [rcEnv.syspaths.zfs, 'set', propname + '='+ propval, self.name]
+        cmd = [Env.syspaths.zfs, 'set', propname + '='+ propval, self.name]
         ret, out, err = vcall(cmd, log=self.log,
                               err_to_warn=err_to_warn,
                               err_to_info=err_to_info)
@@ -222,7 +222,7 @@ class Dataset(object):
         if snapname is None:
             raise ex.Error("snapname should be defined")
         snapdataset = self.name + "@" + snapname
-        cmd = [rcEnv.syspaths.zfs, 'snapshot']
+        cmd = [Env.syspaths.zfs, 'snapshot']
         if recursive:
             cmd.append("-r")
         cmd.append(snapdataset)
@@ -239,9 +239,9 @@ class Dataset(object):
         Return False on failure.
         """
         if option is None:
-            cmd = [rcEnv.syspaths.zfs, 'clone', self.name, name]
+            cmd = [Env.syspaths.zfs, 'clone', self.name, name]
         else:
-            cmd = [rcEnv.syspaths.zfs, 'clone'] + option + [self.name, name]
+            cmd = [Env.syspaths.zfs, 'clone'] + option + [self.name, name]
         ret, _, _ = vcall(cmd, log=self.log)
         if ret == 0:
             return Dataset(name)
@@ -256,7 +256,7 @@ def zpool_devs(poolname, node=None):
     """
     devs = set()
     cmd = ['zpool', 'status']
-    if rcEnv.sysname == "Linux":
+    if Env.sysname == "Linux":
         cmd += ["-L", "-P"]
     cmd += [poolname]
     out, err, ret = justcall(cmd)
@@ -273,8 +273,8 @@ def zpool_devs(poolname, node=None):
                 continue
             # vdev entry
             disk = line.split()[0]
-            if rcEnv.sysname == "SunOS":
-                if disk.startswith(rcEnv.paths.pathvar):
+            if Env.sysname == "SunOS":
+                if disk.startswith(Env.paths.pathvar):
                     disk = disk.split('/')[-1]
                 if re.match("^.*", disk) is None:
                     continue
@@ -287,13 +287,13 @@ def zpool_devs(poolname, node=None):
         if "emcpower" in d:
             regex = re.compile('[a-g]$', re.UNICODE)
             d = regex.sub('c', d)
-        elif rcEnv.sysname == "SunOS":
+        elif Env.sysname == "SunOS":
             if re.match('^.*s[0-9]*$', d) is None:
                 d += "s2"
             else:
                 regex = re.compile('s[0-9]*$', re.UNICODE)
                 d = regex.sub('s2', d)
-        elif rcEnv.sysname == "Linux" and node:
+        elif Env.sysname == "Linux" and node:
             tdev = node.devtree.get_dev_by_devpath(d)
             if tdev is None:
                 continue

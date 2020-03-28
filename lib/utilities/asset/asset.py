@@ -4,7 +4,7 @@ import os
 
 import core.exceptions as ex
 from utilities.converters import print_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 class BaseAsset(object):
@@ -359,7 +359,7 @@ class BaseAsset(object):
             return
         if not which("gcloud"):
             return
-        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", rcEnv.nodename]
+        cmd = ["gcloud", "compute", "instances", "describe", "-q", "--format", "json", Env.nodename]
         out, err, ret = justcall(cmd)
         return self._parse_connect_to(out)
 
@@ -445,7 +445,7 @@ class BaseAsset(object):
         }
 
     def get_listener_port(self):
-        s = str(rcEnv.listener_port)
+        s = str(Env.listener_port)
         source = self.s_default
         try:
             s = str(self.node.conf_get('listener', 'port'))
@@ -540,7 +540,7 @@ class BaseAsset(object):
         return self.get_ids("/etc/group", ("groupname", "gid"))
 
     def get_ids(self, p, keys):
-        if rcEnv.sysname == "Windows":
+        if Env.sysname == "Windows":
             return []
         if not os.path.exists(p):
             return []
@@ -571,7 +571,7 @@ class BaseAsset(object):
 
     def get_lan(self):
         kwargs = {'mcast': True}
-        if rcEnv.sysname == 'HP-UX':
+        if Env.sysname == 'HP-UX':
             kwargs['hwaddr'] = True
         import utilities.ifconfig
         ifconfig = utilities.ifconfig.Ifconfig(**kwargs)
@@ -658,18 +658,18 @@ class BaseAsset(object):
         self.data = {}
         self.data['nodename'] = {
             "title": "nodename",
-            "value": rcEnv.nodename,
+            "value": Env.nodename,
             "source": self.s_probe
         }
         self.data['fqdn'] = {
             "title": "fqdn",
-            "value": rcEnv.fqdn,
+            "value": Env.fqdn,
             "source": self.s_probe
         }
         self.data['version'] = self.get_version()
         self.data['os_name'] = {
             "title": "os name",
-            "value": rcEnv.sysname,
+            "value": Env.sysname,
             "source": self.s_probe
         }
         self.data['os_vendor'] = self.get_os_vendor()

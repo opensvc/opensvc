@@ -3,7 +3,7 @@ import os
 import core.exceptions as ex
 
 from .. import BaseTask, KEYWORDS as BASE_KEYWORDS
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
@@ -68,11 +68,11 @@ def adder(svc, s):
 
 
 def run_as_popen_kwargs(user):
-    if rcEnv.sysname == "Windows":
+    if Env.sysname == "Windows":
         return {}
     if user is None:
         return {}
-    cwd = rcEnv.paths.pathtmp
+    cwd = Env.paths.pathtmp
     import pwd
     try:
         pw_record = pwd.getpwnam(user)

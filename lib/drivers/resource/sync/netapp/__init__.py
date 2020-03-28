@@ -4,7 +4,7 @@ import time
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -78,8 +78,8 @@ class SyncNetapp(Sync):
         return s['slave']
 
     def local(self):
-        if rcEnv.nodename in self.filers:
-            return self.filers[rcEnv.nodename]
+        if Env.nodename in self.filers:
+            return self.filers[Env.nodename]
         return None
 
     def _cmd(self, cmd, target, info=False):
@@ -94,12 +94,12 @@ class SyncNetapp(Sync):
         else:
             raise ex.Error("unable to find the %s filer"%target)
 
-        _cmd = rcEnv.rsh.split() + [self.user+'@'+filer] + cmd
+        _cmd = Env.rsh.split() + [self.user+'@'+filer] + cmd
 
         if info:
             self.log.info(' '.join(_cmd))
 
-        out, err, ret = justcall(rcEnv.rsh.split() + [self.user+'@'+filer] + cmd)
+        out, err, ret = justcall(Env.rsh.split() + [self.user+'@'+filer] + cmd)
 
         if info:
             if len(out) > 0:

@@ -6,7 +6,7 @@ import core.exceptions as ex
 
 from drivers.resource.ip.sunos import Ip
 from drivers.resource.ip import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
-from rcGlobalEnv import rcEnv
+from env import Env
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.net.converters import to_cidr
@@ -83,25 +83,25 @@ class IpCrossbow(Ip):
             self.label += " " + self.ipname
 
     def stopip_cmd(self):
-        if not which(rcEnv.syspaths.ipadm):
+        if not which(Env.syspaths.ipadm):
             raise ex.Error("crossbow ips are not supported on this system")
         ret, out, err = (0, '', '')
         if self.gateway is not None:
             cmd=['route', '-q', 'delete', 'default', self.gateway]
             r, o, e = self.call(cmd, info=True, outlog=False, errlog=False)
             ret += r
-        cmd=[rcEnv.syspaths.ipadm, 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[Env.syspaths.ipadm, 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
         err += e
-        cmd = [rcEnv.syspaths.ipadm, 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
+        cmd = [Env.syspaths.ipadm, 'show-addr', '-p', '-o', 'state', self.stacked_dev ]
         _out, _, _ = justcall(cmd)
         _out = _out.strip().split("\n")
         if len(_out) > 0:
             self.log.info("skip delete-ip because addrs still use the ip")
             return ret, out, err
-        cmd=[rcEnv.syspaths.ipadm, 'delete-ip', self.stacked_dev]
+        cmd=[Env.syspaths.ipadm, 'delete-ip', self.stacked_dev]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
@@ -132,22 +132,22 @@ class IpCrossbow(Ip):
         return out.strip()
 
     def startip_cmd(self):
-        if not which(rcEnv.syspaths.ipadm):
+        if not which(Env.syspaths.ipadm):
             raise ex.Error("crossbow ips are not supported on this system")
         if self.mask is None:
             raise ex.Error("netmask not specified nor guessable")
         self.wait_net_smf()
         ret, out, err = (0, '', '')
-        cmd = [rcEnv.syspaths.ipadm, 'show-if', '-p', '-o', 'state', self.stacked_dev]
+        cmd = [Env.syspaths.ipadm, 'show-if', '-p', '-o', 'state', self.stacked_dev]
         _out, err, ret = justcall(cmd)
         _out = _out.strip().split("\n")
         if len(_out) == 0:
-            cmd=[rcEnv.syspaths.ipadm, 'create-ip', '-t', self.stacked_dev ]
+            cmd=[Env.syspaths.ipadm, 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=[rcEnv.syspaths.ipadm, 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[Env.syspaths.ipadm, 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
         r, o, e = self.vcall(cmd)
         if r != 0:
-            cmd=[rcEnv.syspaths.ipadm, 'show-if' ]
+            cmd=[Env.syspaths.ipadm, 'show-if' ]
             self.vcall(cmd)
             raise ex.Error("Interface %s is not up. ipadm cannot create-addr over it. Retrying..." % self.stacked_dev)
         ret += r
@@ -174,7 +174,7 @@ class IpCrossbow(Ip):
             raise ex.IpConflict(self.addr)
 
     def is_up(self):
-        cmd = [rcEnv.syspaths.ipadm, "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
+        cmd = [Env.syspaths.ipadm, "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
         out, err, ret = justcall(cmd)
         if ret != 0:
             # normal down state

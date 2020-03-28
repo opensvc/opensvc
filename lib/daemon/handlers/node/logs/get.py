@@ -1,7 +1,7 @@
 import os
 
 import daemon.handler
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.string import bdecode
 
 try:
@@ -21,7 +21,7 @@ class Handler(daemon.handler.BaseHandler):
     stream = True
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
-        logfile = os.path.join(rcEnv.paths.pathlog, "node.log")
+        logfile = os.path.join(Env.paths.pathlog, "node.log")
         ofile = thr._action_logs_open(logfile, 0, "node")
         request_headers = HTTPHeaderMap(thr.streams[stream_id]["request"].headers)
         try:

@@ -8,7 +8,7 @@ import os
 import copy
 from textwrap import TextWrapper
 
-from rcGlobalEnv import rcEnv
+from env import Env
 import core.exceptions as ex
 
 class MissKeyNoDefault(Exception):
@@ -286,10 +286,10 @@ class Section(object):
             return ""
 
     def _template_text(self, rtype, section, write=False):
-        fpath = os.path.join(rcEnv.paths.pathdoc, self.top.template_prefix+section+".conf")
+        fpath = os.path.join(Env.paths.pathdoc, self.top.template_prefix+section+".conf")
         if rtype:
             section += ", type "+rtype
-            fpath = os.path.join(rcEnv.paths.pathdoc, self.top.template_prefix+self.section+"."+rtype+".conf")
+            fpath = os.path.join(Env.paths.pathdoc, self.top.template_prefix+self.section+"."+rtype+".conf")
         s = "#"*78 + "\n"
         s += "# %-74s #\n" % " "
         s += "# %-74s #\n" % section
@@ -322,7 +322,7 @@ class Section(object):
         return s
 
     def _template_rst(self, rtype, section, write=False):
-        dpath = os.path.join(rcEnv.paths.pathtmp, "rst")
+        dpath = os.path.join(Env.paths.pathtmp, "rst")
         if not os.path.exists(dpath):
             os.makedirs(dpath)
         if rtype:

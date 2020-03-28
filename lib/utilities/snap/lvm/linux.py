@@ -4,7 +4,7 @@ import core.exceptions as ex
 import utilities.snap
 import utilities.devices.linux
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.files import protected_mount
 from utilities.proc import justcall
 
@@ -57,16 +57,16 @@ class Snap(utilities.snap.Snap):
             self.log.error(err)
         if ret != 0:
             raise ex.syncSnapCreateError
-        snap_mnt = os.path.join(rcEnv.paths.pathtmp,
+        snap_mnt = os.path.join(Env.paths.pathtmp,
                                 'osvc_sync_'+vg_name+'_'+lv_name)
         if not os.path.exists(snap_mnt):
             os.makedirs(snap_mnt, 0o755)
         snap_dev = os.path.join(os.sep, 'dev', vg_name, snap_name)
         if m.fs_type != "xfs":
             self.vcall(['fsck', '-a', snap_dev], err_to_warn=True)
-        (ret, buff, err) = self.vcall([rcEnv.syspaths.mount, '-t', m.fs_type, '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
+        (ret, buff, err) = self.vcall([Env.syspaths.mount, '-t', m.fs_type, '-o', self.mntopt_and_ro(m), snap_dev, snap_mnt])
         if ret != 0:
-            self.vcall([rcEnv.syspaths.mount])
+            self.vcall([Env.syspaths.mount])
             self.vcall(["fuser", "-v", snap_mnt])
             self.vcall(['lvremove', '-A', 'n', '-f', snap_dev])
             raise ex.syncSnapMountError
@@ -82,7 +82,7 @@ class Snap(utilities.snap.Snap):
             raise ex.Error
         cmd = ['fuser', '-kmv', self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd, err_to_info=True)
-        cmd = [rcEnv.syspaths.umount, self.snaps[s]['snap_mnt']]
+        cmd = [Env.syspaths.umount, self.snaps[s]['snap_mnt']]
         (ret, out, err) = self.vcall(cmd)
 
         utilities.devices.linux.udevadm_settle()

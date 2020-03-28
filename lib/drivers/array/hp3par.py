@@ -9,14 +9,14 @@ from subprocess import *
 
 import core.exceptions as ex
 from core.node import Node
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import cache, clear_cache
 from six.moves.urllib.request import Request, build_opener # pylint: disable=import-error
 from six.moves.urllib.parse import urlencode # pylint: disable=import-error
 from utilities.proc import justcall, which
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def reformat(s):
     lines = s.split('\n')

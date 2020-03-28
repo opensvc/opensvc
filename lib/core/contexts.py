@@ -5,7 +5,7 @@ import json
 import sys
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.optparser import OptParser, Option
 from utilities.storage import Storage
 
@@ -70,7 +70,7 @@ def get_context(context=None):
         addr, port = server.split(":", 1)
     else:
         addr = server
-        port = rcEnv.listener_tls_port
+        port = Env.listener_tls_port
     info["cluster"]["addr"] = addr
     try:
         info["cluster"]["port"] = int(port)

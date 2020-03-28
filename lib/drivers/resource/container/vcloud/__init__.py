@@ -16,7 +16,7 @@ from .. import \
     KW_CLOUD_ID, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.builder import init_kwargs, container_kwargs
@@ -214,7 +214,7 @@ class ContainerVcloud(BaseContainer):
         if self.is_up():
             self.log.info("container %s already started" % self.name)
             return
-        if rcEnv.nodename in self.svc.drpnodes:
+        if Env.nodename in self.svc.drpnodes:
             self.install_drp_flag()
         self.container_start()
         self.can_rollback = True

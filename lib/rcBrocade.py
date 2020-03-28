@@ -3,11 +3,11 @@ import telnetlib
 
 import core.exceptions as ex
 from core.node import Node
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
-if rcEnv.paths.pathbin not in os.environ['PATH']:
-    os.environ['PATH'] += ":"+rcEnv.paths.pathbin
+if Env.paths.pathbin not in os.environ['PATH']:
+    os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def brocadetelnetcmd(cmd, switch, username, password):
     tn = telnetlib.Telnet(switch)

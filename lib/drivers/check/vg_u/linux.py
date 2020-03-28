@@ -1,6 +1,6 @@
 import drivers.check
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall
 
 class Check(drivers.check.Check):
@@ -16,7 +16,7 @@ class Check(drivers.check.Check):
         return ''
 
     def do_check(self):
-        cmd = [rcEnv.syspaths.vgs, '--units', 'b', '--noheadings',
+        cmd = [Env.syspaths.vgs, '--units', 'b', '--noheadings',
                '-o', 'vg_name,vg_size,vg_free']
         (out,err,ret) = justcall(cmd)
         if ret != 0:

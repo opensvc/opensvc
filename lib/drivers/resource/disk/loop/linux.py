@@ -14,7 +14,7 @@ from . import \
     DEPRECATED_SECTIONS
 from utilities.converters import convert_size
 from utilities.lock import cmlock
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.cache import clear_cache
 from core.objects.svcdict import KEYS
 
@@ -41,13 +41,13 @@ class DiskLoop(BaseDiskLoop):
         return True
 
     def start(self):
-        lockfile = os.path.join(rcEnv.paths.pathlock, "disk.loop")
+        lockfile = os.path.join(Env.paths.pathlock, "disk.loop")
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return
         try:
             with cmlock(timeout=30, delay=1, lockfile=lockfile):
-                cmd = [rcEnv.syspaths.losetup, '-f', self.loopFile]
+                cmd = [Env.syspaths.losetup, '-f', self.loopFile]
                 ret, out, err = self.vcall(cmd)
                 clear_cache("losetup.json")
         except Exception as exc:
@@ -66,7 +66,7 @@ class DiskLoop(BaseDiskLoop):
             self.log.info("%s is already down" % self.label)
             return 0
         for loop in self.loop:
-            cmd = [rcEnv.syspaths.losetup, '-d', loop]
+            cmd = [Env.syspaths.losetup, '-d', loop]
             ret, out, err = self.vcall(cmd)
             clear_cache("losetup.json")
             if ret != 0:

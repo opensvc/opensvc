@@ -7,7 +7,7 @@ import os, platform
 import time
 import datetime
 import subprocess
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.converters import convert_size
 from utilities.proc import justcall, which
 
@@ -170,9 +170,9 @@ def collect(node):
         return vals
 
     def fs_u_zfs():
-        if not which(rcEnv.syspaths.zfs):
+        if not which(Env.syspaths.zfs):
             return []
-        cmd = [rcEnv.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
+        cmd = [Env.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
         (out,err,ret) = justcall(cmd)
         if ret != 0:
             return []

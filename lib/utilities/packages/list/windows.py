@@ -3,7 +3,7 @@ from ctypes import byref, create_unicode_buffer, windll
 from ctypes.wintypes import DWORD
 from itertools import count
 
-from rcGlobalEnv import rcEnv
+from env import Env
 
 # defined at http://msdn.microsoft.com/en-us/library/aa370101(v=VS.85).aspx
 UID_BUFFER_SIZE = 39
@@ -106,7 +106,7 @@ def listpkg():
     plist = get_installed_products()
     lines = []
     for p in plist:
-        x = [rcEnv.nodename,
+        x = [Env.nodename,
              p.ProductName,
              p.VersionString,
              "",
@@ -128,7 +128,7 @@ def listpatch():
         except:
             t = ""
         lines.append([
-          rcEnv.nodename,
+          Env.nodename,
           hotfix.HotFixID,
           "",
           t

@@ -1,7 +1,7 @@
 import os
 import re
 
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.proc import justcall, which
 
 def term_width():
@@ -23,7 +23,7 @@ def _detect_term_width():
         return os.get_terminal_size().columns
     except (AttributeError, OSError):
         pass
-    if rcEnv.sysname != "Windows" and which("stty") is not None:
+    if Env.sysname != "Windows" and which("stty") is not None:
         out, err, ret = justcall(['stty', '-a'])
         if ret == 0:
             m = re.search(r'columns\s+(?P<columns>\d+);', out)

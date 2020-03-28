@@ -3,13 +3,13 @@ import os
 import core.exceptions as ex
 
 from utilities.converters import convert_size
-from rcGlobalEnv import rcEnv
+from env import Env
 from utilities.subsystems.zfs import Dataset
 from utilities.proc import which
 
 class FsZfsMixin():
     def unprovisioner(self):
-        if not which(rcEnv.syspaths.zfs):
+        if not which(Env.syspaths.zfs):
             self.log.error("zfs command not found")
             raise ex.Error
         dataset = Dataset(self.device, log=self.log)
@@ -23,7 +23,7 @@ class FsZfsMixin():
                 self.log.warning("failed to rmdir %s: %s", self.mount_point, exc)
 
     def provisioner(self):
-        if not which(rcEnv.syspaths.zfs):
+        if not which(Env.syspaths.zfs):
             self.log.error("zfs command not found")
             raise ex.Error
         dataset = Dataset(self.device, log=self.log)

@@ -6,7 +6,7 @@ import logging
 import time
 
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
+from env import Env
 
 MAX_QUEUED = 1000
 
@@ -24,7 +24,7 @@ class Collector(shared.OsvcThread):
 
     def run(self):
         self.set_tid()
-        self.log = logging.LoggerAdapter(logging.getLogger(rcEnv.nodename+".osvcd.collector"), {"node": rcEnv.nodename, "component": self.name})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.collector"), {"node": Env.nodename, "component": self.name})
         self.log.info("collector started")
         self.reset()
 
@@ -99,7 +99,7 @@ class Collector(shared.OsvcThread):
     def get_last_config(self, data):
         last_config = {}
         last_config_changed = []
-        for path, sdata in data["nodes"].get(rcEnv.nodename, {}).get("services", {}).get("config", {}).items():
+        for path, sdata in data["nodes"].get(Env.nodename, {}).get("services", {}).get("config", {}).items():
             config_csum = sdata.get("csum", 0)
             prev_config_csum = self.last_config.get(path, 0)
             if prev_config_csum and config_csum != prev_config_csum:
