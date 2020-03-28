@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import core.exceptions as ex
-from rcUtilities import is_service, split_path, factory
+from utilities.naming import is_service, split_path, factory
 from utilities.lazy import lazy
 from core.pool import BasePool
 

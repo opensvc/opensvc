@@ -5,7 +5,7 @@ import utilities.snap
 import utilities.devices.linux
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import protected_mount
+from utilities.files import protected_mount
 from utilities.proc import justcall
 
 class Snap(utilities.snap.Snap):

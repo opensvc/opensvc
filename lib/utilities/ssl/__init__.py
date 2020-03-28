@@ -5,7 +5,7 @@ import time
 from subprocess import Popen, PIPE
 
 import core.exceptions as ex
-from rcUtilities import makedirs
+from utilities.files import makedirs
 from utilities.proc import justcall
 from utilities.string import is_string
 from utilities.net.ipaddress import ip_address

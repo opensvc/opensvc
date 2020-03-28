@@ -5,7 +5,7 @@ a service is frozen.
 """
 import os
 from rcGlobalEnv import rcEnv
-from rcUtilities import split_path
+from utilities.naming import split_path
 
 
 class Freezer(object):

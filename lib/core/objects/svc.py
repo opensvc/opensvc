@@ -21,11 +21,10 @@ from core.resourceset import ResourceSet
 from core.freezer import Freezer
 from rcGlobalEnv import rcEnv, Paths
 from utilities.storage import Storage
-from rcUtilities import action_triggers, \
-                        drop_option, init_locale, makedirs, \
-                        resolve_path, fmt_path, \
-                        svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, find_editor
+from utilities.files import makedirs
+from utilities.naming import resolve_path, fmt_path, \
+                             svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
+                             svc_pathcf
 from utilities.fcache import fcache
 from utilities.drivers import driver_import
 from utilities.lazy import lazy, set_lazy, unset_lazy, unset_all_lazy
@@ -37,7 +36,8 @@ from core.node import Node
 from core.scheduler import Scheduler, SchedOpts, sched_action
 from core.comm import Crypt
 from core.extconfig import ExtConfigMixin
-from utilities.proc import justcall, vcall, lcall
+from utilities.proc import justcall, vcall, lcall, \
+                           drop_option, init_locale, action_triggers, find_editor
 from utilities.string import is_string
 
 if six.PY2:
@@ -1814,7 +1814,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except ex.Error as error:
             print(error, file=sys.stderr)
             return 1
-        from rcUtilities import fsum
+        from utilities.files import fsum
         import shutil
         if want_context() or not os.path.exists(self.paths.cf):
             refcf = self.remote_service_config_fetch()
@@ -2243,14 +2243,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def set_lazy(self, prop, val):
         """
         Expose the set_lazy(self, ...) utility function as a method,
-        so Svc() users don't have to import it from rcUtilities.
+        so Svc() users don't have to import it from utilities.
         """
         set_lazy(self, prop, val)
 
     def unset_lazy(self, prop):
         """
         Expose the unset_lazy(self, ...) utility function as a method,
-        so Svc() users don't have to import it from rcUtilities.
+        so Svc() users don't have to import it from utilities.
         """
         unset_lazy(self, prop)
 
