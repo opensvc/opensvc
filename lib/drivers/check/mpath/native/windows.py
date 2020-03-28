@@ -1,10 +1,9 @@
 import os
 import tempfile
-import wmi
-
 from subprocess import *
 
 import drivers.check
+import foreign.wmi as wmi
 
 class Check(drivers.check.Check):
     chk_type = "mpath"
