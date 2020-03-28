@@ -12,7 +12,8 @@ import six
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
-from rcUtilities import fcache, ANSI_ESCAPE
+from rcUtilities import ANSI_ESCAPE
+from utilities.fcache import fcache
 from utilities.render.banner import banner
 from utilities.render.color import color, colorize, formatter
 from utilities.proc import is_exe
