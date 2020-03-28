@@ -4,7 +4,7 @@ import os
 from subprocess import *
 
 from rcGlobalEnv import rcEnv
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from core.node import Node
 from utilities.proc import justcall
 

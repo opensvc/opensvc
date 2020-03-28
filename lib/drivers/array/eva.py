@@ -6,7 +6,7 @@ import sys
 import core.exceptions as ex
 from core.node import Node
 from rcGlobalEnv import rcEnv
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from utilities.proc import justcall, which
 
 def sssu(cmd, manager, username, password, array=None, sssubin=None):

@@ -4,7 +4,7 @@ import os
 import tempfile
 from subprocess import *
 
-from rcUtilities import factory, split_path
+from utilities.naming import factory, split_path
 from rcGlobalEnv import rcEnv
 from core.node import Node
 

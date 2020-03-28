@@ -19,10 +19,10 @@ from six.moves import queue
 import core.exceptions as ex
 import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
-from rcUtilities import factory, split_path, normalize_paths
 from rcGlobalEnv import rcEnv
-from utilities.storage import Storage
 from utilities.lazy import lazy, unset_lazy
+from utilities.naming import split_path, normalize_paths, factory
+from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS

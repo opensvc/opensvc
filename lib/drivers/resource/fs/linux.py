@@ -7,7 +7,7 @@ from stat import ST_MODE, ST_INO, S_ISREG, S_ISBLK, S_ISDIR
 import core.exceptions as ex
 import utilities.devices.linux
 from rcGlobalEnv import rcEnv
-from rcUtilities import protected_mount, getmount
+from utilities.files import protected_mount, getmount
 from utilities.cache import cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zfs_getprop, zfs_setprop, zpool_devs

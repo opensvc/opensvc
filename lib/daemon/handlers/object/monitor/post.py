@@ -4,7 +4,7 @@ import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex
 from utilities.storage import Storage
-from rcUtilities import split_path, fmt_path, is_service
+from utilities.naming import split_path, fmt_path, is_service
 
 class Handler(daemon.handler.BaseHandler):
     """
