@@ -2,9 +2,6 @@
 Monitor Thread
 """
 import codecs
-import copy
-import glob
-import hashlib
 import json
 import logging
 import os
@@ -15,19 +12,16 @@ import tempfile
 import threading
 import time
 from itertools import chain
-from subprocess import PIPE, Popen
 
-import core.exceptions as ex
 import daemon.shared as shared
 import foreign.json_delta as json_delta
 from core.freezer import Freezer
 from rcGlobalEnv import rcEnv
 from rcUtilities import (factory, fmt_path, fsum, list_services, makedirs,
-                         resolve_path, split_path, svc_pathcf, svc_pathetc,
+                         resolve_path, split_path, svc_pathcf,
                          svc_pathvar)
 from utilities.cache import purge_cache
 from utilities.storage import Storage
-from utilities.string import bdecode
 
 STARTED_STATES = [
     "n/a",

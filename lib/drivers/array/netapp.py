@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 from subprocess import *
 
-import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from rcUtilities import factory, split_path
 from core.node import Node

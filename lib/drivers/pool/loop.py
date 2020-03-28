@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 
-import core.exceptions as ex
 from utilities.lazy import lazy
 from utilities.proc import justcall
 from core.pool import BasePool

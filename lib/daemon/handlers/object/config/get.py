@@ -1,12 +1,10 @@
 import codecs
 import os
-import time
 import traceback
 
 import daemon.handler
 import daemon.shared as shared
-from rcGlobalEnv import rcEnv
-from rcUtilities import svc_pathcf, split_path
+from rcUtilities import svc_pathcf
 
 class Handler(daemon.handler.BaseHandler):
     """

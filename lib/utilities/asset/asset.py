@@ -6,7 +6,6 @@ import core.exceptions as ex
 from utilities.converters import print_size
 from rcGlobalEnv import rcEnv
 from utilities.proc import justcall, which
-from utilities.string import try_decode
 
 class BaseAsset(object):
     s_config = "config"

@@ -2,7 +2,6 @@ import core.exceptions as ex
 import utilities.snap
 from rcGlobalEnv import rcEnv
 from utilities.subsystems.zfs import dataset_exists
-from utilities.proc import justcall
 
 class Snap(utilities.snap.Snap):
     """Defines a snap object with ZFS

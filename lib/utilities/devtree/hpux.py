@@ -1,10 +1,7 @@
-import glob
-import os
 import re
 from subprocess import *
 
 from .devtree import DevTree as BaseDevTree
-from rcGlobalEnv import rcEnv
 from utilities.proc import which
 from utilities.diskinfo import DiskInfo
 

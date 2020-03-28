@@ -1,13 +1,10 @@
 import json
-import os
 from subprocess import PIPE
 
 import daemon.handler
 import daemon.rbac
-import daemon.shared as shared
 import core.exceptions as ex
-from rcUtilities import drop_option, split_path, validate_paths
-from rcGlobalEnv import rcEnv
+from rcUtilities import validate_paths
 from utilities.string import bdecode
 
 class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):

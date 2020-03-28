@@ -1,17 +1,14 @@
 from __future__ import print_function
 
 import sys
-import os
 import json
 import time
 
 import core.exceptions as ex
-from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from rcUtilities import factory, split_path
 from utilities.converters import convert_size
 from utilities.optparser import OptParser, Option
-from utilities.string import bdecode
 from core.node import Node
 
 ERRCODE_MAPPING_HOST_LUN_NOT_EXISTS = 1073804587

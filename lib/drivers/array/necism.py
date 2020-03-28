@@ -1,5 +1,3 @@
-import os
-
 import core.exceptions as ex
 from utilities.proc import justcall, which
 

@@ -9,7 +9,6 @@ import math
 
 from .devtree import DevTree as BaseDevTree, Dev as BaseDev
 from .veritas import DevTreeVeritas
-import utilities.devtree.veritas
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from utilities.mounts import Mounts

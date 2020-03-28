@@ -2,7 +2,6 @@ import time
 import uuid
 
 import daemon.shared as shared
-import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 
 class LockMixin(object):

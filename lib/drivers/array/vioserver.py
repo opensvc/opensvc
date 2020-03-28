@@ -6,7 +6,7 @@ import sys
 import core.exceptions as ex
 from rcGlobalEnv import rcEnv
 from core.node import Node
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 if rcEnv.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+rcEnv.paths.pathbin

@@ -1,7 +1,6 @@
 import drivers.check
 
 from utilities.diskinfo import DiskInfo
-from utilities.proc import justcall
 
 class Check(drivers.check.Check):
     chk_type = "mpath"

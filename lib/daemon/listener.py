@@ -9,7 +9,6 @@ import pkgutil
 import sys
 import socket
 import logging
-import threading
 import time
 import select
 import shutil
@@ -19,7 +18,7 @@ import fnmatch
 import re
 import datetime
 from six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
-from subprocess import Popen, PIPE
+from subprocess import Popen
 from errno import EADDRINUSE, ECONNRESET, EPIPE
 
 try:
@@ -46,15 +45,13 @@ from six.moves import queue
 from rcGlobalEnv import rcEnv
 from utilities.storage import Storage
 from core.comm import Headers
-from rcUtilities import drop_option, chunker, svc_pathcf, \
-                        split_path, fmt_path, is_service, factory, \
+from rcUtilities import chunker, \
+                        split_path, fmt_path, factory, \
                         makedirs, split_fullname
 from utilities.drivers import driver_import
 from utilities.lazy import set_lazy, lazy, unset_lazy
-from utilities.converters import convert_size, print_duration
+from utilities.converters import print_duration
 from utilities.string import bencode, bdecode
-from foreign.jsonpath_ng import jsonpath
-from foreign.jsonpath_ng.ext import parse
 
 if six.PY2:
     class _ConnectionResetError(Exception):
