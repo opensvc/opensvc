@@ -25,7 +25,8 @@ from rcUtilities import action_triggers, \
                         drop_option, fcache, init_locale, makedirs, \
                         resolve_path, fmt_path, \
                         svc_pathtmp, svc_pathetc, svc_pathvar, svc_pathlog, \
-                        svc_pathcf, find_editor, driver_import
+                        svc_pathcf, find_editor
+from utilities.drivers import driver_import
 from utilities.lazy import lazy, set_lazy, unset_lazy, unset_all_lazy
 from core.contexts import want_context
 from utilities.converters import *
