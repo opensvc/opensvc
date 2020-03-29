@@ -2124,7 +2124,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         repopkg = self.oget("node", "repopkg")
         repo = self.oget("node", "repo")
         if repopkg:
-            bundle_basename = repopkg.strip('/') 
+            bundle_basename = repopkg.strip('/')
         elif repo:
             bundle_basename = repo.strip('/')
         else:
@@ -4267,7 +4267,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if self.daemon_handled_by_systemd():
             return self.daemon_start_systemd()
-        return os.system(sys.executable+" "+os.path.join(Env.paths.pathlib, "osvcd.py"))
+        import daemon.main
+        daemon.main.main()
 
     def daemon_start_thread(self):
         options = {}
