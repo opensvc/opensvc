@@ -2,19 +2,19 @@ import json
 import os
 import sys
 
-from mgr import Mgr
-
 import pytest
 
+import commands.mgr
 from core.node import Node
 
+Mgr = commands.mgr.Mgr
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'}
 OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS'}
 
 
 @pytest.fixture(scope='function')
 def has_privs(mocker):
-    mocker.patch('mgr.check_privs', return_value=None)
+    mocker.patch.object(commands.mgr, 'check_privs', return_value=None)
 
 
 @pytest.fixture(scope='function')
