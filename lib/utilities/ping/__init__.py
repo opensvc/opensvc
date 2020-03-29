@@ -1,6 +1,7 @@
 import importlib
 import platform
 
-sysname = platform.uname()[0].lower().replace("-", "")
-mod = importlib.import_module("." + sysname, package=__package__)
-check_ping = mod.check_ping
+_sysname = platform.uname()[0].lower().replace("-", "")
+_package = __package__ or __spec__.name
+_mod = importlib.import_module("." + _sysname, package=_package)
+check_ping = _mod.check_ping

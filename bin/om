@@ -29,57 +29,7 @@ fi
 
 INTER="$OSVC_PYTHON $OSVC_PYTHON_ARGS"
 
-help() {
-	OM=`basename $0`
-	echo "Usage:" >&2
-	echo "" >&2
-	echo "  $OM ns set <namespace>       Set the current namespace" >&2
-	echo "  $OM ns unset                 Unset the current namespace" >&2
-	echo "  $OM ns get                   Get the current namespace" >&2
-	echo "" >&2
-	echo "  $OM mon                      Monitor the cluster" >&2
-	echo "  $OM ctx                      Manage Remote Connections contexts" >&2
-	echo "  $OM node                     Manage Cluster Nodes" >&2
-	echo "  $OM cluster                  Manage Cluster Configuration" >&2
-	echo "  $OM svc                      Manage Services" >&2
-	echo "  $OM vol                      Manage Persistent Data Volumes" >&2
-	echo "  $OM cfg                      Manage Configurations" >&2
-	echo "  $OM sec                      Manage Secrets" >&2
-	echo "  $OM usr                      Manage Users" >&2
-	echo "  $OM net                      Manage Networks" >&2
-	echo "  $OM pool                     Manage Storage Pools" >&2
-	echo "  $OM daemon                   Manage Agent Daemon" >&2
-	echo "  $OM array                    Manage Storage Arrays" >&2
-	echo "  $OM dns                      Manage Cluster DNS" >&2
-	echo "" >&2
-	echo "  $OM <selector> <options>     Manage the selected objects" >&2
-	echo "" >&2
-	echo "" >&2
-	echo "Selector:" >&2
-	echo "  <selector>[,<selector>,...] Unioned selectors" >&2
-	echo "  <selector>[+<selector>+...] Intersected selectors" >&2
-	echo "" >&2
-	echo "Path Selectors:" >&2
-	echo "  <namespace>/<kind>/<name>   Fully qualified path" >&2
-	echo "  <kind>/<name>               Path relative to the current namespace" >&2
-	echo "  <name>                      Service <name> in the current namespace" >&2
-	echo "  **                          All objects" >&2
-	echo "  **/<name>                   All objects named <name>" >&2
-	echo "  <namespace>/**              All objects in the <namespace> namespace" >&2
-	echo "  <namespace>/<kind>/*        All <kind> objects in the <namespace> namespace" >&2
-	echo "" >&2
-	echo "Status Selectors:" >&2
-	echo "  <jsonpath>:                 All objects with the <jsonpath> referenced key existing in the instance status data" >&2
-	echo "  <jsonpath>=<val>            All objects with the <jsonpath> referenced key value equals to <val> in the instance status data" >&2
-	echo "" >&2
-	echo "Config Selectors:" >&2
-	echo "  <keyword>:                  All objects with the <keyword> existing in the instance config data" >&2
-	echo "  <keyword>=<value>           All objects with the <keyword> value equals to <val> in the instance config data" >&2
-	exit 1
-}
-
 main() {
-	test -z "$*" && help
 	if test -z "$OSVC_CONTEXT"
 	then
 		case "`id`" in
@@ -96,62 +46,8 @@ main() {
 		echo "The 'om' alias must be sourced to handle ns actions" >&2
 		exit 1
 		;;
-	ctx)
-		shift
-		$INTER $OSVC_ROOT_PATH/lib/contexts.py "$@"
-		;;
-	svc)
-		shift
-		$SUDO OSVC_KIND=svc $INTER $OSVC_ROOT_PATH/lib/svcmgr.py "$@"
-		;;
-	vol)
-		shift
-		$SUDO OSVC_KIND=vol $INTER $OSVC_ROOT_PATH/lib/volmgr.py "$@"
-		;;
-	cfg)
-		shift
-		$SUDO OSVC_KIND=cfg $INTER $OSVC_ROOT_PATH/lib/cfgmgr.py "$@"
-		;;
-	sec)
-		shift
-		$SUDO OSVC_KIND=sec $INTER $OSVC_ROOT_PATH/lib/secmgr.py "$@"
-		;;
-	usr)
-		shift
-		$SUDO OSVC_KIND=usr $INTER $OSVC_ROOT_PATH/lib/usrmgr.py "$@"
-		;;
-	node)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py "$@"
-		;;
-	pool)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py pool "$@"
-		;;
-	net)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py network "$@"
-		;;
-	daemon)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py daemon "$@"
-		;;
-	array)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py array "$@"
-		;;
-	dns)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/nodemgr.py dns "$@"
-		;;
-	mon)
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/svcmon.py "$@"
-		;;
 	*)
-		SELECTOR=$1
-		shift
-		$SUDO $INTER $OSVC_ROOT_PATH/lib/mgr.py "$SELECTOR" "$@"
+		$SUDO PYTHONPATH=$OSVC_ROOT_PATH $INTER -m lib "$@"
 		;;
 	esac
 }
