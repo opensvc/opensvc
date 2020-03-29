@@ -47,7 +47,7 @@ main() {
 		exit 1
 		;;
 	*)
-		$SUDO PYTHONPATH=$OSVC_ROOT_PATH $INTER -m lib "$@"
+		$SUDO PYTHONPATH=$OSVC_ROOT_PATH $INTER -m opensvc "$@"
 		;;
 	esac
 }
