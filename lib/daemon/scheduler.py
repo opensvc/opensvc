@@ -211,13 +211,13 @@ class Scheduler(shared.OsvcThread):
 
     def format_cmd(self, action, path=None, rids=None):
         if path is None:
-            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "nodemgr.py"), action]
+            cmd = Env.python_cmd + ["-m", Env.package, "node", action]
         elif isinstance(path, list):
-            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "svcmgr.py"), "-s", ",".join(path), action, "--waitlock=5"]
+            cmd = Env.python_cmd + ["-m", Env.package, ",".join(path), action, "--waitlock=5"]
             if len(path) > 1:
                 cmd.append("--parallel")
         else:
-            cmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "svcmgr.py"), "-s", path, action, "--waitlock=5"]
+            cmd = Env.python_cmd + ["-m", Env.package, path, action, "--waitlock=5"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
