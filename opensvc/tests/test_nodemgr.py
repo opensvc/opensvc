@@ -5,9 +5,10 @@ from __future__ import unicode_literals
 
 import json
 import logging
+
 import pytest
 
-import nodemgr
+from commands import nodemgr
 from utilities.string import try_decode
 
 UNICODE_STRING = "bêh"
