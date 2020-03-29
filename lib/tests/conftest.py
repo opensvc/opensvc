@@ -1,11 +1,10 @@
-import sys
 import os
+import sys
 from contextlib import contextmanager
 
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__),
-                                                 "..")))
-import env  # nopep8
 import pytest  # nopep8
+
+import env  # nopep8
 
 
 @pytest.fixture(scope='function')
