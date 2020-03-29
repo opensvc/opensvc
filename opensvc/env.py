@@ -30,7 +30,7 @@ class Paths(object):
             self.pathsvc = '/usr/share/opensvc'
 
         if self.pathsvc == '/usr/share/opensvc':
-            self.pathlib = '/usr/share/opensvc/lib'
+            self.pathlib = '/usr/share/opensvc/opensvc'
             self.pathbin = '/usr/bin'
             self.pathetc = '/etc/opensvc'
             self.pathetcns = '/etc/opensvc/namespaces'
@@ -44,7 +44,7 @@ class Paths(object):
             self.postinstall = '/usr/share/opensvc/bin/postinstall'
             self.preinstall = '/usr/share/opensvc/bin/preinstall'
         else:
-            self.pathlib = os.path.join(self.pathsvc, 'lib')
+            self.pathlib = os.path.join(self.pathsvc, 'opensvc')
             self.pathbin = os.path.join(self.pathsvc, 'bin')
             self.pathetc = os.path.join(self.pathsvc, 'etc')
             self.pathetcns = os.path.join(self.pathsvc, 'etc', 'namespaces')
@@ -263,7 +263,7 @@ class Env(object):
         python_cmd.append("LD_PRELOAD="+ld_preload)
     if os.name == "nt":
         python_cmd.append(sys.executable.replace(
-            os.path.join('lib', 'site-packages', 'win32', 'PythonService.exe'),
+            os.path.join('opensvc', 'site-packages', 'win32', 'PythonService.exe'),
             "Python.exe"))
     else:
         python_cmd.append(sys.executable)
