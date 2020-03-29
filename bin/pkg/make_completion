@@ -5,14 +5,14 @@ import os
 import datetime
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-pathlib = os.path.join(pathsvc, "lib")
+pathlib = os.path.join(pathsvc, "opensvc")
 completion_fpath = os.path.join(pathsvc, "usr", "share", "bash_completion.d", "opensvc.sh")
 
-sys.path = [pathlib] + sys.path
+sys.path.insert(0, pathlib)
 
-import mgr_parser
-import svcmgr_parser
-import nodemgr_parser
+import commands.mgr.parser
+import commands.svcmgr.parser
+import commands.nodemgr.parser
 
 template = """
 
@@ -192,11 +192,11 @@ def do_prog_lists(prog, actions, global_opts, deprecated_options, opts):
 
 def do_opts_with_arg():
     opts_with_arg = set()
-    for section in svcmgr_parser.ACTIONS:
-        for action in svcmgr_parser.ACTIONS[section]:
-            l = svcmgr_parser.ACTIONS[section][action].get("options", []) + mgr_parser.GLOBAL_OPTS
-            for name in svcmgr_parser.DEPRECATED_OPTIONS:
-                opt = svcmgr_parser.OPT[name]
+    for section in commands.svcmgr.parser.ACTIONS:
+        for action in commands.svcmgr.parser.ACTIONS[section]:
+            l = commands.svcmgr.parser.ACTIONS[section][action].get("options", []) + commands.mgr.parser.GLOBAL_OPTS
+            for name in commands.svcmgr.parser.DEPRECATED_OPTIONS:
+                opt = commands.svcmgr.parser.OPT[name]
                 try:
                     l.remove(opt)
                 except ValueError:
@@ -205,11 +205,11 @@ def do_opts_with_arg():
                 if opt.action not in ("store", "append"):
                     continue
                 opts_with_arg |= set(str(opt).split("/"))
-    for section in nodemgr_parser.ACTIONS:
-        for action in nodemgr_parser.ACTIONS[section]:
-            l = nodemgr_parser.ACTIONS[section][action].get("options", []) + nodemgr_parser.GLOBAL_OPTS
-            for name in nodemgr_parser.DEPRECATED_OPTIONS:
-                opt = svcmgr_parser.OPT[name]
+    for section in commands.nodemgr.parser.ACTIONS:
+        for action in commands.nodemgr.parser.ACTIONS[section]:
+            l = commands.nodemgr.parser.ACTIONS[section][action].get("options", []) + commands.nodemgr.parser.GLOBAL_OPTS
+            for name in commands.nodemgr.parser.DEPRECATED_OPTIONS:
+                opt = commands.svcmgr.parser.OPT[name]
                 try:
                     l.remove(opt)
                 except ValueError:
@@ -227,8 +227,8 @@ def do_opts_with_arg():
 
 def do_lists():
     buff = ""
-    buff += do_prog_lists("svcmgr", svcmgr_parser.ACTIONS, mgr_parser.GLOBAL_OPTS, svcmgr_parser.DEPRECATED_OPTIONS, svcmgr_parser.OPT)
-    buff += do_prog_lists("nodemgr", nodemgr_parser.ACTIONS, nodemgr_parser.GLOBAL_OPTS, nodemgr_parser.DEPRECATED_OPTIONS, nodemgr_parser.OPT)
+    buff += do_prog_lists("svcmgr", commands.svcmgr.parser.ACTIONS, commands.mgr.parser.GLOBAL_OPTS, commands.svcmgr.parser.DEPRECATED_OPTIONS, commands.svcmgr.parser.OPT)
+    buff += do_prog_lists("nodemgr", commands.nodemgr.parser.ACTIONS, commands.nodemgr.parser.GLOBAL_OPTS, commands.nodemgr.parser.DEPRECATED_OPTIONS, commands.nodemgr.parser.OPT)
     buff += do_opts_with_arg()
     return buff
 
