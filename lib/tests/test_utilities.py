@@ -5,6 +5,7 @@ import logging
 import pytest
 
 from core.extconfig import read_cf, eval_expr
+from utilities.chunker import chunker
 from utilities.files import *
 from utilities.naming import *
 from utilities.cache import *
@@ -12,9 +13,9 @@ from utilities.drivers import *
 from utilities.fcache import *
 from utilities.lazy import *
 from utilities.net.converters import *
-from utilities.proc import is_exe, justcall, lcall, qcall, vcall
+from utilities.proc import is_exe, justcall, lcall, qcall, vcall, which, call, drop_option
 from utilities.render.banner import banner
-from utilities.string import bencode, bdecode, empty_string
+from utilities.string import bencode, bdecode, empty_string, is_string
 
 
 @pytest.mark.ci
