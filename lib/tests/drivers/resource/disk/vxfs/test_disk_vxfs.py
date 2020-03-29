@@ -1,6 +1,6 @@
 import pytest
 
-from tests.drivers.resource.helpers import assert_resource_has_mandatory_methods
+from tests.helpers import assert_resource_has_mandatory_methods
 
 
 OS_LIST = ['Linux', 'SunOS']
