@@ -1,3 +1,4 @@
+import importlib
 import json
 import os
 from subprocess import Popen, PIPE
@@ -181,7 +182,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        pmod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
+        pmod = importlib.import_module("commands.{kind}mgr.parser".format(kind=kind))
         popt = pmod.OPT
 
         def find_opt(opt):

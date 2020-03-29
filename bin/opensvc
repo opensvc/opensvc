@@ -69,5 +69,5 @@ ccfgmgr)
 esac
 
 export PYTHONPATH="$OSVC_ROOT_PATH"
-"$OSVC_PYTHON" $OSVC_PYTHON_ARGS -m lib $KIND "$@"
+"$OSVC_PYTHON" $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"
 
