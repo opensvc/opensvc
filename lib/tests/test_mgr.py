@@ -29,8 +29,8 @@ def fake_svc(osvc_path_tests, has_privs, mocker):
 class TestServiceActionWithoutPrivs:
     @staticmethod
     def test_no_call_to_main_and_exit_1(mocker, mock_sysname, sysname):
-        mocker.patch('rcUtilities.os.geteuid', return_value=66)
         mock_sysname(sysname)
+        mocker.patch('utilities.proc.os.geteuid', return_value=66)
         sys_exit = mocker.patch.object(sys, 'exit', side_effect=Exception("exit"))
         _main = mocker.patch.object(Mgr, '_main')
         with pytest.raises(Exception, match="exit"):
