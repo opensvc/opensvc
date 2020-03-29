@@ -12,8 +12,7 @@ try:
 except ImportError:
     from io import StringIO
 
-
-import svcmgr
+from commands.svcmgr import Mgr
 from utilities.string import try_decode
 
 
@@ -46,7 +45,7 @@ class TestReferences:
         """
         Create a trivial service
         """
-        ret = svcmgr.main(argv=["create", "-s", SVCNAME])
+        ret = Mgr()(argv=["create", "-s", SVCNAME])
         assert ret == 0
 
     def test_002_set_default(self):
@@ -56,7 +55,7 @@ class TestReferences:
         refs = ["--kw", "nodes=%s" % NODENAME]
         for idx, (name, val, exp_val) in enumerate(REFS):
             refs += ["--kw", "%s=%s" % (name, val)]
-        ret = svcmgr.main(argv=["-s", SVCNAME, "set"] + refs)
+        ret = Mgr()(argv=["-s", SVCNAME, "set"] + refs)
         assert ret == 0
 
     def test_003_ref_0(self): self.__get_ref(0)
@@ -78,7 +77,7 @@ class TestReferences:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", SVCNAME, "get", "--eval", "--kw", name])
+            ret = Mgr()(argv=["-s", SVCNAME, "get", "--eval", "--kw", name])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -90,7 +89,7 @@ class TestReferences:
         """
         Delete local service instance
         """
-        ret = svcmgr.main(argv=["delete", "-s", SVCNAME, "--local"])
+        ret = Mgr()(argv=["delete", "-s", SVCNAME, "--local"])
         assert ret == 0
 
 

@@ -3,20 +3,15 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
 import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
-
-import json
-import logging
 
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-import nodemgr
+from commands import nodemgr
+
 
 os.environ["PYTHONHTTPSVERIFY"] = "0"
 CONFIG = "--config=/root/.opensvc-cli"
