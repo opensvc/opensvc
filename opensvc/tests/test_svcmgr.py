@@ -14,9 +14,9 @@ try:
 except ImportError:
     from io import StringIO
 
-import svcmgr
-import nodemgr
+from commands import svcmgr, nodemgr
 from utilities.string import try_decode
+
 
 UNICODE_STRING = "bêh"
 SVCNAME = "unittest-" + str(uuid.uuid4())
