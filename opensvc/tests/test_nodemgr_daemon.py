@@ -1,9 +1,10 @@
+import json
 import os
 import time
-import json
-import nodemgr
+
 import pytest
 
+from commands import nodemgr
 from daemon.main import main as daemon_main
 
 
