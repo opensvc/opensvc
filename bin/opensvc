@@ -41,12 +41,33 @@ opensvc)
 	;;
 esac
 
-if [ "$BASENAME" = "nodemgr" -o "$BASENAME" = "svcmgr" -o "$BASENAME" = "svcmon" ]
-then
-	BIN="$OSVC_ROOT_PATH/lib/$BASENAME.py"
-else
+case "$BASENAME" in
+nodemgr)
+	KIND=node
+	;;
+svcmgr)
+	KIND=svc
+	;;
+volmgr)
+	KIND=vol
+	;;
+usrmgr)
+	KIND=usr
+	;;
+secmgr)
+	KIND=sec
+	;;
+cfgmgr)
+	KIND=cfg
+	;;
+ccfgmgr)
+	KIND=ccfg
+	;;
+*)
 	exit 1
-fi
+	;;
+esac
 
-"$OSVC_PYTHON" $OSVC_PYTHON_ARGS "$BIN" $BIN_ARGS "$@"
+export PYTHONPATH="$OSVC_ROOT_PATH"
+"$OSVC_PYTHON" $OSVC_PYTHON_ARGS -m lib $KIND "$@"
 

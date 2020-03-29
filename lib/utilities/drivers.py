@@ -24,14 +24,14 @@ def driver_import(*args, **kwargs):
                 l.append(e)
             else:
                 l.append(fmt_element(e))
-        return ".".join(l)
+        return ".".join(l).rstrip(".")
 
     def import_mod(modname):
         for mn in (modname + "." + fmt_element(Env.sysname), modname):
             try:
                 m = importlib.import_module(mn)
                 return m
-            except ImportError:
+            except ImportError as exc:
                 pass
 
     modname = fmt_modname(args)

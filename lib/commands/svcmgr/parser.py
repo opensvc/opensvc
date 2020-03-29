@@ -1,7 +1,7 @@
 """
 svcmgr command line actions and options
 """
-import mgr_parser as mp
+import commands.mgr.parser as mp
 from core.objects.svc import ACTION_ASYNC
 from utilities.optparser import OptParser, Option
 from utilities.storage import Storage

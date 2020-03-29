@@ -71,11 +71,10 @@ class Handler(daemon.handler.BaseHandler):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        pmod = __import__("nodemgr_parser")
-        popt = pmod.OPT
+        from commands.nodemgr.parser import OPT
 
         def find_opt(opt):
-            for k, o in popt.items():
+            for k, o in OPT.items():
                 if o.dest == opt:
                     return o
                 if o.dest == "parm_" + opt:
@@ -111,9 +110,9 @@ class Handler(daemon.handler.BaseHandler):
                 elif po.type == "integer":
                     opt += "=" + str(val)
                     cmd.append(opt)
-            fullcmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, "nodemgr.py")] + cmd
+            fullcmd = Env.python_cmd + ["-m" , Env.package, "node"] + cmd
 
-        thr.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
+        thr.log_request("run 'om node %s'" % " ".join(cmd), nodename, **kwargs)
         if options.sync:
             proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()

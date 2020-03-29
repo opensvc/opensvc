@@ -1,7 +1,13 @@
+"""
+Defines the BaseCloud class, parent class of cloud drivers.
+"""
 import socket
 import core.exceptions as ex
 
 class BaseCloud(object):
+    """
+    Parent class of cloud drivers hosted in the drivers.cloud package.
+    """
     def __init__(self, s, auth):
         self.cid = s
         self.auth = auth
