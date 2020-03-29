@@ -307,7 +307,7 @@ class TestCreateAddDecodeFrom:
         else:
             os.chdir(str(tmp_path))
             if scenario.startswith('.'):
-                from_dir = os.path.join('.', 'src')
+                from_dir = os.path.join('tests', 'src')
             else:
                 from_dir = 'src'
 
