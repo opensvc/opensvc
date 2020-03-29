@@ -1,25 +1,27 @@
 #!/bin/bash
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+PYTHONPATH=$PATH_SCRIPT/../../opensvc
+cd $PYTHONPATH
 
 echo "* update service templates"
-sudo python $PATH_SCRIPT/../../lib/svcdict.py
+sudo PYTHONPATH=$PYTHONPATH python core/objects/svcdict.py
 
 echo "* update user templates"
-sudo python $PATH_SCRIPT/../../lib/usrdict.py
+sudo PYTHONPATH=$PYTHONPATH python core/objects/usrdict.py
 
 echo "* update secret templates"
-sudo python $PATH_SCRIPT/../../lib/secdict.py
+sudo PYTHONPATH=$PYTHONPATH python core/objects/secdict.py
 
 echo "* update configmap templates"
-sudo python $PATH_SCRIPT/../../lib/cfgdict.py
+sudo PYTHONPATH=$PYTHONPATH python core/objects/cfgdict.py
 
 echo "* update cluster templates"
-sudo python $PATH_SCRIPT/../../lib/clusterdict.py
+sudo PYTHONPATH=$PYTHONPATH python core/objects/ccfgdict.py
 
 echo "* update node templates"
-sudo python $PATH_SCRIPT/../../lib/nodedict.py
+sudo PYTHONPATH=$PYTHONPATH python core/node/nodedict.py
 
 echo "* update daemon events"
-python $PATH_SCRIPT/../../lib/osvcd_events.py | sudo tee $PATH_SCRIPT/../../usr/share/doc/daemon.events >/dev/null
+PYTHONPATH=$PYTHONPATH python daemon/events.py | sudo tee $PATH_SCRIPT/../../usr/share/doc/daemon.events >/dev/null
 
