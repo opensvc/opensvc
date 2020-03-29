@@ -7,7 +7,7 @@ import sys
 import utilities.render.color
 import core.exceptions as ex
 from env import Env
-from nodemgr_parser import NodemgrOptParser
+from commands.nodemgr.parser import NodemgrOptParser
 from core.node import Node
 
 prog = "nodemgr"

@@ -181,7 +181,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        pmod = __import__(kind + "mgr_parser")
+        pmod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
         popt = pmod.OPT
 
         def find_opt(opt):
@@ -217,8 +217,8 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                     opt += "=" + str(val)
                     cmd.append(opt)
 
-        fullcmd = Env.python_cmd + [os.path.join(Env.paths.pathlib, kind+"mgr.py"), "-s", options.path] + cmd
-        thr.log_request("run '%s'" % " ".join(fullcmd), nodename, **kwargs)
+        fullcmd = Env.python_cmd + ["-m", Env.package, options.path] + cmd
+        thr.log_request("run 'om %s %s'" % (options.path, " ".join(cmd)), nodename, **kwargs)
         if options.sync:
             proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()

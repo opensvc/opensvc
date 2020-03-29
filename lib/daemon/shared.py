@@ -743,9 +743,9 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + Env.python_cmd
-        _cmd += [os.path.join(Env.paths.pathlib, "nodemgr.py")]
-        self.log.info("execute: nodemgr %s", " ".join(cmd))
+        _cmd = [] + Env.python_cmd + ["-m", Env.package]
+        cmd = ["node"] + cmd
+        self.log.info("execute: om %s", " ".join(cmd))
         proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
                      close_fds=True, env=env)
         return proc
@@ -756,13 +756,12 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + Env.python_cmd
-        _cmd += [os.path.join(Env.paths.pathlib, "svcmgr.py")]
+        _cmd = [] + Env.python_cmd + ["-m", Env.package]
         if path:
-            cmd = ["-s", path] + cmd
-        if local:
+            cmd = [path] + cmd
+        if local and "--local" not in cmd:
             cmd += ["--local"]
-        self.log.info("execute: svcmgr %s", " ".join(cmd))
+        self.log.info("execute: om %s", " ".join(cmd))
         if stdin is not None:
             _stdin = PIPE
         else:

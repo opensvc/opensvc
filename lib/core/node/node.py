@@ -2437,13 +2437,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         svcs = [] + self.svcs
         if action == "monitor":
-            import svcmon
+            from commands.svcmon import svcmon
             if not options.sections:
                 options.sections = "services"
             elif "services" not in options.sections:
                 options.sections += ",services"
             options.parm_svcs = ",".join([o.path for o in self.svcs])
-            svcmon.svcmon(self, options)
+            svcmon(self, options)
             return
         if action == "ls":
             data = strip_path(sorted([svc.path for svc in svcs if svc.path in options.svcs]), options.namespace)
@@ -2565,9 +2565,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 self.print_data(data.outs)
 
         if options.watch or options.stats:
-            import svcmon
+            from commands.svcmon import svcmon
             options.sections = ["services"]
-            svcmon.svcmon(self, options)
+            svcmon(self, options)
         return err
 
     def collector_cli(self):
@@ -4253,7 +4253,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_start(self):
         if self.options.thr_id:
             return self.daemon_start_thread()
+        if self.options.foreground:
+            return self.daemon_start_foreground()
         return self.daemon_start_native()
+
+    def daemon_start_foreground(self):
+        import daemon.main
+        daemon.main.main(args=["-f"])
 
     def daemon_start_native(self):
         """
