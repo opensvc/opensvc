@@ -106,6 +106,7 @@ class Paths(object):
 class Env(object):
     """Class to store globals
     """
+    package = os.path.basename(os.path.dirname(__file__))
     uuid = ""
     if "OSVC_PARENT_SESSION_UUID" in os.environ:
         # passed from parent forking process: share the session
