@@ -1,0 +1,12 @@
+# coding: utf8
+
+import sys
+from commands.mgr import Mgr as BaseMgr
+from commands.svcmgr.parser import SvcmgrOptParser
+
+class Mgr(BaseMgr):
+    def __init__(self, node=None):
+        super(Mgr, self).__init__(parser=SvcmgrOptParser, node=node)
+
+if __name__ == "__main__":
+    sys.exit(Mgr()())

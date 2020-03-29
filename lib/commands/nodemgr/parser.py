@@ -122,6 +122,10 @@ OPT = Storage({
         "--force", default=False,
         action="store_true", dest="force",
         help="Force action, ignore sanity checks."),
+    "foreground": Option(
+        "-f", "--foreground", default=False,
+        action="store_true", dest="foreground",
+        help="Run the deamon in foreground mode."),
     "format": Option(
         "--format", default=None,
         action="store", dest="format",
@@ -695,6 +699,7 @@ ACTIONS = {
             "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
             "options": [
                 OPT.thr_id,
+                OPT.foreground,
             ],
         },
         "daemon_stop": {

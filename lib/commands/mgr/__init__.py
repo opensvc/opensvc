@@ -8,17 +8,18 @@ It's the entrypoint for all OpenSVC services management ops.
 from __future__ import print_function
 from __future__ import absolute_import
 
-import sys
+import importlib
 import os
+import sys
 
 import core.status
-import utilities.render.color
 import core.exceptions as ex
-from utilities.naming import split_path, validate_kind
-from utilities.proc import get_option, check_privs
-from env import Env
-from utilities.storage import Storage
+import utilities.render.color
 from core.node import Node
+from env import Env
+from utilities.naming import split_path, validate_kind
+from utilities.proc import check_privs, get_option
+from utilities.storage import Storage
 
 
 class Mgr(object):
@@ -91,11 +92,11 @@ class Mgr(object):
             except AttributeError:
                 pass
             prog = os.path.dirname(os.path.abspath(__file__))
+            prog = os.path.join(prog, "..", "..", "__main__.py")
+            prog = os.path.realpath(prog)
             if self.selector:
-                prog = os.path.join(prog, "mgr.py")
                 executable = [sys.executable, prog, self.selector]
             else:
-                prog = os.path.join(prog, self.optparser.prog + ".py")
                 executable = [sys.executable, prog]
 
             proc = subprocess.Popen(executable + argv,
@@ -219,8 +220,8 @@ class Mgr(object):
         if action in ("create", "deploy"):
             expanded_svcs = self.selector.split(",")
         elif action == "ls":
-            mod = __import__("svcmgr_parser")
-            parser = getattr(mod, "SvcmgrOptParser")()
+            from commands.svcmgr.parser import SvcmgrOptParser
+            parser = SvcmgrOptParser()
             expanded_svcs = None
             yield parser
         else:
@@ -230,7 +231,8 @@ class Mgr(object):
         if expanded_svcs is not None:
             svc_by_kind = self.dispatch_svcs(expanded_svcs)
             for kind, paths in svc_by_kind.items():
-                mod = __import__(kind + "mgr_parser")
+                modname = "commands.{kind}mgr.parser".format(kind=kind)
+                mod = importlib.import_module(modname)
                 parser = getattr(mod, kind.capitalize() + "mgrOptParser")()
                 yield parser
 

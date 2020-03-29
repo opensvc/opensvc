@@ -1,7 +1,7 @@
 """
 volmgr command line actions and options
 """
-import svcmgr_parser as mp
+import commands.svcmgr.parser as mp
 
 PROG = "volmgr"
 ACTIONS = mp.ACTIONS
