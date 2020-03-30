@@ -1,7 +1,7 @@
-import rcStats
+from utilities.stats.provider import provider
 from utilities.proc import call
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     def cpu(self, d, day, start, end):
         cols = ['date',
                 'usr',
