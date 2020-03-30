@@ -81,7 +81,7 @@ which python3 >> /dev/null 2>&1 && PYTHON=python3 || PYTHON=python
 %config(noreplace) %{_sysconfdir}/opensvc
 %{_sysconfdir}/bash_completion.d
 %{_localstatedir}/log/opensvc
-%{_datadir}/opensvc/lib
+%{_datadir}/opensvc/opensvc
 %{_datadir}/opensvc/html
 %attr(0755,-,-) %{_localstatedir}/lib/opensvc/compliance/com.opensvc
 %attr(0755,-,-) %{_datadir}/opensvc/bin/init/opensvc.init.AIX
