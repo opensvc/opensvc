@@ -10,7 +10,7 @@ from six.moves import queue
 #
 # add project lib to path
 #
-prog = "svcmon"
+prog = "om mon"
 
 import core.exceptions as ex
 import foreign.json_delta as json_delta
