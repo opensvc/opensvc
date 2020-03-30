@@ -8,14 +8,14 @@ from utilities.proc import justcall, is_exe
 
 def collect(node):
     now = str(datetime.datetime.now())
-    
+
     def fs_u():
         vars = ['date',
                 'nodename',
                 'mntpt',
                 'size',
                 'used']
-    
+
         cmd = ['df', '-lP']
         (out, err, ret) = justcall(cmd)
         if ret != 0:
@@ -28,40 +28,40 @@ def collect(node):
             l = line.split()
             if len(l) != 6:
                 continue
-            vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
+            vals.append([now, node.nodename, l[5], l[1], l[4].replace('%', '')])
         return (vars, vals)
-    
+
     def glance_running(cmd_str):
         (out, err, ret) = justcall(['ps', '-ef'])
         if ret != 0:
             print('ps error')
             return
-    
+
         for line in out.split('\n'):
             l = line.split()
             if len(l) < 6:
                 continue
             if cmd_str in ' '.join(l[6:]):
                 return True
-    
+
         return False
-    
+
     def run_glance():
         glance = '/opt/perf/bin/glance'
         syn = os.path.join(Env.paths.pathtmp, 'glance.syntax')
         now = datetime.datetime.now()
-        iterations = (23-now.hour)*6+(60-now.minute)//10
+        iterations = (23 - now.hour) * 6 + (60 - now.minute) // 10
         cmd = ['/opt/perf/bin/glance', '-aos', syn, '-j', '600', '-iterations']
         cmd_str = ' '.join(cmd)
-    
+
         if not is_exe(glance):
             print('glance executable not found')
             return
-    
+
         if glance_running(cmd_str):
             print('glance is already running')
             return
-    
+
         buff = """print GBL_STATTIME," ",
     // usr
     0.00+GBL_CPU_NORMAL_UTIL+GBL_CPU_REALTIME_UTIL," ",
@@ -109,24 +109,22 @@ def collect(node):
             with open(syn, 'w') as f:
                 f.write(buff)
         except:
-            print('error writing %s'%syn)
+            print('error writing %s' % syn)
             return
-    
+
         collect_d = os.path.join(Env.paths.pathvar, "stats")
-        collect_f = 'glance%0.2d'%now.day
+        collect_f = 'glance%0.2d' % now.day
         collect_p = os.path.join(collect_d, collect_f)
-    
+
         if os.path.exists(collect_p):
             mtime = os.stat(collect_p).st_mtime
             if datetime.datetime.fromtimestamp(mtime) < now - datetime.timedelta(days=1):
                 os.unlink(collect_p)
-    
-        _cmd = 'nohup %s %d >>%s &'%(cmd_str, iterations, collect_p)
+
+        _cmd = 'nohup %s %d >>%s &' % (cmd_str, iterations, collect_p)
         process = Popen(_cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    
-    
+
     run_glance()
     fs_u_data = fs_u()
     if fs_u_data is not None:
         node.collector.call('push_stats_fs_u', fs_u_data)
-    
