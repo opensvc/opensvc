@@ -5,7 +5,7 @@ from utilities.storage import Storage
 from utilities.optparser import OptParser, Option
 from core.node.node import ACTION_ASYNC
 
-PROG = "nodemgr"
+PROG = "om node"
 
 OPT = Storage({
     "api": Option(
