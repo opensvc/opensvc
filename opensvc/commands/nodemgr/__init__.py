@@ -10,7 +10,6 @@ from env import Env
 from commands.nodemgr.parser import NodemgrOptParser
 from core.node import Node
 
-prog = "nodemgr"
 
 def get_extra_argv(argv=None):
     """
