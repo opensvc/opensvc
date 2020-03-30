@@ -1,9 +1,9 @@
 import os
 
-import rcStats
+from utilities.stats.provider import provider
 from env import Env
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     def glancefile(self, day):
         f = os.path.join(Env.paths.pathvar, 'stats', 'glance'+day)
         if os.path.exists(f):

@@ -1,10 +1,10 @@
 import os
 import datetime
-import rcStats
+from utilities.stats.provider import provider
 from env import Env
 from utilities.proc import justcall
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     def xentopfile(self, day):
         f = os.path.join(Env.paths.pathlog, 'xentop', 'xentop'+day)
         if os.path.exists(f):

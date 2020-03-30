@@ -4,7 +4,7 @@ import datetime
 from env import Env
 from utilities.converters import convert_datetime
 
-class StatsProvider(object):
+class BaseStatsProvider(object):
     one_minute = datetime.timedelta(minutes=1)
     one_day = datetime.timedelta(days=1)
 
@@ -104,6 +104,6 @@ class StatsProvider(object):
         return [], []
 
 if __name__ == "__main__":
-    sp = StatsProvider(interval=20)
+    sp = BaseStatsProvider(interval=20)
     print(sp.get('cpu'))
     print(sp.get('swap'))
