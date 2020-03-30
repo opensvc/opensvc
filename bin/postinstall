@@ -41,7 +41,7 @@ if lsb:
     pathtmp = "/var/tmp/opensvc"
     pathlog = "/var/log/opensvc"
     pathbin = "/usr/share/opensvc/bin"
-    pathlib = "/usr/share/opensvc/lib"
+    pathlib = "/usr/share/opensvc/opensvc"
     pathini = "/usr/share/opensvc/bin/init"
     pathusr = None
 else:
@@ -53,7 +53,7 @@ else:
     pathtmp = os.path.join(pathsvc, 'tmp')
     pathlog = os.path.join(pathsvc, 'log')
     pathbin = postinstall_d
-    pathlib = os.path.join(pathsvc, 'lib')
+    pathlib = os.path.join(pathsvc, 'opensvc')
     pathini = os.path.join(pathsvc, 'bin', 'init')
     pathusr = os.path.join(pathsvc, 'usr')
 
