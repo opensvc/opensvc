@@ -32,10 +32,10 @@ class Mgr(object):
     @staticmethod
     def get_extra_argv(argv=None):
         """
-        Extract oci/docker/podman/... passed-through argv from svcmgr argv.
+        Extract oci/docker/podman/... passed-through argv from the command main argv.
 
-        svcmgr acts as a wrapper for those commands, setting the service-specific
-        socket if necessary.
+        The service management command acts as a wrapper for podman and docker commands,
+        setting the service-specific socket if necessary.
         """
         commands = ["oci", "podman", "docker"]
         if argv is None:
@@ -56,7 +56,7 @@ class Mgr(object):
     def get_build_kwargs(options, action):
         """
         Return the service build function keyword arguments, deduced from
-        parsed command line options.
+        parsed command options.
         """
         build_kwargs = {}
 
@@ -251,7 +251,10 @@ class Mgr(object):
                 # if any parser accepts this argv, don't display errors
                 # raised by other parsers. keep them around in case no
                 # parser accepts.
-                err.append("%s: %s" % (self.optparser.prog, exc))
+                buff = str(exc)
+                if not buff.startswith(self.optparser.prog):
+                    buff = "%s: %s" % (self.optparser.prog, buff)
+                err.append(buff)
                 pass
         # no parser matched. display a per-parser errorlog
         raise ex.Error("\n".join(err))

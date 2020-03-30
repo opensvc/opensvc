@@ -1,12 +1,12 @@
 """
-secmgr command line actions and options
+The user management command actions and options
 """
 import commands.mgr.parser as mp
 from utilities.optparser import OptParser, Option
 from utilities.storage import Storage
 from core.objects.svc import ACTION_ASYNC
 
-PROG = "usrmgr"
+PROG = "om usr"
 
 OPT = Storage()
 OPT.update(mp.OPT)
@@ -102,7 +102,7 @@ ACTIONS_TRANSLATIONS = {
 
 class UsrmgrOptParser(OptParser):
     """
-    The usrmgr-specific options parser class
+    The user management command options parser class.
     """
     def __init__(self, args=None, colorize=True, width=None, formatter=None,
                  indent=6):
