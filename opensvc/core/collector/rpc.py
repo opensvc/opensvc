@@ -609,15 +609,15 @@ class CollectorRpc(object):
     def push_stats(self, interval=None, stats_dir=None,
                    stats_start=None, stats_end=None, sync=True, disable=None):
         try:
-            s = __import__('rcStats'+Env.sysname)
+            from utilities.stats.provider import StatsProvider
         except ImportError:
             return
 
         try:
-            sp = s.StatsProvider(interval=interval,
-                                 stats_dir=stats_dir,
-                                 stats_start=stats_start,
-                                 stats_end=stats_end)
+            sp = StatsProvider(interval=interval,
+                               stats_dir=stats_dir,
+                               stats_start=stats_start,
+                               stats_end=stats_end)
         except ValueError as e:
             print(str(e))
             return 1
