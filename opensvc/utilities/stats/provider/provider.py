@@ -15,7 +15,7 @@ class BaseStatsProvider(object):
         self.init_period(stats_start, stats_end, interval)
         self.nodename = Env.nodename
 
-        self.minutes_first_day = 60*self.stats_end.hour + self.stats_end.minute + 1
+        self.minutes_first_day = 60 * self.stats_end.hour + self.stats_end.minute + 1
 
         self.ranges = []
         i = 0
@@ -30,7 +30,7 @@ class BaseStatsProvider(object):
             if start != end:
                 self.ranges.append((start, end))
             end = start - self.one_minute
-        #print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
+        # print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
 
     def init_period(self, stats_start, stats_end, interval):
         if stats_end is None:
@@ -47,8 +47,7 @@ class BaseStatsProvider(object):
 
         # discard seconds
         self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
-        self.stats_end += datetime.timedelta(seconds=60-self.stats_end.second)
-
+        self.stats_end += datetime.timedelta(seconds=60 - self.stats_end.second)
 
     def get(self, fname):
         lines = []
@@ -75,7 +74,7 @@ class BaseStatsProvider(object):
                 stats_dir = os.path.join(os.sep, 'var', 'log', 'sa')
         else:
             stats_dir = self.stats_dir
-        f = os.path.join(stats_dir, 'sa'+day)
+        f = os.path.join(stats_dir, 'sa' + day)
         if os.path.exists(f):
             return f
         return None
@@ -103,6 +102,7 @@ class BaseStatsProvider(object):
 
     def netdev_err(self, d, day, start, end):
         return [], []
+
 
 if __name__ == "__main__":
     sp = BaseStatsProvider(interval=20)
