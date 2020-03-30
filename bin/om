@@ -28,6 +28,45 @@ then
 fi
 
 INTER="$OSVC_PYTHON $OSVC_PYTHON_ARGS"
+BASENAME=`basename $0`
+
+case $BASENAME in
+om)
+	;;
+opensvc)
+	#
+	# Use me as the shebang for python modules to be garantied the
+	# same python requirements than the agent are met (ie 2.6+).
+	#
+	# Example: #!/usr/bin/env opensvc
+	#
+	exec "$OSVC_PYTHON" "$@"
+	;;
+nodemgr)
+	KIND=node
+	;;
+svcmgr)
+	KIND=svc
+	;;
+volmgr)
+	KIND=vol
+	;;
+usrmgr)
+	KIND=usr
+	;;
+secmgr)
+	KIND=sec
+	;;
+cfgmgr)
+	KIND=cfg
+	;;
+ccfgmgr)
+	KIND=ccfg
+	;;
+svcmon)
+	KIND=mon
+	;;
+esac
 
 main() {
 	if test -z "$OSVC_CONTEXT"
@@ -40,6 +79,11 @@ main() {
 			;;
 		esac
 	fi
+	if test -n "$KIND"
+	then
+		$SUDO PYTHONPATH="$OSVC_ROOT_PATH" $INTER $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"
+		return $?
+	fi
 	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	case $1 in
 	ns)
@@ -47,7 +91,7 @@ main() {
 		exit 1
 		;;
 	*)
-		$SUDO PYTHONPATH=$OSVC_ROOT_PATH $INTER -m opensvc "$@"
+		$SUDO PYTHONPATH="$OSVC_ROOT_PATH" $INTER $OSVC_PYTHON_ARGS -m opensvc "$@"
 		;;
 	esac
 }
