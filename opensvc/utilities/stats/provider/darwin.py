@@ -1,10 +1,10 @@
 import os
 
-import rcStats
+from utilities.stats.provider import provider
 from env import Env
 from utilities.proc import call
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     def customfile(self, metric, day):
         f = os.path.join(Env.paths.pathvar, 'stats', metric+day)
         if os.path.exists(f):
