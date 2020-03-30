@@ -43,9 +43,7 @@ class DiskLv(BaseDiskLv):
             raise ex.Error
 
     def unprovisioner(self):
-        try:
-            vg = self.conf_get("vg")
-        except:
+        if self.vg is None:
             self.log.debug("skip lv unprovision: no vg option")
             return
 
@@ -85,42 +83,38 @@ class DiskLv(BaseDiskLv):
 
     def provisioner(self):
         if not which('vgdisplay'):
-            self.log.error("vgdisplay command not found")
-            raise ex.Error
+            raise ex.Error("vgdisplay command not found")
 
         if not which('lvcreate'):
-            self.log.error("lvcreate command not found")
-            raise ex.Error
+            raise ex.Error("lvcreate command not found")
 
         if not which('lvdisplay'):
-            self.log.error("lvdisplay command not found")
-            raise ex.Error
+            raise ex.Error("lvdisplay command not found")
+
+        if self.vg is None:
+            raise ex.Error("skip lv provisioning: vg is not set")
 
         dev = self.get_dev()
 
         try:
-            self.size = self.conf_get("size")
             self.size = str(self.size).upper()
             if "%" not in self.size:
                 size_parm = ["-L", str(convert_size(self.size, _to="m"))+'M']
             else:
                 size_parm = ["-l", self.size]
-            vg = self.conf_get("vg")
         except Exception as e:
             self.log.info("skip lv provisioning: %s" % str(e))
             return
 
-        create_options = self.oget("create_options")
-        cmd = ['vgdisplay', vg]
+        cmd = ['vgdisplay', self.vg]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            self.log.error("volume group %s does not exist" % vg)
-            raise ex.Error
+            raise ex.Error("volume group %s does not exist" % self.vg)
 
         lvname = os.path.basename(dev)
 
         # create the logical volume
-        cmd = ['lvcreate', '-n', lvname] + size_parm + create_options + [vg]
+        cmd = ['lvcreate', '-n', lvname] + size_parm + self.create_options + [self.vg]
         _cmd = "yes | " + " ".join(cmd)
         self.log.info(_cmd)
         p1 = Popen(["yes"], stdout=PIPE, preexec_fn=restore_signals)
@@ -149,7 +143,7 @@ class DiskLv(BaseDiskLv):
         except:
             # best effort
             pass
-        mapname = "%s-%s" % (vg.replace('-','--'),
+        mapname = "%s-%s" % (self.vg.replace('-','--'),
                              lvname.replace('-','--'))
         dev = '/dev/mapper/'+mapname
 
