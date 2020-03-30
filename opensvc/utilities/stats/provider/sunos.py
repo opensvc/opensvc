@@ -17,13 +17,13 @@ class StatsProvider(provider.BaseStatsProvider):
         self.pagesize = int(pagesize)
 
     def zsfile(self, day):
-        f = os.path.join(os.sep, 'var', 'adm', 'zonestat', 'zs'+day)
+        f = os.path.join(os.sep, 'var', 'adm', 'zonestat', 'zs' + day)
         if os.path.exists(f):
             return f
         return None
 
     def sarfile(self, day):
-        f = os.path.join(os.sep, 'var', 'adm', 'sa', 'sa'+day)
+        f = os.path.join(os.sep, 'var', 'adm', 'sa', 'sa' + day)
         if os.path.exists(f):
             return f
         return None
@@ -99,7 +99,7 @@ class StatsProvider(provider.BaseStatsProvider):
             if l[0] == 'Average':
                 continue
             l += ['all', self.nodename]
-            l[0] = '%s %s'%(d, l[0])
+            l[0] = '%s %s' % (d, l[0])
             lines.append(l)
         return cols, lines
 
@@ -123,10 +123,10 @@ class StatsProvider(provider.BaseStatsProvider):
                 continue
 
             try:
-                freemem = int(l[1])*self.pagesize/1024
+                freemem = int(l[1]) * self.pagesize / 1024
             except:
                 continue
-            x = ['%s %s'%(d, l[0]), str(freemem), self.nodename]
+            x = ['%s %s' % (d, l[0]), str(freemem), self.nodename]
             lines.append(x)
         return cols, lines
 
@@ -148,7 +148,7 @@ class StatsProvider(provider.BaseStatsProvider):
                 continue
             if l[0] == 'Average':
                 continue
-            x = ['%s %s'%(d, l[0]), l[1], self.nodename]
+            x = ['%s %s' % (d, l[0]), l[1], self.nodename]
             lines.append(x)
         return cols, lines
 
@@ -172,10 +172,10 @@ class StatsProvider(provider.BaseStatsProvider):
                 continue
 
             try:
-                freeswap = int(l[2])/2
+                freeswap = int(l[2]) / 2
             except:
                 continue
-            x = ['%s %s'%(d, l[0]), str(freeswap), self.nodename]
+            x = ['%s %s' % (d, l[0]), str(freeswap), self.nodename]
             lines.append(x)
         return cols, lines
 
@@ -198,7 +198,7 @@ class StatsProvider(provider.BaseStatsProvider):
                 continue
             if l[0] == 'Average':
                 continue
-            x = ['%s %s'%(d, l[0]), l[1], l[4], self.nodename]
+            x = ['%s %s' % (d, l[0]), l[1], l[4], self.nodename]
             lines.append(x)
         return cols, lines
 
@@ -230,7 +230,6 @@ class StatsProvider(provider.BaseStatsProvider):
             if l[0] == 'Average':
                 continue
             # 00:00:00 device %busy avque r+w/s [blks/s] avwait avserv
-            x = ['%s %s'%(d, l[0]), l[1], l[2], l[3], l[4], l[6], l[7], self.nodename]
+            x = ['%s %s' % (d, l[0]), l[1], l[2], l[3], l[4], l[6], l[7], self.nodename]
             lines.append(x)
         return cols, lines
-
