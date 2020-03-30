@@ -9,7 +9,7 @@ from env import Env
 from foreign.winstats import *
 
 
-def collect(node=None):
+def collect(_=None):
     now = datetime.datetime.now()
     data = {
         "ts": str(now),
