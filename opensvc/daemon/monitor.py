@@ -666,15 +666,15 @@ class Monitor(shared.OsvcThread):
                 del data["DEFAULT"][kw]
             except KeyError:
                 pass
-        data = {path: data}
-        cmd = ["create", "--config=-"]
-        if svc.namespace:
-            cmd += ["--namespace=%s" % svc.namespace]
-        proc = self.service_command(None, cmd, stdin=json.dumps(data))
-        out, err = proc.communicate()
-        if proc.returncode != 0:
+        try:
+            newsvc = factory("svc")(path, svc.namespace, node=shared.NODE, cd=data)
+            newsvc.dump_config_data()
+            del newsvc
+            self.service_status_fallback(path)
+        except Exception as exc:
+            self.log.error("create %s failed: %s", path, exc)
             self.set_smon(path, "create failed")
-        self.service_status_fallback(path)
+            return
 
         try:
             ret = self.wait_service_config_consensus(path, svc.peers)
