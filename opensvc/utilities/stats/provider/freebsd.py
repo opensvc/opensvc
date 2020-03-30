@@ -1,5 +1,6 @@
-from utilities.stats.provider import provider
 from utilities.proc import call
+from utilities.stats.provider import provider
+
 
 class StatsProvider(provider.BaseStatsProvider):
     def cpu(self, d, day, start, end):

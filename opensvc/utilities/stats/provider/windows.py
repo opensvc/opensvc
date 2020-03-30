@@ -1,9 +1,10 @@
-import os
 import json
+import os
 
-from utilities.stats.provider import provider
 from env import Env
 from utilities.converters import convert_datetime
+from utilities.stats.provider import provider
+
 
 class StatsProvider(provider.BaseStatsProvider):
     """

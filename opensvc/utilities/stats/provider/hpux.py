@@ -1,7 +1,8 @@
 import os
 
-from utilities.stats.provider import provider
 from env import Env
+from utilities.stats.provider import provider
+
 
 class StatsProvider(provider.BaseStatsProvider):
     def glancefile(self, day):
