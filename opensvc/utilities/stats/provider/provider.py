@@ -46,7 +46,7 @@ class BaseStatsProvider(object):
 
 class BaseStatsProviderUx(BaseStatsProvider):
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
-        super(BaseStatsProvider, self).__init__(interval, stats_dir, stats_start, stats_end)
+        super(BaseStatsProviderUx, self).__init__(interval, stats_dir, stats_start, stats_end)
         self.nodename = Env.nodename
 
         self.minutes_first_day = 60 * self.stats_end.hour + self.stats_end.minute + 1
