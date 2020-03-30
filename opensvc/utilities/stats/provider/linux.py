@@ -1,8 +1,10 @@
-import os
 import datetime
-from utilities.stats.provider import provider
+import os
+
 from env import Env
 from utilities.proc import justcall
+from utilities.stats.provider import provider
+
 
 class StatsProvider(provider.BaseStatsProvider):
     def xentopfile(self, day):
