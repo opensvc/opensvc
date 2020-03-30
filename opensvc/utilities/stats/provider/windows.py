@@ -34,6 +34,7 @@ class StatsProvider(provider.BaseStatsProvider):
         }
     }                                                                                                                                                           
     """
+
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
         self.init_period(stats_start, stats_end, interval)
         self.data = self.get_data(self.stats_start, self.stats_end)
@@ -64,6 +65,7 @@ class StatsProvider(provider.BaseStatsProvider):
                         continue
                     _data.append(__data)
             return _data
+
         data = get(start.day)
         while start.day < end.day:
             start += self.one_day
@@ -76,33 +78,33 @@ class StatsProvider(provider.BaseStatsProvider):
         cols = ['date',
                 'cpu',
                 'usr',
-#                'nice',
+                #                'nice',
                 'sys',
-#                'iowait',
-#                'steal',
+                #                'iowait',
+                #                'steal',
                 'irq',
-#                'soft',
-#                'guest',
-#                'gnice',
+                #                'soft',
+                #                'guest',
+                #                'gnice',
                 'idle',
                 'nodename']
         lines = []
         for data in self.data:
-           mon = data.get("mon", {})
-           try:
-               usr = mon["pt"]
-               idle = 100 - usr
-           except KeyError:
-               continue
-           lines.append([
-               data["ts"],
-               "all",
-               usr,
-               0,
-               0,
-               idle,
-               Env.nodename
-           ])
+            mon = data.get("mon", {})
+            try:
+                usr = mon["pt"]
+                idle = 100 - usr
+            except KeyError:
+                continue
+            lines.append([
+                data["ts"],
+                "all",
+                usr,
+                0,
+                0,
+                idle,
+                Env.nodename
+            ])
         return cols, lines
 
     def mem_u(self):
@@ -110,33 +112,33 @@ class StatsProvider(provider.BaseStatsProvider):
             return [], []
         cols = ['date',
                 'kbmemfree',
-#                'kbavail',
+                #                'kbavail',
                 'kbmemused',
                 'pct_memused',
-#                'kbbuffers',
-#                'kbcached',
-#                'kbcommit',
-#                'pct_commit',
-#                'kbactive',
-#                'kbinact',
-#                'kbdirty',
+                #                'kbbuffers',
+                #                'kbcached',
+                #                'kbcommit',
+                #                'pct_commit',
+                #                'kbactive',
+                #                'kbinact',
+                #                'kbdirty',
                 'nodename']
         lines = []
         for data in self.data:
-           mem = data.get("mem", {})
-           try:
-               kbmemfree = mem["ap"]
-               kbmemused = mem["tp"] - kbmemfree
-               pct_memused = 100 * kbmemused // mem["tp"]
-           except KeyError:
-               continue
-           lines.append([
-               data["ts"],
-               kbmemfree,
-               kbmemused,
-               pct_memused,
-               Env.nodename
-           ])
+            mem = data.get("mem", {})
+            try:
+                kbmemfree = mem["ap"]
+                kbmemused = mem["tp"] - kbmemfree
+                pct_memused = 100 * kbmemused // mem["tp"]
+            except KeyError:
+                continue
+            lines.append([
+                data["ts"],
+                kbmemfree,
+                kbmemused,
+                pct_memused,
+                Env.nodename
+            ])
         return cols, lines
 
     def fs_u(self):
@@ -153,24 +155,24 @@ class StatsProvider(provider.BaseStatsProvider):
         if self.data is None:
             return [], []
         cols = ['date',
-#                'runq_sz',
+                #                'runq_sz',
                 'plist_sz',
-#                'ldavg_1',
-#                'ldavg_5',
-#                'ldavg_15',
+                #                'ldavg_1',
+                #                'ldavg_5',
+                #                'ldavg_15',
                 'nodename']
         lines = []
         for data in self.data:
-           prf = data.get("prf", {})
-           try:
-               plist_sz = prf["pr"]
-           except KeyError:
-               continue
-           lines.append([
-               data["ts"],
-               plist_sz,
-               Env.nodename
-           ])
+            prf = data.get("prf", {})
+            try:
+                plist_sz = prf["pr"]
+            except KeyError:
+                continue
+            lines.append([
+                data["ts"],
+                plist_sz,
+                Env.nodename
+            ])
         return cols, lines
 
     def swap(self):
@@ -180,25 +182,25 @@ class StatsProvider(provider.BaseStatsProvider):
                 'kbswpfree',
                 'kbswpused',
                 'pct_swpused',
-#                'kbswpcad',
-#                'pct_swpcad',
+                #                'kbswpcad',
+                #                'pct_swpcad',
                 'nodename']
         lines = []
         for data in self.data:
-           mem = data.get("mem", {})
-           try:
-               kbswpfree = mem["as"]
-               kbswpused = mem["ts"] - kbswpfree
-               pct_swpused = 100 * kbswpused // mem["ts"]
-           except KeyError:
-               continue
-           lines.append([
-               data["ts"],
-               kbswpfree,
-               kbswpused,
-               pct_swpused,
-               Env.nodename
-           ])
+            mem = data.get("mem", {})
+            try:
+                kbswpfree = mem["as"]
+                kbswpused = mem["ts"] - kbswpfree
+                pct_swpused = 100 * kbswpused // mem["ts"]
+            except KeyError:
+                continue
+            lines.append([
+                data["ts"],
+                kbswpfree,
+                kbswpused,
+                pct_swpused,
+                Env.nodename
+            ])
         return cols, lines
 
     def block(self):
@@ -213,24 +215,24 @@ class StatsProvider(provider.BaseStatsProvider):
                 'nodename']
         lines = []
         for data in self.data:
-           dev = data.get("dev", {})
-           try:
-               rtps = dev["r"]
-               wtps = dev["w"]
-               tps = rtps + wtps
-               rbps = dev["rb"]
-               wbps = dev["wb"]
-           except KeyError:
-               continue
-           lines.append([
-               data["ts"],
-               tps,
-               rtps,
-               wtps,
-               rbps,
-               wbps,
-               Env.nodename
-           ])
+            dev = data.get("dev", {})
+            try:
+                rtps = dev["r"]
+                wtps = dev["w"]
+                tps = rtps + wtps
+                rbps = dev["rb"]
+                wbps = dev["wb"]
+            except KeyError:
+                continue
+            lines.append([
+                data["ts"],
+                tps,
+                rtps,
+                wtps,
+                rbps,
+                wbps,
+                Env.nodename
+            ])
         return cols, lines
 
     def blockdev(self):
@@ -280,17 +282,17 @@ class StatsProvider(provider.BaseStatsProvider):
     def svc(self):
         if self.data is None:
             return [], []
-        cols = ['date',                                                                                                                                                                                                                
-                'svcname',                                                                                                                                                                                                             
-                'cpu',                                                                                                                                                                                                                 
-                'mem',                                                                                                                                                                                                                 
-                'cap',                                                                                                                                                                                                                 
-                'cap_cpu',                                                                                                                                                                                                             
-                'nodename']                                                                                                                                                                                                            
+        cols = ['date',
+                'svcname',
+                'cpu',
+                'mem',
+                'cap',
+                'cap_cpu',
+                'nodename']
         lines = []
         return cols, lines
+
 
 if __name__ == "__main__":
     sp = StatsProvider(interval=200)
     print(sp.get('mem_u'))
-

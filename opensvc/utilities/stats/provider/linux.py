@@ -8,7 +8,7 @@ from utilities.stats.provider import provider
 
 class StatsProvider(provider.BaseStatsProvider):
     def xentopfile(self, day):
-        f = os.path.join(Env.paths.pathlog, 'xentop', 'xentop'+day)
+        f = os.path.join(Env.paths.pathlog, 'xentop', 'xentop' + day)
         if os.path.exists(f):
             return f
         return None
@@ -120,7 +120,7 @@ class StatsProvider(provider.BaseStatsProvider):
             if l[0] == 'Average:':
                 continue
             l.append(self.nodename)
-            l[0] = '%s %s'%(d, l[0])
+            l[0] = '%s %s' % (d, l[0])
             lines.append(l)
         return cols, lines
 
@@ -197,22 +197,22 @@ class StatsProvider(provider.BaseStatsProvider):
         n = len(cols) - 1
         lines = []
         for line in buff.splitlines():
-           l = line.split()
-           if fmt > 1:
-               if len(l) != n:
-                   continue
-           else:
-               if len(l) < n:
-                   continue
-               l = l[:n]
-           if l[1] == 'kbmemfree':
-               continue
-           if l[0] == 'Average:':
-               continue
+            l = line.split()
+            if fmt > 1:
+                if len(l) != n:
+                    continue
+            else:
+                if len(l) < n:
+                    continue
+                l = l[:n]
+            if l[1] == 'kbmemfree':
+                continue
+            if l[0] == 'Average:':
+                continue
 
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
 
     def fs_u(self, d, day, start, end):
@@ -277,18 +277,18 @@ class StatsProvider(provider.BaseStatsProvider):
             n_fields = 6
             drop_blocked = False
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) != n_fields:
-               continue
-           if l[1] == 'runq-sz':
-               continue
-           if l[0] == 'Average:':
-               continue
-           if drop_blocked:
-              l = l[:-1]
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l = line.split()
+            if len(l) != n_fields:
+                continue
+            if l[1] == 'runq-sz':
+                continue
+            if l[0] == 'Average:':
+                continue
+            if drop_blocked:
+                l = l[:-1]
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
 
     def swap(self, d, day, start, end):
@@ -312,20 +312,20 @@ class StatsProvider(provider.BaseStatsProvider):
             (buff, err, ret) = justcall(cmd)
         lines = []
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) == 10:
-               """ redhat 5
-               """
-               l = [l[0]] + l[6:] + ['0']
-           if len(l) != 6:
-               continue
-           if 'kbswpfree'in l:
-               continue
-           if l[0] == 'Average:':
-               continue
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l = line.split()
+            if len(l) == 10:
+                """ redhat 5
+                """
+                l = [l[0]] + l[6:] + ['0']
+            if len(l) != 6:
+                continue
+            if 'kbswpfree' in l:
+                continue
+            if l[0] == 'Average:':
+                continue
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
 
     def block(self, d, day, start, end):
@@ -344,16 +344,16 @@ class StatsProvider(provider.BaseStatsProvider):
         (buff, err, ret) = justcall(cmd)
         lines = []
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) != 6:
-               continue
-           if l[1] == 'tps':
-               continue
-           if l[0] == 'Average:':
-               continue
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l = line.split()
+            if len(l) != 6:
+                continue
+            if l[1] == 'tps':
+                continue
+            if l[0] == 'Average:':
+                continue
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
 
     def blockdev(self, d, day, start, end):
@@ -375,16 +375,16 @@ class StatsProvider(provider.BaseStatsProvider):
         (buff, err, ret) = justcall(cmd)
         lines = []
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) != 10:
-               continue
-           if l[1] == 'DEV':
-               continue
-           if l[0] == 'Average:':
-               continue
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l = line.split()
+            if len(l) != 10:
+                continue
+            if l[1] == 'DEV':
+                continue
+            if l[0] == 'Average:':
+                continue
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
 
     def netdev(self, d, day, start, end):
@@ -411,29 +411,28 @@ class StatsProvider(provider.BaseStatsProvider):
         lines = []
         div = 1
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) != n:
-               continue
-           if l[1] in ['IFACE', 'lo'] :
-               if 'rxbyt/s' in l:
-                   div = 1024
-               continue
-           if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
-              'pan'   in l[1] or 'sit'  in l[1]:
-               continue
-           if l[0] == 'Average:':
-               continue
-           m = []
-           m.append('%s %s'%(d, l[0]))
-           m.append(l[1])
-           m.append(str(float(l[4])/div))
-           m.append(str(float(l[5])/div))
-           m.append(l[2])
-           m.append(l[3])
-           m.append(self.nodename)
-           lines.append(m)
+            l = line.split()
+            if len(l) != n:
+                continue
+            if l[1] in ['IFACE', 'lo']:
+                if 'rxbyt/s' in l:
+                    div = 1024
+                continue
+            if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
+                    'pan' in l[1] or 'sit' in l[1]:
+                continue
+            if l[0] == 'Average:':
+                continue
+            m = []
+            m.append('%s %s' % (d, l[0]))
+            m.append(l[1])
+            m.append(str(float(l[4]) / div))
+            m.append(str(float(l[5]) / div))
+            m.append(l[2])
+            m.append(l[3])
+            m.append(self.nodename)
+            lines.append(m)
         return cols, lines
-
 
     def netdev_err(self, d, day, start, end):
         f = self.sarfile(day)
@@ -452,21 +451,22 @@ class StatsProvider(provider.BaseStatsProvider):
         (buff, err, ret) = justcall(cmd)
         lines = []
         for line in buff.split('\n'):
-           l = line.split()
-           if len(l) != 11:
-               continue
-           if l[1] in ['IFACE', 'lo'] :
-               continue
-           if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
-              'pan'   in l[1] or 'sit'  in l[1]:
-               continue
-           if l[0] == 'Average:':
-               continue
-           l = l[0:7]
-           l.append(self.nodename)
-           l[0] = '%s %s'%(d, l[0])
-           lines.append(l)
+            l = line.split()
+            if len(l) != 11:
+                continue
+            if l[1] in ['IFACE', 'lo']:
+                continue
+            if 'dummy' in l[1] or 'vnet' in l[1] or 'veth' in l[1] or \
+                    'pan' in l[1] or 'sit' in l[1]:
+                continue
+            if l[0] == 'Average:':
+                continue
+            l = l[0:7]
+            l.append(self.nodename)
+            l[0] = '%s %s' % (d, l[0])
+            lines.append(l)
         return cols, lines
+
 
 if __name__ == "__main__":
     sp = StatsProvider(interval=200)
