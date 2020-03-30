@@ -1,12 +1,12 @@
 """
-svcmgr command line actions and options
+The service management command actions and options
 """
 import commands.mgr.parser as mp
 from core.objects.svc import ACTION_ASYNC
 from utilities.optparser import OptParser, Option
 from utilities.storage import Storage
 
-PROG = "svcmgr"
+PROG = "om svc"
 
 OPT = Storage()
 OPT.update(mp.OPT)
@@ -88,7 +88,7 @@ OPT.update({
     "tag": Option(
         "--tag", default=None,
         action="store", dest="tag",
-        help="The tag name, as shown by :cmd:`svcmgr collector list tags`."),
+        help="The tag name, as shown by :cmd:`collector list tags`."),
     "to": Option(
         "--to", default=None,
         action="store", dest="to",
@@ -103,7 +103,7 @@ OPT.update({
         action="store_true", dest="verbose",
         help="Include more information to some print commands output. "
              "For example, add the ``next run`` column in the output of "
-             ":cmd:`svcmgr print schedule`."),
+             ":cmd:`print schedule`."),
 })
 
 START_ACTION_OPTS = [
@@ -909,7 +909,7 @@ def add_rid(options, new_rids):
 
 class SvcmgrOptParser(OptParser):
     """
-    The svcmgr-specific options parser class
+    The service management command options parser class.
     """
     def __init__(self, args=None, colorize=True, width=None, formatter=None,
                  indent=6):

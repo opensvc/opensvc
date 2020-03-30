@@ -67,9 +67,9 @@ OPT = Storage({
     "eval": Option(
         "--eval", default=False,
         action="store_true", dest="eval",
-        help="If set with the :cmd:`svcmgr get` action, the printed value of "
+        help="If set with the :cmd:`get` action, the printed value of "
              ":opt:`--param` is evaluated, scoped and dereferenced. If set "
-             "with the :cmd:`svcmgr set` action, the current value is "
+             "with the :cmd:`set` action, the current value is "
              "evaluated before mangling."),
     "filter": Option(
         "--filter", default="",
@@ -192,7 +192,7 @@ OPT = Storage({
         "--recover", default=False,
         action="store_true", dest="recover",
         help="Recover the stashed erroneous configuration file "
-             "in a :cmd:`svcmgr edit config` command"),
+             "in a :cmd:`edit config` command"),
     "refresh": Option(
         "-r", "--refresh", default=False,
         action="store_true", dest="refresh",
