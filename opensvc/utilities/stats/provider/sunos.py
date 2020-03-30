@@ -1,8 +1,9 @@
-import os
 import datetime
+import os
 
-from utilities.stats.provider import provider
 from utilities.proc import call
+from utilities.stats.provider import provider
+
 
 class StatsProvider(provider.BaseStatsProvider):
     def __init__(self, interval=2880, stats_dir=None,
