@@ -1,8 +1,9 @@
-import os
 import datetime
+import os
 
 from env import Env
 from utilities.converters import convert_datetime
+
 
 class BaseStatsProvider(object):
     one_minute = datetime.timedelta(minutes=1)
