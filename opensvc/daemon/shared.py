@@ -759,6 +759,9 @@ class OsvcThread(threading.Thread, Crypt):
         _cmd = [] + Env.python_cmd + ["-m", Env.package]
         if path:
             cmd = [path] + cmd
+        else:
+            cmd = ["svc"] + cmd
+        else:
         if local and "--local" not in cmd:
             cmd += ["--local"]
         self.log.info("execute: om %s", " ".join(cmd))
