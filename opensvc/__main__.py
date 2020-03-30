@@ -64,22 +64,27 @@ def main():
         return ret
     elif arg1 == "svc":
         from commands.svcmgr import Mgr
+        os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "vol":
         from commands.volmgr import Mgr
+        os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "cfg":
         from commands.cfgmgr import Mgr
+        os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "sec":
         from commands.secmgr import Mgr
+        os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "usr":
         from commands.usrmgr import Mgr
+        os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "node":
