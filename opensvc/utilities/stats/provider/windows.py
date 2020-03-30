@@ -1,11 +1,11 @@
 import os
 import json
 
-import rcStats
+from utilities.stats.provider import provider
 from env import Env
 from utilities.converters import convert_datetime
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     """
     {
         "ts": "2018-10-18 15:38:01.921000",

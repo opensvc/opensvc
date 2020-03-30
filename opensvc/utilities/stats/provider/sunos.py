@@ -1,16 +1,16 @@
 import os
 import datetime
 
-import rcStats
+from utilities.stats.provider import provider
 from utilities.proc import call
 
-class StatsProvider(rcStats.StatsProvider):
+class StatsProvider(provider.BaseStatsProvider):
     def __init__(self, interval=2880, stats_dir=None,
                  stats_start=None, stats_end=None):
-        rcStats.StatsProvider.__init__(self, interval=interval,
-                                       stats_dir=stats_dir,
-                                       stats_start=stats_start,
-                                       stats_end=stats_end)
+        provider.BaseStatsProvider.__init__(self, interval=interval,
+                                            stats_dir=stats_dir,
+                                            stats_start=stats_start,
+                                            stats_end=stats_end)
         cmd = ['pagesize']
         (ret, pagesize, err) = call(cmd)
         self.pagesize = int(pagesize)
