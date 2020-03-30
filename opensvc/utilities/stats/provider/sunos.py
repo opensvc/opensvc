@@ -5,13 +5,9 @@ from utilities.proc import call
 from utilities.stats.provider import provider
 
 
-class StatsProvider(provider.BaseStatsProvider):
-    def __init__(self, interval=2880, stats_dir=None,
-                 stats_start=None, stats_end=None):
-        provider.BaseStatsProvider.__init__(self, interval=interval,
-                                            stats_dir=stats_dir,
-                                            stats_start=stats_start,
-                                            stats_end=stats_end)
+class StatsProvider(provider.BaseStatsProviderUx):
+    def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
+        super(StatsProvider, self).__init__(interval, stats_dir, stats_start, stats_end)
         cmd = ['pagesize']
         (ret, pagesize, err) = call(cmd)
         self.pagesize = int(pagesize)
@@ -217,12 +213,13 @@ class StatsProvider(provider.BaseStatsProvider):
             return cols, lines
         cmd = ['sar', '-d', '-f', f, '-s', start, '-e', end]
         (ret, buff, err) = call(cmd, errlog=False)
+        last_date = '00:00:00'
         for line in buff.split('\n'):
             l = line.split()
             if len(l) == 8:
-                date = l[0]
+                last_date = l[0]
             if len(l) == 7:
-                l = [date] + l
+                l = [last_date] + l
             if len(l) != 8:
                 continue
             if l[1] == 'device':
