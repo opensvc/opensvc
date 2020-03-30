@@ -10,27 +10,11 @@ class BaseStatsProvider(object):
     one_day = datetime.timedelta(days=1)
 
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
-        self.stats_dir = stats_dir
         self.interval = interval
+        self.stats_dir = stats_dir
+        self.stats_start = None
+        self.stats_end = None
         self.init_period(stats_start, stats_end, interval)
-        self.nodename = Env.nodename
-
-        self.minutes_first_day = 60 * self.stats_end.hour + self.stats_end.minute + 1
-
-        self.ranges = []
-        i = 0
-        end = self.stats_end
-
-        while end > self.stats_start:
-            start = end - self.one_day
-            if start < self.stats_start:
-                start = self.stats_start
-            if start.day != end.day:
-                start = end - datetime.timedelta(hours=end.hour, minutes=end.minute)
-            if start != end:
-                self.ranges.append((start, end))
-            end = start - self.one_minute
-        # print(self.stats_end, interval, [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
 
     def init_period(self, stats_start, stats_end, interval):
         if stats_end is None:
@@ -49,18 +33,50 @@ class BaseStatsProvider(object):
         self.stats_start -= datetime.timedelta(seconds=self.stats_start.second)
         self.stats_end += datetime.timedelta(seconds=60 - self.stats_end.second)
 
-    def get(self, fname):
+    def get(self, stat_name):
+        stat_name_provider = getattr(self, stat_name)
+        if not stat_name_provider:
+            print(stat_name, 'is not implemented')
+            return [], []
+        return self._stat_transformer(stat_name_provider)
+
+    def _stat_transformer(self, stat_provider):
+        return [], []
+
+
+class BaseStatsProviderUx(BaseStatsProvider):
+    def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
+        super(BaseStatsProvider, self).__init__(interval, stats_dir, stats_start, stats_end)
+        self.nodename = Env.nodename
+
+        self.minutes_first_day = 60 * self.stats_end.hour + self.stats_end.minute + 1
+
+        self.ranges = []
+        i = 0
+        end = self.stats_end
+
+        while end > self.stats_start:
+            start = end - self.one_day
+            if start < self.stats_start:
+                start = self.stats_start
+            if start.day != end.day:
+                start = end - datetime.timedelta(hours=end.hour, minutes=end.minute)
+            if start != end:
+                self.ranges.append((start, end))
+            end = start - self.one_minute
+        # print(self.stats_end,
+        #       interval,
+        #       [x.strftime("%Y-%m-%d %H:%M:%S")+" - "+y.strftime("%Y-%m-%d %H:%M:%S") for x, y in self.ranges])
+
+    def _stat_transformer(self, stat_provider):
         lines = []
         cols = []
-        if not hasattr(self, fname):
-            print(fname, 'is not implemented')
-            return cols, lines
         for start, end in self.ranges:
             date = start.strftime("%Y-%m-%d")
             day = start.strftime("%d")
             start = start.strftime("%H:%M:%S")
             end = end.strftime("%H:%M:%S")
-            _cols, _lines = getattr(self, fname)(date, day, start, end)
+            _cols, _lines = stat_provider(date, day, start, end)
             if len(_cols) == 0 or len(_lines) == 0:
                 continue
             cols = _cols
@@ -105,6 +121,6 @@ class BaseStatsProvider(object):
 
 
 if __name__ == "__main__":
-    sp = BaseStatsProvider(interval=20)
+    sp = BaseStatsProviderUx(interval=20)
     print(sp.get('cpu'))
     print(sp.get('swap'))
