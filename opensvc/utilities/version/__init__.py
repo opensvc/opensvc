@@ -5,9 +5,10 @@ def agent_version():
         pass
 
     try:
-        reload(version)
+        import importlib
+        importlib.reload(version)
         return version.version
-    except (NameError, AttributeError):
+    except (ImportError, AttributeError, UnboundLocalError):
         pass
 
     try:
@@ -17,12 +18,6 @@ def agent_version():
     except (AttributeError, UnboundLocalError):
         pass
 
-    try:
-        import importlib
-        importlib.reload(version)
-        return version.version
-    except (ImportError, AttributeError, UnboundLocalError):
-        pass
     import os
     from utilities.proc import which, justcall
     from env import Env
