@@ -105,7 +105,7 @@ def collect(node):
             out = p.stdout.readline()
             continue
 
-        if not "id zone" in line and pr == 1:
+        if "id zone" not in line and pr == 1:
             fields = line.split()
             stor[fields[1]]['CAP'] = fields[5]
             stor[fields[1]]['at'] = fields[6]
