@@ -86,7 +86,7 @@ def main():
         from commands.nodemgr import main
         ret = main(argv=sys.argv[2:])
         return ret
-    elif arg1 in ("pool", "network", "daemon", "array", "dns"):
+    elif arg1 in ("pool", "net", "network", "daemon", "array", "dns"):
         from commands.nodemgr import main
         ret = main(argv=sys.argv[1:])
         return ret
