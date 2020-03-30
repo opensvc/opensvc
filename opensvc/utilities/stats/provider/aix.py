@@ -1,10 +1,18 @@
-import os
 import datetime
+import os
+
 from env import Env
 from utilities.proc import call, which
+from utilities.stats.provider import provider
 
 today = datetime.datetime.today()
 yesterday = today - datetime.timedelta(days=1)
+
+
+class StatsProvider(provider.BaseStatsProvider):
+    """Not yet implemented"""
+    pass
+
 
 def sarfile(day):
     f = os.path.join(os.sep, 'var', 'adm', 'sa', 'sa'+day)
@@ -124,12 +132,13 @@ def stats_blockdev_day(t):
     cmd = ['sar', '-d', '-f', f]
     (ret, buff, err) = call(cmd, errlog=False)
     lines = []
+    last_date = '00:00:00'
     for line in buff.split('\n'):
         l = line.split()
         if len(l) == 8:
-            date = l[0]
+            last_date = l[0]
         if len(l) == 7:
-            l = [date] + l
+            l = [last_date] + l
         if len(l) != 8:
             continue
         if l[1] == 'device':
