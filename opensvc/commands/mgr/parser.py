@@ -30,6 +30,11 @@ OPT = Storage({
              "service selector expression (ATTENTION with cloning existing live "
              "services that include more than containers, volumes and backend "
              "ip addresses ... this could cause disruption on the cloned service)."),
+    "cron": Option(
+        "--cron", default=False,
+        action="store_true", dest="cron",
+        help="If set, the action is actually executed only if the scheduling"
+             "constraints are satisfied."),
     "debug": Option(
         "--debug", default=False,
         action="store_true", dest="debug",
@@ -363,7 +368,7 @@ ASYNC_ACTION_OPTS = [
 
 
 ACTIONS = {
-    "Service actions": {
+    "Common object actions": {
         "deploy": {
             "msg": "Create and provision a new service.",
             "options": ACTION_OPTS + [
@@ -432,8 +437,15 @@ ACTIONS = {
                 OPT.leader,
             ],
         },
+        "status": {
+            "msg": "Return the local service instance overall status code.",
+            "options": [
+                OPT.cron,
+                OPT.refresh,
+            ],
+        },
     },
-    "Service configuration": {
+    "Object configuration": {
         "print_config": {
             "msg": "Display the service current configuration.",
             "options": [

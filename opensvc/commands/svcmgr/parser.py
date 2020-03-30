@@ -33,11 +33,6 @@ OPT.update({
         "--comment", default=None,
         action="store", dest="comment",
         help="A comment to log when acknowldging action log error entries."),
-    "cron": Option(
-        "--cron", default=False,
-        action="store_true", dest="cron",
-        help="If set, the action is actually executed only if the scheduling"
-             "constraints are satisfied."),
     "downto": Option(
         "--downto", default=None,
         action="store", dest="upto",
@@ -117,7 +112,7 @@ START_ACTION_OPTS = [
 
 ACTIONS = Storage()
 ACTIONS.update(mp.ACTIONS)
-ACTIONS["Service actions"].update({
+ACTIONS["Service and volume object actions"] = {
     "abort": {
         "msg": "Abort the action asynchronously done by the cluster daemons.",
         "options": mp.ASYNC_ACTION_OPTS,
@@ -216,13 +211,6 @@ ACTIONS["Service actions"].update({
             OPT.rid,
             OPT.tags,
             OPT.subsets,
-        ],
-    },
-    "status": {
-        "msg": "Return the local service instance overall status code.",
-        "options": [
-            OPT.cron,
-            OPT.refresh,
         ],
     },
     "print_resource_status": {
@@ -581,7 +569,7 @@ ACTIONS["Service actions"].update({
         "msg": "Kill the tasks of a process group.",
         "options": mp.ACTION_OPTS,
     },
-})
+}
 ACTIONS.update({
     "Compliance": {
         "compliance_auto": {
