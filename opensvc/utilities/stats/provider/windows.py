@@ -34,13 +34,12 @@ class StatsProvider(provider.BaseStatsProvider):
         }
     }                                                                                                                                                           
     """
-
     def __init__(self, interval=2880, stats_dir=None, stats_start=None, stats_end=None):
-        self.init_period(stats_start, stats_end, interval)
+        super(StatsProvider, self).__init__(interval, stats_dir, stats_start, stats_end)
         self.data = self.get_data(self.stats_start, self.stats_end)
 
-    def get(self, group):
-        return getattr(self, group)()
+    def _stat_transformer(self, stat_provider):
+        return stat_provider()
 
     def sarfile(self, day):
         f = os.path.join(Env.paths.pathvar, 'stats', 'sa%s' % day)

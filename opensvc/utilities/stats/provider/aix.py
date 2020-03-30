@@ -9,7 +9,7 @@ today = datetime.datetime.today()
 yesterday = today - datetime.timedelta(days=1)
 
 
-class StatsProvider(provider.BaseStatsProvider):
+class StatsProvider(provider.BaseStatsProviderUx):
     """Not yet implemented"""
     pass
 
