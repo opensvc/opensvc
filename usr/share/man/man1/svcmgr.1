@@ -1740,6 +1740,971 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
+\fRCOMMON OBJECT ACTIONS\fP
+
+.RE
+\fBsvcmgr deploy\fP
+.RS
+
+Create and provision a new service.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --config=PARM_CONFIG
+The configuration to use as template when creating or installing a service. The value can be '-' or '/dev/stdin' to read the json-formatted configuration from stdin, or a file path, or uri pointing to a ini-formatted configuration, or a service selector expression (ATTENTION with cloning existing live services that include more than containers, volumes and backend ip addresses ... this could cause disruption on the cloned service).
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B -i, --interactive
+Prompt the user for a choice instead of using defaults, or failing if no default is defined.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --leader
+Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
+.TP
+.B --restore
+Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
+.TP
+.B --template=PARM_TEMPLATE
+The configuration file template name or id, served by the collector, to use when creating or installing a service.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr logs\fP
+.RS
+
+Display the service logs. All service instances logs are aggregated.
+
+.TP
+.B --backlog=BACKLOG
+A size expression limiting the volume of data fetched from the log file tail. Default is 10k.
+.TP
+.B --follow
+Follow the logs as they come. Use crtl-c to interrupt.
+.TP
+.B --no-pager
+Do not display the command result in a pager.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr ls\fP
+.RS
+
+List the service names with a local instance. Most useful to test a service selector expression before running an action.
+
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr monitor\fP
+.RS
+
+Display or watch the synthetic service status, and perf metrics.
+
+.TP
+.B --sections=SECTIONS
+the comma-separated list of sections to display. if not set, all sections are displayed. sections names are: threads,arbitrators,nodes,services.
+.TP
+.B --stats
+Show system resources usage metrics and refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr print config mtime\fP
+.RS
+
+Display the service local configuration file modification time
+
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr print status\fP
+.RS
+
+Display the service status, with a detailed view of the local instance.
+
+Resources Flags:
+
+(1) `R`   Running,           `.` Not Running
+
+(2) `M`   Monitored,         `.` Not Monitored
+
+(3) `D`   Disabled,          `.` Enabled
+
+(4) `O`   Optional,          `.` Not Optional
+
+(5) `E`   Encap,             `.` Not Encap
+
+(6) `P`   Not Provisioned,   `.` Provisioned
+
+(7) `S`   Standby,           `.` Not Standby
+
+(8) `<n>` Remaining Restart, `+` if more than 10,  `.`   No Restart
+
+
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --hide-disabled
+Do not include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
+.TP
+.B -r, --refresh
+Drop status caches and re-evaluate before printing.
+.TP
+.B --show-disabled
+Include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr purge\fP
+.RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
+Unprovision and delete selected services.
+
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination.
+.TP
+.B --stats
+Show system resources usage metrics and refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --purge-collector
+On service delete, also remove the service collector-side
+.TP
+.B --leader
+Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr status\fP
+.RS
+
+Return the local service instance overall status code.
+
+.TP
+.B --cron
+If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B -r, --refresh
+Drop status caches and re-evaluate before printing.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
 \fRCOMPLIANCE\fP
 
 .RE
@@ -2957,7 +3922,1478 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-\fRSERVICE ACTIONS\fP
+\fROBJECT CONFIGURATION\fP
+
+.RE
+\fBsvcmgr create\fP
+.RS
+
+Create a new service.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --config=PARM_CONFIG
+The configuration to use as template when creating or installing a service. The value can be '-' or '/dev/stdin' to read the json-formatted configuration from stdin, or a file path, or uri pointing to a ini-formatted configuration, or a service selector expression (ATTENTION with cloning existing live services that include more than containers, volumes and backend ip addresses ... this could cause disruption on the cloned service).
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B -i, --interactive
+Prompt the user for a choice instead of using defaults, or failing if no default is defined.
+.TP
+.B --leader
+Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
+.TP
+.B --provision
+Provision the service resources after config file creation. Defaults to False.
+.TP
+.B --resource=RESOURCE
+A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
+.TP
+.B --restore
+Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
+.TP
+.B --template=PARM_TEMPLATE
+The configuration file template name or id, served by the collector, to use when creating or installing a service.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr delete\fP
+.RS
+
+Asynchronous orchestrated action, unless --local or --node <node> is specified.
+
+Delete a service, or only the resources specified by '--rid' on the local service instance.
+
+.TP
+.B --time=TIME
+A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
+.TP
+.B --wait
+Wait for asynchronous action termination.
+.TP
+.B --stats
+Show system resources usage metrics and refresh the information every --interval.
+.TP
+.B -w, --watch
+refresh the information every --interval.
+.TP
+.B --interval=INTERVAL
+with --watch, set the refresh interval. defaults to 0, to refresh on event only.
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --purge-collector
+On service delete, also remove the service collector-side
+.TP
+.B --unprovision
+Unprovision the service resources before config files file deletion. Defaults to False.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr edit config\fP
+.RS
+
+Edit the service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.
+
+.TP
+.B --discard
+Discard the stashed, invalid, configuration file.
+.TP
+.B --recover
+Recover the stashed erroneous configuration file in a 'svcmgr edit config' command
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr eval\fP
+.RS
+
+Evaluate the value of a service configuration keyword.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr get\fP
+.RS
+
+Get the raw value of a service configuration keyword.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --eval
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
+.TP
+.B --param=PARAM
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr print config\fP
+.RS
+
+Display the service current configuration.
+
+.TP
+.B --filter=JSONPATH_FILTER
+A JSONPath expression to filter a JSON output.
+.TP
+.B --format=FORMAT
+Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
+.TP
+.B --eval
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+.TP
+.B --impersonate=IMPERSONATE
+Impersonate a peer node when evaluating keywords.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr set\fP
+.RS
+
+Set a service configuration parameter
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --add=ADD
+A list member to add to the value pointed by '--param'. If '--index' is set, insert the new element at the specified position in the list.
+.TP
+.B --eval
+If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+.TP
+.B --index=INDEX
+The position in the list pointed by --param where to add the new list element on a set action
+.TP
+.B --param=PARAM
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+.TP
+.B --remove=REMOVE
+A list member to drop from the value pointed by '--param'.
+.TP
+.B --value=VALUE
+The value to set for the keyword pointed by '--param'
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr unset\fP
+.RS
+
+Unset a node configuration keyword.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --kw=KW
+An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+* <op> can be:
+
+  * '='
+  * '+='
+  * '-='
+
+Multiple --kw can be set to apply multiple configuration change in a file with a single write.
+
+Examples:
+
+* app.start=false
+  Turn off app start for all app resources
+* app#1.start=true
+  Turn on app start for app#1
+* nodes+=node3
+  Append node3 to nodes
+* nodes[0]+=node3
+  Preprend node3 to nodes
+
+.TP
+.B --param=PARAM
+An expression like '[<section>.]<keyword>' where
+
+* <section> can be:
+
+  * a resource id
+  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr update\fP
+.RS
+
+Update definitions in an existing service configuration file.
+
+.TP
+.B --dry-run
+Show the action execution plan.
+.TP
+.B -f, --force
+Force action, ignore sanity checks.
+.TP
+.B --master
+Limit the action scope to the master service resources.
+.TP
+.B --nolock
+Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
+.TP
+.B --rid=PARM_RID
+A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
+
+* A resource id
+* A driver group name (app, fs, disk, ...)
+
+Examples:
+
+* 'app'
+  all app resources
+* 'container#1,ip#1'
+  only container#1 and ip#1
+
+.TP
+.B --slave=SLAVE
+Limit the action to the service resources in the specified, comma-separated, slaves.
+.TP
+.B --slaves
+Limit the action scope to service resources in all slaves.
+.TP
+.B --subsets=PARM_SUBSETS
+Limit the action to the resources in the specified, comma-separated, list of subsets.
+.TP
+.B --tags=PARM_TAGS
+A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
+.TP
+.B --disable-rollback
+If set, don't try to rollback resources activated before a start action interrupts on error.
+.TP
+.B --provision
+Provision the service resources after config file creation. Defaults to False.
+.TP
+.B --resource=RESOURCE
+A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.RE
+\fBsvcmgr validate config\fP
+.RS
+
+Check the section names and keywords are valid.
+
+.TP
+.B --namespace=NAMESPACE
+The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
+.TP
+.B -s PARM_SVCS, --service=PARM_SVCS
+A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
+
+- '!' is the expression negation operator
+
+- '<sep>' can be:
+
+  - ',' OR expressions
+
+  - '+' AND expressions
+
+- '<expr>' can be:
+
+  - a shell glob on service names
+
+  - '<param><op><value>' where:
+
+    - '<param>' can be:
+
+      - '<rid>:'
+
+      - '<group>:'
+
+      - '<rid>.<key>'
+
+      - '<group>.<key>'
+
+      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
+
+    - '<op>' can be:
+
+      - '<'  '>'  '<='  '>='  '='
+
+      - '~' with regexp value
+
+Examples:
+
+- '*dns,ha*+app.timeout>1'
+
+- 'ip:+task:'
+
+- '!*excluded'
+
+- '$.avail=warn'
+
+- '$.nodes.*.status.avail=warn'
+
+Note:
+
+- '!' usage requires single quoting the expression to prevent shell history expansion
+.TP
+.B --status=PARM_STATUS
+Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
+.TP
+.B --node=NODE
+The node to send a request to. If not specified the local node is targeted.
+.TP
+.B --local
+Execute the service action on the local service instances only, ignoring cluster-wide considerations.
+.TP
+.B --color=COLOR
+Colorize output. Possible values are:
+
+* auto: guess based on tty presence
+* always|yes: always colorize
+* never|no: never colorize
+.TP
+.B --debug
+Increase stream and file log verbosity up to the debug level.
+.TP
+.B --env=ENV
+Export the uppercased variable in the os environment.
+
+With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
+.TP
+.B -p, --parallel
+Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
+.TP
+.B --waitlock=PARM_WAITLOCK
+A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+\fRSERVICE AND VOLUME OBJECT ACTIONS\fP
 
 .RE
 \fBsvcmgr abort\fP
@@ -3212,183 +5648,6 @@ Limit the action to the service resources in the specified, comma-separated, sla
 .TP
 .B --slaves
 Limit the action scope to service resources in all slaves.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr deploy\fP
-.RS
-
-Create and provision a new service.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --config=PARM_CONFIG
-The configuration to use as template when creating or installing a service. The value can be '-' or '/dev/stdin' to read the json-formatted configuration from stdin, or a file path, or uri pointing to a ini-formatted configuration, or a service selector expression (ATTENTION with cloning existing live services that include more than containers, volumes and backend ip addresses ... this could cause disruption on the cloned service).
-.TP
-.B --disable-rollback
-If set, don't try to rollback resources activated before a start action interrupts on error.
-.TP
-.B -i, --interactive
-Prompt the user for a choice instead of using defaults, or failing if no default is defined.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B --leader
-Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
-.TP
-.B --restore
-Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
-.TP
-.B --template=PARM_TEMPLATE
-The configuration file template name or id, served by the collector, to use when creating or installing a service.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -4480,209 +6739,6 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 Show this help message and exit.
 
 .RE
-\fBsvcmgr logs\fP
-.RS
-
-Display the service logs. All service instances logs are aggregated.
-
-.TP
-.B --backlog=BACKLOG
-A size expression limiting the volume of data fetched from the log file tail. Default is 10k.
-.TP
-.B --follow
-Follow the logs as they come. Use crtl-c to interrupt.
-.TP
-.B --no-pager
-Do not display the command result in a pager.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr ls\fP
-.RS
-
-List the service names with a local instance. Most useful to test a service selector expression before running an action.
-
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
 \fBsvcmgr migrate\fP
 .RS
 
@@ -4709,112 +6765,6 @@ with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --to=TO
 The remote node to start or migrate the service to. Or the target number of instance to scale to.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr monitor\fP
-.RS
-
-Display or watch the synthetic service status, and perf metrics.
-
-.TP
-.B --sections=SECTIONS
-the comma-separated list of sections to display. if not set, all sections are displayed. sections names are: threads,arbitrators,nodes,services.
-.TP
-.B --stats
-Show system resources usage metrics and refresh the information every --interval.
-.TP
-.B -w, --watch
-refresh the information every --interval.
-.TP
-.B --interval=INTERVAL
-with --watch, set the refresh interval. defaults to 0, to refresh on event only.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -6087,100 +8037,6 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 Show this help message and exit.
 
 .RE
-\fBsvcmgr print config mtime\fP
-.RS
-
-Display the service local configuration file modification time
-
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
 \fBsvcmgr print devs\fP
 .RS
 
@@ -6741,134 +8597,6 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 Show this help message and exit.
 
 .RE
-\fBsvcmgr print status\fP
-.RS
-
-Display the service status, with a detailed view of the local instance.
-
-Resources Flags:
-
-(1) `R`   Running,           `.` Not Running
-
-(2) `M`   Monitored,         `.` Not Monitored
-
-(3) `D`   Disabled,          `.` Enabled
-
-(4) `O`   Optional,          `.` Not Optional
-
-(5) `E`   Encap,             `.` Not Encap
-
-(6) `P`   Not Provisioned,   `.` Provisioned
-
-(7) `S`   Standby,           `.` Not Standby
-
-(8) `<n>` Remaining Restart, `+` if more than 10,  `.`   No Restart
-
-
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --hide-disabled
-Do not include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
-.TP
-.B -r, --refresh
-Drop status caches and re-evaluate before printing.
-.TP
-.B --show-disabled
-Include the disabled resources. This option supersedes the 'show_disabled' value in the service configuration.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
 \fBsvcmgr print sub devs\fP
 .RS
 
@@ -7249,161 +8977,6 @@ If set, don't try to rollback resources activated before a start action interrup
 .TP
 .B --provision
 Provision the service resources after config file creation. Defaults to False.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr purge\fP
-.RS
-
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
-Unprovision and delete selected services.
-
-.TP
-.B --time=TIME
-A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
-.TP
-.B --wait
-Wait for asynchronous action termination.
-.TP
-.B --stats
-Show system resources usage metrics and refresh the information every --interval.
-.TP
-.B -w, --watch
-refresh the information every --interval.
-.TP
-.B --interval=INTERVAL
-with --watch, set the refresh interval. defaults to 0, to refresh on event only.
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --purge-collector
-On service delete, also remove the service collector-side
-.TP
-.B --leader
-Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -9229,106 +10802,6 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --disable-rollback
 If set, don't try to rollback resources activated before a start action interrupts on error.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr status\fP
-.RS
-
-Return the local service instance overall status code.
-
-.TP
-.B --cron
-If set, the action is actually executed only if the schedulingconstraints are satisfied.
-.TP
-.B -r, --refresh
-Drop status caches and re-evaluate before printing.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -12152,1477 +13625,6 @@ Show this help message and exit.
 .RS
 
 Unsnooze alerts on the node
-
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-\fRSERVICE CONFIGURATION\fP
-
-.RE
-\fBsvcmgr create\fP
-.RS
-
-Create a new service.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --config=PARM_CONFIG
-The configuration to use as template when creating or installing a service. The value can be '-' or '/dev/stdin' to read the json-formatted configuration from stdin, or a file path, or uri pointing to a ini-formatted configuration, or a service selector expression (ATTENTION with cloning existing live services that include more than containers, volumes and backend ip addresses ... this could cause disruption on the cloned service).
-.TP
-.B --disable-rollback
-If set, don't try to rollback resources activated before a start action interrupts on error.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B -i, --interactive
-Prompt the user for a choice instead of using defaults, or failing if no default is defined.
-.TP
-.B --leader
-Switch the provision action behaviour to leader, ie provision shared resources that are not provisionned by default.
-.TP
-.B --provision
-Provision the service resources after config file creation. Defaults to False.
-.TP
-.B --resource=RESOURCE
-A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
-.TP
-.B --restore
-Keep the same service id as the template or config file referenced by the create action. The default behaviour is to generate a new id.
-.TP
-.B --template=PARM_TEMPLATE
-The configuration file template name or id, served by the collector, to use when creating or installing a service.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr delete\fP
-.RS
-
-Asynchronous orchestrated action, unless --local or --node <node> is specified.
-
-Delete a service, or only the resources specified by '--rid' on the local service instance.
-
-.TP
-.B --time=TIME
-A duration expression like '1m5s'. The maximum wait time for an async action to finish. Default is 300 seconds.
-.TP
-.B --wait
-Wait for asynchronous action termination.
-.TP
-.B --stats
-Show system resources usage metrics and refresh the information every --interval.
-.TP
-.B -w, --watch
-refresh the information every --interval.
-.TP
-.B --interval=INTERVAL
-with --watch, set the refresh interval. defaults to 0, to refresh on event only.
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --purge-collector
-On service delete, also remove the service collector-side
-.TP
-.B --unprovision
-Unprovision the service resources before config files file deletion. Defaults to False.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr edit config\fP
-.RS
-
-Edit the service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.
-
-.TP
-.B --discard
-Discard the stashed, invalid, configuration file.
-.TP
-.B --recover
-Recover the stashed erroneous configuration file in a 'svcmgr edit config' command
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr eval\fP
-.RS
-
-Evaluate the value of a service configuration keyword.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --impersonate=IMPERSONATE
-Impersonate a peer node when evaluating keywords.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr get\fP
-.RS
-
-Get the raw value of a service configuration keyword.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --impersonate=IMPERSONATE
-Impersonate a peer node when evaluating keywords.
-.TP
-.B --param=PARAM
-An expression like '[<section>.]<keyword>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr print config\fP
-.RS
-
-Display the service current configuration.
-
-.TP
-.B --filter=JSONPATH_FILTER
-A JSONPath expression to filter a JSON output.
-.TP
-.B --format=FORMAT
-Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
-.TP
-.B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
-.TP
-.B --impersonate=IMPERSONATE
-Impersonate a peer node when evaluating keywords.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr set\fP
-.RS
-
-Set a service configuration parameter
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B --add=ADD
-A list member to add to the value pointed by '--param'. If '--index' is set, insert the new element at the specified position in the list.
-.TP
-.B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
-.TP
-.B --index=INDEX
-The position in the list pointed by --param where to add the new list element on a set action
-.TP
-.B --param=PARAM
-An expression like '[<section>.]<keyword>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-.TP
-.B --remove=REMOVE
-A list member to drop from the value pointed by '--param'.
-.TP
-.B --value=VALUE
-The value to set for the keyword pointed by '--param'
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr unset\fP
-.RS
-
-Unset a node configuration keyword.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --kw=KW
-An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-* <op> can be:
-
-  * '='
-  * '+='
-  * '-='
-
-Multiple --kw can be set to apply multiple configuration change in a file with a single write.
-
-Examples:
-
-* app.start=false
-  Turn off app start for all app resources
-* app#1.start=true
-  Turn on app start for app#1
-* nodes+=node3
-  Append node3 to nodes
-* nodes[0]+=node3
-  Preprend node3 to nodes
-
-.TP
-.B --param=PARAM
-An expression like '[<section>.]<keyword>' where
-
-* <section> can be:
-
-  * a resource id
-  * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr update\fP
-.RS
-
-Update definitions in an existing service configuration file.
-
-.TP
-.B --dry-run
-Show the action execution plan.
-.TP
-.B -f, --force
-Force action, ignore sanity checks.
-.TP
-.B --master
-Limit the action scope to the master service resources.
-.TP
-.B --nolock
-Don't acquire the action lock. Dangerous, but can be useful to set parameters from an action trigger.
-.TP
-.B --rid=PARM_RID
-A resource specifier expression like '<spec>[,<spec>]', where '<spec>' can be:
-
-* A resource id
-* A driver group name (app, fs, disk, ...)
-
-Examples:
-
-* 'app'
-  all app resources
-* 'container#1,ip#1'
-  only container#1 and ip#1
-
-.TP
-.B --slave=SLAVE
-Limit the action to the service resources in the specified, comma-separated, slaves.
-.TP
-.B --slaves
-Limit the action scope to service resources in all slaves.
-.TP
-.B --subsets=PARM_SUBSETS
-Limit the action to the resources in the specified, comma-separated, list of subsets.
-.TP
-.B --tags=PARM_TAGS
-A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
-.TP
-.B --disable-rollback
-If set, don't try to rollback resources activated before a start action interrupts on error.
-.TP
-.B --provision
-Provision the service resources after config file creation. Defaults to False.
-.TP
-.B --resource=RESOURCE
-A resource definition in json dictionary format fed to create or update. The 'rtype' key point the driver group name, and the 'type' key the driver name (translated to type in the configuration file section).
-.TP
-.B --namespace=NAMESPACE
-The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
-.TP
-.B -s PARM_SVCS, --service=PARM_SVCS
-A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
-
-- '!' is the expression negation operator
-
-- '<sep>' can be:
-
-  - ',' OR expressions
-
-  - '+' AND expressions
-
-- '<expr>' can be:
-
-  - a shell glob on service names
-
-  - '<param><op><value>' where:
-
-    - '<param>' can be:
-
-      - '<rid>:'
-
-      - '<group>:'
-
-      - '<rid>.<key>'
-
-      - '<group>.<key>'
-
-      - '<single value jsonpath expression on the $.monitor.services.<path> dictionary extended under the 'nodes' key by each instance 'status' and 'config' data>'
-
-    - '<op>' can be:
-
-      - '<'  '>'  '<='  '>='  '='
-
-      - '~' with regexp value
-
-Examples:
-
-- '*dns,ha*+app.timeout>1'
-
-- 'ip:+task:'
-
-- '!*excluded'
-
-- '$.avail=warn'
-
-- '$.nodes.*.status.avail=warn'
-
-Note:
-
-- '!' usage requires single quoting the expression to prevent shell history expansion
-.TP
-.B --status=PARM_STATUS
-Operate only on service with a local instance in the specified availability status (up, down, warn, ...).
-.TP
-.B --node=NODE
-The node to send a request to. If not specified the local node is targeted.
-.TP
-.B --local
-Execute the service action on the local service instances only, ignoring cluster-wide considerations.
-.TP
-.B --color=COLOR
-Colorize output. Possible values are:
-
-* auto: guess based on tty presence
-* always|yes: always colorize
-* never|no: never colorize
-.TP
-.B --debug
-Increase stream and file log verbosity up to the debug level.
-.TP
-.B --env=ENV
-Export the uppercased variable in the os environment.
-
-With the create action only, set a env section parameter in the service configuration file. Multiple '--env <key>=<val>' can be specified. For all other actions.
-.TP
-.B -p, --parallel
-Start actions on specified services in parallel. 'max_parallel' in node.conf limits the number of parallel running subprocesses.
-.TP
-.B --waitlock=PARM_WAITLOCK
-A duration expression like '5s'. The maximum wait time when acquiring the service action lock.
-.TP
-.B -h, --help
-Show this help message and exit.
-
-.RE
-\fBsvcmgr validate config\fP
-.RS
-
-Check the section names and keywords are valid.
 
 .TP
 .B --namespace=NAMESPACE
