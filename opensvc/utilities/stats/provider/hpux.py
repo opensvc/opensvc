@@ -4,7 +4,7 @@ from env import Env
 from utilities.stats.provider import provider
 
 
-class StatsProvider(provider.BaseStatsProvider):
+class StatsProvider(provider.BaseStatsProviderUx):
     def glancefile(self, day):
         f = os.path.join(Env.paths.pathvar, 'stats', 'glance' + day)
         if os.path.exists(f):

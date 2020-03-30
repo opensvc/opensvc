@@ -6,7 +6,7 @@ from utilities.proc import justcall
 from utilities.stats.provider import provider
 
 
-class StatsProvider(provider.BaseStatsProvider):
+class StatsProvider(provider.BaseStatsProviderUx):
     def xentopfile(self, day):
         f = os.path.join(Env.paths.pathlog, 'xentop', 'xentop' + day)
         if os.path.exists(f):
