@@ -1,11 +1,11 @@
 """
-ccfgmgr command line actions and options
+The cluster configuration management command actions and options.
 """
 import commands.mgr.parser as mp
 from core.objects.svc import ACTION_ASYNC
 from utilities.optparser import OptParser
 
-PROG = "ccfgmgr"
+PROG = "om cluster"
 
 OPT = mp.OPT
 ACTIONS = mp.ACTIONS
@@ -21,7 +21,7 @@ ACTIONS_TRANSLATIONS = {
 
 class CcfgmgrOptParser(OptParser):
     """
-    The secmgr-specific options parser class
+    The cluster configuration management command options parser class.
     """
     def __init__(self, args=None, colorize=True, width=None, formatter=None,
                  indent=6):
