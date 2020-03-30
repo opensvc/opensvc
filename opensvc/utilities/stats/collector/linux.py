@@ -1,9 +1,11 @@
 from __future__ import print_function
-import os
+
 import datetime
-import time
 import json
+import os
 import re
+import time
+
 from env import Env
 from utilities.proc import justcall, which
 
@@ -64,9 +66,7 @@ def collect(node):
     """
     
     def xentop(node):
-        import os, sys, platform
-        import select
-        import logging
+        import os
         import time
         import datetime
         import subprocess
