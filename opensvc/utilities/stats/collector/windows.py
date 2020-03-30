@@ -1,12 +1,13 @@
 from __future__ import print_function
 
-import os
 import datetime
-import time
 import json
+import os
+import time
 
 from env import Env
 from foreign.winstats import *
+
 
 def collect(node=None):
     now = datetime.datetime.now()
