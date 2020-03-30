@@ -130,7 +130,7 @@ function prepare_chroot {
 	cd /tmp
 	rm -f $CHROOT/opt/opensvc/*.tar.gz >> /dev/null 2>&1
 	rm -rf $CHROOT/opt/opensvc/bin/pkg
-	rm -rf $CHROOT/opt/opensvc/lib/tests
+	rm -rf $CHROOT/opt/opensvc/opensvc/tests
 	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
 
 	DOCDIR=$CHROOT/usr/share/doc/opensvc
