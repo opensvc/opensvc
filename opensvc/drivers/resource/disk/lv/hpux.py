@@ -17,9 +17,14 @@ class DiskLv(BaseDiskLv):
             self.log.error("lvcreate command not found")
             raise ex.Error
 
-        size = self.oget("size")
-        size = convert_size(size, _to="m")
-        vg = self.oget("vg")
+        if self.vg is None:
+            raise ex.Error("skip lv provisioning: vg is not set")
+
+        if self.size is None:
+            raise ex.Error("skip lv provisioning: size is not set")
+
+        size = convert_size(self.size, _to="m")
+        vg = self.vg
 
         cmd = ['vgdisplay', vg]
         out, err, ret = justcall(cmd)

@@ -340,7 +340,9 @@ class BaseFs(Resource):
                 return
         except ImportError:
             return
-        return mod.DiskLv(name=name, vg=vg, size=size)
+        res = mod.DiskLv(rid="disk#", name=name, vg=vg, size=size)
+        res.svc = self.svc
+        return res
 
     def provision_dev(self):
         res = self.lv_resource()
