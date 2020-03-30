@@ -6,7 +6,7 @@ from utilities.stats.provider import provider
 
 class StatsProvider(provider.BaseStatsProvider):
     def glancefile(self, day):
-        f = os.path.join(Env.paths.pathvar, 'stats', 'glance'+day)
+        f = os.path.join(Env.paths.pathvar, 'stats', 'glance' + day)
         if os.path.exists(f):
             return f
         return None
@@ -37,8 +37,8 @@ class StatsProvider(provider.BaseStatsProvider):
                                      1   2    3   4   5    6
                     xmlrpc: date cpu usr nice sys iowait steal irq soft guest idle nodename
                 """
-                ts = '%s %s'%(d, l[0])
-                ts = ts.replace('\0','')
+                ts = '%s %s' % (d, l[0])
+                ts = ts.replace('\0', '')
                 x = [ts,
                      'all',
                      l[1],
@@ -90,8 +90,8 @@ class StatsProvider(provider.BaseStatsProvider):
                 pct_commit = 100 * commit / vm
                 pct_used = 100 * used / phys
 
-                ts = '%s %s'%(d, l[0])
-                ts = ts.replace('\0','')
+                ts = '%s %s' % (d, l[0])
+                ts = ts.replace('\0', '')
                 x = [ts,
                      l[8],
                      str(used),
@@ -126,8 +126,8 @@ class StatsProvider(provider.BaseStatsProvider):
                                      15          16           17            18            19
                     xmlrpc: date runq_sz plist_sz ldavg_1 ldavg_5 ldavg_15 nodename
                 """
-                ts = '%s %s'%(d, l[0])
-                ts = ts.replace('\0','')
+                ts = '%s %s' % (d, l[0])
+                ts = ts.replace('\0', '')
                 x = [ts,
                      l[18],
                      l[19],
@@ -164,8 +164,8 @@ class StatsProvider(provider.BaseStatsProvider):
                 swap = int(l[14])
                 swapfree = swap - swapused
 
-                ts = '%s %s'%(d, l[0])
-                ts = ts.replace('\0','')
+                ts = '%s %s' % (d, l[0])
+                ts = ts.replace('\0', '')
                 x = [ts,
                      str(swapfree),
                      l[13],
@@ -199,8 +199,8 @@ class StatsProvider(provider.BaseStatsProvider):
                     xmlrpc: date tps rtps wtps rbps wbps nodename
                 """
                 tps = float(l[20]) + float(l[21])
-                ts = '%s %s'%(d, l[0])
-                ts = ts.replace('\0','')
+                ts = '%s %s' % (d, l[0])
+                ts = ts.replace('\0', '')
                 x = [ts,
                      str(tps),
                      l[20],
@@ -210,4 +210,3 @@ class StatsProvider(provider.BaseStatsProvider):
                      self.nodename]
                 lines.append(x)
         return cols, lines
-
