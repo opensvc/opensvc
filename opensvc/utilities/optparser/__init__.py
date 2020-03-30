@@ -206,7 +206,9 @@ class OptParser(object):
         """
         action = action.rstrip("?")
         desc = self.usage
-        desc += "Set --help with an action to display its description and supported options.\n\n"
+        desc = desc.replace("COMMAND", action + "...")
+        desc = desc.replace("[ OPTIONS ] ", "")
+        desc += "  --help   display action description and supported options.\n\n"
 
         for section in sorted(self.actions):
             valid_actions = self.get_valid_actions(section, action)
@@ -463,5 +465,5 @@ class OptParser(object):
             raise ex.Error(self.parser.format_help())
         else:
             usage = self.format_digest(action)
-            raise ex.Error("%s\n%s" % (str(action), usage))
+            raise ex.Error("%s" % usage)
 
