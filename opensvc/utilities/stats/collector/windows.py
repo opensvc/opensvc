@@ -38,10 +38,10 @@ def collect(node=None):
         r'\PhysicalDisk(_Total)\Disk Write Bytes/sec',
         r'\PhysicalDisk(_Total)\Disk Reads/sec',
         r'\PhysicalDisk(_Total)\Disk Writes/sec',
-#        r'\Network Adapter(*)\Bytes Received/sec',
-#        r'\Network Adapter(*)\Bytes Sent/sec',
-#        r'\Network Adapter(*)\Packets Received/sec',
-#        r'\Network Adapter(*)\Packets Sent/sec',
+        #        r'\Network Adapter(*)\Bytes Received/sec',
+        #        r'\Network Adapter(*)\Bytes Sent/sec',
+        #        r'\Network Adapter(*)\Packets Received/sec',
+        #        r'\Network Adapter(*)\Packets Sent/sec',
     ]
     fmts = [
         "double",
@@ -50,10 +50,10 @@ def collect(node=None):
         "double",
         "double",
         "double",
-#        "double",
-#        "double",
-#        "double",
-#        "double",
+        #        "double",
+        #        "double",
+        #        "double",
+        #        "double",
     ]
     mon = get_perf_data(counters, fmts=fmts, delay=2000, english=True)
     data["mon"] = {
@@ -81,10 +81,11 @@ def collect(node=None):
     else:
         # append to the daily stats file
         mode = 'a'
-    
+
     with open(stats_p, mode) as fd:
         json.dump(data, fd)
         fd.write(os.linesep)
+
 
 if __name__ == "__main__":
     collect()
