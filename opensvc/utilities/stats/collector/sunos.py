@@ -34,7 +34,7 @@ def collect(node):
     except:
         d = 0
 
-    if d > 27*24*3600:
+    if d > 27 * 24 * 3600:
         os.remove(zs_f)
 
     f = open(zs_f, "a")
@@ -67,23 +67,23 @@ def collect(node):
         if "%" in line and pr == 1:
             fields = line.split()
             stor[fields[7]] = {
-             'SWAP': fields[2],
-             'RSS': fields[3],
-             'CAP': '0',
-             'at': '0',
-             'avgat': '0',
-             'pg': '0',
-             'avgpg': '0',
-             'NPROC': fields[1],
-             'mem': fields[4],
-             'cpu': fields[6],
-             'TIME': fields[5]
+                'SWAP': fields[2],
+                'RSS': fields[3],
+                'CAP': '0',
+                'at': '0',
+                'avgat': '0',
+                'pg': '0',
+                'avgpg': '0',
+                'NPROC': fields[1],
+                'mem': fields[4],
+                'cpu': fields[6],
+                'TIME': fields[5]
             }
         out = p.stdout.readline()
 
     p.wait()
-    fi=1
-    pr=0
+    fi = 1
+    pr = 0
     p = subprocess.Popen('/usr/bin/rcapstat -z 1 2',
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT,
@@ -119,28 +119,30 @@ def collect(node):
 
     for z in stor:
         zn = z
-        if z == 'global' :
+        if z == 'global':
             zn = platform.node()
             p = subprocess.Popen('/usr/bin/who -b',
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             bufsize=0,
-                             shell=True)
-        else :
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 bufsize=0,
+                                 shell=True)
+        else:
             p = subprocess.Popen('/usr/sbin/zlogin ' + z + ' /usr/bin/who -b',
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             bufsize=0,
-                             shell=True)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT,
+                                 bufsize=0,
+                                 shell=True)
         out = p.stdout.readline()
         txt = out.split()
-        print(datenow, zn, stor[z]['SWAP'], stor[z]['RSS'], stor[z]['CAP'], stor[z]['at'], stor[z]['avgat'], stor[z]['pg'], stor[z]['avgpg'], stor[z]['NPROC'], stor[z]['mem'], stor[z]['cpu'], stor[z]['TIME'], txt[-3], txt[-2], txt[-1], file=f)
+        print(datenow, zn, stor[z]['SWAP'], stor[z]['RSS'], stor[z]['CAP'], stor[z]['at'], stor[z]['avgat'],
+              stor[z]['pg'], stor[z]['avgpg'], stor[z]['NPROC'], stor[z]['mem'], stor[z]['cpu'], stor[z]['TIME'],
+              txt[-3], txt[-2], txt[-1], file=f)
         p.wait()
-
 
     """
      fs_u
     """
+
     def fs_u():
         vars = ['date',
                 'nodename',
@@ -157,7 +159,7 @@ def collect(node):
         if not which('df'):
             return []
         cmd = ['df', '-F', t, '-k']
-        (out,err,ret) = justcall(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return []
         lines = out.split('\n')
@@ -170,14 +172,14 @@ def collect(node):
                 l = [''] + l
             elif len(l) != 6:
                 continue
-            vals.append([now, node.nodename, l[5], l[1], l[4].replace('%','')])
+            vals.append([now, node.nodename, l[5], l[1], l[4].replace('%', '')])
         return vals
 
     def fs_u_zfs():
         if not which(Env.syspaths.zfs):
             return []
         cmd = [Env.syspaths.zfs, 'list', '-o', 'name,used,avail,mountpoint', '-H']
-        (out,err,ret) = justcall(cmd)
+        (out, err, ret) = justcall(cmd)
         if ret != 0:
             return []
         lines = out.split('\n')
