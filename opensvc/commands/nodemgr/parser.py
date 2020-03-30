@@ -1,5 +1,5 @@
 """
-nodemgr command line actions and options
+The node management command actions and options.
 """
 from utilities.storage import Storage
 from utilities.optparser import OptParser, Option
@@ -399,17 +399,17 @@ ACTIONS = {
         "freeze": {
             "msg": "Freeze services node-wide, preventing the daemon to "
                    "orchestrate them. This freeze method preserves the "
-                   "frozen state at service-level (with svcmgr).",
+                   "frozen state at service-level.",
             "options": ASYNC_OPTS,
         },
         "thaw": {
             "msg": "Thaw services node-wide, allowing the daemon to "
                    "orchestrate them. This thaw method does not actually "
-                   "thaw services frozen at service-level (with svcmgr).",
+                   "thaw services frozen at service-level.",
             "options": ASYNC_OPTS,
         },
         "logs": {
-            "msg": "Display of the nodemgr and daemon logs.",
+            "msg": "Display the node and daemon logs.",
             "options": [
                 OPT.backlog,
                 OPT.follow,
@@ -581,7 +581,7 @@ ACTIONS = {
             "msg": "List the available networks.",
         },
         "network_setup": {
-            "msg": "Create bridges, assign host address, update host routes to node backend networks. This action is executed on node configuration changes. It is exposed as a nodemgr action for troubleshoot.",
+            "msg": "Create bridges, assign host address, update host routes to node backend networks. This action is executed on node configuration changes. Useful for troubleshoot.",
         },
         "network_show": {
             "msg": "Show network configuration.",
@@ -1152,7 +1152,7 @@ ACTIONS_TRANSLATIONS = {
 
 class NodemgrOptParser(OptParser):
     """
-    The nodemgr-specific options parser class
+    The node management command options parser class.
     """
     def __init__(self, args=None, colorize=True, width=None, formatter=None,
                  indent=6):
