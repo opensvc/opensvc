@@ -5,7 +5,7 @@ from utilities.proc import call
 from utilities.stats.provider import provider
 
 
-class StatsProvider(provider.BaseStatsProvider):
+class StatsProvider(provider.BaseStatsProviderUx):
     def customfile(self, metric, day):
         f = os.path.join(Env.paths.pathvar, 'stats', metric + day)
         if os.path.exists(f):
