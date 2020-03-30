@@ -35,7 +35,7 @@ OPT.update({
 
 ACTIONS = mp.ACTIONS
 ACTIONS.update({
-    "User actions": {
+    "User object actions": {
         "add": {
             "msg": "Add a secret key/value to the secret object.",
             "options": mp.ACTION_OPTS + [
