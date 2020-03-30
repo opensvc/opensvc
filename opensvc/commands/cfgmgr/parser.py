@@ -32,7 +32,7 @@ OPT.update({
 ACTIONS = Storage()
 ACTIONS.update(mp.ACTIONS)
 ACTIONS.update({
-    "Configuration actions": {
+    "Configuration object actions": {
         "add": {
             "msg": "Add a key/value to the configuration object.",
             "options": mp.ACTION_OPTS + [
