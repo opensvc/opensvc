@@ -31,7 +31,7 @@ def collect(node):
                 # Darwin automount package files under /Volumes
                 continue
             vals.append([str(now), node.nodename, l[5], l[1], l[4].replace('%', '')])
-        return (vars, vals)
+        return vars, vals
 
     def mem_u():
         basedir = os.path.join(Env.paths.pathvar, 'stats')
