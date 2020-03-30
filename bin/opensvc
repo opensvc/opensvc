@@ -63,6 +63,9 @@ cfgmgr)
 ccfgmgr)
 	KIND=ccfg
 	;;
+svcmon)
+	KIND=mon
+	;;
 *)
 	exit 1
 	;;
