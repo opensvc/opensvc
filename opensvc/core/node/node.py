@@ -1120,10 +1120,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         method.
         """
         try:
-            mod = __import__("rcStatsCollect"+Env.sysname)
+            import utilities.stats.collector
         except ImportError:
             return
-        mod.collect(self)
+        utilities.stats.collector.collect(self)
 
     def pushstats(self):
         """
