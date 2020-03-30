@@ -2,7 +2,7 @@ from utilities.proc import call
 from utilities.stats.provider import provider
 
 
-class StatsProvider(provider.BaseStatsProvider):
+class StatsProvider(provider.BaseStatsProviderUx):
     def cpu(self, d, day, start, end):
         cols = ['date',
                 'usr',
