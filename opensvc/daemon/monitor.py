@@ -667,7 +667,7 @@ class Monitor(shared.OsvcThread):
             except KeyError:
                 pass
         data = {path: data}
-        cmd = ["create", "--config=-"]
+        cmd = ["svc", "create", "--config=-"]
         if svc.namespace:
             cmd += ["--namespace=%s" % svc.namespace]
         proc = self.service_command(None, cmd, stdin=json.dumps(data))
