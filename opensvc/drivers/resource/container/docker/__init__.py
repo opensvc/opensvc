@@ -192,7 +192,7 @@ KEYWORDS = [
         "convert": "duration",
         "at": True,
         "text": "Wait for <duration> before declaring the container action a failure.",
-        "default": "2",
+        "default": "5",
         "example": "5"
     },
     {
