@@ -3,13 +3,17 @@ YYYY-MM-DD hh:mm:ss ZONE SWAP RSS CAP at avgat pg avgpg NPROC mem% cpu% TIME Las
 """
 
 from __future__ import print_function
-import os, platform
-import time
+
 import datetime
+import os
+import platform
 import subprocess
+import time
+
 from env import Env
 from utilities.converters import convert_size
 from utilities.proc import justcall, which
+
 
 def collect(node):
     now = str(datetime.datetime.now())
