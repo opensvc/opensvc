@@ -96,6 +96,8 @@ class Mgr(object):
             prog = os.path.realpath(prog)
             if self.selector:
                 executable = [sys.executable, prog, self.selector]
+            elif os.environ.get("OSVC_KIND"):
+                executable = [sys.executable, prog, os.environ.get("OSVC_KIND")]
             else:
                 executable = [sys.executable, prog]
 
