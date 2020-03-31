@@ -38,7 +38,7 @@ def get_cgroup_mntpt(t):
         if len(l) < 6:
             continue
         if l[2] == 'cgroup':
-            mntopts = re.split('\W+',l[3])
+            mntopts = re.split(r'\W+',l[3])
             for opt in mntopts:
                 if t == opt:
                     return l[1]
