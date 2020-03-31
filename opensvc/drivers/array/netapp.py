@@ -12,7 +12,9 @@ if Env.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+Env.paths.pathbin
 
 class Netapps(object):
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         self.filtering = len(objects) > 0
         self.arrays = []

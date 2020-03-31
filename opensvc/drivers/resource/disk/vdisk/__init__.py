@@ -49,8 +49,10 @@ def adder(svc, s):
 
 
 class DiskVdisk(Resource):
-    def __init__(self, name=None, devpath={}, **kwargs):
+    def __init__(self, name=None, devpath=None, **kwargs):
         super(DiskVdisk, self).__init__(type="disk.vdisk", **kwargs)
+        if devpath is None:
+            devpath = {}
         self.name = name
         self.label = "vdisk %s" % self.name
         self.devpath = devpath
