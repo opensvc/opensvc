@@ -5,8 +5,8 @@ import re
 from .diskinfo import BaseDiskInfo
 from utilities.proc import justcall
 
-regex = re.compile("^\W*[0-9]*:")
-regex_path = re.compile('\W*[0-9]*\W+')
+regex = re.compile(r"^\W*[0-9]*:")
+regex_path = re.compile(r'\W*[0-9]*\W+')
 
 class DiskInfo(BaseDiskInfo):
 

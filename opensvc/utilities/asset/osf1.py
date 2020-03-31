@@ -4,7 +4,7 @@ from .asset import BaseAsset
 from utilities.proc import justcall
 
 sim = False
-regex = re.compile("^\W*[0-9]*:")
+regex = re.compile(r"^\W*[0-9]*:")
 
 class Asset(BaseAsset):
     def __init__(self, node):

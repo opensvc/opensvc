@@ -4,7 +4,7 @@ import struct
 import re
 
 regex_mac = re.compile('[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$')
-regex_broadcast = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+regex_broadcast = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
 
 class wolrequest(object):
     def __init__(self, macaddress, broadcast, udpport=7):

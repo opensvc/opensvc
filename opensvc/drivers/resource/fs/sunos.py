@@ -43,7 +43,7 @@ class Fs(BaseFs):
 
     def start(self):
         super(Fs, self).start()
-        m = re.match("<(\w+)>", self.mount_point)
+        m = re.match(r"<(\w+)>", self.mount_point)
         if m:
             # the zone was not created when the service was built. now it should,
             # so try the redetect the zonepath
@@ -51,7 +51,7 @@ class Fs(BaseFs):
             for r in self.svc.get_resources("container.zone"):
                 if r.name == zone:
                     zonepath = r.get_zonepath()
-                    self.mount_point = re.sub("<\w+>", zonepath, self.mount_point)
+                    self.mount_point = re.sub(r"<\w+>", zonepath, self.mount_point)
 
         if self.fs_type == 'zfs':
             if 'noaction' not in self.tags and zfs_getprop(self.device, 'canmount') != 'noauto':
