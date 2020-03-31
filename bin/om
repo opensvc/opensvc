@@ -79,12 +79,12 @@ main() {
 			;;
 		esac
 	fi
+	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	if test -n "$KIND"
 	then
 		$SUDO PYTHONPATH="$OSVC_ROOT_PATH" $INTER $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"
 		return $?
 	fi
-	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
 	case $1 in
 	ns)
 		echo "The 'om' alias must be sourced to handle ns actions" >&2
