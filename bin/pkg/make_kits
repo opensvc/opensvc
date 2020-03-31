@@ -29,7 +29,7 @@ OPENSVC$SUBSET_V      .       0       'OpenSVC agent $V'
 EOF
 
 cd $CHROOT || exit 1
-(find . |grep -v opensvc.init | grep -v OSV100 ; echo "./opt/opensvc/bin/opensvc.init.OSF1")| awk -vV=$SUBSET_V '{if ($0=="."||$0=="./opt") {w="RESERVED"} else {w="OPENSVC"+V} ; print "0\t" $0 "\t" w}' | tee $MIFILE
+(find . |grep -v opensvc.init | grep -v OSV100 ; echo "./opt/opensvc/bin/init/opensvc.init.OSF1")| awk -vV=$SUBSET_V '{if ($0=="."||$0=="./opt") {w="RESERVED"} else {w="OPENSVC"+V} ; print "0\t" $0 "\t" w}' | tee $MIFILE
 
 cd .. || exit 1
 tar cf - $CHROOT_BN | ssh root@$REMOTEHOST "cd /tmp && tar xf -"
