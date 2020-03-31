@@ -1,12 +1,15 @@
 #!/bin/bash
 
+set -e
+
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+OSVC_CORE="$PATH_SCRIPT/../../opensvc/core"
+export PYTHONPATH="$PATH_SCRIPT/../../opensvc"
 
-python $PATH_SCRIPT/../../lib/usrdict.py rst
-python $PATH_SCRIPT/../../lib/svcdict.py rst
-python $PATH_SCRIPT/../../lib/secdict.py rst
-python $PATH_SCRIPT/../../lib/cfgdict.py rst
-python $PATH_SCRIPT/../../lib/nodedict.py rst
-python $PATH_SCRIPT/../../lib/clusterdict.py rst
+python $OSVC_CORE/objects/usrdict.py rst
+python $OSVC_CORE/objects/svcdict.py rst
+python $OSVC_CORE/objects/secdict.py rst
+python $OSVC_CORE/objects/cfgdict.py rst
+python $OSVC_CORE/objects/ccfgdict.py rst
+python $OSVC_CORE/node/nodedict.py rst
 python $PATH_SCRIPT/make_rst_examples rst
-
