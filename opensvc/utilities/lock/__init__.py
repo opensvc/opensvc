@@ -10,7 +10,7 @@ import json
 import os
 import time
 
-import six
+import foreign.six as six
 
 
 class LockNoLockFile(Exception):

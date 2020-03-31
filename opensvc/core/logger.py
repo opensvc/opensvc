@@ -4,7 +4,7 @@ import logging.handlers
 import os
 import sys
 
-import six
+import foreign.six as six
 from env import Env
 from utilities.files import makedirs
 
@@ -198,7 +198,7 @@ def initLogger(root, logfile, handlers=None, sid=True):
                 streamhandler.setLevel(logging.INFO)
 
     if "syslog" in handlers:
-        from six.moves import configparser as ConfigParser
+        from foreign.six.moves import configparser as ConfigParser
         config = ConfigParser.RawConfigParser({})
         try:
             config.read(Env.paths.nodeconf)

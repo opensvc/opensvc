@@ -4,8 +4,9 @@ Converters, used by arguments and config file parsers.
 import re
 import shlex
 import datetime
-import six
 import json
+
+import foreign.six as six
 
 try:
     NUMERIC_TYPES = (int, float, long)

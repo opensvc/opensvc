@@ -4,7 +4,7 @@ import base64
 import os
 import sys
 
-import six
+import foreign.six as six
 
 import core.exceptions as ex
 from core.objects.data import DataMixin

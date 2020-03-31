@@ -11,7 +11,7 @@ try:
     import pythoncom
     import foreign.wmi as wmi
     import win32serviceutil
-    from six.moves import winreg
+    from foreign.six.moves import winreg
 except ImportError:
     raise
 

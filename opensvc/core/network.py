@@ -2,10 +2,10 @@ from __future__ import print_function
 import json
 import os
 import re
-import six
 import socket
 
 import core.exceptions as ex
+import foreign.six as six
 
 from env import Env
 from utilities.files import makedirs

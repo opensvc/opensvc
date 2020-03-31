@@ -5,7 +5,6 @@ import optparse
 import time
 import datetime
 import threading
-from six.moves import queue
 
 #
 # add project lib to path
@@ -16,6 +15,7 @@ import core.exceptions as ex
 import foreign.json_delta as json_delta
 import utilities.render.color
 from core.node import Node
+from foreign.six.moves import queue
 from utilities.render.cluster import format_cluster
 
 CLEAREOL = "\x1b[K"

@@ -9,9 +9,8 @@ import sys
 import time
 from datetime import datetime
 
-import six
-
 import core.exceptions as ex
+import foreign.six as six
 from env import Env
 from utilities.naming import split_path
 
