@@ -721,7 +721,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def hook_command(self, cmd, data):
         """
-        A generic nodemgr command Popen wrapper.
+        A generic Popen wrapper logging the begining of execution.
         """
         cmd = list(cmd)
         eid = data.get("data", {}).get("id")
@@ -739,7 +739,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def node_command(self, cmd):
         """
-        A generic nodemgr command Popen wrapper.
+        A generic node command Popen wrapper.
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
@@ -752,13 +752,13 @@ class OsvcThread(threading.Thread, Crypt):
 
     def service_command(self, path, cmd, stdout=None, stderr=None, stdin=None, local=True):
         """
-        A generic svcmgr command Popen wrapper.
+        A generic object command Popen wrapper.
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         _cmd = [] + Env.python_cmd + ["-m", Env.package]
         if path:
-            cmd = [path] + cmd
+            cmd = ["svc", "-s", path] + cmd
         else:
             cmd = ["svc"] + cmd
         if local and "--local" not in cmd:

@@ -63,11 +63,13 @@ class Paths(object):
             self.nodemgr = os.path.join(self.pathsvc, "nodemgr.cmd")
             self.svcmon = os.path.join(self.pathsvc, "svcmon.cmd")
             self.cron = os.path.join(self.pathsvc, "cron.cmd")
+            self.om = os.path.join(self.pathsvc, "om.cmd")
         else:
             self.svcmgr = os.path.join(self.pathbin, "svcmgr")
             self.nodemgr = os.path.join(self.pathbin, "nodemgr")
             self.svcmon = os.path.join(self.pathbin, "svcmon")
             self.cron = os.path.join(self.pathcron, "cron")
+            self.om = os.path.join(self.pathbin, "om")
 
         self.nodeconf = os.path.join(self.pathetc, "node.conf")
         self.clusterconf = os.path.join(self.pathetc, "cluster.conf")
@@ -269,3 +271,4 @@ class Env(object):
         python_cmd.append(sys.executable)
     if pyargs:
         python_cmd += pyargs
+    om = python_cmd + ["-m", package]

@@ -4036,7 +4036,7 @@ class Svc(BaseSvc):
             options += ["--namespace", self.options.namespace]
 
         paths = Paths(osvc_root_path=container.osvc_root_path)
-        cmd = [paths.svcmgr, '-s', self.path] + options + cmd
+        cmd = [paths.om, "svc", "-s", self.path] + options + cmd
         if verbose:
             self.log.info(" ".join(cmd))
 
@@ -5551,8 +5551,7 @@ class Svc(BaseSvc):
 
     def pull(self):
         """
-        Pull a service configuration from the collector, installs it and
-        create the svcmgr link.
+        Pull a service configuration from the collector and install it.
         """
         data = self.node.collector_rest_get("/services/"+self.path+"?props=svc_config&meta=0")
         if "error" in data:

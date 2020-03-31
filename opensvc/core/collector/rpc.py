@@ -121,7 +121,7 @@ class CollectorRpc(object):
            self.node.collector_env.dbopensvc is not None and \
            not Env.warned and \
            fn != "register_node":
-            print("this node is not registered. try 'nodemgr register'", file=sys.stderr)
+            print("this node is not registered. try 'om node register'", file=sys.stderr)
             print("to disable this warning, set 'dbopensvc = None' in node.conf", file=sys.stderr)
             Env.warned = True
             return

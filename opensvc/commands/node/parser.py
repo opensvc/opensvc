@@ -7,14 +7,53 @@ from core.node.node import ACTION_ASYNC
 
 PROG = "om node"
 
+GLOBAL_OPT = Storage({
+    "color": Option(
+        "--color", default="auto",
+        action="store", dest="color",
+        help="Colorize output. Possible values are:\n\n"
+             "* auto: guess based on tty presence\n"
+             "* always|yes: always colorize\n"
+             "* never|no: never colorize"),
+    "debug": Option(
+        "--debug", default=False,
+        action="store_true", dest="debug",
+        help="Increase stream log verbosity up to the debug level."),
+    "format": Option(
+        "--format", default=None,
+        action="store", dest="format",
+        help="Specify a data formatter. Possible values are json, flat_json, "
+              "csv or table. csv and table formatters are available only for "
+              "commands returning tabular data."),
+    "filter": Option(
+        "--filter", default="",
+        action="store", dest="jsonpath_filter",
+        help="A JSONPath expression to filter a JSON output."),
+    "help": Option(
+        "-h", "--help", default=None,
+        action="store_true", dest="parm_help",
+        help="Show this help message and exit"),
+    "local": Option(
+        "--local", default=False,
+        action="store_true", dest="local",
+        help="Set to disable cluster-wide operations."),
+    "node": Option(
+        "--node", default="",
+        action="store", dest="node",
+        help="A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted."),
+    "server": Option(
+        "--server", default="",
+        action="store", dest="server",
+        help="The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock."),
+})
+
+GLOBAL_OPTS = [GLOBAL_OPT[opt] for opt in GLOBAL_OPT]
+
 OPT = Storage({
     "api": Option(
         "--api", default=None, action="store", dest="api",
         help="Specify a collector api url different from the "
              "one set in node.conf."),
-    "access": Option(
-        "--access", default="rwo", action="store", dest="access",
-        help="The access mode of the volume. rwo, roo, rwx, rox."),
     "add": Option(
         "--add", default=None,
         action="store",
@@ -45,22 +84,11 @@ OPT = Storage({
         action="store", dest="begin",
         help="A begin date expressed as ``YYYY-MM-DD hh:mm`` limiting the "
              "timerange the action applies to."),
-    "blk": Option(
-        "--blk", default=False,
-        action="store_true", dest="blk",
-        help="Create a block volume instead of a formatted volume."),
     "broadcast": Option(
         "--broadcast", default=None,
         action="store", dest="broadcast",
         help="A list of broadcast addresses, comma separated, the send "
              "the Wake-On-LAN packets to."),
-    "color": Option(
-        "--color", default="auto",
-        action="store", dest="color",
-        help="Colorize output. Possible values are:\n\n"
-             "* auto: guess based on tty presence\n"
-             "* always|yes: always colorize\n"
-             "* never|no: never colorize"),
     "comment": Option(
         "--comment", default=None,
         action="store", dest="comment",
@@ -79,10 +107,6 @@ OPT = Storage({
         action="store_true", dest="cron",
         help="If set, the action is actually executed impersonating the "
              "scheduler thread."),
-    "debug": Option(
-        "--debug", default=False,
-        action="store_true", dest="debug",
-        help="Increase stream log verbosity up to the debug level."),
     "devices": Option(
         "--dev", default=[], action="append", dest="devices",
         help="A device path to limit or apply the action to."),
@@ -106,10 +130,6 @@ OPT = Storage({
              ":opt:`--param` is evaluated, scoped and dereferenced. If set "
              "with the :cmd:`om node set` action, the current value is "
              "evaluated before mangling."),
-    "filter": Option(
-        "--filter", default="",
-        action="store", dest="jsonpath_filter",
-        help="A JSONPath expression to filter a JSON output."),
     "filterset": Option(
         "--filterset", default="",
         action="store", dest="filterset",
@@ -122,24 +142,10 @@ OPT = Storage({
         "--force", default=False,
         action="store_true", dest="force",
         help="Force action, ignore sanity checks."),
-    "foreground": Option(
-        "-f", "--foreground", default=False,
-        action="store_true", dest="foreground",
-        help="Run the deamon in foreground mode."),
-    "format": Option(
-        "--format", default=None,
-        action="store", dest="format",
-        help="Specify a data formatter. Possible values are json, flat_json, "
-              "csv or table. csv and table formatters are available only for "
-              "commands returning tabular data."),
     "hba": Option(
         "--hba", default=None, action="store", dest="hba",
         help="Specify a hba to scan for new block devices. Example: "
              "5001438002432430 or iqn.1993-08.org.debian:01:659b4bbd68bd."),
-    "help": Option(
-        "-h", "--help", default=None,
-        action="store_true", dest="parm_help",
-        help="Show this help message and exit"),
     "id": Option(
         "--id", default=0,
         action="store", dest="id",
@@ -185,10 +191,6 @@ OPT = Storage({
         help="A data filtering expression. ``%`` is the multi-character "
              "wildcard. ``_`` is the single-character wildcard. Leading and "
              "trailing ``%`` are automatically set."),
-    "local": Option(
-        "--local", default=False,
-        action="store_true", dest="local",
-        help="Set to disable cluster-wide operations."),
     "lun": Option(
         "--lun", default=None, action="store", dest="lun",
         help="Specify a logical unit number to scan for new block devices. "
@@ -211,24 +213,6 @@ OPT = Storage({
         action="store", dest="moduleset",
         help="Specify the modulesets to limit the action to. The special value ``all`` "
              "can be used in conjonction with detach."),
-    "name": Option(
-        "--name", action="store", dest="name",
-        help="The name of the object."),
-    "namespace": Option(
-        "--namespace", action="store", dest="namespace",
-        help="The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable."),
-    "server": Option(
-        "--server", default="",
-        action="store", dest="server",
-        help="The server uri to send a request to. If not specified the local node is targeted. Supported schemes are https and raw. The default scheme is https. The default port is 1214 for the raw scheme, and 1215 for https. The uri can be a fullpath to a listener socket. In this case, the scheme is deduced from the socket. Examples: raw://1.2.3.4:1214, https://relay.opensvc.com, /var/lib/opensvc/lsnr/h2.sock."),
-    "node": Option(
-        "--node", default="",
-        action="store", dest="node",
-        help="A node selector expression. Embedded in requests for the daemon to route and multiplex the request to a list of nodes. If not specified the local node is targeted."),
-    "nodes": Option(
-        "--nodes", default="",
-        action="store", dest="nodes",
-        help="A node selector expression. Used as the created volume nodes."),
     "nopager": Option(
         "--no-pager", default=False,
         action="store_true", dest="nopager",
@@ -252,10 +236,6 @@ OPT = Storage({
              "specified user credentials instead of the node "
              "credentials. Prompted if necessary but not "
              "specified."),
-    "pool": Option(
-        "--pool", default=None,
-        action="store", dest="pool",
-        help="The name of the storage pool."),
     "port": Option(
         "--port", default=7,
         action="store", dest="port",
@@ -291,23 +271,11 @@ OPT = Storage({
         "--save", default=False,
         action="store_true", dest="save",
         help="Save the collector cli settings to the file specified by --config or ~/.opensvc-cli by default."),
-    "shared": Option(
-        "--shared", default=False,
-        action="store_true", dest="shared",
-        help="Create a volume service for a shared volume resource."),
-    "size": Option(
-        "--size", default="rwo", action="store", dest="size",
-        help="The size mode of the volume. ex: 10gi, 10g."),
     "stats_dir": Option(
         "--stats-dir", default=None,
         action="store", dest="stats_dir",
         help="Points the directory where the metrics files are "
              "stored for pushstats."),
-    "secret": Option(
-        "--secret", default=None,
-        action="store", dest="secret",
-        help="The cluster secret used as the AES key in the cluster "
-             "communications."),
     "symcli_db_file": Option(
         "--symcli-db-file", default=None,
         action="store", dest="symcli_db_file",
@@ -330,10 +298,6 @@ OPT = Storage({
         "--target", default=None, action="store", dest="target",
         help="Specify a target to scan for new block devices. Example: "
              "5000097358185088 or iqn.clementine.tgt1."),
-    "thr_id": Option(
-        "--thread-id", default=None, action="store", dest="thr_id",
-        help="Specify a daemon thread, as listed in the :cmd:`om daemon "
-             "status` output."),
     "time": Option(
         "--time", default=300,
         action="store", dest="time", type="int",
@@ -362,16 +326,7 @@ OPT = Storage({
         help="Wait for asynchronous action termination"),
 })
 
-GLOBAL_OPTS = [
-    OPT.color,
-    OPT.debug,
-    OPT.format,
-    OPT.filter,
-    OPT.help,
-    OPT.local,
-    OPT.server,
-    OPT.node,
-]
+OPT.update(GLOBAL_OPT)
 
 ASYNC_OPTS = [
     OPT.time,
@@ -551,52 +506,6 @@ ACTIONS = {
             ],
         },
     },
-    "Pool actions": {
-        "pool_ls": {
-            "msg": "List the available pools.",
-        },
-        "pool_status": {
-            "msg": "Show pools status.",
-            "options": [
-                OPT.name,
-                OPT.verbose,
-            ],
-        },
-        "pool_create_volume": {
-            "msg": "Create a volume in the pool.",
-            "options": [
-                OPT.access,
-                OPT.blk,
-                OPT.name,
-                OPT.namespace,
-                OPT.pool,
-                OPT.shared,
-                OPT.size,
-                OPT.nodes,
-            ],
-        },
-    },
-    "Network actions": {
-        "network_ls": {
-            "msg": "List the available networks.",
-        },
-        "network_setup": {
-            "msg": "Create bridges, assign host address, update host routes to node backend networks. This action is executed on node configuration changes. Useful for troubleshoot.",
-        },
-        "network_show": {
-            "msg": "Show network configuration.",
-            "options": [
-                OPT.name,
-            ],
-        },
-        "network_status": {
-            "msg": "Show allocated ip address in networks.",
-            "options": [
-                OPT.name,
-                OPT.verbose,
-            ],
-        },
-    },
     "Node configuration": {
         "print_config": {
             "msg": "Display the node current configuration.",
@@ -660,70 +569,6 @@ ACTIONS = {
         },
         "validate_config": {
             "msg": "Check the section names and keywords are valid.",
-        },
-    },
-    "Node daemon management": {
-        "daemon_relay_status": {
-            "msg": "Show the daemon relay clients and last update timestamp.",
-        },
-        "daemon_blacklist_status": {
-            "msg": "Show the content of the daemon senders blacklist.",
-        },
-        "daemon_blacklist_clear": {
-            "msg": "Empty the content of the daemon senders blacklist.",
-        },
-        "daemon_lock_release": {
-            "msg": "Release a lock. Beware locks should be released automatically.",
-            "options": [
-                OPT.id,
-                OPT.name,
-            ],
-        },
-        "daemon_restart": {
-            "msg": "Restart the daemon.",
-        },
-        "daemon_running": {
-            "msg": "Return with code 0 if the daemon is running, else return "
-                   "with code 1",
-        },
-        "daemon_shutdown": {
-            "msg": "Stop all local services instances then stop the daemon.",
-        },
-        "daemon_status": {
-            "msg": "Display the daemon status.",
-        },
-        "daemon_stats": {
-            "msg": "Display the daemon stats.",
-        },
-        "daemon_start": {
-            "msg": "Start the daemon or a daemon thread pointed by :opt:`--thread-id`.",
-            "options": [
-                OPT.thr_id,
-                OPT.foreground,
-            ],
-        },
-        "daemon_stop": {
-            "msg": "Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.",
-            "options": [
-                OPT.thr_id,
-            ],
-        },
-        "daemon_join": {
-            "msg": "Join the cluster of the node specified by :opt:`--node <node>`, authenticating with :opt:`--secret <secret>`.",
-            "options": [
-                OPT.secret,
-            ],
-        },
-        "daemon_rejoin": {
-            "msg": "Rejoin the cluster of the node specified by :opt:`--node <node>`, authenticating with the already known secret. This will re-merge the remote node cluster-wide configurations in the local node configuration file.",
-        },
-        "daemon_leave": {
-            "msg": "Inform peer nodes we leave the cluster. Make sure the "
-                   "left nodes are no longer in the services nodes list "
-                   "before leaving, so the other nodes won't takeover.",
-        },
-        "dns_dump": {
-            "msg": "Dump the content of the cluster zone.",
         },
     },
     "Push data to the collector": {
@@ -1150,7 +995,7 @@ ACTIONS_TRANSLATIONS = {
     "unfreeze": "thaw",
 }
 
-class NodemgrOptParser(OptParser):
+class NodeOptParser(OptParser):
     """
     The node management command options parser class.
     """

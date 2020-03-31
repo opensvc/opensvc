@@ -10,7 +10,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from commands import nodemgr
+import commands.node
 
 
 os.environ["PYTHONHTTPSVERIFY"] = "0"
@@ -23,7 +23,7 @@ class Test:
         """
         cli get /users/self
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "get", "/users/self",
         ])
@@ -33,7 +33,7 @@ class Test:
         """
         cli ls
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "ls",
         ])
@@ -43,7 +43,7 @@ class Test:
         """
         cli POST /groups
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "post", "/groups", "--data", "role=unittest",
         ])
@@ -52,7 +52,7 @@ class Test:
         """
         cli moduleset create 1
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "moduleset", "--create", "--moduleset", "unittest1",
         ])
@@ -62,7 +62,7 @@ class Test:
         """
         cli moduleset create 2
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "moduleset", "--create", "--moduleset", "unittest2",
         ])
@@ -72,7 +72,7 @@ class Test:
         """
         cli moduleset recreate 1
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "moduleset", "--create", "--moduleset", "unittest1",
         ])
@@ -82,7 +82,7 @@ class Test:
         """
         cli moduleset add responsible
         """
-        ret = nodemgr.main(argv=[
+        ret = commands.node.main(argv=[
             CONFIG, "collector", "cli",
             "moduleset", "--attach",
             "--moduleset", "unittest1",

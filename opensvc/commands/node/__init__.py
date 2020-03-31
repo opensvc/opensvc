@@ -7,39 +7,10 @@ import sys
 import utilities.render.color
 import core.exceptions as ex
 from env import Env
-from commands.nodemgr.parser import NodemgrOptParser
+from commands.node.parser import NodeOptParser
 from core.node import Node
+from utilities.proc import get_extra_argv
 
-
-def get_extra_argv(argv=None):
-    """
-    Extract extra argv from nodemgr argv.
-
-    nodemgr can act as a wrapper for other commands (storage drivers for
-    example).
-    """
-    if argv is None:
-        argv = sys.argv[1:]
-    if len(argv) < 2:
-        return argv, []
-
-    if "array" in argv:
-        pos = argv.index('array')
-    elif "cli" in argv:
-        pos = argv.index('cli')
-        if pos > 0 and argv[pos-1] != "collector":
-            return argv, []
-    else:
-        return argv, []
-
-    if "--" in argv:
-        pos = argv.index("--")
-    if len(argv) > pos + 1:
-        extra_argv = argv[pos+1:]
-    else:
-        extra_argv = []
-    argv = argv[:pos+1]
-    return argv, extra_argv
 
 def do_symcli_db_file(options):
     try:
@@ -56,7 +27,7 @@ def do_symcli_db_file(options):
 
 def _main(node, argv=None):
     argv, extra_argv = get_extra_argv(argv)
-    optparser = NodemgrOptParser(argv)
+    optparser = NodeOptParser(argv)
     options, action = optparser.parse_args(argv)
     options.extra_argv = extra_argv
 

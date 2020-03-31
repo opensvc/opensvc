@@ -53,7 +53,7 @@ PRIVATE_KEYWORDS = [
     {
         "section": "node",
         "keyword": "uuid",
-        "text": "The auth token provided by the collector on :cmd:`nodemgr register`."
+        "text": "The auth token provided by the collector on :cmd:`om node register`."
     },
     {
         "section": "node",
@@ -308,7 +308,7 @@ KEYWORDS = [
         "keyword": "max_parallel",
         "default": 10,
         "convert": "integer",
-        "text": "Allow a maximum of :kw:`max_parallel` subprocesses to run simultaneously on :cmd:`svcmgr --parallel <action>` commands."
+        "text": "Allow a maximum of :kw:`max_parallel` subprocesses to run simultaneously on :cmd:`om <selector> --parallel <action>` commands."
     },
     {
         "section": "node",
@@ -428,7 +428,7 @@ KEYWORDS = [
         "section": "node",
         "keyword": "repo",
         "example": "http://opensvc.repo.corp",
-        "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the :cmd:`nodemgr updatepkg` and :cmd:`nodemgr updatecomp` commands.
+        "text": """Set the uri of the opensvc agent package repository and compliance modules gzipped tarball repository. This parameter is used by the :cmd:`om node updatepkg` and :cmd:`om node updatecomp` commands.
 
 Expected repository structure::
 
@@ -459,7 +459,7 @@ Expected repository structure::
         "section": "node",
         "keyword": "repopkg",
         "example": "http://repo.opensvc.com",
-        "text": """Set the uri of the opensvc agent package repository. This parameter is used by the :cmd:`nodemgr updatepkg` command.
+        "text": """Set the uri of the opensvc agent package repository. This parameter is used by the :cmd:`om node updatepkg` command.
 
 Expected repository structure::
 
@@ -485,7 +485,7 @@ Expected repository structure::
         "section": "node",
         "keyword": "repocomp",
         "example": "http://compliance.repo.corp",
-        "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the :cmd:`nodemgr updatecomp` command.
+        "text": """Set the uri of the opensvc compliance modules gzipped tarball repository. This parameter is used by the :cmd:`om node updatecomp` command.
 
 Expected repository structure::
 
@@ -502,8 +502,7 @@ Expected repository structure::
         "default": "root",
         "example": "root opensvc@node1",
         "text": """Set the remote user to use to login to a remote node with ssh and rsync. The remote user must have the privileges to run as root the following commands on the remote node:
-* nodemgr
-* svcmgr
+* om
 * rsync
 The default ruser is root for all nodes. ruser accepts a list of user[@node] ... If @node is ommited, user is considered the new default user.
 """

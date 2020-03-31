@@ -7,8 +7,8 @@ import json
 import logging
 
 import pytest
+import commands.node
 
-from commands import nodemgr
 from utilities.string import try_decode
 
 UNICODE_STRING = "bêh"
@@ -17,12 +17,12 @@ logging.disable(logging.CRITICAL)
 
 @pytest.fixture(scope='function')
 def has_privs(mocker):
-    mocker.patch.object(nodemgr.Node, 'check_privs', return_value=None)
+    mocker.patch.object(commands.node.Node, 'check_privs', return_value=None)
 
 
 @pytest.fixture(scope='function')
 def parse_args(mocker):
-    parse_args = mocker.patch.object(nodemgr.NodemgrOptParser,
+    parse_args = mocker.patch.object(commands.node.NodemgrOptParser,
                                      'parse_args',
                                      return_value=(mocker.Mock(symcli_db_file=None), 'my_action'))
     return parse_args
@@ -30,7 +30,7 @@ def parse_args(mocker):
 
 @pytest.fixture(scope='function')
 def node(mocker):
-    node = mocker.patch.object(nodemgr, 'Node', autospec=True).return_value
+    node = mocker.patch.object(commands.node, 'Node', autospec=True).return_value
     node.options = dict()
     node.action.return_value = 0
     return node
@@ -44,27 +44,27 @@ class TestNodemgr:
     def test_it_call_once_node_action_and_returns_node_action_return_value(node, parse_args, action_return_value):
         node.action.return_value = action_return_value
 
-        ret = nodemgr.main(argv=["my_action", "--format", "json"])
+        ret = commands.node.main(argv=["my_action", "--format", "json"])
 
         assert ret == action_return_value
         node.action.assert_called_once_with('my_action')
 
     @staticmethod
     def test_get_extra_argv():
-        assert nodemgr.get_extra_argv(["hello", 'world']) == (['hello', 'world'], [])
+        assert commands.node.get_extra_argv(["hello", 'world']) == (['hello', 'world'], [])
 
     @staticmethod
     def test_get_extra_argv_when_array():
-        assert nodemgr.get_extra_argv(["array", '--', 'value=1']) == (['array', '--'], ['value=1'])
-        assert nodemgr.get_extra_argv(["array", 'value=1']) == (['array'], ['value=1'])
-        assert nodemgr.get_extra_argv(["myaction", 'value=1']) == (['myaction', 'value=1'], [])
+        assert commands.node.get_extra_argv(["array", '--', 'value=1']) == (['array', '--'], ['value=1'])
+        assert commands.node.get_extra_argv(["array", 'value=1']) == (['array'], ['value=1'])
+        assert commands.node.get_extra_argv(["myaction", 'value=1']) == (['myaction', 'value=1'], [])
 
     @staticmethod
     def test_print_schedule():
         """
         Print node schedules
         """
-        ret = nodemgr.main(argv=["print", "schedule"])
+        ret = commands.node.main(argv=["print", "schedule"])
         assert ret == 0
 
     @staticmethod
@@ -73,7 +73,7 @@ class TestNodemgr:
         Print node schedules (json format)
         """
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["print", "schedule", "--format", "json", "--color", "no"])
+            ret = commands.node.main(argv=["print", "schedule", "--format", "json", "--color", "no"])
 
         assert ret == 0
         with open(tmp_file) as json_file:
@@ -88,12 +88,12 @@ class TestNodemgr:
                               ['pool', 'status', '--verbose', '--debug']),
                              ids=['ls', 'status', 'status --verbose'])
     def test_pool_action(argv):
-        assert nodemgr.main(argv=argv) == 0
+        assert commands.node.main(argv=argv) == 0
 
     @staticmethod
     def test_node_has_a_pool(tmp_file, capture_stdout):
         with capture_stdout(tmp_file):
-            assert nodemgr.main(argv=['pool', 'status', '--format', 'json']) == 0
+            assert commands.node.main(argv=['pool', 'status', '--format', 'json']) == 0
         with open(tmp_file) as json_file:
             pools = json.load(json_file).values()
             assert len([pool for pool in pools if pool['type'] != 'unknown']) > 0
@@ -102,7 +102,7 @@ class TestNodemgr:
         """
         Print node config
         """
-        ret = nodemgr.main(argv=["print", "config"])
+        ret = commands.node.main(argv=["print", "config"])
         assert ret == 0
 
     @staticmethod
@@ -111,7 +111,7 @@ class TestNodemgr:
         Print node config (json format)
         """
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["print", "config", "--format", "json", "--color", "no"])
+            ret = commands.node.main(argv=["print", "config", "--format", "json", "--color", "no"])
 
         with open(tmp_file) as json_file:
             config = json.load(json_file)
@@ -122,21 +122,21 @@ class TestNodemgr:
     @staticmethod
     @pytest.mark.parametrize('get_set_arg', ['--param', '--kw'])
     def test_set_get_unset_some_env_value(tmp_file, capture_stdout, get_set_arg):
-        ret = nodemgr.main(argv=["set", "--param", "env.this_is_test", "--value", "true"])
+        ret = commands.node.main(argv=["set", "--param", "env.this_is_test", "--value", "true"])
         assert ret == 0
 
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["get", get_set_arg, "env.this_is_test"])
+            ret = commands.node.main(argv=["get", get_set_arg, "env.this_is_test"])
             assert ret == 0
         with open(tmp_file) as output_file:
             assert try_decode(output_file.read()).strip() == "true"
 
-        ret = nodemgr.main(argv=["unset", get_set_arg, "env.this_is_test"])
+        ret = commands.node.main(argv=["unset", get_set_arg, "env.this_is_test"])
         assert ret == 0
 
         tmp_file_1 = tmp_file + '-1'
         with capture_stdout(tmp_file_1):
-            ret = nodemgr.main(argv=["get", get_set_arg, "env.this_is_test"])
+            ret = commands.node.main(argv=["get", get_set_arg, "env.this_is_test"])
             assert ret == 0
         with open(tmp_file_1) as output_file:
             assert output_file.read().strip() == "None"
@@ -146,7 +146,7 @@ class TestNodemgr:
         """
         Set node env.comment to a unicode string
         """
-        ret = nodemgr.main(argv=["set", "--param", "env.comment", "--value", UNICODE_STRING])
+        ret = commands.node.main(argv=["set", "--param", "env.comment", "--value", UNICODE_STRING])
         assert ret == 0
 
     @staticmethod
@@ -157,7 +157,7 @@ class TestNodemgr:
         """
 
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["get", "--param", "env.comment"])
+            ret = commands.node.main(argv=["get", "--param", "env.comment"])
 
         assert ret == 0
         with open(tmp_file) as output_file:
@@ -169,7 +169,7 @@ class TestNodemgr:
         """
         Unset env.comment
         """
-        ret = nodemgr.main(argv=["unset", "--param", "env.comment"])
+        ret = commands.node.main(argv=["unset", "--param", "env.comment"])
         assert ret == 0
 
     @pytest.mark.skip
@@ -177,109 +177,109 @@ class TestNodemgr:
         """
         Get an unset keyword
         """
-        assert nodemgr.main(argv=["get", "--param", "env.comment"]) == 1
+        assert commands.node.main(argv=["get", "--param", "env.comment"]) == 1
 
     @staticmethod
     def test_checks_return_0():
         """
         Run node checks
         """
-        ret = nodemgr.main(argv=["checks"])
+        ret = commands.node.main(argv=["checks"])
         assert ret == 0
 
     @staticmethod
     def test_sysreport(mocker):
         from core.sysreport.sysreport import BaseSysReport
         send_sysreport = mocker.patch.object(BaseSysReport, 'sysreport')
-        ret = nodemgr.main(argv=["sysreport"])
+        ret = commands.node.main(argv=["sysreport"])
         assert ret == 0
         assert send_sysreport.call_count == 1
 
     @staticmethod
     @pytest.mark.skip
     def test_pushasset_return_0():
-        ret = nodemgr.main(argv=["pushasset"])
+        ret = commands.node.main(argv=["pushasset"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_08_nodemgr_collect_stats():
+    def test_08_node_collect_stats():
         """
         Run node collect stats
         """
-        ret = nodemgr.main(argv=["collect_stats"])
+        ret = commands.node.main(argv=["collect_stats"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_09_nodemgr_pushstats():
+    def test_09_node_pushstats():
         """
         Run node pushstats
         """
-        ret = nodemgr.main(argv=["pushstats"])
+        ret = commands.node.main(argv=["pushstats"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_10_nodemgr_pushpkg():
+    def test_10_node_pushpkg():
         """
         Run node pushpkg
         """
-        ret = nodemgr.main(argv=["pushpkg"])
+        ret = commands.node.main(argv=["pushpkg"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_11_nodemgr_pushpatch():
+    def test_11_node_pushpatch():
         """
         Run node pushpatch
         """
-        ret = nodemgr.main(argv=["pushpatch"])
+        ret = commands.node.main(argv=["pushpatch"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_12_nodemgr_pushdisks():
+    def test_12_node_pushdisks():
         """
         Run node pushdisks
         """
-        ret = nodemgr.main(argv=["pushdisks"])
+        ret = commands.node.main(argv=["pushdisks"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_131_nodemgr_schedule_reboot():
+    def test_131_node_schedule_reboot():
         """
         Run schedule reboot
         """
-        ret = nodemgr.main(argv=["schedule", "reboot"])
+        ret = commands.node.main(argv=["schedule", "reboot"])
         assert ret == 0
 
     @staticmethod
     # @pytest.mark.skip
-    def test_132_nodemgr_unschedule_reboot():
+    def test_132_node_unschedule_reboot():
         """
         Run unschedule reboot
         """
-        ret = nodemgr.main(argv=["unschedule", "reboot"])
+        ret = commands.node.main(argv=["unschedule", "reboot"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_133_nodemgr_print_reboot_status():
+    def test_133_node_print_reboot_status():
         """
         Print reboot schedule status
         """
-        ret = nodemgr.main(argv=["schedule", "reboot", "status"])
+        ret = commands.node.main(argv=["schedule", "reboot", "status"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_14_nodemgr_logs():
+    def test_14_node_logs():
         """
         Print node logs
         """
-        ret = nodemgr.main(argv=["logs"])
+        ret = commands.node.main(argv=["logs"])
         assert ret == 0
 
     @staticmethod
@@ -287,7 +287,7 @@ class TestNodemgr:
         """
         List node networks
         """
-        ret = nodemgr.main(argv=["network", "ls"])
+        ret = commands.node.main(argv=["network", "ls"])
         assert ret == 0
 
     @staticmethod
@@ -296,71 +296,71 @@ class TestNodemgr:
         List node networks (json format)
         """
 
-        nodemgr.main(argv=["network", "ls", "--format", "json", "--color", "no"])
+        commands.node.main(argv=["network", "ls", "--format", "json", "--color", "no"])
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["network", "ls", "--format", "json", "--color", "no"])
+            ret = commands.node.main(argv=["network", "ls", "--format", "json", "--color", "no"])
 
         assert ret == 0
         with open(tmp_file) as std_out:
             assert isinstance(json.load(std_out), dict)
 
     @staticmethod
-    def test_nodemgr_print_devs():
+    def test_node_print_devs():
         """
         Print node device tree
         """
-        assert nodemgr.main(argv=["print", "devs"]) == 0
+        assert commands.node.main(argv=["print", "devs"]) == 0
 
     @staticmethod
     def test_prkey_create_initial_value_when_absent(tmp_file, capture_stdout):
         with capture_stdout(tmp_file):
-            ret = nodemgr.main(argv=["prkey"])
+            ret = commands.node.main(argv=["prkey"])
         assert ret == 0
         with open(tmp_file) as std_out:
             assert std_out.read().startswith('0x')
 
     @staticmethod
     def test_prkey_show_existing_prkey(tmp_file, capture_stdout):
-        nodemgr.main(argv=['set', '--kw', 'node.prkey=0x8796759710111'])
+        commands.node.main(argv=['set', '--kw', 'node.prkey=0x8796759710111'])
         with capture_stdout(tmp_file):
-            assert nodemgr.main(argv=["prkey"]) == 0
+            assert commands.node.main(argv=["prkey"]) == 0
         with open(tmp_file) as output_file:
             assert output_file.read().strip() == '0x8796759710111'
 
     @staticmethod
     @pytest.mark.skip
-    def test_163_nodemgr_dequeue_actions():
+    def test_163_node_dequeue_actions():
         """
         Dequeue actions
         """
-        ret = nodemgr.main(argv=["dequeue", "actions"])
+        ret = commands.node.main(argv=["dequeue", "actions"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_164_nodemgr_scan_scsi():
+    def test_164_node_scan_scsi():
         """
         Scan scsi buses
         """
-        ret = nodemgr.main(argv=["scanscsi"])
+        ret = commands.node.main(argv=["scanscsi"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_164_nodemgr_collector_networks():
+    def test_164_node_collector_networks():
         """
         Collector networks
         """
-        ret = nodemgr.main(argv=["collector", "networks"])
+        ret = commands.node.main(argv=["collector", "networks"])
         assert ret == 0
 
     @staticmethod
     @pytest.mark.skip
-    def test_164_nodemgr_collector_search():
+    def test_164_node_collector_search():
         """
         Collector search
         """
-        ret = nodemgr.main(argv=["collector", "search", "--like", "safe:%"])
+        ret = commands.node.main(argv=["collector", "search", "--like", "safe:%"])
         assert ret == 0
 
     @staticmethod
@@ -369,7 +369,7 @@ class TestNodemgr:
         """
         Node compliance auto
         """
-        ret = nodemgr.main(argv=["compliance", "auto"])
+        ret = commands.node.main(argv=["compliance", "auto"])
         assert ret == 0
 
     @staticmethod
@@ -378,7 +378,7 @@ class TestNodemgr:
         """
         Node compliance check
         """
-        ret = nodemgr.main(argv=["compliance", "check"])
+        ret = commands.node.main(argv=["compliance", "check"])
         assert ret == 0
 
     @staticmethod
@@ -387,7 +387,7 @@ class TestNodemgr:
         """
         Node compliance fix
         """
-        ret = nodemgr.main(argv=["compliance", "fix"])
+        ret = commands.node.main(argv=["compliance", "fix"])
         assert ret == 0
 
     @staticmethod
@@ -396,7 +396,7 @@ class TestNodemgr:
         """
         Node compliance show moduleset
         """
-        ret = nodemgr.main(argv=["compliance", "show", "moduleset"])
+        ret = commands.node.main(argv=["compliance", "show", "moduleset"])
         assert ret == 0
 
     @staticmethod
@@ -405,7 +405,7 @@ class TestNodemgr:
         """
         Node compliance list moduleset
         """
-        ret = nodemgr.main(argv=["compliance", "list", "moduleset"])
+        ret = commands.node.main(argv=["compliance", "list", "moduleset"])
         assert ret == 0
 
     @staticmethod
@@ -414,7 +414,7 @@ class TestNodemgr:
         """
         Node compliance show ruleset
         """
-        ret = nodemgr.main(argv=["compliance", "show", "ruleset"])
+        ret = commands.node.main(argv=["compliance", "show", "ruleset"])
         assert ret == 0
 
     @staticmethod
@@ -423,7 +423,7 @@ class TestNodemgr:
         """
         Node compliance list ruleset
         """
-        ret = nodemgr.main(argv=["compliance", "list", "ruleset"])
+        ret = commands.node.main(argv=["compliance", "list", "ruleset"])
         assert ret == 0
 
     @staticmethod
@@ -432,7 +432,7 @@ class TestNodemgr:
         """
         Node compliance attach
         """
-        ret = nodemgr.main(argv=["compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        ret = commands.node.main(argv=["compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
         assert ret == 1
 
     @staticmethod
@@ -441,5 +441,5 @@ class TestNodemgr:
         """
         Node compliance detach
         """
-        ret = nodemgr.main(argv=["compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        ret = commands.node.main(argv=["compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
         assert ret == 0
