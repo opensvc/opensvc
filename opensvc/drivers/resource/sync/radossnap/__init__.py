@@ -38,12 +38,14 @@ def adder(svc, s):
 
 class SyncRadossnap(Sync):
     def __init__(self,
-                 images=[],
+                 images=None,
                  client_id=None,
                  keyring=None,
                  **kwargs):
         super(SyncRadossnap, self).__init__(type="sync.radossnap", **kwargs)
 
+        if images is None:
+            images = []
         self.fmt_label("snap", images)
         self.images = images
         if not client_id.startswith("client."):

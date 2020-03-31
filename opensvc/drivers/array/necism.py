@@ -297,7 +297,9 @@ SV Information
 
 
 class NecIsms(NecMixin):
-    def __init__(self, objects=[]):
+    def __init__(self, objects=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True

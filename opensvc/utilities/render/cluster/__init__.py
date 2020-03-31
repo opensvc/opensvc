@@ -218,7 +218,9 @@ def fmt_tid(_data, stats_data):
         return "%d" % tid
     return ""
 
-def list_print(data, right=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]):
+def list_print(data, right=None):
+    if right is None:
+        right = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     outs = ""
     if len(data) == 0:
         return ""

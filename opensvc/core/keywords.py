@@ -30,10 +30,12 @@ class Keyword(object):
                  candidates=None,
                  strict_candidates=True,
                  convert=None,
-                 depends=[],
+                 depends=None,
                  text="",
                  example=None,
                  provisioning=False):
+        if depends is None:
+            depends = []
         self.section = section
         self.keyword = keyword
         if rtype is None or isinstance(rtype, list):
@@ -399,11 +401,21 @@ class Section(object):
         return
 
 class KeywordStore(dict):
-    def __init__(self, name=None, provision=False, keywords=[], deprecated_keywords={},
-                 reverse_deprecated_keywords={},
-                 deprecated_sections={}, template_prefix="template.",
-                 base_sections=[], has_default_section=True):
+    def __init__(self, name=None, provision=False, keywords=None, deprecated_keywords=None,
+                 reverse_deprecated_keywords=None,
+                 deprecated_sections=None, template_prefix="template.",
+                 base_sections=None, has_default_section=True):
         dict.__init__(self)
+        if base_sections is None:
+            base_sections = []
+        if deprecated_sections is None:
+            deprecated_sections = {}
+        if reverse_deprecated_keywords is None:
+            reverse_deprecated_keywords = {}
+        if deprecated_keywords is None:
+            deprecated_keywords = {}
+        if keywords is None:
+            keywords = []
         self.name = name
         self.sections = {}
         self.deprecated_sections = deprecated_sections

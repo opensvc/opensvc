@@ -185,7 +185,9 @@ class DiskVg(BaseDisk):
         self.clear_cache("vg.lvs.attr")
         self.clear_cache("vg.tags")
 
-    def list_tags(self, tags=[]):
+    def list_tags(self, tags=None):
+        if tags is None:
+            tags = []
         if not self.test_vgs():
             self.pvscan()
         data = self.get_tags()
@@ -193,7 +195,9 @@ class DiskVg(BaseDisk):
             raise ex.Error("vg %s not found" % self.name)
         return data[self.name]
 
-    def remove_tags(self, tags=[]):
+    def remove_tags(self, tags=None):
+        if tags is None:
+            tags = []
         for tag in tags:
             tag = tag.lstrip('@')
             if len(tag) == 0:

@@ -52,8 +52,10 @@ def adder(svc, s):
 
 
 class SyncNetapp(Sync):
-    def __init__(self, filers={}, path=None, user=None, **kwargs):
+    def __init__(self, filers=None, path=None, user=None, **kwargs):
         super(SyncNetapp, self).__init__(type="sync.netapp", **kwargs)
+        if filers is None:
+            filers = {}
         self.pausable = False
         self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
         self.filers = filers

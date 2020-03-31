@@ -12,7 +12,9 @@ if Env.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+Env.paths.pathbin
 
 class Centeras(object):
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
