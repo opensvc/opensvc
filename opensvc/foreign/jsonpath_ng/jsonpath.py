@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, print_function, absolute_import, division, generators, nested_scopes
 import logging
-import six
-from six.moves import xrange
+import foreign.six as six
+from foreign.six.moves import xrange
 from itertools import *  # noqa
 
 # Get logger name

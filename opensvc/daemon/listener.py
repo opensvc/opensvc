@@ -17,7 +17,7 @@ import uuid
 import fnmatch
 import re
 import datetime
-from six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
+from foreign.six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen
 from errno import EADDRINUSE, ECONNRESET, EPIPE
 
@@ -38,10 +38,10 @@ try:
 except Exception:
     has_jwt = False
 
-import six
+import foreign.six as six
 import daemon.shared as shared
 import core.exceptions as ex
-from six.moves import queue
+from foreign.six.moves import queue
 from env import Env
 from utilities.storage import Storage
 from core.comm import Headers

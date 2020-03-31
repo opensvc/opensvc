@@ -6,9 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from collections import namedtuple
 from platform import python_version_tuple
-import six
-from six.moves import zip_longest
-from six.moves import reduce
+import foreign.six as six
+from foreign.six.moves import zip_longest
+from foreign.six.moves import reduce
 import re
 
 

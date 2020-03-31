@@ -1,4 +1,4 @@
-import six
+import foreign.six as six
 
 def bencode(buff):
     """

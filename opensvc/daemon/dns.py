@@ -10,7 +10,7 @@ import shutil
 import json
 import re
 
-import six
+import foreign.six as six
 import daemon.shared as shared
 from env import Env
 from utilities.storage import Storage
