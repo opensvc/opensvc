@@ -3058,7 +3058,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             create codepath.
             """
             import re
-            comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
+            comment = re.sub(r"(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
         from foreign.six.moves import input
@@ -3581,8 +3581,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if isinstance(selector, (list, tuple, set)):
             return selector
         selector = selector.strip()
-        if not re.search("[\*?=,\+]", selector):
-            if re.search("\s", selector):
+        if not re.search(r"[\*?=,\+]", selector):
+            if re.search(r"\s", selector):
                 # simple node list
                 return selector.split()
             elif selector in self.cluster_nodes:
@@ -3791,7 +3791,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @staticmethod
     def normalize_ssh_key(buff):
-        return " ".join(re.split("\s+", buff.strip())[0:2])
+        return " ".join(re.split(r"\s+", buff.strip())[0:2])
 
     def update_ssh_authorized_keys(self):
         data = self._daemon_get_ssh()

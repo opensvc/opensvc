@@ -1566,7 +1566,7 @@ class Monitor(shared.OsvcThread):
 
     def scaler_current_slaves(self, path):
         name, namespace, kind = split_path(path)
-        pattern = "[0-9]+\." + name + "$"
+        pattern = r"[0-9]+\." + name + "$"
         if namespace:
             pattern = "^%s/%s/%s" % (namespace, kind, pattern)
         else:

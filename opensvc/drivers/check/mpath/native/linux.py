@@ -20,7 +20,7 @@ class Check(drivers.check.Check):
         return ''
 
     def do_check_old(self):
-        """
+        r"""
 	mpath1 (3600508b4000971ca0000f00010650000)
 	[size=404 GB][features="1 queue_if_no_path"][hwhandler="0"]
 	\_ round-robin 0 [active]
@@ -44,7 +44,7 @@ class Check(drivers.check.Check):
         dev = None
         n = 0
         for line in lines:
-            if len(line) > 0 and not '\_ ' in line and not line.startswith('['):
+            if len(line) > 0 and not r'\_ ' in line and not line.startswith('['):
                 # new mpath
                 # - store previous
                 # - reset path counter
