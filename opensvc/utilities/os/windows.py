@@ -1,5 +1,5 @@
 try:
-    from six.moves import winreg
+    from foreign.six.moves import winreg
 except ImportError:
     pass
 

@@ -11,8 +11,8 @@ import core.exceptions as ex
 from core.node import Node
 from env import Env
 from utilities.cache import cache, clear_cache
-from six.moves.urllib.request import Request, build_opener # pylint: disable=import-error
-from six.moves.urllib.parse import urlencode # pylint: disable=import-error
+from foreign.six.moves.urllib.request import Request, build_opener # pylint: disable=import-error
+from foreign.six.moves.urllib.parse import urlencode # pylint: disable=import-error
 from utilities.proc import justcall, which
 
 if Env.paths.pathbin not in os.environ['PATH']:

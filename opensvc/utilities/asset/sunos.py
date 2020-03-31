@@ -3,7 +3,7 @@ import os
 import re
 
 from .asset import BaseAsset
-from six.moves.urllib.parse import quote # pylint: disable=import-error
+from foreign.six.moves.urllib.parse import quote # pylint: disable=import-error
 from utilities.subsystems.zone import is_zone
 from utilities.proc import justcall, which
 

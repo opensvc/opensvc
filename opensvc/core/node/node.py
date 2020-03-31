@@ -21,7 +21,7 @@ import sys
 import time
 from errno import ECONNREFUSED, EPIPE
 
-import six
+import foreign.six as six
 
 import core.exceptions as ex
 import core.logger
@@ -51,9 +51,9 @@ from utilities.storage import Storage
 from utilities.string import bdecode, bencode
 
 try:
-    from six.moves.urllib.request import Request, urlopen
-    from six.moves.urllib.error import HTTPError
-    from six.moves.urllib.parse import urlencode
+    from foreign.six.moves.urllib.request import Request, urlopen
+    from foreign.six.moves.urllib.error import HTTPError
+    from foreign.six.moves.urllib.parse import urlencode
 except ImportError:
     # pylint false positive
     pass
@@ -3061,7 +3061,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             comment = re.sub("(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
-        from six.moves import input
+        from foreign.six.moves import input
         for key, default_val in env.items():
             if key.endswith(".comment"):
                 continue

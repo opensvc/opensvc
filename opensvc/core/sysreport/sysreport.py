@@ -8,7 +8,7 @@ import json
 from stat import *
 from subprocess import *
 
-import six
+import foreign.six as six
 import core.exceptions as ex
 from env import Env
 from utilities.proc import which

@@ -1,7 +1,7 @@
 import os
 import socket
-import six
 
+import foreign.six as six
 import core.exceptions as ex
 from utilities.proc import justcall, which
 
