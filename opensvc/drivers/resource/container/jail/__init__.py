@@ -79,14 +79,18 @@ class ContainerJail(BaseContainer):
     def __init__(self,
                  guestos="FreeBSD",
                  jailroot="/tmp",
-                 ips=[],
-                 ip6s=[],
+                 ips=None,
+                 ip6s=None,
                  **kwargs):
         super(ContainerJail, self).__init__(
             guestos=guestos,
             type="container.jail",
             **kwargs
         )
+        if ip6s is None:
+            ip6s = []
+        if ips is None:
+            ips = []
         self.jailroot = jailroot
         self.ips = ips
         self.ip6s = ip6s

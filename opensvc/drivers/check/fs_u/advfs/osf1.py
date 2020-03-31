@@ -4,8 +4,10 @@ import utilities.subsystems.advfs
 class Check(drivers.check.Check):
     chk_type = "fs_u"
 
-    def __init__(self, svcs=[]):
+    def __init__(self, svcs=None):
         super(Check, self).__init__(self, svcs)
+        if svcs is None:
+            svcs = []
 
     def find_svc(self, name):
         for svc in self.svcs:

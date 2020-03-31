@@ -137,7 +137,9 @@ class DiskInfo(BaseDiskInfo):
             s = self._scsi_id(dev, ["-p", "pre-spc3-83"])
         return s
 
-    def _scsi_id(self, dev, args=[]):
+    def _scsi_id(self, dev, args=None):
+        if args is None:
+            args = []
         wwid = self.mpath_id(dev)
         if wwid is not None:
             return wwid

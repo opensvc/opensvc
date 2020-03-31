@@ -7,7 +7,9 @@ from env import Env
 from utilities.proc import justcall, which
 
 class Check(drivers.check.Check):
-    def __init__(self, svcs=[]):
+    def __init__(self, svcs=None):
+        if svcs is None:
+            svcs = []
         super(Check, self).__init__(svcs)
         self.zpcache = {}
 
