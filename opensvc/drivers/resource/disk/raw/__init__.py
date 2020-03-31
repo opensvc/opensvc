@@ -152,7 +152,7 @@ class BaseDiskRaw(BaseDisk):
         return data
 
     def subst_container_root(self, path):
-        m = re.match("<(\w+)>", path)
+        m = re.match(r"<(\w+)>", path)
         if m is None:
             return path
         container_name = m.group(1)
@@ -166,7 +166,7 @@ class BaseDiskRaw(BaseDisk):
                     container_root = r.get_rootfs()
                 else:
                     return path
-                path = re.sub("<\w+>", container_root, path)
+                path = re.sub(r"<\w+>", container_root, path)
                 break
         return path
 

@@ -900,9 +900,9 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                 if scale:
                     name, _namespace, kind = split_path(path)
                     if _namespace:
-                        pattern = "^%s/%s/[0-9]+\.%s$" % (_namespace, kind, name)
+                        pattern = r"^%s/%s/[0-9]+\.%s$" % (_namespace, kind, name)
                     else:
-                        pattern = "^[0-9]+\.%s$" % name
+                        pattern = r"^[0-9]+\.%s$" % name
                     for child in data["monitor"]["services"]:
                         if re.match(pattern, child) is None:
                             continue
