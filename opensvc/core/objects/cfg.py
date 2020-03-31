@@ -1,5 +1,5 @@
 import base64
-import six
+import foreign.six as six
 
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc

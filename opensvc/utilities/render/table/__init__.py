@@ -8,8 +8,8 @@ import utilities.render.color
 import utilities.render.term
 
 from .tabulate import tabulate
-from six.moves import reduce
-from six import u as unicode
+from foreign.six.moves import reduce
+from foreign.six import u as unicode
 from textwrap import wrap
 
 def parse_data(data):

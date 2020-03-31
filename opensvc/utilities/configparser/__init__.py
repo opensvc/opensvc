@@ -1,8 +1,8 @@
 from __future__ import print_function
 import sys
 
-import six
-from six.moves import configparser as ConfigParser
+import foreign.six as six
+from foreign.six.moves import configparser as ConfigParser
 
 Error = ConfigParser.Error
 ParsingError = ConfigParser.ParsingError

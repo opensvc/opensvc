@@ -5,7 +5,7 @@ Forest data representation module.
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import six
+import foreign.six as six
 
 from textwrap import wrap
 from utilities.render.color import colorize, color

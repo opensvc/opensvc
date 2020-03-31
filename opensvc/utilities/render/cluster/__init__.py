@@ -1,8 +1,8 @@
 import os
-import six
 import time
 import re
 
+import foreign.six as six
 from utilities.converters import print_duration, print_size
 from utilities.render.color import colorize, color, unicons
 from env import Env

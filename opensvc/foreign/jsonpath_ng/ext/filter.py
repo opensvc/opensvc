@@ -12,7 +12,7 @@
 # under the License.
 
 import operator
-from six import moves
+from foreign.six import moves
 
 from .. import JSONPath, DatumInContext, Index
 

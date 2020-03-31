@@ -2,7 +2,7 @@ import datetime
 import glob
 import os
 
-from six.moves import configparser as ConfigParser
+from foreign.six.moves import configparser as ConfigParser
 from subprocess import *
 
 import core.exceptions as ex

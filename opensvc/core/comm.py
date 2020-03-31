@@ -33,7 +33,7 @@ except Exception:
     SSLError = DummyException
     has_ssl = False
 
-import six
+import foreign.six as six
 import foreign.pyaes as pyaes
 from env import Env
 from utilities.storage import Storage

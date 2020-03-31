@@ -9,7 +9,7 @@ import shlex
 import core.exceptions as ex
 import utilities.lock
 import core.status
-import six
+import foreign.six as six
 
 from utilities.lazy import lazy
 from utilities.converters import convert_boolean
