@@ -211,13 +211,13 @@ class Scheduler(shared.OsvcThread):
 
     def format_cmd(self, action, path=None, rids=None):
         if path is None:
-            cmd = Env.python_cmd + ["-m", Env.package, "node", action]
+            cmd = Env.om + ["node", action]
         elif isinstance(path, list):
-            cmd = Env.python_cmd + ["-m", Env.package, ",".join(path), action, "--waitlock=5"]
+            cmd = Env.om + ["svc", "-s", ",".join(path), action, "--waitlock=5"]
             if len(path) > 1:
                 cmd.append("--parallel")
         else:
-            cmd = Env.python_cmd + ["-m", Env.package, path, action, "--waitlock=5"]
+            cmd = Env.om + ["svc", "-s", path, action, "--waitlock=5"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
@@ -227,11 +227,11 @@ class Scheduler(shared.OsvcThread):
         if path is None:
             cmd = ["om", "node", action]
         elif isinstance(path, list):
-            cmd = ["om", ",".join(path), action, "--waitlock=5"]
+            cmd = ["om", "svc", "-s", ",".join(path), action, "--waitlock=5"]
             if len(path) > 1:
                 cmd.append("--parallel")
         else:
-            cmd = ["om", path, action, "--waitlock=5"]
+            cmd = ["om", "svc", "-s", path, action, "--waitlock=5"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")

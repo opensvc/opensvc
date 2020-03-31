@@ -218,7 +218,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                     opt += "=" + str(val)
                     cmd.append(opt)
 
-        fullcmd = Env.python_cmd + ["-m", Env.package, options.path] + cmd
+        fullcmd = Env.om + ["svc", "-s", options.path] + cmd
         thr.log_request("run 'om %s %s'" % (options.path, " ".join(cmd)), nodename, **kwargs)
         if options.sync:
             proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
