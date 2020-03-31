@@ -220,8 +220,8 @@ class Mgr(object):
         if action in ("create", "deploy"):
             expanded_svcs = self.selector.split(",")
         elif action == "ls":
-            from commands.svcmgr.parser import SvcmgrOptParser
-            parser = SvcmgrOptParser()
+            from commands.svc.parser import SvcOptParser
+            parser = SvcOptParser()
             expanded_svcs = None
             yield parser
         else:
@@ -230,9 +230,9 @@ class Mgr(object):
         if expanded_svcs is not None:
             svc_by_kind = self.dispatch_svcs(expanded_svcs)
             for kind, paths in svc_by_kind.items():
-                modname = "commands.{kind}mgr.parser".format(kind=kind)
+                modname = "commands.{kind}.parser".format(kind=kind)
                 mod = importlib.import_module(modname)
-                parser = getattr(mod, kind.capitalize() + "mgrOptParser")()
+                parser = getattr(mod, kind.capitalize() + "OptParser")()
                 yield parser
 
     def parse_args(self, argv):

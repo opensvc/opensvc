@@ -2840,7 +2840,7 @@ class Monitor(shared.OsvcThread):
     def service_status_fallback(self, path):
         """
         Return the specified service status structure fetched from an execution
-        of svcmgr -s <path> json status". As we arrive here when the
+        of "om svc" -s <path> json status". As we arrive here when the
         status.json doesn't exist, we don't have to specify --refresh.
         """
         self.log.info("synchronous service status eval: %s", path)
