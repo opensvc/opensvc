@@ -733,7 +733,9 @@ class CollectorRpc(object):
         args = [json.dumps(data), json.dumps(changes), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_daemon_status(*args)
 
-    def push_brocade(self, objects=[], sync=True):
+    def push_brocade(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_brocade' not in self.proxy_methods:
             print("'update_brocade' method is not exported by the collector")
             return
@@ -754,7 +756,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_brocade(*args)
 
-    def push_vioserver(self, objects=[], sync=True):
+    def push_vioserver(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_vioserver' not in self.proxy_methods:
             print("'update_vioserver' method is not exported by the collector")
             return
@@ -771,7 +775,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_vioserver(*args)
 
-    def push_hds(self, objects=[], sync=True):
+    def push_hds(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_hds' not in self.proxy_methods:
             print("'update_hds' method is not exported by the collector")
             return
@@ -789,7 +795,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_hds(*args)
 
-    def push_necism(self, objects=[], sync=True):
+    def push_necism(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_necism' not in self.proxy_methods:
             print("'update_necism' method is not exported by the collector")
             return
@@ -806,7 +814,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_necism(*args)
 
-    def push_hp3par(self, objects=[], sync=True):
+    def push_hp3par(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_hp3par' not in self.proxy_methods:
             print("'update_hp3par' method is not exported by the collector")
             return
@@ -823,7 +833,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_hp3par(*args)
 
-    def push_centera(self, objects=[], sync=True):
+    def push_centera(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_centera' not in self.proxy_methods:
             print("'update_centera' method is not exported by the collector")
             return
@@ -842,7 +854,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_centera(*args)
 
-    def push_emcvnx(self, objects=[], sync=True):
+    def push_emcvnx(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_emcvnx' not in self.proxy_methods:
             print("'update_emcvnx' method is not exported by the collector")
             return
@@ -861,7 +875,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_emcvnx(*args)
 
-    def push_netapp(self, objects=[], sync=True):
+    def push_netapp(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_netapp' not in self.proxy_methods:
             print("'update_netapp' method is not exported by the collector")
             return
@@ -880,7 +896,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_netapp(*args)
 
-    def push_ibmsvc(self, objects=[], sync=True):
+    def push_ibmsvc(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_ibmsvc' not in self.proxy_methods:
             print("'update_ibmsvc' method is not exported by the collector")
             return
@@ -916,7 +934,9 @@ class CollectorRpc(object):
         except:
             print("error pushing nsr index")
 
-    def push_ibmds(self, objects=[], sync=True):
+    def push_ibmds(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_ibmds' not in self.proxy_methods:
            print("'update_ibmds' method is not exported by the collector")
            return
@@ -936,7 +956,9 @@ class CollectorRpc(object):
             except:
                 print("error pushing", ibmds.name)
 
-    def push_gcedisks(self, objects=[], sync=True):
+    def push_gcedisks(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_gcedisks' not in self.proxy_methods:
            print("'update_gcedisks' method is not exported by the collector")
            return
@@ -956,7 +978,9 @@ class CollectorRpc(object):
             except Exception as e:
                 print("error pushing %s: %s" % (array.name, str(e)))
 
-    def push_freenas(self, objects=[], sync=True):
+    def push_freenas(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_freenas' not in self.proxy_methods:
            print("'update_freenas' method is not exported by the collector")
            return
@@ -976,7 +1000,9 @@ class CollectorRpc(object):
             except:
                 print("error pushing", array.name)
 
-    def push_xtremio(self, objects=[], sync=True):
+    def push_xtremio(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_xtremio' not in self.proxy_methods:
            print("'update_xtremio' method is not exported by the collector")
            return
@@ -998,7 +1024,9 @@ class CollectorRpc(object):
                 print(exc, file=sys.stderr)
                 raise ex.Error
 
-    def push_eva(self, objects=[], sync=True):
+    def push_eva(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         if 'update_eva_xml' not in self.proxy_methods:
             print("'update_eva_xml' method is not exported by the collector")
             return
@@ -1015,7 +1043,9 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_eva_xml(*args)
 
-    def push_dorado(self, objects=[], sync=True):
+    def push_dorado(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         import json
         import drivers.array.dorado as m
         try:
@@ -1055,7 +1085,9 @@ class CollectorRpc(object):
                 array.close_session()
         return r
 
-    def push_sym(self, objects=[], sync=True):
+    def push_sym(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
         import zlib
         if 'update_sym_xml' not in self.proxy_methods:
             print("'update_sym_xml' method is not exported by the collector")
@@ -1107,12 +1139,16 @@ class CollectorRpc(object):
     def register_node(self, sync=True):
         return self.proxy.register_node(Env.nodename)
 
-    def comp_get_data(self, modulesets=[], sync=True):
+    def comp_get_data(self, modulesets=None, sync=True):
+        if modulesets is None:
+            modulesets = []
         args = [Env.nodename, modulesets]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_data_v2(*args)
 
-    def comp_get_svc_data(self, svcname, modulesets=[], sync=True):
+    def comp_get_svc_data(self, svcname, modulesets=None, sync=True):
+        if modulesets is None:
+            modulesets = []
         args = [Env.nodename, svcname, modulesets]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.comp_proxy.comp_get_svc_data_v2(*args)

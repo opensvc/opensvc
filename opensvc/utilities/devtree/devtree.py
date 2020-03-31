@@ -158,7 +158,9 @@ class Dev(object):
             d |= dev.get_top_devs()
         return d
 
-    def get_top_devs_chain(self, chain=[]):
+    def get_top_devs_chain(self, chain=None):
+        if chain is None:
+            chain = []
         if len(self.parents) == 0 or self.devtype == "multipath":
             return [[self, chain]]
         d = []
@@ -167,7 +169,9 @@ class Dev(object):
             d += dev.get_top_devs_chain(chain+[parent])
         return d
 
-    def print_dev(self, relation=None, node=None, highlight=[], verbose=False):
+    def print_dev(self, relation=None, node=None, highlight=None, verbose=False):
+        if highlight is None:
+            highlight = []
         if relation is None:
             parent_size = 0
         else:
@@ -200,8 +204,12 @@ class Dev(object):
                 d.print_dev(relation=r, node=node_dev, highlight=highlight,
                             verbose=verbose)
 
-    def print_dev_bottom_up(self, chain=[], node=None, highlight=[],
+    def print_dev_bottom_up(self, chain=None, node=None, highlight=None,
                             verbose=False):
+        if highlight is None:
+            highlight = []
+        if chain is None:
+            chain = []
         if len(chain) == 0:
             prev_size = 0
             used_s = "-"
@@ -232,7 +240,9 @@ class Dev(object):
             dev = self.get_dev(r.parent)
             dev.print_dev_bottom_up(chain+[r], node_dev, verbose=verbose)
 
-    def get_parents_bottom_up(self, l=[]):
+    def get_parents_bottom_up(self, l=None):
+        if l is None:
+            l = []
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
             l.append(dev)

@@ -185,10 +185,10 @@ class SyncRsync(Sync):
     or both.
     """
     def __init__(self,
-                 src=[],
+                 src=None,
                  dst=None,
-                 options=[],
-                 target=[],
+                 options=None,
+                 target=None,
                  dstfs=None,
                  snap=False,
                  bwlimit=None,
@@ -197,6 +197,12 @@ class SyncRsync(Sync):
                  **kwargs):
         super(SyncRsync, self).__init__(type="sync.rsync", **kwargs)
 
+        if target is None:
+            target = []
+        if options is None:
+            options = []
+        if src is None:
+            src = []
         if internal:
             if Env.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"

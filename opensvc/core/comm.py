@@ -196,11 +196,13 @@ class Crypt(object):
         return _decrypt(ciphertext, key, _iv)
 
     @staticmethod
-    def gen_iv(urandom=[], locker=threading.RLock()):
+    def gen_iv(urandom=None, locker=threading.RLock()):
         """
         This is 4x faster than calling os.urandom(16) and prevents
         the "too many files open" issue with concurrent access to os.urandom()
         """
+        if urandom is None:
+            urandom = []
         try:
             return urandom.pop()
         except IndexError:

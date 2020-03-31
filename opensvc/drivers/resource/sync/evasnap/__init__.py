@@ -66,12 +66,14 @@ def adder(svc, s):
 
 class SyncEvasnap(Sync):
     def __init__(self,
-                 pairs=[],
+                 pairs=None,
                  eva_name="",
                  snap_name="",
                  **kwargs):
         super(SyncEvasnap, self).__init__(type="sync.evasnap", **kwargs)
 
+        if pairs is None:
+            pairs = []
         self.label = "EVA snapshot %s" % eva_name
         self.eva_name = eva_name
         self.snap_name = snap_name
@@ -159,7 +161,9 @@ class SyncEvasnap(Sync):
                 cmd += ['add lun %s host="%s" vdisk="%s"'%(lunid, hostpath, snapname(info))]
         self.sssu(cmd, verbose=True)
 
-    def sssu(self, cmd=[], verbose=False, check=True):
+    def sssu(self, cmd=None, verbose=False, check=True):
+        if cmd is None:
+            cmd = []
         os.chdir(Env.paths.pathtmp)
         cmd = [self.sssubin,
                "select manager %s username=%s password=%s"%(self.manager, self.username, self.password),

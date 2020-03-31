@@ -27,7 +27,9 @@ def naviseccli(cmd, scope=None, spa=None, spb=None, username=None, password=None
     return out, err
 
 class EmcVnxs(object):
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True

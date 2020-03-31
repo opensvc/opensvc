@@ -38,7 +38,9 @@ def dscli(cmd, hmc1, hmc2, username, pwfile, log=None):
     return out, err
 
 class IbmDss(object):
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         self.filtering = len(objects) > 0
         self.arrays = []

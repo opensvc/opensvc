@@ -22,7 +22,9 @@ def rcmd(cmd, manager, username, key):
     return out, err
 
 class VioServers(object):
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = []
         self.filtering = len(objects) > 0
         self.arrays = []

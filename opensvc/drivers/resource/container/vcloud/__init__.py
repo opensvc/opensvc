@@ -291,7 +291,9 @@ class ContainerVcloud(BaseContainer):
         self.info = {'vcpus': '0', 'vmem': '0'}
         n = self.get_node()
         top = self.cloud.driver._get_vm_elements(n['id'])[0]
-        def recurse(x, info={}, desc=None):
+        def recurse(x, info=None, desc=None):
+            if info is None:
+                info = {}
             if x.tag == '{http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData}Description':
                 desc = x.text
                 info[desc] = {}

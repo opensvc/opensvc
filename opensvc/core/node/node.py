@@ -3077,13 +3077,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return env
 
     def install_service(self, path, fpath=None, template=None,
-                        restore=False, resources=[], kw=[], namespace=None,
+                        restore=False, resources=None, kw=None, namespace=None,
                         env=None, interactive=False, provision=False):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
         service symlinks and launchers directory.
         """
+        if kw is None:
+            kw = []
+        if resources is None:
+            resources = []
         if fpath is not None and template is not None:
             raise ex.Error("--config and --template can't both be specified")
 
@@ -3265,11 +3269,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except Exception as exc:
             self.log.debug(str(exc))
 
-    def svc_conf_from_args(self, kind, resources=[]):
+    def svc_conf_from_args(self, kind, resources=None):
         """
         Create a new service from resource definitions passed as individual
         dictionaries in json format.
         """
+        if resources is None:
+            resources = []
         defaults = {}
         sections = {}
         rtypes = {}

@@ -125,7 +125,9 @@ class Btrfs(object):
             subvol['path'] = line[line.index(" path ")+6:]
             self.subvols[subvol['id']] = subvol
 
-    def subvol_delete(self, subvol=[], recursive=False):
+    def subvol_delete(self, subvol=None, recursive=False):
+        if subvol is None:
+            subvol = []
         opts = []
         if recursive:
             opts.append('-R')

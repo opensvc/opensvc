@@ -64,10 +64,12 @@ class SyncNexenta(Sync):
     def __init__(self,
                  name=None,
                  path=None,
-                 filers={},
+                 filers=None,
                  reversible=False,
                  **kwargs):
         super(SyncNexenta, self).__init__(type="sync.nexenta", **kwargs)
+        if filers is None:
+            filers = {}
         self.pausable = False
         self.label = "nexenta autosync %s"%name
         self.autosync = name

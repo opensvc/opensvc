@@ -38,11 +38,13 @@ class SyncSymclone(BaseSyncSymclone):
     def __init__(self,
                  type="sync.symclone",
                  symid=None,
-                 pairs=[],
+                 pairs=None,
                  precopy=True,
                  consistent=True,
                  **kwargs):
         super(SyncSymclone, self).__init__(type=type, **kwargs)
+        if pairs is None:
+            pairs = []
 
     def dev_rescan(self, dev):
         dev = dev.replace('/dev/', '')

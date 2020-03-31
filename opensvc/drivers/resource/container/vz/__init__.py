@@ -128,7 +128,9 @@ class ContainerVz(BaseContainer):
             f.write(' ')
             f.close()
 
-    def vzctl(self, action, options=[]):
+    def vzctl(self, action, options=None):
+        if options is None:
+            options = []
         cmd = ['vzctl', action, self.name] + options
         ret, out, err = self.vcall(cmd)
         if ret != 0:

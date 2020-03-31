@@ -43,7 +43,9 @@ def brocadecmd(cmd, switch, username, key):
 class Brocades(object):
     switchs = []
 
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True

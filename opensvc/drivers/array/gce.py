@@ -4,7 +4,9 @@ from utilities.proc import justcall
 class GceDiskss(object):
     arrays = []
 
-    def __init__(self, objects=[]):
+    def __init__(self, objects=None):
+        if objects is None:
+            objects = []
         self.arrays.append(GceDisks())
 
     def __iter__(self):
