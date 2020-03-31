@@ -22,7 +22,7 @@
                                         <File Id="PythonService" Name="$(var.PRJSVCPYEXECBIN)" Source="$(var.OSVCPKGROOT)\$(var.PRJSVCPYEXECPATH)\$(var.PRJSVCPYEXECBIN)" KeyPath="yes" />
                                         <ServiceInstall Id="inst$(var.PRJSVCNAME)" Name="$(var.PRJSVCNAME)" Type="ownProcess" Start="auto" ErrorControl="normal" DisplayName="$(var.PRJSVCDISPLAYNAME)" Description="$(var.PRJSVCDESC)" Vital="yes" />
                                         <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\$(var.PRJSVCNAME)\PythonClass">
-                                            <RegistryValue Value="[INSTALLFOLDER]lib\osvcd_winservice.$(var.PRJSVCNAME)" Type="string" />
+                                            <RegistryValue Value="[INSTALLFOLDER]opensvc\osvcd_winservice.$(var.PRJSVCNAME)" Type="string" />
                                         </RegistryKey>
                                         <ServiceControl Id="sc_inst$(var.PRJSVCNAME)" Name="$(var.PRJSVCNAME)" Start="install" Remove="uninstall" Stop="both" Wait="no" />
                                     </Component>
@@ -30,9 +30,9 @@
                             </Directory>
                         </Directory>
                     </Directory>
-                    <Directory Id="lib">
+                    <Directory Id="opensvc">
                         <Component Id="SetOsvcPythonPath" Guid="853207E8-B567-4245-93F9-7008742C3989" KeyPath="yes" Win64="yes">
-                            <Environment Id="PYTHONPATH" Name="PYTHONPATH" Value="[INSTALLFOLDER]lib" Permanent="no" Part="last" Action="set" System="yes" />
+                            <Environment Id="PYTHONPATH" Name="PYTHONPATH" Value="[INSTALLFOLDER]opensvc" Permanent="no" Part="last" Action="set" System="yes" />
                         </Component>
                     </Directory>
                 </Directory>
@@ -76,6 +76,7 @@
         <UI />
         <Component Id="OSVCFwRules" Guid="4AFB6248-7930-4B03-A4CA-8ED8D2215F16" Directory="TARGETDIR" Win64="yes">
             <firewall:FirewallException Id="OSVCFWRULE1" Name="$(var.PRJFWRULE1NAME)" Port="1214" IgnoreFailure="yes" Scope="any" Protocol="tcp" />
+            <firewall:FirewallException Id="OSVCFWRULE2" Name="$(var.PRJFWRULE2NAME)" Port="1215" IgnoreFailure="yes" Scope="any" Protocol="tcp" />
         </Component>
         <AdminExecuteSequence />
         <CustomAction Id="POSTINSTALL" Execute="commit" FileKey="OSVC_POSTINSTALL_CMD" ExeCommand="&quot;[INSTALLFOLDER]&quot;" />
