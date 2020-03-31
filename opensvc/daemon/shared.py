@@ -743,7 +743,7 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + Env.python_cmd + ["-m", Env.package]
+        _cmd = [] + Env.om
         cmd = ["node"] + cmd
         self.log.info("execute: om %s", " ".join(cmd))
         proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
@@ -756,7 +756,7 @@ class OsvcThread(threading.Thread, Crypt):
         """
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        _cmd = [] + Env.python_cmd + ["-m", Env.package]
+        _cmd = [] + Env.om
         if path:
             cmd = ["svc", "-s", path] + cmd
         else:
