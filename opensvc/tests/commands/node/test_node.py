@@ -16,19 +16,6 @@ logging.disable(logging.CRITICAL)
 
 
 @pytest.fixture(scope='function')
-def has_privs(mocker):
-    mocker.patch.object(commands.node.Node, 'check_privs', return_value=None)
-
-
-@pytest.fixture(scope='function')
-def parse_args(mocker):
-    parse_args = mocker.patch.object(commands.node.NodemgrOptParser,
-                                     'parse_args',
-                                     return_value=(mocker.Mock(symcli_db_file=None), 'my_action'))
-    return parse_args
-
-
-@pytest.fixture(scope='function')
 def node(mocker):
     node = mocker.patch.object(commands.node, 'Node', autospec=True).return_value
     node.options = dict()
@@ -37,16 +24,18 @@ def node(mocker):
 
 
 @pytest.mark.ci
-@pytest.mark.usefixtures('has_privs', 'osvc_path_tests')
+@pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
 class TestNodemgr:
     @staticmethod
     @pytest.mark.parametrize('action_return_value', [0, 13])
-    def test_it_call_once_node_action_and_returns_node_action_return_value(node, parse_args, action_return_value):
+    def test_it_call_once_node_action_and_returns_node_action_return_value(mocker, node, action_return_value):
         node.action.return_value = action_return_value
+        mocker.patch.object(commands.node.NodeOptParser,
+                            'parse_args',
+                            return_value=(mocker.Mock(symcli_db_file=None), 'my_action'))
 
-        ret = commands.node.main(argv=["my_action", "--format", "json"])
-
-        assert ret == action_return_value
+        result = commands.node.main(argv=["my_action", "--format", "json"])
+        assert result == action_return_value
         node.action.assert_called_once_with('my_action')
 
     @staticmethod
@@ -81,23 +70,6 @@ class TestNodemgr:
         assert isinstance(schedules, list)
         assert len(schedules) > 0
 
-    @staticmethod
-    @pytest.mark.parametrize('argv',
-                             (['pool', 'ls', '--debug'],
-                              ['pool', 'status', '--debug'],
-                              ['pool', 'status', '--verbose', '--debug']),
-                             ids=['ls', 'status', 'status --verbose'])
-    def test_pool_action(argv):
-        assert commands.node.main(argv=argv) == 0
-
-    @staticmethod
-    def test_node_has_a_pool(tmp_file, capture_stdout):
-        with capture_stdout(tmp_file):
-            assert commands.node.main(argv=['pool', 'status', '--format', 'json']) == 0
-        with open(tmp_file) as json_file:
-            pools = json.load(json_file).values()
-            assert len([pool for pool in pools if pool['type'] != 'unknown']) > 0
-
     def test_print_config(self):
         """
         Print node config
@@ -122,8 +94,7 @@ class TestNodemgr:
     @staticmethod
     @pytest.mark.parametrize('get_set_arg', ['--param', '--kw'])
     def test_set_get_unset_some_env_value(tmp_file, capture_stdout, get_set_arg):
-        ret = commands.node.main(argv=["set", "--param", "env.this_is_test", "--value", "true"])
-        assert ret == 0
+        assert commands.node.main(argv=["set", "--param", "env.this_is_test", "--value", "true"]) == 0
 
         with capture_stdout(tmp_file):
             ret = commands.node.main(argv=["get", get_set_arg, "env.this_is_test"])
@@ -165,12 +136,8 @@ class TestNodemgr:
             # assert try_decode(output_file.read()).strip() == UNICODE_STRING
 
     @staticmethod
-    def test_043_unset():
-        """
-        Unset env.comment
-        """
-        ret = commands.node.main(argv=["unset", "--param", "env.comment"])
-        assert ret == 0
+    def test_unset_env_comment():
+        assert commands.node.main(argv=["unset", "--param", "env.comment"]) == 0
 
     @pytest.mark.skip
     def test_044_get_not_found(self):
@@ -184,8 +151,7 @@ class TestNodemgr:
         """
         Run node checks
         """
-        ret = commands.node.main(argv=["checks"])
-        assert ret == 0
+        assert commands.node.main(argv=["checks"]) == 0
 
     @staticmethod
     def test_sysreport(mocker):
@@ -281,28 +247,6 @@ class TestNodemgr:
         """
         ret = commands.node.main(argv=["logs"])
         assert ret == 0
-
-    @staticmethod
-    def test_network_ls():
-        """
-        List node networks
-        """
-        ret = commands.node.main(argv=["network", "ls"])
-        assert ret == 0
-
-    @staticmethod
-    def test_network_ls_json(tmp_file, capture_stdout):
-        """
-        List node networks (json format)
-        """
-
-        commands.node.main(argv=["network", "ls", "--format", "json", "--color", "no"])
-        with capture_stdout(tmp_file):
-            ret = commands.node.main(argv=["network", "ls", "--format", "json", "--color", "no"])
-
-        assert ret == 0
-        with open(tmp_file) as std_out:
-            assert isinstance(json.load(std_out), dict)
 
     @staticmethod
     def test_node_print_devs():
