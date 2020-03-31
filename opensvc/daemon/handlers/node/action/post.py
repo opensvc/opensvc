@@ -110,7 +110,7 @@ class Handler(daemon.handler.BaseHandler):
                 elif po.type == "integer":
                     opt += "=" + str(val)
                     cmd.append(opt)
-            fullcmd = Env.python_cmd + ["-m" , Env.package, "node"] + cmd
+            fullcmd = Env.om + ["node"] + cmd
 
         thr.log_request("run 'om node %s'" % " ".join(cmd), nodename, **kwargs)
         if options.sync:
