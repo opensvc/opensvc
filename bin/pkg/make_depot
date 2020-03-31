@@ -12,7 +12,7 @@ prepare_chroot || exit 1
 cat - <<-EOF >$CHROOT/../$PSF
 vendor
   tag           opensvc
-  title         Opensvc SARL
+  title         OpenSVC SAS
   description   opensvc nodeware
 end
 product
@@ -21,7 +21,7 @@ product
   revision       $VERSION-$RELEASE
   category       system_management
   description    $SUMMARY
-  copyright      Opensvc SARL
+  copyright      OpenSVC SAS
   architecture   HP-UX_10.20_700/800
   machine_type   *
   os_name        HP-UX
