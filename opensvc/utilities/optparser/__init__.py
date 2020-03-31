@@ -209,7 +209,11 @@ class OptParser(object):
         desc = desc.replace("COMMAND", action + "...")
         desc = desc.replace("[ OPTIONS ] ", "")
         desc += "  --help   display action description and supported options.\n\n"
+        desc += self.format_valid_actions(action)
+        return desc
 
+    def format_valid_actions(self, action):
+        desc = ""
         for section in sorted(self.actions):
             valid_actions = self.get_valid_actions(section, action)
             if len(valid_actions) == 0:
@@ -220,7 +224,9 @@ class OptParser(object):
             for valid_action in valid_actions:
                 desc += "  " + valid_action.replace("_", " ") + "\n"
             desc += "\n"
-        return desc[:-2]
+        if desc:
+            return desc[:-2]
+        return self.format_valid_actions("")
 
     def format_desc(self, svc=False, action=None, options=True):
         """
