@@ -22,7 +22,6 @@ HELP = """Usage:
   om pool                     Manage Storage Pools
   om daemon                   Manage Agent Daemon
   om array                    Manage Storage Arrays
-  om dns                      Manage Cluster DNS
 
   om <selector> <options>     Manage the selected objects
 
@@ -63,37 +62,49 @@ def main():
         ret = main(sys.argv[1:])
         return ret
     elif arg1 == "svc":
-        from commands.svcmgr import Mgr
+        from commands.svc import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "vol":
-        from commands.volmgr import Mgr
+        from commands.vol import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "cfg":
-        from commands.cfgmgr import Mgr
+        from commands.cfg import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "sec":
-        from commands.secmgr import Mgr
+        from commands.sec import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "usr":
-        from commands.usrmgr import Mgr
+        from commands.usr import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret
     elif arg1 == "node":
-        from commands.nodemgr import main
+        from commands.node import main
         ret = main(argv=sys.argv[2:])
         return ret
-    elif arg1 in ("pool", "net", "network", "daemon", "array", "dns"):
-        from commands.nodemgr import main
+    elif arg1 == "array":
+        from commands.node import main
         ret = main(argv=sys.argv[1:])
+        return ret
+    elif arg1 in ("net", "network"):
+        from commands.network import main
+        ret = main(argv=sys.argv[2:])
+        return ret
+    elif arg1 == "pool":
+        from commands.pool import main
+        ret = main(argv=sys.argv[2:])
+        return ret
+    elif arg1 == "daemon":
+        from commands.daemon import main
+        ret = main(argv=sys.argv[2:])
         return ret
     elif arg1 == "mon":
         from commands.svcmon import main

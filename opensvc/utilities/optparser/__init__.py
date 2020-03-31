@@ -224,7 +224,7 @@ class OptParser(object):
 
     def format_desc(self, svc=False, action=None, options=True):
         """
-        Format and return a svcmgr parser help message, contextualized to display
+        Format and return the help message, contextualized to display
         only actions matching the action argument.
         """
         desc = self.usage
@@ -250,7 +250,7 @@ class OptParser(object):
 
     def supported_actions(self):
         """
-        Return the list of actions supported by svcmgr.
+        Return the list of actions supported by the command.
         """
         actions = []
         for section in self.actions:
