@@ -907,7 +907,7 @@ def add_rid(options, new_rids):
     options.parm_rid = ",".join(rids)
     return options
 
-class SvcmgrOptParser(OptParser):
+class SvcOptParser(OptParser):
     """
     The service management command options parser class.
     """

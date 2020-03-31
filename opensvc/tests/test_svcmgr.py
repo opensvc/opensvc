@@ -14,7 +14,8 @@ try:
 except ImportError:
     from io import StringIO
 
-from commands import svcmgr, nodemgr
+import commands.node
+import commands.svc
 from utilities.string import try_decode
 
 
@@ -36,19 +37,19 @@ class TestSvcmgr:
         """
         Create a trivial service
         """
-        ret = svcmgr.main(argv=["create", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["create", "-s", SVCNAME])
         assert ret == 0
-        ret = svcmgr.main(argv=["create", "-s", SVCNAME + '2'])
+        ret = commands.svc.main(argv=["create", "-s", SVCNAME + '2'])
         assert ret == 0
 
-    def test_002_svcmgr_print_schedule(self):
+    def test_002_svc_print_schedule(self):
         """
         Print all services schedules
         """
-        ret = svcmgr.main(argv=["-s", "*", "print", "schedule"])
+        ret = commands.svc.main(argv=["-s", "*", "print", "schedule"])
         assert ret == 0
 
-    def test_003_svcmgr_print_schedule_json(self):
+    def test_003_svc_print_schedule_json(self):
         """
         Print all services schedules (json format)
         """
@@ -57,7 +58,7 @@ class TestSvcmgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", "*", "print", "schedule", "--format", "json", "--color", "no"])
+            ret = commands.svc.main(argv=["-s", "*", "print", "schedule", "--format", "json", "--color", "no"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -69,14 +70,14 @@ class TestSvcmgr:
         assert ret == 0
         assert isinstance(data, dict)
 
-    def test_004_svcmgr_print_config(self):
+    def test_004_svc_print_config(self):
         """
         Print all services config
         """
-        ret = svcmgr.main(argv=["-s", "*", "print", "config"])
+        ret = commands.svc.main(argv=["-s", "*", "print", "config"])
         assert ret == 0
 
-    def test_005_svcmgr_print_config_json(self):
+    def test_005_svc_print_config_json(self):
         """
         Print all services config (json format)
         """
@@ -85,7 +86,7 @@ class TestSvcmgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", "*", "print", "config", "--format", "json", "--color", "no"])
+            ret = commands.svc.main(argv=["-s", "*", "print", "config", "--format", "json", "--color", "no"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -96,14 +97,14 @@ class TestSvcmgr:
         assert ret == 0
         assert isinstance(json.loads(output), dict)
 
-    def test_006_svcmgr_print_status(self):
+    def test_006_svc_print_status(self):
         """
         Print all services status
         """
-        ret = svcmgr.main(argv=["-s", "*", "print", "status"])
+        ret = commands.svc.main(argv=["-s", "*", "print", "status"])
         assert ret == 0
 
-    def test_007_svcmgr_print_status_json(self):
+    def test_007_svc_print_status_json(self):
         """
         Print all services status (json format)
         """
@@ -112,7 +113,7 @@ class TestSvcmgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", "*", "print", "status", "--format", "json", "--color", "no"])
+            ret = commands.svc.main(argv=["-s", "*", "print", "status", "--format", "json", "--color", "no"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -127,7 +128,7 @@ class TestSvcmgr:
         """
         Set DEFAULT.comment to an unicode string
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "set", "--param", "comment", "--value", UNICODE_STRING])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "set", "--param", "comment", "--value", UNICODE_STRING])
         assert ret == 0
 
     def test_0082_get_default(self):
@@ -139,7 +140,7 @@ class TestSvcmgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", SVCNAME, "get", "--param", "comment"])
+            ret = commands.svc.main(argv=["-s", SVCNAME, "get", "--param", "comment"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -150,7 +151,7 @@ class TestSvcmgr:
         """
         Set env.list_entry_ref_indirect_eval2 to {nodes[$(0//(3//{#nodes}))]}
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "set", "--param", "env.list_entry_ref_indirect_eval2", "--value", "{nodes[$(0//(3//{#nodes}))]}"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "set", "--param", "env.list_entry_ref_indirect_eval2", "--value", "{nodes[$(0//(3//{#nodes}))]}"])
         assert ret == 0
 
     def test_0084_get_env(self):
@@ -163,7 +164,7 @@ class TestSvcmgr:
         try:
             out = StringIO()
             sys.stdout = out
-            ret = svcmgr.main(argv=["-s", SVCNAME, "get", "--param", "env.list_entry_ref_indirect_eval2", "--eval"])
+            ret = commands.svc.main(argv=["-s", SVCNAME, "get", "--param", "env.list_entry_ref_indirect_eval2", "--eval"])
             output = out.getvalue().strip()
         finally:
             sys.stdout = _stdout
@@ -175,7 +176,7 @@ class TestSvcmgr:
         """
         Unset DEFAULT.comment
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "unset", "--param", "comment"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "unset", "--param", "comment"])
         assert ret == 0
 
     def test_011_get_default_not_found(self):
@@ -187,7 +188,7 @@ class TestSvcmgr:
         try:
             err = StringIO()
             sys.stderr = err
-            ret = svcmgr.main(argv=["-s", SVCNAME, "get", "--param", "comment"])
+            ret = commands.svc.main(argv=["-s", SVCNAME, "get", "--param", "comment"])
             output = err.getvalue().strip()
         finally:
             sys.stderr = _stderr
@@ -198,191 +199,191 @@ class TestSvcmgr:
         """
         Validate config
         """
-        ret = svcmgr.main(argv=["validate", "config", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["validate", "config", "-s", SVCNAME])
         assert ret == 0
 
     def test_014_frozen(self):
         """
         The service is frozen after create.
         """
-        ret = svcmgr.main(argv=["frozen", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["frozen", "-s", SVCNAME])
         assert ret > 1
-        ret = svcmgr.main(argv=["thaw", "-s", SVCNAME, "--local"])
+        ret = commands.svc.main(argv=["thaw", "-s", SVCNAME, "--local"])
         assert ret == 0
 
     def test_0151_node_freeze(self):
         """
         Freeze the local node
         """
-        ret = nodemgr.main(argv=["freeze", "--local"])
+        ret = commands.node.main(argv=["freeze", "--local"])
         assert ret == 0
 
     def test_0152_node_frozen(self):
         """
         The local node is frozen
         """
-        ret = nodemgr.main(argv=["frozen"])
+        ret = commands.node.main(argv=["frozen"])
         assert ret > 0
 
     def test_0153_svc_not_frozen(self):
         """
         The service is not frozen
         """
-        ret = svcmgr.main(argv=["frozen", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["frozen", "-s", SVCNAME])
         assert ret == 0
 
     def test_0154_node_refreeze(self):
         """
         Re-freeze the local node (valid noop)
         """
-        ret = nodemgr.main(argv=["freeze", "--local"])
+        ret = commands.node.main(argv=["freeze", "--local"])
         assert ret == 0
 
     def test_0155_node_thaw(self):
         """
         Thaw the local node
         """
-        ret = nodemgr.main(argv=["thaw", "--local"])
+        ret = commands.node.main(argv=["thaw", "--local"])
         assert ret == 0
 
     def test_0156_node_frozen(self):
         """
         The local node is no longer frozen
         """
-        ret = nodemgr.main(argv=["frozen"])
+        ret = commands.node.main(argv=["frozen"])
         assert ret == 0
 
     def test_0157_svc_frozen(self):
         """
         The service is still not frozen
         """
-        ret = svcmgr.main(argv=["frozen", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["frozen", "-s", SVCNAME])
         assert ret == 0
 
     def test_0158_node_rethaw(self):
         """
         Re-thaw the local node (valid noop)
         """
-        ret = nodemgr.main(argv=["thaw", "--local"])
+        ret = commands.node.main(argv=["thaw", "--local"])
         assert ret == 0
 
     def test_01611_freeze(self):
         """
         Freeze the service
         """
-        ret = svcmgr.main(argv=["freeze", "-s", SVCNAME, "--local"])
+        ret = commands.svc.main(argv=["freeze", "-s", SVCNAME, "--local"])
         assert ret == 0
 
     def test_01612_freeze(self):
         """
         Freeze the services (parallel)
         """
-        ret = svcmgr.main(argv=["freeze", "-s", "unittest*", "--parallel", "--local"])
+        ret = commands.svc.main(argv=["freeze", "-s", "unittest*", "--parallel", "--local"])
         assert ret == 0
 
     def test_01613_freeze(self):
         """
         Freeze the services (serial)
         """
-        ret = svcmgr.main(argv=["freeze", "-s", "unittest*", "--local"])
+        ret = commands.svc.main(argv=["freeze", "-s", "unittest*", "--local"])
         assert ret == 0
 
     def test_0162_frozen(self):
         """
         The service is frozen
         """
-        ret = svcmgr.main(argv=["frozen", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["frozen", "-s", SVCNAME])
         assert ret > 0
 
     def test_0163_thaw(self):
         """
         Thaw the service
         """
-        ret = svcmgr.main(argv=["thaw", "-s", SVCNAME, "--local"])
+        ret = commands.svc.main(argv=["thaw", "-s", SVCNAME, "--local"])
         assert ret == 0
 
     def test_0164_frozen(self):
         """
         The service is no longer frozen
         """
-        ret = svcmgr.main(argv=["frozen", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["frozen", "-s", SVCNAME])
         assert ret == 0
 
     def test_0165_multi_get(self):
         """
         Multi-service get
         """
-        ret = svcmgr.main(argv=["get", "-s", "unittest*", "--param", "nodes", "--eval"])
+        ret = commands.svc.main(argv=["get", "-s", "unittest*", "--param", "nodes", "--eval"])
         assert ret == 0
 
     def test_021_logs(self):
         """
         Print service logs
         """
-        ret = svcmgr.main(argv=["logs", "-s", SVCNAME, "--no-pager"])
+        ret = commands.svc.main(argv=["logs", "-s", SVCNAME, "--no-pager"])
         assert ret == 0
 
     def test_022_push(self):
         """
         Push service to the collector
         """
-        ret = svcmgr.main(argv=["push", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["push", "-s", SVCNAME])
         assert ret == 0
 
     def test_023_pull(self):
         """
         Pull the service from the collector
         """
-        ret = svcmgr.main(argv=["pull", "-s", SVCNAME])
+        ret = commands.svc.main(argv=["pull", "-s", SVCNAME])
         assert ret == 0
 
     def test_0241_svc_selector(self):
         """
         Service selector: <none>
         """
-        ret = svcmgr.main(argv=["ls"])
+        ret = commands.svc.main(argv=["ls"])
         assert ret == 0
 
     def test_0242_svc_selector(self):
         """
         Service selector: uni*
         """
-        ret = svcmgr.main(argv=["ls", "-s", "uni*"])
+        ret = commands.svc.main(argv=["ls", "-s", "uni*"])
         assert ret == 0
 
     def test_0243_svc_selector(self):
         """
         Service selector: notexists*
         """
-        ret = svcmgr.main(argv=["ls", "-s", "notexists*"])
+        ret = commands.svc.main(argv=["ls", "-s", "notexists*"])
         assert ret == 0
 
     def test_0244_svc_selector(self):
         """
         Service selector: *dns,ha*+app.timeout>1*
         """
-        ret = svcmgr.main(argv=["ls", "-s", "*dns,ha*+app.timeout>1*"])
+        ret = commands.svc.main(argv=["ls", "-s", "*dns,ha*+app.timeout>1*"])
         assert ret == 0
 
     def test_0245_svc_selector(self):
         """
         Service selector: ip:+task:
         """
-        ret = svcmgr.main(argv=["ls", "-s", "ip:+task:"])
+        ret = commands.svc.main(argv=["ls", "-s", "ip:+task:"])
         assert ret == 0
 
     def test_0246_svc_selector(self):
         """
         Service selector: !*excluded
         """
-        ret = svcmgr.main(argv=["ls", "-s", "!*excluded"])
+        ret = commands.svc.main(argv=["ls", "-s", "!*excluded"])
         assert ret == 0
 
     def test_0247_svc_selector(self):
         """
         Service selector: notexists
         """
-        ret = svcmgr.main(argv=["ls", "-s", "notexists"])
+        ret = commands.svc.main(argv=["ls", "-s", "notexists"])
         assert ret == 1
 
     def test_0248_svc_selector(self):
@@ -390,7 +391,7 @@ class TestSvcmgr:
         Service selector: OSVC_SERVICE_LINK=unittest
         """
         os.environ["OSVC_SERVICE_LINK"] = SVCNAME
-        ret = svcmgr.main(argv=["ls"])
+        ret = commands.svc.main(argv=["ls"])
         assert ret == 0
         del os.environ["OSVC_SERVICE_LINK"]
 
@@ -398,72 +399,72 @@ class TestSvcmgr:
         """
         Service compliance auto
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "auto"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "auto"])
         assert ret == 0
 
     def test_0252_compliance(self):
         """
         Service compliance check
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "check"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "check"])
         assert ret == 0
 
     def test_0253_compliance(self):
         """
         Service compliance fix
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "fix"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "fix"])
         assert ret == 0
 
     def test_0254_compliance(self):
         """
         Service compliance show moduleset
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "show", "moduleset"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "show", "moduleset"])
         assert ret == 0
 
     def test_0255_compliance(self):
         """
         Service compliance list moduleset
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "list", "moduleset"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "list", "moduleset"])
         assert ret == 0
 
     def test_0256_compliance(self):
         """
         Service compliance show ruleset
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "show", "ruleset"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "show", "ruleset"])
         assert ret == 0
 
     def test_0257_compliance(self):
         """
         Service compliance list ruleset
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "list", "ruleset"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "list", "ruleset"])
         assert ret == 0
 
     def test_0258_compliance(self):
         """
         Service compliance attach
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "attach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
         assert ret == 1
 
     def test_0259_compliance(self):
         """
         Service compliance detach
         """
-        ret = svcmgr.main(argv=["-s", SVCNAME, "compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
+        ret = commands.svc.main(argv=["-s", SVCNAME, "compliance", "detach", "--ruleset", "abcdef", "--moduleset", "abcdef"])
         assert ret == 0
 
     def test_026_delete(self):
         """
         Delete local service instance
         """
-        ret = svcmgr.main(argv=["delete", "-s", SVCNAME, "--local"])
+        ret = commands.svc.main(argv=["delete", "-s", SVCNAME, "--local"])
         assert ret == 0
-        ret = svcmgr.main(argv=["delete", "-s", SVCNAME + '2', "--local"])
+        ret = commands.svc.main(argv=["delete", "-s", SVCNAME + '2', "--local"])
         assert ret == 0
 
 

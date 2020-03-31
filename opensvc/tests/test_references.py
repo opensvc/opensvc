@@ -12,7 +12,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from commands.svcmgr import Mgr
+from commands.svc import Mgr
 from utilities.string import try_decode
 
 

@@ -3,8 +3,8 @@ import os
 import time
 
 import pytest
+import commands.daemon
 
-from commands import nodemgr
 from daemon.main import main as daemon_main
 
 
@@ -31,26 +31,26 @@ class TestNodemgrDaemonActions:
             proc.join()
             return 0
 
-        mocker.patch.object(nodemgr.Node, 'check_privs', return_value=None)
-        mocker.patch.object(nodemgr.Node, 'daemon_start_native', daemon_start_native)
-        mocker.patch.object(nodemgr.Node, 'daemon_handled_by_systemd', return_value=False)
+        mocker.patch.object(commands.daemon.Node, 'check_privs', return_value=None)
+        mocker.patch.object(commands.daemon.Node, 'daemon_start_native', daemon_start_native)
+        mocker.patch.object(commands.daemon.Node, 'daemon_handled_by_systemd', return_value=False)
         mocker.patch('utilities.asset.Asset.get_boot_id', side_effect='fake_boot_id')
 
         print('daemon is not running')
-        assert nodemgr.main(argv=["daemon", "running", "--debug"]) > 0
+        assert commands.daemon.main(argv=["daemon", "running", "--debug"]) > 0
 
         print('daemon start...')
-        assert nodemgr.main(argv=["daemon", "start", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "start", "--debug"]) == 0
 
         print('daemon is running...')
-        assert nodemgr.main(argv=["daemon", "running", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "running", "--debug"]) == 0
 
         print('sleep %ss for osvcd ready' % wait_time_for_osvcd_ready)
         time.sleep(wait_time_for_osvcd_ready)
 
         print('daemon status json...')
         with capture_stdout(tmp_file):
-            assert nodemgr.main(argv=["daemon", "status", "--format", "json"]) == 0
+            assert commands.daemon.main(argv=["daemon", "status", "--format", "json"]) == 0
         with open(tmp_file, 'r') as status_file:
             status = json.load(status_file)
         print(status)
@@ -58,19 +58,19 @@ class TestNodemgrDaemonActions:
         assert status['scheduler']['state'] == 'running'
 
         print('daemon status...')
-        assert nodemgr.main(argv=["daemon", "status", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "status", "--debug"]) == 0
 
         print('daemon restart...')
-        assert nodemgr.main(argv=["daemon", "restart", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "restart", "--debug"]) == 0
 
         print('daemon is running...')
-        assert nodemgr.main(argv=["daemon", "running", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "running", "--debug"]) == 0
 
         print('sleep %ss for osvcd ready' % wait_time_for_osvcd_ready)
         time.sleep(wait_time_for_osvcd_ready)
 
         print('daemon stop...')
-        assert nodemgr.main(argv=["daemon", "stop", "--debug"]) == 0
+        assert commands.daemon.main(argv=["daemon", "stop", "--debug"]) == 0
 
         print('daemon is not running...')
-        assert nodemgr.main(argv=["daemon", "running", "--debug"]) > 0
+        assert commands.daemon.main(argv=["daemon", "running", "--debug"]) > 0

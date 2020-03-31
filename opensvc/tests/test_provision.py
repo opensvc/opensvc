@@ -12,7 +12,7 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-from commands.svcmgr import Mgr
+from commands.svc import Mgr
 import commands.mgr
 
 
