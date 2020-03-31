@@ -1754,6 +1754,8 @@ class OsvcThread(threading.Thread, Crypt):
             return match
 
         def svc_matching(path, param, op, value, jsonpath_expr):
+            if not param:
+                return False
             if param.startswith("$."):
                 try:
                     data = self.object_data(path)
