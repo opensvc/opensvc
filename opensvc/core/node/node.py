@@ -765,6 +765,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return match
 
         def svc_matching(svc, param, op, value):
+            if not param:
+                return False
             try:
                 current = svc._get(param, evaluate=True)
             except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
