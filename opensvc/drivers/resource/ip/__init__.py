@@ -13,13 +13,13 @@ import utilities.lock
 import core.exceptions as ex
 import utilities.ifconfig
 
-from arp import send_arp
-from utilities.converters import convert_duration, print_duration
-from env import Env
-from utilities.lazy import lazy
-from core.resource import Resource
 from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from core.resource import Resource
+from env import Env
+from utilities.arp import send_arp
+from utilities.converters import convert_duration, print_duration
+from utilities.lazy import lazy
 from utilities.net.converters import to_cidr
 from utilities.net.getaddr import getaddr
 
