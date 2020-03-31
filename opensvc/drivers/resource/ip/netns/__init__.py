@@ -354,7 +354,7 @@ class IpNetns(Ip):
                 return ret, out, err
 
         # announce
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "utilities", "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
@@ -592,7 +592,7 @@ class IpNetns(Ip):
                 return ret, out, err
 
         # announce
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "arp.py"), self.final_guest_dev, self.addr]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "utilities", "arp.py"), self.final_guest_dev, self.addr]
         self.log.info(" ".join(cmd))
         out, err, ret = justcall(cmd)
 
