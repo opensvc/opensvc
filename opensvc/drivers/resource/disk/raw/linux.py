@@ -31,7 +31,7 @@ def adder(svc, s):
 
 class DiskRaw(BaseDiskRaw):
     def __init__(self,
-                 devs=set(),
+                 devs=None,
                  create_char_devices=True,
                  user=None,
                  group=None,
@@ -39,6 +39,7 @@ class DiskRaw(BaseDiskRaw):
                  **kwargs):
 
         super(DiskRaw, self).__init__(**kwargs)
+        devs = devs or set()
         self.min_raw = 1
         self.sys_devs = {}
 

@@ -34,7 +34,9 @@ def reformat(s):
     return s.strip()
 
 class Hp3pars(object):
-    def __init__(self, objects=[], log=None, node=None):
+    def __init__(self, objects=None, log=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         self.filtering = len(objects) > 0
         self.arrays = []

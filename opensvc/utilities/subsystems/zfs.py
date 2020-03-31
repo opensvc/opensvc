@@ -157,10 +157,12 @@ class Dataset(object):
         else:
             return False
 
-    def destroy(self, options=[]):
+    def destroy(self, options=None):
         """
         Destroy the dataset.
         """
+        if options is None:
+            options = []
         if not self.exists():
             return True
         cmd = [Env.syspaths.zfs, 'destroy'] + options + [self.name]
@@ -201,12 +203,14 @@ class Dataset(object):
         else:
             return False
 
-    def verify_prop(self, nv_pairs={}, err_to_warn=False, err_to_info=False):
+    def verify_prop(self, nv_pairs=None, err_to_warn=False, err_to_info=False):
         """
         For name, val from nv_pairs dict,
         if zfs name property value of dataset differ from val
         then zfs set name=value on dataset object.
         """
+        if nv_pairs is None:
+            nv_pairs = {}
         for name in nv_pairs.keys():
             if self.getprop(name) != nv_pairs[name]:
                 self.setprop(propname=name, propval=nv_pairs[name],

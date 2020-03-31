@@ -224,7 +224,9 @@ class Arrays(object):
         if os.path.exists(symcli_bin):
             return os.path.dirname(symcli_bin)
 
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         if len(objects) > 0:
             self.filtering = True
@@ -459,10 +461,18 @@ class SymMixin(object):
         out, err, ret = self.symsg(['list', '-v'])
         return out
 
-    def parse_xml(self, buff, key=None, as_list=[], exclude=[]):
+    def parse_xml(self, buff, key=None, as_list=None, exclude=None):
+        if exclude is None:
+            exclude = []
+        if as_list is None:
+            as_list = []
         tree = fromstring(buff)
         data = []
-        def parse_elem(elem, as_list=[], exclude=[]):
+        def parse_elem(elem, as_list=None, exclude=None):
+            if exclude is None:
+                exclude = []
+            if as_list is None:
+                as_list = []
             d = {}
             for e in list(elem):
                 if e.tag in exclude:

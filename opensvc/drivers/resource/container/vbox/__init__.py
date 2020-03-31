@@ -119,7 +119,9 @@ class ContainerVbox(BaseContainer):
     def ping(self):
         return utilities.ping.check_ping(self.addr)
 
-    def container_action(self, action, add=[]):
+    def container_action(self, action, add=None):
+        if add is None:
+            add = []
         cmd = ['VBoxManage', action, self.name] + add
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:

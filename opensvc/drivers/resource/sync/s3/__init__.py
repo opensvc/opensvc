@@ -72,13 +72,17 @@ def adder(svc, s):
 
 class SyncS3(Sync):
     def __init__(self,
-                 src=[],
-                 options=[],
+                 src=None,
+                 options=None,
                  bucket=None,
                  snar=None,
                  full_schedule="@1441 sun",
                  **kwargs):
         super(SyncS3, self).__init__(type="sync.s3", **kwargs)
+        if options is None:
+            options = []
+        if src is None:
+            src = []
         self.label = "s3 backup"
         self.src = src
         self.bucket = bucket

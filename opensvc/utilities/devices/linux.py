@@ -275,10 +275,11 @@ def get_partition_parent(dev):
         return '/dev/'+l[0].split('/')[3]
     return None
 
-def devs_to_disks(self, devs=set()):
+def devs_to_disks(self, devs=None):
     """ If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
     """
+    devs = dev or set()
     disks = set()
     dm_major = major('device-mapper')
     try: md_major = major('md')

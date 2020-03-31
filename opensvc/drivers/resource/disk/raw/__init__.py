@@ -89,7 +89,7 @@ def adder(svc, s, drv=None):
 
 class BaseDiskRaw(BaseDisk):
     def __init__(self,
-                 devs=set(),
+                 devs=None,
                  user=None,
                  group=None,
                  perm=None,
@@ -102,7 +102,7 @@ class BaseDiskRaw(BaseDisk):
         self.group = group
         self.perm = perm
         self.create_char_devices = create_char_devices
-        self.original_devs = devs
+        self.original_devs = devs or set()
 
         self.devs = set()
         self.devs_not_found = set()

@@ -32,14 +32,14 @@ def find_mounts(self, mounts_h):
 class Snap(Resource):
     """Defines a snap object
     """
-    def __init__(self, rid, optional=False, disabled=False, tags=set()):
+    def __init__(self, rid, optional=False, disabled=False, tags=None):
         self.snaps = {}
         super(Snap, self).__init__(
             rid,
             "sync.snap",
             optional=optional,
             disabled=disabled,
-            tags=tags
+            tags=tags or set()
         )
 
     def try_snap(self, rset, action, rid=None):

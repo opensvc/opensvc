@@ -275,7 +275,9 @@ ACTIONS = {
 class Freenass(object):
     arrays = []
 
-    def __init__(self, objects=[], node=None):
+    def __init__(self, objects=None, node=None):
+        if objects is None:
+            objects = []
         self.objects = objects
         self.filtering = len(objects) > 0
         self.timeout = 10

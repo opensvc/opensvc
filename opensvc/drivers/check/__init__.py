@@ -14,7 +14,9 @@ class Check(object):
               'instance': 'undef',
               'value': '-1'
              }]
-    def __init__(self, svcs=[]):
+    def __init__(self, svcs=None):
+        if svcs is None:
+            svcs = []
         self.svcs = svcs
         if self.svcs is None:
             self.svcs = []
@@ -28,7 +30,9 @@ class Check(object):
 class Checks(Check):
     check_list = []
 
-    def __init__(self, svcs=[], node=None):
+    def __init__(self, svcs=None, node=None):
+        if svcs is None:
+            svcs = []
         self.svcs = svcs
         self.node = node
         self.register_internal_checkers()

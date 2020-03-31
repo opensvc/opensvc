@@ -22,7 +22,7 @@ def adder(svc, s):
 
 class DiskRaw(BaseDiskRaw):
     def __init__(self,
-                 devs=set(),
+                 devs=None,
                  user=None,
                  group=None,
                  perm=None,
@@ -30,6 +30,7 @@ class DiskRaw(BaseDiskRaw):
                  **kwargs):
 
         super(DiskRaw, self).__init__(**kwargs)
+        devs = devs or set()
 
     def verify_dev(self, dev):
         cmd = ["diskinfo", dev]

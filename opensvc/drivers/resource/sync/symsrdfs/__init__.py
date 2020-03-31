@@ -64,11 +64,13 @@ class SyncSymsrdfs(Sync):
                  symid=None,
                  symdg=None,
                  rdfg=None,
-                 symdevs=[],
+                 symdevs=None,
                  precopy_timeout=300,
                  **kwargs):
         super(SyncSymsrdfs, self).__init__(type="sync.symsrdfs", **kwargs)
 
+        if symdevs is None:
+            symdevs = []
         self.pausable = False
         self.label = "srdf/s symdg %s"%(symdg)
         self.symid = symid
