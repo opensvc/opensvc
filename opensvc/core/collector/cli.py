@@ -394,7 +394,7 @@ class Cmd(object):
         line = line.strip()
 
         # strip the ls command
-        relpath = re.sub("^\s*ls\s+", "", line)
+        relpath = re.sub(r"^\s*ls\s+", "", line)
         if relpath == "ls":
             relpath = ""
 

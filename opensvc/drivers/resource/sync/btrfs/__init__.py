@@ -493,7 +493,7 @@ class SyncBtrfs(Sync):
              f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
 
     def _push_statefile(self, node):
-        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', '\#')]
+        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', r'\#')]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error

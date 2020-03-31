@@ -444,7 +444,7 @@ def colorize_log_line(line, last=None, auto=None):
 
     if auto:
         for i, word in enumerate(auto):
-            msg = re.sub("([\s,:@'\"]+)%s([\s,:@'\"]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%AUTO_COLORS_LEN])+m.group(2), msg)
+            msg = re.sub(r"([\s,:@'\"]+)%s([\s,:@'\"]+)"%word, lambda m: m.group(1)+colorize(word, AUTO_COLORS[i%AUTO_COLORS_LEN])+m.group(2), msg)
     line = " ".join((t, lvl, extra, "|", msg))
     return line
 

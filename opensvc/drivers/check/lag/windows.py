@@ -8,7 +8,7 @@ class Check(drivers.check.Check):
 
     def do_check(self):
         try:
-            self.w = wmi.WMI(namespace="root\hpq")
+            self.w = wmi.WMI(namespace=r"root\hpq")
         except:
             # no HP lag
             return []
