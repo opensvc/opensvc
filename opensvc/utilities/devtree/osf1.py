@@ -4,7 +4,7 @@ from .devtree import DevTree as BaseDevTree
 from utilities.diskinfo import DiskInfo
 from utilities.proc import justcall
 
-regex = re.compile('\W*[a-h]:')
+regex = re.compile(r'\W*[a-h]:')
 
 class DevTree(BaseDevTree):
     def get_parts(self, devname, d):

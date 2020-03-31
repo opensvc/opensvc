@@ -692,7 +692,7 @@ class Asset(BaseAsset):
         devs = []
         dev = {}
         for line in out.splitlines():
-            if re.match("^\w", line):
+            if re.match(r"^\w", line):
                 # new pci device
                 if dev:
                     devs.append(dev)
