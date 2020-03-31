@@ -8,7 +8,7 @@ import os
 import re
 import sys
 
-import six
+import foreign.six as six
 
 import core.exceptions as ex
 from env import Env

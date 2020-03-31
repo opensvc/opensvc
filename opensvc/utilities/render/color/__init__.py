@@ -5,8 +5,8 @@ import sys
 import datetime
 import re
 
-import six
 import core.exceptions as ex
+import foreign.six as six
 from foreign.jsonpath_ng.ext import parse
 from utilities.string import is_string
 

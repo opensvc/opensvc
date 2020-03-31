@@ -2,7 +2,7 @@ import json
 import re
 import time
 
-from six.moves import queue
+from foreign.six.moves import queue
 import daemon.handler
 import daemon.shared as shared
 import core.exceptions as ex

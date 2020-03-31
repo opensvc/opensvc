@@ -12,9 +12,9 @@ import tempfile
 import shutil
 from subprocess import Popen, PIPE
 
-import six
+import foreign.six as six
 # noinspection PyUnresolvedReferences
-from six.moves import queue
+from foreign.six.moves import queue
 
 import core.exceptions as ex
 import foreign.json_delta as json_delta

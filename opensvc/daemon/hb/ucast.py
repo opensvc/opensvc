@@ -6,7 +6,7 @@ import socket
 import threading
 import time
 
-import six
+import foreign.six as six
 import core.exceptions as ex
 import daemon.shared as shared
 from env import Env

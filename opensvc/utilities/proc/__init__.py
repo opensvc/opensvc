@@ -10,8 +10,8 @@ import time
 from errno import ENOENT
 from subprocess import Popen, PIPE
 
-import six
 import core.exceptions as ex
+import foreign.six as six
 from env import Env
 from utilities.string import bencode, bdecode, empty_string, is_string
 
