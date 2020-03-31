@@ -26,8 +26,8 @@ prepare_chroot || exit 1
 
 cd $REPODIR 
 
-mkdir -p $CHROOT/lib/svc/manifest/application
-cp $CHROOT/usr/share/opensvc/bin/init/opensvc.agent.xml $CHROOT/lib/svc/manifest/application/
+mkdir -p $CHROOT/opensvc/svc/manifest/application
+cp $CHROOT/usr/share/opensvc/bin/init/opensvc.agent.xml $CHROOT/opensvc/svc/manifest/application/
 
 # solaris bash completion is located in /etc/bash/bash_completion.d
 mkdir -p $CHROOT/etc/bash
@@ -55,10 +55,10 @@ let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
 echo "----- STEP $STEP > removing well known system directories from manifest -----"
 
 cat $LAST > $NEW
-sed -i '/^dir  path=lib owner=/d' $NEW
-sed -i '/^dir  path=lib\/svc owner=/d' $NEW
-sed -i '/^dir  path=lib\/svc\/manifest owner=/d' $NEW
-sed -i '/^dir  path=lib\/svc\/manifest\/application owner=/d' $NEW
+sed -i '/^dir  path=opensvc owner=/d' $NEW
+sed -i '/^dir  path=opensvc\/svc owner=/d' $NEW
+sed -i '/^dir  path=opensvc\/svc\/manifest owner=/d' $NEW
+sed -i '/^dir  path=opensvc\/svc\/manifest\/application owner=/d' $NEW
 sed -i '/^dir  path=bin owner=/d' $NEW
 sed -i '/^dir  path=opt owner=/d' $NEW
 sed -i '/^dir  path=usr owner=/d' $NEW
@@ -84,7 +84,7 @@ LAST=$NEW
 
 let STEP=$STEP+1 ; NEW=opensvc-agent.p5m.gen.$STEP
 echo "----- STEP $STEP > adding manifest-import fmri restart -----"
-echo '<transform file path=(var|lib)/svc/manifest/.*\.xml$ -> default restart_fmri svc:/system/manifest-import:default>' > $NEW.transform
+echo '<transform file path=(var|opensvc)/svc/manifest/.*\.xml$ -> default restart_fmri svc:/system/manifest-import:default>' > $NEW.transform
 pkgmogrify $LAST $NEW.transform | pkgfmt > $NEW
 LAST=$NEW
 
