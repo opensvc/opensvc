@@ -599,3 +599,33 @@ def find_editor():
     return editor
 
 
+def get_extra_argv(argv=None):
+    """
+    Extract extra argv from "om array" and "om collector cli" argv.
+
+    om node act as a wrapper for other commands (storage drivers for
+    example).
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+    if len(argv) < 2:
+        return argv, []
+
+    if "array" in argv:
+        pos = argv.index('array')
+    elif "cli" in argv:
+        pos = argv.index('cli')
+        if pos > 0 and argv[pos-1] != "collector":
+            return argv, []
+    else:
+        return argv, []
+
+    if "--" in argv:
+        pos = argv.index("--")
+    if len(argv) > pos + 1:
+        extra_argv = argv[pos+1:]
+    else:
+        extra_argv = []
+    argv = argv[:pos+1]
+    return argv, extra_argv
+

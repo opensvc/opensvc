@@ -19,7 +19,7 @@ DEPRECATED_ACTIONS = [
 ACTIONS_TRANSLATIONS = {
 }
 
-class CcfgmgrOptParser(OptParser):
+class CcfgOptParser(OptParser):
     """
     The cluster configuration management command options parser class.
     """

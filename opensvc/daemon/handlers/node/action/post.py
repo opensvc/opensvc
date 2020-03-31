@@ -71,7 +71,7 @@ class Handler(daemon.handler.BaseHandler):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        from commands.nodemgr.parser import OPT
+        from commands.node.parser import OPT
 
         def find_opt(opt):
             for k, o in OPT.items():
