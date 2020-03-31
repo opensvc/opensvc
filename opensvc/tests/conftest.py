@@ -12,6 +12,11 @@ def which(mocker):
     mocker.patch('utilities.proc.which')
 
 
+@pytest.fixture(scope='function')
+def has_euid_0(mocker):
+    mocker.patch('os.geteuid', autospec=True, return_value=0)
+
+
 @pytest.fixture(scope='function', name='osvc_path_tests')
 def osvc_path_tests_fixture(tmpdir):
     test_dir = str(tmpdir)
