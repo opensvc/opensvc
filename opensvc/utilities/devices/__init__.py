@@ -6,8 +6,8 @@ _package = __package__ or __spec__.name # pylint: disable=undefined-variable
 _os = importlib.import_module("." + _sysname, package=_package)
 _module_dict = _os.__dict__
 
-def devs_to_disks(self, devs=set()):
-    return devs
+def devs_to_disks(self, devs=None):
+    return devs or set()
 
 #
 # Override generic definitions by os-specific ones

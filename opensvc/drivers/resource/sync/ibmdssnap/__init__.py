@@ -64,13 +64,15 @@ def adder(svc, s):
 
 class SyncIbmdssnap(Sync):
     def __init__(self,
-                 pairs=[],
+                 pairs=None,
                  array=None,
                  bgcopy=True,
                  recording=True,
                  **kwargs):
         super(SyncIbmdssnap, self).__init__(type="sync.ibmdssnap", **kwargs)
 
+        if pairs is None:
+            pairs = []
         self.label = "flash copy %s"%','.join(pairs)
         self.pairs = pairs
         self.arrayname = array

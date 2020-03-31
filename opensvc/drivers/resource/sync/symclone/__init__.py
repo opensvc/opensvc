@@ -84,7 +84,7 @@ class SyncSymclone(Sync):
     def __init__(self,
                  type="sync.symclone",
                  symid=None,
-                 pairs=[],
+                 pairs=None,
                  precopy=True,
                  consistent=True,
                  restore_timeout=None,
@@ -92,6 +92,8 @@ class SyncSymclone(Sync):
                  **kwargs):
         super(SyncSymclone, self).__init__(type=type, **kwargs)
 
+        if pairs is None:
+            pairs = []
         if self.type == "sync.symclone":
             self.active_states = ["copied", "copyinprog"]
             self.activable_states = ["recreated", "precopy"]

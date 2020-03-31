@@ -84,12 +84,12 @@ def adder(svc, s):
 class DiskRados(BaseDisk):
     def __init__(self,
                  type="disk.rados",
-                 images=set(),
+                 images=None,
                  client_id=None,
                  keyring=None,
                  **kwargs):
         super(DiskRados, self).__init__(type=type, **kwargs)
-        self.images = images
+        self.images = images or set()
         self.keyring = keyring
         if not client_id.startswith("client."):
             client_id = "client."+client_id

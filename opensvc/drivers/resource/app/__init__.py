@@ -66,11 +66,13 @@ KEYWORDS = [
     },
 ]
 
-def run_as_popen_kwargs(fpath, limits={}, user=None, group=None, cwd=None):
+def run_as_popen_kwargs(fpath, limits=None, user=None, group=None, cwd=None):
     """
     Setup the Popen keyword args to execute <fpath> with the
     privileges demoted to those of the owner of <fpath>.
     """
+    if limits is None:
+        limits = {}
     if Env.sysname == "Windows":
         return {}
 
