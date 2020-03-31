@@ -2111,7 +2111,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             os.unlink(fpath)
         except OSError:
             pass
-        os.system("%s pushasset" % Env.paths.nodemgr)
+        os.system("%s node pushasset" % Env.paths.om)
         return 0
 
     def updateclumgr(self):
@@ -2295,13 +2295,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     @staticmethod
     def dequeue_action(action):
         """
-        Execute the nodemgr or svcmgr action described in payload element
+        Execute the node or object action described in payload element
         received from the collector's action queue.
         """
         if action.get("svc_id") in (None, "") or action.get("svcname") in (None, ""):
-            cmd = [Env.paths.nodemgr]
+            cmd = [Env.paths.om, "node"]
         else:
-            cmd = [Env.paths.svcmgr, "-s", action.get("svcname")]
+            cmd = [Env.paths.om, "svc", "-s", action.get("svcname")]
         cmd += shlex.split(action.get("command", ""))
         print("dequeue action %s" % " ".join(cmd))
         out, err, ret = justcall(cmd)
@@ -2696,7 +2696,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         username = Env.nodename
         node_uuid = self.oget("node", "uuid")
         if not node_uuid:
-            raise ex.Error("the node is not registered yet. use 'nodemgr register [--user <user>]'")
+            raise ex.Error("the node is not registered yet. use 'om node register [--user <user>]'")
         return username, node_uuid
 
     def collector_auth_user(self):
@@ -3348,7 +3348,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def create_service(self, paths, options):
         """
-        The "svcmgr create" entrypoint.
+        The "om <kind> create" entrypoint.
         """
         ret = 0
         if paths:
@@ -3973,7 +3973,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print(error, file=sys.stderr)
         return status
 
-    def dns_dump(self):
+    def daemon_dns_dump(self):
         """
         Dump the content of the cluster zone.
         """
@@ -4233,8 +4233,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = None
         if self.options.thr_id is None and self.daemon_handled_by_systemd():
             # 'systemctl restart <osvcunit>' when the daemon has been started
-            # manually causes a direct 'nodemgr daemon start', which fails,
-            # and systemd fallbacks to 'nodemgr daemon stop' and leaves the
+            # manually causes a direct 'om daemon start', which fails,
+            # and systemd fallbacks to 'om daemon stop' and leaves the
             # daemon stopped.
             # Detect this situation and stop the daemon ourselves.
             if self.daemon_active_systemd():
@@ -4348,8 +4348,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_restart(self):
         if self.daemon_handled_by_systemd():
             # 'systemctl restart <osvcunit>' when the daemon has been started
-            # manually causes a direct 'nodemgr daemon start', which fails,
-            # and systemd fallbacks to 'nodemgr daemon stop' and leaves the
+            # manually causes a direct 'om daemon start', which fails,
+            # and systemd fallbacks to 'om daemon stop' and leaves the
             # daemon stopped.
             # Detect this situation and stop the daemon ourselves.
             if not self.daemon_active_systemd():

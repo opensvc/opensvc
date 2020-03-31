@@ -1,13 +1,13 @@
 """
 The volume management command actions and options.
 """
-import commands.svcmgr.parser as mp
+import commands.svc.parser as mp
 
 PROG = "om vol"
 ACTIONS = mp.ACTIONS
 OPT = mp.OPT
 
-class VolmgrOptParser(mp.SvcmgrOptParser):
+class VolOptParser(mp.SvcOptParser):
     """
     The volume management command options parser class.
     """
