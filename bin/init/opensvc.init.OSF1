@@ -8,17 +8,17 @@ OSVC_ROOT_PATH="/usr/share/opensvc"
 
 case $1 in
 start)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
-        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
+        ${OSVC_ROOT_PATH}/bin/om daemon start
+        ${OSVC_ROOT_PATH}/bin/om node pushasset
 	;;
 stop)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
+        ${OSVC_ROOT_PATH}/bin/om daemon shutdown
 	;;
 status)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+        ${OSVC_ROOT_PATH}/bin/om daemon running
 	;;
 restart)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
+        ${OSVC_ROOT_PATH}/bin/om daemon restart
 	;;
 esac
 

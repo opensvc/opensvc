@@ -26,25 +26,25 @@ OSVC_ROOT_PATH="/usr/share/opensvc"
 opensvc_start()
 {
         echo "OpenSVC daemon start"
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
-        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
+        ${OSVC_ROOT_PATH}/bin/om daemon start
+        ${OSVC_ROOT_PATH}/bin/om node pushasset
 }
 
 opensvc_restart()
 {
         echo "OpenSVC daemon restart"
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
+        ${OSVC_ROOT_PATH}/bin/om daemon restart
 }
 
 opensvc_stop()
 {
         echo "OpenSVC daemon shutdown"
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
+        ${OSVC_ROOT_PATH}/bin/om daemon shutdown
 }
 
 opensvc_status()
 {
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+        ${OSVC_ROOT_PATH}/bin/om daemon running
 }
 
 load_rc_config $name
