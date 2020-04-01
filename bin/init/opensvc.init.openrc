@@ -20,15 +20,15 @@ depend() {
 }
 
 start() {
-	${OSVC_ROOT_PATH}/bin/nodemgr daemon start
+	${OSVC_ROOT_PATH}/bin/om daemon start
 }
 
 stop() {
-	${OSVC_ROOT_PATH}/bin/nodemgr daemon shutdown
+	${OSVC_ROOT_PATH}/bin/om daemon shutdown
 }
 
 status() {
-	${OSVC_ROOT_PATH}/bin/nodemgr daemon status
-	${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+	${OSVC_ROOT_PATH}/bin/om daemon status
+	${OSVC_ROOT_PATH}/bin/om daemon running
 }
 
