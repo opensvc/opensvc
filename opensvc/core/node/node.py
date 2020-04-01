@@ -4275,8 +4275,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         if self.daemon_handled_by_systemd():
             return self.daemon_start_systemd()
-        import daemon.main
-        daemon.main.main()
+        os.chdir(Env.paths.pathsvc)
+        return os.system(sys.executable+" -m opensvc.daemon")
 
     def daemon_start_thread(self):
         options = {}
