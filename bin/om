@@ -43,7 +43,26 @@ opensvc)
 	exec "$OSVC_PYTHON" "$@"
 	;;
 nodemgr)
-	KIND=node
+	case $1 in
+	daemon)
+		shift
+		KIND=daemon
+		;;
+	dns)
+		KIND=daemon
+		;;
+	net|network)
+		shift
+		KIND=network
+		;;
+	pool)
+		shift
+		KIND=pool
+		;;
+	*)
+		KIND=node
+		;;
+	esac
 	;;
 svcmgr)
 	KIND=svc
