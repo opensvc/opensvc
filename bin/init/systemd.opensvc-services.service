@@ -1,6 +1,6 @@
 [Unit]
 Description=OpenSVC agent and services oneshot stopper
-Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
+Documentation=https://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 After=opensvc-agent.service
 
 [Service]
