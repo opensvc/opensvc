@@ -21,9 +21,9 @@ start)
 	else
 		exit 0
 	fi
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon start
-	${OSVC_ROOT_PATH}/bin/nodemgr collect stats
-        ${OSVC_ROOT_PATH}/bin/nodemgr pushasset
+        ${OSVC_ROOT_PATH}/bin/om daemon start
+	${OSVC_ROOT_PATH}/bin/om node collect stats
+        ${OSVC_ROOT_PATH}/bin/om node pushasset
 	;;
 stop_msg)
 	if [ "$RUN_OPENSVC" -ne 0 ] ; then
@@ -36,12 +36,12 @@ stop)
 	else
 		exit 0
 	fi
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon stutdown
+        ${OSVC_ROOT_PATH}/bin/om daemon shutdown
 	;;
 status)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon running
+        ${OSVC_ROOT_PATH}/bin/om daemon running
 	;;
 restart)
-        ${OSVC_ROOT_PATH}/bin/nodemgr daemon restart
+        ${OSVC_ROOT_PATH}/bin/om daemon restart
 	;;
 esac
