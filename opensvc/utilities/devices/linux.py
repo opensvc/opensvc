@@ -279,7 +279,7 @@ def devs_to_disks(self, devs=None):
     """ If PV is a device map, replace by its sysfs name (dm-*)
         If device map has slaves, replace by its slaves
     """
-    devs = dev or set()
+    devs = devs or set()
     disks = set()
     dm_major = major('device-mapper')
     try: md_major = major('md')
