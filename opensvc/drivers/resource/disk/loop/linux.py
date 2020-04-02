@@ -40,11 +40,24 @@ class DiskLoop(BaseDiskLoop):
             return False
         return True
 
+    def auto_provision(self):
+        """
+        If the loop file is hosted on a volatile fs, auto provision on start.
+        """
+        from utilities.mounts.linux import Mounts
+        from utilities.files import getmount
+        mnt = getmount(self.loopFile)
+        mount = Mounts().mount("tmpfs", mnt)
+        if mount and mount.type == "tmpfs":
+            self.provisioner()
+
     def start(self):
-        lockfile = os.path.join(Env.paths.pathlock, "disk.loop")
         if self.is_up():
             self.log.info("%s is already up" % self.label)
             return
+        if not os.path.exists(self.loopFile):
+            self.auto_provision()
+        lockfile = os.path.join(Env.paths.pathlock, "disk.loop")
         try:
             with cmlock(timeout=30, delay=1, lockfile=lockfile):
                 cmd = [Env.syspaths.losetup, '-f', self.loopFile]
