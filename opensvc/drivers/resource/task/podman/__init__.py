@@ -89,8 +89,9 @@ class TaskPodman(ContainerPodman, BaseTask):
         except ex.Error:
             self.write_last_run_retcode(1)
             raise
-        if self.rm:
-            self.container_rm()
+        finally:
+            if self.rm:
+                self.container_rm()
 
     def _status(self, *args, **kwargs):
         return BaseTask._status(self, *args, **kwargs)
