@@ -11,7 +11,6 @@ from __future__ import absolute_import, division, print_function
 
 import datetime
 import fnmatch
-import importlib
 import json
 import logging
 import os
@@ -212,8 +211,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def kwstore(self):
-        mod = importlib.import_module("core.node.nodedict")
-        return mod.KEYS
+        from .nodedict import KEYS
+        return KEYS
 
     @lazy
     def devnull(self):
@@ -2077,6 +2076,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             modname = 'utilitities.packages.update.'+Env.module_sysname
 
+        import importlib
         try:
             mod = importlib.import_module(modname)
         except ImportError:
