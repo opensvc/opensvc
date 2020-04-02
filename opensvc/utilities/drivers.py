@@ -11,7 +11,10 @@ def driver_import(*args, **kwargs):
         kwargs["head"] = "site-opensvc.drivers"
         return _driver_import(*args, **kwargs)
 
-def _driver_import(*args, head="drivers", fallback=True, initial_modname=None):
+def _driver_import(*args, **kwargs):
+    head = kwargs.get("head", "drivers")
+    fallback = kwargs.get("fallback", True)
+    initial_modname = kwargs.get("initial_modname")
     def fmt_element(s):
         if s is None:
             return ""
