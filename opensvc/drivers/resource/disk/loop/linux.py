@@ -12,11 +12,13 @@ from . import \
     DRIVER_GROUP, \
     DRIVER_BASENAME, \
     DEPRECATED_SECTIONS
-from utilities.converters import convert_size
-from utilities.lock import cmlock
+from core.objects.svcdict import KEYS
 from env import Env
 from utilities.cache import clear_cache
-from core.objects.svcdict import KEYS
+from utilities.converters import convert_size
+from utilities.lock import cmlock
+from utilities.mounts.linux import Mounts
+from utilities.files import getmount
 
 KEYS.register_driver(
     DRIVER_GROUP,
@@ -40,16 +42,29 @@ class DiskLoop(BaseDiskLoop):
             return False
         return True
 
+    def is_volatile(self):
+        mnt = getmount(self.loopFile)
+        mount = Mounts().mount("tmpfs", mnt)
+        if mount and mount.type == "tmpfs":
+            return True
+        return False
+
     def auto_provision(self):
         """
         If the loop file is hosted on a volatile fs, auto provision on start.
         """
-        from utilities.mounts.linux import Mounts
-        from utilities.files import getmount
-        mnt = getmount(self.loopFile)
-        mount = Mounts().mount("tmpfs", mnt)
-        if mount and mount.type == "tmpfs":
-            self.provisioner()
+        if not self.is_volatile():
+            return
+        self.provisioner()
+
+    def auto_unprovision(self):
+        """
+        If the loop file is hosted on a volatile fs, auto unprovision on stop.
+        Free the memory asap.
+        """
+        if not self.is_volatile():
+            return
+        self.unprovisioner()
 
     def start(self):
         if self.is_up():
@@ -84,6 +99,8 @@ class DiskLoop(BaseDiskLoop):
             clear_cache("losetup.json")
             if ret != 0:
                 raise ex.Error
+        if os.path.exists(self.loopFile):
+            self.auto_unprovision()
 
     def resource_handling_file(self):
         path = os.path.dirname(self.loopFile)
