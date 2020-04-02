@@ -294,7 +294,7 @@ class Listener(shared.OsvcThread):
         def onerror(name):
             import traceback
             traceback.print_exc()
-        handlers_path = [os.path.join(os.path.dirname(__file__), "handlers")]
+        handlers_path = [os.path.join(Env.paths.pathsvc, Env.package, "daemon", "handlers")]
         for modinfo in pkgutil.walk_packages(handlers_path, 'daemon.handlers.', onerror=onerror):
             if hasattr(modinfo, "ispkg"):
                 name = modinfo.name
