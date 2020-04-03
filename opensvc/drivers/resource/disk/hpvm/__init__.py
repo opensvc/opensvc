@@ -5,10 +5,36 @@ from subprocess import *
 import core.exceptions as ex
 import core.status
 from ..vg.hpux import DiskVg
+from .. import BASE_KEYWORDS
+
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "hpvm"
+KEYWORDS = BASE_KEYWORDS + [
+    {
+        "keyword": "container_name",
+        "at": True,
+        "required": True,
+        "text": "The name of the container to map the disks in its configuration file to the resource."
+    },
+]
+
+KEYS.register_driver(
+    DRIVER_GROUP,
+    DRIVER_BASENAME,
+    name=__name__,
+    keywords=KEYWORDS,
+)
+
+def adder(svc, s):
+    kwargs = init_kwargs(svc, s)
+    kwargs["container_name"] = svc.oget(s, "container_name")
+    r = DiskHpvm(**kwargs)
+    svc += r
 
 
 class DiskHpvm(DiskVg):
     def __init__(self, container_name=None, **kwargs):
+        kwargs["name"] = "vmdg_%s" % container_name
         super(DiskHpvm, self).__init__(**kwargs)
         self.label = "vmdg %s" % self.name
         self.container_name = container_name
