@@ -4,6 +4,8 @@ from subprocess import *
 
 import core.exceptions as ex
 import core.status
+from core.objects.builder import init_kwargs
+from core.objects.svcdict import KEYS
 from ..vg.hpux import DiskVg
 from .. import BASE_KEYWORDS
 
