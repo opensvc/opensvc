@@ -93,7 +93,6 @@ SCENARIOS = [
 
     #  share.nfs has its own test file
 
-    ('sync', 'Sync', {'rid': '#1'}, None),
     ('sync.btfrssnap', 'SyncBtrfssnap', {'rid': '#1'}, 'sync.btrfssnap'),
     ('sync.btrfs', 'SyncBtrfs', {'rid': '#1', 'src': 'src:a', 'dst': 'dst:foo', 'target': ['foo']}, 'sync.btrfs'),
     ('sync.dds', 'SyncDds', {'rid': '#1', 'target': ['a']}, 'sync.dds'),
