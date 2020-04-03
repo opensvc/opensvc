@@ -6,21 +6,14 @@ import core.exceptions as ex
 import core.status
 import utilities.devices.linux
 
-from . import DiskDisk as BaseDiskDisk, KEYWORDS
+from . import DiskDisk as BaseDiskDisk, KEYWORDS, adder as base_adder
 from utilities.lazy import lazy
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "disk"
-
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    r = DiskDisk(**kwargs)
-    svc += r
 
 KEYS.register_driver(
     DRIVER_GROUP,
@@ -28,6 +21,10 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
+
+def adder(svc, s):
+    base_adder(svc, s, mod=DiskDisk)
+
 
 class DiskDisk(BaseDiskDisk):
     @lazy
