@@ -53,7 +53,6 @@ class ContainerHpvm(BaseContainer):
         super(ContainerHpvm, self).__init__(type="container.hpvm", guestos=guestos, **kwargs)
         self.vg = DiskHpvm(
             rid = 'vmdg#'+self.rid,
-            name = 'vmdg_'+self.name,
             container_name = self.name
         )
 
