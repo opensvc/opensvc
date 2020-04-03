@@ -7,6 +7,7 @@ from .. import BASE_KEYWORDS
 from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
+from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.render.color import format_str_flat_json
 
@@ -68,6 +69,20 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
+
+def adder(svc, s, mod=None):
+    mod = mod or DiskDisk
+    kwargs = init_kwargs(svc, s)
+    kwargs["size"] = svc.oget(s, "size")
+    kwargs["pool"] = svc.oget(s, "pool")
+    kwargs["name"] = svc.oget(s, "name")
+    kwargs["disk_id"] = svc.oget(s, "disk_id")
+    kwargs["array"] = svc.oget(s, "array")
+    kwargs["diskgroup"] = svc.oget(s, "diskgroup")
+    kwargs["slo"] = svc.oget(s, "slo")
+    r = mod(**kwargs)
+    svc += r
+
 
 class DiskDisk(Resource):
     """
