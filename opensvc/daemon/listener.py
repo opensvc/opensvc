@@ -1868,8 +1868,10 @@ class ClientHandler(shared.OsvcThread):
         def parse(_buff):
             head, message = _buff.split(" | ", 1)
             date_s, time_s, lvl, meta = head.split(None, 3)
+            dt = datetime.datetime.strptime(date_s + " " + time_s, "%Y-%m-%d %H:%M:%S,%f")
+            t = time.mktime(dt.timetuple()) + dt.microsecond / 1000000
             d = {
-                "t": datetime.datetime.strptime(date_s + " " + time_s, "%Y-%m-%d %H:%M:%S,%f").timestamp(),
+                "t": t,
                 "l": lvl,
                 "m": message.rstrip().split("\n"),
                 "x": {},
