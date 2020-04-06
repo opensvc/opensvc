@@ -73,7 +73,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             return
         if not options.data:
             return
-        errors = self.rbac_create_data(options.data, **kwargs)
+        errors = self.rbac_create_data(options.data, thr=thr, **kwargs)
         if errors:
             raise ex.HTTP(403, errors)
 
