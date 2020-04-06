@@ -150,7 +150,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
 
             # apply object create rbac to the amended config
             payload = {options.path: cf}
-            errors = self.rbac_create_data(payload, thr=thr, **kwargs)
+            errors = self.rbac_create_data(payload=payload, thr=thr, **kwargs)
             if errors:
                 raise HTTP(403, errors)
         else:
