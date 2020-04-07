@@ -734,7 +734,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Given a basic selector string (no AND nor OR), return a list of service
         names.
         """
-        ops = r"(<=|>=|<|>|=|~|:)"
+        ops = r"(<=|>=|~=|<|>|=|~|:)"
         negate = selector[0] == "!"
         selector = selector.lstrip("!")
         elts = re.split(ops, selector)
@@ -746,12 +746,26 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 except (ValueError, TypeError):
                     return False
             if op == "=":
-                if current.lower() in ("true", "false"):
-                    match = current.lower() == value.lower()
+                if str(current).lower() in ("true", "false"):
+                    match = str(current).lower() == value.lower()
                 else:
                     match = current == value
+            elif op == "~=":
+                if isinstance(current, (set, list, tuple)):
+                    match = value in current
+                else:
+                    try:
+                        match = re.search(value, current)
+                    except TypeError:
+                        match = False
             elif op == "~":
-                match = re.search(value, current)
+                if isinstance(current, (set, list, tuple)):
+                    match = any([True for v in current if re.search(value, v)])
+                else:
+                    try:
+                        match = re.search(value, current)
+                    except TypeError:
+                        match = False
             elif op == ">":
                 match = current > value
             elif op == ">=":
