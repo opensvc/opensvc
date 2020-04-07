@@ -118,6 +118,7 @@ KWS_VIRTUAL = [
     KW_SIZE,
     KW_DEV,
     KW_STAT_TIMEOUT,
+    KW_ZONE,
 ]
 
 KEYWORDS = [
@@ -133,6 +134,7 @@ KEYWORDS = [
     KW_MKFS_OPT,
     KW_CREATE_OPTIONS,
     KW_VG,
+    KW_ZONE,
 ]
 
 KWS_POOLING = [
@@ -146,6 +148,7 @@ KWS_POOLING = [
     KW_SCSIRESERV,
     KW_NO_PREEMPT_ABORT,
     KW_MKFS_OPT,
+    KW_ZONE,
 ]
 
 DRIVER_GROUP = "fs"

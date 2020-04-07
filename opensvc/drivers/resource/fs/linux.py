@@ -508,7 +508,7 @@ class Fs(BaseFs):
         return ret, out, err
 
     def mount_zfs(self):
-        zone = self.svc.oget(self.rid, "zone")
+        zone = self.zone or self.oget("zone")
         if not self.encap and not zone and \
            zfs_getprop(self.device, 'zoned') != 'off':
             if zfs_setprop(self.device, 'zoned', 'off', log=self.log):
