@@ -8,7 +8,6 @@ from subprocess import *
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
@@ -57,17 +56,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["full_schedule"] = svc.oget(s, "full_schedule")
-    kwargs["options"] = svc.oget(s, "options")
-    kwargs["snar"] = svc.oget(s, "snar")
-    kwargs["bucket"] = svc.oget(s, "bucket")
-    kwargs["src"] = svc.oget(s, "src")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncS3(**kwargs)
-    svc += r
 
 
 class SyncS3(Sync):

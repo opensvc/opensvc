@@ -64,8 +64,8 @@ class TestReferences:
     def test_003_ref_3(self): self.__get_ref(3)
     def test_003_ref_4(self): self.__get_ref(4)
     def test_003_ref_5(self): self.__get_ref(5)
-    def test_003_ref_6(self): self.__get_ref(7)
-    def test_003_ref_6(self): self.__get_ref(7)
+    def test_003_ref_6(self): self.__get_ref(6)
+    def test_003_ref_7(self): self.__get_ref(7)
 
     def __get_ref(self, idx):
         """

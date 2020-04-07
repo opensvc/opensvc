@@ -7,7 +7,6 @@ from .. import BASE_KEYWORDS
 from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.render.color import format_str_flat_json
 
@@ -70,27 +69,21 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s, mod=None):
-    mod = mod or DiskDisk
-    kwargs = init_kwargs(svc, s)
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["pool"] = svc.oget(s, "pool")
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["disk_id"] = svc.oget(s, "disk_id")
-    kwargs["array"] = svc.oget(s, "array")
-    kwargs["diskgroup"] = svc.oget(s, "diskgroup")
-    kwargs["slo"] = svc.oget(s, "slo")
-    r = mod(**kwargs)
-    svc += r
-
 
 class DiskDisk(Resource):
     """
     SAN Disk resource
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, name=None, size=None, pool=None, disk_id=None, array=None, diskgroup=None, slo=None, **kwargs):
         super(DiskDisk, self).__init__(type="disk.disk", **kwargs)
+        self.name = name
+        self.size = size
+        self.poolname = pool
+        self.disk_id = disk_id
+        self.array = array
+        self.diskgroup = diskgroup
+        self.slo = slo
 
     def __str__(self):
         return "%s disk disk_id=%s" % (
@@ -100,13 +93,6 @@ class DiskDisk(Resource):
 
     def on_add(self):
         self.set_label()
-
-    @lazy
-    def disk_id(self):
-        try:
-            return self.conf_get("disk_id").strip()
-        except ex.OptNotFound as exc:
-            return
 
     def set_label(self):
         if self.disk_id is None:
@@ -141,18 +127,15 @@ class DiskDisk(Resource):
             self.configure(force=True)
 
     def create_disk(self):
-        poolname = self.oget("pool")
-        name = self.oget("name")
-        size = self.oget("size")
-        pool = self.svc.node.get_pool(poolname)
+        pool = self.svc.node.get_pool(self.poolname)
         pool.log = self.log
         if self.shared:
             disk_id_kw = "disk_id"
-            result = pool.create_disk(name, size=size, nodes=self.svc.nodes)
+            result = pool.create_disk(self.name, size=self.size, nodes=self.svc.nodes)
         else:
             disk_id_kw = "disk_id@" + Env.nodename
-            name += "." + Env.nodename
-            result = pool.create_disk(name, size=size, nodes=[Env.nodename])
+            name = self.name + "." + Env.nodename
+            result = pool.create_disk(name, size=self.size, nodes=[Env.nodename])
         if not result:
             raise ex.Error("invalid create disk result: %s" % result)
         for line in format_str_flat_json(result).splitlines():
@@ -169,7 +152,7 @@ class DiskDisk(Resource):
         self.log.info("changes: %s", changes)
         self.svc.set_multi(changes, validation=False)
         self.log.info("changes applied")
-        self.unset_lazy("disk_id")
+        self.disk_id = self.oget("disk_id")
         self.log.info("disk %s provisioned" % result["disk_id"])
 
     def provisioner_shared_non_leader(self):
@@ -183,19 +166,16 @@ class DiskDisk(Resource):
             self.log.info("skip unprovision: 'disk_id' is not set")
             return
         self.unconfigure()
-        poolname = self.oget("pool")
-        name = self.oget("name")
-        pool = self.svc.node.get_pool(poolname)
+        pool = self.svc.node.get_pool(self.poolname)
         pool.log = self.log
         if self.shared:
             disk_id_kw = "disk_id"
         else:
             disk_id_kw = "disk_id@" + Env.nodename
-            name += "." + Env.nodename
+            name = self.name + "." + Env.nodename
         result = pool.delete_disk(name=name, disk_id=self.disk_id)
         for line in format_str_flat_json(result).splitlines():
             self.log.info(line)
         self.svc.set_multi(["%s.%s=%s" % (self.rid, disk_id_kw, "")], validation=False)
-        self.unset_lazy("disk_id")
         self.log.info("unprovisioned")
 

@@ -10,9 +10,9 @@ import utilities.devices.linux
 from .. import Sync, notify
 from utilities.converters import print_duration
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "dds"
@@ -48,41 +48,21 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {}
-    kwargs["src"] = svc.oget(s, "src")
-    kwargs["target"] = svc.oget(s, "target")
-
-    dsts = {}
-    for node in svc.nodes | svc.drpnodes:
-        dst = svc.oget(s, "dst", impersonate=node)
-        dsts[node] = dst
-
-    if len(dsts) == 0:
-        for node in svc.nodes | svc.drpnodes:
-            dsts[node] = kwargs["src"]
-
-    kwargs["dsts"] = dsts
-    kwargs["snap_size"] = svc.oget(s, "snap_size")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncDds(**kwargs)
-    svc += r
-
 
 class SyncDds(Sync):
     def __init__(self,
                  target=None,
                  src=None,
-                 dsts=None,
+                 dst=None,
                  snap_size=0,
                  **kwargs):
         super(SyncDds, self).__init__(type="sync.dds", **kwargs)
         if dsts is None:
             dsts = {}
-        self.label = "dds of %s to %s"%(src, ", ".join(target))
+        self.label = "dds of %s to %s" % (src, ", ".join(target))
         self.target = target
         self.src = src
-        self.dsts = dsts
+        self.dst = dst
         self.snap_size = snap_size
 
     def __str__(self):
@@ -91,6 +71,17 @@ class SyncDds(Sync):
             self.target,
             self.src
         )
+
+    @lazy
+    def dsts(self):
+        data = {}
+        for node in self.svc.nodes | self.svc.drpnodes:
+            data[node] = self.oget("dst", impersonate=node)
+
+        if len(data) == 0:
+            for node in self.svc.nodes | self.svc.drpnodes:
+                data[node] = self.src
+        return data
 
     def pre_action(self, action):
         resources = [r for r in self.rset.resources if \

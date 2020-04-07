@@ -5,9 +5,9 @@ import core.exceptions as ex
 import core.status
 from .. import Sync, notify
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "netapp"
@@ -38,27 +38,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {}
-    kwargs["path"] = svc.oget(s, "path")
-    kwargs["user"] = svc.oget(s, "user")
-    filers = {}
-    for n in svc.nodes | svc.drpnodes:
-        filers[n] = svc.oget(s, "filer", impersonate=n)
-    kwargs["filers"] = filers
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncNetapp(**kwargs)
-    svc += r
-
 
 class SyncNetapp(Sync):
-    def __init__(self, filers=None, path=None, user=None, **kwargs):
+    def __init__(self, filer=None, path=None, user=None, **kwargs):
         super(SyncNetapp, self).__init__(type="sync.netapp", **kwargs)
-        if filers is None:
-            filers = {}
         self.pausable = False
-        self.label = "netapp %s on %s"%(path, ', '.join(filers.values()))
-        self.filers = filers
+        self.label = "netapp %s on %s" % (path, filer)
+        self.filer = filer
         self.path = path
         self.user = user
         self.path_short = self.path.replace('/vol/','')
@@ -70,6 +56,13 @@ class SyncNetapp(Sync):
             self.user,
             self.path
         )
+
+    @lazy
+    def filers(self):
+        data = {}
+        for n in self.svc.nodes | self.svc.drpnodes:
+            data[n] = self.oget("filer", impersonate=n)
+        return data
 
     def master(self):
         s = self.local_snapmirror_status()

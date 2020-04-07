@@ -39,14 +39,9 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {"rid": s}
-    kwargs.update(svc.section_kwargs(s, "envoy"))
-    r = HashpolicyEnvoy(**kwargs)
-    svc += r
 
 class HashpolicyEnvoy(DataResource):
     def __init__(self, **kwargs):
-        super(HashpolicyEnvoy, self).__init__(type="hash_policy.envoy", **kwargs)
+        super(HashpolicyEnvoy, self).__init__(type="hashpolicy.envoy", **kwargs)
         self.label = "envoy hash policy"
 

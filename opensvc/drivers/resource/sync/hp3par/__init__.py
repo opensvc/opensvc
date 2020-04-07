@@ -5,8 +5,8 @@ import core.status
 import drivers.array.hp3par as array_driver
 from .. import Sync, notify
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "hp3par"
@@ -18,17 +18,17 @@ KEYWORDS = [
         "text": "Name of the HP 3par array to send commands to."
     },
     {
-        "keyword": "mode",
-        "required": True,
-        "candidates": ["async", "sync"],
-        "text": "Replication mode: Synchronous or Asynchronous"
-    },
-    {
         "keyword": "method",
         "candidates": ["ssh", "cli"],
         "default": "ssh",
         "at": True,
         "text": "The method to use to submit commands to the arrays."
+    },
+    {
+        "keyword": "mode",
+        "required": True,
+        "candidates": ["async", "sync"],
+        "text": "Replication mode: Synchronous or Asynchronous"
     },
     {
         "keyword": "rcg",
@@ -45,43 +45,20 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {}
-
-    kwargs["mode"] = svc.oget(s, "mode")
-    kwargs["array"] = svc.oget(s, "array")
-
-    rcg_names = {}
-    for node in svc.nodes | svc.drpnodes:
-        array = svc.oget(s, "array", impersonate=node)
-        rcg = svc.oget(s, "rcg", impersonate=node)
-        rcg_names[array] = rcg
-
-    if len(rcg_names) == 0:
-        svc.log.error("config file section %s must have rcg set" % s)
-        return
-
-    kwargs["rcg_names"] = rcg_names
-
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncHp3par(**kwargs)
-    svc += r
-
 
 class SyncHp3par(Sync):
     def __init__(self,
                  array=None,
                  method=None,
                  mode=None,
-                 rcg_names=None,
+                 rcg=None,
                  **kwargs):
         super(SyncHp3par, self).__init__(type="sync.hp3par", **kwargs)
         if rcg_names is None:
             rcg_names = {}
         self.pausable = False
         self.array = array
-        self.rcg_names = rcg_names
-        self.rcg = rcg_names[array]
+        self.rcg = rcg
         self.mode = mode
         self.method = method
         self.label = "hp3par %s %s"%(mode, self.rcg)
@@ -107,6 +84,15 @@ class SyncHp3par(Sync):
         if self.array_obj is None:
             raise ex.Error("array %s is not accessible" % self.array)
         self.array_obj.path = self.svc.path
+
+    @lazy
+    def rcg_names(self):
+        data = {}
+        for node in self.svc.nodes | self.svc.drpnodes:
+            array = self.oget("array", impersonate=node)
+            rcg = self.oget("rcg", impersonate=node)
+            data[array] = rcg
+        return data
 
     def get_array_obj(self, target=None, log=False):
         if target is None:

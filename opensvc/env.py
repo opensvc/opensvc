@@ -168,6 +168,10 @@ class Env(object):
         "qnx4", "ocfs", "ocfs2", "nilfs", "jffs", "jffs2",
         "tux3", "f2fs", "logfs", "gfs", "gfs2", "gpfs",
     ]
+    fs_net = [
+        "nfs", "nfs4", "smbfs", "cifs", "9pfs", "gpfs",
+        "afs", "ncpfs", "glusterfs", "cephfs",
+    ]
     _platform = sys.platform
     sysname, x, x, x, machine, x = platform.uname()
     module_sysname = sysname.lower().replace("-", "")

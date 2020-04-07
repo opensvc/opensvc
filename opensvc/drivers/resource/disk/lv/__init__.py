@@ -6,7 +6,6 @@ import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.proc import justcall, which
@@ -52,16 +51,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s, drv=None):
-    drv = drv or BaseDiskLv
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["vg"] = svc.oget(s, "vg")
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["create_options"] = svc.oget(s, "create_options")
-    r = drv(**kwargs)
-    svc += r
 
 
 class BaseDiskLv(BaseDisk):

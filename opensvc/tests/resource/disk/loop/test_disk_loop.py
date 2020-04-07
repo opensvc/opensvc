@@ -6,7 +6,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD'}
 
 SCENARIOS = [
-    ('disk.loop', 'DiskLoop', {'rid': '#1', 'loopFile': 'loopFile'}, 'disk.loop'),
+    ('disk.loop', 'DiskLoop', {'rid': '#1', 'loopfile': 'loopfile'}, 'disk.loop'),
 ]
 
 

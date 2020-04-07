@@ -1235,7 +1235,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
             return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.standby)]
+        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.is_standby)]
         if len(rids) == 0:
             self.log.info("skip rollback %s: no resource activated", action)
             return
@@ -2762,8 +2762,10 @@ class Svc(BaseSvc):
 
     @lazy
     def full_kwstore(self):
-        from .svcdict import full_kwstore
-        return full_kwstore()
+        from .svcdict import KEYS, SECTIONS, DATA_SECTIONS
+        from utilities.drivers import load_drivers
+        load_drivers(SECTIONS + DATA_SECTIONS)
+        return KEYS
 
     def load_driver(self, driver_group, driver_basename):
         try:
@@ -3241,7 +3243,7 @@ class Svc(BaseSvc):
         try:
             kwargs['standby'] = self.conf_get(pr_rid, "standby")
         except ex.OptNotFound:
-            kwargs['standby'] = resource.standby
+            kwargs['standby'] = resource.is_standby
 
         kwargs['rid'] = resource.rid
         kwargs['peer_resource'] = resource
@@ -3708,8 +3710,8 @@ class Svc(BaseSvc):
                     _data["provisioned"] = prov_data
                 if disable:
                     _data["disable"] = disable
-                if resource.standby:
-                    _data["standby"] = resource.standby
+                if resource.is_standby:
+                    _data["standby"] = resource.is_standby
                 if resource.encap:
                     _data["encap"] = resource.encap
                 if resource.optional:
@@ -5077,7 +5079,7 @@ class Svc(BaseSvc):
         Return the list of resources flagged always on on this node
         """
         return [resource for resource in self.resources_by_id.values()
-                if resource.standby]
+                if resource.is_standby]
 
     def options_to_rids(self, options, action):
         """

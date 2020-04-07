@@ -11,7 +11,6 @@ from env import Env
 from utilities.cache import cache, clear_cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zpool_devs, zpool_getprop, zpool_setprop
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which, drop_option
 
@@ -78,21 +77,8 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["vdev"] = svc.oget(s, "vdev")
-    kwargs["multihost"] = svc.oget(s, "multihost")
-    kwargs["create_options"] = svc.oget(s, "create_options")
-    zone = svc.oget(s, "zone")
-    r = ZpoolDisk(**kwargs)
-    if zone is not None:
-        r.tags.add("zone")
-        r.tags.add(zone)
-    svc += r
 
-
-class ZpoolDisk(BaseDisk):
+class DiskZpool(BaseDisk):
     """
     Zfs pool resource driver.
     """
@@ -100,12 +86,16 @@ class ZpoolDisk(BaseDisk):
                  multihost=None,
                  vdev=None,
                  create_options=None,
+                 zone=None,
                  **kwargs):
-        super(ZpoolDisk, self).__init__(type='disk.zpool', **kwargs)
+        super(DiskZpool, self).__init__(type='disk.zpool', **kwargs)
         self.multihost = multihost
         self.vdev = vdev or []
         self.create_options = create_options or []
         self.label = 'zpool ' + self.name if self.name else "<undefined>"
+        if zone is not None:
+            self.tags.add("zone")
+            self.tags.add(zone)
 
     def _info(self):
         data = [

@@ -9,7 +9,6 @@ import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 from utilities.string import is_string
@@ -66,26 +65,6 @@ KEYS.register_driver(
     keywords=BASE_RAW_KEYWORDS,
 )
 
-def adder(svc, s, drv=None):
-    drv = drv or BaseDiskRaw
-    kwargs = init_kwargs(svc, s)
-    kwargs["devs"] = svc.oget(s, "devs")
-    zone = svc.oget(s, "zone")
-
-    if zone is not None:
-        kwargs["devs"] = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs["devs"]])
-
-    kwargs["user"] = svc.oget(s, "user")
-    kwargs["group"] = svc.oget(s, "group")
-    kwargs["perm"] = svc.oget(s, "perm")
-    kwargs["create_char_devices"] = svc.oget(s, "create_char_devices")
-
-    r = drv(**kwargs)
-    if zone is not None:
-        r.tags.add("zone")
-        r.tags.add(zone)
-    svc += r
-
 
 class BaseDiskRaw(BaseDisk):
     def __init__(self,
@@ -94,6 +73,7 @@ class BaseDiskRaw(BaseDisk):
                  group=None,
                  perm=None,
                  create_char_devices=False,
+                 zone=None,
                  **kwargs):
         super(BaseDiskRaw, self).__init__(name="raw", type='disk.raw', **kwargs)
 
@@ -101,7 +81,12 @@ class BaseDiskRaw(BaseDisk):
         self.user = user
         self.group = group
         self.perm = perm
+        self.zone = zone
         self.create_char_devices = create_char_devices
+        if zone:
+            devs = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs["devs"]])
+            self.tags.add("zone")
+            self.tags.add(zone)
         self.original_devs = devs or set()
 
         self.devs = set()
@@ -119,11 +104,8 @@ class BaseDiskRaw(BaseDisk):
         self.clear_caches()
         self.devs = set()
         self.original_devs = self.conf_get('devs')
-        try:
-            zone = self.conf_get('zone')
-        except ex.OptNotFound as exc:
-            zone = exc.default
-        if zone is not None:
+        zone = self.oget('zone')
+        if zone:
             self.original_devs = set([dev.replace(":", ":<%s>" % zone) for dev in self.original_devs])
 
     def clear_caches(self):

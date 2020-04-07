@@ -28,11 +28,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {"rid": s}
-    kwargs.update(svc.section_kwargs(s, "envoy"))
-    r = VhostEnvoy(**kwargs)
-    svc += r
 
 class VhostEnvoy(DataResource):
     def __init__(self, **kwargs):
