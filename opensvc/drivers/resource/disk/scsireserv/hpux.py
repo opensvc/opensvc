@@ -5,6 +5,9 @@ import core.exceptions as ex
 from utilities.proc import which
 from . import BaseDiskScsireserv
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "scsireserv"
+
 
 def mpath_to_path(disks):
     l = []
