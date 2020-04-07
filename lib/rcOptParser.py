@@ -309,7 +309,7 @@ class OptParser(object):
         interpreted as an action. Raise if not, else return the action name
         formatted as a '_' joined string.
         """
-        if len(args) is 0:
+        if len(args) == 0:
             if options.parm_help:
                 self.print_full_help()
             else:
