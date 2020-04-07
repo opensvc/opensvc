@@ -57,8 +57,6 @@ class SyncDds(Sync):
                  snap_size=0,
                  **kwargs):
         super(SyncDds, self).__init__(type="sync.dds", **kwargs)
-        if dsts is None:
-            dsts = {}
         self.label = "dds of %s to %s" % (src, ", ".join(target))
         self.target = target
         self.src = src
