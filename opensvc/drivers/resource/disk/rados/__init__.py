@@ -7,7 +7,6 @@ import core.exceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -59,27 +58,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["images"] = svc.oget(s, "images")
-    kwargs["keyring"] = svc.oget(s, "keyring")
-    kwargs["client_id"] = svc.oget(s, "client_id")
-
-    r = DiskRados(**kwargs)
-    svc += r
-
-    # rados locking resource
-    lock_shared_tag = svc.oget(s, "lock_shared_tag")
-    lock = svc.oget(s, "lock")
-    if not lock:
-        return
-
-    kwargs["rid"] = kwargs["rid"]+"lock"
-    kwargs["lock"] = lock
-    kwargs["lock_shared_tag"] = lock_shared_tag
-    r = DiskRadoslock(**kwargs)
-    svc += r
-
 
 class DiskRados(BaseDisk):
     def __init__(self,
@@ -87,6 +65,10 @@ class DiskRados(BaseDisk):
                  images=None,
                  client_id=None,
                  keyring=None,
+                 lock_shared_tag=None,
+                 lock=None,
+                 image_format=None,
+                 size=None,
                  **kwargs):
         super(DiskRados, self).__init__(type=type, **kwargs)
         self.images = images or set()
@@ -94,8 +76,22 @@ class DiskRados(BaseDisk):
         if not client_id.startswith("client."):
             client_id = "client."+client_id
         self.client_id = client_id
+        self.image_format = image_format
+        self.size = size
+        self.lock = lock
+        self.lock_shared_tag = lock_shared_tag
         self.label = self.fmt_label()
         self.modprobe_done = False
+
+    def on_add(self):
+        if self.lock:
+            kwargs = {
+                "rid": self.rid + "lock",
+                "lock": self.lock,
+                "lock_shared_tag": self.lock_shared_tag,
+            }
+            r = DiskRadoslock(**kwargs)
+            self.svc += r
 
     def validate_image_fmt(self):
         l = []
@@ -331,12 +327,10 @@ class DiskRadoslock(DiskRados):
         if self.exists(image):
             self.log.info("%s already provisioned"%image)
             return
-        size = self.oget('size')
-        size = convert_size(size, _to="m")
-        image_format = self.oget('image_format')
+        size = convert_size(self.size, _to="m")
         cmd = self.rbd_rcmd() + ['create', '--size', str(size), image]
-        if image_format:
-            cmd += ["--image-format", str(image_format)]
+        if self.image_format:
+            cmd += ["--image-format", str(self.image_format)]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error

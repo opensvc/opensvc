@@ -4,10 +4,7 @@ import core.exceptions as ex
 import utilities.lock
 import utilities.devices
 
-from . import \
-    BaseDiskRaw, \
-    adder as base_raw_adder, \
-    BASE_RAW_KEYWORDS
+from . import BaseDiskRaw, BASE_RAW_KEYWORDS
 from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
@@ -24,9 +21,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    base_raw_adder(svc, s, drv=DiskRaw)
 
 
 class DiskRaw(BaseDiskRaw):

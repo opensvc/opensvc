@@ -6,12 +6,11 @@ import core.exceptions as ex
 from env import Env
 from utilities.subsystems.zfs import zfs_getprop, zfs_setprop
 from utilities.mounts.sunos import Mounts
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 from utilities.proc import justcall
 
-
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
 class Fs(BaseFs):
     """

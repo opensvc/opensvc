@@ -11,7 +11,7 @@ import core.exceptions as ex
 import core.status
 import utilities.ifconfig
 
-from .. import \
+from drivers.resource.ip import \
     KW_WAIT_DNS, \
     KW_DNS_NAME_SUFFIX, \
     KW_PROVISIONER, \
@@ -19,9 +19,8 @@ from .. import \
     KW_CHECK_CARRIER, \
     KW_ALIAS, \
     KW_EXPOSE
-from ..linux import Ip
+from drivers.resource.ip.host.linux import IpHost
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
@@ -96,24 +95,8 @@ KEYS.register_driver(
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
 )
 
-def adder(svc, s):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    kwargs = init_kwargs(svc, s)
-    kwargs["expose"] = svc.oget(s, "expose")
-    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
-    kwargs["alias"] = svc.oget(s, "alias")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    kwargs["network"] = svc.oget(s, "network")
-    kwargs["netns"] = svc.oget(s, "netns")
-    r = IpCni(**kwargs)
-    svc += r
 
-
-class IpCni(Ip):
+class IpCni(IpHost):
     def __init__(self,
                  network=None,
                  netns=None,

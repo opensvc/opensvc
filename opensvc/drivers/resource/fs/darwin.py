@@ -3,14 +3,15 @@ from stat import *
 
 import core.exceptions as ex
 import utilities.devices.darwin
+from env import Env
 from utilities.files import protected_mount, getmount
 from utilities.mounts.darwin import Mounts
 from utilities.proc import qcall
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
 
 def try_umount(self):
     cmd = ['diskutil', 'umount', self.mount_point]
@@ -90,7 +91,7 @@ class Fs(BaseFs):
         if ret:
             return True
 
-        if self.fs_type not in self.netfs:
+        if self.fs_type not in Env.fs_net:
             try:
                 st = os.stat(self.device)
                 mode = st[ST_MODE]
@@ -150,7 +151,7 @@ class Fs(BaseFs):
             self.Mounts = Mounts()
         super(Fs, self).start()
 
-        if self.fs_type in self.netfs or self.device == "none":
+        if self.fs_type in Env.fs_net or self.device == "none":
             # TODO showmount -e
             pass
         else:

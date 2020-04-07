@@ -6,7 +6,6 @@ import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -43,15 +42,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["keep"] = svc.oget(s, "keep")
-    kwargs["subvol"] = svc.oget(s, "subvol")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncBtrfssnap(**kwargs)
-    svc += r
 
 
 class SyncBtrfssnap(Sync):

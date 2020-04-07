@@ -6,10 +6,7 @@ import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 from .. import \
     BaseContainer
-from ..docker import \
-    KEYWORDS, \
-    ContainerDocker, \
-    adder as docker_adder
+from ..docker import KEYWORDS, ContainerDocker
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
@@ -43,9 +40,6 @@ KEYS.register_driver(
     deprecated_keywords=DEPRECATED_KEYWORDS,
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
 )
-
-def adder(svc, s):
-    docker_adder(svc, s, drv=ContainerPodman)
 
 
 class ContainerPodman(ContainerDocker):

@@ -12,12 +12,11 @@ from utilities.cache import cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zfs_getprop, zfs_setprop, zpool_devs
 from utilities.mounts.linux import Mounts
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 from utilities.proc import justcall, qcall
 
-
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
 class Fs(BaseFs):
     """

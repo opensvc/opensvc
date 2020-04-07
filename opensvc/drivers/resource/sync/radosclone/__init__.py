@@ -3,7 +3,6 @@ import datetime
 import core.exceptions as ex
 import core.status
 from ..radossnap import SyncRadossnap
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
@@ -24,15 +23,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["client_id"] = svc.oget(s, "client_id")
-    kwargs["keyring"] = svc.oget(s, "keyring")
-    kwargs["pairs"] = svc.oget(s, "pairs")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncRadosclone(**kwargs)
-    svc += r
 
 
 class SyncRadosclone(SyncRadossnap):

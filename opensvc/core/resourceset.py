@@ -250,7 +250,7 @@ class ResourceSet(object):
 
         if action == "startstandby":
             # filter out resource not in standby mode
-            resources = [res for res in resources if res.standby]
+            resources = [res for res in resources if res.is_standby]
 
         resources = self.sort_resources(resources, action)
 

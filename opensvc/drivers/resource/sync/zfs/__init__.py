@@ -10,7 +10,6 @@ from env import Env
 from utilities.subsystems.zfs import a2pool_dataset, Dataset
 from utilities.lazy import lazy
 from utilities.converters import print_duration
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 from utilities.string import bdecode
@@ -62,16 +61,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["src"] = svc.oget(s, "src")
-    kwargs["dst"] = svc.oget(s, "dst")
-    kwargs["target"] = svc.oget(s, "target")
-    kwargs["recursive"] = svc.oget(s, "recursive")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncZfs(**kwargs)
-    svc += r
 
 
 class SyncZfs(Sync):

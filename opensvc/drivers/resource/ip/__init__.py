@@ -13,7 +13,6 @@ import utilities.lock
 import core.exceptions as ex
 import utilities.ifconfig
 
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from core.resource import Resource
 from env import Env
@@ -130,13 +129,12 @@ COMMON_KEYWORDS = [
 ]
 
 DRIVER_GROUP = "ip"
-DRIVER_BASENAME = None
+DRIVER_BASENAME = "host"
 KEYWORDS = [
     KW_IPNAME,
     KW_IPDEV,
     KW_NETMASK,
     KW_GATEWAY,
-    KW_ZONE,
 ] + COMMON_KEYWORDS
 
 KEYS.register_driver(
@@ -145,25 +143,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s, drv=None):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    drv = drv or Ip
-    kwargs = init_kwargs(svc, s)
-    kwargs["expose"] = svc.oget(s, "expose")
-    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
-    kwargs["alias"] = svc.oget(s, "alias")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    kwargs["ipname"] = svc.oget(s, "ipname")
-    kwargs["mask"] = svc.oget(s, "netmask")
-    kwargs["gateway"] = svc.oget(s, "gateway")
-    kwargs["provisioner"] = svc.oget(s, "provisioner")
-    r = drv(**kwargs)
-    svc += r
 
 
 class Ip(Resource):
@@ -174,7 +153,7 @@ class Ip(Resource):
     def __init__(self,
                  ipdev=None,
                  ipname=None,
-                 mask=None,
+                 netmask=None,
                  gateway=None,
                  type="ip",
                  expose=None,
@@ -186,7 +165,7 @@ class Ip(Resource):
         super(Ip, self).__init__(type=type, **kwargs)
         self.ipdev = ipdev
         self.ipname = ipname
-        self.mask = mask
+        self.netmask = netmask
         self.gateway = gateway
         self.lockfd = None
         self.stacked_dev = None
@@ -242,7 +221,7 @@ class Ip(Resource):
             addr = self.addr
         except ex.Error:
             addr = self.ipname
-        self.label = "%s/%s %s" % (addr, self.mask, self.ipdev)
+        self.label = "%s/%s %s" % (addr, self.netmask, self.ipdev)
         if self.ipname != addr:
             self.label += " " + self.ipname
 
@@ -265,8 +244,8 @@ class Ip(Resource):
             data["ipdev"] = self.ipdev
         if self.gateway:
             data["gateway"] = self.gateway
-        if self.mask is not None:
-            data["mask"] = to_cidr(self.mask)
+        if self.netmask is not None:
+            data["netmask"] = to_cidr(self.netmask)
         if self.expose:
             data["expose"] = self.expose
         return data
@@ -287,8 +266,8 @@ class Ip(Resource):
             ["ipdev", self.ipdev],
             ["gateway", str(self.gateway)],
         ]
-        if self.mask is not None:
-            data.append(["mask", str(to_cidr(self.mask))])
+        if self.netmask is not None:
+            data.append(["netmask", str(to_cidr(self.netmask))])
         return data
 
     def getaddr(self, cache_fallback=False):
@@ -318,7 +297,7 @@ class Ip(Resource):
         """
         os.environ['OPENSVC_IPDEV'] = str(self.ipdev)
         os.environ['OPENSVC_IPNAME'] = str(self.ipname)
-        os.environ['OPENSVC_MASK'] = str(self.mask)
+        os.environ['OPENSVC_NETMASK'] = str(self.netmask)
         try:
             self.getaddr()
             os.environ['OPENSVC_IPADDR'] = str(self.addr)
@@ -331,7 +310,7 @@ class Ip(Resource):
             index = ''
         var = 'OPENSVC_IP'+index
         vals = []
-        for prop in ['ipname', 'ipdev', 'addr', 'mask']:
+        for prop in ['ipname', 'ipdev', 'addr', 'netmask']:
             if getattr(self, prop) is not None:
                 vals.append(str(getattr(self, prop)))
             else:
@@ -444,11 +423,11 @@ class Ip(Resource):
                 current_mask = to_cidr(intf.mask[idx])
             else:
                 current_mask = to_cidr(intf.mask)
-            if self.mask is None:
+            if self.netmask is None:
                 self.status_log("netmask is not set nor guessable")
-            elif current_mask != to_cidr(self.mask):
-                self.status_log("current mask %s, expected %s" %
-                                (current_mask, to_cidr(self.mask)))
+            elif current_mask != to_cidr(self.netmask):
+                self.status_log("current netmask %s, expected %s" %
+                                (current_mask, to_cidr(self.netmask)))
             ref_dev = intf.name.split(":")[0]
             if self.type == "ip" and ref_dev != self.ipdev:
                 self.status_log("current dev %s, expected %s" %
@@ -461,9 +440,9 @@ class Ip(Resource):
                 current_mask = to_cidr(intf.ip6mask[idx])
             else:
                 current_mask = to_cidr(intf.ip6mask)
-            if current_mask != to_cidr(self.mask):
-                self.status_log("current mask %s, expected %s" %
-                                (current_mask, to_cidr(self.mask)))
+            if current_mask != to_cidr(self.netmask):
+                self.status_log("current netmask %s, expected %s" %
+                                (current_mask, to_cidr(self.netmask)))
             ref_dev = intf.name.split(":")[0]
             if self.type == "ip" and ref_dev != self.ipdev:
                 self.status_log("current dev %s, expected %s" %
@@ -589,20 +568,20 @@ class Ip(Resource):
     def get_mask(self, ifconfig=None):
         if ifconfig is None:
             ifconfig = self.get_ifconfig()
-        if self.mask is None:
+        if self.netmask is None:
             intf = ifconfig.interface(self.ipdev)
             if intf is None:
                 raise ex.Error("netmask parameter is mandatory with 'noalias' tag")
-            self.mask = intf.mask
-        if not self.mask:
+            self.netmask = intf.mask
+        if not self.netmask:
             if "noaction" not in self.tags:
-                self.mask = None
+                self.netmask = None
                 raise ex.Error("No netmask set on parent interface %s" % self.ipdev)
-        if isinstance(self.mask, list):
+        if isinstance(self.netmask, list):
             try:
-                self.mask = self.mask[0]
+                self.netmask = self.netmask[0]
             except IndexError:
-                self.mask = None
+                self.netmask = None
 
     def start_locked(self):
         """
@@ -803,12 +782,12 @@ class Ip(Resource):
                 self.log.info("set gateway=%s", gateway)
                 self.svc._set(self.rid, "gateway", gateway)
                 self.gateway = gateway
-        if self.mask in (None, ""):
+        if self.netmask in (None, ""):
             netmask = data.get("data", {}).get("network", {}).get("netmask")
             if netmask:
                 self.log.info("set netmask=%s", netmask)
                 self.svc._set(self.rid, "netmask", netmask)
-                self.mask = str(netmask)
+                self.netmask = str(netmask)
         self.log.info("ip %s allocated", self.ipname)
         record_name = data["data"].get("record_name")
         if record_name:

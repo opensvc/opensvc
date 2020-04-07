@@ -1,7 +1,4 @@
-from . import \
-    BaseDiskRaw, \
-    adder as base_raw_adder, \
-    BASE_RAW_KEYWORDS
+from . import BaseDiskRaw, BASE_RAW_KEYWORDS
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -15,9 +12,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    base_raw_adder(svc, s, drv=DiskRaw)
 
 
 class DiskRaw(BaseDiskRaw):

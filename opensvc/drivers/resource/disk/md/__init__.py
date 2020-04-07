@@ -7,7 +7,6 @@ import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.converters import convert_size
 from utilities.fcache import fcache
@@ -69,17 +68,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["uuid"] = svc.oget(s, "uuid")
-    kwargs["level"] = svc.oget(s, "level")
-    kwargs["devs"] = svc.oget(s, "devs")
-    kwargs["spares"] = svc.oget(s, "spares")
-    kwargs["chunk"] = svc.oget(s, "chunk")
-    kwargs["layout"] = svc.oget(s, "layout")
-    r = DiskMd(**kwargs)
-    svc += r
 
 
 class DiskMd(BaseDisk):

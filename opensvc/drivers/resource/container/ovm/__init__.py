@@ -19,7 +19,6 @@ from .. import \
     KW_SCSIRESERV
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.fcache import fcache
 
@@ -52,13 +51,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["uuid"] = svc.oget(s, "uuid")
-    r = ContainerOvm(**kwargs)
-    svc += r
 
 
 class ContainerOvm(BaseContainer):

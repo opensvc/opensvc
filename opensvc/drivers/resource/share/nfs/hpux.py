@@ -5,7 +5,6 @@ import core.exceptions as ex
 
 from . import BASE_KEYWORDS
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 
@@ -19,22 +18,16 @@ KEYS.register_driver(
     keywords=BASE_KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["path"] = svc.oget(s, "path")
-    kwargs["opts"] = svc.oget(s, "opts")
-    r = NfsShare(**kwargs)
-    svc += r
 
 class NfsShare(Resource):
-    def __init__(self, path, opts, **kwargs):
+    def __init__(self, path=None, opts=None, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
         self.sharetab = "/etc/dfs/sharetab"
         self.dfstab = "/etc/dfs/dfstab"
 
         if not which("share"):
             raise ex.InitError("share is not installed")
-        self.label = "nfs:"+path
+        self.label = "nfs:%s" % path
         self.path = path
         try:
             self.opts = self.parse_opts(opts)

@@ -11,7 +11,6 @@ from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -27,7 +26,8 @@ KEYWORDS = [
     },
     {
         "keyword": "options",
-        "default": "",
+        "default": [],
+        "convert": "shlex",
         "at": True,
         "provisioning": True,
         "text": "The vgcreate options to use upon vg provisioning."
@@ -63,19 +63,13 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["pvs"] = svc.oget(s, "pvs")
-    r = DiskVg(**kwargs)
-    svc += r
-
 
 class DiskVg(BaseDisk):
-    def __init__(self, pvs=None, **kwargs):
+    def __init__(self, pvs=None, options=None, **kwargs):
         super(DiskVg, self).__init__(type='disk.vg', **kwargs)
         self.label = "vg %s" % self.name
         self.pvs = pvs or []
+        self.options = options or []
         self.tag = Env.nodename
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
@@ -434,7 +428,7 @@ class DiskVg(BaseDisk):
             self.log.info("vg %s already exists", self.name)
             return
 
-        cmd = ['vgcreate', self.name] + self.pvs
+        cmd = ["vgcreate"] + self.options + [self.name] + self.pvs
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
