@@ -1651,7 +1651,7 @@ class OsvcThread(threading.Thread, Crypt):
                 return [s]
 
             # fnmatch expression
-            ops = r"(<=|>=|<|>|=|~|:)"
+            ops = r"(<=|>=|~=|<|>|=|~|:)"
             negate = s[0] == "!"
             s = s.lstrip("!")
             elts = re.split(ops, s)
@@ -1732,12 +1732,26 @@ class OsvcThread(threading.Thread, Crypt):
                 except (ValueError, TypeError):
                     return False
             if op == "=":
-                if current.lower() in ("true", "false"):
-                    match = current.lower() == value.lower()
+                if str(current).lower() in ("true", "false"):
+                    match = str(current).lower() == value.lower()
                 else:
                     match = current == value
+            elif op == "~=":
+                if isinstance(current, (set, list, tuple)):
+                    match = value in current
+                else:
+                    try:
+                        match = re.search(value, current)
+                    except TypeError:
+                        match = False
             elif op == "~":
-                match = re.search(value, current)
+                if isinstance(current, (set, list, tuple)):
+                    match = any([True for v in current if re.search(value, v)])
+                else:
+                    try:
+                        match = re.search(value, current)
+                    except TypeError:
+                        match = False
             elif op == ">":
                 match = current > value
             elif op == ">=":
