@@ -6,70 +6,157 @@ import time
 import core.exceptions as ex
 import core.status
 from core.resource import Resource
+from core.objects.svcdict import KEYS
 from env import Env
 from utilities.files import protected_dir
 from utilities.drivers import driver_import
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs
 from utilities.proc import justcall, which
 
 
-def adder(svc, s, drv=None):
-    """
-    Add a fs resource to the object.
-    """
-    drv = drv or BaseFs
-    kwargs = init_kwargs(svc, s)
+KW_PRKEY = {
+    "keyword": "prkey",
+    "at": True,
+    "text": "Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
+}
+KW_CREATE_OPTIONS = {
+    "keyword": "create_options",
+    "convert": "shlex",
+    "default": [],
+    "at": True,
+    "provisioning": True,
+    "text": "Additional options to pass to the logical volume create command. Size and name are alread set.",
+    "example": "--contiguous y"
+}
+KW_SCSIRESERV = {
+    "keyword": "scsireserv",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
+}
+KW_NO_PREEMPT_ABORT = {
+    "keyword": "no_preempt_abort",
+    "at": True,
+    "candidates": (True, False),
+    "default": False,
+    "convert": "boolean",
+    "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
+}
+KW_DEV = {
+    "keyword": "dev",
+    "protoname": "device",
+    "at": True,
+    "required": True,
+    "text": "The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the ``dev@nodename`` syntax"
+}
+KW_VG = {
+    "keyword": "vg",
+    "required": False,
+    "at": True,
+    "text": "The name of the disk group the filesystem device should be provisioned from.",
+    "provisioning": True
+}
+KW_SIZE = {
+    "keyword": "size",
+    "required": False,
+    "convert": "size",
+    "at": True,
+    "text": "The size of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
+    "provisioning": True
+}
+KW_MKFS_OPT = {
+    "keyword": "mkfs_opt",
+    "convert": "shlex",
+    "default": [],
+    "provisioning": True,
+    "at": True,
+    "text": "Eventual mkfs additional options."
+}
+KW_STAT_TIMEOUT = {
+    "keyword": "stat_timeout",
+    "convert": "duration",
+    "default": 5,
+    "at": True,
+    "text": "The maximum wait time for a stat call to respond. When expired, the resource status is degraded is to warn, which might cause a TOC if the resource is monitored."
+}
+KW_SNAP_SIZE = {
+    "keyword": "snap_size",
+    "at": True,
+    "text": "If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
+}
+KW_MNT = {
+    "keyword": "mnt",
+    "protoname": "mount_point",
+    "at": True,
+    "required": True,
+    "text": "The mount point where to mount the filesystem."
+}
+KW_MNT_OPT = {
+    "keyword": "mnt_opt",
+    "protoname": "mount_options",
+    "at": True,
+    "text": "The mount options."
+}
+KW_PROMOTE_RW = {
+    "keyword": "promote_rw",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
+}
+KW_ZONE = {
+    "keyword": "zone",
+    "at": True,
+    "text": "The zone name the fs refers to. If set, the fs mount point is reparented into the zonepath rootfs."
+}
 
-    try:
-        kwargs["fs_type"] = svc.conf_get(s, "type")
-    except ex.OptNotFound as exc:
-        kwargs["fs_type"] = ""
 
-    kwargs["device"] = svc.oget(s, "dev")
-    kwargs["mount_point"] = svc.oget(s, "mnt")
-    kwargs["stat_timeout"] = svc.oget(s, "stat_timeout")
+KWS_VIRTUAL = [
+    KW_MNT,
+    KW_MNT_OPT,
+    KW_SIZE,
+    KW_DEV,
+    KW_STAT_TIMEOUT,
+]
 
-    if kwargs["mount_point"] and kwargs["mount_point"][-1] != "/" and kwargs["mount_point"][-1] == "/":
-        # Remove trailing / to not risk losing rsync src trailing / upon snap
-        # mountpoint substitution.
-        kwargs["mount_point"] = kwargs["mount_point"][0:-1]
+KEYWORDS = [
+    KW_MNT,
+    KW_DEV,
+    KW_MNT_OPT,
+    KW_SIZE,
+    KW_STAT_TIMEOUT,
+    KW_SNAP_SIZE,
+    KW_PRKEY,
+    KW_SCSIRESERV,
+    KW_NO_PREEMPT_ABORT,
+    KW_MKFS_OPT,
+    KW_CREATE_OPTIONS,
+    KW_VG,
+]
 
-    try:
-        kwargs["mount_options"] = svc.conf_get(s, "mnt_opt")
-    except ex.OptNotFound as exc:
-        kwargs["mount_options"] = ""
+KWS_POOLING = [
+    KW_MNT,
+    KW_DEV,
+    KW_MNT_OPT,
+    KW_SIZE,
+    KW_STAT_TIMEOUT,
+    KW_SNAP_SIZE,
+    KW_PRKEY,
+    KW_SCSIRESERV,
+    KW_NO_PREEMPT_ABORT,
+    KW_MKFS_OPT,
+]
 
-    try:
-        kwargs["snap_size"] = svc.conf_get(s, "snap_size")
-    except ex.OptNotFound as exc:
-        pass
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
-    zone = svc.oget(s, "zone")
-
-    if zone is not None:
-        zp = None
-        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
-            if r.name == zone:
-                try:
-                    zp = r.zonepath
-                except:
-                    zp = "<%s>" % zone
-                break
-        if zp is None:
-            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
-            raise ex.Error()
-        kwargs["mount_point"] = zp+"/root"+kwargs["mount_point"]
-        if "<%s>" % zone != zp:
-            kwargs["mount_point"] = os.path.realpath(kwargs["mount_point"])
-
-    r = drv(**kwargs)
-
-    if zone is not None:
-        r.tags.add(zone)
-        r.tags.add("zone")
-
-    svc += r
+KEYS.register_driver(
+    "fs",
+    "",
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 
 class BaseFs(Resource):
@@ -83,16 +170,44 @@ class BaseFs(Resource):
                  mount_options=None,
                  stat_timeout=5,
                  snap_size=None,
+                 zone=None,
+                 vg=None,
+                 size=None,
+                 mkfs_opt=None,
                  **kwargs):
         super(BaseFs, self).__init__(type="fs", **kwargs)
+        if mount_point:
+            mount_point = mount_point.rstrip(os.sep)
         self.mount_point = mount_point
         self._device = device
-        self.fs_type = fs_type
+        self.fs_type = fs_type or ""
         self.stat_timeout = stat_timeout
-        self.mount_options = mount_options
+        self.mount_options = mount_options or ""
         self.snap_size = snap_size
+        self.zone = zone
         self.fsck_h = {}
-        self.netfs = ['nfs', 'nfs4', 'cifs', 'smbfs', '9pfs', 'gpfs', 'afs', 'ncpfs']
+        self.vg = vg
+        self.size = size
+        self.mkfs_opt = mkfs_opt or []
+
+    def on_add(self):
+        if self.zone is None:
+            return
+        zp = None
+        for r in [r for r in self.svc.resources_by_id.values() if r.type == "container.zone"]:
+            if r.name == self.zone:
+                try:
+                    zp = r.zonepath
+                except:
+                    zp = "<%s>" % self.zone
+                break
+        if zp is None:
+            raise ex.Error("zone %s, referenced in %s, not found" % (self.zone, self.rid))
+        self.mount_point = zp + "/root" + self.mount_point
+        if "<%s>" % self.zone != zp:
+            self.mount_point = os.path.realpath(self.mount_point)
+        r.tags.add(self.zone)
+        r.tags.add("zone")
 
     @lazy
     def testfile(self):
@@ -117,7 +232,7 @@ class BaseFs(Resource):
                     return "/".join(l)
             return self._device
         # lazy ref support, like {<rid>.exposed_devs[<n>]}
-        return self.conf_get("dev")
+        return self.dev or self.conf_get("dev")
 
     @lazy
     def label(self): # pylint: disable=method-hidden
@@ -145,7 +260,7 @@ class BaseFs(Resource):
         self.create_mntpt()
 
     def validate_dev(self):
-        if self.fs_type in ["zfs", "advfs"] + self.netfs:
+        if self.fs_type in ["zfs", "advfs"] + Env.fs_net:
             return
         if self.fs_type in ["bind", "lofs"] or "bind" in self.mount_options:
             return
@@ -199,7 +314,7 @@ class BaseFs(Resource):
     def need_check_writable(self):
         if 'ro' in self.mount_options.split(','):
             return False
-        if self.fs_type in self.netfs + ["tmpfs"]:
+        if self.fs_type in Env.fs_net + ["tmpfs"]:
             return False
         return True
 
@@ -276,7 +391,7 @@ class BaseFs(Resource):
           'proc',
           'sysfs',
         ]
-        if self.fs_type in pseudofs + self.netfs:
+        if self.fs_type in pseudofs + Env.fs_net:
             return set()
         if self.fs_type == "zfs":
             from utilities.subsystems.zfs import zpool_devs
@@ -360,8 +475,8 @@ class BaseFs(Resource):
         if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
             return
         try:
-            self.dev = self.conf_get("dev")
-            self.mnt = self.conf_get("mnt")
+            self.dev = self.dev or self.conf_get("dev")
+            self.mnt = self.mnt or self.conf_get("mnt")
         except ex.OptNotFound:
             return
         if self.dev is None:
@@ -370,7 +485,7 @@ class BaseFs(Resource):
             return
         if not os.path.exists(self.mnt):
             return False
-        if self.fs_type in self.netfs + ["tmpfs"]:
+        if self.fs_type in Env.fs_net + ["tmpfs"]:
             return
         try:
             self.get_mkfs_dev()
@@ -406,13 +521,15 @@ class BaseFs(Resource):
                     raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
 
     def provisioner_fs(self):
-        if self.fs_type in self.netfs + ["tmpfs"]:
+        if self.fs_type in Env.fs_net + ["tmpfs"]:
             return
         if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
             return
 
-        self.dev = self.conf_get("dev")
-        self.mnt = self.conf_get("mnt")
+        if not self.dev:
+            self.dev = self.conf_get("dev")
+        if not self.mnt:
+            self.mnt = self.conf_get("mnt")
 
         if self.dev is None:
             raise ex.Error("device %s not found. parent resource is down ?" % self.dev)
@@ -422,13 +539,14 @@ class BaseFs(Resource):
 
         if not os.path.exists(self.dev):
             try:
-                self.conf_get("vg", verbose=False)
-                self.provision_dev()
+                vg = self.vg or self.conf_get("vg", verbose=False)
             except ValueError:
                 # keyword not supported (ex. bind mounts)
-                pass
+                vg = None
             except ex.OptNotFound:
-                pass
+                vg = None
+            if vg:
+                self.provision_dev()
 
         self.get_mkfs_dev()
 
@@ -477,17 +595,18 @@ class BaseFs(Resource):
         pass
 
     def unprovisioner(self):
-        if self.fs_type in self.netfs + ["tmpfs"]:
+        if self.fs_type in Env.fs_net + ["tmpfs"]:
             return
         self.unprovisioner_fs()
         self.purge_mountpoint()
         try:
-            self.conf_get("vg", verbose=False)
-            self.unprovision_dev()
+            vg = self.conf_get("vg", verbose=False)
         except ValueError:
             # keyword not supported (ex. bind mounts)
-            return
+            vg = None
         except ex.OptNotFound:
-            pass
+            vg = None
+        if vg:
+            self.unprovision_dev()
 
 

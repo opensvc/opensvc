@@ -2,7 +2,6 @@ import sys
 
 from core.keywords import KeywordStore
 from env import Env
-from utilities.drivers import iter_drivers
 
 SECTIONS = [
     "DEFAULT",
@@ -242,7 +241,7 @@ KEYWORDS = [
         "keyword": "type",
         "inheritance": "leaf",
         "at": True,
-        "candidates": Env.vt_supported,
+        "candidates": [],
         "text": "The type of container.",
         "required": False,
         "default": "oci",
@@ -613,6 +612,7 @@ KEYWORDS = [
         "keyword": "type",
         "inheritance": "leaf",
         "at": True,
+        "default": "host",
         "candidates": [],
         "text": "The opensvc ip driver name.",
         "example": "crossbow",
@@ -627,143 +627,15 @@ KEYWORDS = [
         "text": "The volume group driver to use. Leave empty to activate the native volume group manager."
     },
     {
-        "sections": ["fs"],
-        "keyword": "prkey",
-        "at": True,
-        "text": "Defines a specific persistent reservation key for the resource. Takes priority over the service-level defined prkey and the node.conf specified prkey."
-    },
-    {
-        "section": "fs",
-        "keyword": "populate",
-        "at": True,
-        "convert": "list",
-        "provisioning": True,
-        "text": "The list of modulesets providing files to install in the volume.",
-        "example": "configmap.redis configmap.global"
-    },
-    {
-        "section": "fs",
-        "rtype": Env.fs_non_pooling,
-        "keyword": "create_options",
-        "convert": "shlex",
-        "default": [],
-        "at": True,
-        "provisioning": True,
-        "text": "Additional options to pass to the logical volume create command. Size and name are alread set.",
-        "example": "--contiguous y"
-    },
-    {
-        "section": "fs",
-        "keyword": "promote_rw",
-        "default": False,
-        "convert": "boolean",
-        "candidates": (True, False),
-        "text": "If set to ``true``, OpenSVC will try to promote the base devices to read-write on start."
-    },
-    {
-        "section": "fs",
-        "keyword": "scsireserv",
-        "default": False,
-        "convert": "boolean",
-        "candidates": (True, False),
-        "text": "If set to ``true``, OpenSVC will try to acquire a type-5 (write exclusive, registrant only) scsi3 persistent reservation on every path to every disks held by this resource. Existing reservations are preempted to not block service start-up. If the start-up was not legitimate the data are still protected from being written over from both nodes. If set to ``false`` or not set, :kw:`scsireserv` can be activated on a per-resource basis."
-    },
-    {
-        "section": "fs",
-        "keyword": "no_preempt_abort",
-        "at": True,
-        "candidates": (True, False),
-        "default": False,
-        "convert": "boolean",
-        "text": "If set to ``true``, OpenSVC will preempt scsi reservation with a preempt command instead of a preempt and and abort. Some scsi target implementations do not support this last mode (esx). If set to ``false`` or not set, :kw:`no_preempt_abort` can be activated on a per-resource basis."
-    },
-    {
-        "section": "fs",
-        "keyword": "dev",
-        "at": True,
-        "required": True,
-        "text": "The block device file or filesystem image file hosting the filesystem to mount. Different device can be set up on different nodes using the ``dev@nodename`` syntax"
-    },
-    {
-        "section": "fs",
-        "keyword": "zone",
-        "at": True,
-        "text": "The zone name the fs refers to. If set, the fs mount point is reparented into the zonepath rootfs."
-    },
-    {
-        "section": "fs",
-        "keyword": "vg",
-        "rtype": Env.fs_non_pooling,
-        "required": False,
-        "at": True,
-        "text": "The name of the disk group the filesystem device should be provisioned from.",
-        "provisioning": True
-    },
-    {
-        "section": "fs",
-        "rtype": Env.fs_non_pooling,
-        "keyword": "size",
-        "required": False,
-        "convert": "size",
-        "at": True,
-        "text": "The size of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
-        "provisioning": True
-    },
-    {
-        "section": "fs",
-        "rtype": "zfs",
-        "keyword": "size",
-        "required": False,
-        "convert": "size",
-        "at": True,
-        "text": "The quota in MB of the provisioned dataset.",
-        "provisioning": True
-    },
-    {
-        "section": "fs",
-        "keyword": "mnt",
-        "at": True,
-        "required": True,
-        "text": "The mount point where to mount the filesystem."
-    },
-    {
-        "section": "fs",
-        "keyword": "mnt_opt",
-        "at": True,
-        "text": "The mount options."
-    },
-    {
-        "section": "fs",
-        "keyword": "mkfs_opt",
-        "convert": "shlex",
-        "default": [],
-        "provisioning": True,
-        "at": True,
-        "text": "Eventual mkfs additional options."
-    },
-    {
-        "section": "fs",
-        "keyword": "stat_timeout",
-        "convert": "duration",
-        "default": 5,
-        "at": True,
-        "text": "The maximum wait time for a stat call to respond. When expired, the resource status is degraded is to warn, which might cause a TOC if the resource is monitored."
-    },
-    {
         "section": "fs",
         "keyword": "type",
+        "protoname": "fs_type",
         "inheritance": "leaf",
         "at": True,
         "required": True,
         "strict_candidates": False,
-        "candidates": ["zfs", "flag"]+Env.fs_non_pooling,
-        "text": "The filesystem type or 'directory'. Used to determine the fsck command to use."
-    },
-    {
-        "section": "fs",
-        "keyword": "snap_size",
-        "at": True,
-        "text": "If this filesystem is build on a snapable logical volume or is natively snapable (jfs, vxfs, ...) this setting overrides the default 10% of the filesystem size to compute the snapshot size. The snapshot is created by snap-enabled rsync-type sync resources. The unit is Megabytes."
+        "candidates": [],
+        "text": "The filesystem type for the generic driver or the fs driver."
     },
     {
         "section": "share",
@@ -808,7 +680,7 @@ KEYWORDS = [
         "default": "envoy",
     },
     {
-        "section": "hash_policy",
+        "section": "hashpolicy",
         "keyword": "type",
         "inheritance": "leaf",
         "candidates": [],
@@ -928,9 +800,7 @@ KEYWORDS = [
         "keyword": "standby",
         "generic": True,
         "at": True,
-        "default": False,
-        "candidates": (True, False),
-        "convert": "boolean",
+        "convert": "tristate",
         "text": "Always start the resource, even on standby instances. The daemon is responsible for starting standby resources. A resource can be set standby on a subset of nodes using keyword scoping.\n\nA typical use-case is sync'ed fs on non-shared disks: the remote fs must be mounted to not overflow the underlying fs.\n\n.. warning:: Don't set shared resources standby: fs on shared disks for example."
     },
     {
@@ -1369,20 +1239,3 @@ KEYS = KeywordStore(
     base_sections=["env", "DEFAULT"],
     template_prefix="template.service.",
 )
-
-def full_kwstore():
-    global KEYS
-    for mod in iter_drivers(SECTIONS + DATA_SECTIONS):
-        KEYS += mod
-    return KEYS
-
-
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        fmt = sys.argv[1]
-    else:
-        fmt = "text"
-    kwstore = full_kwstore()
-    kwstore.write_templates(fmt=fmt)
-    #print(kwstore.container.getkey("cf"))
-    #print(kwstore['DEFAULT'])

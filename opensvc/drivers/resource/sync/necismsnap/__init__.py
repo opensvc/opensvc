@@ -5,7 +5,6 @@ import core.exceptions as ex
 import core.status
 import drivers.array.necism as array_driver
 from .. import Sync, notify
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
@@ -29,14 +28,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["array"] = svc.oget(s, "array")
-    kwargs["devs"] = svc.oget(s, "devs")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncNecismsnap(**kwargs)
-    svc += r
 
 
 class SyncNecismsnap(Sync):

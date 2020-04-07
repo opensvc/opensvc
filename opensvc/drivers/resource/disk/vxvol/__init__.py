@@ -6,7 +6,6 @@ import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.converters import convert_size
@@ -51,21 +50,16 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["vg"] = svc.oget(s, "vg")
-    r = DiskVxvol(**kwargs)
-    svc += r
-
 
 class DiskVxvol(BaseDisk):
-    def __init__(self, vg=None, **kwargs):
+    def __init__(self, vg=None, create_options=None, size=None, **kwargs):
         super(DiskVxvol, self).__init__(type='disk.vxvol', **kwargs)
         self.fullname = "%s/%s" % (vg, self.name)
         self.label = "vxvol %s" % self.fullname
         self.vg = vg
         self.devpath  = "/dev/vx/dsk/%s/%s" % (self.vg, self.name)
+        self.create_options = create_options
+        self.size = size
 
     def _info(self):
         data = [
@@ -199,15 +193,12 @@ class DiskVxvol(BaseDisk):
             self.log.info("skip vxvol provision: %s already exists" % self.fullname)
             return
 
-        try:
-            self.size = self.conf_get("size")
-            self.size = str(self.size).upper()
-            size_parm = [str(convert_size(self.size, _to="m"))+'M']
-        except Exception as e:
-            self.log.info("skip vxvol provisioning: %s %s" % (self.fullname, str(e)))
-            return
+        if not self.size:
+            raise ex.Error("a size is required")
 
-        create_options = self.oget("create_options")
+        size_parm = str(self.size).upper()
+        size_parm = [str(convert_size(size_parm, _to="m"))+'M']
+        create_options = self.create_options or self.oget("create_options")
 
         # strip dev dir in case the alloc vxassist parameter was formatted using sub_devs
         # lazy references

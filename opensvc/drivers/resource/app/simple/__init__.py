@@ -9,7 +9,6 @@ import time
 import core.status
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -164,31 +163,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-
-def adder(svc, s, drv=None):
-    drv = drv or AppSimple
-    kwargs = init_kwargs(svc, s)
-    kwargs["script"] = svc.oget(s, "script")
-    kwargs["start"] = svc.oget(s, "start")
-    kwargs["stop"] = svc.oget(s, "stop")
-    kwargs["check"] = svc.oget(s, "check")
-    kwargs["info"] = svc.oget(s, "info")
-    kwargs["status_log"] = svc.oget(s, "status_log")
-    kwargs["timeout"] = svc.oget(s, "timeout")
-    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
-    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
-    kwargs["check_timeout"] = svc.oget(s, "check_timeout")
-    kwargs["info_timeout"] = svc.oget(s, "info_timeout")
-    kwargs["user"] = svc.oget(s, "user")
-    kwargs["group"] = svc.oget(s, "group")
-    kwargs["cwd"] = svc.oget(s, "cwd")
-    kwargs["environment"] = svc.oget(s, "environment")
-    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
-    kwargs["kill"] = svc.oget(s, "kill")
-    r = drv(**kwargs)
-    svc += r
 
 
 class AppSimple(BaseApp):

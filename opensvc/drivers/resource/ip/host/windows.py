@@ -7,12 +7,13 @@ import time
 import core.exceptions as ex
 import utilities.ping
 
-from . import Ip as ParentIp, adder as parent_adder
+from .. import Ip
 
-def adder(svc, s):
-    parent_adder(svc, s, drv=Ip)
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "host"
 
-class Ip(ParentIp):
+
+class IpHost(Ip):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
         return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
@@ -20,12 +21,12 @@ class Ip(ParentIp):
     def startip_cmd(self):
         #netsh interface ip add address "Local Area Connection" 33.33.33.33 255.255.255.255
         if ":" in self.addr:
-            if "." in self.mask:
+            if "." in self.netmask:
                 self.log.error("netmask parameter is mandatory for ipv6 adresses")
                 raise ex.Error
-            cmd = ["netsh", "interface", "ipv6", "add", "address", self.ipdev, self.addr, self.mask]
+            cmd = ["netsh", "interface", "ipv6", "add", "address", self.ipdev, self.addr, self.netmask]
         else:
-            cmd = ["netsh", "interface", "ipv4", "add", "address", self.ipdev, self.addr, self.mask]
+            cmd = ["netsh", "interface", "ipv4", "add", "address", self.ipdev, self.addr, self.netmask]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:

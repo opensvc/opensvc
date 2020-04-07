@@ -10,7 +10,6 @@ from utilities.converters import convert_speed
 from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which, drop_option
 from utilities.string import bdecode
@@ -91,29 +90,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
 )
-
-def adder(svc, s):
-    if s.startswith("sync#i"):
-        # internal syncs have their own dedicated add function
-        return
-
-    kwargs = {}
-    kwargs["src"] = []
-    _s = svc.oget(s, "src")
-    for src in _s:
-        kwargs["src"] += glob.glob(src)
-
-    kwargs["dst"] = svc.oget(s, "dst")
-    kwargs["options"] = svc.oget(s, "options")
-    kwargs["reset_options"] = svc.oget(s, "reset_options")
-    kwargs["dstfs"] = svc.oget(s, "dstfs")
-    kwargs["snap"] = svc.oget(s, "snap")
-    kwargs["bwlimit"] = svc.oget(s, "bwlimit")
-    kwargs["target"] = svc.oget(s, "target")
-    kwargs.update(sync_kwargs(svc, s))
-
-    r = SyncRsync(**kwargs)
-    svc += r
 
 
 def lookup_snap_mod():
@@ -203,6 +179,10 @@ class SyncRsync(Sync):
             options = []
         if src is None:
             src = []
+        glob_src = []
+        for s in src:
+            glob_src += glob.glob(s)
+        src = glob_src
         if internal:
             if Env.paths.drp_path in dst:
                 self.label = "rsync system files to drpnodes"

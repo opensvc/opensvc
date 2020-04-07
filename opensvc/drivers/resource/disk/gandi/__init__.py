@@ -9,7 +9,6 @@ import core.exceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.string import is_string
 
@@ -48,17 +47,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["node"] = svc.oget(s, "node")
-    kwargs["user"] = svc.oget(s, "user")
-    kwargs["group"] = svc.oget(s, "group")
-    kwargs["perm"] = svc.oget(s, "perm")
-    r = DiskGandi(**kwargs)
-    svc += r
 
 
 class DiskGandi(BaseDisk):

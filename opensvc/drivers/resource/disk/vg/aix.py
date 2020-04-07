@@ -7,7 +7,6 @@ from subprocess import *
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "disk"
@@ -24,12 +23,14 @@ KEYWORDS = BASE_KEYWORDS + [
         "keyword": "options",
         "default": "",
         "at": True,
+        "convert": "shlex",
         "provisioning": True,
         "text": "The vgcreate options to use upon vg provisioning."
     },
     {
         "keyword": "pvs",
         "required": True,
+        "convert": "list",
         "text": "The list of paths to the physical volumes of the volume group.",
         "provisioning": True
     },
@@ -57,17 +58,14 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    r = DiskVg(**kwargs)
-    svc += r
 
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
 class DiskVg(BaseDisk):
-    def __init__(self, **kwargs):
+    def __init__(self, options=None, pvs=None, **kwargs):
         super(DiskVg, self).__init__(type='disk.vg', **kwargs)
+        self.options = options or []
+        self.pvs = pvs or []
         self.label = "vg %s" % self.name
 
     def has_it(self):

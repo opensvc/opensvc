@@ -5,15 +5,18 @@ from subprocess import *
 import core.exceptions as ex
 import utilities.ifconfig
 
-from ..sunos import Ip, adder as parent_adder
+from drivers.resource.ip import KW_ZONE
+from drivers.resource.ip.host.sunos import IpHost
 from env import Env
 
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "zone"
+KEYWORDS = [
+    KW_ZONE,
+]
 
-def adder(svc, s):
-    parent_adder(svc, s, drv=IpZone)
 
-
-class IpZone(Ip):
+class IpZone(IpHost):
     def __init__(self, zone=None, **kwargs):
         super(IpZone, self).__init__(type="ip.zone", **kwargs)
         self.zone = zone
@@ -52,8 +55,4 @@ class IpZone(Ip):
             self.log.error("%s is already up on another host" % (self.addr))
             raise ex.IpConflict(self.addr)
         return
-
-if __name__ == "__main__":
-    for c in (Ip,) :
-        help(c)
 

@@ -10,7 +10,6 @@ except ImportError:
 import core.exceptions as ex
 
 from .. import App, KEYWORDS as BASE_KEYWORDS, StatusNA, StatusWARN
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 
@@ -50,15 +49,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["timeout"] = svc.oget(s, "timeout")
-    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
-    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
-    r = AppWinservice(**kwargs)
-    svc += r
 
 
 class AppWinservice(App):

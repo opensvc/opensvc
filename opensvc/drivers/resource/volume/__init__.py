@@ -10,7 +10,6 @@ from utilities.naming import fmt_path, split_path, factory
 from utilities.files import makedirs
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.string import is_string, is_glob
 
@@ -87,26 +86,18 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["pool"] = svc.oget(s, "pool")
-    kwargs["format"] = svc.oget(s, "format")
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["access"] = svc.oget(s, "access")
-    kwargs["configs"] = svc.oget(s, "configs")
-    try:
-        kwargs["secrets"] = svc.oget(s, "secrets")
-    except ValueError:
-        # only supported on type=shm volumes
-        pass
-    r = Volume(**kwargs)
-    svc += r
-
 
 class Volume(Resource):
     """
     Volume resource class.
+
+    A volume resource is linked to a volume object named <name> in the
+    namespace of the service.
+
+    The volume object contains disk and fs resources configured by the
+    <pool> that created it, so the service doesn't have to embed 
+    driver keywords that would prevent the service from being run on
+    another cluster with different capabilities.
 
     Access:
     * rwo  Read Write Once
@@ -428,7 +419,7 @@ class Volume(Resource):
                                "non leader instance waited for too long for the "
                                "volume to appear")
             return volume
-        pooltype = self.oget("type")
+        pooltype = self.type
         self.log.info("create new volume %s (pool name: %s, pool type: %s, "
                         "access: %s, size: %s, format: %s, shared: %s)",
                         self.volname, self.pool, pooltype, self.access,

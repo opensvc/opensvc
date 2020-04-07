@@ -3,7 +3,6 @@ The module defining the app.forking resource class.
 """
 
 from .. import App, KEYWORDS as BASE_KEYWORDS
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "app"
@@ -150,28 +149,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["script"] = svc.oget(s, "script")
-    kwargs["start"] = svc.oget(s, "start")
-    kwargs["stop"] = svc.oget(s, "stop")
-    kwargs["check"] = svc.oget(s, "check")
-    kwargs["info"] = svc.oget(s, "info")
-    kwargs["status_log"] = svc.oget(s, "status_log")
-    kwargs["timeout"] = svc.oget(s, "timeout")
-    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
-    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
-    kwargs["check_timeout"] = svc.oget(s, "check_timeout")
-    kwargs["info_timeout"] = svc.oget(s, "info_timeout")
-    kwargs["user"] = svc.oget(s, "user")
-    kwargs["group"] = svc.oget(s, "group")
-    kwargs["cwd"] = svc.oget(s, "cwd")
-    kwargs["environment"] = svc.oget(s, "environment")
-    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
-    r = AppForking(**kwargs)
-    svc += r
 
 
 class AppForking(App):

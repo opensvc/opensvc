@@ -9,7 +9,6 @@ import core.exceptions as ex
 from .. import Sync, notify
 from env import Env
 from utilities.converters import print_duration
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
@@ -52,16 +51,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["src"] = svc.oget(s, "src")
-    kwargs["dst"] = svc.oget(s, "dst")
-    kwargs["target"] = svc.oget(s, "target")
-    kwargs["recursive"] = svc.oget(s, "recursive")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncBtrfs(**kwargs)
-    svc += r
 
 
 class SyncBtrfs(Sync):

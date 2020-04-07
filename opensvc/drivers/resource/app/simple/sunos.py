@@ -2,13 +2,11 @@
 The module defining the app.simple resource class.
 """
 
-from . import AppSimple as ParentAppSimple, adder as parent_adder
+from . import AppSimple as ParentAppSimple
 from utilities.proc import justcall
 
-
-def adder(svc, s):
-    parent_adder(svc, s, drv=AppSimple)
-
+DRIVER_GROUP = "app"
+DRIVER_BASENAME = "simple"
 
 class AppSimple(ParentAppSimple):
     """
