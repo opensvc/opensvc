@@ -3,7 +3,6 @@ import core.status
 import utilities.ifconfig
 
 from .. import Ip, COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.net.getaddr import getaddr
 from utilities.subsystems.amazon import AmazonMixin
@@ -47,19 +46,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    kwargs = init_kwargs(svc, s)
-    kwargs["ipname"] = svc.oget(s, "ipname")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["eip"] = svc.oget(s, "eip")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    r = IpAmazon(**kwargs)
-    svc += r
 
 
 class IpAmazon(Ip, AmazonMixin):

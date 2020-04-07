@@ -4,10 +4,9 @@ from subprocess import *
 
 import core.exceptions as ex
 
-from drivers.resource.ip.sunos import Ip
+from drivers.resource.ip.host.sunos import IpHost
 from drivers.resource.ip import COMMON_KEYWORDS, KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.net.converters import to_cidr
 from utilities.proc import justcall, which
@@ -35,32 +34,10 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    zone = svc.oget(s, "zone")
-    if zone is not None:
-        svc.log.error("'zone' and 'type=crossbow' are incompatible in section %s" % s)
-        return
-    kwargs = init_kwargs(svc, s)
-    kwargs["expose"] = svc.oget(s, "expose")
-    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
-    kwargs["alias"] = svc.oget(s, "alias")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    kwargs["ipdevExt"] = svc.oget(s, "ipdevext")
-    kwargs["ipname"] = svc.oget(s, "ipname")
-    kwargs["mask"] = svc.oget(s, "netmask")
-    kwargs["gateway"] = svc.oget(s, "gateway")
-    r = IpCrossbow(**kwargs)
-    svc += r
 
-
-class IpCrossbow(Ip):
-    def __init__(self, ipdevExt="v4", **kwargs):
-        self.ipdevExt = ipdevExt
+class IpCrossbow(IpHost):
+    def __init__(self, ipdevext="v4", **kwargs):
+        self.ipdevext = ipdevext
         super(IpCrossbow, self).__init__(type="ip.crossbow", **kwargs)
         if 'noalias' not in self.tags:
             self.tags.add('noalias')
@@ -78,7 +55,7 @@ class IpCrossbow(Ip):
             addr = self.addr
         except ex.Error:
             addr = self.ipname
-        self.label = "%s/%s %s/%s" % (addr, to_cidr(self.mask), self.ipdev, self.ipdevExt)
+        self.label = "%s/%s %s/%s" % (addr, to_cidr(self.netmask), self.ipdev, self.ipdevext)
         if self.ipname != addr:
             self.label += " " + self.ipname
 
@@ -90,7 +67,7 @@ class IpCrossbow(Ip):
             cmd=['route', '-q', 'delete', 'default', self.gateway]
             r, o, e = self.call(cmd, info=True, outlog=False, errlog=False)
             ret += r
-        cmd=[Env.syspaths.ipadm, 'delete-addr', self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[Env.syspaths.ipadm, 'delete-addr', self.stacked_dev+'/'+self.ipdevext]
         r, o, e =  self.vcall(cmd)
         ret += r
         out += o
@@ -134,7 +111,7 @@ class IpCrossbow(Ip):
     def startip_cmd(self):
         if not which(Env.syspaths.ipadm):
             raise ex.Error("crossbow ips are not supported on this system")
-        if self.mask is None:
+        if self.netmask is None:
             raise ex.Error("netmask not specified nor guessable")
         self.wait_net_smf()
         ret, out, err = (0, '', '')
@@ -144,7 +121,7 @@ class IpCrossbow(Ip):
         if len(_out) == 0:
             cmd=[Env.syspaths.ipadm, 'create-ip', '-t', self.stacked_dev ]
             r, o, e = self.vcall(cmd)
-        cmd=[Env.syspaths.ipadm, 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.mask), self.stacked_dev+'/'+self.ipdevExt]
+        cmd=[Env.syspaths.ipadm, 'create-addr', '-t', '-T', 'static', '-a', self.addr+"/"+to_cidr(self.netmask), self.stacked_dev+'/'+self.ipdevext]
         r, o, e = self.vcall(cmd)
         if r != 0:
             cmd=[Env.syspaths.ipadm, 'show-if' ]
@@ -174,7 +151,7 @@ class IpCrossbow(Ip):
             raise ex.IpConflict(self.addr)
 
     def is_up(self):
-        cmd = [Env.syspaths.ipadm, "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevExt]
+        cmd = [Env.syspaths.ipadm, "show-addr", "-p", "-o", "STATE,ADDR", self.ipdev+'/'+self.ipdevext]
         out, err, ret = justcall(cmd)
         if ret != 0:
             # normal down state
@@ -195,10 +172,10 @@ class IpCrossbow(Ip):
         if _addr != self.addr:
             self.status_log("wrong addr: %s" % addr)
             return False
-        if self.mask is None:
+        if self.netmask is None:
             self.status_log("netmask not specified nor guessable")
-        elif _mask != to_cidr(self.mask):
-            self.status_log("wrong mask: %s, expected %s" % (_mask, to_cidr(self.mask)))
+        elif _mask != to_cidr(self.netmask):
+            self.status_log("wrong netmask: %s, expected %s" % (_mask, to_cidr(self.netmask)))
             return True
         return True
 

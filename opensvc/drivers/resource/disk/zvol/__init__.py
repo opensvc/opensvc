@@ -11,7 +11,6 @@ from utilities.converters import convert_size
 from env import Env
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import dataset_exists, zpool_devs
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 from utilities.string import bdecode
@@ -51,14 +50,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["create_option"] = svc.oget(s, "create_option")
-    r = DiskZvol(**kwargs)
-    svc += r
 
 
 class DiskZvol(BaseDisk):

@@ -10,7 +10,6 @@ from .. import BaseDisk, BASE_KEYWORDS
 from subprocess import *
 from utilities.lazy import lazy
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall
 
@@ -71,19 +70,14 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["dsf"] = svc.oget(s, "dsf")
-    r = DiskVg(**kwargs)
-    svc += r
-
 
 class DiskVg(BaseDisk):
-    def __init__(self, dsf=True, **kwargs):
+    def __init__(self, dsf=True, options=None, pvs=None, **kwargs):
         super(DiskVg, self).__init__(type='disk.vg', **kwargs)
         self.label = "vg %s " % self.name
         self.dsf = dsf
+        self.options = options or []
+        self.raw_pvs = pvs or []
 
     def is_child_dev(self, device):
         l = device.split("/")
@@ -420,18 +414,17 @@ class DiskVg(BaseDisk):
         utilities.lock.unlock(self.lockfd)
 
     @lazy
-    def options(self):
-        return self.oget("options")
-
-    @lazy
     def pvs(self):
-        try:
-            pvs = self.oget("pvs")
-        except:
+        if not self.raw_pvs:
+            # update lazy reference
+            self.raw_pvs = self.oget("pvs")
+        if not self.raw_pvs:
             raise ex.Error("pvs provisioning keyword is not set")
         l = []
-        for pv in pvs:
+        for pv in self.raw_pvs:
             l += glob.glob(pv)
+        if not l:
+            raise ex.Error("pvs provisioning keyword expands to an empty list")
         return l
 
     def provisioner(self):

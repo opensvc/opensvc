@@ -1,10 +1,10 @@
-from .. import adder as base_adder
-from ..linux import Fs
+from drivers.resource.fs import KEYWORDS
+from core.objects.svcdict import KEYS
 
-def adder(svc, s):
-    base_adder(svc, s, drv=FsXfs)
-
-class FsXfs(Fs):
-    info = ['xfs_admin', '-l']
-    mkfs = ['mkfs.xfs', '-f', '-q']
+KEYS.register_driver(
+    "fs",
+    "xfs",
+    name=__name__,
+    keywords=KEYWORDS,
+)
 

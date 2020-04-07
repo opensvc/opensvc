@@ -8,7 +8,6 @@ import core.exceptions as ex
 import core.status
 from .. import Sync, notify
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 
@@ -45,24 +44,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {}
-    kwargs["eva_name"] = svc.oget(s, "eva_name")
-    kwargs["snap_name"] = svc.oget(s, "snap_name")
-    try:
-        pairs = json.loads(svc.oget(s, "pairs"))
-    except:
-        pairs = None
-    if not pairs:
-        svc.log.error("config file section %s must have pairs set" % s)
-        return
-    else:
-        kwargs["pairs"] = pairs
-
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncEvasnap(**kwargs)
-    svc += r
-
 
 class SyncEvasnap(Sync):
     def __init__(self,
@@ -74,6 +55,15 @@ class SyncEvasnap(Sync):
 
         if pairs is None:
             pairs = []
+        else:
+            try:
+                pairs = json.loads(pairs)
+            except TypeError:
+                pass
+            except ValueError:
+                raise ex.InitError("invalid pairs format")
+        if not pairs:
+            raise ex.InitError("pairs must be set")
         self.label = "EVA snapshot %s" % eva_name
         self.eva_name = eva_name
         self.snap_name = snap_name

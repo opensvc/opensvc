@@ -5,7 +5,6 @@ import core.exceptions as ex
 import core.status
 
 from .. import BaseDisk, BASE_KEYWORDS
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -23,12 +22,14 @@ KEYWORDS = BASE_KEYWORDS + [
         "keyword": "options",
         "default": "",
         "at": True,
+        "convert": "shlex",
         "provisioning": True,
         "text": "The vgcreate options to use upon vg provisioning."
     },
     {
         "keyword": "pvs",
         "required": True,
+        "convert": "list",
         "text": "The list of paths to the physical volumes of the volume group.",
         "provisioning": True
     },
@@ -56,17 +57,14 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    r = DiskAdvfs(**kwargs)
-    svc += r
 
 class DiskAdvfs(BaseDisk):
-    def __init__(self, **kwargs):
+    def __init__(self, options=None, pvs=None, **kwargs):
         super(DiskAdvfs, self).__init__(type='disk.advfs', **kwargs)
         self.label = "fdmn %s" % self.name
         self.sub_devs_cache = set()
+        self.options = options or []
+        self.pvs = pvs or []
 
     def sub_devs_name(self):
         return os.path.join(self.var_d, 'sub_devs')

@@ -6,6 +6,28 @@ from utilities.converters import convert_size
 from env import Env
 from utilities.subsystems.zfs import Dataset
 from utilities.proc import which
+from core.objects.svcdict import KEYS
+from .. import KWS_POOLING
+
+KEYWORDS = KWS_POOLING + [
+    {
+        "section": "fs",
+        "rtype": "zfs",
+        "keyword": "size",
+        "required": False,
+        "convert": "size",
+        "at": True,
+        "text": "The quota in MB of the provisioned dataset.",
+        "provisioning": True
+    },
+]
+
+KEYS.register_driver(
+    "fs",
+    "zfs",
+    name=__name__,
+    keywords=KEYWORDS,
+)
 
 class FsZfsMixin():
     def unprovisioner(self):

@@ -2,14 +2,15 @@ import os
 from stat import *
 
 import core.exceptions as ex
+from env import Env
 from utilities.files import protected_mount
 from utilities.mounts.osf1 import Mounts
 from utilities.proc import qcall
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
 
 def try_umount(self):
     cmd = ['umount', self.mount_point]
@@ -64,7 +65,7 @@ class Fs(BaseFs):
         if ret:
             return True
 
-        if self.fs_type not in ["advfs"] + self.netfs:
+        if self.fs_type not in ["advfs"] + Env.fs_net:
             # might be a loopback mount
             try:
                 mode = os.stat(self.device)[ST_MODE]

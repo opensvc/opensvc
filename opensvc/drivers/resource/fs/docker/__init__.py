@@ -5,7 +5,6 @@ import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "fs"
@@ -25,6 +24,15 @@ KEYWORDS = [
         "text": "The docker volume create options to use for the resource. :opt:`--label` and :opt:`--opt`",
         "example": "--opt o=size=100m,uid=1000 --opt type=tmpfs --opt device=tmpfs"
     },
+    {
+        "section": "fs",
+        "keyword": "populate",
+        "at": True,
+        "convert": "list",
+        "provisioning": True,
+        "text": "The list of modulesets providing files to install in the volume.",
+        "example": "configmap.redis configmap.global"
+    },
 ]
 
 KEYS.register_driver(
@@ -34,19 +42,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["driver"] = svc.oget(s, "driver")
-    kwargs["options"] = svc.oget(s, "options")
-    r = FsDocker(**kwargs)
-    svc += r
-
 
 class FsDocker(Resource):
-    def __init__(self, driver=None, options=None, **kwargs):
+    def __init__(self, driver=None, options=None, populate=None, **kwargs):
         super(FsDocker, self).__init__(type='fs.docker', **kwargs)
         self.driver = driver
         self.options = options
+        self.populate = populate or []
 
     @lazy
     def lib(self):
@@ -126,10 +128,10 @@ class FsDocker(Resource):
     def provisioner(self):
         self.lib.docker_start()
         self.create_vol()
-        self.populate()
+        self.populatefs()
 
-    def populate(self):
-        modulesets = self.oget("populate")
+    def populatefs(self):
+        modulesets = self.populate
         if not modulesets:
             return
         try:

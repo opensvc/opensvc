@@ -1,15 +1,15 @@
 import core.exceptions as ex
 import utilities.ping
 
-from . import Ip as ParentIp, adder as parent_adder
+from .. import Ip
 from env import Env
 from utilities.net.converters import to_cidr, to_dotted
 from utilities.proc import which
 
-def adder(svc, s):
-    parent_adder(svc, s, drv=Ip)
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "host"
 
-class Ip(ParentIp):
+class IpHost(Ip):
     def check_ping(self, timeout=5, count=1):
         self.log.info("checking %s availability"%self.addr)
         return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
@@ -26,11 +26,11 @@ class Ip(ParentIp):
     def startip_cmd(self):
         if which("ifconfig") and self.alias:
             if ':' in self.addr:
-                cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.mask)])]
+                cmd = ['ifconfig', self.ipdev, 'inet6', 'add', '/'.join([self.addr, to_cidr(self.netmask)])]
             else:
-                cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.mask), 'up']
+                cmd = ['ifconfig', self.stacked_dev, self.addr, 'netmask', to_dotted(self.netmask), 'up']
         else:
-            cmd = [Env.syspaths.ip, "addr", "add", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+            cmd = [Env.syspaths.ip, "addr", "add", '/'.join([self.addr, to_cidr(self.netmask)]), "dev", self.ipdev]
 
         ret, out, err = self.vcall(cmd)
         if ret != 0:
@@ -47,15 +47,15 @@ class Ip(ParentIp):
     def stopip_cmd(self):
         if which("ifconfig") and self.alias:
             if ':' in self.addr:
-                cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.mask)])]
+                cmd = ['ifconfig', self.ipdev, 'inet6', 'del', '/'.join([self.addr, to_cidr(self.netmask)])]
             else:
                 if self.stacked_dev is None:
                     return 1, "", "no stacked dev found"
                 if ":" in self.stacked_dev:
                     cmd = ['ifconfig', self.stacked_dev, 'down']
                 else:
-                    cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+                    cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.netmask)]), "dev", self.ipdev]
         else:
-            cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.mask)]), "dev", self.ipdev]
+            cmd = [Env.syspaths.ip, "addr", "del", '/'.join([self.addr, to_cidr(self.netmask)]), "dev", self.ipdev]
         return self.vcall(cmd)
 

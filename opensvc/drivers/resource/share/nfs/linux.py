@@ -3,7 +3,6 @@ import core.exceptions as ex
 
 from . import BASE_KEYWORDS
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.cache import cache, clear_cache
 from utilities.proc import justcall, which
@@ -18,20 +17,13 @@ KEYS.register_driver(
     keywords=BASE_KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["path"] = svc.oget(s, "path")
-    kwargs["opts"] = svc.oget(s, "opts")
-    r = NfsShare(**kwargs)
-    svc += r
-
 
 class NfsShare(Resource):
-    def __init__(self, path, opts, **kwargs):
+    def __init__(self, path=None, opts=None, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
         if not which("exportfs"):
             raise ex.InitError("exportfs is not installed")
-        self.label = "nfs:"+path
+        self.label = "nfs:%s" % path
         self.path = path
         l = opts.replace('\\', '').split()
         self.opts = {}

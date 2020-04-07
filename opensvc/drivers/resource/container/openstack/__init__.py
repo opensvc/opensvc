@@ -21,13 +21,19 @@ from .. import \
 from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 from utilities.proc import justcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "openstack"
 KEYWORDS = [
+    {
+        "keyword": "template",
+        "text": "The name of the openstack template image to derive from.",
+        "required": True,
+        "provisioning": True
+    },
     KW_START_TIMEOUT,
     KW_STOP_TIMEOUT,
     KW_NO_PREEMPT_ABORT,
@@ -50,16 +56,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
-    kwargs["key_name"] = svc.oget(s, "key_name")
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["shared_ip_group"] = svc.oget(s, "shared_ip_group")
-    r = ContainerOpenstack(**kwargs)
-    svc += r
-
 
 class ContainerOpenstack(BaseContainer):
     save_timeout = 240
@@ -69,14 +65,19 @@ class ContainerOpenstack(BaseContainer):
                  size="tiny",
                  key_name=None,
                  shared_ip_group=None,
+                 template=None,
                  **kwargs):
         super(ContainerOpenstack, self).__init__(type="container.openstack", **kwargs)
         self.cloud_id = cloud_id
-        self.save_name = "%s.save" % self.name
         self.size_name = size
         self.key_name = key_name
         self.shared_ip_group = shared_ip_group
+        self.template = template
         self.addr = None
+
+    @lazy
+    def save_name(self):
+        return "%s.save" % self.name
 
     def keyfile(self):
         kf = [os.path.join(Env.paths.pathetc, self.key_name+'.pem'),
@@ -195,8 +196,7 @@ class ContainerOpenstack(BaseContainer):
         return self.get_image(self.save_name)
 
     def get_template(self):
-        template = self.svc.oget(self.rid, "template")
-        return self.get_image(template)
+        return self.get_image(self.template)
 
     def get_image(self, name):
         l = self.cloud.driver.list_images()

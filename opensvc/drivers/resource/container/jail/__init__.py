@@ -17,7 +17,6 @@ from .. import \
     KW_SCSIRESERV
 from core.resource import Resource
 from env import Env
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall
 
@@ -59,15 +58,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["jailroot"] = svc.oget(s, "jailroot")
-    kwargs["ips"] = svc.oget(s, "ips")
-    kwargs["ip6s"] = svc.oget(s, "ip6s")
-    r = ContainerJail(**kwargs)
-    svc += r
-
 
 class ContainerJail(BaseContainer):
     """ jail -c name=jail1
@@ -97,6 +87,7 @@ class ContainerJail(BaseContainer):
 
     def __str__(self):
         return "%s name=%s" % (Resource.__str__(self), self.name)
+
     def operational(self):
         return True
 

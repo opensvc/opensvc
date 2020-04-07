@@ -6,14 +6,14 @@ from subprocess import *
 
 import core.exceptions as ex
 
-from . import BaseDiskLv, adder as base_adder
+from . import BaseDiskLv
 from utilities.converters import convert_size
 from env import Env
 from utilities.proc import justcall, which
 from utilities.string import bdecode
 
-def adder(svc, s):
-    base_adder(svc, s, drv=DiskLv)
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "lv"
 
 def restore_signals():
     # from http://hg.python.org/cpython/rev/768722b2ae0a/

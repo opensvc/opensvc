@@ -19,7 +19,6 @@ from .. import \
     KW_SCSIRESERV
 from core.resource import Resource
 from env import Env
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "container"
@@ -46,11 +45,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerXen(**kwargs)
-    svc += r
 
 class ContainerXen(BaseContainer):
     def __init__(self, **kwargs):

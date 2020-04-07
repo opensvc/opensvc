@@ -46,17 +46,18 @@ class Resource(object):
                  rid=None,
                  type=None,
                  subset=None,
-                 optional=False,
+                 optional=None,
                  disabled=False,
                  monitor=False,
                  restart=0,
                  tags=None,
-                 standby=False,
+                 standby=None,
                  skip_provision=False,
                  skip_unprovision=False,
                  shared=False,
                  promote_rw=False,
                  encap=False,
+                 always_on=None,
                  **ignored):
         if tags is None:
             tags = set()
@@ -66,8 +67,9 @@ class Resource(object):
         self.tags = tags
         self.type = type
         self.subset = subset
-        self.optional = optional if optional is not None else self.default_optional
+        self.optional = self.mangle_optional(optional, self.tags)
         self.standby = standby
+        self.always_on = always_on or []
         self.disabled = disabled
         self.skip = False
         self.monitor = monitor
@@ -101,6 +103,27 @@ class Resource(object):
         after the Resource::svc attribute is set.
         """
         pass
+
+    @lazy
+    def is_standby(self):
+        if self.standby is not None:
+            return self.standby
+        if Env.nodename in self.always_on:
+            return True
+        if not hasattr(self, "svc"):
+            return False
+        if "nodes" in self.always_on and Env.nodename in self.svc.nodes:
+            return True
+        if "drpnodes" in self.always_on and Env.nodename in self.svc.drpnodes:
+            return True
+        return False
+
+    def mangle_optional(self, optional, tags):
+        if "noaction" in tags:
+            return True
+        if optional is None:
+            return self.default_optional
+        return optional
 
     @lazy
     def log(self):
@@ -324,7 +347,7 @@ class Resource(object):
 
         self.log.debug('do action %s', action)
 
-        if action == "stop" and self.standby and not self.svc.options.force:
+        if action == "stop" and self.is_standby and not self.svc.options.force:
             standby_action = action+'standby'
             if hasattr(self, standby_action):
                 self.action_main(standby_action)
@@ -457,7 +480,7 @@ class Resource(object):
         This method modifies the passed status according to the standby
         property.
         """
-        if not self.standby:
+        if not self.is_standby:
             return status
         if status == core.status.UP:
             return core.status.STDBY_UP
@@ -850,7 +873,7 @@ class Resource(object):
         Executes a resource stop if the resource start has marked the resource
         as rollbackable.
         """
-        if self.can_rollback and not self.standby:
+        if self.can_rollback and not self.is_standby:
             self.stop()
 
     def stop(self):
@@ -863,7 +886,7 @@ class Resource(object):
         """
         Promote the action to start if the resource is flagged standby
         """
-        if self.standby:
+        if self.is_standby:
             self.start()
 
     def start(self):
@@ -1022,7 +1045,7 @@ class Resource(object):
     def info(self):
         data = [
           ["driver", self.type],
-          ["standby", str(self.standby).lower()],
+          ["standby", str(self.is_standby).lower()],
           ["optional", str(self.optional).lower()],
           ["disabled", str(self.disabled).lower()],
           ["monitor", str(self.monitor).lower()],

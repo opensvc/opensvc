@@ -6,7 +6,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'Linux', 'HP-UX'}
 
 SCENARIOS = [
-    ('disk.lv', 'DiskLv', {'rid': '#1', 'loopFile': 'loopFile'}, 'disk.lv'),
+    ('disk.lv', 'DiskLv', {'rid': '#1', 'loopfile': 'loopfile'}, 'disk.lv'),
 ]
 
 

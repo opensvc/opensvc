@@ -12,7 +12,6 @@ from env import Env
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.mounts import Mounts
 from utilities.proc import justcall, qcall, which
@@ -97,18 +96,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["delete_on_stop"] = svc.oget(s, "delete_on_stop")
-    kwargs["zonepath"] = svc.oget(s, "zonepath")
-    kwargs["container_origin"] = svc.oget(s, "container_origin")
-    kwargs["rootfs"] = svc.oget(s, "rootfs")
-    kwargs["snap"] = svc.oget(s, "snap")
-    kwargs["snapof"] = svc.oget(s, "snapof")
-    r = ContainerZone(**kwargs)
-    svc += r
-
 
 class ContainerZone(BaseContainer):
     """
@@ -123,18 +110,26 @@ class ContainerZone(BaseContainer):
                  snapof=None,
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
-        self.label = self.name
         self.delete_on_stop = delete_on_stop
-        self.runmethod = ["/usr/sbin/zlogin", self.name]
-        self.zone_cf = "/etc/zones/%s.xml" % self.name
         self.delayed_noaction = True
         self.container_origin = container_origin
         self.snapof = snapof
-        self.clone = snap
+        self.snap = snap
         self.kw_zonepath = zonepath
-        if not self.clone:
-            self.clone = "rpool/zones/" + self.name
 
+    @lazy
+    def clone(self):
+        if not self.snap:
+            return "rpool/zones/" + self.name
+        return self.snap
+
+    @lazy
+    def runmethod(self):
+        return ["/usr/sbin/zlogin", self.name]
+
+    @lazy
+    def zone_cf(self):
+        return "/etc/zones/%s.xml" % self.name
 
     def zone_cfg_dir(self):
         return os.path.join(self.var_d, "zonecfg")

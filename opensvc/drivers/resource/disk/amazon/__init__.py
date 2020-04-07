@@ -6,7 +6,6 @@ import core.status
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.subsystems.amazon import AmazonMixin
 
@@ -29,12 +28,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["volumes"] = svc.oget(s, "volumes")
-    r = DiskAmazon(**kwargs)
-    svc += r
 
 
 class DiskAmazon(BaseDisk, AmazonMixin):

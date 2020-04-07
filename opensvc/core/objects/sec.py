@@ -30,8 +30,8 @@ class Sec(DataMixin, BaseSvc):
 
     @lazy
     def full_kwstore(self):
-        from .secdict import full_kwstore
-        return full_kwstore()
+        from .secdict import KEYS
+        return KEYS
 
     def on_create(self):
         if self.oget("DEFAULT", "cn") and "certificate" not in self.data_keys():

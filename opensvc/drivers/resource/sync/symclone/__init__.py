@@ -8,7 +8,6 @@ import core.status
 from .. import Sync, notify
 from utilities.converters import print_duration
 from utilities.lazy import lazy
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -64,20 +63,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s, drv=None, t="sync.symclone"):
-    drv = drv or SyncSymclone
-    kwargs = {}
-    kwargs["type"] = t
-    kwargs["pairs"] = svc.oget(s, "pairs")
-    kwargs["symid"] = svc.oget(s, "symid")
-    kwargs["recreate_timeout"] = svc.oget(s, "recreate_timeout")
-    kwargs["restore_timeout"] = svc.oget(s, "restore_timeout")
-    kwargs["consistent"] = svc.oget(s, "consistent")
-    kwargs["precopy"] = svc.oget(s, "precopy")
-    kwargs.update(sync_kwargs(svc, s))
-    r = drv(**kwargs)
-    svc += r
 
 
 class SyncSymclone(Sync):

@@ -7,7 +7,6 @@ import utilities.subsystems.docker as dockerlib
 from .. import Sync, notify
 from utilities.lazy import lazy
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -32,13 +31,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["target"] = svc.oget(s, "target")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncDocker(**kwargs)
-    svc += r
 
 
 class SyncDocker(Sync):

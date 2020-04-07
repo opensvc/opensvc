@@ -4,7 +4,6 @@ import core.exceptions as ex
 import core.status
 import drivers.array.hp3par as array_driver
 from .. import Sync, notify
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -32,22 +31,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-
-    kwargs["array"] = svc.oget(s, "array")
-    vv_names = svc.oget(s, "vv_names")
-
-    if len(vv_names) == 0:
-        svc.log.error("config file section %s must have at least one vv_name set" % s)
-        return
-
-    kwargs["vv_names"] = vv_names
-
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncHp3parsnap(**kwargs)
-    svc += r
 
 
 class SyncHp3parsnap(Sync):

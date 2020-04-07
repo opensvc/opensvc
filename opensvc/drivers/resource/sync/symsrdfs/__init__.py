@@ -12,7 +12,6 @@ import core.exceptions as ex
 import utilities.devices.linux
 
 from .. import Sync
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 os.environ['PATH'] += ":/usr/symcli/bin"
@@ -48,15 +47,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["symdg"] = svc.oget(s, "symdg")
-    kwargs["rdfg"] = svc.oget(s, "rdfg")
-    kwargs["symid"] = svc.oget(s, "symid")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncSymsrdfs(**kwargs)
-    svc += r
 
 
 class SyncSymsrdfs(Sync):

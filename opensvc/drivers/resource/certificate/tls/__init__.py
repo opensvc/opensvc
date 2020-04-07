@@ -43,12 +43,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    rtype = svc.oget(s, "type")
-    kwargs = {"rid": s}
-    kwargs.update(svc.section_kwargs(s, "tls"))
-    r = CertificateTls(**kwargs)
-    svc += r
 
 class CertificateTls(DataResource):
     def __init__(self, **kwargs):

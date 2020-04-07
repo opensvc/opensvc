@@ -4,9 +4,9 @@ from subprocess import *
 
 import core.exceptions as ex
 import core.status
-from .. import BaseDisk, BASE_KEYWORDS
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
+from .. import BaseDisk, BASE_KEYWORDS
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "ldom"
@@ -30,32 +30,22 @@ KEYS.register_driver(
     deprecated_sections=DEPRECATED_SECTIONS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["container_id"] = svc.oget(s, "container_id")
-
-    if not kwargs["container_id"] in svc.cd:
-        svc.log.error("%s.container_id points to an invalid section"%kwargs["container_id"])
-        return
-
-    try:
-        container_type = svc.conf_get(kwargs["container_id"], "type")
-    except ex.OptNotFound as exc:
-        svc.log.error("type must be set in section %s"%kwargs["container_id"])
-        return
-
-    if container_type != "ldom":
-        return
-
-    r = DiskLdom(**kwargs)
-    svc += r
-
 
 class DiskLdom(BaseDisk):
     def __init__(self, container_id=None, **kwargs):
         super(DiskLdom, self).__init__(type='disk.ldom', **kwargs)
         self.label = "vmdg %s" % self.name
         self.container_id = container_id
+
+    @lazy
+    def container(self):
+        try:
+            res = self.svc.resources_by_id[self.container_id]
+        except KeyError:
+            raise ex.Error("%s.container_id points to an invalid section" % self.container_id)
+        if res.type != "container.ldom":
+            raise ex.Error("%s.container_id points to a non-ldom container" % self.container_id)
+        return res
 
     def has_it(self):
         return True
@@ -125,7 +115,7 @@ class DiskLdom(BaseDisk):
                 vds = ''
 
         cmd = ['/usr/sbin/ldm', 'list', '-o', 'disk', '-p',
-               self.svc.resources_by_id[self.container_id].name]
+               self.container.name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         buff = p.communicate()
         if p.returncode != 0:

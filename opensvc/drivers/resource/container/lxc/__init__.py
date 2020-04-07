@@ -24,7 +24,6 @@ from .. import \
 from env import Env
 from utilities.files import makedirs, protected_dir
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs, container_kwargs, get_rcmd
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
@@ -137,15 +136,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["rcmd"] = get_rcmd(svc, s)
-    kwargs["cf"] = svc.oget(s, "cf")
-    kwargs["container_data_dir"] = svc.oget(s, "container_data_dir")
-    r = ContainerLxc(**kwargs)
-    svc += r
-
 
 class ContainerLxc(BaseContainer):
     """
@@ -180,39 +170,55 @@ class ContainerLxc(BaseContainer):
                  guestos="Linux",
                  cf=None,
                  rcmd=None,
+                 rootfs=None,
                  container_data_dir=None,
+                 template=None,
+                 template_options=None,
+                 mirror=None,
+                 security_mirror=None,
                  **kwargs):
         super(ContainerLxc, self).__init__(
             type="container.lxc",
             guestos=guestos,
             **kwargs
         )
+        self.raw_rootfs = rootfs
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
         self.always_pg = True
-        self.label = "lxc " + self.label
         self.container_data_dir = container_data_dir
         self.rcmd = rcmd
+        self.template = template
+        self.template_options = template_options or []
+        self.mirror = mirror
+        self.security_mirror = security_mirror
         self.links = None
         self.cf = cf
 
     def on_add(self):
-        if self.rcmd is not None:
-            self.runmethod = self.rcmd
-        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
-            if self.lxcpath:
-                self.runmethod = ['lxc-attach', '-n', self.name, '-P', self.lxcpath, '--']
-            else:
-                self.runmethod = ['lxc-attach', '-n', self.name, '--']
-        else:
-            self.runmethod = Env.rsh.split() + [self.name]
-
         if "lxc-attach" in ' '.join(self.runmethod):
             # override getaddr from parent class with a noop
             self.getaddr = self.dummy
         else:
             # enable ping test on start
             self.ping = self._ping
+
+    @lazy
+    def label(self):  # pylint: disable=method-hidden
+        return "lxc " + self.label
+
+    @lazy
+    def runmethod(self):
+        if self.rcmd is not None:
+            runmethod = self.rcmd
+        elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
+            if self.lxcpath:
+                runmethod = ['lxc-attach', '-n', self.name, '-P', self.lxcpath, '--']
+            else:
+                runmethod = ['lxc-attach', '-n', self.name, '--']
+        else:
+            runmethod = Env.rsh.split() + [self.name]
+        return runmethod
 
     @lazy
     def lxc_version(self):
@@ -330,7 +336,7 @@ class ContainerLxc(BaseContainer):
 
     @lazy
     def rootfs(self):
-        rootfs = self.oget("rootfs")
+        rootfs = self.raw_rootfs
         if rootfs:
             rootfs, vol = self.replace_volname(rootfs, strict=False)
         if rootfs:
@@ -869,8 +875,6 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.d_lxc = None
 
     def provisioner(self):
-        self.template = self.oget("template")
-
         # hostname file in the container rootfs
         self.p_hostname = os.path.join(self.rootfs, 'etc', 'hostname')
         self.set_d_lxc()
@@ -884,7 +888,6 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.provisioner_archive()
 
     def provisioner_lxc_create(self):
-        template_options = self.oget("template_options")
         cmd = ['lxc-create', '--name', self.name, "--dir", self.rootfs]
         if self.cf:
             cmd += ['-f', self.cf]
@@ -895,8 +898,8 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
                 cmd += ["-f", os.path.join(self.lxcpath, self.name, "config")]
         if self.template:
             cmd += ['--template', self.template]
-            if template_options:
-                cmd += ["--"] + template_options
+            if self.template_options:
+                cmd += ["--"] + self.template_options
         env = {
             "DEBIAN_FRONTEND": "noninteractive",
             "DEBIAN_PRIORITY": "critical",
@@ -907,13 +910,11 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             key = key.upper()
             if key in os.environ:
                 env[key] = os.environ[key]
-        mirror = self.oget("mirror")
-        if mirror:
-            env["MIRROR"] = mirror
-            env["SECURITY_MIRROR"] = mirror
-        security_mirror = self.oget("security_mirror")
-        if security_mirror:
-            env["SECURITY_MIRROR"] = security_mirror
+        if self.mirror:
+            env["MIRROR"] = self.mirror
+            env["SECURITY_MIRROR"] = self.mirror
+        if self.security_mirror:
+            env["SECURITY_MIRROR"] = self.security_mirror
         self.log.info(" ".join(cmd))
         ret = self.lcall(cmd, env=env)
         if ret != 0:

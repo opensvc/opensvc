@@ -1,10 +1,10 @@
-from .. import adder as base_adder
-from ..linux import Fs
+from drivers.resource.fs import KEYWORDS
+from core.objects.svcdict import KEYS
 
-def adder(svc, s):
-    base_adder(svc, s, drv=FsExt3)
-
-class FsExt3(Fs):
-    mkfs = ['mkfs.ext3', '-F', '-q']
-    info = ['tune2fs', '-l']
+KEYS.register_driver(
+    "fs",
+    "ext3",
+    name=__name__,
+    keywords=KEYWORDS,
+)
 

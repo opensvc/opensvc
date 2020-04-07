@@ -4,10 +4,9 @@ import core.exceptions as ex
 import core.status
 import utilities.ifconfig
 
-from drivers.resource.ip.linux import Ip
+from drivers.resource.ip.host.linux import IpHost
 from drivers.resource.ip import KW_IPNAME, KW_IPDEV, KW_NETMASK, KW_GATEWAY, COMMON_KEYWORDS
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
@@ -97,34 +96,8 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    kwargs = init_kwargs(svc, s)
-    kwargs["expose"] = svc.oget(s, "expose")
-    kwargs["check_carrier"] = svc.oget(s, "check_carrier")
-    kwargs["alias"] = svc.oget(s, "alias")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    kwargs["ipname"] = svc.oget(s, "ipname")
-    kwargs["mask"] = svc.oget(s, "netmask")
-    kwargs["gateway"] = svc.oget(s, "gateway")
-    kwargs["netns"] = svc.oget(s, "netns")
-    kwargs["nsdev"] = svc.oget(s, "nsdev")
-    kwargs["mode"] = svc.oget(s, "mode")
-    kwargs["network"] = svc.oget(s, "network")
-    kwargs["macaddr"] = svc.oget(s, "macaddr")
-    kwargs["del_net_route"] = svc.oget(s, "del_net_route")
-    if kwargs["mode"] == "ovs":
-        kwargs["vlan_tag"] = svc.oget(s, "vlan_tag")
-        kwargs["vlan_mode"] = svc.oget(s, "vlan_mode")
-    r = IpNetns(**kwargs)
-    svc += r
 
-
-class IpNetns(Ip):
+class IpNetns(IpHost):
     def __init__(self,
                  mode=None,
                  network=None,
@@ -175,7 +148,7 @@ class IpNetns(Ip):
              self.get_mask()
         except ex.Error:
              pass
-        self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.mask), self.ipdev, self.container_rid)
+        self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.netmask), self.ipdev, self.container_rid)
 
     @lazy
     def guest_dev(self):
@@ -335,7 +308,7 @@ class IpNetns(Ip):
             return ret, out, err
 
         # plumb the ip
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.netmask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -410,7 +383,7 @@ class IpNetns(Ip):
             return ret, out, err
 
         # plumb ip
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.netmask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -458,7 +431,7 @@ class IpNetns(Ip):
         self.set_macaddr()
 
         # plumb ip
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", self.addr+"/"+to_cidr(self.netmask), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -499,7 +472,7 @@ class IpNetns(Ip):
             return ret, out, err
 
         # plumb the ip
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.netmask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -543,7 +516,7 @@ class IpNetns(Ip):
         self.set_macaddr()
 
         # plumb the ip
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.mask)), "dev", self.final_guest_dev]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "add", "%s/%s" % (self.addr, to_cidr(self.netmask)), "dev", self.final_guest_dev]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             return ret, out, err
@@ -586,7 +559,7 @@ class IpNetns(Ip):
                 return ret, out, err
 
         if self.del_net_route and self.network:
-            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.mask), "dev", self.final_guest_dev]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del", self.network+"/"+to_cidr(self.netmask), "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
@@ -646,9 +619,9 @@ class IpNetns(Ip):
         intf = self.get_docker_interface()
         if intf is None:
             raise ex.ContinueAction("can't find on which interface %s is plumbed in container %s" % (self.addr, self.container_id()))
-        if self.mask is None:
+        if self.netmask is None:
             raise ex.ContinueAction("netmask is not set")
-        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "del", self.addr+"/"+to_cidr(self.mask), "dev", intf]
+        cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "addr", "del", self.addr+"/"+to_cidr(self.netmask), "dev", intf]
         ret, out, err = self.vcall(cmd)
         cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "link", "del", "dev", intf]
         ret, out, err = self.vcall(cmd)
