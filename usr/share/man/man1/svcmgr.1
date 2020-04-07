@@ -1,18 +1,16 @@
-.TH SVCMGR 1 2020\-03\-30
+.TH SVCMGR 1 2020\-04\-07
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
 .B svcmgr
-[ \fIOPTIONS\fP ] COMMAND
+om svc [ \fIOPTIONS\fP ] COMMAND
 .SH DESCRIPTION
 In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \fBsvcmgr\fP program provides commands to provision, configure, stop, start and replicate services instances on the local node.
 .SH COMMANDS
 
 \fRCOLLECTOR MANAGEMENT\fP
 
-.RE
-\fBsvcmgr collector ack action\fP
-.RS
+  om svc collector ack action
 
 Acknowledge an action error on the service. An acknowlegment can be completed by --author (defaults to root@nodename) and --comment.
 
@@ -59,7 +57,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -110,9 +110,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector ack unavailability\fP
-.RS
+  om svc collector ack unavailability
 
 Acknowledge an unavailability period. The period is specified by '--begin' '--end' or '--begin' '--duration'. '--begin' defaults to now.
 
@@ -171,7 +169,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -222,9 +222,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector alerts\fP
-.RS
+  om svc collector alerts
 
 Display service alerts.
 
@@ -271,7 +269,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -322,9 +322,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector asset\fP
-.RS
+  om svc collector asset
 
 Display asset information known to the collector.
 
@@ -371,7 +369,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -422,9 +422,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector checks\fP
-.RS
+  om svc collector checks
 
 Display service checks.
 
@@ -471,7 +469,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -522,15 +522,13 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector create tag\fP
-.RS
+  om svc collector create tag
 
 Create a new tag.
 
 .TP
 .B --tag=TAG
-The tag name, as shown by 'svcmgr collector list tags'.
+The tag name, as shown by 'collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -568,7 +566,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -619,9 +619,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector disks\fP
-.RS
+  om svc collector disks
 
 Display service disks.
 
@@ -668,7 +666,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -719,9 +719,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector events\fP
-.RS
+  om svc collector events
 
 Display the service events during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
@@ -774,7 +772,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -825,9 +825,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector list actions\fP
-.RS
+  om svc collector list actions
 
 List actions on the service, Whatever the node, during the period specified by --begin/--end. --end defaults to now. --begin defaults to 7 days ago.
 
@@ -880,7 +878,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -931,9 +931,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector list tags\fP
-.RS
+  om svc collector list tags
 
 List all available tags. Use '--like' to filter the output.
 
@@ -983,7 +981,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1034,9 +1034,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector list unavailability ack\fP
-.RS
+  om svc collector list unavailability ack
 
 List acknowledged periods for the service.
 
@@ -1089,7 +1087,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1140,9 +1140,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector log\fP
-.RS
+  om svc collector log
 
 Log a message in the collector service log.
 
@@ -1186,7 +1184,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1237,9 +1237,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector networks\fP
-.RS
+  om svc collector networks
 
 Display network information known to the collector for each service ip.
 
@@ -1286,7 +1284,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1337,9 +1337,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector show actions\fP
-.RS
+  om svc collector show actions
 
 Show actions detailed log. A single action is specified by --id. A range is specified by --begin/--end dates. --end defaults to now. --begin defaults to 7 days ago.
 
@@ -1395,7 +1393,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1446,9 +1446,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector show tags\fP
-.RS
+  om svc collector show tags
 
 List all service tags.
 
@@ -1495,7 +1493,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1546,15 +1546,13 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector tag\fP
-.RS
+  om svc collector tag
 
 Set a service tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by 'svcmgr collector list tags'.
+The tag name, as shown by 'collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -1592,7 +1590,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1643,15 +1643,13 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr collector untag\fP
-.RS
+  om svc collector untag
 
 Unset a service tag (pointed by --tag).
 
 .TP
 .B --tag=TAG
-The tag name, as shown by 'svcmgr collector list tags'.
+The tag name, as shown by 'collector list tags'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -1689,7 +1687,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1742,9 +1742,7 @@ Show this help message and exit.
 
 \fRCOMMON OBJECT ACTIONS\fP
 
-.RE
-\fBsvcmgr deploy\fP
-.RS
+  om svc deploy
 
 Create and provision a new service.
 
@@ -1868,7 +1866,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -1919,9 +1919,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr logs\fP
-.RS
+  om svc logs
 
 Display the service logs. All service instances logs are aggregated.
 
@@ -1971,7 +1969,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2022,9 +2022,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr ls\fP
-.RS
+  om svc ls
 
 List the service names with a local instance. Most useful to test a service selector expression before running an action.
 
@@ -2071,7 +2069,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2122,9 +2122,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr monitor\fP
-.RS
+  om svc monitor
 
 Display or watch the synthetic service status, and perf metrics.
 
@@ -2177,7 +2175,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2228,9 +2228,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print config mtime\fP
-.RS
+  om svc print config mtime
 
 Display the service local configuration file modification time
 
@@ -2271,7 +2269,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2322,9 +2322,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print status\fP
-.RS
+  om svc print status
 
 Display the service status, with a detailed view of the local instance.
 
@@ -2399,7 +2397,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2450,9 +2450,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr purge\fP
-.RS
+  om svc purge
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -2554,7 +2552,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2605,9 +2605,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr status\fP
-.RS
+  om svc status
 
 Return the local service instance overall status code.
 
@@ -2654,7 +2652,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2707,9 +2707,7 @@ Show this help message and exit.
 
 \fRCOMPLIANCE\fP
 
-.RE
-\fBsvcmgr compliance attach\fP
-.RS
+  om svc compliance attach
 
 Attach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' to this service. Attached modulesets are scheduled for check or autofix.
 
@@ -2756,7 +2754,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2807,9 +2807,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance auto\fP
-.RS
+  om svc compliance auto
 
 Run compliance checks or fixes, depending on the autofix module property values.
 
@@ -2868,7 +2866,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -2919,9 +2919,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance check\fP
-.RS
+  om svc compliance check
 
 Run compliance checks.
 
@@ -2977,7 +2975,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3028,9 +3028,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance detach\fP
-.RS
+  om svc compliance detach
 
 Detach rulesets specified by '--ruleset' and modulesets specified by '--moduleset' from this service. Detached modulesets are no longer scheduled for check and autofix.
 
@@ -3077,7 +3075,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3128,9 +3128,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance env\fP
-.RS
+  om svc compliance env
 
 Show the environment variables set during a compliance module run.
 
@@ -3177,7 +3175,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3228,9 +3228,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance fix\fP
-.RS
+  om svc compliance fix
 
 Run compliance fixes.
 
@@ -3286,7 +3284,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3337,9 +3337,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance fixable\fP
-.RS
+  om svc compliance fixable
 
 Verify compliance fixes prerequisites.
 
@@ -3395,7 +3393,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3446,9 +3446,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance list moduleset\fP
-.RS
+  om svc compliance list moduleset
 
 List available compliance modulesets. Setting '--moduleset f%' limits the resultset to modulesets matching the `f%` pattern.
 
@@ -3492,7 +3490,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3543,9 +3543,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance list ruleset\fP
-.RS
+  om svc compliance list ruleset
 
 List available compliance rulesets. Setting '--ruleset f%' limits the scope to rulesets matching the `f%` pattern.
 
@@ -3589,7 +3587,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3640,9 +3640,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance show moduleset\fP
-.RS
+  om svc compliance show moduleset
 
 Show compliance rules applying to this service.
 
@@ -3683,7 +3681,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3734,9 +3734,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance show ruleset\fP
-.RS
+  om svc compliance show ruleset
 
 Show compliance rules applying to this service.
 
@@ -3777,7 +3775,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3828,9 +3828,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr compliance show status\fP
-.RS
+  om svc compliance show status
 
 Show compliance modules status.
 
@@ -3871,7 +3869,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -3924,9 +3924,7 @@ Show this help message and exit.
 
 \fROBJECT CONFIGURATION\fP
 
-.RE
-\fBsvcmgr create\fP
-.RS
+  om svc create
 
 Create a new service.
 
@@ -4056,7 +4054,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4107,9 +4107,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr delete\fP
-.RS
+  om svc delete
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -4211,7 +4209,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4262,9 +4262,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr edit config\fP
-.RS
+  om svc edit config
 
 Edit the service configuration. The new configuration file is actually installed only if it passes validation, so this action is recommended over direct edition.
 
@@ -4273,7 +4271,7 @@ Edit the service configuration. The new configuration file is actually installed
 Discard the stashed, invalid, configuration file.
 .TP
 .B --recover
-Recover the stashed erroneous configuration file in a 'svcmgr edit config' command
+Recover the stashed erroneous configuration file in a 'edit config' command
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -4311,7 +4309,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4362,9 +4362,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr eval\fP
-.RS
+  om svc eval
 
 Evaluate the value of a service configuration keyword.
 
@@ -4476,7 +4474,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4527,9 +4527,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr get\fP
-.RS
+  om svc get
 
 Get the raw value of a service configuration keyword.
 
@@ -4573,7 +4571,7 @@ Limit the action to the resources in the specified, comma-separated, list of sub
 A comma-separated list of resource tags to limit action to. The '+' separator can be used to impose multiple tag conditions. For example, 'tag1+tag2,tag3' limits the action to resources with both tag1 and tag2, or tag3.
 .TP
 .B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+If set with the 'get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'set' action, the current value is evaluated before mangling.
 .TP
 .B --format=FORMAT
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
@@ -4652,7 +4650,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4703,9 +4703,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print config\fP
-.RS
+  om svc print config
 
 Display the service current configuration.
 
@@ -4717,7 +4715,7 @@ A JSONPath expression to filter a JSON output.
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+If set with the 'get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'set' action, the current value is evaluated before mangling.
 .TP
 .B --impersonate=IMPERSONATE
 Impersonate a peer node when evaluating keywords.
@@ -4758,7 +4756,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4809,9 +4809,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr set\fP
-.RS
+  om svc set
 
 Set a service configuration parameter
 
@@ -4885,7 +4883,7 @@ Examples:
 A list member to add to the value pointed by '--param'. If '--index' is set, insert the new element at the specified position in the list.
 .TP
 .B --eval
-If set with the 'svcmgr get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'svcmgr set' action, the current value is evaluated before mangling.
+If set with the 'get' action, the printed value of '--param' is evaluated, scoped and dereferenced. If set with the 'set' action, the current value is evaluated before mangling.
 .TP
 .B --index=INDEX
 The position in the list pointed by --param where to add the new list element on a set action
@@ -4940,7 +4938,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -4991,9 +4991,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr unset\fP
-.RS
+  om svc unset
 
 Unset a node configuration keyword.
 
@@ -5107,7 +5105,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5158,9 +5158,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr update\fP
-.RS
+  om svc update
 
 Update definitions in an existing service configuration file.
 
@@ -5248,7 +5246,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5299,9 +5299,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr validate config\fP
-.RS
+  om svc validate config
 
 Check the section names and keywords are valid.
 
@@ -5342,7 +5340,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5395,9 +5395,7 @@ Show this help message and exit.
 
 \fRSERVICE AND VOLUME OBJECT ACTIONS\fP
 
-.RE
-\fBsvcmgr abort\fP
-.RS
+  om svc abort
 
 Abort the action asynchronously done by the cluster daemons.
 
@@ -5453,7 +5451,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5504,9 +5504,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr boot\fP
-.RS
+  om svc boot
 
 Clean up actions executed before the daemon starts. For example scsi reservation release and vg tags removal. Never execute this action manually.
 
@@ -5585,7 +5583,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5636,9 +5636,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr clear\fP
-.RS
+  om svc clear
 
 Clear the monitor status of the service on the node pointed by --node. If --node is not specified, all nodes are cleared. This command can be used to reactivate service orchestration blocked by a failed status like `start failed`.
 
@@ -5685,7 +5683,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5736,9 +5736,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr disable\fP
-.RS
+  om svc disable
 
 Disable resources specified by '--rid' in services specified by '--service'. Specifying no resource disables the whole service.
 
@@ -5799,7 +5797,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5850,9 +5850,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr dns update\fP
-.RS
+  om svc dns update
 
 Update the collector dns records for the service. The managed dns record is <name>.<app>.<collector domain>`.
 
@@ -5931,7 +5929,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -5982,9 +5982,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr docker\fP
-.RS
+  om svc docker
 
 Wrap the docker client command, setting automatically the socket parameter to join the service-private docker daemon. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <path>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of docker instance names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
 
@@ -6025,7 +6023,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6076,9 +6076,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr enable\fP
-.RS
+  om svc enable
 
 Enable resources specified by '--rid' in services specified by '--service'. Specifying no resource enables the whole service.
 
@@ -6139,7 +6137,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6190,9 +6190,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr enter\fP
-.RS
+  om svc enter
 
 Enter the container specified by --rid <rid>, executing a shell.
 
@@ -6247,7 +6245,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6298,9 +6298,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr freeze\fP
-.RS
+  om svc freeze
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -6367,7 +6365,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6418,9 +6418,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr frozen\fP
-.RS
+  om svc frozen
 
 Report on the current blocking of orchestration on the service.
 
@@ -6461,7 +6459,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6512,9 +6512,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr giveback\fP
-.RS
+  om svc giveback
 
 Stop the service on its current node and start on the node chosen by the placement policy.
 
@@ -6573,7 +6571,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6624,9 +6624,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr install data\fP
-.RS
+  om svc install data
 
 Install secrets and configurations in volume resources with secrets or configurations mapping configured.
 
@@ -6687,7 +6685,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6738,9 +6738,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr migrate\fP
-.RS
+  om svc migrate
 
 Live migrate the service to the remote node. --to <node> specify the remote node to migrate the service to.
 
@@ -6802,7 +6800,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6853,9 +6853,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr move\fP
-.RS
+  om svc move
 
 Ask the daemon to orchestrate a stop of the service instances running on nodes not in the specified target, and start instances on the specified target nodes. The target is specified by '--to <nodename>,<nodename>'.
 
@@ -6917,7 +6915,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -6968,9 +6968,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr oci\fP
-.RS
+  om svc oci
 
 Wrap the podman or docke client command, setting automatically the namespace, cni-config-dir options and eventually the --root and --runroot options for services configured for private storage. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <path>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of podman container names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
 
@@ -7011,7 +7009,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7062,9 +7062,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr pg freeze\fP
-.RS
+  om svc pg freeze
 
 Freeze the tasks of a process group.
 
@@ -7143,7 +7141,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7194,9 +7194,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr pg kill\fP
-.RS
+  om svc pg kill
 
 Kill the tasks of a process group.
 
@@ -7275,7 +7273,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7326,9 +7326,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr pg pids\fP
-.RS
+  om svc pg pids
 
 Display the tasks of the service process groups or selected resources process groups.
 
@@ -7375,7 +7373,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7426,9 +7426,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr pg thaw\fP
-.RS
+  om svc pg thaw
 
 Thaw the tasks of a process group.
 
@@ -7507,7 +7505,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7558,9 +7558,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr podman\fP
-.RS
+  om svc podman
 
 Wrap the podman client command, setting automatically the namespace, cni-config-dir options and eventually the --root and --runroot options for services configured for private storage. The {as_service}, {images} and {instances} words in the wrapped command are replaced by, respectively, the registry login username/password/email parameters to log as a service using <path>@<nodename> as the username and the node uuid as password (which is what is expected when the opensvc collector is used as the JWT manager for the registry), the set of podman container names and images for container resources passing the --tags, --rid and --subsets filters. This is useful to remove all instances of a service or all instances of resources with a tag like 'frontend'. Note the opensvc filters must be positioned before the docker command in the arguments list.
 
@@ -7601,7 +7599,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7652,9 +7652,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr postsync\fP
-.RS
+  om svc postsync
 
 Execute the postsync method of the resource driver for each local service instance resource. These methods usually take appropriate action based on var files received from the primary node.
 
@@ -7733,7 +7731,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7784,9 +7784,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr presync\fP
-.RS
+  om svc presync
 
 Execute the presync method of the resource driver for each local service instance resource. These methods usually update var files needing replication on other nodes.
 
@@ -7865,7 +7863,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -7916,9 +7916,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print base devs\fP
-.RS
+  om svc print base devs
 
 Print the list of base devices the local service instance or the specified resources are layered on.
 
@@ -7985,7 +7983,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8036,9 +8036,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print devs\fP
-.RS
+  om svc print devs
 
 Aggregate the information of 'print base devs', 'print sub devs' and 'print exposed devs'.
 
@@ -8105,7 +8103,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8156,9 +8156,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print exposed devs\fP
-.RS
+  om svc print exposed devs
 
 Print the list of devices the local service instance or the specified resources expose.
 
@@ -8225,7 +8223,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8276,9 +8276,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print resinfo\fP
-.RS
+  om svc print resinfo
 
 Display the service resource and env section key/val pairs pushed to the collector.
 
@@ -8325,7 +8323,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8376,9 +8376,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print resource status\fP
-.RS
+  om svc print resource status
 
 Display a specific service resource status, pointed by --rid
 
@@ -8442,7 +8440,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8493,9 +8493,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print schedule\fP
-.RS
+  om svc print schedule
 
 Print the service tasks schedule.
 
@@ -8507,7 +8505,7 @@ A JSONPath expression to filter a JSON output.
 Specify a data formatter. Possible values are json, flat_json, csv or table. csv and table formatters are available only for commands returning tabular data.
 .TP
 .B --verbose
-Include more information to some print commands output. For example, add the 'next run' column in the output of 'svcmgr print schedule'.
+Include more information to some print commands output. For example, add the 'next run' column in the output of 'print schedule'.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
@@ -8545,7 +8543,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8596,9 +8596,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr print sub devs\fP
-.RS
+  om svc print sub devs
 
 Print the list of devices the local service instance or the specified resources are layered on.
 
@@ -8665,7 +8663,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8716,9 +8716,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr provision\fP
-.RS
+  om svc provision
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -8820,7 +8818,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8871,9 +8871,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr prstatus\fP
-.RS
+  om svc prstatus
 
 Report the status of scsi3 persistent reservations on scsi disks held by the local service instance.
 
@@ -8914,7 +8912,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -8965,9 +8965,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr pull\fP
-.RS
+  om svc pull
 
 Pull a service configuration from the collector, overwritting the currently installed one.
 
@@ -9014,7 +9012,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9065,9 +9065,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr push config\fP
-.RS
+  om svc push config
 
 Push service configuration to the collector.
 
@@ -9111,7 +9109,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9162,9 +9162,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr push encap config\fP
-.RS
+  om svc push encap config
 
 Push service configuration to the containers hosting an encapsulated service.
 
@@ -9208,7 +9206,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9259,9 +9259,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr push resinfo\fP
-.RS
+  om svc push resinfo
 
 Push the local service instance resources and application launchers info key/value pairs the collector.
 
@@ -9308,7 +9306,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9359,9 +9359,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr push status\fP
-.RS
+  om svc push status
 
 Push service instance status to the collector synchronously.
 
@@ -9402,7 +9400,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9453,9 +9453,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr resource monitor\fP
-.RS
+  om svc resource monitor
 
 Refresh the monitored resource status. This action is scheduleable, usually every minute.
 
@@ -9537,7 +9535,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9588,9 +9588,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr restart\fP
-.RS
+  om svc restart
 
 Chain a local service instance stop and start
 
@@ -9672,7 +9670,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9723,9 +9723,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr resync\fP
-.RS
+  om svc resync
 
 Chain a local service instance  stop, sync_resync and start
 
@@ -9807,7 +9805,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9858,9 +9858,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr run\fP
-.RS
+  om svc run
 
 Run all tasks, or tasks specified by --rid --tags and --subset, disregarding their schedule.
 
@@ -9942,7 +9940,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -9993,9 +9993,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr scale\fP
-.RS
+  om svc scale
 
 Create-provision or delete-unprovision instances to meet service scale target.
 
@@ -10039,7 +10037,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10090,9 +10090,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr set provisioned\fP
-.RS
+  om svc set provisioned
 
 Set the resources as provisioned.
 
@@ -10171,7 +10169,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10222,9 +10222,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr set unprovisioned\fP
-.RS
+  om svc set unprovisioned
 
 Set the resources as unprovisioned.
 
@@ -10303,7 +10301,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10354,9 +10354,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr shutdown\fP
-.RS
+  om svc shutdown
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -10452,7 +10450,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10503,9 +10503,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr snooze\fP
-.RS
+  om svc snooze
 
 Snooze alerts on the node for '--duration'
 
@@ -10549,7 +10547,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10600,9 +10600,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr start\fP
-.RS
+  om svc start
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -10704,7 +10702,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10755,9 +10755,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr startstandby\fP
-.RS
+  om svc startstandby
 
 Start local service instance resources flagged standby.
 
@@ -10839,7 +10837,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -10890,9 +10890,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr stop\fP
-.RS
+  om svc stop
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -10991,7 +10989,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11042,9 +11042,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr support\fP
-.RS
+  om svc support
 
 Create a tarball archive of config, var and log files, and upload it to the OpenSVC support site.
 
@@ -11085,7 +11083,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11136,9 +11136,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr switch\fP
-.RS
+  om svc switch
 
 Stop the running failover service instance and start the instance on the peer node specified by '--to <nodename>'.
 
@@ -11200,7 +11198,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11251,9 +11251,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync all\fP
-.RS
+  om svc sync all
 
 Chain sync nodes, sync drp and sync update.
 
@@ -11335,7 +11333,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11386,9 +11386,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync break\fP
-.RS
+  om svc sync break
 
 Break the disk replication of sync.hp3par, sync.ibmdssnap, sync.netapp, sync.symclone, sync.symsrdf resources.
 
@@ -11467,7 +11465,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11518,9 +11518,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync drp\fP
-.RS
+  om svc sync drp
 
 Run the synchronization method of each local service instance sync resource, targetting the drp nodes.
 
@@ -11599,7 +11597,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11650,9 +11650,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync establish\fP
-.RS
+  om svc sync establish
 
 Establish disk replication of sync.symsrdf resources.
 
@@ -11731,7 +11729,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11782,9 +11782,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync full\fP
-.RS
+  om svc sync full
 
 Trigger a full copy of the volume to its target.
 
@@ -11863,7 +11861,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -11914,9 +11914,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync nodes\fP
-.RS
+  om svc sync nodes
 
 Run the synchronization method of each local service instance sync resource, targetting the peer nodes.
 
@@ -11995,7 +11993,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12046,9 +12046,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync quiesce\fP
-.RS
+  om svc sync quiesce
 
 Pause replication of sync.netapp and sync.symsrdf resources.
 
@@ -12127,7 +12125,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12178,9 +12178,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync restore\fP
-.RS
+  om svc sync restore
 
 Trigger a restore of the sync resources data to their target path (DANGEROUS: make sure you understand before running this action).
 
@@ -12259,7 +12257,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12310,9 +12310,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync resume\fP
-.RS
+  om svc sync resume
 
 Re-establish a broken storage hardware-assisted synchronization.
 
@@ -12391,7 +12389,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12442,9 +12442,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync resync\fP
-.RS
+  om svc sync resync
 
 Like 'sync update', but not triggered by the scheduler (thus adapted for clone/snap operations).
 
@@ -12523,7 +12521,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12574,9 +12574,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync revert\fP
-.RS
+  om svc sync revert
 
 Revert to the pre-failover data (looses current data).
 
@@ -12655,7 +12653,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12706,9 +12706,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync split\fP
-.RS
+  om svc sync split
 
 Split the disk replication of sync.symsrdf resources.
 
@@ -12787,7 +12785,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12838,9 +12838,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync update\fP
-.RS
+  om svc sync update
 
 Trigger a one-time resync of the volume to its target.
 
@@ -12919,7 +12917,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -12970,9 +12970,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr sync verify\fP
-.RS
+  om svc sync verify
 
 Trigger a one-time checksum-based verify of the volume and its target.
 
@@ -13051,7 +13049,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -13102,9 +13102,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr takeover\fP
-.RS
+  om svc takeover
 
 Stop the service on its current node and start on the local node.
 
@@ -13163,7 +13161,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -13214,9 +13214,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr thaw\fP
-.RS
+  om svc thaw
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -13283,7 +13281,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -13334,9 +13334,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr toc\fP
-.RS
+  om svc toc
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -13417,7 +13415,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -13468,9 +13468,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr unprovision\fP
-.RS
+  om svc unprovision
 
 Asynchronous orchestrated action, unless --local or --node <node> is specified.
 
@@ -13569,7 +13567,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
@@ -13620,9 +13620,7 @@ A duration expression like '5s'. The maximum wait time when acquiring the servic
 .B -h, --help
 Show this help message and exit.
 
-.RE
-\fBsvcmgr unsnooze\fP
-.RS
+  om svc unsnooze
 
 Unsnooze alerts on the node
 
@@ -13663,7 +13661,9 @@ A service selector expression '[!]<expr>[<sep>[!]<expr>]' where:
 
       - '<'  '>'  '<='  '>='  '='
 
-      - '~' with regexp value
+      - '~' the string or any list element matches the regexp value
+
+      - '~=' the string matches regexp value or any list element is the value
 
 Examples:
 
