@@ -54,8 +54,6 @@ class SyncHp3par(Sync):
                  rcg=None,
                  **kwargs):
         super(SyncHp3par, self).__init__(type="sync.hp3par", **kwargs)
-        if rcg_names is None:
-            rcg_names = {}
         self.pausable = False
         self.array = array
         self.rcg = rcg
