@@ -4,7 +4,6 @@ from subprocess import *
 
 import core.exceptions as ex
 import core.status
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from ..vg.hpux import DiskVg
 from .. import BASE_KEYWORDS
@@ -26,12 +25,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["container_name"] = svc.oget(s, "container_name")
-    r = DiskHpvm(**kwargs)
-    svc += r
 
 
 class DiskHpvm(DiskVg):

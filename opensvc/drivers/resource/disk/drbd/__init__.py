@@ -5,7 +5,6 @@ import core.status
 from .. import BASE_KEYWORDS
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
@@ -29,12 +28,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["res"] = svc.oget(s, "res")
-    r = DiskDrbd(**kwargs)
-    svc += r
 
 
 class DiskDrbd(Resource):
@@ -218,7 +211,7 @@ class DiskDrbd(Resource):
         self.start_role('Primary')
 
     def stop(self):
-        if self.standby:
+        if self.is_standby:
             self.stopstandby()
         else:
             self.drbdadm_down()
@@ -229,7 +222,7 @@ class DiskDrbd(Resource):
     def rollback(self):
         if not self.can_rollback:
             return
-        if self.standby:
+        if self.is_standby:
             if not self.can_rollback_role:
                 return
             self.go_secondary()
@@ -286,7 +279,7 @@ class DiskDrbd(Resource):
                 return status
         if role == "Primary":
             return core.status.UP
-        elif role == "Secondary" and self.standby:
+        elif role == "Secondary" and self.is_standby:
             return core.status.STDBY_UP
         else:
             return core.status.WARN

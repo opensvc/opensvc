@@ -11,6 +11,9 @@ sys.path.insert(0, pathlib)
 
 from env import Env
 import core.objects.svcdict
+from utilities.drivers import load_drivers
+
+load_drivers(core.objects.svcdict.SECTIONS + core.objects.svcdict.DATA_SECTIONS)
 
 
 def generate_examples(fmt="text"):

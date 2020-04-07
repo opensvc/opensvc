@@ -16,7 +16,6 @@ from .. import \
     KW_SCSIRESERV
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import qcall
 
@@ -41,11 +40,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerLdom(**kwargs)
-    svc += r
 
 
 class ContainerLdom(BaseContainer):

@@ -17,8 +17,8 @@ from .. import \
 from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 from utilities.proc import justcall, qcall, which
 
 DRIVER_GROUP = "container"
@@ -36,12 +36,6 @@ KEYWORDS = [
         "at": True,
         "provisioning": True,
         "text": "The ip name or addr used to create the SRP container."
-    },
-    {
-        "keyword": "rootpath",
-        "at": True,
-        "provisioning": True,
-        "text": "The path of the SRP container root filesystem."
     },
     KW_START_TIMEOUT,
     KW_STOP_TIMEOUT,
@@ -61,19 +55,21 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerSrp(**kwargs)
-    svc += r
-
 
 class ContainerSrp(BaseContainer):
-    def __init__(self, guestos="HP-UX", **kwargs):
+    def __init__(self, guestos="HP-UX", prm_cores=1, ip=None, **kwargs):
         super(ContainerSrp, self).__init__(type="container.srp", guestos=guestos, **kwargs)
-        self.runmethod = ['srp_su', self.name, 'root', '-c']
-        self.rootpath = os.path.join(os.sep, 'var', 'hpsrp', self.name)
+        self.prm_cores = prm_cores
+        self.raw_ip = ip
         self.need_start = []
+
+    @lazy
+    def rootpath(self):
+        return os.path.join(os.sep, 'var', 'hpsrp', self.name)
+
+    @lazy
+    def runmethod(self):
+        return ['srp_su', self.name, 'root', '-c']
 
     def files_to_sync(self):
         return [self.export_file]
@@ -304,12 +300,7 @@ class ContainerSrp(BaseContainer):
 
     @lazy
     def ip(self):
-        ip = self.oget("ip")
-        return self.lookup(ip)
-
-    @lazy
-    def prm_cores(self):
-        return self.oget("prm_cores")
+        return self.lookup(self.raw_ip)
 
     def lookup(self, ip):
         if ip is None:

@@ -4,7 +4,6 @@ import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 from utilities.subsystems.gce import GceMixin
@@ -79,19 +78,18 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["names"] = svc.oget(s, "names")
-    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
-    r = DiskGce(**kwargs)
-    svc += r
-
 
 class DiskGce(BaseDisk, GceMixin):
-    def __init__(self, names=None, gce_zone=None, **kwargs):
+    def __init__(self, names=None, gce_zone=None, description=None, image=None, image_project=None, size=None, source_snapshot=None, disk_type=None, **kwargs):
         BaseDisk.__init__(self, type="disk.gce", **kwargs)
         self.names = names or set()
         self.gce_zone = gce_zone
+        self.description = description
+        self.image = image
+        self.image_project = image_project
+        self.size = size
+        self.source_snapshot = source_snapshot
+        self.disk_type = disk_type
         self.label = self.fmt_label()
 
     def get_disk_names(self, refresh=False):
@@ -260,43 +258,23 @@ class DiskGce(BaseDisk, GceMixin):
             self.log.info("gce disk name %s already provisioned" % name)
             return
 
-        size = self.oget("size")
-        size = str(convert_size(size, _to="MB"))+'MB'
+        size = str(convert_size(self.size, _to="MB"))+'MB'
 
         cmd = ["gcloud", "compute", "disks", "create", "-q",
                name,
                "--size", size,
                "--zone", self.gce_zone]
 
-        try:
-            description = self.svc.conf_get(self.rid, "description")
-            cmd += ["--description", description]
-        except:
-            pass
-
-        try:
-            image = self.svc.conf_get(self.rid, "image")
-            cmd += ["--image", image]
-        except:
-            pass
-
-        try:
-            source_snapshot = self.svc.conf_get(self.rid, "source_snapshot")
-            cmd += ["--source-snapshot", source_snapshot]
-        except:
-            pass
-
-        try:
-            image_project = self.svc.conf_get(self.rid, "image_project")
-            cmd += ["--image-project", image_project]
-        except:
-            pass
-
-        try:
-            disk_type = self.svc.conf_get(self.rid, "disk_type")
-            cmd += ["--type", disk_type]
-        except:
-            pass
+        if self.description:
+            cmd += ["--description", self.description]
+        if self.image:
+            cmd += ["--image", self.image]
+        if self.source_snapshot:
+            cmd += ["--source-snapshot", self.source_snapshot]
+        if self.image_project:
+            cmd += ["--image-project", self.image_project]
+        if self.disk_type:
+            cmd += ["--type", self.disk_type]
 
         self.vcall(cmd)
 

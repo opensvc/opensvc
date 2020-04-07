@@ -6,8 +6,8 @@ import drivers.array.nexenta as array_driver
 
 from .. import Sync, notify
 from env import Env
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "nexenta"
@@ -46,37 +46,21 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = {}
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["path"] = svc.oget(s, "path")
-    kwargs["reversible"] = svc.oget(s, "reversible")
-    filers = {}
-    for n in svc.nodes | svc.drpnodes:
-        filers[n] = svc.oget(s, "filer", impersonate=n)
-    kwargs["filers"] = filers
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncNexenta(**kwargs)
-    svc += r
-
 
 class SyncNexenta(Sync):
     def __init__(self,
                  name=None,
                  path=None,
-                 filers=None,
+                 filer=None,
                  reversible=False,
                  **kwargs):
         super(SyncNexenta, self).__init__(type="sync.nexenta", **kwargs)
-        if filers is None:
-            filers = {}
         self.pausable = False
-        self.label = "nexenta autosync %s"%name
+        self.label = "nexenta autosync %s" % name
         self.autosync = name
-        self.filers = filers
         self.path = path
         self.reversible = reversible
-        self.filer = filers[Env.nodename]
+        self.filer = filer
         self.master = None
         self.slave = None
         self.ts = None
@@ -90,6 +74,13 @@ class SyncNexenta(Sync):
             super(SyncNexenta, self).__str__(),
             self.autosync
         )
+
+    @lazy
+    def filers(self):
+        data = {}
+        for n in self.svc.nodes | self.svc.drpnodes:
+            data[n] = self.oget("filer", impersonate=n)
+        return data
 
     def can_sync(self, target=None):
         try:

@@ -132,24 +132,25 @@ class BaseContainer(Resource):
         self.stop_timeout = stop_timeout
         self.osvc_root_path = osvc_root_path
         self.sshbin = '/usr/bin/ssh'
-        try:
-            self.name = name
-        except AttributeError:
-            # name is a lazy prop of the child class
-            pass
-        try:
-            self.label = name
-        except AttributeError:
-            # label is a lazy prop of the child class
-            pass
+        self.raw_name = name
         self.guestos = guestos
         if guestos is not None:
             self.guestos = guestos.lower()
-        if self.guestos == "windows":
-            self.runmethod = None
-        else:
-            self.runmethod = Env.rsh.split() + [name]
         self.booted = False
+
+    @lazy
+    def name(self):
+        return self.raw_name or self.svc.name
+
+    @lazy
+    def label(self):  # pylint: disable=method-hidden
+        return self.name
+
+    @lazy
+    def runmethod(self):
+        if self.guestos == "windows":
+            return
+        return Env.rsh.split() + [self.name]
 
     def _info(self):
         """

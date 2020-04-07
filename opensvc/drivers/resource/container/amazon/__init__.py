@@ -22,7 +22,7 @@ from core.resource import Resource
 from env import Env
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
-from core.objects.builder import init_kwargs, container_kwargs
+from utilities.lazy import lazy
 from utilities.proc import justcall
 
 
@@ -51,18 +51,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
-    kwargs["key_name"] = svc.oget(s, "key_name")
-
-    # provisioning keywords
-    kwargs["image_id"] = svc.oget(s, "image_id")
-    kwargs["size"] = svc.oget(s, "size")
-    kwargs["subnet"] = svc.oget(s, "subnet")
-    r = ContainerAmazon(**kwargs)
-    svc += r
 
 class ContainerAmazon(BaseContainer):
     save_timeout = 240
@@ -76,12 +64,15 @@ class ContainerAmazon(BaseContainer):
                  **kwargs):
         super(ContainerAmazon, self).__init__(type="container.amazon", **kwargs)
         self.cloud_id = cloud_id
-        self.save_name = "%s.save" % self.name
         self.size_id = size
         self.image_id = image_id
         self.key_name = key_name
         self.subnet_name = subnet
         self.addr = None
+
+    @lazy
+    def save_name(self):
+        return "%s.save" % self.name
 
     def keyfile(self):
         kf = [os.path.join(Env.paths.pathetc, self.key_name+'.pem'),

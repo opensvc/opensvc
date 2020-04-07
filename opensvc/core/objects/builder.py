@@ -12,65 +12,36 @@ from utilities.storage import Storage
 
 def get_tags(svc, section):
     try:
-        s = svc.oget(section, "tags")
-    except ValueError as exc:
-        s = set()
-    return s
+        return svc.oget(section, "tags")
+    except ValueError:
+        # Raised by the kwstore when the keyword is not valid in
+        # the section.
+        # Data resources for example don't have a tags keyword.
+        return set()
+
+def get_encap(svc, section):
+    try:
+        return svc.oget(section, "encap")
+    except ValueError:
+        # Raised by the kwstore when the keyword is not valid in
+        # the section.
+        # Data resources for example don't have a tags keyword.
+        return False
 
 def get_optional(svc, section):
-    if "noaction" in get_tags(svc, section):
-        return True
     return svc.oget(section, "optional")
 
 def get_monitor(svc, section, impersonate=None):
     return svc.oget(section, "monitor", impersonate=impersonate)
 
-def get_provision(svc, section):
-    return svc.oget(section, "provision")
-
-def get_unprovision(svc, section):
-    return svc.oget(section, "unprovision")
-
-def get_encap(svc, section):
-    try:
-        return svc.oget(section, "encap")
-    except ValueError as exc:
-        return False
-
-def get_shared(svc, section):
-    return svc.oget(section, "shared")
-
-def get_rcmd(svc, section):
-    return svc.oget(section, "rcmd")
-
 def get_subset(svc, section, impersonate=None):
     return svc.oget(section, "subset", impersonate=impersonate)
-
-def get_osvc_root_path(svc, section):
-    return svc.oget(section, "osvc_root_path")
 
 def get_restart(svc, section, impersonate=None):
     return svc.oget(section, "restart", impersonate=impersonate)
 
 def get_disabled(svc, section, impersonate=None):
     return svc.oget(section, "disable", impersonate=impersonate)
-
-def get_promote_rw(svc, section):
-    try:
-        return svc.oget(section, "promote_rw")
-    except ValueError as exc:
-        return False
-
-def get_standby(svc, section):
-    try:
-        return svc.conf_get(section, "standby")
-    except ex.OptNotFound as exc:
-        # backward compat with always_on
-        try:
-            return standby_from_always_on(svc, section)
-        except ex.OptNotFound:
-            pass
-        return exc.default
 
 def base_kwargs(svc, s):
     """
@@ -84,23 +55,6 @@ def base_kwargs(svc, s):
         "optional": get_optional(svc, s),
     }
 
-def init_kwargs(svc, s):
-    return {
-        "rid": s,
-        "subset": get_subset(svc, s),
-        "tags": get_tags(svc, s),
-        "standby": get_standby(svc, s),
-        "disabled": get_disabled(svc, s),
-        "optional": get_optional(svc, s),
-        "monitor": get_monitor(svc, s),
-        "skip_provision": not get_provision(svc, s),
-        "skip_unprovision": not get_unprovision(svc, s),
-        "restart": get_restart(svc, s),
-        "shared": get_shared(svc, s),
-        "encap": get_encap(svc, s),
-        "promote_rw": get_promote_rw(svc, s),
-    }
-
 def sync_kwargs(svc, s):
     """
     Common kwargs for all sync drivers.
@@ -111,37 +65,9 @@ def sync_kwargs(svc, s):
     kwargs["schedule"] = svc.oget(s, "schedule")
     return kwargs
 
-def container_kwargs(svc, s, default_name="name"):
-    """
-    Common kwargs for all container drivers.
-    """
-    kwargs = {}
-    kwargs["osvc_root_path"] = get_osvc_root_path(svc, s)
-
-    try:
-        kwargs["name"] = svc.conf_get(s, "name")
-    except ex.OptNotFound as exc:
-        if default_name is None:
-            kwargs["name"] = exc.default
-        else:
-            kwargs["name"] = svc.name
-
-    kwargs["guestos"] = svc.oget(s, "guestos")
-    kwargs["start_timeout"] = svc.oget(s, "start_timeout")
-    kwargs["stop_timeout"] = svc.oget(s, "stop_timeout")
-    return kwargs
-
-def standby_from_always_on(svc, section):
-    always_on_opt = svc.conf_get(section, "always_on")
-    if Env.nodename in always_on_opt:
-        return True
-    if "nodes" in always_on_opt and Env.nodename in svc.nodes:
-        return True
-    if "drpnodes" in always_on_opt and Env.nodename in svc.drpnodes:
-        return True
-    return False
-
 def add_resource(svc, driver_group, s):
+    if s == "sync#i0":
+        return
     if driver_group == "pool":
         driver_group = "zpool"
         match = "[z]{0,1}pool#"
@@ -190,10 +116,25 @@ def add_resource(svc, driver_group, s):
     if s in svc.resources_by_id:
         return
 
-    if not hasattr(mod, "adder"):
-        raise ImportError("%s returned by load_driver(%s, %s) does not have a adder" % (mod, driver_group, driver_basename))
+    kwargs = svc.section_kwargs(s)
+    kwargs.update(svc.section_kwargs(s, rtype=mod.DRIVER_BASENAME))
+    kwargs["rid"] = s
+    try:
+        del kwargs["type"]
+    except KeyError:
+        pass
+    svc += driver_class(mod)(**kwargs)
 
-    mod.adder(svc, s)
+def driver_class(mod):
+    try:
+        classname = mod.DRIVER_GROUP.capitalize()
+    except AttributeError:
+        return
+    try:
+        classname += mod.DRIVER_BASENAME.capitalize()
+    except AttributeError:
+        pass
+    return getattr(mod, classname)
 
 def add_mandatory_syncs(svc):
     """
@@ -273,7 +214,7 @@ def add_resources(svc):
         "vhost",
         "route",
         "certificate",
-        "hash_policy",
+        "hashpolicy",
     ]
 
     for restype in ordered_restypes:

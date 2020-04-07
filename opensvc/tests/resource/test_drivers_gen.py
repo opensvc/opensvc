@@ -57,7 +57,7 @@ SCENARIOS = [
     #  disk.scsireserv has its own test file
     ('disk.vdisk', 'DiskVdisk', {'name': 'name'}, 'disk.vdisk'),
     ('disk.vxvol', 'DiskVxvol', {}, 'disk.vxvol'),
-    ('disk.zpool', 'ZpoolDisk', {'name': 'pool1'}, 'disk.zpool'),
+    ('disk.zpool', 'DiskZpool', {'name': 'pool1'}, 'disk.zpool'),
     ('disk.zvol', 'DiskZvol', {'name': 'zvol'}, 'disk.zvol'),
 
     ('expose.envoy', 'ExposeEnvoy', {'rid': '#1', 'port': 8000, 'listener_port': 9000}, 'expose.envoy'),
@@ -79,7 +79,7 @@ SCENARIOS = [
     ('fs.xfs', 'FsXfs', {}, 'fs'),
     #  fs.zfs has its own test file
 
-    ('hashpolicy.envoy', 'HashpolicyEnvoy', {'rid': '#1'}, 'hash_policy.envoy'),
+    ('hashpolicy.envoy', 'HashpolicyEnvoy', {'rid': '#1'}, 'hashpolicy.envoy'),
 
     ('ip', 'Ip', {'rid': '#1'}, 'ip'),
     ('ip.amazon', 'IpAmazon', {'rid': '#1'}, 'ip.amazon'),

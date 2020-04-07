@@ -20,7 +20,6 @@ from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
 from utilities.storage import Storage
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 
@@ -66,21 +65,23 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerLxd(**kwargs)
-    svc += r
-
 
 class ContainerLxd(BaseContainer):
     refresh_provisioned_on_unprovision = True
 
-    def __init__(self, **kwargs):
+    def __init__(self, launch_image=None, launch_options=None, **kwargs):
         super(ContainerLxd, self).__init__(type="container.lxd", **kwargs)
-        self.runmethod = ['lxc', 'exec', self.name, '--']
         self.getaddr = self.dummy
-        self.label = "lxd %s" % self.name if self.name else "<undefined>"
+        self.launch_image = None
+        self.launch_options = []
+
+    @lazy
+    def label(self):  # pylint: disable=method-hidden
+        return "lxd %s" % self.name if self.name else "<undefined>"
+
+    @lazy
+    def runmethod(self):
+        return ['lxc', 'exec', self.name, '--']
 
     def files_to_sync(self):
         return ["/var/lib/lxd/containers/"+self.name]
@@ -350,9 +351,7 @@ class ContainerLxd(BaseContainer):
     def provisioner(self):
         if self.has_it():
             return
-        image = self.oget("launch_image")
-        options = self.oget("launch_options")
-        cmd = ["/usr/bin/lxc", "launch", image] + options + [self.name]
+        cmd = ["/usr/bin/lxc", "launch", self.launch_image] + self.launch_options + [self.name]
         ret, out, err = self.vcall(cmd, stdin=PIPE)
         if ret != 0:
             raise ex.Error

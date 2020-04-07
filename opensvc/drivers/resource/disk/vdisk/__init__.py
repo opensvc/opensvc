@@ -6,8 +6,8 @@ import core.exceptions as ex
 from .. import BASE_KEYWORDS
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vdisk"
@@ -31,31 +31,15 @@ KEYS.register_driver(
     deprecated_sections=DEPRECATED_SECTIONS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    devpath = {}
-
-    for attr, val in svc.cd[s].items():
-        if "path@" in attr:
-            devpath[attr.replace("path@", "")] = val
-
-    if len(devpath) == 0:
-        svc.log.error("path@node must be set in section %s"%s)
-        return
-
-    kwargs["devpath"] = devpath
-    r = DiskVdisk(**kwargs)
-    svc += r
-
 
 class DiskVdisk(Resource):
-    def __init__(self, name=None, devpath=None, **kwargs):
+    def __init__(self, name=None, path=None, **kwargs):
         super(DiskVdisk, self).__init__(type="disk.vdisk", **kwargs)
         if devpath is None:
             devpath = {}
         self.name = name
         self.label = "vdisk %s" % self.name
-        self.devpath = devpath
+        self.devpath = path
 
     def __str__(self):
         return "%s name=%s" % (
@@ -63,12 +47,19 @@ class DiskVdisk(Resource):
             self.name
         )
 
+    @lazy
+    def devpaths(self):
+        data = {}
+        for n in self.svc.nodes | self.svc.drpnodes:
+            data[n] = self.oget("path", impersonate=n)
+        return data
+
     def sub_devs(self):
-        return self.devpath.keys()
+        return self.devpaths.keys()
 
     def remap(self):
-        path = self.devpath[Env.nodename]
-        paths = set(self.devpath.values()) - set(self.devpath[Env.nodename])
+        path = self.devpaths[Env.nodename]
+        paths = set(self.devpaths.values()) - set(self.devpaths[Env.nodename])
         from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
         try:

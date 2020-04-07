@@ -5,11 +5,11 @@ import core.exceptions as ex
 from utilities.files import protected_mount, getmount
 from utilities.mounts.aix import Mounts
 from utilities.proc import qcall
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
 
 def try_umount(self):
     cmd = ['umount', self.mount_point]

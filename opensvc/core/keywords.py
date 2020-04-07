@@ -20,6 +20,7 @@ class KeyInvalidValue(Exception):
 class Keyword(object):
     def __init__(self, section, keyword,
                  rtype=None,
+                 protoname=None,
                  required=False,
                  generic=False,
                  at=False,
@@ -36,6 +37,7 @@ class Keyword(object):
                  provisioning=False):
         if depends is None:
             depends = []
+        self.protoname = protoname or keyword
         self.section = section
         self.keyword = keyword
         if rtype is None or isinstance(rtype, list):
@@ -62,6 +64,8 @@ class Keyword(object):
             self.example = "100m"
         elif self.convert == "duration":
             self.example = "1h"
+        elif self.convert in ("boolean", "tristate"):
+            self.example = "false"
         else:
             self.example = "foo"
 
@@ -238,6 +242,7 @@ class Section(object):
         self.top = top
         self.keywords = []
         self.sigs = []
+        self.rtypes = set()
 
     def __repr__(self):
         return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
@@ -253,6 +258,12 @@ class Section(object):
             return self
         self.keywords.append(o)
         self.sigs.append(sig)
+        if isinstance(o.rtype, (list, tuple, set)):
+            for rt in o.rtype:
+                if rt is not None:
+                    self.rtypes.add(rt)
+        elif o.rtype is not None:
+            self.rtypes.add(o.rtype)
         return self
 
     def dump(self):
@@ -351,17 +362,30 @@ class Section(object):
                 f.write(s)
         return s
 
+    def getallkeys(self, rtype=None):
+        if rtype is None:
+            return [k for k in self.keywords if k.rtype is None]
+        elif rtype in self.rtypes:
+            return [k for k in self.keywords if k.rtype and rtype in k.rtype]
+        else:
+            # non-strict rtype candidates. ex: fs.vfat falls back to fs
+            return [k for k in self.keywords if k.rtype == ""]
+
     def getkeys(self, rtype=None):
         if rtype is None:
             return [k for k in self.keywords if k.rtype is None and not k.provisioning]
-        else:
+        elif rtype in self.rtypes:
             return [k for k in self.keywords if k.rtype and rtype in k.rtype and not k.provisioning]
+        else:
+            return [k for k in self.keywords if k.rtype == "" and not k.provisioning]
 
     def getprovkeys(self, rtype=None):
         if rtype is None:
             return [k for k in self.keywords if k.rtype is None and k.provisioning]
-        else:
+        elif rtype in self.rtypes:
             return [k for k in self.keywords if k.rtype and rtype in k.rtype and k.provisioning]
+        else:
+            return [k for k in self.keywords if k.rtype == "" and k.provisioning]
 
     def getkey(self, keyword, rtype=None):
         if '@' in keyword:
@@ -370,7 +394,11 @@ class Section(object):
                 return
             keyword, _ = l
         if rtype:
-            fkey = ".".join((self.section, rtype, keyword))
+            if rtype not in self.rtypes:
+                rtype = ""
+                fkey = ".".join((self.section, keyword))
+            else:
+                fkey = ".".join((self.section, rtype, keyword))
             if self.top is not None and fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
                 if keyword is None:
@@ -480,7 +508,7 @@ class KeywordStore(dict):
             modname = mod.__name__
         if modname in self.modules:
             # already merged
-            return self
+            return
         self.modules.add(modname)
         kwargs = {
             "name": modname,
@@ -631,7 +659,7 @@ class KeywordStore(dict):
         """
         if section not in self.sections:
             return []
-        return sorted(self.sections[section].getkeys(rtype))
+        return sorted(self.sections[section].getallkeys(rtype))
 
     def section_kwargs(self, cat, rtype=None):
         kwargs = {}

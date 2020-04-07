@@ -9,6 +9,7 @@ def driver_import(*args, **kwargs):
         return _driver_import(*args, **kwargs)
     except ImportError as exc:
         kwargs["head"] = "site-opensvc.drivers"
+        kwargs["initial_modname"] = "drivers." + ".".join(args)
         return _driver_import(*args, **kwargs)
 
 def _driver_import(*args, **kwargs):
@@ -50,8 +51,8 @@ def _driver_import(*args, **kwargs):
 
     mod = import_mod(modname)
     if mod:
-        if args[0] == "resource" and not hasattr(mod, "adder"):
-            raise ImportError("no module found: %s" % initial_modname)
+        if not hasattr(mod, "DRIVER_BASENAME") and "drivers.resource." in mod.__name__:
+            raise ImportError("module %s does not set DRIVER_BASENAME" % mod.__file__)
         return mod
     if fallback and len(args) > 2:
         args = args[:-1]
@@ -61,7 +62,7 @@ def _driver_import(*args, **kwargs):
 
 
 def iter_drivers(groups=None):
-    groups = groups or [""]
+    groups = groups or []
     for group in groups:
         try:
             package = importlib.import_module("drivers.resource."+group)
@@ -70,5 +71,12 @@ def iter_drivers(groups=None):
         for importer, modname, ispkg in pkgutil.iter_modules(package.__path__):
             if not ispkg:
                 continue
-            yield driver_import("resource", group, modname)
+            try:
+                yield driver_import("resource", group, modname)
+            except ImportError:
+                continue
+
+def load_drivers(groups=None):
+    for mod in iter_drivers(groups):
+        pass
 

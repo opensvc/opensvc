@@ -10,7 +10,6 @@ from .. import \
     KW_GATEWAY, \
     COMMON_KEYWORDS
 from env import Env
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 from utilities.subsystems.gce import GceMixin
@@ -43,20 +42,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    """
-    Add a resource instance to the object, parsing parameters
-    from a configuration section dictionnary.
-    """
-    kwargs = init_kwargs(svc, s)
-    kwargs["ipname"] = svc.oget(s, "ipname")
-    kwargs["ipdev"] = svc.oget(s, "ipdev")
-    kwargs["routename"] = svc.oget(s, "routename")
-    kwargs["gce_zone"] = svc.oget(s, "gce_zone")
-    kwargs["wait_dns"] = svc.oget(s, "wait_dns")
-    r = IpGce(**kwargs)
-    svc += r
 
 
 class IpGce(Ip, GceMixin):

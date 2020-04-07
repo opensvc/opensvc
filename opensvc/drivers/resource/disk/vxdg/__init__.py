@@ -11,7 +11,6 @@ import core.exceptions as ex
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from utilities.lazy import lazy
-from core.objects.builder import init_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, qcall, which
 
@@ -45,20 +44,16 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["name"] = svc.oget(s, "name")
-    r = DiskVxdg(**kwargs)
-    svc += r
-
 
 class DiskVxdg(BaseDisk):
-    """ basic Veritas Volume group resource
     """
-    def __init__(self, **kwargs):
+    Veritas Volume group resource
+    """
+    def __init__(self, pvs=None, **kwargs):
         super(DiskVxdg, self).__init__(type='disk.vxdg', **kwargs)
         self.label = "vxdg %s" % self.name
         self.sub_devs_cache = set()
+        self.pvs = pvs or None
 
     def vxprint(self):
         cmd = ["vxprint", "-g", self.name]
@@ -303,7 +298,9 @@ class DiskVxdg(BaseDisk):
         return data
 
     def provisioner(self):
-        self.pvs = self.oget("pvs")
+        if not self.pvs:
+            # lazy reference
+            self.pvs = self.oget("pvs")
 
         if self.pvs is None:
             # lazy reference not resolvable

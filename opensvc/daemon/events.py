@@ -49,21 +49,19 @@ EVENTS = {
 
 
 def doc():
-    print("Daemon Events")
-    print("=============")
-    print("")
+    buff = "Daemon Events\n"
+    buff += "=============\n\n"
     for (eid, reason), msg in sorted(EVENTS.items(), key=lambda x: x[0][0] + x[0][1] if x[0][1] else ""):
         if reason:
             title = "Id ``%s``, Reason ``%s``" % (eid, reason)
         else:
             title = "Id ``%s``" % eid
         length = len(title)
-        print(title)
-        print("-" * length)
-        print("")
-        print(msg)
-        print("")
+        buff += "%s\n" % title
+        buff += "-" * length + "\n\n"
+        buff += "%s\n\n" % msg
+    return buff
 
 
 if __name__ == "__main__":
-    doc()
+    print(doc())

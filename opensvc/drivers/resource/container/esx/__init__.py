@@ -5,8 +5,6 @@ import utilities.ping
 
 from .. import \
     BaseContainer, \
-    KW_SNAP, \
-    KW_SNAPOF, \
     KW_START_TIMEOUT, \
     KW_STOP_TIMEOUT, \
     KW_NO_PREEMPT_ABORT, \
@@ -17,15 +15,12 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import which
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "esx"
 KEYWORDS = [
-    KW_SNAP,
-    KW_SNAPOF,
     KW_START_TIMEOUT,
     KW_STOP_TIMEOUT,
     KW_NO_PREEMPT_ABORT,
@@ -43,12 +38,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerEsx(**kwargs)
-    svc += r
 
 
 class ContainerEsx(BaseContainer):
