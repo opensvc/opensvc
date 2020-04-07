@@ -3,6 +3,9 @@ import utilities.devices.linux
 
 from .sg import DiskScsireservSg
 
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "scsireserv"
+
 
 class DiskScsireserv(DiskScsireservSg):
     def mangle_devs(self, devs):
