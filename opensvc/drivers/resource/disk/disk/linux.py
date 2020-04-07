@@ -6,7 +6,7 @@ import core.exceptions as ex
 import core.status
 import utilities.devices.linux
 
-from . import DiskDisk as BaseDiskDisk, KEYWORDS, adder as base_adder
+from . import DiskDisk as BaseDiskDisk, KEYWORDS
 from utilities.lazy import lazy
 from env import Env
 from core.objects.svcdict import KEYS
@@ -21,9 +21,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    base_adder(svc, s, mod=DiskDisk)
 
 
 class DiskDisk(BaseDiskDisk):

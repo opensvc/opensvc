@@ -15,8 +15,8 @@ from .. import \
     KW_SCSIRESERV
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
+from utilities.lazy import lazy
 from utilities.proc import justcall, qcall, which
 
 DRIVER_GROUP = "container"
@@ -52,20 +52,24 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerVz(**kwargs)
-    svc += r
 
 class ContainerVz(BaseContainer):
-    def __init__(self, guestos="Linux", **kwargs):
+    def __init__(self, guestos="Linux", rootfs=None, template=None, **kwargs):
         super(ContainerVz, self).__init__(type="container.vz", guestos=guestos, **kwargs)
-        self._cf = os.path.join(os.sep, "etc", "vz", "conf", "%s.conf" % self.name)
-        self.runmethod = ["vzctl", "exec", self.name]
+        self.rootfs = rootfs
+        self.template = template
+
+    @lazy
+    def runmethod(self):
+        return ["vzctl", "exec", self.name]
+
+    @lazy
+    def _cf(self):
+        return os.path.join(os.sep, "etc", "vz", "conf", "%s.conf" % self.name)
 
     def __str__(self):
         return "%s name=%s" % (Resource.__str__(self), self.name)
+
     def files_to_sync(self):
         return [self._cf]
 

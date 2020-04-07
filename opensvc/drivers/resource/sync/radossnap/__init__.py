@@ -4,7 +4,6 @@ import json
 import core.exceptions as ex
 import core.status
 from .. import Sync, notify
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
@@ -25,15 +24,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["client_id"] = svc.oget(s, "client_id")
-    kwargs["keyring"] = svc.oget(s, "keyring")
-    kwargs["images"] = svc.oget(s, "images")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncRadossnap(**kwargs)
-    svc += r
 
 
 class SyncRadossnap(Sync):

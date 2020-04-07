@@ -17,7 +17,6 @@ from .. import \
 from drivers.resource.disk.hpvm import DiskHpvm
 from env import Env
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "container"
@@ -41,22 +40,16 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    r = ContainerHpvm(**kwargs)
-    svc += r
-
 
 class ContainerHpvm(BaseContainer):
     def __init__(self, guestos="HP-UX", **kwargs):
         super(ContainerHpvm, self).__init__(type="container.hpvm", guestos=guestos, **kwargs)
+
+    def on_add(self):
         self.vg = DiskHpvm(
             rid = 'vmdg#'+self.rid,
             container_name = self.name
         )
-
-    def on_add(self):
         self.vg.svc = self.svc
 
     def __str__(self):

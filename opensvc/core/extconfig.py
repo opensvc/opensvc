@@ -1463,11 +1463,11 @@ class ExtConfigMixin(object):
             return kwargs
         for keyword in self.kwstore.all_keys(cat, rtype):
             try:
-                kwargs[keyword.keyword] = self.conf_get(section, keyword.keyword, rtype=rtype)
+                kwargs[keyword.protoname] = self.conf_get(section, keyword.keyword, rtype=rtype)
             except ex.RequiredOptNotFound:
                 raise
             except ex.OptNotFound as exc:
-                kwargs[keyword.keyword] = exc.default
+                kwargs[keyword.protoname] = exc.default
         return kwargs
 
     def conf_sections(self, cat=None, cd=None):

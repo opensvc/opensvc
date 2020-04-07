@@ -61,7 +61,7 @@ class BaseFsFlag(Resource):
     def abort_start(self):
         if self.svc.topology != "failover":
             return
-        if self.standby:
+        if self.is_standby:
             return
         try:
             for node in self.svc.nodes:

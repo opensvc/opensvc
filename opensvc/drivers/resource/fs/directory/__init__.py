@@ -6,11 +6,10 @@ import stat
 
 import core.exceptions as ex
 import core.status
+from core.resource import Resource
+from core.objects.svcdict import KEYS
 from utilities.files import protected_dir
 from utilities.lazy import lazy
-from core.resource import Resource
-from core.objects.builder import init_kwargs
-from core.objects.svcdict import KEYS
 from utilities.string import is_string
 
 DRIVER_GROUP = "fs"
@@ -49,38 +48,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs["path"] = svc.oget(s, "path")
-    kwargs["user"] = svc.oget(s, "user")
-    kwargs["group"] = svc.oget(s, "group")
-    kwargs["perm"] = svc.oget(s, "perm")
-    zone = svc.oget(s, "zone")
-
-    if zone is not None:
-        zp = None
-        for r in [r for r in svc.resources_by_id.values() if r.type == "container.zone"]:
-            if r.name == zone:
-                try:
-                    zp = r.zonepath
-                except:
-                    zp = "<%s>" % zone
-                break
-        if zp is None:
-            svc.log.error("zone %s, referenced in %s, not found"%(zone, s))
-            raise ex.Error()
-        kwargs["path"] = zp+"/root"+kwargs["path"]
-        if "<%s>" % zone != zp:
-            kwargs["path"] = os.path.realpath(kwargs["path"])
-
-    r = FsDirectory(**kwargs)
-
-    if zone is not None:
-        r.tags.add(zone)
-        r.tags.add("zone")
-
-    svc += r
-
 
 class FsDirectory(Resource):
     """Define a mount resource
@@ -91,6 +58,7 @@ class FsDirectory(Resource):
                  user=None,
                  group=None,
                  perm=None,
+                 zone=None,
                  **kwargs):
         super(FsDirectory, self).__init__(type="fs.directory", **kwargs)
         self.path = path
@@ -98,6 +66,26 @@ class FsDirectory(Resource):
         self.user = user
         self.group = group
         self.perm = perm
+        self.zone = zone
+
+    def on_add(self):
+        if self.zone is None:
+            return
+        zp = None
+        for r in [r for r in self.svc.resources_by_id.values() if r.type == "container.zone"]:
+            if r.name == self.zone:
+                try:
+                    zp = r.zonepath
+                except:
+                    zp = "<%s>" % self.zone
+                break
+        if zp is None:
+            raise ex.Error("zone %s, referenced in %s, not found" % (self.zone, self.rid))
+        self.path = zp + "/root" + self.path
+        if "<%s>" % self.zone != zp:
+            self.path = os.path.realpath(self.path)
+        self.tags.add(self.zone)
+        self.tags.add("zone")
 
     @lazy
     def label(self): # pylint: disable=method-hidden

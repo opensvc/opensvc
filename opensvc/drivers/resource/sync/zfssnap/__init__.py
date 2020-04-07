@@ -5,7 +5,6 @@ import core.status
 
 from .. import Sync, notify
 from utilities.cache import cache, clear_cache
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 from utilities.subsystems.zfs import Dataset
@@ -51,16 +50,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["name"] = svc.oget(s, "name")
-    kwargs["keep"] = svc.oget(s, "keep")
-    kwargs["recursive"] = svc.oget(s, "recursive")
-    kwargs["dataset"] = svc.oget(s, "dataset")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncZfssnap(**kwargs)
-    svc += r
 
 
 class SyncZfssnap(Sync):

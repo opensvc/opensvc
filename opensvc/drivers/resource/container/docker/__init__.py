@@ -23,7 +23,6 @@ from .. import \
 from utilities.lazy import unset_lazy, lazy
 from core.resource import Resource
 from utilities.converters import print_duration
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, drop_option, has_option, get_option, get_options
 
@@ -280,34 +279,6 @@ ATTR_MAP = {
     },
 }
 
-def adder(svc, s, drv=None):
-    drv = drv or ContainerDocker
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s, default_name=None))
-    kwargs["image"] = svc.oget(s, "image")
-    kwargs["image_pull_policy"] = svc.oget(s, "image_pull_policy")
-    kwargs["run_command"] = svc.oget(s, "command")
-    kwargs["run_args"] = svc.oget(s, "run_args")
-    kwargs["rm"] = svc.oget(s, "rm")
-    kwargs["detach"] = svc.oget(s, "detach")
-    kwargs["entrypoint"] = svc.oget(s, "entrypoint")
-    kwargs["netns"] = svc.oget(s, "netns")
-    kwargs["userns"] = svc.oget(s, "userns")
-    kwargs["pidns"] = svc.oget(s, "pidns")
-    kwargs["ipcns"] = svc.oget(s, "ipcns")
-    kwargs["utsns"] = svc.oget(s, "utsns")
-    kwargs["privileged"] = svc.oget(s, "privileged")
-    kwargs["interactive"] = svc.oget(s, "interactive")
-    kwargs["tty"] = svc.oget(s, "tty")
-    kwargs["volume_mounts"] = svc.oget(s, "volume_mounts")
-    kwargs["environment"] = svc.oget(s, "environment")
-    kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
-    kwargs["configs_environment"] = svc.oget(s, "configs_environment")
-    kwargs["devices"] = svc.oget(s, "devices")
-    r = drv(**kwargs)
-    svc += r
-
-
 def alarm_handler(signum, frame):
     raise KeyboardInterrupt
 
@@ -323,6 +294,7 @@ class ContainerDocker(BaseContainer):
     def __init__(self,
                  name="",
                  type="container.docker",
+                 hostname=None,
                  image=None,
                  image_pull_policy="once",
                  run_command=None,
@@ -352,6 +324,7 @@ class ContainerDocker(BaseContainer):
             **kwargs
         )
         self.user_defined_name = name
+        self.hostname = hostname
         self.image = image
         self.image_pull_policy = image_pull_policy
         self.run_command = run_command
@@ -508,7 +481,7 @@ class ContainerDocker(BaseContainer):
         The container hostname
         """
         try:
-            hostname = self.conf_get("hostname")
+            hostname = self.hostname
         except ex.OptNotFound:
             hostname = ""
         return hostname

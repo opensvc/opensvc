@@ -19,7 +19,6 @@ from .. import \
 from env import Env
 from utilities.lazy import lazy
 from core.resource import Resource
-from core.objects.builder import init_kwargs, container_kwargs
 from core.objects.svcdict import KEYS
 
 try:
@@ -41,6 +40,12 @@ KEYWORDS = [
         "at": True,
         "example": "MyVapp",
         "text": "The Vcloud Virtual App hosting the VM."
+    },
+    {
+        "keyword": "template",
+        "text": "The name of the vcloud template image to derive from.",
+        "required": True,
+        "provisioning": True
     },
     KW_START_TIMEOUT,
     KW_STOP_TIMEOUT,
@@ -64,15 +69,6 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def adder(svc, s):
-    kwargs = init_kwargs(svc, s)
-    kwargs.update(container_kwargs(svc, s))
-    kwargs["cloud_id"] = svc.oget(s, "cloud_id")
-    kwargs["vapp"] = svc.oget(s, "vapp")
-    kwargs["key_name"] = svc.oget(s, "key_name")
-    r = ContainerVcloud(**kwargs)
-    svc += r
-
 
 class ContainerVcloud(BaseContainer):
     save_timeout = 240
@@ -83,14 +79,19 @@ class ContainerVcloud(BaseContainer):
                  size="tiny",
                  key_name=None,
                  shared_ip_group=None,
+                 template=None,
                  **kwargs):
         super(ContainerVcloud, self).__init__(type="container.vcloud", **kwargs)
         self.cloud_id = cloud_id
-        self.save_name = "%s.save" % self.name
         self.size_name = size
         self.key_name = key_name
         self.vapp = vapp
+        self.template = template
         self.shared_ip_group = shared_ip_group
+
+    @lazy
+    def save_name(self):
+        return "%s.save" % self.name
 
     def _vm_perform_power_operation(self, vapp_or_vm_id, operation):
         drv = self.cloud.driver
@@ -159,8 +160,7 @@ class ContainerVcloud(BaseContainer):
         return self.get_image(self.save_name)
 
     def get_template(self):
-        template = self.svc.oget(self.rid, 'template')
-        return self.get_image(template)
+        return self.get_image(self.template)
 
     def get_image(self, name):
         l = self.cloud.driver.list_images()

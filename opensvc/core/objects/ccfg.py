@@ -22,6 +22,6 @@ class Ccfg(BaseSvc):
 
     @lazy
     def full_kwstore(self):
-        from .ccfgdict import full_kwstore
-        return full_kwstore()
+        from .ccfgdict import KEYS
+        return KEYS
 

@@ -2,26 +2,12 @@ import os
 
 import core.exceptions as ex
 import core.status
-from . import \
-    BaseDiskLoop, \
-    adder as base_loop_adder, \
-    KEYWORDS, \
-    DRIVER_GROUP, \
-    DRIVER_BASENAME, \
-    DEPRECATED_SECTIONS
 from core.objects.svcdict import KEYS
 from utilities.proc import call, which
+from . import BaseDiskLoop
 
-KEYS.register_driver(
-    DRIVER_GROUP,
-    DRIVER_BASENAME,
-    name=__name__,
-    keywords=KEYWORDS,
-    deprecated_sections=DEPRECATED_SECTIONS,
-)
-
-def adder(svc, s):
-    base_loop_adder(svc, s, drv=DiskLoop)
+DRIVER_GROUP = "disk"
+DRIVER_BASENAME = "loop"
 
 
 def file_to_loop(f):
@@ -54,26 +40,26 @@ class DiskLoop(BaseDiskLoop):
     def is_up(self):
         """Returns True if the loop group is present and activated
         """
-        self.loop = file_to_loop(self.loopFile)
+        self.loop = file_to_loop(self.loopfile)
         if len(self.loop) == 0:
             return False
         return True
 
     def start(self):
         if self.is_up():
-            self.log.info("%s is already up" % self.loopFile)
+            self.log.info("%s is already up" % self.loopfile)
             return
-        cmd = ['mdconfig', '-a', '-t', 'vnode', '-f', self.loopFile]
+        cmd = ['mdconfig', '-a', '-t', 'vnode', '-f', self.loopfile]
         (ret, out, err) = self.call(cmd, info=True, outlog=False)
         if ret != 0:
             raise ex.Error
-        self.loop = file_to_loop(self.loopFile)
-        self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopFile))
+        self.loop = file_to_loop(self.loopfile)
+        self.log.info("%s now loops to %s" % (', '.join(self.loop), self.loopfile))
         self.can_rollback = True
 
     def stop(self):
         if not self.is_up():
-            self.log.info("%s is already down" % self.loopFile)
+            self.log.info("%s is already down" % self.loopfile)
             return 0
         for loop in self.loop:
             cmd = ['mdconfig', '-d', '-u', loop.strip('md')]

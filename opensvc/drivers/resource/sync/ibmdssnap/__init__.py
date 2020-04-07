@@ -5,7 +5,6 @@ import core.status
 import drivers.array.ibmds as array_driver
 from .. import Sync, notify
 from utilities.converters import print_duration
-from core.objects.builder import sync_kwargs
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
@@ -50,16 +49,6 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
-
-def adder(svc, s):
-    kwargs = {}
-    kwargs["pairs"] = svc.oget(s, "pairs")
-    kwargs["array"] = svc.oget(s, "array")
-    kwargs["bgcopy"] = svc.oget(s, "bgcopy")
-    kwargs["recording"] = svc.oget(s, "recording")
-    kwargs.update(sync_kwargs(svc, s))
-    r = SyncIbmdssnap(**kwargs)
-    svc += r
 
 
 class SyncIbmdssnap(Sync):

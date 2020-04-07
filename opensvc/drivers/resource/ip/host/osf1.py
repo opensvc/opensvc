@@ -1,14 +1,14 @@
 import utilities.ping
 
-from . import Ip as ParentIp, adder as parent_adder
+from .. import Ip
 from utilities.net.converters import to_cidr, to_dotted
 
-def adder(svc, s):
-    parent_adder(svc, s, drv=Ip)
+DRIVER_GROUP = "ip"
+DRIVER_BASENAME = "host"
 
-class Ip(ParentIp):
+class IpHost(Ip):
     def check_ping(self, count=1, timeout=5):
-        self.log.info("checking %s availability"%self.addr)
+        self.log.info("checking %s availability", self.addr)
         return utilities.ping.check_ping(self.addr, count=count, timeout=timeout)
 
     def arp_announce(self):
@@ -16,15 +16,15 @@ class Ip(ParentIp):
 
     def startip_cmd(self):
         if ':' in self.addr:
-            cmd = ['ifconfig', self.ipdev, 'inet6', 'alias', '/'.join([self.addr, to_cidr(self.mask)])]
+            cmd = ['ifconfig', self.ipdev, 'inet6', '/'.join([self.addr, to_cidr(self.netmask)]), 'add']
         else:
-            cmd = ['ifconfig', self.ipdev, self.addr, 'netmask', to_dotted(self.mask), 'alias']
+            cmd = ['ifconfig', self.ipdev, 'inet', 'alias', self.addr, 'netmask', to_dotted(self.netmask)]
         return self.vcall(cmd)
 
     def stopip_cmd(self):
         if ':' in self.addr:
             cmd = ['ifconfig', self.ipdev, 'inet6', self.addr, 'delete']
         else:
-            cmd = ['ifconfig', self.ipdev, self.addr, 'delete']
+            cmd = ['ifconfig', self.ipdev, 'inet', '-alias', self.addr]
         return self.vcall(cmd)
 

@@ -3,11 +3,10 @@ import os
 import core.exceptions as ex
 from utilities.lazy import lazy
 from utilities.mounts.windows import Mounts
-from . import BaseFs, adder as base_adder
+from . import BaseFs
 
-
-def adder(svc, s):
-    base_adder(svc, s, drv=Fs)
+DRIVER_GROUP = "fs"
+DRIVER_BASENAME = ""
 
 def diskpartfile_name(self):
     return os.path.join(self.var_d, 'diskpart')
