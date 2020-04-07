@@ -76,7 +76,7 @@ class Handler(handler.Handler, mixinObjectCreate.ObjectCreateMixin):
             return
         if not options.data:
             return
-        errors = thr.rbac_create_data(options.data, **kwargs)
+        errors = self.rbac_create_data(payload=options.data, thr=thr, **kwargs)
         if errors:
             raise HTTP(403, errors)
 
