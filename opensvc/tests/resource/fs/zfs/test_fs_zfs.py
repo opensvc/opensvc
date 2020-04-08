@@ -6,8 +6,8 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'Linux', 'SunOS', 'FreeBSD'}
 
 SCENARIOS = [
-    ('fs.zfs', 'FsZfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop',
-                         'mount_options': None, 'device': '/dev/zvol/...'},
+    ('fs.zfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop',
+                'mount_options': None, 'device': '/dev/zvol/...'},
      'fs'),
 ]
 
@@ -19,7 +19,7 @@ SCENARIOS = [
 class TestDriverFsZfsInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
-        assert create_driver_resource(sysname, scenario).type == scenario[3]
+        assert create_driver_resource(sysname, scenario).type == scenario[2]
 
     @staticmethod
     def test_has_mandatory_methods(create_driver_resource, sysname, scenario):
