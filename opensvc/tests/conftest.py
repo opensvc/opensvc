@@ -86,7 +86,8 @@ def create_driver_resource(mock_sysname):
         driver_name, class_name, kwargs, expected_type = scenario
         mock_sysname(sysname)
         from utilities.drivers import driver_import
-        driver = driver_import('resource', driver_name)
+        args = ["resource"] + driver_name.split(".")
+        driver = driver_import(*args)
         return getattr(driver, class_name)(**kwargs)
 
     return create
