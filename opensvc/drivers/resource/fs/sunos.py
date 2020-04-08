@@ -8,6 +8,7 @@ from utilities.subsystems.zfs import zfs_getprop, zfs_setprop
 from utilities.mounts.sunos import Mounts
 from . import BaseFs
 from utilities.proc import justcall
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "fs"
 DRIVER_BASENAME = ""
@@ -18,7 +19,10 @@ class Fs(BaseFs):
     """
     def __init__(self, **kwargs):
         super(Fs, self).__init__(**kwargs)
-        self.rdevice = self.device.replace('/dsk/', '/rdsk/', 1)
+
+    @lazy
+    def rdevice(self):
+        return self.device.replace('/dsk/', '/rdsk/', 1)
 
     def set_fsck_h(self):
         self.fsck_h = {
