@@ -33,7 +33,7 @@ BASE_RAW_KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "create_char_devices",
         "at": True,
-        "default": False,
+        "default": True,
         "convert": "boolean",
         "text": "On Linux, char devices are not automatically created when devices are discovered. If set to True (the default), the raw resource driver will create and delete them using the raw kernel driver.",
         "example": "false"

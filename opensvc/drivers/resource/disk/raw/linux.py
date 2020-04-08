@@ -24,16 +24,8 @@ KEYS.register_driver(
 
 
 class DiskRaw(BaseDiskRaw):
-    def __init__(self,
-                 devs=None,
-                 create_char_devices=True,
-                 user=None,
-                 group=None,
-                 perm=None,
-                 **kwargs):
-
+    def __init__(self, **kwargs):
         super(DiskRaw, self).__init__(**kwargs)
-        devs = devs or set()
         self.min_raw = 1
         self.sys_devs = {}
 
