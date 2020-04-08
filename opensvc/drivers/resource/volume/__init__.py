@@ -24,6 +24,7 @@ KEYWORDS = [
     },
     {
         "keyword": "type",
+        "protoname": "pooltype",
         "provisioning": True,
         "at": True,
         "required": False,
@@ -106,10 +107,11 @@ class Volume(Resource):
     * rox  Read Only Many
     """
 
-    def __init__(self, name=None, pool=None, size=None, format=True,
-                 access="rwo", secrets=None, configs=None, **kwargs):
+    def __init__(self, name=None, pool=None, pooltype=None, size=None,
+                 format=True, access="rwo", secrets=None, configs=None,
+                 **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
-        self.pooltype = kwargs.get("type")
+        self.pooltype = pooltype
         self.access = access
         self.name = name
         self.pool = pool
@@ -426,11 +428,11 @@ class Volume(Resource):
                         print_size(self.size, unit="B", compact=True),
                         self.format, self.shared)
         pool = self.svc.node.find_pool(poolname=self.pool,
-                                         pooltype=self.pooltype,
-                                         access=self.access,
-                                         size=self.size,
-                                         fmt=self.format,
-                                         shared=self.shared)
+                                       pooltype=self.pooltype,
+                                       access=self.access,
+                                       size=self.size,
+                                       fmt=self.format,
+                                       shared=self.shared)
         if pool is None:
             raise ex.Error("could not find a pool matching criteria")
         pool.log = self.log
