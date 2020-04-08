@@ -73,7 +73,7 @@ class DiskLv(BaseDiskLv):
             raise ex.Error
         self.svc.node.unset_lazy("devtree")
 
-    def is_provisioned(self):
+    def provisioned(self):
         dev = self.get_dev()
         cmd = ["lvdisplay", dev]
         out, err, ret = justcall(cmd)
