@@ -174,6 +174,7 @@ KEYWORDS = [
     },
     {
         "keyword": "command",
+        "protoname": "run_command",
         "at": True,
         "convert": "shlex",
         "text": "The command to execute in the docker container on run.",
