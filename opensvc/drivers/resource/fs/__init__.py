@@ -226,6 +226,9 @@ class BaseFs(Resource):
 
     @lazy
     def device(self):
+        if self._device is None:
+            # lazy ref support, like {<rid>.exposed_devs[<n>]}
+            self._device = self.conf_get("dev")
         if self._device is not None:
             if self.fs_type == "lofs" and not self._device.startswith(os.sep):
                 l = self._device.split("/")
@@ -234,8 +237,7 @@ class BaseFs(Resource):
                     l[0] = vol.mount_point
                     return "/".join(l)
             return self._device
-        # lazy ref support, like {<rid>.exposed_devs[<n>]}
-        return self.dev or self.conf_get("dev")
+        return self._device
 
     @lazy
     def label(self): # pylint: disable=method-hidden
