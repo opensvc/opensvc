@@ -61,9 +61,8 @@ class SyncEvasnap(Sync):
             except TypeError:
                 pass
             except ValueError:
-                raise ex.InitError("invalid pairs format")
-        if not pairs:
-            raise ex.InitError("pairs must be set")
+                pairs = []
+                self.status_log("invalid pairs format")
         self.label = "EVA snapshot %s" % eva_name
         self.eva_name = eva_name
         self.snap_name = snap_name
@@ -235,15 +234,17 @@ class SyncEvasnap(Sync):
         except ex.Error as e:
             self.status_log(str(e))
             return core.status.WARN
+        if not self.pairs:
+            self.status_log("no pairs")
         for pair in self.pairs:
             info_s = self.lun_info(pair['src'])
             info_d = self.lun_info(pair['dst'])
             if info_s is None:
-                errlog.append("snapshot source %s does not exists"%pair['src'])
+                errlog.append("snapshot source %s does not exists" % pair['src'])
                 err |= True
                 continue
             if info_d is None:
-                errlog.append("snapshot %s does not exists"%pair['dst'])
+                errlog.append("snapshot %s does not exists" % pair['dst'])
                 err |= True
                 continue
             if info_s['oxuid'].lower() != info_d['oxuid'].lower():
