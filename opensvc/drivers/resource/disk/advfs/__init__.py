@@ -9,8 +9,7 @@ from core.objects.svcdict import KEYS
 from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
-DRIVER_BASENAME = "vg"
-DRIVER_BASENAME_ALIASES = ["lvm"]
+DRIVER_BASENAME = "advfs"
 KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "name",
@@ -34,27 +33,12 @@ KEYWORDS = BASE_KEYWORDS + [
         "provisioning": True
     },
 ]
-DEPRECATED_KEYWORDS = {
-    "disk.lvm.vgname": "name",
-    "disk.vg.vgname": "name",
-}
-REVERSE_DEPRECATED_KEYWORDS = {
-    "disk.lvm.name": "vgname",
-    "disk.vg.name": "vgname",
-}
-DEPRECATED_SECTIONS = {
-    "vg": ["disk", "vg"],
-}
 
 KEYS.register_driver(
     DRIVER_GROUP,
     DRIVER_BASENAME,
     name=__name__,
     keywords=KEYWORDS,
-    deprecated_sections=DEPRECATED_SECTIONS,
-    deprecated_keywords=DEPRECATED_KEYWORDS,
-    reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
-    driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
 
