@@ -531,10 +531,8 @@ class BaseFs(Resource):
         if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
             return
 
-        if not self.dev:
-            self.dev = self.conf_get("dev")
-        if not self.mnt:
-            self.mnt = self.conf_get("mnt")
+        self.dev = self._device or self.conf_get("dev")
+        self.mnt = self.mount_point or self.conf_get("mnt")
 
         if self.dev is None:
             raise ex.Error("device %s not found. parent resource is down ?" % self.dev)
