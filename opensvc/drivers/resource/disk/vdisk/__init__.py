@@ -35,8 +35,6 @@ KEYS.register_driver(
 class DiskVdisk(Resource):
     def __init__(self, name=None, path=None, **kwargs):
         super(DiskVdisk, self).__init__(type="disk.vdisk", **kwargs)
-        if devpath is None:
-            devpath = {}
         self.name = name
         self.label = "vdisk %s" % self.name
         self.devpath = path
