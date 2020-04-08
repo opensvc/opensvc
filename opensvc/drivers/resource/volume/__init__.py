@@ -109,6 +109,7 @@ class Volume(Resource):
     def __init__(self, name=None, pool=None, size=None, format=True,
                  access="rwo", secrets=None, configs=None, **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
+        self.pooltype = kwargs.get("type")
         self.access = access
         self.name = name
         self.pool = pool
@@ -419,14 +420,13 @@ class Volume(Resource):
                                "non leader instance waited for too long for the "
                                "volume to appear")
             return volume
-        pooltype = self.type
         self.log.info("create new volume %s (pool name: %s, pool type: %s, "
                         "access: %s, size: %s, format: %s, shared: %s)",
-                        self.volname, self.pool, pooltype, self.access,
+                        self.volname, self.pool, self.pooltype, self.access,
                         print_size(self.size, unit="B", compact=True),
                         self.format, self.shared)
         pool = self.svc.node.find_pool(poolname=self.pool,
-                                         pooltype=pooltype,
+                                         pooltype=self.pooltype,
                                          access=self.access,
                                          size=self.size,
                                          fmt=self.format,
