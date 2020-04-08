@@ -81,7 +81,7 @@ SCENARIOS = [
 
     ('hashpolicy.envoy', {'rid': '#1'}, 'hashpolicy.envoy'),
 
-    ('ip', {'rid': '#1'}, 'ip'),
+    ('ip.host', {'rid': '#1'}, 'ip'),
     ('ip.amazon', {'rid': '#1'}, 'ip.amazon'),
     ('ip.cni', {'rid': '#1'}, 'ip.cni'),
     ('ip.crossbow', {'rid': '#1'}, 'ip.crossbow'),
