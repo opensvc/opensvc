@@ -480,8 +480,8 @@ class BaseFs(Resource):
         if "bind" in self.mount_options or self.fs_type in ("bind", "lofs"):
             return
         try:
-            self.dev = self.dev or self.conf_get("dev")
-            self.mnt = self.mnt or self.conf_get("mnt")
+            self.dev = self._device or self.conf_get("dev")
+            self.mnt = self.mount_point or self.conf_get("mnt")
         except ex.OptNotFound:
             return
         if self.dev is None:
