@@ -113,7 +113,7 @@ SCENARIOS = [
     ('sync.symsnap', {'rid': '#1'}, 'sync.symclone'),
     ('sync.symsrdfs', {'rid': '#1'}, 'sync.symsrdfs'),
     ('sync.zfs', {'rid': '#1', 'src': 'tank/a', 'dst': 'tank/b', 'target': ['a']}, 'sync.zfs'),
-    ('sync.zfssnap', {'rid': '#1'}, None),
+    ('sync.zfssnap', {'rid': '#1'}, 'sync.zfssnap'),
 
     ('task.docker', {'rid': '#1'}, 'task.docker'),
     ('task.host', {'rid': '#1'}, 'task.host'),
