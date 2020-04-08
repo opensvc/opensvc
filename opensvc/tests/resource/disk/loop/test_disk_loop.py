@@ -6,7 +6,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD'}
 
 SCENARIOS = [
-    ('disk.loop', 'DiskLoop', {'rid': '#1', 'loopfile': 'loopfile'}, 'disk.loop'),
+    ('disk.loop', {'rid': '#1', 'loopfile': 'loopfile'}, 'disk.loop'),
 ]
 
 
@@ -17,7 +17,7 @@ SCENARIOS = [
 class TestDriverDiskLoopInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
-        assert create_driver_resource(sysname, scenario).type == scenario[3]
+        assert create_driver_resource(sysname, scenario).type == scenario[2]
 
     @staticmethod
     def test_has_mandatory_methods(create_driver_resource, sysname, scenario):

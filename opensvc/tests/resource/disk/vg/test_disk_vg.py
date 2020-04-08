@@ -6,7 +6,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = ['AIX', 'Linux', 'HP-UX']
 
 SCENARIOS = [
-    ('disk.vg', 'DiskVg', {'name': 'vg1'}, 'disk.vg'),
+    ('disk.vg', {'name': 'vg1'}, 'disk.vg'),
 ]
 
 
@@ -17,7 +17,7 @@ SCENARIOS = [
 class TestDriverDiskVgInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
-        assert create_driver_resource(sysname, scenario).type == scenario[3]
+        assert create_driver_resource(sysname, scenario).type == scenario[2]
 
     @staticmethod
     def test_has_mandatory_methods(create_driver_resource, sysname, scenario):
