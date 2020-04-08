@@ -16,7 +16,7 @@ KEYS.register_driver(
 )
 
 
-class NfsShare(Resource):
+class ShareNfs(Resource):
     def __init__(self, path=None, opts=None, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
 
