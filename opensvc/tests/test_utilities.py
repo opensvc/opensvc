@@ -144,25 +144,12 @@ class TestUtilities:
         assert empty_string("fêo") is False
 
     @staticmethod
-    def test_driver_import():
+    def test_driver_import_must_fail_when_driver_is_unknwon():
         """
         driver_import()
         """
-        mod = driver_import("res", "fs", "linux")
-        assert hasattr(mod, "Fs") is True
-        mod = driver_import("res", "fs", "linux", "")
-        assert hasattr(mod, "Fs") is True
-        mod = driver_import("resource", "fs", "linux")
-        assert hasattr(mod, "Fs") is True
-        mod = driver_import("resource", "fs", "xfs")
-        assert hasattr(mod, "FsXfs") is True
-
-        try:
-            _ = driver_import("aa", "bb", "cc")
-        except ImportError:
-            pass
-        else:
-            assert False
+        with pytest.raises(ImportError):
+            driver_import("aa", "bb", "cc")
 
     @staticmethod
     def test_is_exe():
