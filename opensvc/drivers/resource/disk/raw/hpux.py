@@ -15,16 +15,8 @@ KEYS.register_driver(
 
 
 class DiskRaw(BaseDiskRaw):
-    def __init__(self,
-                 devs=None,
-                 user=None,
-                 group=None,
-                 perm=None,
-                 create_char_devices=False,
-                 **kwargs):
-
+    def __init__(self, **kwargs):
         super(DiskRaw, self).__init__(**kwargs)
-        devs = devs or set()
 
     def verify_dev(self, dev):
         cmd = ["diskinfo", dev]
