@@ -61,6 +61,28 @@ def _driver_import(*args, **kwargs):
         raise ImportError("no module found: %s" % initial_modname)
 
 
+def driver_class(mod):
+    """
+    Inspect the module and format the expected resource class name
+    based on the DRIVER_GROUP and DRIVER_BASENAME attributes.
+
+    For example:
+    mod.DRIVER_GROUP = "fs"
+    mod.DRIVER_BASENAME = "xfs"
+
+    formats and return the "FsXfs" classname.
+    """
+    try:
+        classname = mod.DRIVER_GROUP.capitalize()
+    except AttributeError:
+        return
+    try:
+        classname += mod.DRIVER_BASENAME.capitalize()
+    except AttributeError:
+        pass
+    return getattr(mod, classname)
+
+
 def iter_drivers(groups=None):
     groups = groups or []
     for group in groups:

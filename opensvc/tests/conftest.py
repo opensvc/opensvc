@@ -83,12 +83,12 @@ def mock_sysname_fixture(mocker):
 @pytest.fixture(scope='function')
 def create_driver_resource(mock_sysname):
     def create(sysname, scenario):
-        driver_name, class_name, kwargs, expected_type = scenario
+        driver_name, kwargs, expected_type = scenario
         mock_sysname(sysname)
-        from utilities.drivers import driver_import
+        from utilities.drivers import driver_import, driver_class
         args = ["resource"] + driver_name.split(".")
         driver = driver_import(*args)
-        return getattr(driver, class_name)(**kwargs)
+        return driver_class(driver)(**kwargs)
 
     return create
 

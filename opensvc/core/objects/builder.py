@@ -6,6 +6,7 @@ import re
 import core.exceptions as ex
 import utilities.configparser
 from env import Env
+from utilities.drivers import driver_class
 from utilities.naming import factory, list_services, split_path
 from utilities.storage import Storage
 
@@ -124,17 +125,6 @@ def add_resource(svc, driver_group, s):
     except KeyError:
         pass
     svc += driver_class(mod)(**kwargs)
-
-def driver_class(mod):
-    try:
-        classname = mod.DRIVER_GROUP.capitalize()
-    except AttributeError:
-        return
-    try:
-        classname += mod.DRIVER_BASENAME.capitalize()
-    except AttributeError:
-        pass
-    return getattr(mod, classname)
 
 def add_mandatory_syncs(svc):
     """
