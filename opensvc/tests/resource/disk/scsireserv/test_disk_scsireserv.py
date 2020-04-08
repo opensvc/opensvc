@@ -7,7 +7,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'FreeBSD', 'OSF1', 'Linux', 'SunOS'}
 
 SCENARIOS = [
-    ('disk.scsireserv', 'DiskScsireserv', {'rid': '#1'}, 'disk.scsireserv'),
+    ('disk.scsireserv', {'rid': '#1'}, 'disk.scsireserv'),
 ]
 
 
@@ -18,7 +18,7 @@ SCENARIOS = [
 class TestDriverDiskScsireservInstances:
     @staticmethod
     def test_has_correct_type(create_driver_resource, sysname, scenario):
-        assert create_driver_resource(sysname, scenario).type == scenario[3]
+        assert create_driver_resource(sysname, scenario).type == scenario[2]
 
     @staticmethod
     def test_has_mandatory_methods(create_driver_resource, sysname, scenario):
