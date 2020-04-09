@@ -1,4 +1,4 @@
-.TH NODEMGR 1 2020\-04\-07
+.TH NODEMGR 1 2020\-04\-09
 .SH NAME
 nodemgr - OpenSVC agent's node management command.
 .SH SYNOPSIS
@@ -2327,9 +2327,9 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -2429,9 +2429,9 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -2503,9 +2503,9 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -2644,9 +2644,9 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -2729,9 +2729,9 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). In this case, the set applies to all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 

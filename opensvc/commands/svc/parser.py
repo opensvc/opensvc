@@ -33,6 +33,12 @@ OPT.update({
         "--comment", default=None,
         action="store", dest="comment",
         help="A comment to log when acknowldging action log error entries."),
+    "confirm": Option(
+        "--confirm", default=False,
+        action="store_true", dest="confirm",
+        help="Confirm a run action configured to ask for confirmation. "
+             "This can be used when scripting the run or triggering it "
+             "from the api."),
     "downto": Option(
         "--downto", default=None,
         action="store", dest="upto",
@@ -259,6 +265,7 @@ ACTIONS["Service and volume object actions"] = {
                "--subset, disregarding their schedule.",
         "options": mp.ACTION_OPTS + [
             OPT.cron,
+            OPT.confirm,
         ],
     },
     "presync": {
