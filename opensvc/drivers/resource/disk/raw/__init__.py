@@ -72,11 +72,10 @@ class BaseDiskRaw(BaseDisk):
                  user=None,
                  group=None,
                  perm=None,
-                 create_char_devices=False,
+                 create_char_devices=True,
                  zone=None,
                  **kwargs):
         super(BaseDiskRaw, self).__init__(name="raw", type='disk.raw', **kwargs)
-
         self.label = "raw"
         self.user = user
         self.group = group
@@ -84,16 +83,20 @@ class BaseDiskRaw(BaseDisk):
         self.zone = zone
         self.create_char_devices = create_char_devices
         if zone:
-            devs = set([dev.replace(":", ":<%s>" % zone) for dev in kwargs["devs"]])
             self.tags.add("zone")
             self.tags.add(zone)
-        self.original_devs = devs or set()
-
+            devs = self.mangle_zone_devs(devs)
+        self.original_devs = devs
         self.devs = set()
         self.devs_not_found = set()
         self.dst_devs_not_found = set()
         self.major_minor_errs = set()
         self.devs_map = {}
+
+    def mangle_zone_devs(self, devs):
+        if devs is None:
+            return
+        return set([dev.replace(":", ":<%s>" % self.zone) for dev in devs])
 
     def reload_config(self):
         """
@@ -103,10 +106,10 @@ class BaseDiskRaw(BaseDisk):
         self.svc.ref_cache = {}
         self.clear_caches()
         self.devs = set()
-        self.original_devs = self.conf_get('devs')
+        self.original_devs = self.oget('devs')
         zone = self.oget('zone')
         if zone:
-            self.original_devs = set([dev.replace(":", ":<%s>" % zone) for dev in self.original_devs])
+            self.original_devs = self.mangle_zone_devs(self.original_devs)
 
     def clear_caches(self):
         pass
@@ -153,9 +156,13 @@ class BaseDiskRaw(BaseDisk):
         return path
 
     def validate_devs(self):
+        if not self.original_devs:
+            self.reload_config()
         self.devs = set()
         self.devs_not_found = set()
         self.dst_devs_not_found = set()
+        if self.original_devs is None:
+            self.original_devs = self.oget("devs")
         for dev in self.original_devs:
             if ":" in dev:
                 try:
@@ -370,10 +377,12 @@ class BaseDiskRaw(BaseDisk):
     def _status(self, verbose=False):
         self.validate_devs()
         self.mangle_devs_map()
-        r = self.is_up()
-        if not self.create_char_devices and len(self.devs_map) == 0:
-            return core.status.NA
-        if r:
+        if self.create_char_devices:
+            if len(self.original_devs) == 0:
+                return core.status.NA
+            if len(self.devs_map) == 0:
+                return core.status.DOWN
+        if self.is_up():
             return core.status.UP
         else:
             return core.status.DOWN
