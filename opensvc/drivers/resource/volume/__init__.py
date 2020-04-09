@@ -2,6 +2,8 @@
 Volume resource driver module.
 """
 import os
+import pwd
+import grp
 
 import core.exceptions as ex
 import core.status
@@ -67,7 +69,7 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of ``<config name>/<key>:<volume relative path>:<options>``.",
-        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,mode=0640 conf/sysctl:/etc/sysctl.d/01-db.conf"
+        "example": "conf/mycnf:/etc/mysql/my.cnf:ro conf/sysctl:/etc/sysctl.d/01-db.conf"
     },
     {
         "keyword": "secrets",
@@ -76,7 +78,31 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of ``<secret name>/<key>:<volume relative path>:<options>``.",
-        "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
+        "example": "cert/pem:server.pem cert/key:server.key"
+    },
+    {
+        "keyword": "user",
+        "at": True,
+        "text": "The user name or id that will own the volume root and installed files and directories.",
+        "example": "1001"
+    },
+    {
+        "keyword": "group",
+        "at": True,
+        "text": "The group name or id that will own the volume root and installed files and directories.",
+        "example": "1001"
+    },
+    {
+        "keyword": "perm",
+        "at": True,
+        "text": "The permissions, in octal notation, to apply to the installed files.",
+        "example": "660"
+    },
+    {
+        "keyword": "dirperm",
+        "at": True,
+        "text": "The permissions, in octal notation, to apply to the volume root and installed directories.",
+        "example": "750"
     },
 ]
 
@@ -109,6 +135,7 @@ class Volume(Resource):
 
     def __init__(self, name=None, pool=None, pooltype=None, size=None,
                  format=True, access="rwo", secrets=None, configs=None,
+                 user=None, group=None, perm=None, dirperm=None,
                  **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
         self.pooltype = pooltype
@@ -121,6 +148,10 @@ class Volume(Resource):
         self.configs = configs
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
+        self.user = user
+        self.group = group
+        self.perm = perm
+        self.dirperm = dirperm
 
     def __str__(self):
         return "%s name=%s" % (super(Volume, self).__str__(), self.volname)
@@ -150,6 +181,13 @@ class Volume(Resource):
     def device(self):
         return self.volsvc.device()
 
+    def chown(self):
+        uid = self.uid if self.uid is not None else -1
+        gid = self.gid if self.gid is not None else -1
+        os.chown(self.mount_point, uid, gid)
+        if self.octal_dirmode:
+            os.chmod(self.mount_point, self.octal_dirmode)
+
     def stop(self):
         self.uninstall_flag()
         if not self.volsvc.exists():
@@ -166,6 +204,7 @@ class Volume(Resource):
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.Error
         self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.chown()
         self.install_flag()
         self.install_secrets()
         self.install_configs()
@@ -270,6 +309,45 @@ class Volume(Resource):
                 self.status_log("%s %s has no key %s. "
                                 "expected data can not be installed in the volume" % (kind, name, data["key"]), "warn")
 
+    @lazy
+    def octal_mode(self):
+        try:
+            return int(self.perm, 8)
+        except TypeError:
+            return None
+
+    @lazy
+    def octal_dirmode(self):
+        try:
+            return int(self.dirperm, 8)
+        except TypeError:
+            return None
+
+    @lazy
+    def uid(self):
+        try:
+            return int(self.user)
+        except ValueError:
+            pass
+        try:
+            info = pwd.getpwnam(self.user)
+            return info.pw_uid
+        except Exception:
+            pass
+
+    @lazy
+    def gid(self):
+        try:
+            return int(self.group)
+        except ValueError:
+            pass
+        try:
+            info = grp.getgrnam(self.group)
+            gid = info.gr_gid
+        except Exception:
+            pass
+        return gid
+
     def _install_data(self, kind):
         for data in self.data_data(kind):
             name, _, kind = split_path(data["obj"])
@@ -287,7 +365,7 @@ class Volume(Resource):
                 continue
             self.log.debug("install ./%s/%s/%s in %s", kind, name, data["key"], data["path"])
             for key in keys:
-                obj.install_key(key, data["path"])
+                obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode, dirmode=self.octal_dirmode)
 
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):

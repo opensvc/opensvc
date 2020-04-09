@@ -53,18 +53,22 @@ def fsum(fpath):
     return cksum.hexdigest()
 
 
-def makedirs(path, mode=0o755):
+def makedirs(path, mode=None, uid=None, gid=None):
     """
     Wraps os.makedirs with a more restrictive 755 mode and ignore
     already exists errors.
     """
     try:
+        mode = mode or 0o755
         os.makedirs(path, mode)
     except OSError as exc:
         if exc.errno == 17:
             pass
         else:
             raise
+    uid = uid if uid is not None else -1
+    gid = gid if gid is not None else -1
+    os.chown(path, uid, gid)
 
 
 def create_protected_file(filepath, buff, mode):
