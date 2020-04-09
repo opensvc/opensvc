@@ -325,6 +325,8 @@ class Volume(Resource):
 
     @lazy
     def uid(self):
+        if self.user is None:
+            return
         try:
             return int(self.user)
         except ValueError:
@@ -337,6 +339,8 @@ class Volume(Resource):
 
     @lazy
     def gid(self):
+        if self.group is None:
+            return
         try:
             return int(self.group)
         except ValueError:
