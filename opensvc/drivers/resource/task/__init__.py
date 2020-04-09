@@ -201,6 +201,9 @@ class BaseTask(Resource):
         """
         if not self.confirmation:
             return
+        if self.svc.options.confirm:
+            self.log.info("confirmed by command line option")
+            return
         import signal
         signal.signal(signal.SIGALRM, self.alarm_handler)
         signal.alarm(30)

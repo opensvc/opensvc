@@ -1,4 +1,4 @@
-.TH SVCMGR 1 2020\-04\-07
+.TH SVCMGR 1 2020\-04\-09
 .SH NAME
 svcmgr - OpenSVC agent's services instances management command.
 .SH SYNOPSIS
@@ -1803,9 +1803,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -3982,9 +3983,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -4420,9 +4422,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -4596,9 +4599,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -4861,9 +4865,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -5043,9 +5048,10 @@ An expression like '[<section>.]<keyword>[@<scope>][[<index>]]<op><value>' where
   * a resource driver group name (fs, ip, ...). For the set and unset actions only, set the keyword for all matching resources.
 * <op> can be:
 
-  * '='
-  * '+='
-  * '-='
+  * '='  set as new value
+  * '-=' remove value from the current list
+  * '+=' append value to the current list
+  * '|=' append value to the current list if not already included
 
 Multiple --kw can be set to apply multiple configuration change in a file with a single write.
 
@@ -9903,6 +9909,9 @@ A comma-separated list of resource tags to limit action to. The '+' separator ca
 .TP
 .B --cron
 If set, the action is actually executed only if the schedulingconstraints are satisfied.
+.TP
+.B --confirm
+Confirm a run action configured to ask for confirmation. This can be used when scripting the run or triggering it from the api.
 .TP
 .B --namespace=NAMESPACE
 The namespace to switch to for the action. Namespaces are cluster partitions. A default namespace can be set for the session setting the OSVC_NAMESPACE environment variable.
