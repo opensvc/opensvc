@@ -232,7 +232,7 @@ class BaseDiskScsireserv(Resource):
         self.log.debug("starting checkreserv. prkey %s"%self.hostid)
         if self.ack_all_unit_attention() != 0:
             return core.status.WARN
-        r = core.status.Status()
+        r = core.status.Status("n/a")
         for d in self.devs:
             try:
                 key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
