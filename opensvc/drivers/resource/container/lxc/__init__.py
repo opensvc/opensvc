@@ -205,7 +205,7 @@ class ContainerLxc(BaseContainer):
 
     @lazy
     def label(self):  # pylint: disable=method-hidden
-        return "lxc " + self.label
+        return "lxc " + self.name
 
     @lazy
     def runmethod(self):
