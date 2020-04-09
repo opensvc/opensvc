@@ -170,6 +170,7 @@ class DiskDisk(Resource):
         pool.log = self.log
         if self.shared:
             disk_id_kw = "disk_id"
+            name = self.name
         else:
             disk_id_kw = "disk_id@" + Env.nodename
             name = self.name + "." + Env.nodename
