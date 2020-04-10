@@ -16,7 +16,6 @@ import utilities.ifconfig
 from core.objects.svcdict import KEYS
 from core.resource import Resource
 from env import Env
-from utilities.arp import send_arp
 from utilities.converters import convert_duration, print_duration
 from utilities.lazy import lazy
 from utilities.net.converters import to_cidr
@@ -356,6 +355,7 @@ class Ip(Resource):
         if ':' in self.addr or self.ipdev in ("lo", "lo0"):
             return
         self.log.info("send gratuitous arp to announce %s is at %s", self.addr, self.ipdev)
+        from utilities.arp import send_arp
         send_arp(self.ipdev, self.addr)
 
     def abort_start(self):
