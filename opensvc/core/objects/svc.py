@@ -1567,7 +1567,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         A helper method to save stacks in the service log.
         """
-        self.log.error("", exc_info=True)
+        self.log.error("a stack has been saved in the logs", exc_info=True)
 
     def vcall(self, *args, **kwargs):
         """
