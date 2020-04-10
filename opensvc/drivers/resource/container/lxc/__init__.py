@@ -258,6 +258,16 @@ class ContainerLxc(BaseContainer):
         data = [self.cf]
         return data
 
+    def enter(self):
+        for cmd in [["/bin/bash"], ["/bin/sh"]]:
+            try:
+                os.system(" ".join(self.runmethod + cmd))
+                return
+            except ValueError:
+                continue
+            else:
+                return
+
     def rcp_from(self, src, dst):
         if not self.rootfs:
             raise ex.Error
