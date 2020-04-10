@@ -14,8 +14,8 @@ DRIVER_BASENAME = "host"
 
 
 class IpHost(Ip):
-    def check_ping(self, timeout=5, count=1):
-        self.log.info("checking %s availability"%self.addr)
+    def check_ping(self, count=1, timeout=5):
+        self.log.info("checking %s availability (%ss)", self.addr, timeout)
         return utilities.ping.check_ping(self.addr, timeout=timeout, count=count)
 
     def startip_cmd(self):

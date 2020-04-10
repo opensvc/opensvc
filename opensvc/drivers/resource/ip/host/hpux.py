@@ -9,7 +9,7 @@ DRIVER_BASENAME = "host"
 
 class IpHost(Ip):
     def check_ping(self, count=1, timeout=5):
-        self.log.info("checking %s availability", self.addr)
+        self.log.info("checking %s availability (%ss)", self.addr, timeout)
         return utilities.ping.check_ping(self.addr, count=count, timeout=timeout)
 
     def arp_announce(self):
