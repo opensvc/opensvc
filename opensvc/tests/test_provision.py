@@ -1,173 +1,158 @@
 import json
 import os
+import platform
 
 import pytest
 
 from commands.svc import Mgr
 
-scenarios = [
-    ['loop-standby-converters', 'test-start', ['--rid', 'disk#0,disk#1,disk#2'], [
-        "--kw", "disk#0.type=loop",
-        "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
-        "--kw", "disk#0.size=10m",
+scenarios = {
+    'linux': [
+        ['loop-standby-converters', 'test-start', ['--rid', 'disk#0,disk#1,disk#2'], [
+            "--kw", "disk#0.type=loop",
+            "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
+            "--kw", "disk#0.size=10m",
 
-        "--kw", "disk#1.type=loop",
-        "--kw", "disk#1.file=/var/tmp/{svcname}.dd",
-        "--kw", "disk#1.size=5mib",  # with mbi converter
-        "--kw", "disk#1.standby=true",
+            "--kw", "disk#1.type=loop",
+            "--kw", "disk#1.file=/var/tmp/{svcname}.dd",
+            "--kw", "disk#1.size=5mib",  # with mbi converter
+            "--kw", "disk#1.standby=true",
 
-        "--kw", "disk#2.type=loop",
-        "--kw", "disk#2.file=/var/tmp/{svcname}.dd",
-        "--kw", "disk#2.size=4000kib",  # with kbi converter
-    ]],
+            "--kw", "disk#2.type=loop",
+            "--kw", "disk#2.file=/var/tmp/{svcname}.dd",
+            "--kw", "disk#2.size=4000kib",  # with kbi converter
+        ]],
 
-    ['lvm-unprovision-rid-disk', 'test-start', ['--rid', 'disk'], [
-        "--kw", "disk#loop0.type=loop",
-        "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop0.size=10m",
+        ['lvm-unprovision-rid-disk', 'test-start', ['--rid', 'disk'], [
+            "--kw", "disk#loop0.type=loop",
+            "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop0.size=10m",
 
-        "--kw", "disk#loop1.type=loop",
-        "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop1.size=10m",
+            "--kw", "disk#loop1.type=loop",
+            "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop1.size=10m",
 
-        "--kw", "disk#lvm.type=lvm",
-        "--kw", "disk#lvm.vgname={svcname}",
-        "--kw", "disk#lvm.pvs={disk#loop0.exposed_devs[0]} {disk#loop1.exposed_devs[0]}",
+            "--kw", "disk#lvm.type=lvm",
+            "--kw", "disk#lvm.vgname={svcname}",
+            "--kw", "disk#lvm.pvs={disk#loop0.exposed_devs[0]} {disk#loop1.exposed_devs[0]}",
 
-        "--kw", "disk#vol0.type=lv",
-        "--kw", "disk#vol0.name=vol0",
-        "--kw", "disk#vol0.vg={disk#lvm.name}",
-        "--kw", "disk#vol0.size=100%FREE",
-    ]],
+            "--kw", "disk#vol0.type=lv",
+            "--kw", "disk#vol0.name=vol0",
+            "--kw", "disk#vol0.vg={disk#lvm.name}",
+            "--kw", "disk#vol0.size=100%FREE",
+        ]],
 
-    ['vg-with-2-disks-subset', 'test-start', ['--subset', 'g1'], [
-        "--kw", "disk#loop0.subset=g1",
-        "--kw", "disk#loop0.type=loop",
-        "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop0.size=10m",
-        "--kw", "disk#loop1.subset=g1",
-        "--kw", "disk#loop1.type=loop",
-        "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop1.size=10m",
-        "--kw", "disk#vg.subset=g1",
-        "--kw", "disk#vg.type=vg",
-        "--kw", "disk#vg.name={svcname}",
-        "--kw", "disk#vg.pvs={disk#loop0.file} {disk#loop1.file}",
-    ]],
+        ['vg-with-2-disks-subset', 'test-start', ['--subset', 'g1'], [
+            "--kw", "disk#loop0.subset=g1",
+            "--kw", "disk#loop0.type=loop",
+            "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop0.size=10m",
+            "--kw", "disk#loop1.subset=g1",
+            "--kw", "disk#loop1.type=loop",
+            "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop1.size=10m",
+            "--kw", "disk#vg.subset=g1",
+            "--kw", "disk#vg.type=vg",
+            "--kw", "disk#vg.name={svcname}",
+            "--kw", "disk#vg.pvs={disk#loop0.file} {disk#loop1.file}",
+        ]],
 
-    ['raw', 'test-start', ['--rid', 'disk'], [
-        "--kw", "disk#loop0.type=loop",
-        "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop0.size=10m",
-        "--kw", "disk#loop1.type=loop",
-        "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#loop1.size=10m",
-        "--kw", "disk#raw.type=raw",
-        "--kw", "disk#raw.user=root",
-        "--kw", "disk#raw.group=root",
-        "--kw", "disk#raw.create_char_devices=true",
-        "--kw", "disk#raw.perm=640",
-        "--kw", "disk#raw.devs={disk#loop0.exposed_devs[0]}:/tmp/raw/raw00 {disk#loop1.exposed_devs[0]}:/tmp/raw/raw01",
-    ]],
+        ['raw', 'test-start', ['--rid', 'disk'], [
+            "--kw", "disk#loop0.type=loop",
+            "--kw", "disk#loop0.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop0.size=10m",
+            "--kw", "disk#loop1.type=loop",
+            "--kw", "disk#loop1.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#loop1.size=10m",
+            "--kw", "disk#raw.type=raw",
+            "--kw", "disk#raw.user=root",
+            "--kw", "disk#raw.group=root",
+            "--kw", "disk#raw.create_char_devices=true",
+            "--kw", "disk#raw.perm=640",
+            "--kw",
+            "disk#raw.devs={disk#loop0.exposed_devs[0]}:/tmp/raw/raw00 {disk#loop1.exposed_devs[0]}:/tmp/raw/raw01",
+        ]],
 
-    ['md-raid0-unprovision-all', 'test-start', [], [
-        "--kw", "disk#0.type=loop",
-        "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
-        "--kw", "disk#0.size=10m",
-        "--kw", "disk#1.type=loop",
-        "--kw", "disk#1.file=/var/tmp/{svcname}.2.dd",
-        "--kw", "disk#1.size=10m",
-        "--kw", "disk#2.type=md",
-        "--kw", "disk#2.level=raid0",
-        "--kw", "disk#2.devs={disk#0.exposed_devs[0]} {disk#1.exposed_devs[0]}",
-    ]],
+        ['md-raid0-unprovision-all', 'test-start', [], [
+            "--kw", "disk#0.type=loop",
+            "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
+            "--kw", "disk#0.size=10m",
+            "--kw", "disk#1.type=loop",
+            "--kw", "disk#1.file=/var/tmp/{svcname}.2.dd",
+            "--kw", "disk#1.size=10m",
+            "--kw", "disk#2.type=md",
+            "--kw", "disk#2.level=raid0",
+            "--kw", "disk#2.devs={disk#0.exposed_devs[0]} {disk#1.exposed_devs[0]}",
+        ]],
 
-    ['md-raid1', 'test-start', ['--rid', 'disk'], [
-        "--kw", "disk#0.type=loop",
-        "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
-        "--kw", "disk#0.size=10m",
-        "--kw", "disk#1.type=loop",
-        "--kw", "disk#1.file=/var/tmp/{svcname}.2.dd",
-        "--kw", "disk#1.size=10m",
-        "--kw", "disk#2.type=md",
-        "--kw", "disk#2.level=raid1",
-        "--kw", "disk#2.devs={disk#0.exposed_devs[0]} {disk#1.exposed_devs[0]}",
-    ]],
+        ['md-raid1', 'test-start', ['--rid', 'disk'], [
+            "--kw", "disk#0.type=loop",
+            "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
+            "--kw", "disk#0.size=10m",
+            "--kw", "disk#1.type=loop",
+            "--kw", "disk#1.file=/var/tmp/{svcname}.2.dd",
+            "--kw", "disk#1.size=10m",
+            "--kw", "disk#2.type=md",
+            "--kw", "disk#2.level=raid1",
+            "--kw", "disk#2.devs={disk#0.exposed_devs[0]} {disk#1.exposed_devs[0]}",
+        ]],
 
-    ['ext3-ext4', 'test-start', ['--rid', 'disk,fs'], [
-        "--kw", "disk#ext3.type=loop",
-        "--kw", "disk#ext3.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#ext3.size=10m",
-        "--kw", "disk#ext4.type=loop",
-        "--kw", "disk#ext4.file=/var/tmp/{svcname}.{rid}",
-        "--kw", "disk#ext4.size=10m",
-        "--kw", "fs#ext3.type=ext3",
-        "--kw", "fs#ext3.dev={disk#ext3.exposed_devs[0]}",
-        "--kw", "fs#ext3.mnt=/var/tmp/{svcname}-{rid}",
-        "--kw", "fs#ext4.type=ext4",
-        "--kw", "fs#ext3.mnt_opt=rw,noatime",
-        "--kw", "fs#ext4.dev={disk#ext4.exposed_devs[0]}",
-        "--kw", "fs#ext4.mnt=/var/tmp/{svcname}-{rid}",
-        "--kw", "fs#ext4.mnt_opt=rw,noatime",
-    ]],
+        ['ext3-ext4', 'test-start', ['--rid', 'disk,fs'], [
+            "--kw", "disk#ext3.type=loop",
+            "--kw", "disk#ext3.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#ext3.size=10m",
+            "--kw", "disk#ext4.type=loop",
+            "--kw", "disk#ext4.file=/var/tmp/{svcname}.{rid}",
+            "--kw", "disk#ext4.size=10m",
+            "--kw", "fs#ext3.type=ext3",
+            "--kw", "fs#ext3.dev={disk#ext3.exposed_devs[0]}",
+            "--kw", "fs#ext3.mnt=/var/tmp/{svcname}-{rid}",
+            "--kw", "fs#ext4.type=ext4",
+            "--kw", "fs#ext3.mnt_opt=rw,noatime",
+            "--kw", "fs#ext4.dev={disk#ext4.exposed_devs[0]}",
+            "--kw", "fs#ext4.mnt=/var/tmp/{svcname}-{rid}",
+            "--kw", "fs#ext4.mnt_opt=rw,noatime",
+        ]],
 
-    ['xfs-unprovision-all', 'test-start', [], [
-        "--kw", "disk#0.type=loop",
-        "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
-        "--kw", "disk#0.size=20m",
-        "--kw", "fs#0.type=xfs",
-        "--kw", "fs#0.dev={disk#0.exposed_devs[0]}",
-        "--kw", "fs#0.mnt=/var/tmp/{svcname}-{rid}",
-        "--kw", "fs#0.mnt_opt=rw,noatime",
-    ]],
+        ['xfs-unprovision-all', 'test-start', [], [
+            "--kw", "disk#0.type=loop",
+            "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
+            "--kw", "disk#0.size=20m",
+            "--kw", "fs#0.type=xfs",
+            "--kw", "fs#0.dev={disk#0.exposed_devs[0]}",
+            "--kw", "fs#0.mnt=/var/tmp/{svcname}-{rid}",
+            "--kw", "fs#0.mnt_opt=rw,noatime",
+        ]],
 
-    ['container-docker-shared', 'test-start', ['--rid', 'container#0'], [
-        "--kw", "docker_daemon_private=false",
-        "--kw", "container#0.type=docker",
-        "--kw", "container#0.image=alpine:latest",
-        "--kw", "container#0.run_args=-it --net=none",
-        "--kw", "container#0.run_command=/bin/sh",
-    ]],
+        ['container-docker-shared', 'test-start', ['--rid', 'container#0'], [
+            "--kw", "docker_daemon_private=false",
+            "--kw", "container#0.type=docker",
+            "--kw", "container#0.image=alpine:latest",
+            "--kw", "container#0.run_args=-it --net=none",
+            "--kw", "container#0.run_command=/bin/sh",
+        ]],
 
-    ['ip', 'nothing', ['--rid', 'ip#0'], [
-        "--kw", "ip#0.provisioner=collector",
-        "--kw", "ip#0.ipdev=lo",
-        "--kw", "ip#0.network=192.168.0.0",
-    ]],
-
-]
-
-skipped_scenarios = [
-    ['btrfs', ['--rid', 'disk#0,fs#0'], [
-        "--kw", "disk#0.type=loop",
-        "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
-        "--kw", "disk#0.size=1g",
-        "--kw", "fs#0.type=btrfs",
-        "--kw", "fs#0.dev={disk#0.file}",
-        "--kw", "fs#0.mnt=/var/tmp/{svcname}",
-        "--kw", "fs#0.mnt_opt=rw,noatime,subvol=init",
-    ]],
-
-    ['ip-docker', ['--rid', 'container#0,ip#0'], [
-        "--kw", "docker_daemon_private=false",
-        "--kw", "container#0.type=docker",
-        "--kw", "container#0.image=alpine:latest",
-        "--kw", "container#0.run_args=-it --net=none",
-        "--kw", "container#0.run_command=/bin/sh",
-        "--kw", "ip#0.type=docker",
-        "--kw", "ip#0.ipname=172.17.172.17",
-        "--kw", "ip#0.ipdev=docker0",
-        "--kw", "ip#0.network=172.17.0.0",
-        "--kw", "ip#0.netmask=16",
-        "--kw", "ip#0.container_rid=container#0",
-    ]],
-]
+        ['ip', 'nothing', ['--rid', 'ip#0'], [
+            "--kw", "ip#0.provisioner=collector",
+            "--kw", "ip#0.ipdev=lo",
+            "--kw", "ip#0.network=192.168.0.0",
+        ]],
+    ],
+    'sunos': [
+        ['loop-standby-converters', 'test-start', ['--rid', 'disk#0'], [
+            "--kw", "disk#0.type=loop",
+            "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
+            "--kw", "disk#0.size=10m",
+        ]]
+    ]
+}
 
 
 @pytest.mark.linux
+@pytest.mark.sunos
 @pytest.mark.slow
 @pytest.mark.usefixtures('osvc_path_tests')
-@pytest.mark.parametrize('name, extra_test, unprovision_args, properties', scenarios)
+@pytest.mark.parametrize('name, extra_test, unprovision_args, properties', scenarios.get(platform.system().lower(), []))
 class TestProvision:
     @staticmethod
     def test_service_lifecycle(mocker, capture_stdout, tmp_file, name, extra_test, unprovision_args, properties):
