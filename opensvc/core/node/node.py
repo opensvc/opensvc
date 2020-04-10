@@ -16,7 +16,6 @@ import logging
 import os
 import re
 import shlex
-import socket
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
@@ -47,7 +46,7 @@ from utilities.proc import call, justcall, vcall, which, check_privs, daemon_pro
 from utilities.files import makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
-from utilities.string import bdecode, bencode
+from utilities.string import bdecode
 
 try:
     from foreign.six.moves.urllib.request import Request, urlopen
@@ -396,8 +395,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Lazy initialization of the node name.
         """
-        self.log.debug("initialize node::nodename")
-        return socket.gethostname().lower()
+        return Env.nodename
 
     @lazy
     def compliance(self):
@@ -476,10 +474,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @lazy
     def dnsnodes(self):
+        if not self.dns:
+            return []
+        from socket import gethostbyaddr
         nodes = []
         for ip in self.dns:
             try:
-                data = socket.gethostbyaddr(ip)
+                data = gethostbyaddr(ip)
                 names = [data[0]] + data[1]
             except Exception as exc:
                 names = []
@@ -3783,6 +3784,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     return json.load(ofile)
             except Exception as exc:
                 pass
+        import socket
         try:
             return self._daemon_nodes_info(silent=True)["data"]
         except (KeyError, TypeError, socket.error):
@@ -4003,52 +4005,26 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             dns = self.dns
         except Exception:
             return
-        request = {
-            "method": "list",
-            "parameters": {
-                "zonename": self.cluster_name + "."
-            }
-        }
-        for node in dns:
-            try:
-                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                sock.connect(Env.paths.dnsuxsock)
-                sock.send(bencode(json.dumps(request)+"\n"))
-                response = ""
-                while True:
-                    buff = sock.recv(4096)
-                    if not buff:
-                        break
-                    response += bdecode(buff)
-                    if response[-1] == "\n":
-                        break
-            finally:
-                sock.close()
-            if not response:
-                return
-            try:
-                data = json.loads(response)["result"]
-            except ValueError:
-                print("invalid response format", file=sys.stderr)
-                raise ex.Error
-            if self.options.format in ("json", "flat_json"):
-                self.print_data(data)
-                return
-            widths = {
-                "qname": 0,
-                "qtype": 0,
-                "ttl": 0,
-                "content": 0,
-            }
-            for record in data:
-                for key in ("qname", "qtype", "ttl", "content"):
-                    length = len(str(record[key]))
-                    if length > widths[key]:
-                        widths[key] = length
-            fmt = "{:%d}  IN   {:%d}  {:%d}  {:%d}" % (widths["qname"], widths["qtype"], widths["ttl"], widths["content"])
-            for record in sorted(data, key=lambda x: x["qname"]):
-                print(fmt.format(record["qname"], record["qtype"], record["ttl"], record["content"]))
+        from utilities.dns import zone_list
+        data = zone_list(self.cluster_name + ".", dns)
+        if self.options.format in ("json", "flat_json"):
+            self.print_data(data)
             return
+        widths = {
+            "qname": 0,
+            "qtype": 0,
+            "ttl": 0,
+            "content": 0,
+        }
+        for record in data:
+            for key in ("qname", "qtype", "ttl", "content"):
+                length = len(str(record[key]))
+                if length > widths[key]:
+                    widths[key] = length
+        fmt = "{:%d}  IN   {:%d}  {:%d}  {:%d}" % (widths["qname"], widths["qtype"], widths["ttl"], widths["content"])
+        for record in sorted(data, key=lambda x: x["qname"]):
+            print(fmt.format(record["qname"], record["qtype"], record["ttl"], record["content"]))
+        return
 
     def daemon_relay_status(self):
         """
