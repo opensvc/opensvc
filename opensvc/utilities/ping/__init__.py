@@ -1,7 +1,6 @@
 import importlib
-import platform
+from env import Env
 
-_sysname = platform.uname()[0].lower().replace("-", "")
 _package = __package__ or __spec__.name # pylint: disable=undefined-variable
-_mod = importlib.import_module("." + _sysname, package=_package)
-check_ping = _mod.check_ping
+_os = importlib.import_module("." + Env.module_sysname, package=_package)
+check_ping = _os.check_ping
