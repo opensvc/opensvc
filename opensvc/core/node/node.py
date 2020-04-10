@@ -26,7 +26,6 @@ import foreign.six as six
 import core.exceptions as ex
 import core.logger
 import core.objects.builder
-from core.collector.rpc import CollectorRpc
 from core.comm import Crypt
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
@@ -389,6 +388,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Lazy initialization of the node Collector object.
         """
         self.log.debug("initialize node::collector")
+        from core.collector.rpc import CollectorRpc
         return CollectorRpc(node=self)
 
     @lazy
