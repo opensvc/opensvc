@@ -7,7 +7,6 @@ import re
 
 import core.exceptions as ex
 import foreign.six as six
-from foreign.jsonpath_ng.ext import parse
 from utilities.string import is_string
 
 try:
@@ -353,6 +352,7 @@ def formatter(fn):
 
         path = args[0].options.jsonpath_filter
         if path:
+            from foreign.jsonpath_ng.ext import parse
             try:
                 jsonpath_expr = parse(path)
                 data = [match.value for match in jsonpath_expr.find(data)]
