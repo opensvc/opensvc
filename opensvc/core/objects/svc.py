@@ -3852,6 +3852,10 @@ class Svc(BaseSvc):
         except Exception as exc:
             print(exc)
             raise
+        try:
+            mod.DRIVER_BASENAME
+        except AttributeError:
+            return
         return mod
 
     def pg_stats(self):

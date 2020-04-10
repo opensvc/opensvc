@@ -6,6 +6,7 @@ from utilities.converters import convert_size
 
 UNIFIED_MNT = "/sys/fs/cgroup/unified"
 UNIFIED = os.path.exists(UNIFIED_MNT)
+DRIVER_BASENAME = 'pg'
 
 CONTROLLERS = [
     "blkio",
