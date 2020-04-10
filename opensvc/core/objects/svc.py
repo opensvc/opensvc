@@ -1369,7 +1369,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         For encap commands
         """
-        cmd = sys.argv[1:]
+        if "__main__" in sys.argv[0]:
+            # skip selector or subsystem name too
+            cmd = sys.argv[2:]
+        else:
+            cmd = sys.argv[1:]
         cmd = drop_option("--node", cmd, drop_value=True)
         cmd = drop_option("-s", cmd, drop_value=True)
         cmd = drop_option("--service", cmd, drop_value=True)
@@ -3952,7 +3956,7 @@ class Svc(BaseSvc):
         """
         for container in self.get_resources('container'):
             try:
-                self._encap_cmd(cmd, container, verbose=verbose)
+                self._encap_cmd(cmd, container=container, verbose=verbose)
             except ex.EncapUnjoinable:
                 if unjoinable != "continue":
                     self.log.error("container %s is not joinable to execute "
@@ -4009,25 +4013,34 @@ class Svc(BaseSvc):
             options = []
             if self.options.dry_run:
                 options.append('--dry-run')
+                cmd = drop_option("--dry-run", cmd, drop_value=False)
             if self.options.restore:
                 options.append("--restore")
+                cmd = drop_option("--restore", cmd, drop_value=False)
             if self.options.force:
                 options.append('--force')
+                cmd = drop_option("--force", cmd, drop_value=False)
             if self.options.local and "status" not in cmd:
                 options.append('--local')
+                cmd = drop_option("--local", cmd, drop_value=False)
             if self.options.leader:
                 options.append('--leader')
+                cmd = drop_option("--leader", cmd, drop_value=False)
             if self.options.disable_rollback:
                 options.append('--disable-rollback')
+                cmd = drop_option("--disable-rollback", cmd, drop_value=False)
             if self.options.rid:
                 options.append('--rid')
                 options.append(self.options.rid)
+                cmd = drop_option("--rid", cmd, drop_value=True)
             if self.options.tags:
                 options.append('--tags')
                 options.append(self.options.tags)
+                cmd = drop_option("--tags", cmd, drop_value=True)
             if self.options.subsets:
                 options.append('--subsets')
                 options.append(self.options.subsets)
+                cmd = drop_option("--subsets", cmd, drop_value=True)
         else:
             options = []
 
