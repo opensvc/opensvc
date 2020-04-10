@@ -1463,8 +1463,15 @@ class ExtConfigMixin(object):
             return kwargs
         for keyword in self.kwstore.all_keys(cat, rtype):
             try:
-                kwargs[keyword.protoname] = self.conf_get(section, keyword.keyword, rtype=rtype)
+                kwargs[keyword.protoname] = self.conf_get(section, keyword.keyword, rtype=rtype, verbose=False)
             except ex.RequiredOptNotFound:
+                try:
+                    if keyword.provisioning and self.running_action != "provision":
+                        continue
+                except AttributeError:
+                    # not a BaseSvc
+                    pass
+                self.log.error("%s.%s is mandatory" % (section, keyword.keyword))
                 raise
             except ex.OptNotFound as exc:
                 kwargs[keyword.protoname] = exc.default
