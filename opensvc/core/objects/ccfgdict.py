@@ -44,6 +44,8 @@ PRIVATE_KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "disable",
+        "protoname": "disabled",
+        "protoname": "disabled",
         "inheritance": "leaf",
         "generic": True,
         "at": True,
