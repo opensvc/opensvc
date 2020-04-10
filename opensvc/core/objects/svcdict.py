@@ -778,6 +778,7 @@ KEYWORDS = [
     {
         "sections": SECTIONS,
         "keyword": "disable",
+        "protoname": "disabled",
         "inheritance": "leaf",
         "generic": True,
         "at": True,
