@@ -5,7 +5,7 @@ from subprocess import *
 import core.exceptions as ex
 from env import Env
 from utilities.lazy import lazy
-from utilities.proc import which
+from utilities.proc import which, justcall
 from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
@@ -33,11 +33,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         while i > 0:
             i -= 1
             cmd = ["sg_persist", "-n", "-r", d]
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
-            out, err = p.communicate()
-            out = bdecode(out)
-            err = bdecode(err)
-            ret = p.returncode
+            out, err, ret = justcall(cmd)
             if "unsupported service action" in err:
                 raise ex.ScsiPrNotsupported("disk %s does not support persistent reservation" % d)
             if "Not ready" in err:
