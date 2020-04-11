@@ -377,11 +377,8 @@ class BaseDiskRaw(BaseDisk):
     def _status(self, verbose=False):
         self.validate_devs()
         self.mangle_devs_map()
-        if self.create_char_devices:
-            if len(self.original_devs) == 0:
-                return core.status.NA
-            if len(self.devs_map) == 0:
-                return core.status.DOWN
+        if len(self.original_devs) == 0:
+            return core.status.NA
         if self.is_up():
             return core.status.UP
         else:
