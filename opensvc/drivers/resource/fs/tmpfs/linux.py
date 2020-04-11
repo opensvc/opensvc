@@ -4,5 +4,6 @@ DRIVER_GROUP = "fs"
 DRIVER_BASENAME = "tmpfs"
 
 class FsTmpfs(Fs):
-    pass
+    def check_stat(self):
+        pass
 
