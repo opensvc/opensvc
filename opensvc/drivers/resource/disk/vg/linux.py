@@ -8,11 +8,12 @@ import core.exceptions as ex
 import utilities.devices.linux
 
 from .. import BaseDisk, BASE_KEYWORDS
+from core.objects.svcdict import KEYS
 from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
-from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.subsystems.lvm.linux import get_lvs_attr
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "vg"
@@ -111,7 +112,7 @@ class DiskVg(BaseDisk):
         """
         if not self.has_it():
             return False
-        data = self.get_lvs_attr()
+        data = get_lvs_attr()
         if self.name not in data:
             # no lv ... happens in provisioning, where lv are not created yet
             self.log.debug("no logical volumes. consider up")
@@ -121,23 +122,6 @@ class DiskVg(BaseDisk):
                 # at least one lv is active
                 return True
         return False
-
-    @cache("vg.lvs.attr")
-    def get_lvs_attr(self):
-        cmd = [Env.syspaths.lvs, '-o', 'vg_name,lv_name,lv_attr', '--noheadings', '--separator=;']
-        out, err, ret = justcall(cmd)
-        data = {}
-        for line in out.splitlines():
-            l = line.split(";")
-            if len(l) != 3:
-                continue
-            vgname = l[0].strip()
-            lvname = l[1].strip()
-            attr = l[2].strip()
-            if vgname not in data:
-                data[vgname] = {}
-            data[vgname][lvname] = attr
-        return data
 
     @cache("vg.tags")
     def get_tags(self):
@@ -176,7 +160,7 @@ class DiskVg(BaseDisk):
             cmd += ["--cache"]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
 
     def list_tags(self, tags=None):
@@ -209,7 +193,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgchange', '-a', 'y', self.name]
         ret, out, err = self.vcall(cmd)
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         if ret != 0:
             raise ex.Error
@@ -218,7 +202,7 @@ class DiskVg(BaseDisk):
         cmd = ['vgchange', '-a', 'n', self.name]
         ret, out, err = self.vcall(cmd, err_to_info=True)
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         if ret == 0:
             return True
@@ -231,7 +215,7 @@ class DiskVg(BaseDisk):
 
     def do_start(self):
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         curtags = self.list_tags()
         tags_to_remove = set(curtags) - set([self.tag])
@@ -339,7 +323,7 @@ class DiskVg(BaseDisk):
     def provisioned(self):
         # don't trust cache for that
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         self.clear_cache("vg.pvs")
         self.vgscan()
@@ -353,7 +337,7 @@ class DiskVg(BaseDisk):
         if ret != 0:
             raise ex.Error
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         self.clear_cache("vg.pvs")
         self.svc.node.unset_lazy("devtree")
@@ -435,7 +419,7 @@ class DiskVg(BaseDisk):
 
         self.can_rollback = True
         self.clear_cache("vg.lvs")
-        self.clear_cache("vg.lvs.attr")
+        self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
         self.clear_cache("vg.pvs")
         self.svc.node.unset_lazy("devtree")

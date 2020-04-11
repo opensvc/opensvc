@@ -69,6 +69,7 @@ class DiskLv(BaseDiskLv):
 
         cmd = ["lvremove", "-f", dev]
         ret, out, err = self.vcall(cmd)
+        self.clear_cache("lvs.attr")
         if ret != 0:
             raise ex.Error
         self.svc.node.unset_lazy("devtree")
@@ -122,6 +123,7 @@ class DiskLv(BaseDiskLv):
         out, err = p2.communicate()
         out = bdecode(out)
         err = bdecode(err)
+        self.clear_cache("lvs.attr")
         if p2.returncode != 0:
             raise ex.Error(err)
         self.can_rollback = True
