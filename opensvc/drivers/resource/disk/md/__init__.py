@@ -8,6 +8,7 @@ import utilities.devices.linux
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from core.objects.svcdict import KEYS
+from utilities.cache import cache
 from utilities.converters import convert_size
 from utilities.fcache import fcache
 from utilities.lazy import lazy
@@ -185,7 +186,7 @@ class DiskMd(BaseDisk):
         devpath = self.devpath()
         if os.path.exists(devpath):
             return devpath
-        out, err, ret = self.mdadm_scan()
+        out, err, ret = self.mdadm_scan_v()
         for line in out.splitlines():
             if self.uuid in line:
                 devname = line.split()[1]
@@ -213,6 +214,7 @@ class DiskMd(BaseDisk):
     def assemble(self):
         cmd = [self.mdadm, "--assemble", self.devname(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
+        self.clear_cache("mdadm.scan.v")
         if ret == 2:
             self.log.info("no changes were made to the array")
         elif ret != 0:
@@ -223,6 +225,7 @@ class DiskMd(BaseDisk):
     def manage_stop(self):
         cmd = [self.mdadm, "--stop", self.md_devpath()]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
+        self.clear_cache("mdadm.scan.v")
         if ret != 0:
             raise ex.Error
 
@@ -353,10 +356,7 @@ class DiskMd(BaseDisk):
         else:
             return self.sub_devs_inactive()
 
-    def mdadm_scan(self):
-        cmd = [self.mdadm, "--detail", "--scan"]
-        return justcall(cmd)
-
+    @cache("mdadm.scan.v")
     def mdadm_scan_v(self):
         cmd = [self.mdadm, "-E", "--scan", "-v"]
         return justcall(cmd)
@@ -432,6 +432,7 @@ class DiskMd(BaseDisk):
                 faultydev = line.split()[-1]
                 cmd = [self.mdadm, "--re-add", devpath, faultydev]
                 ret, out, err = self.vcall(cmd, warn_to_info=True)
+                self.clear_cache("mdadm.scan.v")
                 if ret != 0:
                     raise ex.Error("failed to re-add %s to %s"%(faultydev, devpath))
                 added += 1
@@ -478,6 +479,7 @@ class DiskMd(BaseDisk):
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         out, err = proc.communicate(input=b'no\n')
         out, err = bdecode(out).strip(), bdecode(err).strip()
+        self.clear_cache("mdadm.scan.v")
         self.log.info(out)
         if proc.returncode != 0:
             raise ex.Error(err)
@@ -517,4 +519,5 @@ class DiskMd(BaseDisk):
             self.log.info("reset %s.uuid@%s", self.rid, Env.nodename)
             self.svc._set(self.rid, "uuid@"+Env.nodename, "")
         self.svc.node.unset_lazy("devtree")
+        self.clear_cache("mdadm.scan.v")
 
