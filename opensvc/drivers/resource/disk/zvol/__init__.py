@@ -2,8 +2,6 @@ import os
 import signal
 import time
 
-from subprocess import *
-
 import core.exceptions as ex
 
 from .. import BaseDisk, BASE_KEYWORDS
