@@ -7,8 +7,9 @@ import utilities.devices.linux
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from core.objects.svcdict import KEYS
-from utilities.cache import cache
 from utilities.proc import justcall, which
+from utilities.subsystems.lvm.linux import get_lvs_attr
+
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "lv"
@@ -93,21 +94,21 @@ class BaseDiskLv(BaseDisk):
         return False
 
     def get_lv_attr(self):
-        cmd = [Env.syspaths.lvs, '-o', 'lv_attr', '--noheadings', '--separator=;', self.fullname]
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            return
-        return out.strip()
+        data = get_lvs_attr()
+        lv_attr = data.get(self.vg, {}).get(self.name)
+        return lv_attr
 
     def activate_lv(self):
         cmd = ['lvchange', '-a', 'y', self.fullname]
         ret, out, err = self.vcall(cmd)
+        self.clear_cache("lvs.attr")
         if ret != 0:
             raise ex.Error
 
     def deactivate_lv(self):
         cmd = ['lvchange', '-a', 'n', self.fullname]
         ret, out, err = self.vcall(cmd, err_to_info=True)
+        self.clear_cache("lvs.attr")
         if ret != 0:
             raise ex.Error
 
