@@ -8,7 +8,6 @@ import core.status
 from .. import BaseDisk, BASE_KEYWORDS
 from utilities.lock import cmlock
 from env import Env
-from utilities.cache import cache, clear_cache
 from utilities.lazy import lazy
 from utilities.subsystems.zfs import zpool_devs, zpool_getprop, zpool_setprop
 from core.objects.svcdict import KEYS
@@ -144,15 +143,14 @@ class DiskZpool(BaseDisk):
             errors.append(entry)
         return errors
 
-    @cache("zpool.status.{args[1]}")
-    def zpool_status(self, name):
-        cmd = ["zpool", "status", "-v", name]
+    @lazy
+    def zpool_status(self):
+        cmd = ["zpool", "status", "-v", self.name]
         out, err, ret = justcall(cmd)
         return out+err
 
     def _status(self, verbose=False):
-        status = self.zpool_status(self.name)
-        errors = self.zpool_errors(status)
+        errors = self.zpool_errors(self.zpool_status)
         if errors:
             for error in errors:
                 if "pool I/O is currently suspended" in error:
@@ -167,8 +165,7 @@ class DiskZpool(BaseDisk):
     def is_up(self):
         """Returns True if the pool is present and activated
         """
-        status = self.zpool_status(self.name)
-        state = self.zpool_health(status)
+        state = self.zpool_health(self.zpool_status)
         if not self.has_it():
             return False
         if state == "ONLINE":
@@ -249,7 +246,7 @@ class DiskZpool(BaseDisk):
             raise ex.Error("failed to import pool")
         self.can_rollback = True
         self.set_multihost()
-        clear_cache("zpool.status." + self.name)
+        self.unset_lazy("zpool_status")
 
     def do_stop(self):
         if not self.is_up():
@@ -260,7 +257,7 @@ class DiskZpool(BaseDisk):
         if ret != 0:
             cmd = ["zpool", "export", "-f", self.name]
             ret, out, err = self.vcall(cmd)
-        clear_cache("zpool.status." + self.name)
+        self.unset_lazy("zpool_status")
         if ret != 0:
             raise ex.Error
 
