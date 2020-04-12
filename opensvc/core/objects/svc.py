@@ -2328,19 +2328,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except OSError as exc:
             return True
 
-    def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
+    def load_status_json(self, from_resource_status_cache=False, refresh=False):
         """
         Return a structure containing hierarchical status of
         the service and monitor information. Fetch CRM status from cache if
         possible and allowed by kwargs.
         """
-        data = None
+        if not from_resource_status_cache or not refresh:
+            return
         try:
             lockfile = os.path.join(self.var_d, "lock.json.status")
             with utilities.lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
-                if not from_resource_status_cache and \
-                   not refresh and \
-                   os.path.exists(self.status_data_dump) and \
+                if os.path.exists(self.status_data_dump) and \
                    not self.status_data_dump_outdated():
                     try:
                         with open(self.status_data_dump, 'r') as filep:
@@ -2349,48 +2348,55 @@ class BaseSvc(Crypt, ExtConfigMixin):
                         pass
         except utilities.lock.LOCK_EXCEPTIONS as exc:
             raise ex.AbortAction(str(exc))
+        running = self.get_running(data.get("resources", {}).keys())
+        if running:
+            data["running"] = running
+        return data
 
+    def locking_status_data_eval(self, refresh=False):
         waitlock = convert_duration(self.options.waitlock)
         if waitlock is None or waitlock < 0:
             waitlock = self.lock_timeout
+        # use a different lock to not block the faster "from cache" codepath
+        lockfile = os.path.join(self.var_d, "lock.status")
+        try:
+            with utilities.lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
+                return self.print_status_data_eval(refresh=refresh)
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
+            raise ex.AbortAction(str(exc))
 
+    def status_smon_data(self, mon_data=False):
+        if not mon_data:
+            return {}
+        mon_data = self.get_smon_data()
+        data = {}
+        try:
+            data["compat"] = mon_data["compat"]
+        except:
+            pass
+        try:
+            data["avail"] = mon_data["service"]["avail"]
+        except:
+            pass
+        try:
+            data["overall"] = mon_data["service"]["overall"]
+        except:
+            pass
+        try:
+            data["placement"] = mon_data["service"]["placement"]
+        except:
+            pass
+        try:
+            data = mon_data["instances"][Env.nodename]
+        except:
+            pass
+        return {"cluster": data}
+
+    def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
+        data = self.load_status_json(from_resource_status_cache=from_resource_status_cache, refresh=refresh)
         if data is None:
-            # use a different lock to not block the faster "from cache" codepath
-            lockfile = os.path.join(self.var_d, "lock.status")
-            try:
-                with utilities.lock.cmlock(timeout=waitlock, delay=1, lockfile=lockfile, intent="status"):
-                    data = self.print_status_data_eval(refresh=refresh)
-            except utilities.lock.LOCK_EXCEPTIONS as exc:
-                raise ex.AbortAction(str(exc))
-        else:
-            running = self.get_running(data.get("resources", {}).keys())
-            if running:
-                data["running"] = running
-
-        if mon_data:
-            mon_data = self.get_smon_data()
-            data["cluster"] = {}
-            try:
-                data["cluster"]["compat"] = mon_data["compat"]
-            except:
-                pass
-            try:
-                data["cluster"]["avail"] = mon_data["service"]["avail"]
-            except:
-                pass
-            try:
-                data["cluster"]["overall"] = mon_data["service"]["overall"]
-            except:
-                pass
-            try:
-                data["cluster"]["placement"] = mon_data["service"]["placement"]
-            except:
-                pass
-            try:
-                data["monitor"] = mon_data["instances"][Env.nodename]
-            except:
-                pass
-
+            data = self.locking_status_data_eval(refresh=refresh)
+        data.update(self.status_smon_data(mon_data=mon_data))
         return data
 
     def print_status_data_eval(self, refresh=False, write_data=True, clear_rstatus=False):
