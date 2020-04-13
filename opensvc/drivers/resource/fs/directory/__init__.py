@@ -62,11 +62,14 @@ class FsDirectory(Resource):
                  **kwargs):
         super(FsDirectory, self).__init__(type="fs.directory", **kwargs)
         self.path = path
-        self.mount_point = path # for fs ordering
         self.user = user
         self.group = group
         self.perm = perm
         self.zone = zone
+
+    @lazy
+    def mount_point(self):
+        return self.path
 
     def on_add(self):
         if self.zone is None:
