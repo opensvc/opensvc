@@ -179,9 +179,7 @@ class BaseFs(Resource):
                  mkfs_opt=None,
                  **kwargs):
         super(BaseFs, self).__init__(type="fs", **kwargs)
-        if mount_point:
-            mount_point = mount_point.rstrip(os.sep)
-        self.mount_point = mount_point
+        self.raw_mount_point = mount_point
         self._device = device
         self.fs_type = fs_type or ""
         self.stat_timeout = stat_timeout
@@ -192,10 +190,18 @@ class BaseFs(Resource):
         self.vg = vg
         self.size = size
         self.mkfs_opt = mkfs_opt or []
+        if self.zone is not None:
+            r.tags.add(self.zone)
+            r.tags.add("zone")
 
-    def on_add(self):
+    @lazy
+    def mount_point(self):
+        try:
+            mount_point = self.raw_mount_point.rstrip(os.sep)
+        except AttributeError:
+            return self.raw_mount_point
         if self.zone is None:
-            return
+            return self.raw_mount_point
         zp = None
         for r in [r for r in self.svc.resources_by_id.values() if r.type == "container.zone"]:
             if r.name == self.zone:
@@ -206,11 +212,10 @@ class BaseFs(Resource):
                 break
         if zp is None:
             raise ex.Error("zone %s, referenced in %s, not found" % (self.zone, self.rid))
-        self.mount_point = zp + "/root" + self.mount_point
+        mount_point = zp + "/root" + self.raw_mount_point
         if "<%s>" % self.zone != zp:
-            self.mount_point = os.path.realpath(self.mount_point)
-        r.tags.add(self.zone)
-        r.tags.add("zone")
+            mount_point = os.path.realpath(mount_point)
+        return mount_point
 
     @lazy
     def testfile(self):
