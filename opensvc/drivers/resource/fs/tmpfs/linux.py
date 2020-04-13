@@ -5,5 +5,5 @@ DRIVER_BASENAME = "tmpfs"
 
 class FsTmpfs(Fs):
     def check_stat(self):
-        pass
+        return True
 
