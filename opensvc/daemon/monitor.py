@@ -3647,10 +3647,8 @@ class Monitor(shared.OsvcThread):
                     self.reload_instance_frozen(svc.path)
 
     def reload_instance_frozen(self, path):
-        if not nodename:
-            nodename = Env.nodename
         try:
-            shared.CLUSTER_DATA[nodename]["services"]["status"][path]["frozen"] = shared.SERVICES[path].frozen()
+            shared.CLUSTER_DATA[Env.nodename]["services"]["status"][path]["frozen"] = shared.SERVICES[path].frozen()
         except Exception:
             pass
 
