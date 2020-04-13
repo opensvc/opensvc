@@ -77,10 +77,12 @@ class FsDocker(Resource):
         ]
         return data
 
-    def on_add(self):
-        self.mount_point = self.lib.container_data_dir
-        if self.mount_point is None:
-            self.mount_point = "/var/tmp"
+    @lazy
+    def mount_point(self):
+        mount_point = self.lib.container_data_dir
+        if mount_point is None:
+            mount_point = "/var/tmp"
+        return mount_point
 
     @lazy
     def vol_path(self):
