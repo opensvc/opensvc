@@ -3642,6 +3642,17 @@ class Monitor(shared.OsvcThread):
                         "path": svc.path,
                     })
                     svc.freezer.freeze()
+                    # reload the frozen state immediately so the monitor will
+                    # not take action on this instance in the same loop.
+                    self.reload_instance_frozen(svc.path)
+
+    def reload_instance_frozen(self, path):
+        if not nodename:
+            nodename = Env.nodename
+        try:
+            shared.CLUSTER_DATA[nodename]["services"]["status"][path]["frozen"] = shared.SERVICES[path].frozen()
+        except Exception:
+            pass
 
     def instance_frozen(self, path, nodename=None):
         if not nodename:
