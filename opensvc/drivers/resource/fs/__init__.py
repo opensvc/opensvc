@@ -191,8 +191,8 @@ class BaseFs(Resource):
         self.size = size
         self.mkfs_opt = mkfs_opt or []
         if self.zone is not None:
-            r.tags.add(self.zone)
-            r.tags.add("zone")
+            self.tags.add(self.zone)
+            self.tags.add("zone")
 
     @lazy
     def mount_point(self):
