@@ -178,6 +178,10 @@ class BaseDiskRaw(BaseDisk):
                 self.devs_map[src] = dst
                 self.devs.add(src)
                 continue
+            else:
+                if not os.path.exists(dev) or not self.verify_dev(dev):
+                    self.devs_not_found.add(dev)
+                    continue
             l = set(glob.glob(dev))
             if len(l) > 0:
                 for _dev in l:

@@ -10,6 +10,7 @@ from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.devices.linux import loop_to_file
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"
@@ -269,3 +270,8 @@ class DiskRaw(BaseDiskRaw):
             sys_devs.add(sys_dev)
         return sys_devs
 
+    def verify_dev(self, dev):
+        if dev.startswith("/dev/loop"):
+            fpath = loop_to_file(dev)
+            return fpath is not None
+        return True
