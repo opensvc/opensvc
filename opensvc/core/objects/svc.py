@@ -2328,14 +2328,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except OSError as exc:
             return True
 
-    def load_status_json(self, from_resource_status_cache=False, refresh=False):
+    def load_status_json(self):
         """
         Return a structure containing hierarchical status of
         the service and monitor information. Fetch CRM status from cache if
         possible and allowed by kwargs.
         """
-        if not from_resource_status_cache or not refresh:
-            return
         try:
             lockfile = os.path.join(self.var_d, "lock.json.status")
             with utilities.lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
@@ -2393,7 +2391,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return {"cluster": data}
 
     def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
-        data = self.load_status_json(from_resource_status_cache=from_resource_status_cache, refresh=refresh)
+        if from_resource_status_cache or refresh:
+            data = None
+        else:
+            data = self.load_status_json()
         if data is None:
             data = self.locking_status_data_eval(refresh=refresh)
         data.update(self.status_smon_data(mon_data=mon_data))
