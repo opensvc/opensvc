@@ -1,6 +1,7 @@
 def agent_version():
     try:
-        import version
+        from utilities.version import version
+        return version.version
     except ImportError:
         pass
 
