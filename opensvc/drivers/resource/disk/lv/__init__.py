@@ -169,8 +169,6 @@ class BaseDiskLv(BaseDisk):
         return self.lv_devices()
 
     def exposed_devs(self):
-        lvp = "/dev/"+self.vg+"/"+self.name
-        if os.path.exists(lvp):
-            return set([lvp])
-        return set()
+        lvp = "/dev/%s" % self.fullname
+        return set([lvp])
 
