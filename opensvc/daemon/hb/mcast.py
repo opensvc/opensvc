@@ -116,6 +116,8 @@ class HbMcastTx(HbMcast):
     """
     The multicast heartbeat tx class.
     """
+    sock_tmo = 2
+
     def __init__(self, name):
         HbMcast.__init__(self, name, role="tx")
 
@@ -135,7 +137,7 @@ class HbMcastTx(HbMcast):
             self.set_if()
             ttl = struct.pack('b', 32)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-            self.sock.settimeout(2)
+            self.sock.settimeout(self.sock_tmo)
             self.group = (self.addr, self.port)
         except socket.error as exc:
             self.log.error("init error: %s", str(exc))
@@ -203,6 +205,7 @@ class HbMcastRx(HbMcast):
     """
     The multicast heartbeat rx class.
     """
+    sock_tmo = 2
     fragments = {}
 
     def __init__(self, name):
@@ -236,7 +239,7 @@ class HbMcastRx(HbMcast):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, self.mreq)
         self.sock.bind(('', self.port))
-        self.sock.settimeout(2)
+        self.sock.settimeout(self.sock_tmo)
         self.log.info("listening on %s:%s", self.addr, self.port)
 
     def run(self):

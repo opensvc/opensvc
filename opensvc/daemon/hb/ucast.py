@@ -82,6 +82,8 @@ class HbUcastTx(HbUcast):
     """
     The unicast heartbeat tx class.
     """
+    sock_tmo = 1.0
+
     def __init__(self, name):
         HbUcast.__init__(self, name, role="tx")
 
@@ -123,7 +125,7 @@ class HbUcastTx(HbUcast):
         try:
             #self.log.info("sending to %s:%s", config["addr"], config["port"])
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
+            sock.settimeout(self.sock_tmo)
             sock.bind((self.peer_config[Env.nodename]["addr"], 0))
             sock.connect((config["addr"], config["port"]))
             sock.sendall((message+"\0").encode())
@@ -149,6 +151,9 @@ class HbUcastRx(HbUcast):
     """
     The unicast heartbeat rx class.
     """
+    sock_accept_tmo = 2.0
+    sock_recv_tmo = 5.0
+
     def __init__(self, name):
         HbUcast.__init__(self, name, role="rx")
         self.sock = None
@@ -177,7 +182,7 @@ class HbUcastRx(HbUcast):
         self.sock.bind((self.peer_config[Env.nodename]["addr"],
                         self.peer_config[Env.nodename]["port"]))
         self.sock.listen(5)
-        self.sock.settimeout(2)
+        self.sock.settimeout(self.sock_accept_tmo)
 
     def run(self):
         self.set_tid()
@@ -204,6 +209,7 @@ class HbUcastRx(HbUcast):
 
         try:
             conn, addr = self.sock.accept()
+            self.sock.settimeout(self.sock_recv_tmo)
         except socket.timeout:
             return
         finally:
