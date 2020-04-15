@@ -5,8 +5,6 @@ import re
 from .diskinfo import BaseDiskInfo
 from utilities.proc import justcall
 
-regex = re.compile(r"^\W*[0-9]*:")
-regex_path = re.compile(r'\W*[0-9]*\W+')
 
 class DiskInfo(BaseDiskInfo):
 
@@ -14,7 +12,7 @@ class DiskInfo(BaseDiskInfo):
         self.load_cache()
 
     def is_id(self, line):
-        if regex.match(line) is None:
+        if re.match(r"^\W*[0-9]*:", line) is None:
             return False
         return True
 
@@ -55,7 +53,7 @@ class DiskInfo(BaseDiskInfo):
             elif 'WWID' in e:
                 wwid = e.split(":")[-1].replace('-','').lower()
                 wwid = wwid.strip('"').replace(" ", "_")
-            elif regex_path.match(e) is not None and 'valid' in e:
+            elif re.match(r'\W*[0-9]*\W+', e) is not None and 'valid' in e:
                 path_count += 1
         if path_count >= 0:
             self.cache_add(id, dev, wwid, path_count)

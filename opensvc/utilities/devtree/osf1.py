@@ -4,7 +4,6 @@ from .devtree import DevTree as BaseDevTree
 from utilities.diskinfo import DiskInfo
 from utilities.proc import justcall
 
-regex = re.compile(r'\W*[a-h]:')
 
 class DevTree(BaseDevTree):
     def get_parts(self, devname, d):
@@ -49,7 +48,7 @@ drivedata: 0
         for line in out.split("\n"):
             if line.startswith("bytes/sector"):
                 bs = int(line.split()[-1])
-            if regex.match(line) is None:
+            if re.match(r'\W*[a-h]:', line) is None:
                 continue
             l = line.split()
             part = l[0].replace(':','')

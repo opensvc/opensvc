@@ -3,8 +3,6 @@ import socket
 import struct
 import re
 
-regex_mac = re.compile('[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$')
-regex_broadcast = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
 
 class wolrequest(object):
     sock_tmo = 5.0
@@ -20,6 +18,7 @@ class wolrequest(object):
     def check_mac(self):
         if not ':' and not '-' in self.mac:
             return False
+        regex_mac = re.compile('[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$')
         if regex_mac.match(self.mac.lower()) is None:
             return False
         if ':' in self.mac:
@@ -31,6 +30,7 @@ class wolrequest(object):
         return True
 
     def check_broadcast(self):
+        regex_broadcast = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
         if regex_broadcast.match(self.broadcast) is None:
             return False
         return True
