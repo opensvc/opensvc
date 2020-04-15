@@ -15,6 +15,7 @@ from utilities.lazy import lazy
 from utilities.converters import convert_boolean
 from env import Env
 from core.resource import Resource
+from core.capabilities import capabilities
 from utilities.proc import which, lcall
 from utilities.string import is_string
 
@@ -564,7 +565,7 @@ class App(Resource):
     def netns_formatter(self, cmd):
         if Env.sysname != "Linux":
             return cmd
-        if which("ip") is None:
+        if "node.x.ip" not in capabilities:
             return cmd
         resources = [res for res in self.svc.get_resources("ip.cni") if res.container_rid is None]
         if not resources:

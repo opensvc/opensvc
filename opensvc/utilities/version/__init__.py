@@ -20,9 +20,10 @@ def agent_version():
         pass
 
     import os
-    from utilities.proc import which, justcall
+    from utilities.proc import justcall
+    from core.capabilities import capabilities
     from env import Env
-    if which("git"):
+    if "node.x.git" in capabilities:
         cmd = ["git", "--git-dir", os.path.join(Env.paths.pathsvc, ".git"),
                "describe", "--tags", "--abbrev=0"]
         out, err, ret = justcall(cmd)

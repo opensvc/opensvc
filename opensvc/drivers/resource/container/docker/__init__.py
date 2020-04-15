@@ -280,6 +280,13 @@ ATTR_MAP = {
     },
 }
 
+def driver_capabilities():
+    data = []
+    from utilities.proc import which
+    if which("docker") or which("docker.io"):
+        data.append("container.docker")
+    return data
+
 def alarm_handler(signum, frame):
     raise KeyboardInterrupt
 

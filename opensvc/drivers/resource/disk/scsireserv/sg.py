@@ -3,16 +3,32 @@ import time
 from subprocess import *
 
 import core.exceptions as ex
+from core.capabilities import capabilities
 from env import Env
 from utilities.lazy import lazy
-from utilities.proc import which, justcall
+from utilities.proc import justcall
 from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
+def driver_capabilities():
+    from utilities.proc import which
+    data = []
+    if which("sg_persist"):
+        data.append("disk.scsireserv")
+        data.append("disk.scsireserv.sg_persist")
+    if which("mpathpersist"):
+        out, err, ret = justcall(["multipath", "-h"])
+        for line in err.splitlines():
+            version = [int(v) for v in line.split()[1].strip("v").split(".")]
+            break
+        if version > [0, 7, 8]:
+            data.append("disk.scsireserv")
+            data.append("disk.scsireserv.mpathpersist")
+    return data
 
 class DiskScsireservSg(BaseDiskScsireserv):
     def scsireserv_supported(self):
-        if which("sg_persist") is None and which("mpathpersist") is None:
+        if not self.has_capability("disk.scsireserv"):
             self.status_log("sg_persist or mpathpersist must be installed to use scsi-3 reservations")
             return False
         return True
@@ -103,12 +119,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return True
         return False
 
-    @lazy
-    def has_mpathpersist(self):
-        return which("mpathpersist")
-
     def use_mpathpersist(self, disk):
-        if not self.has_mpathpersist:
+        if not self.has_capability("disk.scsireserv.mpathpersist"):
             return False
         if [disk] != self.devs[disk]:
             return True
@@ -162,7 +174,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret
 
     def dev_to_mpath_dev(self, devpath):
-        if which(Env.syspaths.multipath) is None:
+        if "node.x.multipath" not in capabilities:
             return devpath
         cmd = [Env.syspaths.multipath, "-l", "-v1", devpath]
         ret, out, err = self.call(cmd)

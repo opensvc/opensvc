@@ -6,14 +6,15 @@ import time
 
 import core.exceptions as ex
 from env import Env
+from core.capabilities import capabilities
 from utilities.cache import cache
-from utilities.proc import justcall, call, qcall, which
+from utilities.proc import justcall, call, qcall
 
 label_to_dev_cache = {}
 
 
 def udevadm_settle():
-    if not which("udevadm"):
+    if "node.x.udevadm" not in capabilities:
         return
     cmd = ["udevadm", "settle"]
     justcall(cmd)
@@ -161,7 +162,7 @@ def promote_dev_rw(dev, log=None):
             pass
 
 def loop_is_deleted(dev):
-    if not which(Env.syspaths.losetup):
+    if "node.x.losetup" not in capabilities:
         raise ex.Error("losetup must be installed")
     out, err, ret = justcall([Env.syspaths.losetup, dev])
     if "(deleted)" in out:
@@ -177,7 +178,7 @@ def label_to_dev(label, tree=None):
     if label in label_to_dev_cache:
         return label_to_dev_cache[label]
 
-    if not which(Env.syspaths.blkid):
+    if "node.x.blkid" not in capabilities:
         return
     out, err, ret = justcall([Env.syspaths.blkid, "-t", label])
     if ret != 0:

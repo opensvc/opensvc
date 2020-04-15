@@ -25,6 +25,7 @@ import foreign.six as six
 import core.exceptions as ex
 import core.logger
 import core.objects.builder
+from core.capabilities import capabilities
 from core.comm import Crypt
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
@@ -5136,7 +5137,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         oci = self.oget("node", "oci")
         if oci:
             return oci
-        if which("podman"):
+        if "node.x.podman" in capabilities:
             return "podman"
         else:
             return "docker"
+
+    @formatter
+    def scan_capabilities(self):
+        return capabilities.scan()
+
+    @formatter
+    def print_capabilities(self):
+        return capabilities.data
+
+

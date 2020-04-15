@@ -1,10 +1,8 @@
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 ZONEADM="/usr/sbin/zoneadm"
 
 def is_zone():
-    if not which('zonename'):
-        return False
     out, err, ret = justcall(['zonename'])
     if ret != 0:
         return False

@@ -15,8 +15,9 @@ import core.status
 import core.exceptions as ex
 
 from env import Env
+from core.capabilities import capabilities
 from utilities.lazy import lazy, unset_lazy, set_lazy
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class ContainerLib(object):
     """
@@ -504,20 +505,15 @@ class DockerLib(ContainerLib):
         docker_exe as the first choice, and a docker.io or docker exe found
         in PATH as a fallback.
         """
-        if self.docker_exe_init and which(self.docker_exe_init):
-            return self.docker_exe_init
-        elif which("docker.io"):
+        if capabilities.has("node.x.docker.io"):
             return "docker.io"
-        elif which("docker"):
+        if capabilities.has("node.x.docker"):
             return "docker"
-        else:
-            raise ex.InitError("docker executable not found")
+        raise ex.InitError("docker executable not found")
 
     @lazy
     def dockerd_exe(self):
-        if self.dockerd_exe_init and which(self.dockerd_exe_init):
-            return self.dockerd_exe_init
-        elif which("dockerd"):
+        if capabilities.has("node.x.dockerd"):
             return "dockerd"
         else:
             raise ex.InitError("dockerd executable not found")

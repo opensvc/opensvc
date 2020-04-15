@@ -45,6 +45,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities():
+    from utilities.proc import which
+    data = []
+    if which("xm"):
+        data.append("container.xen")
+    return data
 
 class ContainerXen(BaseContainer):
     def __init__(self, **kwargs):
