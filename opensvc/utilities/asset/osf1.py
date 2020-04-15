@@ -4,7 +4,6 @@ from .asset import BaseAsset
 from utilities.proc import justcall
 
 sim = False
-regex = re.compile(r"^\W*[0-9]*:")
 
 class Asset(BaseAsset):
     def __init__(self, node):
@@ -121,7 +120,7 @@ class Asset(BaseAsset):
         return 'Unknown'
 
     def is_id(self, line):
-        if regex.match(line) is None:
+        if re.match(r"^\W*[0-9]*:", line) is None:
             return False
         return True
 
