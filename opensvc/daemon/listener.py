@@ -745,6 +745,8 @@ class Listener(shared.OsvcThread):
 
 
 class ClientHandler(shared.OsvcThread):
+    sock_tmo = 5.0
+
     def __init__(self, parent, conn, addr, encrypted, scheme, tls, tls_context):
         shared.OsvcThread.__init__(self)
         self.parent = parent
@@ -1242,6 +1244,7 @@ class ClientHandler(shared.OsvcThread):
 
     def handle_h2_client(self):
         self.negotiate_tls()
+        self.tls_conn.settimeout(self.sock_tmo)
 
         # init h2 connection
         h2config = H2Configuration(client_side=False)
@@ -1304,11 +1307,11 @@ class ClientHandler(shared.OsvcThread):
     def handle_raw_client(self):
         chunks = []
         buff_size = 4096
-        self.conn.setblocking(0)
+        self.conn.setblocking(False)
         while True:
             if self.stopped():
                 break
-            ready = select.select([self.conn], [], [self.conn], 6)
+            ready = select.select([self.conn], [], [self.conn], self.sock_tmo)
             if ready[0]:
                 chunk = self.sock_recv(self.conn, buff_size)
             else:
@@ -1380,7 +1383,7 @@ class ClientHandler(shared.OsvcThread):
         if result is None:
             return
         self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
-        self.conn.setblocking(1)
+        self.conn.setblocking(True)
         if self.encrypted:
             message = self.encrypt(result)
         else:

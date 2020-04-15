@@ -432,6 +432,7 @@ class ContainerLib(object):
 
 
 class DockerLib(ContainerLib):
+    sock_tmo = 5.0
     container_type = ["container.docker", "task.docker"]
 
     def __init__(self, svc=None):
@@ -521,6 +522,7 @@ class DockerLib(ContainerLib):
     def test_sock(self, path):
         import socket
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(self.sock_tmo)
         try:
             sock.connect(path)
         except Exception as exc:

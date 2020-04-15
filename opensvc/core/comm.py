@@ -57,7 +57,8 @@ RETRYABLE = (
     EPIPE,
     EALREADY,
 )
-SOCK_TMO = 1.0
+SOCK_TMO_REQUEST = 1.0
+SOCK_TMO_STREAM = 6.2
 PAUSE = 0.2
 PING = ".".encode()
 
@@ -815,7 +816,7 @@ class Crypt(object):
                     secret = self.get_secret(sp, secret)
                     cluster_name = self.get_cluster_name(sp, cluster_name)
                     sock = socket.socket(sp.af, socket.SOCK_STREAM)
-                    sock.settimeout(SOCK_TMO)
+                    sock.settimeout(SOCK_TMO_REQUEST)
                     sock.connect(sp.to)
                     break
                 except socket.timeout:
@@ -826,7 +827,7 @@ class Crypt(object):
                                 "err": "timeout sending request",
                             }
                         time.sleep(PAUSE)
-                        elapsed += SOCK_TMO + PAUSE
+                        elapsed += SOCK_TMO_REQUEST + PAUSE
                         continue
                     raise
                 except socket.error as exc:
@@ -871,7 +872,7 @@ class Crypt(object):
                                 "err": "timeout waiting for result",
                             }
                         time.sleep(PAUSE)
-                        elapsed += SOCK_TMO + PAUSE
+                        elapsed += SOCK_TMO_REQUEST + PAUSE
         except socket.error as exc:
             if not silent:
                 self.log.error("%s comm error while %s: %s",
@@ -973,7 +974,7 @@ class Crypt(object):
         sp = self.socket_parms(server)
         try:
             sock = socket.socket(sp.af, socket.SOCK_STREAM)
-            sock.settimeout(6.2)
+            sock.settimeout(SOCK_TMO_STREAM)
             sock.connect(sp.to)
             if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,

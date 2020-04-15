@@ -119,6 +119,7 @@ class Dns(shared.OsvcThread):
             conn.close()
 
     def handle_client(self, conn):
+        # todo: change implementation to avoid socket.makefile with non blocking mode
         conn.settimeout(self.sock_tmo)
         cr = conn.makefile("r", **MAKEFILE_KWARGS)
         cw = conn.makefile("w", **MAKEFILE_KWARGS)
