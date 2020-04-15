@@ -2367,28 +2367,28 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if not mon_data:
             return {}
         mon_data = self.get_smon_data()
-        data = {}
+        data = {"cluster": {}}
         try:
-            data["compat"] = mon_data["compat"]
+            data["cluster"]["compat"] = mon_data["compat"]
         except:
             pass
         try:
-            data["avail"] = mon_data["service"]["avail"]
+            data["cluster"]["avail"] = mon_data["service"]["avail"]
         except:
             pass
         try:
-            data["overall"] = mon_data["service"]["overall"]
+            data["cluster"]["overall"] = mon_data["service"]["overall"]
         except:
             pass
         try:
-            data["placement"] = mon_data["service"]["placement"]
+            data["cluster"]["placement"] = mon_data["service"]["placement"]
         except:
             pass
         try:
-            data = mon_data["instances"][Env.nodename]
+            data["monitor"] = mon_data["instances"][Env.nodename]
         except:
             pass
-        return {"cluster": data}
+        return data
 
     def print_status_data(self, from_resource_status_cache=False, mon_data=False, refresh=False):
         if from_resource_status_cache or refresh:
