@@ -7,12 +7,15 @@ regex_mac = re.compile('[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$')
 regex_broadcast = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
 
 class wolrequest(object):
+    sock_tmo = 5.0
+
     def __init__(self, macaddress, broadcast, udpport=7):
         self.mac = macaddress
         self.broadcast = broadcast
         self.udpport = int(udpport)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.sock.settimeout(self.sock_tmo)
 
     def check_mac(self):
         if not ':' and not '-' in self.mac:
