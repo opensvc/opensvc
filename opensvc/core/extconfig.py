@@ -1061,27 +1061,25 @@ class ExtConfigMixin(object):
             return cd[s][o]
         raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
 
-    def conf_has_option_scoped(self, s, o, impersonate=None, cd=None, scope_order=None):
+    def conf_has_option_scoped(self, s, o, nodename=None, cd=None, scope_order=None):
         """
         Handles the keyword scope_order property, at and impersonate
         """
-        if cd is None:
+        if s != "DEFAULT":
             try:
-                cd = self.private_cd
-            except AttributeError:
-                cd = self.cd
-        if impersonate is None:
-            nodename = Env.nodename
+                options = cd[s].keys()
+            except KeyError:
+                return
         else:
-            nodename = impersonate
+            try:
+                options = cd["DEFAULT"].keys()
+            except KeyError:
+                options = []
 
-        if s != "DEFAULT" and not s in cd:
+        prefix = o + "@"
+        options = [option for option in options if o == option or option.startswith(prefix)]
+        if not options:
             return
-
-        if s == "DEFAULT":
-            options = cd.get("DEFAULT", {}).keys()
-        else:
-            options = cd[s].keys()
 
         candidates = [
             (o+"@"+nodename, True),
@@ -1131,21 +1129,22 @@ class ExtConfigMixin(object):
         else:
             nodename = impersonate
 
-        option = self.conf_has_option_scoped(s, o, impersonate=impersonate,
+        option = self.conf_has_option_scoped(s, o, nodename=nodename,
                                              cd=cd,
                                              scope_order=scope_order)
-        if option is None and (not self.has_default_section or not use_default):
-            raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
-
-        if option is None and use_default and self.has_default_section:
-            if s != "DEFAULT":
-                # fallback to default
-                return self.conf_get_val_scoped("DEFAULT", o,
-                                                impersonate=impersonate,
-                                                cd=cd,
-                                                scope_order=scope_order)
-            else:
+        if option is None:
+            if not self.has_default_section or not use_default:
                 raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
+
+            if use_default and self.has_default_section:
+                if s != "DEFAULT":
+                    # fallback to default
+                    return self.conf_get_val_scoped("DEFAULT", o,
+                                                    impersonate=impersonate,
+                                                    cd=cd,
+                                                    scope_order=scope_order)
+                else:
+                    raise ex.OptNotFound("scoped keyword %s.%s not found." % (s, o))
 
         try:
             val = cd[s][option]
