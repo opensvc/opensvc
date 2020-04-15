@@ -141,7 +141,7 @@ _table_formats = {"simple":
                               without_header_hide=["linebelowheader"])}
 
 
-_invisible_codes = re.compile(r"\x1b\[\d*m")  # ANSI color codes
+_invisible_codes = r"\x1b\[\d*m"  # ANSI color codes
 
 
 def simple_separated_format(separator):
