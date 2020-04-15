@@ -8,8 +8,8 @@ import os
 import copy
 from textwrap import TextWrapper
 
-from env import Env
 import core.exceptions as ex
+from env import Env
 
 class MissKeyNoDefault(Exception):
     pass
@@ -240,31 +240,37 @@ class Section(object):
     def __init__(self, section, top=None):
         self.section = section
         self.top = top
-        self.keywords = []
+        self.data = {}
         self.sigs = []
         self.rtypes = set()
 
     def __repr__(self):
-        return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
+        return "<Section %s keywords:%d>" % (self.section, len(self.data))
 
     def __str__(self):
-        return "<Section %s keywords:%d>" % (self.section, len(self.keywords))
+        return "<Section %s keywords:%d>" % (self.section, len(self.data))
 
     def __iadd__(self, o):
         if not isinstance(o, Keyword):
             return self
-        sig = (o.section, o.rtype, o.keyword)
-        if sig in self.sigs:
-            return self
-        self.keywords.append(o)
-        self.sigs.append(sig)
-        if isinstance(o.rtype, (list, tuple, set)):
+        if o.rtype is None:
+            sig = (None, o.keyword)
+            if sig in self.data:
+                return
+            self.data[sig] = o
+        else:
             for rt in o.rtype:
+                sig = (rt, o.keyword)
+                if sig in self.data:
+                    continue
+                self.data[sig] = o
                 if rt is not None:
                     self.rtypes.add(rt)
-        elif o.rtype is not None:
-            self.rtypes.add(o.rtype)
         return self
+
+    @property
+    def keywords(self):
+        return self.data.values()
 
     def dump(self):
         data = []
@@ -388,45 +394,32 @@ class Section(object):
             return [k for k in self.keywords if k.rtype == "" and k.provisioning]
 
     def getkey(self, keyword, rtype=None):
-        if '@' in keyword:
-            l = keyword.split('@')
-            if len(l) != 2:
-                return
-            keyword, _ = l
+        try:
+            keyword, _ = keyword.split("@", 1)
+        except ValueError:
+            pass
+        k = None
         if rtype:
             if rtype not in self.rtypes:
+                # unknown rtype, allowed by non-strict candidates,
+                # are routed to special type ''.
                 rtype = ""
                 fkey = ".".join((self.section, keyword))
             else:
                 fkey = ".".join((self.section, rtype, keyword))
-            if self.top is not None and fkey in self.top.deprecated_keywords:
+            if fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
                 if keyword is None:
                     return
-            fallback = None
-            for k in self.keywords:
-                if k.keyword != keyword:
-                    continue
-                if isinstance(k.rtype, (tuple, list)) and rtype in k.rtype:
-                    return k
-                if rtype == k.rtype:
-                    return k
-                if k.rtype is None:
-                    fallback = k
-            if fallback:
-                return fallback
+            k = self.data.get((rtype, keyword))
+            if not k:
+                k = self.data.get((None, keyword))
         else:
             fkey = ".".join((self.section, keyword))
-            if self.top is not None and fkey in self.top.deprecated_keywords:
+            if fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
-            for k in self.keywords:
-                if k.keyword != keyword:
-                    continue
-                if isinstance(k.rtype, (tuple, list)) and None in k.rtype:
-                    return k
-                if k.rtype is None:
-                    return k
-        return
+            k = self.data.get((None, keyword))
+        return k
 
 class KeywordStore(dict):
     def __init__(self, name=None, provision=False, keywords=None, deprecated_keywords=None,
