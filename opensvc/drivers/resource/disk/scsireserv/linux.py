@@ -1,7 +1,7 @@
 import core.status
 import utilities.devices.linux
 
-from .sg import DiskScsireservSg, node_capabilities
+from .sg import DiskScsireservSg, driver_capabilities
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "scsireserv"
