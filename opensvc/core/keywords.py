@@ -632,27 +632,30 @@ class KeywordStore(dict):
         Return the list of required keywords in the section for the resource
         type specified by <rtype>.
         """
-        if section not in self.sections:
+        try:
+            return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
+        except KeyError:
             return []
-        return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is True]
 
     def optional_keys(self, section, rtype=None):
         """
         Return the list of optional keywords in the section for the resource
         type specified by <rtype>.
         """
-        if section not in self.sections:
+        try:
+            return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is False]
+        except KeyError:
             return []
-        return [k for k in sorted(self.sections[section].getkeys(rtype)) if k.required is False]
 
     def all_keys(self, section, rtype=None):
         """
         Return the list of optional keywords in the section for the resource
         type specified by <rtype>.
         """
-        if section not in self.sections:
+        try:
+            return sorted(self.sections[section].getallkeys(rtype))
+        except KeyError:
             return []
-        return sorted(self.sections[section].getallkeys(rtype))
 
     def section_kwargs(self, cat, rtype=None):
         kwargs = {}
