@@ -4,9 +4,10 @@ import core.exceptions as ex
 import core.status
 from .. import BASE_KEYWORDS
 from env import Env
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "drbd"
@@ -28,6 +29,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
 )
+
+def driver_capabilities():
+    data = []
+    from utilities.proc import which
+    if which("drbdadm"):
+        data.append("disk.drbd")
+    return data
 
 
 class DiskDrbd(Resource):
@@ -63,7 +71,7 @@ class DiskDrbd(Resource):
 
     def drbdadm_cmd(self, cmd):
         if self.drbdadm is None:
-            if which('drbdadm'):
+            if "node.x.drbadm" in capabilities:
                 self.drbdadm = 'drbdadm'
             else:
                 raise ex.Error("drbdadm command not found")

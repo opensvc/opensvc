@@ -13,6 +13,7 @@ from optparse import OptionParser
 import daemon.shared as shared
 import core.exceptions as ex
 import core.logger
+from core.capabilities import capabilities
 from core.comm import CRYPTO_MODULE
 from utilities.lock import LockTimeout, cmlock
 from env import Env
@@ -184,6 +185,10 @@ class Daemon(object):
         shared.NODE = Node()
         self.log.info("daemon started, version %s, crypto mod %s, api version %s",
                       shared.NODE.agent_version, CRYPTO_MODULE, shared.API_VERSION)
+        caps = capabilities.scan()
+        self.log.info("%d capabilities:", len(caps))
+        for cap in caps:
+            self.log.info(" %s", cap)
 
     def loop_forever(self):
         """

@@ -16,6 +16,7 @@ import core.exceptions as ex
 import utilities.devices
 import utilities.render.color
 from env import Env
+from core.capabilities import capabilities
 from utilities.naming import factory
 from utilities.cache import clear_cache
 from utilities.lazy import lazy, set_lazy, unset_lazy
@@ -1418,6 +1419,8 @@ class Resource(object):
         """
         return {}
 
+    def has_capability(self, cap):
+        return capabilities.has("drivers.resource.%s" % cap)
 
 class DataResource(Resource):
     def __init__(self, rid, type="data", **kwargs):

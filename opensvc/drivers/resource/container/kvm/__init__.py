@@ -52,6 +52,14 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities():
+    data = []
+    cmd = ['virsh', 'capabilities']
+    out, err, ret = justcall(cmd)
+    if ret == 0:
+        data.append("container.kvm")
+    return data
+
 
 class ContainerKvm(BaseContainer):
     def __init__(self,

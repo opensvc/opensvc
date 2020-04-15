@@ -5,6 +5,7 @@ import time
 
 import core.exceptions as ex
 import core.status
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
 from env import Env
@@ -336,7 +337,7 @@ class BaseFs(Resource):
         return True
 
     def check_stat(self):
-        if which("stat") is None:
+        if not capabilities.has("node.x.stat"):
             return True
 
         if self.device is None:

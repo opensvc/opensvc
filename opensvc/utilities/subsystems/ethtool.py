@@ -1,4 +1,4 @@
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 """
 Settings for eth0:
@@ -38,11 +38,11 @@ class Ethtool(object):
         return self.data[attr]
 
     def load(self):
-        if not which('ethtool'):
-            raise LoadError("ethtool is not installed")
         cmd = ['ethtool', self.intf]
         out, err, ret = justcall(cmd)
         if ret != 0:
+            if not out and not err:
+                raise LoadError("ethtool is not installed")
             raise LoadError("ret=%d\nout=%s\nerr=%s\n"%(ret, out, err))
         for line in out.split('\n'):
             if not line.startswith('\t'):

@@ -6,12 +6,13 @@ import time
 import core.exceptions as ex
 import core.status
 from .. import BaseDisk, BASE_KEYWORDS
-from utilities.lock import cmlock
+from core.capabilities import capabilities
+from core.objects.svcdict import KEYS
 from env import Env
 from utilities.lazy import lazy
+from utilities.lock import cmlock
+from utilities.proc import justcall, drop_option
 from utilities.subsystems.zfs import zpool_devs, zpool_getprop, zpool_setprop
-from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which, drop_option
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "zpool"
@@ -117,7 +118,7 @@ class DiskZpool(BaseDisk):
     def has_it(self):
         """Returns True if the pool is present
         """
-        if not which("zpool"):
+        if "node.x.zpool" not in capabilities:
             raise ex.Error("zpool command not found")
         _, _, ret = justcall(['zpool', 'list', self.name])
         if ret == 0 :

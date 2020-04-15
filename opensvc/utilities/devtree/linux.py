@@ -10,9 +10,9 @@ import math
 from .devtree import DevTree as BaseDevTree, Dev as BaseDev
 from .veritas import DevTreeVeritas
 import core.exceptions as ex
+from core.capabilities import capabilities
 from env import Env
 from utilities.mounts import Mounts
-from utilities.proc import which
 
 
 class Dev(BaseDev):
@@ -86,7 +86,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return self.dm_h
 
     def get_map_wwid(self, map):
-        if not which(Env.syspaths.multipath):
+        if "node.x.multipath" not in capabilities:
             return None
         if not hasattr(self, 'multipath_l'):
             self.multipath_l = []
@@ -117,7 +117,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return self.wwid_h
 
     def get_wwid_native(self):
-        if not which(Env.syspaths.multipath):
+        if "node.x.multipath" not in capabilities:
             return self.wwid_h
         cmd = [Env.syspaths.multipath, '-l']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -147,7 +147,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
 
     def get_mp_powerpath(self):
         self.powerpath = {}
-        if not which("powermt"):
+        if "node.x.powermt" not in capabilities:
             return {}
         cmd = ['powermt', 'display', 'dev=all']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -188,7 +188,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         return mp_h
 
     def get_mp_native(self):
-        if not which(Env.syspaths.dmsetup):
+        if "node.x.dmsetup" not in capabilities:
             return {}
         cmd = [Env.syspaths.dmsetup, 'ls', '--target', 'multipath']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -231,7 +231,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
 
     def load_dm_dev_t(self):
         table = {}
-        if not which(Env.syspaths.dmsetup):
+        if "node.x.dmsetup" not in capabilities:
             return
         cmd = [Env.syspaths.dmsetup, 'ls']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -251,7 +251,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
     def load_dm(self):
         table = {}
         self.load_dm_dev_t()
-        if not which(Env.syspaths.dmsetup):
+        if "node.x.dmsetup" not in capabilities:
             return
         cmd = [Env.syspaths.dmsetup, 'table']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -297,7 +297,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
                 parentdev.add_child(mapname)
 
     def set_udev_symlink(self, d, name):
-        if not which("udevadm"):
+        if "node.x.udevadm" not in capabilities:
             return
         cmd = ["udevadm", "info", "-q", "symlink", "--name", name]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -313,7 +313,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         except AttributeError:
             pass
         self.lv_linear = {}
-        if not which(Env.syspaths.dmsetup):
+        if "node.x.dmsetup" not in capabilities:
             return self.lv_linear
         cmd = [Env.syspaths.dmsetup, 'table', '--target', 'linear']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -394,7 +394,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
             r = c.add_parent(d.devname, size=c.size)
 
     def add_drbd_relations(self):
-        if not which("drbdadm") or not os.path.exists('/proc/drbd'):
+        if "node.x.drbdadm" not in capabilities or not os.path.exists("/proc/drbd"):
             return
         cmd = ["drbdadm", "dump-xml"]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)

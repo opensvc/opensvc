@@ -87,6 +87,7 @@ class Paths(object):
         self.drp_path = os.path.join(self.pathvar, "cache")
         self.last_shutdown = os.path.join(self.pathvar, "last_shutdown")
         self.nodes_info = os.path.join(self.pathvar, "nodes_info.json")
+        self.capabilities = os.path.join(self.pathvar, "capabilities.json")
 
         self.daemon_pid = os.path.join(self.pathvar, "osvcd.pid")
         self.daemon_pid_args = os.path.join(self.pathvar, "osvcd.pid.args")

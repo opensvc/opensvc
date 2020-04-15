@@ -3,7 +3,8 @@ import os
 from subprocess import *
 
 from .devtree import DevTree as BaseDevTree
-from utilities.proc import justcall, which
+from core.capabilities import capabilities
+from utilities.proc import justcall
 
 class DevTreeVeritas(BaseDevTree):
     vxprint_cache = {}
@@ -93,7 +94,7 @@ class DevTreeVeritas(BaseDevTree):
 
     def get_mp_dmp(self):
         self.dmp = {}
-        if not which("vxdmpadm"):
+        if "node.x.vxdmpadm" not in capabilities:
             return {}
         cmd = ['vxdmpadm', 'getsubpaths']
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
