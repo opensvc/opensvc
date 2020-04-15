@@ -2337,13 +2337,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             lockfile = os.path.join(self.var_d, "lock.json.status")
             with utilities.lock.cmlock(timeout=2, delay=1, lockfile=lockfile, intent="status from cache"):
-                if os.path.exists(self.status_data_dump) and \
-                   not self.status_data_dump_outdated():
-                    try:
-                        with open(self.status_data_dump, 'r') as filep:
-                            data = json.load(filep)
-                    except ValueError:
-                        pass
+                if self.status_data_dump_outdated():
+                    return
+                try:
+                    with open(self.status_data_dump, 'r') as filep:
+                        data = json.load(filep)
+                except (OSError, ValueError):
+                    return
         except utilities.lock.LOCK_EXCEPTIONS as exc:
             raise ex.AbortAction(str(exc))
         running = self.get_running(data.get("resources", {}).keys())
