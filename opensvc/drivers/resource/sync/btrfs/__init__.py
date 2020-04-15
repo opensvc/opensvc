@@ -67,9 +67,9 @@ class SyncBtrfs(Sync):
                  **kwargs):
         super(SyncBtrfs, self).__init__(type="sync.btrfs", **kwargs)
 
-        self.label = "btrfs of %s to %s"%(src, ", ".join(target))
+        self.target = target or []
+        self.label = "btrfs of %s to %s"%(src, ", ".join(self.target))
         self.src = src
-        self.target = target
         self.sender = sender
         self.recursive = recursive
 

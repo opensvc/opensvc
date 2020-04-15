@@ -7,7 +7,7 @@ import select
 import shlex
 import sys
 import time
-from errno import ENOENT
+from errno import ENOENT, EACCES
 from subprocess import Popen, PIPE
 
 import core.exceptions as ex
@@ -63,8 +63,8 @@ def justcall(argv=None, stdin=None, input=None):
                      close_fds=close_fds)
         out, err = proc.communicate(input=input)
         return bdecode(out), bdecode(err), proc.returncode
-    except Exception as exc:
-        if hasattr(exc, "errno") and getattr(exc, "errno") == ENOENT:
+    except OSError as exc:
+        if exc.errno in (ENOENT, EACCES):
             return "", "", 1
         raise
 
@@ -225,11 +225,6 @@ def call(argv,
     else:
         cmd = ' '.join(argv)
 
-    if not shell and which(argv[0]) is None:
-        log.error("%s does not exist or not in path or is not executable" %
-                  argv[0])
-        return (1, '', '')
-
     if info:
         log.info(cmd)
     else:
@@ -242,8 +237,17 @@ def call(argv,
         log.debug("cache miss for '%s'" % cmd)
 
     if not cache or cmd not in Env.call_cache:
-        process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell,
-                        preexec_fn=preexec_fn, cwd=cwd, env=env)
+        try:
+            process = Popen(argv, stdin=stdin, stdout=PIPE, stderr=PIPE, close_fds=close_fds, shell=shell,
+                            preexec_fn=preexec_fn, cwd=cwd, env=env)
+        except OSError as exc:
+            if exc.errno == EACCES:
+                log.error("command is not executable")
+                return 1, "", ""
+            elif exc.errno == ENOENT:
+                log.error("command not found")
+                return 1, "", ""
+            raise
         buff = process.communicate()
         buff = tuple(map(lambda x: bdecode(x).strip(), buff))
         ret = process.returncode
@@ -315,7 +319,7 @@ def qcall(argv=None):
     Execute command using Popen with no additional args, disgarding stdout and stderr.
     """
     if argv is None:
-        argv = [Env.syspaths.false]
+        return 1
     process = Popen(argv, stdout=PIPE, stderr=PIPE, close_fds=close_fds)
     process.wait()
     return process.returncode

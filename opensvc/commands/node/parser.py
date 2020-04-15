@@ -374,6 +374,10 @@ ACTIONS = {
             "msg": "Ping a cluster node or arbitrator node. The ping "
                    "validates the remote is functional.",
         },
+        "print_capabilities": {
+            "msg": "Display the node capabilities scanned and cached by the "
+                   "agent.",
+        },
         "shutdown": {
             "msg": "Shutdown the node to powered off state.",
         },
@@ -414,6 +418,14 @@ ACTIONS = {
         "update_ssh_authorized_keys": {
             "msg": "Install the root pubkey of each node in the local root "
                    "user authorized_keys.",
+        },
+        "scan_capabilities": {
+            "msg": "Scan the node for capabilities. Capabilities are normaly "
+                   "scanned at daemon startup and when the installed system "
+                   "packages change, so admins only have to use this when "
+                   "they want manually installed software to be discovered "
+                   "without restarting the daemon.",
+            "options": [],
         },
         "scanscsi": {
             "msg": "Scan the scsi hosts in search of new disks.",

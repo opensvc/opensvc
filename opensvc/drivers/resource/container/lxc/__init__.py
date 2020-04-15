@@ -136,6 +136,17 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities():
+    data = []
+    cmd = ["lxc-info", "--version"]
+    out, _, ret = justcall(cmd)
+    if ret == 0:
+        data.append("container.lxc")
+        version = out.strip()
+        if version >= CAPABILITIES.get("cgroup_dir", "0"):
+            data.append("container.lxc.cgroup_dir")
+    return data
+
 
 class ContainerLxc(BaseContainer):
     """

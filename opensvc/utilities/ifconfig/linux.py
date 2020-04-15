@@ -2,7 +2,8 @@ import copy
 
 from utilities.net.converters import cidr_to_dotted
 from env import Env
-from utilities.proc import justcall, which
+from utilities.proc import justcall
+from core.capabilities import capabilities
 
 from .ifconfig import BaseIfconfig, Interface
 
@@ -36,11 +37,11 @@ class Ifconfig(BaseIfconfig):
             self.mcast_data = {}
         if ip_out:
             self.parse_ip(ip_out)
-        elif which(Env.syspaths.ip):
+        elif "node.x.ip" in capabilities:
             cmd = [Env.syspaths.ip, 'addr']
             out, _, _ = justcall(cmd)
             self.parse_ip(out)
-        else:
+        elif "node.x.ifconfig" in capabilities:
             cmd = ['ifconfig', '-a']
             out, _, _ = justcall(cmd)
             self.parse_ifconfig(out)
@@ -224,14 +225,14 @@ class Ifconfig(BaseIfconfig):
             prev = w
 
     def get_mcast(self):
-        if which('netstat'):
-            cmd = ['netstat', '-gn']
-            out, _, _ = justcall(cmd)
-            return self.parse_mcast_netstat(out)
-        elif which(Env.syspaths.ip):
+        if "node.x.ip" in capabilities:
             cmd = [Env.syspaths.ip, 'maddr']
             out, _, _ = justcall(cmd)
             return self.parse_mcast_ip(out)
+        if "node.x.netstat" in capabilities:
+            cmd = ["netstat", "-gn"]
+            out, _, _ = justcall(cmd)
+            return self.parse_mcast_netstat(out)
 
     def parse_mcast_netstat(self, out):
         lines = out.splitlines()

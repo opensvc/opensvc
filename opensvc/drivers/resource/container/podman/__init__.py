@@ -41,6 +41,13 @@ KEYS.register_driver(
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
 )
 
+def driver_capabilities():
+    from utilities.proc import which
+    data = []
+    if which("podman"):
+        data.append("container.podman")
+    return data
+
 
 class ContainerPodman(ContainerDocker):
     """

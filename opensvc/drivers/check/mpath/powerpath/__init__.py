@@ -1,7 +1,8 @@
 import drivers.check
 
+from core.capabilities import capabilities
 from env import Env
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 from utilities.diskinfo import DiskInfo
 
 _di = DiskInfo()
@@ -37,7 +38,7 @@ class Check(drivers.check.Check):
 	   1 qla2xxx                   sds       FA  8dB   active  alive      0      0
         """
 
-        if not which('powermt'):
+        if "node.x.powermt" not in capabilities:
             return self.undef
 
         cmd = ['powermt', 'display', 'dev=all']

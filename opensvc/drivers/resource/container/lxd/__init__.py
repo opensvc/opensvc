@@ -65,6 +65,11 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities():
+    data = []
+    if os.path.exists(lxd) and os.path.exists(lxc):
+        data.append("container.lxd")
+    return data
 
 class ContainerLxd(BaseContainer):
     refresh_provisioned_on_unprovision = True
