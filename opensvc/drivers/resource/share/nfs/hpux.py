@@ -4,9 +4,9 @@ import core.status
 import core.exceptions as ex
 
 from . import BASE_KEYWORDS
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.proc import which
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"
@@ -18,6 +18,15 @@ KEYS.register_driver(
     keywords=BASE_KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    from env import Env
+    if Env.sysname != "HP-UX":
+        return []
+    if which("share"):
+        return ["share.nfs"]
+    return []
+
 
 class ShareNfs(Resource):
     def __init__(self, path=None, opts=None, **kwargs):
@@ -25,7 +34,7 @@ class ShareNfs(Resource):
         self.sharetab = "/etc/dfs/sharetab"
         self.dfstab = "/etc/dfs/dfstab"
 
-        if not which("share"):
+        if "node.x.share" not in capabilities:
             raise ex.InitError("share is not installed")
         self.label = "nfs:%s" % path
         self.path = path

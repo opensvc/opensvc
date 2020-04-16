@@ -16,10 +16,11 @@ from .. import \
     KW_SCSIRESERV
 from env import Env
 from utilities.lazy import lazy
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
-from utilities.proc import justcall, qcall, which
+from utilities.proc import justcall, qcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "srp"
@@ -54,6 +55,14 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
+
+
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("srp") and which("srp_su"):
+        data.append("container.srp")
+    return data
 
 
 class ContainerSrp(BaseContainer):
@@ -264,7 +273,7 @@ class ContainerSrp(BaseContainer):
         return True
 
     def check_capabilities(self):
-        if not which('srp'):
+        if "node.x.srp" not in capabilities:
             self.log.debug("srp is not in PATH")
             return False
         return True
@@ -324,7 +333,7 @@ class ContainerSrp(BaseContainer):
 
     def validate(self):
         # False triggers provisioner, True skip provisioner
-        if not which('srp'):
+        if "node.x.srp" not in capabilities:
             self.log.error("this node is not srp capable")
             return True
 

@@ -96,6 +96,11 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if Env.sysname == "Linux" and which("ip"):
+        return ["ip.netns"]
+    return []
 
 class IpNetns(IpHost):
     def __init__(self,

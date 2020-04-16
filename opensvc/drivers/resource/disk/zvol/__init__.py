@@ -49,6 +49,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("zfs"):
+        return ["disk.zvol"]
+    return []
+
 
 class DiskZvol(BaseDisk):
     def __init__(self,

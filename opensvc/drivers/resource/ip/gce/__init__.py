@@ -43,6 +43,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("gcloud") and which("ip"):
+        return ["ip.gce"]
+    return []
+
 
 class IpGce(Ip, GceMixin):
     def __init__(self,

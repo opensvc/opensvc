@@ -185,7 +185,7 @@ class Daemon(object):
         shared.NODE = Node()
         self.log.info("daemon started, version %s, crypto mod %s, api version %s",
                       shared.NODE.agent_version, CRYPTO_MODULE, shared.API_VERSION)
-        caps = capabilities.scan()
+        caps = capabilities.scan(node=shared.NODE)
         self.log.info("%d capabilities:", len(caps))
         for cap in caps:
             self.log.info(" %s", cap)

@@ -32,6 +32,12 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    data = []
+    from utilities.proc import which
+    if which("docker") or which("docker.io"):
+        data.append("container.docker")
+    return data
 
 class SyncDocker(Sync):
     def __init__(self, target=None, **kwargs):

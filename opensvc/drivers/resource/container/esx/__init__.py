@@ -14,9 +14,9 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.proc import which
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "esx"
@@ -39,6 +39,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("vmware-cmd"):
+        data.append("container.esx")
+    return data
+
 
 class ContainerEsx(BaseContainer):
     def __init__(self, **kwargs):
@@ -57,7 +64,7 @@ class ContainerEsx(BaseContainer):
         return ret, out, err
 
     def check_capabilities(self):
-        return which('vmware-cmd')
+        return "node.x.vmware-cmd" in capabilities
 
     def ping(self):
         return utilities.ping.check_ping(self.addr, timeout=1, count=1)

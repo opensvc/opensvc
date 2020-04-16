@@ -39,6 +39,12 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("podman"):
+        data.append("task.podman")
+    return data
 
 class TaskPodman(ContainerPodman, BaseTask):
     def __init__(self, *args, **kwargs):

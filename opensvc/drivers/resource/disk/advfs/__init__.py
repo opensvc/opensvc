@@ -41,6 +41,16 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if not os.path.exists("/etc/fdmns"):
+        return data
+    if not which("showfdmn"):
+        return data
+    data.append("disk.advfs")
+    return data
+
 
 class DiskAdvfs(BaseDisk):
     def __init__(self, options=None, pvs=None, **kwargs):

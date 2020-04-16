@@ -14,10 +14,11 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from env import Env
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.lazy import lazy
-from utilities.proc import justcall, qcall, which
+from utilities.proc import justcall, qcall
 
 DRIVER_GROUP = "container"
 DRIVER_BASENAME = "vz"
@@ -51,6 +52,13 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
+
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("vzctl"):
+        data.append("container.vz")
+    return data
 
 
 class ContainerVz(BaseContainer):
@@ -193,7 +201,7 @@ class ContainerVz(BaseContainer):
         return True
 
     def check_capabilities(self):
-        if not which('vzctl'):
+        if "vzctl" not in capabilities:
             self.log.debug("vzctl is not in PATH")
             return False
         return True

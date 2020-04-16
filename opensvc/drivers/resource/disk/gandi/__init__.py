@@ -48,6 +48,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    try:
+        from libcloud.compute.types import Provider
+        from libcloud.compute.providers import get_driver
+        return ["disk.gandi"]
+    except ImportError:
+        return []
 
 class DiskGandi(BaseDisk):
     def __init__(self,

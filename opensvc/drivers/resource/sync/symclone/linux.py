@@ -6,7 +6,8 @@ from . import \
     SyncSymclone as BaseSyncSymclone, \
     KEYWORDS, \
     DRIVER_GROUP, \
-    DRIVER_BASENAME
+    DRIVER_BASENAME, \
+    driver_capabilities
 from env import Env
 from core.objects.svcdict import KEYS
 from utilities.proc import which

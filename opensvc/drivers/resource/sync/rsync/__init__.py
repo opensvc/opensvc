@@ -91,6 +91,13 @@ KEYS.register_driver(
     deprecated_keywords=DEPRECATED_KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("rsync"):
+        data.append("sync.rsync")
+    return data
+
 
 def lookup_snap_mod():
     if Env.sysname == 'Linux':

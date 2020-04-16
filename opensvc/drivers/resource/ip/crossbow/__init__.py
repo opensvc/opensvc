@@ -34,6 +34,11 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("ipadm"):
+        return ["ip.crossbow"]
+    return []
 
 class IpCrossbow(IpHost):
     def __init__(self, ipdevext="v4", **kwargs):

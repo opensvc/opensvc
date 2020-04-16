@@ -51,6 +51,14 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    try:
+        from libcloud.compute.providers import get_driver
+        from libcloud.compute.types import NodeState
+        return ["container.amazon"]
+    except ImportError:
+        return []
+
 
 class ContainerAmazon(BaseContainer):
     save_timeout = 240

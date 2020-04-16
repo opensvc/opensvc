@@ -64,6 +64,12 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("vgdisplay"):
+        return ["disk.vg"]
+    return []
+
 
 class DiskVg(BaseDisk):
     def __init__(self, pvs=None, options=None, **kwargs):

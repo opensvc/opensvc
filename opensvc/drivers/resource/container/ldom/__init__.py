@@ -41,6 +41,13 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("/usr/sbin/ldm"):
+        data.append("container.ldom")
+    return data
+
 
 class ContainerLdom(BaseContainer):
     def __init__(self, guestos="SunOS", **kwargs):

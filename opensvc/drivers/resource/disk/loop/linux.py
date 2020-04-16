@@ -16,6 +16,11 @@ from utilities.files import getmount
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "loop"
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("losetup"):
+        return ["disk.loop"]
+    return []
 
 class DiskLoop(BaseDiskLoop):
     def is_up(self):

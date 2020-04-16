@@ -50,6 +50,14 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from env import Env
+    data = []
+    if Env.sysname != "Windows":
+        return data
+    data.append("app.winservice")
+    return data
+
 
 class AppWinservice(App):
     """

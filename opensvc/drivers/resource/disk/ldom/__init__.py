@@ -31,6 +31,13 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("ldm"):
+        return ["disk.ldom"]
+    return []
+
+
 class DiskLdom(BaseDisk):
     def __init__(self, container_id=None, **kwargs):
         super(DiskLdom, self).__init__(type='disk.ldom', **kwargs)
