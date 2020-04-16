@@ -308,6 +308,9 @@ class DiskMd(BaseDisk):
             ofile.write("ARRAY <ignore> UUID=%s\n" % self.uuid)
 
     def _status(self, verbose=False):
+        invalid_devname_message = self._invalid_devname()
+        if invalid_devname_message:
+            self.status_log(invalid_devname_message)
         if self.uuid is None:
             return core.status.NA
         self.auto_assemble_disabled()
