@@ -95,6 +95,20 @@ KEYS.register_driver(
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
 )
 
+def cni_plugins(node):
+    path = node.oget("cni", "plugins")
+    if os.path.exists(os.path.join(path, "bridge")):
+        return path
+    altpath = os.path.join(os.sep, "usr", "libexec", "cni")
+    if os.path.exists(os.path.join(altpath, "bridge")):
+        return altpath
+    return path
+
+def driver_capabilities(node=None):
+    if os.path.exists(cni_plugins(node)):
+        return ["ip.cni"]
+    return []
+
 
 class IpCni(IpHost):
     def __init__(self,
@@ -221,13 +235,7 @@ class IpCni(IpHost):
 
     @lazy
     def cni_plugins(self):
-        path = self.svc.node.oget("cni", "plugins")
-        if os.path.exists(os.path.join(path, "bridge")):
-            return path
-        altpath = os.path.join(os.sep, "usr", "libexec", "cni")
-        if os.path.exists(os.path.join(altpath, "bridge")):
-            return altpath
-        return path
+        return cni_plugins(node=self.svc.node)
 
     @lazy
     def cni_config(self):

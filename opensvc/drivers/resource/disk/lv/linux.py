@@ -15,6 +15,12 @@ from utilities.string import bdecode
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "lv"
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("lvchange"):
+        return ["disk.lv"]
+    return []
+
 def restore_signals():
     # from http://hg.python.org/cpython/rev/768722b2ae0a/
     signals = ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ')

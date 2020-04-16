@@ -164,6 +164,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    data = []
+    if Env.sysname == "Windows":
+        return data
+    data.append("app.simple")
+    return data
+
 
 class AppSimple(BaseApp):
     """

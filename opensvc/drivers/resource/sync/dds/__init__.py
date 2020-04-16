@@ -48,6 +48,11 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("dds") and which("lvcreate"):
+        return ["sync.dds"]
+    return []
 
 class SyncDds(Sync):
     def __init__(self,

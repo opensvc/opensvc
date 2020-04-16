@@ -7,9 +7,10 @@ import core.exceptions as ex
 from .. import KEYWORDS
 from ..linux import Fs
 from core.objects.svcdict import KEYS
+from core.capabilities import capabilities
 from utilities.subsystems.btrfs import Btrfs
 from utilities.lazy import lazy
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "fs"
 DRIVER_BASENAME = "btrfs"
@@ -20,6 +21,13 @@ KEYS.register_driver(
     name=__name__,
     keywords=KEYWORDS,
 )
+
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("btrfs"):
+        data.append("fs.btrfs")
+    return data
 
 class FsBtrfs(Fs):
     info = ['btrfs', 'device', 'ready']
@@ -83,7 +91,7 @@ class FsBtrfs(Fs):
         self.wait_label(label)
 
     def wait_label(self, label):
-        if which("findfs") is None:
+        if "node.x.findfs" not in capabilities:
             self.log.info("findfs program not found, wait arbitrary 20 seconds for label to be usable")
             time.sleep(20)
         cmd = ["findfs", "LABEL="+label]

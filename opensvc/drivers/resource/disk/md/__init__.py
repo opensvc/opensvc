@@ -70,6 +70,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("mdadm"):
+        return ["disk.md"]
+    return []
+
 
 class DiskMd(BaseDisk):
     startup_timeout = 10

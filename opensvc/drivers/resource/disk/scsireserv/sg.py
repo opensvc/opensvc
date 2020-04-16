@@ -10,7 +10,7 @@ from utilities.proc import justcall
 from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
     if which("sg_persist"):

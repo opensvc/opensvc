@@ -43,6 +43,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("btrfs"):
+        return ["sync.btrfssnap"]
+    return []
+
 
 class SyncBtrfssnap(Sync):
     def __init__(self,

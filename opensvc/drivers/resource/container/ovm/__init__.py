@@ -53,6 +53,14 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("xm") and os.path.exists("/OVS"):
+        data.append("container.ovm")
+    return data
+
+
 class ContainerOvm(BaseContainer):
     def __init__(self, uuid=None, **kwargs):
         super(ContainerOvm, self).__init__(type="container.ovm", **kwargs)

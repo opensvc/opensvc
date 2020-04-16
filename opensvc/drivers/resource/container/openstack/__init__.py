@@ -56,6 +56,14 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    try:
+        from libcloud.compute.types import Provider
+        from libcloud.compute.providers import get_driver
+        import libcloud.security
+        return ["container.openstack"]
+    except ImportError:
+        return []
 
 class ContainerOpenstack(BaseContainer):
     save_timeout = 240

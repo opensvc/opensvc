@@ -48,6 +48,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("VBoxManage"):
+        data.append("container.vbox")
+    return data
 
 class ContainerVbox(BaseContainer):
     def __init__(self, headless=None, **kwargs):

@@ -39,6 +39,13 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("docker") or which("docker.io"):
+        data.append("task.docker")
+    return data
+
 
 class TaskDocker(ContainerDocker, BaseTask):
     def __init__(self, *args, **kwargs):

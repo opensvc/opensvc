@@ -1,9 +1,10 @@
 import core.exceptions as ex
 import core.status
 from . import BASE_KEYWORDS
+from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 DRIVER_GROUP = "share"
 DRIVER_BASENAME = "nfs"
@@ -15,12 +16,21 @@ KEYS.register_driver(
     keywords=BASE_KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    from env import Env
+    if Env.sysname != "SunOS":
+        return []
+    if which("share"):
+        return ["share.nfs"]
+    return []
+
 
 class ShareNfs(Resource):
     def __init__(self, path=None, opts=None, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
 
-        if not which("share"):
+        if "node.x.share" not in capabilities:
             raise ex.InitError("share is not installed")
         self.label = "nfs:%s" % path
         self.path = path

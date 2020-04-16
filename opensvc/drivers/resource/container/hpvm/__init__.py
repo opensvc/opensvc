@@ -40,6 +40,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("/opt/hpvm/bin/hpvmstatus"):
+        data.append("container.hpvm")
+    return data
 
 class ContainerHpvm(BaseContainer):
     def __init__(self, guestos="HP-UX", **kwargs):

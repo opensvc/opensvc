@@ -5,8 +5,8 @@ import core.exceptions as ex
 from utilities.converters import convert_size
 from env import Env
 from utilities.subsystems.zfs import Dataset
-from utilities.proc import which
 from core.objects.svcdict import KEYS
+from core.capabilities import capabilities
 from .. import KWS_POOLING
 
 KEYWORDS = KWS_POOLING + [
@@ -29,9 +29,16 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("zfs"):
+        data.append("fs.zfs")
+    return data
+
 class FsZfsMixin():
     def unprovisioner(self):
-        if not which(Env.syspaths.zfs):
+        if "node.x.zfs" not in capabilities:
             self.log.error("zfs command not found")
             raise ex.Error
         dataset = Dataset(self.device, log=self.log)
@@ -45,7 +52,7 @@ class FsZfsMixin():
                 self.log.warning("failed to rmdir %s: %s", self.mount_point, exc)
 
     def provisioner(self):
-        if not which(Env.syspaths.zfs):
+        if "node.x.zfs" not in capabilities:
             self.log.error("zfs command not found")
             raise ex.Error
         dataset = Dataset(self.device, log=self.log)
