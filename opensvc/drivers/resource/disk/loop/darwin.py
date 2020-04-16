@@ -11,6 +11,12 @@ from core.objects.svcdict import KEYS
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "loop"
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("hdiutil"):
+        return ["disk.loop"]
+    return []
+
 
 class DiskLoop(BaseDiskLoop):
     def is_up(self):

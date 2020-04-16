@@ -38,6 +38,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("ssh"):
+        data.append("sync.netapp")
+    return data
+
 
 class SyncNetapp(Sync):
     def __init__(self, filer=None, path=None, user=None, **kwargs):

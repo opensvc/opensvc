@@ -44,6 +44,12 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("vxdg"):
+        return ["disk.vxdg"]
+    return []
+
 
 class DiskVxdg(BaseDisk):
     """

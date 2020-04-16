@@ -136,7 +136,7 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     data = []
     cmd = ["lxc-info", "--version"]
     out, _, ret = justcall(cmd)

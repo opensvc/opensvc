@@ -59,6 +59,12 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("lsvg"):
+        return ["disk.vg"]
+    return []
+
 # ajouter un dump regulier de la config des vg (pour ne pas manquer les extensions de vol)
 
 class DiskVg(BaseDisk):

@@ -69,6 +69,14 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    try:
+        from libcloud.compute.types import Provider
+        from libcloud.compute.providers import get_driver
+        return ["container.vcloud"]
+    except ImportError:
+        return []
+
 
 class ContainerVcloud(BaseContainer):
     save_timeout = 240

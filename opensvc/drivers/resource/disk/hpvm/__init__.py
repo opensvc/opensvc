@@ -27,6 +27,13 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("/opt/hpvm/bin/hpvmdevmgmt"):
+        return "disk.hpvm"
+    return []
+
+
 class DiskHpvm(DiskVg):
     def __init__(self, container_name=None, **kwargs):
         kwargs["name"] = "vmdg_%s" % container_name

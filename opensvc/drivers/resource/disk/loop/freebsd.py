@@ -9,6 +9,12 @@ from . import BaseDiskLoop
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "loop"
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("mdconfig"):
+        return ["disk.loop"]
+    return []
+
 
 def file_to_loop(f):
     """Given a file path, returns the loop device associated. For example,

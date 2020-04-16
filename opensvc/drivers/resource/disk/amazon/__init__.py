@@ -29,6 +29,24 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if not which("ec2"):
+        return data
+    if os.path.exists("/sys/hypervisor/uuid"):
+        with open("/sys/hypervisor/uuid", "r") as f:
+           uuid = f.read().lower()
+        if not uuid.startswith("ec2"):
+           return data
+    if os.path.exists("/sys/devices/virtual/dmi/id/product_uuid"):
+        with open("/sys/devices/virtual/dmi/id/product_uuid", "r") as f:
+           uuid = f.read().lower()
+        if not uuid.startswith("ec2"):
+           return data
+    data.append("ip.amazon")
+    return data
+
 
 class DiskAmazon(BaseDisk, AmazonMixin):
     def __init__(self,

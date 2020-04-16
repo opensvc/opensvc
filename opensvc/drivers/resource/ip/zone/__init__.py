@@ -15,6 +15,11 @@ KEYWORDS = [
     KW_ZONE,
 ]
 
+def driver_capabilities(node=None):
+    if Env.sysname == "SunOS":
+        return ["ip.zone"]
+    return []
+
 
 class IpZone(IpHost):
     def __init__(self, zone=None, **kwargs):

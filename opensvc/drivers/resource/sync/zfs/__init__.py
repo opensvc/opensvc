@@ -62,6 +62,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("zfs"):
+        data.append("sync.zfs")
+    return data
 
 class SyncZfs(Sync):
     """define zfs sync resource to be zfs send/zfs receive between nodes

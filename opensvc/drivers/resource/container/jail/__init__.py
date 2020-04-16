@@ -59,6 +59,14 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("jail"):
+        data.append("container.jail")
+    return data
+
+
 class ContainerJail(BaseContainer):
     """ jail -c name=jail1
                 path=/usr/local/opt/jail1.opensvc.com

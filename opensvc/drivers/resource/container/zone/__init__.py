@@ -96,7 +96,7 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     data = []
     if which("zoneadm"):
         data.append("container.zone")

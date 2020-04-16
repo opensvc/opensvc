@@ -29,6 +29,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("iSMsc_query"):
+        data.append("sync.necismsnap")
+    return data
+
 
 class SyncNecismsnap(Sync):
     def __init__(self,

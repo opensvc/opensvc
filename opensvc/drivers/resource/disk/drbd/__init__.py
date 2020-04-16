@@ -30,7 +30,7 @@ KEYS.register_driver(
     deprecated_sections=DEPRECATED_SECTIONS,
 )
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     data = []
     from utilities.proc import which
     if which("drbdadm"):

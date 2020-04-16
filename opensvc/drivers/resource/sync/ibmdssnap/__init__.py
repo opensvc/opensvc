@@ -50,6 +50,11 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("mkflash"):
+        return ["sync.ibmdssnap"]
+    return []
 
 class SyncIbmdssnap(Sync):
     def __init__(self,

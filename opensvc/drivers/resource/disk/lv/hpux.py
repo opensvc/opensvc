@@ -7,6 +7,12 @@ from utilities.proc import justcall, which
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "lv"
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("vgdisplay") and which("lvcreate"):
+        return ["disk.lv"]
+    return []
+
 class DiskLv(BaseDiskLv):
     def provisioner(self):
         if not which('vgdisplay'):

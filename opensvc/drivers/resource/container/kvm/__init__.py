@@ -52,7 +52,7 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     data = []
     cmd = ['virsh', 'capabilities']
     out, err, ret = justcall(cmd)

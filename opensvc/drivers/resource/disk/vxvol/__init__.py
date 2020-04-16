@@ -50,6 +50,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("vxvol"):
+        return ["disk.vxvol"]
+    return []
+
 
 class DiskVxvol(BaseDisk):
     def __init__(self, vg=None, create_options=None, size=None, **kwargs):

@@ -79,6 +79,13 @@ KEYS.register_driver(
 )
 
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    if which("gcloud"):
+        return ["disk.gce"]
+    return []
+
+
 class DiskGce(BaseDisk, GceMixin):
     def __init__(self, names=None, gce_zone=None, description=None, image=None, image_project=None, size=None, source_snapshot=None, disk_type=None, **kwargs):
         BaseDisk.__init__(self, type="disk.gce", **kwargs)

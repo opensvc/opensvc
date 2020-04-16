@@ -5144,7 +5144,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @formatter
     def scan_capabilities(self):
-        return capabilities.scan()
+        return capabilities.scan(node=self)
 
     @formatter
     def print_capabilities(self):

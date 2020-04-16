@@ -57,6 +57,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    from utilities.proc import which
+    data = []
+    if which("gof3r") and which("tar"):
+        data.append("sync.s3")
+    return data
+
 
 class SyncS3(Sync):
     def __init__(self,

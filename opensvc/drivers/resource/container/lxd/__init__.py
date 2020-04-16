@@ -65,7 +65,7 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
-def driver_capabilities():
+def driver_capabilities(node=None):
     data = []
     if os.path.exists(lxd) and os.path.exists(lxc):
         data.append("container.lxd")
