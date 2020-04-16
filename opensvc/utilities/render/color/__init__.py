@@ -165,6 +165,8 @@ def format_str_flat_json(d):
     buff = ""
     for k, v in sorted(out.items(), key=lambda x: x[0]):
         buff += "%s = %s\n" % (k, v)
+    if buff.endswith("\n"):
+        buff = buff[:-1]
     if six.PY2:
         return buff.encode("utf-8")
     else:
@@ -358,6 +360,12 @@ def formatter(fn):
                 data = [match.value for match in jsonpath_expr.find(data)]
             except Exception as exc:
                 raise ex.Error(str(exc))
+            if re.match(r"^[\w\.']+$", path):
+                # single value expression
+                try:
+                    data = data[0]
+                except IndexError:
+                    return
 
         if not isinstance(data, (dict, list)):
             print(data)
