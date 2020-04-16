@@ -66,8 +66,12 @@ class Handler(daemon.handler.BaseHandler):
     def validate_cluster_global_expect(self, global_expect):
         if global_expect is None:
             return
-        if global_expect == "thawed" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
-            raise ex.AbortAction("cluster is already thawed")
-        if global_expect == "frozen" and shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
-            raise ex.AbortAction("cluster is already frozen")
+        if global_expect == "thawed":
+            if shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
+                raise ex.AbortAction("cluster is already thawed")
+        elif global_expect == "frozen":
+            if shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
+                raise ex.AbortAction("cluster is already frozen")
+        else:
+            raise ex.Error("invalid global_expect value: %s" % global_expect)
 
