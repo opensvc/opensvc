@@ -466,6 +466,10 @@ class DiskMd(BaseDisk):
         if len(devs) == 0:
             raise ex.Error("at least 2 devices must be set in the 'devs' provisioning parameter")
 
+        invalid_devname_message = self._invalid_devname()
+        if invalid_devname_message:
+            raise ex.Error(invalid_devname_message)
+
         # long md names cause a buffer overflow in mdadm
         name = self.devname()
         cmd = [self.mdadm, '--create', name, '--force', '--quiet',
@@ -527,3 +531,7 @@ class DiskMd(BaseDisk):
         self.svc.node.unset_lazy("devtree")
         self.clear_cache("mdadm.scan.v")
 
+    def _invalid_devname(self):
+        md_name = os.path.basename(self.devname())
+        if len(md_name) >= 32:
+            return "device md name is too long, 32 chars max (name is %s)" % md_name
