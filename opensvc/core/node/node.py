@@ -34,7 +34,7 @@ from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
-                              is_service, normalize_paths,
+                              is_service, new_id, normalize_paths,
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name)
 from utilities.cache import purge_cache_expired
@@ -2994,7 +2994,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 pass
 
         svc = factory(kind)(name, namespace=namespace, cf=info.cf, cd=data, node=self)
-        svc.dump_config_data()
+        svc.commit()
         svc.postinstall()
 
     def install_service_info(self, name, namespace, kind):
@@ -3005,7 +3005,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data.path = fmt_path(name, namespace, kind)
         data.pathetc = svc_pathetc(data.path, namespace)
         data.cf = os.path.join(data.pathetc, name+'.conf')
-        data.id = factory(kind)(name, namespace=namespace, volatile=True, cf=data.cf, node=self).id
+        data.id = new_id()
         makedirs(data.pathetc)
         return data
 
@@ -5150,4 +5150,5 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def print_capabilities(self):
         return capabilities.data
 
-
+    def post_commit(self):
+        self.unset_all_lazy()

@@ -105,6 +105,7 @@ def sched_action(func):
     timestamps.
     """
     def _func(self, action, options=None):
+        self.sched.configure(action)
         if options is None:
             options = Storage()
         if action in self.sched.scheduler_actions:
@@ -127,8 +128,11 @@ class Scheduler(object):
     this class.
     """
     def __init__(self, config_defaults=None, node=None, options=None,
-                 scheduler_actions=None, log=None, svc=None):
+                 scheduler_actions=None, log=None, svc=None,
+                 configure_method=None):
         self.config_defaults = config_defaults
+        self.configured = False
+        self.configure_method = configure_method
 
         if scheduler_actions is None:
             self.scheduler_actions = {}
@@ -152,6 +156,19 @@ class Scheduler(object):
             self.log = node.log
             if node is None:
                 self.node = node
+
+    def reconfigure(self):
+        self.configured = False
+
+    def configure(self, *args, **kwargs):
+        """
+        Placeholder for post-instanciation configuration.
+        """
+        if self.configured:
+            return
+        if self.configure_method:
+            getattr(self.obj, self.configure_method)(*args, **kwargs)
+        self.configured = True
 
     def get_next_schedule(self, action, _max=14400):
         """
@@ -952,7 +969,7 @@ class Scheduler(object):
         if self.options.format is None:
             self._print_schedule_default()
             return
-        data = self._print_schedule_data()
+        data = self.print_schedule_data()
         if self.svc and not self.svc.options.single_service:
             # let the Node object do the formatting (for aggregation)
             return data
@@ -981,7 +998,7 @@ class Scheduler(object):
         head_node.add_column("Config Parameter", color.BOLD)
         head_node.add_column("Schedule Definition", color.BOLD)
 
-        for data in self._print_schedule_data():
+        for data in self.print_schedule_data():
             node = head_node.add_node()
             node.add_column(data["action"], color.LIGHTBLUE)
             node.add_column(data["last_run"])
@@ -992,16 +1009,17 @@ class Scheduler(object):
 
         tree.out()
 
-    def _print_schedule_data(self):
+    def print_schedule_data(self):
         """
         Return a list of dict of schedule information for all tasks.
         """
+        self.configure()
         data = []
         for action in sorted(self.scheduler_actions):
-            data += self.__print_schedule_data(action)
+            data += self._print_schedule_data(action)
         return data
 
-    def __print_schedule_data(self, action):
+    def _print_schedule_data(self, action):
         """
         Return a dict of a scheduled task, or list of dict of a task-set,
         containing schedule information.
@@ -1009,13 +1027,13 @@ class Scheduler(object):
         data = []
         if isinstance(self.scheduler_actions[action], list):
             for sopt in self.scheduler_actions[action]:
-                data += [self.___print_schedule_data(action, sopt)]
+                data += [self.__print_schedule_data(action, sopt)]
         else:
             sopt = self.scheduler_actions[action]
-            data += [self.___print_schedule_data(action, sopt)]
+            data += [self.__print_schedule_data(action, sopt)]
         return data
 
-    def ___print_schedule_data(self, action, sopt):
+    def __print_schedule_data(self, action, sopt):
         """
         Return a dict of a scheduled task information.
         """
