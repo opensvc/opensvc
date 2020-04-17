@@ -402,15 +402,6 @@ class Scheduler(object):
             # explicit schedule in config data
             return schedule_s
 
-        try:
-            schedule_s = self.obj.oget("DEFAULT", option)
-        except ValueError:
-            # keyword not found
-            schedule_s = None
-        if schedule_s is not None:
-            # custom schedule in DEFAULT config data
-            return schedule_s
-
         if self.svc and section in self.svc.resources_by_id and \
              hasattr(self.svc.resources_by_id[section], "default_schedule"):
             # driver default

@@ -968,6 +968,7 @@ class ExtConfigMixin(object):
                 kwargs["deprecated"] = (key.keyword != o)
                 kwargs["required"] = key.required
                 kwargs["default"] = key.default
+                kwargs["default_keyword"] = key.default_keyword
                 inheritance = key.inheritance
                 if scope is None:
                     scope = key.at
@@ -994,10 +995,12 @@ class ExtConfigMixin(object):
                 kwargs["use_default"] = False
                 return self.__conf_get(s, o, **kwargs)
             if inheritance == "head":
-                return self.__conf_get("DEFAULT", o, **kwargs)
+                default_o = key.default_keyword if key else o
+                return self.__conf_get("DEFAULT", default_o, **kwargs)
             if inheritance == "head > leaf":
                 try:
-                    return self.__conf_get("DEFAULT", o, **kwargs)
+                    default_o = key.default_keyword if key else o
+                    return self.__conf_get("DEFAULT", default_o, **kwargs)
                 except ex.OptNotFound:
                     kwargs["use_default"] = False
                     return self.__conf_get(s, o, **kwargs)
@@ -1017,15 +1020,17 @@ class ExtConfigMixin(object):
 
     def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
                    use_default=None, cd=None, default=None, required=None,
-                   deprecated=None):
+                   deprecated=None, default_keyword=None):
         try:
             if not scope:
                 val = self.conf_get_val_unscoped(s, o, use_default=use_default,
-                                                 cd=cd)
+                                                 cd=cd,
+                                                 default_keyword=default_keyword)
             else:
                 val = self.conf_get_val_scoped(s, o, use_default=use_default,
                                                cd=cd,
-                                               impersonate=impersonate)
+                                               impersonate=impersonate,
+                                               default_keyword=default_keyword)
         except ex.OptNotFound as exc:
             if required:
                 raise ex.RequiredOptNotFound
@@ -1051,15 +1056,22 @@ class ExtConfigMixin(object):
             return val
         return self.convert(t, val)
 
-    def conf_get_val_unscoped(self, s, o, use_default=True, cd=None):
+    def conf_get_val_unscoped(self, s, o, use_default=True, cd=None, default_keyword=None):
         if cd is None:
             try:
                 cd = self.private_cd
             except AttributeError:
                 cd = self.cd
-        if s in cd and o in cd[s]:
+        try:
             return cd[s][o]
+        except KeyError:
+            pass
+        if s != "DEFAULT" and use_default and self.has_default_section:
+            # fallback to default
+            return self.conf_get_val_unscoped("DEFAULT", default_keyword,
+                                              cd=cd)
         raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
+
 
     def conf_has_option_scoped(self, s, o, nodename=None, cd=None, scope_order=None):
         """
@@ -1118,7 +1130,7 @@ class ExtConfigMixin(object):
             if option in options and condition:
                 return option
 
-    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, cd=None, scope_order=None):
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, cd=None, scope_order=None, default_keyword=None):
         if cd is None:
             try:
                 cd = self.private_cd
@@ -1139,7 +1151,7 @@ class ExtConfigMixin(object):
             if use_default and self.has_default_section:
                 if s != "DEFAULT":
                     # fallback to default
-                    return self.conf_get_val_scoped("DEFAULT", o,
+                    return self.conf_get_val_scoped("DEFAULT", default_keyword,
                                                     impersonate=impersonate,
                                                     cd=cd,
                                                     scope_order=scope_order)

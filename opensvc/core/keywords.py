@@ -28,6 +28,7 @@ class Keyword(object):
                  scope_order="specific > generic",
                  default=None,
                  default_text=None,
+                 default_keyword=None,
                  candidates=None,
                  strict_candidates=True,
                  convert=None,
@@ -40,6 +41,7 @@ class Keyword(object):
         self.protoname = protoname or keyword
         self.section = section
         self.keyword = keyword
+        self.default_keyword = default_keyword or keyword
         if rtype is None or isinstance(rtype, list):
             self.rtype = rtype
         else:
@@ -134,6 +136,8 @@ class Keyword(object):
         s += "#  default:         %s\n"%str(self.default_text)
         if self.top.has_default_section:
             s += "#  inheritance:     %s\n"%str(self.inheritance)
+            if self.keyword != self.default_keyword:
+                s += "#  default keyword: %s\n" % self.default_keyword
         s += "#  scope order:     %s\n"%str(self.scope_order)
         if self.candidates:
             s += "#  candidates:      %s\n"%candidates
@@ -191,6 +195,8 @@ class Keyword(object):
         s += "**default**       %s\n"%str(self.default_text)
         if self.top.has_default_section:
             s += "**inheritance**   %s\n"%str(self.inheritance)
+            if self.keyword != self.default_keyword:
+                s += "**default keyword** %s\n" % self.default_keyword
         s += "**scope order**   %s\n"%str(self.scope_order)
         if self.candidates:
             s += "**candidates**    %s\n"%candidates
@@ -220,6 +226,8 @@ class Keyword(object):
             data["default"] = self.default
         if self.default_text:
             data["default_text"] = self.default_text
+        if self.default_keyword != self.keyword:
+            data["default_keyword"] = self.default_keyword
         if self.inheritance:
             data["inheritance"] = self.inheritance
         if self.scope_order:
