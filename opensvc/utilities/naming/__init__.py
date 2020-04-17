@@ -375,4 +375,7 @@ def factory(kind):
     raise ValueError("unknown kind: %s" % kind)
 
 
+def new_id():
+    import uuid
+    return str(uuid.uuid4())
 
