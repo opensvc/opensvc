@@ -1548,11 +1548,21 @@ class ExtConfigMixin(object):
 
         return data
 
+    def is_volatile(self):
+        try:
+            if self.volatile:
+                return True
+        except AttributeError:
+            pass
+        return False
+
     def dump_config_data(self, cd=None, cf=None, validation=True):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
+        if self.is_volatile():
+            return
         if cd is None:
             try:
                 cd = self.private_cd
