@@ -31,7 +31,7 @@ from utilities.fcache import fcache
 from utilities.files import makedirs
 from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
 from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
-                              svc_pathlog, svc_pathtmp, svc_pathvar)
+                              svc_pathlog, svc_pathtmp, svc_pathvar, new_id)
 from utilities.proc import (action_triggers, drop_option, find_editor,
                             init_locale, justcall, lcall, vcall)
 from utilities.storage import Storage
@@ -475,8 +475,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
     def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None):
-        if cd:
-            self.set_lazy("cd", cd)
+        self.raw_cd = cd
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.name = name
         self.namespace = namespace.strip("/") if namespace else None
@@ -489,7 +488,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.set_lazy("log", log)
 
         self.paths = ObjPaths(self.path, name, cf)
-        self.scheduler_configured = False
         self.reset_resources()
 
         self.encap_json_status_cache = {}
@@ -661,6 +659,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             options=self.options,
             svc=self,
             scheduler_actions={},
+            configure_method="configure_scheduler",
         )
 
     @lazy
@@ -698,8 +697,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @staticmethod
     def new_id():
-        import uuid
-        return str(uuid.uuid4())
+        return new_id()
 
     @lazy
     def peers(self):
@@ -740,6 +738,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def cd(self):
+        if self.raw_cd is not None:
+            return self.raw_cd
         return self.parse_config_file(self.paths.cf)
 
     @lazy
@@ -869,8 +869,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             # service to reach the global_expect
             return -1
         self.allow_on_this_node(action)
-        if (self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status")) or action == "print_schedule":
-            self.configure_scheduler()
         try:
             return self._action(action, options=options)
         except utilities.lock.LOCK_EXCEPTIONS as exc:
@@ -1661,7 +1659,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if is_resource:
                 rid.append(section)
 
-        self.dump_config_data()
+        self.commit()
 
         for section in rid:
             group = section.split("#")[0]
@@ -2668,9 +2666,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def frozen(self):
         return 0
 
-    def configure_scheduler(self):
-        pass
-
     def action_rid_dependencies(self, action, rid):
         return set()
 
@@ -2756,6 +2751,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def postinstall(self, *args, **kwargs):
         pass
 
+    def post_commit(self):
+        self.unset_all_lazy()
+        self.sched.reconfigure()
+
+    def configure_scheduler(self, action):
+        pass
 
 class Svc(BaseSvc):
     """
@@ -3129,13 +3130,22 @@ class Svc(BaseSvc):
                 return True
         return False
 
-    def configure_scheduler(self):
+    def configure_scheduler(self, action):
         """
         Add resource-dependent tasks to the scheduler.
+        Called by the @scheduler decorator if not already run once.
+        Rearm with .reconfigure_scheduler()
         """
-        if self.scheduler_configured:
+        def need_configure(action):
+            if action == "print_schedule":
+                return True
+            if self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status"):
+                return True
+            return False
+
+        if not need_configure(action):
             return
-        self.scheduler_configured = True
+
         monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
         self.sched.scheduler_actions.update({

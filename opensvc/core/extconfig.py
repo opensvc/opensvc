@@ -198,7 +198,7 @@ class ExtConfigMixin(object):
             except KeyError:
                 self.log.info("skip delete %s: not found", section)
         if deleted:
-            self.dump_config_data()
+            self.commit()
 
     def unset(self):
         """
@@ -240,7 +240,7 @@ class ExtConfigMixin(object):
         if not deleted:
             return 0
         try:
-            self.dump_config_data(cd=cd)
+            self.commit(cd=cd)
         except (IOError, OSError) as exc:
             raise ex.Error(str(exc))
         return deleted
@@ -523,7 +523,7 @@ class ExtConfigMixin(object):
         if not changed:
             return
         try:
-            self.dump_config_data(validation=validation)
+            self.commit(validation=validation)
         except (IOError, OSError) as exc:
             raise ex.Error(str(exc))
 
@@ -1556,13 +1556,11 @@ class ExtConfigMixin(object):
             pass
         return False
 
-    def dump_config_data(self, cd=None, cf=None, validation=True):
+    def commit(self, cd=None, cf=None, validation=True):
         """
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
-        if self.is_volatile():
-            return
         if cd is None:
             try:
                 cd = self.private_cd
@@ -1577,16 +1575,32 @@ class ExtConfigMixin(object):
         if hasattr(self, "new_id") and "id" not in cd.get("DEFAULT", {}):
             if "DEFAULT" not in cd:
                 cd["DEFAULT"] = {}
-            current_id = self.parse_config_file(cf).get("DEFAULT", {}).get("id")
-            if current_id:
-                cd["DEFAULT"]["id"] = current_id
-            else:
+            if self.is_volatile():
                 cd["DEFAULT"]["id"] = self.new_id()
+            else:
+                current_id = self.parse_config_file(cf).get("DEFAULT", {}).get("id")
+                if current_id:
+                    cd["DEFAULT"]["id"] = current_id
+                else:
+                    cd["DEFAULT"]["id"] = self.new_id()
         if validation:
             ret = self._validate_config()
             if ret["errors"]:
                 raise ex.Error
 
+        if not self.is_volatile():
+            self.dump_config_data(cd=cd, cf=cf)
+
+        self.clear_ref_cache()
+        self.post_commit()
+
+    def post_commit(self):
+        """
+        Place holder for things to do on the child class instance after a commit.
+        """
+        pass
+
+    def dump_config_data(self, cd=None, cf=None):
         makedirs(os.path.dirname(cf))
         lines = []
 
@@ -1613,5 +1627,3 @@ class ExtConfigMixin(object):
                     ofile.write(buff)
         except Exception as exc:
             raise ex.Error("failed to write %s: %s" % (cf, exc))
-        self.unset_all_lazy()
-        self.clear_ref_cache()
