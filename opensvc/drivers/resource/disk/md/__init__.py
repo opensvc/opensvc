@@ -4,7 +4,7 @@ import os
 import core.exceptions as ex
 import core.status
 import utilities.devices.linux
-
+from os.path import exists as path_exists
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from core.objects.svcdict import KEYS
@@ -13,7 +13,6 @@ from utilities.converters import convert_size
 from utilities.fcache import fcache
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
-from utilities.string import bdecode
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "md"
@@ -76,6 +75,17 @@ def driver_capabilities(node=None):
         return ["disk.md"]
     return []
 
+def justcall_mdadm_detail(*args, **kwargs):
+    return justcall(*args, **kwargs)
+
+
+def justcall_mdadm_scan(*args, **kwargs):
+    return justcall(*args, **kwargs)
+
+
+def justcall_md_create(*args, **kwargs):
+    return justcall(*args, **kwargs)
+
 
 class DiskMd(BaseDisk):
     startup_timeout = 10
@@ -127,6 +137,27 @@ class DiskMd(BaseDisk):
             self.log.debug("shared param defaults to 'true' due to unscoped "
                            "configuration")
             return True
+
+    def provisioned(self):
+        if which("mdadm") is None:
+            return
+        return self.has_it()
+
+    def provisioner(self):
+        self._create_md()
+        self.can_rollback = True
+        self._set_real_uuid()
+        self._set_svc_rid_uuid()
+        self.svc.node.unset_lazy("devtree")
+
+    def unprovisioner(self):
+        if self.uuid == "" or self.uuid is None:
+            return
+        for dev in self.sub_devs():
+            self.vcall([self.mdadm, "--brief", "--zero-superblock", dev])
+        self._unset_svc_rid_uuid()
+        self.svc.node.unset_lazy("devtree")
+        self.clear_cache("mdadm.scan.v")
 
     def _info(self):
         data = [
@@ -190,13 +221,14 @@ class DiskMd(BaseDisk):
 
     def md_devpath(self):
         devpath = self.devpath()
-        if os.path.exists(devpath):
+        if path_exists(devpath):
             return devpath
         out, err, ret = self.mdadm_scan_v()
+        devname = self.devname()
         for line in out.splitlines():
-            if self.uuid in line:
+            if self._mdadm_scan_match(line, uuid=self.uuid, devname=devname):
                 devname = line.split()[1]
-                if os.path.exists(devname):
+                if path_exists(devname):
                     return devname
         raise ex.Error("unable to find a devpath for md")
 
@@ -207,7 +239,7 @@ class DiskMd(BaseDisk):
             return "/dev/md/"+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
 
     def devpath(self):
-        return "/dev/disk/by-id/md-uuid-"+self.uuid
+        return "/dev/disk/by-id/md-uuid-"+str(self.uuid)
 
     def exposed_devs(self):
         if self.uuid == "" or self.uuid is None:
@@ -235,15 +267,14 @@ class DiskMd(BaseDisk):
         if ret != 0:
             raise ex.Error
 
-    def detail(self):
+    def detail(self, devname=None):
         try:
-            devpath = self.md_devpath()
+            devpath = devname or self.md_devpath()
         except ex.Error as e:
             return "State : " + str(e)
-        if not os.path.exists(devpath):
+        if not path_exists(devpath):
             return "State : devpath does not exist"
-        cmd = [self.mdadm, "--detail", devpath]
-        out, err, ret = justcall(cmd)
+        out, err, ret = justcall_mdadm_detail(argv=[self.mdadm, '--detail', devpath])
         if "cannot open /dev" in err:
             return "State : devpath does not exist"
         if ret != 0:
@@ -260,10 +291,19 @@ class DiskMd(BaseDisk):
                 return line.split(" : ")[-1]
         return "unknown"
 
+    def _mdadm_scan_match(self, output, uuid=None, devname=None):
+        words = output.split()
+        if uuid and "UUID=" + uuid in words:
+            return True
+        elif devname and devname in words:
+            return True
+        else:
+            return False
+
     def has_it(self):
         if self.uuid == "" or self.uuid is None:
             return False
-        return self.uuid in self.mdadm_scan_v()[0]
+        return self._mdadm_scan_match(self.mdadm_scan_v()[0], uuid=self.uuid)
 
     def is_up(self):
         if not self.has_it():
@@ -271,12 +311,19 @@ class DiskMd(BaseDisk):
         buff = self.detail_status()
         states = buff.split(", ")
         if len(states) > 1:
-            self.status_log(buff, "warn")
-        if "Not Started" in states or len(states) == 0:
+            self.status_log(buff)
+        if len(states) == 0:
             return False
-        if "devpath does not exist" in states or \
-           "unable to find a devpath for md" in states:
-            return False
+        false_states = [
+            "Not Started",
+            "devpath does not exist",
+            "unable to find a devpath for md",
+            "unknown"
+        ]
+        for state in false_states:
+            if state in states:
+                self.status_log(buff)
+                return False
         return True
 
     def auto_assemble_disabled(self):
@@ -360,15 +407,14 @@ class DiskMd(BaseDisk):
             devpath = self.md_devpath()
         except ex.Error as e:
             return self.sub_devs_inactive()
-        if os.path.exists(devpath):
+        if path_exists(devpath):
             return self.sub_devs_active()
         else:
             return self.sub_devs_inactive()
 
     @cache("mdadm.scan.v")
     def mdadm_scan_v(self):
-        cmd = [self.mdadm, "-E", "--scan", "-v"]
-        return justcall(cmd)
+        return justcall_mdadm_scan(argv=[self.mdadm, "-E", "--scan", "-v"])
 
     def sub_devs_inactive(self):
         devs = set()
@@ -382,7 +428,7 @@ class DiskMd(BaseDisk):
         inblock = False
         paths = set()
         for line in lines:
-            if "UUID="+self.uuid in line:
+            if self._mdadm_scan_match(line, uuid=self.uuid):
                 inblock = True
                 continue
             if inblock and "devices=" in line:
@@ -449,90 +495,72 @@ class DiskMd(BaseDisk):
             self.log.error("no faulty device found to re-add to %s remaining "
                            "%d removed legs"% (devpath, removed - added))
 
-
-
-    def provisioned(self):
-        if which("mdadm") is None:
-            return
-        return self.has_it()
-
-    def provisioner(self):
-        if which("mdadm") is None:
-            raise ex.Error("mdadm is not installed")
-
-        level = self.level
-        devs = self.devs or self.oget("devs")
-        spares = self.spares
-        chunk = self.chunk
-        layout = self.layout
-
-        if len(devs) == 0:
-            raise ex.Error("at least 2 devices must be set in the 'devs' provisioning parameter")
-
-        invalid_devname_message = self._invalid_devname()
-        if invalid_devname_message:
-            raise ex.Error(invalid_devname_message)
-
-        # long md names cause a buffer overflow in mdadm
-        name = self.devname()
-        cmd = [self.mdadm, '--create', name, '--force', '--quiet',
-               '--metadata=default']
-        cmd += ['-n', str(len(devs)-spares)]
-        if level:
-            cmd += ["-l", level]
-        if spares:
-            cmd += ["-x", str(spares)]
-        if chunk:
-            cmd += ["-c", str(convert_size(chunk, _to="k", _round=4))]
-        if layout:
-            cmd += ["-p", layout]
-        cmd += devs
-        self.log.info(" ".join(cmd))
-        from subprocess import Popen, PIPE
-        proc = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        out, err = proc.communicate(input=b'no\n')
-        out, err = bdecode(out).strip(), bdecode(err).strip()
-        self.clear_cache("mdadm.scan.v")
-        self.log.info(out)
-        if proc.returncode != 0:
-            raise ex.Error(err)
-        self.can_rollback = True
-        if len(out) > 0:
-            self.log.info(out)
-        if len(err) > 0:
-            self.log.error(err)
-        self.uuid = os.path.basename(name)
-        uuid = self.get_real_uuid(name)
-        self.uuid = uuid
+    def _set_svc_rid_uuid(self):
         if self.shared:
-            self.log.info("set %s.uuid = %s", self.rid, uuid)
-            self.svc._set(self.rid, "uuid", uuid)
+            self.log.info("set %s.uuid = %s", self.rid, self.uuid)
+            self.svc._set(self.rid, "uuid", self.uuid)
         else:
-            self.log.info("set %s.uuid@%s = %s", self.rid, Env.nodename, uuid)
-            self.svc._set(self.rid, "uuid@"+Env.nodename, uuid)
-        self.svc.node.unset_lazy("devtree")
+            self.log.info("set %s.uuid@%s = %s", self.rid, Env.nodename, self.uuid)
+            self.svc._set(self.rid, "uuid@" + Env.nodename, self.uuid)
 
-    def get_real_uuid(self, name):
-        buff = self.detail()
-        for line in buff.split("\n"):
-            line = line.strip()
-            if line.startswith("UUID :"):
-                return line.split(" : ")[-1]
-        raise ex.Error("unable to determine md uuid")
-
-    def unprovisioner(self):
-        if self.uuid == "" or self.uuid is None:
-            return
-        for dev in self.sub_devs():
-            self.vcall([self.mdadm, "--brief", "--zero-superblock", dev])
+    def _unset_svc_rid_uuid(self):
         if self.shared:
             self.log.info("reset %s.uuid", self.rid)
             self.svc._set(self.rid, "uuid", "")
         else:
             self.log.info("reset %s.uuid@%s", self.rid, Env.nodename)
-            self.svc._set(self.rid, "uuid@"+Env.nodename, "")
-        self.svc.node.unset_lazy("devtree")
+            self.svc._set(self.rid, "uuid@" + Env.nodename, "")
+
+    def _create_md(self):
+        if which("mdadm") is None:
+            raise ex.Error("mdadm is not installed")
+        argv = self._md_create_argv()
+        self.log.info(" ".join(argv))
+        out, err, return_code = justcall_md_create(argv=argv, input=b'no\n')
         self.clear_cache("mdadm.scan.v")
+        self.log.info(out)
+        if return_code != 0:
+            raise ex.Error(err)
+        if len(out) > 0:
+            self.log.info(out)
+        if len(err) > 0:
+            self.log.error(err)
+
+    def _md_create_argv(self):
+        level = self.level
+        devs = self.devs or self.oget("devs")
+        spares = self.spares
+        chunk = self.chunk
+        layout = self.layout
+        number_devs = len(devs) - (spares or 0)
+        if number_devs < 1:
+            raise ex.Error("at least 1 device must be set in the 'devs' provisioning")
+        invalid_devname_message = self._invalid_devname()
+        if invalid_devname_message:
+            raise ex.Error(invalid_devname_message)
+        name = self.devname()
+        argv = [self.mdadm, '--create', name, '--force', '--quiet',
+               '--metadata=default']
+        argv += ['-n', str(number_devs)]
+        if level:
+            argv += ["-l", level]
+        if spares:
+            argv += ["-x", str(spares)]
+        if chunk:
+            argv += ["-c", str(convert_size(chunk, _to="k", _round=4))]
+        if layout:
+            argv += ["-p", layout]
+        argv += devs
+        return argv
+
+    def _set_real_uuid(self):
+        buff = self.detail(devname=self.devname())
+        for line in buff.split("\n"):
+            line = line.strip()
+            if line.startswith("UUID :"):
+                self.uuid = line.split(" : ")[-1]
+                return
+        raise ex.Error("unable to determine md uuid")
 
     def _invalid_devname(self):
         md_name = os.path.basename(self.devname())
