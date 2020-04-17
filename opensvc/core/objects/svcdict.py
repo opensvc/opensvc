@@ -107,6 +107,12 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
+        "keyword": "run_schedule",
+        "at": True,
+        "text": "The default task resources schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
+    },
+    {
+        "section": "DEFAULT",
         "keyword": "aws",
         "at": True,
         "text": "The aws cli executable fullpath. If not provided, aws is expected to be found in the PATH."
@@ -596,6 +602,7 @@ KEYWORDS = [
     {
         "section": "sync",
         "keyword": "schedule",
+        "default_keyword": "sync_schedule",
         "at": True,
         "text": "Set the this resource synchronization schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
         "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
