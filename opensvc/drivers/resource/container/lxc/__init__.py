@@ -224,9 +224,9 @@ class ContainerLxc(BaseContainer):
             runmethod = self.rcmd
         elif which('lxc-attach') and os.path.exists('/proc/1/ns/pid'):
             if self.lxcpath:
-                runmethod = ['lxc-attach', '-n', self.name, '-P', self.lxcpath, '--']
+                runmethod = ['lxc-attach', '-n', self.name, '-P', self.lxcpath, '--clear-env', '--']
             else:
-                runmethod = ['lxc-attach', '-n', self.name, '--']
+                runmethod = ['lxc-attach', '-n', self.name, '--clear-env', '--']
         else:
             runmethod = Env.rsh.split() + [self.name]
         return runmethod
