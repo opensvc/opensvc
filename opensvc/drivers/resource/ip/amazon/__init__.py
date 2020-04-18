@@ -48,6 +48,7 @@ KEYS.register_driver(
 )
 
 def driver_capabilities(node=None):
+    import os
     from utilities.proc import which
     data = []
     if not which("ec2"):
