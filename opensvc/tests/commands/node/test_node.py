@@ -12,7 +12,6 @@ import commands.node
 from utilities.string import try_decode
 
 UNICODE_STRING = "bêh"
-logging.disable(logging.CRITICAL)
 
 
 @pytest.fixture(scope='function')
