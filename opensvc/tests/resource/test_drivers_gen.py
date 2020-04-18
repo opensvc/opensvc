@@ -93,7 +93,7 @@ SCENARIOS = [
 
     #  share.nfs has its own test file
 
-    ('sync.btfrssnap', {'rid': '#1'}, 'sync.btrfssnap'),
+    ('sync.btrfssnap', {'rid': '#1'}, 'sync.btrfssnap'),
     ('sync.btrfs', {'rid': '#1', 'src': 'src:a', 'dst': 'dst:foo', 'target': ['foo']}, 'sync.btrfs'),
     ('sync.dds', {'rid': '#1', 'target': ['a']}, 'sync.dds'),
     ('sync.docker', {'rid': '#1', 'target': ['a']}, 'sync.docker'),
