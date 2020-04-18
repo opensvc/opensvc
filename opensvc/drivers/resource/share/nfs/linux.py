@@ -31,8 +31,6 @@ def driver_capabilities(node=None):
 class ShareNfs(Resource):
     def __init__(self, path=None, opts=None, **kwargs):
         Resource.__init__(self, type="share.nfs", **kwargs)
-        if "node.x.exportfs" not in capabilities:
-            raise ex.InitError("exportfs is not installed")
         self.label = "nfs:%s" % path
         self.path = path
         l = opts.replace('\\', '').split()
@@ -119,6 +117,8 @@ class ShareNfs(Resource):
         return True
 
     def start(self):
+        if "node.x.exportfs" not in capabilities:
+            raise ex.Error("exportfs is not installed")
         try:
             up = self.is_up()
         except ex.Error as e:
@@ -146,6 +146,8 @@ class ShareNfs(Resource):
                 raise ex.Error
 
     def stop(self):
+        if "node.x.exportfs" not in capabilities:
+            raise ex.Error("exportfs is not installed")
         try:
             up = self.is_up()
         except ex.Error as e:
@@ -162,6 +164,9 @@ class ShareNfs(Resource):
                 raise ex.Error
 
     def _status(self, verbose=False):
+        if "node.x.exportfs" not in capabilities:
+            self.status_log("exportfs is not installed")
+            return core.status.NA
         try:
             up = self.is_up()
         except ex.Error as e:
