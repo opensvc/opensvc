@@ -73,7 +73,7 @@ scenarios = {
             "disk#raw.devs={disk#loop0.exposed_devs[0]}:/tmp/raw/raw00 {disk#loop1.exposed_devs[0]}:/tmp/raw/raw01",
         ]],
 
-        ['md-raid0-unprov-all', 'test-start', [], [
+        ['md-raid0-all', 'test-start', [], [
             "--kw", "disk#0.type=loop",
             "--kw", "disk#0.file=/var/tmp/{svcname}.1.dd",
             "--kw", "disk#0.size=10m",
