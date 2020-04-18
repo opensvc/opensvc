@@ -11,9 +11,6 @@ def node():
     return Node()
 
 
-logging.disable(logging.CRITICAL)
-
-
 class TestNode:
     @staticmethod
     def test_010_str(node):
