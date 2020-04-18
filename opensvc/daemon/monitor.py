@@ -130,7 +130,7 @@ class Monitor(shared.OsvcThread):
             self.kern_freeze()
             self.services_init_boot()
         shared.NODE.write_boot_id()
-        self.commit()
+        self.dump_nodes_info()
 
         # send a first message without service status, so the peers know
         # we are in init state.
