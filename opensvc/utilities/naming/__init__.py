@@ -16,13 +16,6 @@ VALID_NAME_RFC952_NO_DOT = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]))*"
                             r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
 VALID_NAME_RFC952 = (r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*"
                      r"([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$")
-GLOB_ROOT_SVC_CONF = os.path.join(Env.paths.pathetc, "*.conf")
-GLOB_ROOT_VOL_CONF = os.path.join(Env.paths.pathetc, "vol", "*.conf")
-GLOB_ROOT_CFG_CONF = os.path.join(Env.paths.pathetc, "cfg", "*.conf")
-GLOB_ROOT_SEC_CONF = os.path.join(Env.paths.pathetc, "sec", "*.conf")
-GLOB_ROOT_USR_CONF = os.path.join(Env.paths.pathetc, "usr", "*.conf")
-GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, "*", "*", "*.conf")
-GLOB_CONF_NS_ONE = os.path.join(Env.paths.pathetcns, "%s", "*", "*.conf")
 
 ANSI_ESCAPE = re.compile(r"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]", re.UNICODE)
 ANSI_ESCAPE_B = re.compile(br"\x1b\[([0-9]{1,3}(;[0-9]{1,3})*)?[mHJKG]")
@@ -82,6 +75,11 @@ def list_services(namespace=None, kinds=None):
 
 
 def glob_root_config():
+    GLOB_ROOT_SVC_CONF = os.path.join(Env.paths.pathetc, "*.conf")
+    GLOB_ROOT_VOL_CONF = os.path.join(Env.paths.pathetc, "vol", "*.conf")
+    GLOB_ROOT_CFG_CONF = os.path.join(Env.paths.pathetc, "cfg", "*.conf")
+    GLOB_ROOT_SEC_CONF = os.path.join(Env.paths.pathetc, "sec", "*.conf")
+    GLOB_ROOT_USR_CONF = os.path.join(Env.paths.pathetc, "usr", "*.conf")
     return chain(
         glob.iglob(GLOB_ROOT_SVC_CONF),
         glob.iglob(GLOB_ROOT_VOL_CONF),
@@ -92,6 +90,8 @@ def glob_root_config():
 
 
 def glob_ns_config(namespace=None):
+    GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, "*", "*", "*.conf")
+    GLOB_CONF_NS_ONE = os.path.join(Env.paths.pathetcns, "%s", "*", "*.conf")
     if namespace is None:
         return glob.iglob(GLOB_CONF_NS)
     else:
