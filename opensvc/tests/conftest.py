@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 from contextlib import contextmanager
 
 import pytest  # nopep8
@@ -95,17 +96,19 @@ def create_driver_resource(mock_sysname):
 
 @pytest.fixture(scope='function')
 def has_cluster_config(osvc_path_tests):
-    config_txt = """
-[DEFAULT]
-id = 70000f54827611ea8ef8080027f58106
-
-[cluster]
-secret = 71111f54827611ea8ef8080027f58106
-"""
     pathetc = env.Env.paths.pathetc
     os.mkdir(pathetc)
-    with open(env.Env.paths.clusterconf, mode='w+') as cluster_config_file:
-        cluster_config_file.write(config_txt)
+    config_lines = [
+        '[DEFAULT]',
+        'id = ' + str(uuid.uuid4()),
+        '',
+        '[cluster]',
+        'secret = ' + str(uuid.uuid4()),
+        'nodes = ' + env.Env.nodename
+    ]
+    with open(env.Env.paths.clusterconf, mode='w+') as cfg_file:
+        for line in config_lines:
+            cfg_file.write(line + '\n')
 
 
 @pytest.fixture(scope='function')
