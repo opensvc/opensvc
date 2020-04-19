@@ -668,7 +668,7 @@ class Monitor(shared.OsvcThread):
                 pass
         try:
             newsvc = factory("svc")(path, svc.namespace, node=shared.NODE, cd=data)
-            newsvc.dump_config_data()
+            newsvc.commit()
             del newsvc
             self.service_status_fallback(path)
         except Exception as exc:
