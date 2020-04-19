@@ -2755,7 +2755,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.unset_all_lazy()
         self.sched.reconfigure()
 
-    def configure_scheduler(self, action):
+    def configure_scheduler(self, *args, **kwargs):
         pass
 
 class Svc(BaseSvc):
@@ -3130,14 +3130,14 @@ class Svc(BaseSvc):
                 return True
         return False
 
-    def configure_scheduler(self, action):
+    def configure_scheduler(self, action=None):
         """
         Add resource-dependent tasks to the scheduler.
         Called by the @scheduler decorator if not already run once.
         Rearm with .reconfigure_scheduler()
         """
         def need_configure(action):
-            if action == "print_schedule":
+            if action in (None, "print_schedule"):
                 return True
             if self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status"):
                 return True
@@ -3148,7 +3148,7 @@ class Svc(BaseSvc):
 
         monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
-        self.sched.scheduler_actions.update({
+        self.sched.update({
             "compliance_auto": SchedOpts(
                 "DEFAULT",
                 fname="last_comp_check",
@@ -3163,17 +3163,21 @@ class Svc(BaseSvc):
             ),
         })
         if not self.encap:
-            self.sched.scheduler_actions["status"] = SchedOpts(
+            self.sched.update({
+                "status": SchedOpts(
                     "DEFAULT",
                     fname="last_status",
                     schedule_option="status_schedule"
-            )
-            if self.has_monitored_resources() or monitor_schedule is not None:
-                self.sched.scheduler_actions["resource_monitor"] = SchedOpts(
-                    "DEFAULT",
-                    fname="last_resource_monitor",
-                    schedule_option="monitor_schedule"
                 )
+            })
+            if self.has_monitored_resources() or monitor_schedule is not None:
+                self.sched.update({
+                    "resource_monitor": SchedOpts(
+                        "DEFAULT",
+                        fname="last_resource_monitor",
+                        schedule_option="monitor_schedule"
+                    )
+                })
 
         resource_schedules = {}
         for resource in self.get_resources():
@@ -3187,7 +3191,7 @@ class Svc(BaseSvc):
                     resource_schedules[saction] = [sopt]
                 else:
                     resource_schedules[saction] += [sopt]
-        self.sched.scheduler_actions.update(resource_schedules)
+        self.sched.update(resource_schedules)
 
     def get_subset_parallel(self, rtype):
         """

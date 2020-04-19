@@ -1154,7 +1154,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         A list of metrics can be disabled from the task configuration section,
         using the 'disable' option.
         """
-        fpath = self.sched.get_timestamp_f(self.sched.scheduler_actions["pushstats"].fname,
+        fpath = self.sched.get_timestamp_f(self.sched.actions["pushstats"].fname,
                                            success=True)
         try:
             with open(fpath, "r") as ofile:
@@ -1469,7 +1469,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("reboot is not scheduled")
             return
 
-        sch = self.sched.scheduler_actions["auto_reboot"]
+        sch = self.sched.actions["auto_reboot"]
         schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
         print("reboot is scheduled")
         print("reboot schedule: %s" % schedule)
