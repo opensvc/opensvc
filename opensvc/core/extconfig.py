@@ -1601,6 +1601,8 @@ class ExtConfigMixin(object):
         pass
 
     def dump_config_data(self, cd=None, cf=None):
+        if cf is None:
+            cf = self.paths.cf
         makedirs(os.path.dirname(cf))
         lines = []
 
