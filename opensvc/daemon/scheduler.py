@@ -400,7 +400,7 @@ class Scheduler(shared.OsvcThread):
 
         if shared.NODE:
             shared.NODE.options.cron = True
-            for action in shared.NODE.sched.scheduler_actions:
+            for action in shared.NODE.sched.actions:
                 try:
                     delay = shared.NODE.sched.validate_action(action, now=now)
                 except ex.AbortAction:
@@ -412,14 +412,14 @@ class Scheduler(shared.OsvcThread):
             except KeyError:
                 # deleted during previous iterations
                 continue
-            svc.configure_scheduler()
             svc.options.cron = True
+            svc.sched.configure()
             try:
                 provisioned = shared.AGG[path].provisioned
             except KeyError:
                 continue
             lasts = self.get_lasts(svc)
-            for action, parms in svc.sched.scheduler_actions.items():
+            for action, parms in svc.sched.actions.items():
                 if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+path)
                     continue
