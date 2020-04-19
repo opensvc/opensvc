@@ -105,17 +105,17 @@ def sched_action(func):
     timestamps.
     """
     def _func(self, action, options=None):
-        self.sched.configure(action)
         if options is None:
             options = Storage()
-        if action in self.sched.scheduler_actions:
+        self.sched.configure(action=action)
+        if action in self.sched.actions:
             self.sched.action_timestamps(action, options.rid)
         try:
             ret = func(self, action, options)
         except ex.AbortAction:
             # finer-grained locking can raise that to cancel the task
             return 0
-        if ret == 0 and action in self.sched.scheduler_actions:
+        if ret == 0 and action in self.sched.actions:
             self.sched.action_timestamps(action, options.rid, success=True)
         return ret
     return _func
@@ -133,17 +133,8 @@ class Scheduler(object):
         self.config_defaults = config_defaults
         self.configured = False
         self.configure_method = configure_method
-
-        if scheduler_actions is None:
-            self.scheduler_actions = {}
-        else:
-            self.scheduler_actions = scheduler_actions
-
-        if options is None:
-            self.options = Storage()
-        else:
-            self.options = options
-
+        self.scheduler_actions = scheduler_actions or {}
+        self.options = Storage(options or {})
         self.svc = svc
         self.node = node
         if svc:
@@ -156,6 +147,9 @@ class Scheduler(object):
             self.log = node.log
             if node is None:
                 self.node = node
+
+    def update(self, data):
+        self.scheduler_actions.update(data)
 
     def reconfigure(self):
         self.configured = False
@@ -826,6 +820,10 @@ class Scheduler(object):
             fpath += ".success"
         return fpath
 
+    @property
+    def actions(self):
+        return self.scheduler_actions
+
     def validate_action(self, action, now=None, lasts=None):
         """
         Decide if the scheduler task can run, and return the concerned rids
@@ -1013,7 +1011,6 @@ class Scheduler(object):
         """
         Return a list of dict of schedule information for all tasks.
         """
-        self.configure()
         data = []
         for action in sorted(self.scheduler_actions):
             data += self._print_schedule_data(action)
