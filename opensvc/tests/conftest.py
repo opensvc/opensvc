@@ -94,6 +94,21 @@ def create_driver_resource(mock_sysname):
 
 
 @pytest.fixture(scope='function')
+def has_cluster_config(osvc_path_tests):
+    config_txt = """
+[DEFAULT]
+id = 70000f54827611ea8ef8080027f58106
+
+[cluster]
+secret = 71111f54827611ea8ef8080027f58106
+"""
+    pathetc = env.Env.paths.pathetc
+    os.mkdir(pathetc)
+    with open(env.Env.paths.clusterconf, mode='w+') as cluster_config_file:
+        cluster_config_file.write(config_txt)
+
+
+@pytest.fixture(scope='function')
 def has_node_config(osvc_path_tests):
 
     pathetc = env.Env.paths.pathetc

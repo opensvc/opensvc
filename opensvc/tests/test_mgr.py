@@ -202,7 +202,7 @@ class TestServiceActionWhenNoDaemonListen:
 
 
 @pytest.mark.ci
-@pytest.mark.usefixtures('osvc_path_tests', 'has_privs')
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
 class TestCreateAddDecode:
     @staticmethod
     @pytest.mark.parametrize('key', ['lowercase', 'camelCase', 'UPPERCASE'])
