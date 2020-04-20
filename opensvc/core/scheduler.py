@@ -1011,6 +1011,7 @@ class Scheduler(object):
         """
         Return a list of dict of schedule information for all tasks.
         """
+        self.configure()
         data = []
         for action in sorted(self.scheduler_actions):
             data += self._print_schedule_data(action)
