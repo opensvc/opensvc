@@ -139,7 +139,7 @@ scenarios = {
         ]],
     ],
     'sunos': [
-        ['loop-standby-converters', 'test-start', ['--rid', 'disk#0'], [
+        ['loop-converters', 'test-start', ['--rid', 'disk#0'], [
             "--kw", "disk#0.type=loop",
             "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
             "--kw", "disk#0.size=10m",
