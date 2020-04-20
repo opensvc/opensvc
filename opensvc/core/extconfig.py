@@ -995,12 +995,10 @@ class ExtConfigMixin(object):
                 kwargs["use_default"] = False
                 return self.__conf_get(s, o, **kwargs)
             if inheritance == "head":
-                default_o = key.default_keyword if key else o
-                return self.__conf_get("DEFAULT", default_o, **kwargs)
+                return self.__conf_get("DEFAULT", o, **kwargs)
             if inheritance == "head > leaf":
                 try:
-                    default_o = key.default_keyword if key else o
-                    return self.__conf_get("DEFAULT", default_o, **kwargs)
+                    return self.__conf_get("DEFAULT", o, **kwargs)
                 except ex.OptNotFound:
                     kwargs["use_default"] = False
                     return self.__conf_get(s, o, **kwargs)
