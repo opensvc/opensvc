@@ -52,6 +52,12 @@ ACTIONS.update({
                 OPT.value,
             ],
         },
+        "edit": {
+            "msg": "Edit the configuration or the current value of a key.",
+            "options": mp.ACTION_OPTS + [
+                OPT.key,
+            ],
+        },
         "keys": {
             "msg": "Show all keys available in this secret.",
         },

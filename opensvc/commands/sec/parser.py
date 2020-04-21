@@ -54,7 +54,7 @@ ACTIONS.update({
             ],
         },
         "edit": {
-            "msg": "Edit the current value of a key.",
+            "msg": "Edit the configuration or the current value of a key.",
             "options": mp.ACTION_OPTS + [
                 OPT.key,
             ],
