@@ -3958,6 +3958,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             node=node,
             server=server,
             silent=silent,
+            timeout=5,
         )
         if data is None or data.get("status", 0) != 0:
             return
@@ -4781,7 +4782,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "debug": debug,
             }
         }
-        result = self.daemon_get(req, server=server, node=node)
+        result = self.daemon_get(req, server=server, node=node, timeout=5)
         if "nodes" in result:
             lines = []
             for logs in result["nodes"].values():
