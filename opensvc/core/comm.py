@@ -797,7 +797,7 @@ class Crypt(object):
         return data
 
     def raw_daemon_request(self, data, server=None, node=None, with_result=True, silent=False,
-                           cluster_name=None, secret=None, timeout=0, sp=None, method="GET"):
+                           cluster_name=None, secret=None, timeout=None, sp=None, method="GET"):
         """
         Send a request to the daemon running on server and return the result
         fetched if with_result is set.
