@@ -767,7 +767,7 @@ class Crypt(object):
         headers = self.h2_headers(node=node, secret=secret, multiplexed=data.get("multiplexed"), af=sp.af)
         body = self.h2_body_from_data(data)
         headers.update({"Content-Length": str(len(body))})
-        conn = self.h2c(sp=sp)
+        conn = self.h2c(sp=sp, timeout=timeout)
         elapsed = 0
         while True:
             try:
