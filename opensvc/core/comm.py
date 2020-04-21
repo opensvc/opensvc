@@ -761,7 +761,7 @@ class Crypt(object):
             return bdecode(self.cluster_key)
 
     def h2_daemon_request(self, data, server=None, node=None, with_result=True, silent=False,
-                          cluster_name=None, secret=None, timeout=0, sp=None, method="GET"):
+                          cluster_name=None, secret=None, timeout=None, sp=None, method="GET"):
         secret = self.get_secret(sp, secret)
         path = self.h2_path_from_data(data)
         headers = self.h2_headers(node=node, secret=secret, multiplexed=data.get("multiplexed"), af=sp.af)
