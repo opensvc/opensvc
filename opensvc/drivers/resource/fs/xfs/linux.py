@@ -10,6 +10,6 @@ def driver_capabilities(node=None):
     return []
 
 class FsXfs(Fs):
-    info = ['xfs_admin', '-l']
+    queryfs = ['xfs_admin', '-l']
     mkfs = ['mkfs.xfs', '-f', '-q']
 
