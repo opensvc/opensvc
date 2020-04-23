@@ -192,6 +192,8 @@ class Ip(Resource):
             raise ex.Error("dns resolution not ready after %s (ip not in local dataset)" % print_duration(self.wait_dns))
         left = time.time() - timeout
         while left:
+            if left < 0:
+                left = 0
             result = self.svc.node.daemon_get({"action": "sync"}, timeout=left)
             if result["status"] == 0:
                 break
