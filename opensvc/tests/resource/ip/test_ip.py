@@ -5,6 +5,7 @@ from core.objects.svc import Svc
 from utilities.drivers import driver_import, driver_class
 
 OS_LIST = set(['AIX', 'Darwin', 'FreeBSD', 'HP-UX', 'Linux', 'OSF1', 'SunOS', 'Windows'])
+OS_LIST = set(['Linux'])
 
 IP_0 = {
     "DEFAULT": {},
@@ -46,11 +47,15 @@ def wait_dns_records(mocker, ip_class):
     return mocker.patch.object(ip_class, 'wait_dns_records')
 
 
+@pytest.fixture()
+def arp_announce(mocker, ip_class):
+    return mocker.patch.object(ip_class, 'arp_announce')
+
+
 # mock external utilities.ping.check_ping
 @pytest.fixture()
 def check_ping(mocker, ip_class):
     return mocker.patch('utilities.ping.check_ping', return_value=False)
-
 
 @pytest.fixture()
 def check_ping_is_false(check_ping):
@@ -85,21 +90,32 @@ def ifconfig_has_not_ip_local(get_ifconfig):
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('ifconfig_has_not_ip_local', 'check_ping_is_false')
+@pytest.mark.usefixtures('startip_cmd', 'dns_update', 'wait_dns_records', 'arp_announce')
 class TestIpStartWhenNoIpLocalAndNoPing:
+    """
+    Test a start when we need actions callst ping
+
+    Following methods need extra tests depending on sysname value:
+        startip_cmd
+        dns_update
+        wait_dns_records
+        arp_announce
+    """
     @staticmethod
-    @pytest.mark.usefixtures('startip_cmd', 'dns_update', 'wait_dns_records')
     def test_no_exceptions(svc):
         svc.start()
 
     @staticmethod
     def test_calls_startip_cmd_and_dns_update_and_wait_dns_records(
             startip_cmd,
+            arp_announce,
             dns_update,
             wait_dns_records,
             svc):
         svc.start()
 
         startip_cmd.assert_called_once()
+        arp_announce.assert_called_once()
         dns_update.assert_called_once()
         wait_dns_records.assert_called_once()
 
