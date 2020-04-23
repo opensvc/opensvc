@@ -30,7 +30,7 @@ def driver_capabilities(node=None):
     return data
 
 class FsBtrfs(Fs):
-    info = ['btrfs', 'device', 'ready']
+    queryfs = ['btrfs', 'device', 'ready']
 
     @lazy
     def mkfs(self):

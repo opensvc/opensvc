@@ -434,15 +434,15 @@ class BaseFs(Resource):
     
     required attributes from child classes:
     *  mkfs = ['mkfs.ext4', '-F']
-    *  info = ['tune2fs', '-l']
+    *  queryfs = ['tune2fs', '-l']
     """
 
     def check_fs(self):
-        if not hasattr(self, "info"):
+        if not hasattr(self, "queryfs"):
             return True
         if self.mkfs_dev is None:
             return True
-        cmd = getattr(self, "info") + [self.mkfs_dev]
+        cmd = getattr(self, "queryfs") + [self.mkfs_dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             return True
