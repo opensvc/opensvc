@@ -11,5 +11,5 @@ def driver_capabilities(node=None):
 
 class FsExt4(Fs):
     mkfs = ['mkfs.ext4', '-F', '-q']
-    info = ['tune2fs', '-l']
+    queryfs = ['tune2fs', '-l']
 

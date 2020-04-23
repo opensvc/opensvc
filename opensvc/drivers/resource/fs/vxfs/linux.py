@@ -11,5 +11,5 @@ def driver_capabilities(node=None):
 
 class FsVxfs(Fs):
     mkfs = ['mkfs.vxfs', '-o', 'largefiles,bsize=8192']
-    info = ['fstyp']
+    queryfs = ['fstyp']
 
