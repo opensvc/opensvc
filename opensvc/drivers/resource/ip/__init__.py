@@ -329,7 +329,7 @@ class Ip(Resource):
                 return core.status.DOWN
             else:
                 return core.status.WARN
-        ifconfig = utilities.ifconfig.Ifconfig()
+        ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
         if intf is None and "dedicated" not in self.tags and mode != "dedicated":
@@ -457,7 +457,7 @@ class Ip(Resource):
         if self.is_up() is True:
             self.log.info("%s is already up on %s", self.addr, self.ipdev)
             raise ex.IpAlreadyUp(self.addr)
-        ifconfig = utilities.ifconfig.Ifconfig()
+        ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         if self.has_carrier(intf) is False and not self.svc.options.force:
             self.log.error("interface %s no-carrier.", self.ipdev)
@@ -736,7 +736,7 @@ class Ip(Resource):
 
         if network is None:
             # implicit network: the network of the first ipdev ip
-            ifconfig = utilities.ifconfig.Ifconfig()
+            ifconfig = self.get_ifconfig()
             intf = ifconfig.interface(self.ipdev)
             try:
                 if isinstance(intf.ipaddr, list):
