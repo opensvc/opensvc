@@ -488,7 +488,7 @@ class Ip(Resource):
         ipdev stacked device to multiple resources or multiple services.
         """
         timeout = convert_duration(self.svc.options.waitlock)
-        if timeout < 0:
+        if timeout is None or timeout < 0:
             timeout = 120
         delay = 1
         lockfd = None
