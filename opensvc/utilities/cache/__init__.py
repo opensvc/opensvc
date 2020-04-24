@@ -9,8 +9,12 @@ from env import Env
 from utilities.files import makedirs
 
 
+def cache_uuid():
+    return os.environ.get("OSVC_CACHE_UUID") or Env.session_uuid
+
+
 def get_cache_d():
-    return os.path.join(Env.paths.pathvar, "cache", Env.session_uuid)
+    return os.path.join(Env.paths.pathvar, "cache", cache_uuid())
 
 
 def cache(sig):
