@@ -129,9 +129,12 @@ class DataMixin(object):
             self.edit_config()
             return
         buff = self.decode_key(self.options.key)
-        no_newline = buff.count(os.linesep) == 0
         if buff is None:
             raise ex.Error("could not decode the secret key '%s'" % self.options.key)
+        try:
+            no_newline = os.sep not in buff.decode()
+        except Exception:
+            raise ex.Error("this key is not editable")
         editor = find_editor()
         fpath = self.tempfilename()
         try:
