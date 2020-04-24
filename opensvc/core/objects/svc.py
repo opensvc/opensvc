@@ -1554,10 +1554,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         if options is None:
             options = self.options
-        if (options.rid is not None and options.rid != "") or \
-           (options.tags is not None and options.tags != "") or \
-           (options.subsets is not None and options.subsets != "") or \
-           options.upto or options.downto:
+        if options.rid or options.tags or options.subsets or options.upto or options.downto:
             return True
         return False
 
@@ -4057,15 +4054,15 @@ class Svc(BaseSvc):
                 cmd = drop_option("--disable-rollback", cmd, drop_value=False)
             if self.options.rid:
                 options.append('--rid')
-                options.append(self.options.rid)
+                options.append(self.options.rid if is_string(self.options.rid) else ",".join(self.options.rid))
                 cmd = drop_option("--rid", cmd, drop_value=True)
             if self.options.tags:
                 options.append('--tags')
-                options.append(self.options.tags)
+                options.append(self.options.tags if is_string(self.options.tags) else ",".join(self.options.tags))
                 cmd = drop_option("--tags", cmd, drop_value=True)
             if self.options.subsets:
                 options.append('--subsets')
-                options.append(self.options.subsets)
+                options.append(self.options.subsets if is_string(self.options.subsets) else ",".join(self.options.subsets))
                 cmd = drop_option("--subsets", cmd, drop_value=True)
         else:
             options = []
@@ -5463,7 +5460,7 @@ class Svc(BaseSvc):
             self.delete_resources()
 
     def enter(self):
-        self._enter(self.options.rid)
+        self._enter(self.options.rid if is_string(self.options.rid) else self.options.rid[0])
 
     def _enter(self, rid):
         res = self.get_resource(rid)
