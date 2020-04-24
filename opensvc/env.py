@@ -111,11 +111,7 @@ class Env(object):
     """
     package = os.path.basename(os.path.dirname(__file__))
     uuid = ""
-    if "OSVC_PARENT_SESSION_UUID" in os.environ:
-        # passed from parent forking process: share the session
-        session_uuid = os.environ["OSVC_PARENT_SESSION_UUID"]
-    else:
-        session_uuid = str(uuid4())
+    session_uuid = os.environ.get("OSVC_PARENT_SESSION_UUID") or str(uuid4())
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
 
