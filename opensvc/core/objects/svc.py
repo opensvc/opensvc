@@ -4791,7 +4791,8 @@ class Svc(BaseSvc):
                 _data = res.info()
             except Exception as exc:
                 _data = []
-                print(exc, file=sys.stderr)
+                import traceback
+                traceback.print_exc()
             for __data in _data:
                 rid = __data[-3]
                 if rid not in data:
