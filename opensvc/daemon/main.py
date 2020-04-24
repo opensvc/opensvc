@@ -183,8 +183,12 @@ class Daemon(object):
 
     def init(self):
         shared.NODE = Node()
-        self.log.info("daemon started, version %s, crypto mod %s, api version %s",
-                      shared.NODE.agent_version, CRYPTO_MODULE, shared.API_VERSION)
+        self.log.info("daemon started")
+        self.log.info("versions:")
+        self.log.info(" opensvc agent: %s", shared.NODE.agent_version)
+        self.log.info(" opensvc api:   %s", shared.API_VERSION)
+        self.log.info(" python:        %s", sys.version.split()[0])
+        self.log.info(" crypto module: %s", CRYPTO_MODULE)
         caps = capabilities.scan(node=shared.NODE)
         self.log.info("%d capabilities:", len(caps))
         for cap in caps:
