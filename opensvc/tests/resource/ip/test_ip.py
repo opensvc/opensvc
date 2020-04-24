@@ -119,6 +119,9 @@ class TestIpStartWhenNoIpLocalAndNoPing:
         dns_update.assert_called_once()
         wait_dns_records.assert_called_once()
 
+    @staticmethod
+    def test_dont_call_daemon_get_with_negative_timeout(svc):
+        pass
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
