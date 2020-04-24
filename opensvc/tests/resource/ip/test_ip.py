@@ -54,7 +54,7 @@ def arp_announce(mocker, ip_class):
 
 # mock external utilities.ping.check_ping
 @pytest.fixture()
-def check_ping(mocker, ip_class):
+def check_ping(mocker):
     return mocker.patch('utilities.ping.check_ping', return_value=False)
 
 @pytest.fixture()
@@ -69,7 +69,7 @@ def check_ping_is_true(check_ping):
 
 # mock external utilities.ifconfig.Ifconfig
 @pytest.fixture()
-def get_ifconfig(mocker, ip_class):
+def get_ifconfig(mocker):
     return mocker.patch('utilities.ifconfig.Ifconfig')
 
 
