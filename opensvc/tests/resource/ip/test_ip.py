@@ -137,10 +137,10 @@ class TestIpStartWhenNoIpLocalAndNoPing:
             svc):
         svc.start()
 
-        startip_cmd.assert_called_once()
-        arp_announce.assert_called_once()
-        dns_update.assert_called_once()
-        wait_dns_records.assert_called_once()
+        assert startip_cmd.call_count == 1
+        assert arp_announce.call_count == 1
+        assert dns_update.call_count == 1
+        assert wait_dns_records.call_count == 1
 
     @staticmethod
     @pytest.mark.usefixtures('node_wait_method')
