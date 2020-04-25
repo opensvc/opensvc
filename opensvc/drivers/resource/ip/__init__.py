@@ -182,7 +182,7 @@ class Ip(Resource):
         if not self.wait_dns:
             return
         left = self.wait_dns
-        time_max = time.time() + left
+        time_max = self._current_time() + left
         self.svc.print_status_data_eval()
         self.log.info("wait address propagation to peers (wait_dns=%s)", print_duration(left))
         path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (Env.nodename, self.svc.path, self.rid)
@@ -190,13 +190,13 @@ class Ip(Resource):
             result = self.svc.node._wait(path=path, duration=left)
         except KeyboardInterrupt:
             raise ex.Error("dns resolution not ready after %s (ip not in local dataset)" % print_duration(self.wait_dns))
-        left = time_max - time.time()
+        left = time_max - self._current_time()
         self.log.info("wait cluster sync (time left is %s)", print_duration(left))
         while left > 0:
             result = self.svc.node.daemon_get({"action": "sync"}, timeout=left)
             if result["status"] == 0:
                 return
-            left = time_max - time.time()
+            left = time_max - self._current_time()
         raise ex.Error("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
 
     @lazy
@@ -900,3 +900,5 @@ class Ip(Resource):
             return
         self.release()
 
+    def _current_time(self):
+        return time.time()
