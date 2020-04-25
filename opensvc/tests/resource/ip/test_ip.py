@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 import core.exceptions as ex
@@ -5,14 +7,14 @@ from core.objects.svc import Svc
 from utilities.drivers import driver_import, driver_class
 
 OS_LIST = set(['AIX', 'Darwin', 'FreeBSD', 'HP-UX', 'Linux', 'OSF1', 'SunOS', 'Windows'])
-OS_LIST = set(['Linux'])
 
 IP_0 = {
-    "DEFAULT": {},
+    "DEFAULT": {"env": "tst"},
     "ip#0": {
         "ipname": "192.168.0.149",
         "ipdev": "eth0",
-        "netmask": "24"
+        "netmask": "24",
+        "wait_dns": "40"
     }
 }
 
@@ -22,7 +24,18 @@ def svc():
     svc = Svc(name="foo", cd=dict(IP_0))
     svc.options.debug = True
     svc.options.master = True
+    svc.get_node()  # Some ip methods need svc.node
     return svc
+
+
+@pytest.fixture()
+def node_wait_method(mocker, svc):
+    return mocker.patch.object(svc.node, '_wait')
+
+
+@pytest.fixture()
+def node_daemon_get(mocker, svc):
+    return mocker.patch.object(svc.node, 'daemon_get')
 
 
 @pytest.fixture(params=OS_LIST)
@@ -52,10 +65,18 @@ def arp_announce(mocker, ip_class):
     return mocker.patch.object(ip_class, 'arp_announce')
 
 
+@pytest.fixture()
+def current_time(mocker, ip_class):
+    now = int(time.time())
+    return mocker.patch.object(ip_class, '_current_time',
+                               side_effect=range(now, now + 100))
+
+
 # mock external utilities.ping.check_ping
 @pytest.fixture()
 def check_ping(mocker):
     return mocker.patch('utilities.ping.check_ping', return_value=False)
+
 
 @pytest.fixture()
 def check_ping_is_false(check_ping):
@@ -90,7 +111,7 @@ def ifconfig_has_not_ip_local(get_ifconfig):
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('ifconfig_has_not_ip_local', 'check_ping_is_false')
-@pytest.mark.usefixtures('startip_cmd', 'dns_update', 'wait_dns_records', 'arp_announce')
+@pytest.mark.usefixtures('startip_cmd', 'dns_update', 'arp_announce')
 class TestIpStartWhenNoIpLocalAndNoPing:
     """
     Test a start when we need actions callst ping
@@ -101,7 +122,9 @@ class TestIpStartWhenNoIpLocalAndNoPing:
         wait_dns_records
         arp_announce
     """
+
     @staticmethod
+    @pytest.mark.usefixtures('wait_dns_records')
     def test_no_exceptions(svc):
         svc.start()
 
@@ -120,8 +143,30 @@ class TestIpStartWhenNoIpLocalAndNoPing:
         wait_dns_records.assert_called_once()
 
     @staticmethod
-    def test_dont_call_daemon_get_with_negative_timeout(svc):
-        pass
+    @pytest.mark.usefixtures('node_wait_method')
+    def test_raise_when_all_daemon_get_calls_fails_also_ensure_no_call_daemon_get_call_with_negative_timeout(
+            node_daemon_get,
+            current_time,
+            svc):
+        node_daemon_get.side_effect = [{"status": 1, "errors": {}, "info": {}}] * 50
+        with pytest.raises(ex.Error):
+            svc.start()
+
+        assert node_daemon_get.call_count > 5
+        timeout_args = [args[1].get('timeout') for args in node_daemon_get.call_args_list]
+        assert len([timeout for timeout in timeout_args if timeout <= 0]) == 0
+
+    @staticmethod
+    @pytest.mark.usefixtures('node_wait_method')
+    def test_wait_dns_make_retries_on_daemon_get_until_daemon_get_succeed(
+            node_daemon_get,
+            svc):
+        daemon_result = [{"status": 1, "errors": {}, "info": {}}] * 3
+        daemon_result += [{"status": 0, "errors": {}, "info": {}}]
+        node_daemon_get.side_effect = daemon_result
+        svc.start()
+        assert node_daemon_get.call_count > 1
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
