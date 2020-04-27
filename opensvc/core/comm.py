@@ -821,16 +821,15 @@ class Crypt(object):
                     sock.connect(sp.to)
                     break
                 except socket.timeout:
-                    if timeout > 0 and elapsed > timeout:
+                    elapsed += SOCK_TMO_REQUEST + PAUSE
+                    if timeout == 0 or (timeout and elapsed >= timeout):
                         if with_result:
                             return {
                                 "status": 1,
-                                "err": "timeout sending request",
+                                "err": "timeout daemon request (connect error)",
                             }
-                        time.sleep(PAUSE)
-                        elapsed += SOCK_TMO_REQUEST + PAUSE
-                        continue
-                    raise
+                    time.sleep(PAUSE)
+                    continue
                 except socket.error as exc:
                     if exc.errno in RETRYABLE and \
                        (timeout == 0 or elapsed < timeout):
@@ -867,13 +866,13 @@ class Crypt(object):
                             encrypted=sp.encrypted
                         )
                     except socket.timeout:
-                        if timeout > 0 and elapsed > timeout:
+                        elapsed += SOCK_TMO_REQUEST + PAUSE
+                        if timeout == 0 or (timeout and elapsed >= timeout):
                             return {
                                 "status": 1,
-                                "err": "timeout waiting for result",
+                                "err": "timeout daemon request (recv_message error)",
                             }
                         time.sleep(PAUSE)
-                        elapsed += SOCK_TMO_REQUEST + PAUSE
         except socket.error as exc:
             if not silent:
                 self.log.error("%s comm error while %s: %s",
