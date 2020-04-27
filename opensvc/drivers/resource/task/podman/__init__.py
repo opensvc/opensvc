@@ -55,6 +55,12 @@ class TaskPodman(ContainerPodman, BaseTask):
 
     _info = ContainerPodman._info
 
+    def start(self):
+        BaseTask.start(self)
+
+    def stop(self):
+        BaseTask.stop(self)
+
     def _run_call(self):
         try:
             ContainerPodman.start(self)
