@@ -743,7 +743,7 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "keyword": "name",
         "at": True,
         "default": "default",
-        "text": "This information is fetched from the join command payload received from the joined node."
+        "text": "The cluster name is used as the zone name in the cluster dns records, in the {fqdn} configuration reference, in the aes secret encryption metadata, in the default name of the secret storing the listener certificate authority (system/sec/ca-<clustername>), in the default name of the secret storing the listener certificate and private key (system/sec/cert-<clustername>). The cluster name should be unique site-wide and be set right before populating secrets. It is always lowercased, so better to set it to a lowercase value to avoid confusion. This information is fetched from the join command payload received from the joined node."
     },
     {
         "section": "cluster",
