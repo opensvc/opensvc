@@ -1867,8 +1867,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if "nodes" in result:
             lines = []
             for logs in result["nodes"].values():
-                if logs is None:
-                    # happens when no log is present on a peer
+                if not isinstance(logs, list):
+                    # happens when no log is present on a peer or when peer
+                    # is down
                     continue
                 lines += logs
         else:
