@@ -5753,8 +5753,12 @@ class Svc(BaseSvc):
             if errors != "ignore":
                 raise ex.Error("volume %s is %s" % (volname, core.status.Status(volstatus)))
         if mode == "blk":
+            if vol.device is None:
+                return None, vol
             l[0] = vol.device
         else:
+            if vol.mount_point is None:
+                return None, vol
             l[0] = vol.mount_point
         return "/".join(l), vol
 
