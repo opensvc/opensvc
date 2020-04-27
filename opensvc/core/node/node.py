@@ -4786,6 +4786,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if "nodes" in result:
             lines = []
             for logs in result["nodes"].values():
+                if not isinstance(logs, list):
+                    continue
                 lines += logs
         else:
             lines = result
