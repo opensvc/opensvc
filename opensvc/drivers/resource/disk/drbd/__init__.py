@@ -15,6 +15,10 @@ from utilities.lazy import lazy
 from utilities.proc import justcall
 from utilities.converters import convert_size
 
+RE_MINOR = b"^\s*device\s*/dev/drbd([0-9]+).*;"
+RE_PORT = b"^\s*address.*:([0-9]+).*;"
+RE_NODE_ID = b"^\s*node-id\s+([0-9]+)\s*;"
+MAX_NODES = 32
 MAX_DRBD = 512
 MIN_PORT = 7289
 MAX_PORT = 7489
@@ -64,9 +68,12 @@ def driver_capabilities(node=None):
     from utilities.proc import which
     if which("drbdadm"):
         data.append("disk.drbd")
+        out, err, ret = justcall(["drbdadm"])
+        if "Version: 9" in out:
+            data.append("disk.drbd.mesh")
     return data
 
-class ConfigHandler(daemon.handler.BaseHandler):
+class PostConfigHandler(daemon.handler.BaseHandler):
     """
     Write a resource configuration file. Used by the provisioner to
     replicate the new configuration.
@@ -96,6 +103,34 @@ class ConfigHandler(daemon.handler.BaseHandler):
         with open(cf, "w") as f:
             f.write(options.data)
 
+class GetConfigHandler(daemon.handler.BaseHandler):
+    """
+    Read a resource configuration file. Used by the provisioner to
+    fetch an existing drbd resource configuration, for example
+    when a new service instance provisions.
+    """
+    routes = (
+        ("GET", "config"),
+    )
+    prototype = [
+        {
+            "name": "res",
+            "desc": "The drbd resource name.",
+            "required": True,
+            "format": "string",
+        },
+    ]
+    access = {}
+
+    def action(self, nodename, thr=None, **kwargs):
+        options = self.parse_options(kwargs)
+        cf = "/etc/drbd.d/%s.res" % options.res
+        if not os.path.exists(cf):
+            raise ex.HTTP(404, "resource configuration file does not exist")
+        with open(cf, "r") as f:
+            buff = f.read()
+        return {"data": buff}
+
 class AllocationsHandler(daemon.handler.BaseHandler):
     """
     Return the supported authentication methods.
@@ -110,15 +145,15 @@ class AllocationsHandler(daemon.handler.BaseHandler):
         if "node.x.drbdadm" not in capabilities:
             raise ex.Error("this node is not drbd capable")
         out, err, ret = justcall(["drbdadm", "dump"])
-        re_minor = re.compile("^\s*device\s*/dev/drbd([0-9]+).*;")
-        re_port = re.compile("^\s*address.*:([0-9]+).*;")
+        if ret:
+            raise ex.HTTP(500, err)
         minors = set()
         ports = set()
         for line in out.splitlines():
-            m = re_minor.match(line)
+            m = re.match(RE_MINOR, line)
             if m is not None:
                 minors.add(int(m.group(1)))
-            m = re_port.match(line)
+            m = re.match(RE_PORT, line)
             if m is not None:
                 ports.add(int(m.group(1)))
         return {
@@ -129,7 +164,8 @@ class AllocationsHandler(daemon.handler.BaseHandler):
 
 DRIVER_HANDLERS = [
     AllocationsHandler,
-    ConfigHandler,
+    GetConfigHandler,
+    PostConfigHandler,
 ]
 
 class DiskDrbd(Resource):
@@ -178,7 +214,10 @@ class DiskDrbd(Resource):
 
     def res_xml(self):
         from xml.etree.ElementTree import fromstring
-        tree = fromstring(self.dump_xml())
+        try:
+            tree = fromstring(self.dump_xml())
+        except Exception:
+            return
         for res in tree.getiterator("resource"):
             if res.attrib["name"] != self.res:
                 continue
@@ -421,8 +460,8 @@ class DiskDrbd(Resource):
     def provisioner(self):
         if self.svc.options.leader:
             self.write_config()
-        elif not os.path.exists(self.cf):
-            raise ex.Error("%s does not exist. it should have been sent by the leader" % self.cf)
+        elif not os.path.exists(self.cf) or not self.node_in_config():
+            self.write_config_from_peer()
         self.create_md()
         self.drbdadm_up()
         if self.svc.options.leader:
@@ -523,6 +562,33 @@ class DiskDrbd(Resource):
     def cf(self):
         return "/etc/drbd.d/%s.res" % self.res
 
+    def fetch_config(self):
+        for node in self.svc.nodes:
+            if node == Env.nodename:
+                continue
+            data = self.svc.daemon_get(
+                {
+                    "action": "/drivers/resource/disk/drbd/config",
+                    "options": {"res": self.res}
+                },
+                node=node,
+            )
+            buff = data.get("nodes", {}).get(node, {}).get("data")
+            if buff:
+                return buff
+        raise ex.Error("couldn't fetch the resource config from any peer")
+
+    def write_config_from_peer(self):
+        buff = self.fetch_config()
+        need_replicate = False
+        if not self.node_in_config(buff):
+            buff = self.add_node_to_config(buff)
+            need_replicate = True
+        with open(self.cf, "w") as f:
+            f.write(buff)
+        if need_replicate:
+            self.replicate_config(buff)
+
     def write_config(self):
         if os.path.exists(self.cf):
             self.log.info("%s already exists", self.cf)
@@ -585,27 +651,104 @@ class DiskDrbd(Resource):
         }
         return data
 
+    @staticmethod
+    def format_on(node, device, disk, addr, port, node_id=None):
+        fmt_on =        "    on %s {\n%s    }\n"
+        fmt_on_device = "        device    %s;\n"
+        fmt_on_disk =   "        disk      %s;\n"
+        fmt_on_meta =   "        meta-disk internal;\n"
+        fmt_on_addr =   "        address   %s:%s;\n"
+        fmt_on_nid =    "        node-id   %d;\n"
+        buff_content = fmt_on_device % device
+        buff_content += fmt_on_disk % disk
+        buff_content += fmt_on_meta
+        buff_content += fmt_on_addr % (addr, str(port))
+        if node_id is not None:
+            buff_content += fmt_on_nid % node_id
+        buff_on = fmt_on % (node, buff_content)
+        return buff_on
+
     def format_config(self, device, freeport):
+        if "drivers.resource.disk.drbd.mesh" in capabilities:
+            return self.format_config_v9(device, freeport)
+        else:
+            return self.format_config_v8(device, freeport)
+
+    def format_config_v9(self, device, freeport):
+        import socket
+        fmt_res =       "resource %s {\n%s%s}\n"
+        buff_on = ""
+        for node_id, node in enumerate(self.svc.node.cluster_nodes):
+            disk = self.oget("disk", impersonate=node)
+            addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
+            port = self.oget("port", impersonate=node) or freeport
+            buff_on += self.format_on(node, device, disk, addr, port, node_id=node_id)
+        buff_mesh = "    connection-mesh {\n        hosts %s;\n    }\n" % " ".join(self.svc.cluster_nodes)
+        buff = fmt_res % (self.res, buff_on, buff_mesh)
+        return buff
+
+    def format_config_v8(self, device, freeport):
         import socket
         fmt_res =       "resource %s {\n%s}\n"
-        def format_on(node, disk, addr, port):
-            fmt_on =        "    on %s {\n%s    }\n"
-            fmt_on_device = "        device    %s;\n"
-            fmt_on_disk =   "        disk      %s;\n"
-            fmt_on_meta =   "        meta-disk internal;\n"
-            fmt_on_addr =   "        address   %s:%s;\n"
-            buff_content = fmt_on_device % device
-            buff_content += fmt_on_disk % disk
-            buff_content += fmt_on_meta
-            buff_content += fmt_on_addr % (addr, str(port))
-            buff_on = fmt_on % (node, buff_content)
-            return buff_on
         buff_on = ""
         for node in self.svc.node.cluster_nodes:
             disk = self.oget("disk", impersonate=node)
             addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
             port = self.oget("port", impersonate=node) or freeport
-            buff_on += format_on(node, disk, addr, port)
+            buff_on += self.format_on(node, device, disk, addr, port)
         buff = fmt_res % (self.res, buff_on)
         return buff
+
+    def read_first_port(self, buff):
+        for line in buff.splitlines():
+            m = re.match(RE_PORT, line)
+            if not m:
+                continue
+            return int(m.group(1))
+        raise ex.Error("can not find the port in the current configuration")
+
+    def read_first_device(self, buff):
+        for line in buff.splitlines():
+            m = re.match(RE_MINOR, line)
+            if not m:
+                continue
+            return "/dev/drbd" + m.group(1)
+        raise ex.Error("can not find the device in the current configuration")
+
+    def read_next_node_id(self, buff):
+        node_ids = []
+        for line in buff.splitlines():
+            m = re.match(RE_NODE_ID, line)
+            if not m:
+                continue
+            node_ids.append(int(m.group(1)))
+        for i in range(MAX_NODES):
+            if i not in node_ids:
+                return i
+        raise ex.Error("can not find the device in the current configuration")
+
+    def add_node_to_config(self, buff, node=None):
+        node = node or Env.nodename
+        import socket
+        disk = self.oget("disk")
+        addr = self.oget("addr") or socket.gethostbyname(node)
+        port = self.oget("port") or self.read_first_port(buff)
+        device = self.read_first_device(buff)
+        node_id = self.read_next_node_id(buff)
+        on_section = self.format_on(node, device, disk, addr, port, node_id)
+        idx = buff.rindex("}")
+        buff = "%s%s%s" % (buff[:idx], on_section, buff[idx:])
+        buff = buff.replace("hosts ", "hosts %s " % node)
+        return buff
+
+    def node_in_config(self, buff=None, node=None):
+        node = node or Env.nodename
+        if buff is None:
+            with open(self.cf, "r") as f:
+                buff = f.read()
+        pattern = b"^\s*on\s+%s\s*{" % node
+        for line in buff.splitlines():
+            if re.match(pattern, line):
+                return True
+        return False
 
