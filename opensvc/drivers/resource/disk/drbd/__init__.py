@@ -1,14 +1,23 @@
+import json
 import os
+import re
 
 import core.exceptions as ex
 import core.status
+import daemon.handler
 from .. import BASE_KEYWORDS
 from env import Env
 from core.capabilities import capabilities
 from core.resource import Resource
 from core.objects.svcdict import KEYS
+from utilities.cache import cache
+from utilities.lazy import lazy
 from utilities.proc import justcall
+from utilities.converters import convert_size
 
+MAX_DRBD = 512
+MIN_PORT = 7289
+MAX_PORT = 7489
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "drbd"
 KEYWORDS = BASE_KEYWORDS + [
@@ -16,6 +25,26 @@ KEYWORDS = BASE_KEYWORDS + [
         "keyword": "res",
         "required": True,
         "text": "The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in ``/etc/drbd.d/resname.res``. The :c-res:`sync#i0` resource will take care of replicating this file to remote nodes."
+    },
+    {
+        "keyword": "disk",
+        "required": True,
+        "provisioning": True,
+        "text": "The path of the device to provision the drbd on."
+    },
+    {
+        "keyword": "addr",
+        "required": False,
+        "provisioning": True,
+        "text": "The addr to use to connect a peer. Use scoping to define each non-default address.",
+        "default_text": "The ipaddr resolved for the nodename.",
+    },
+    {
+        "keyword": "port",
+        "required": False,
+        "provisioning": True,
+        "text": "The port to use to connect a peer. The default",
+        "default_text": "A port free on all nodes, allocated by the agent.",
     },
 ]
 DEPRECATED_SECTIONS = {
@@ -37,6 +66,71 @@ def driver_capabilities(node=None):
         data.append("disk.drbd")
     return data
 
+class ConfigHandler(daemon.handler.BaseHandler):
+    """
+    Write a resource configuration file. Used by the provisioner to
+    replicate the new configuration.
+    """
+    routes = (
+        ("POST", "config"),
+    )
+    prototype = [
+        {
+            "name": "res",
+            "desc": "The drbd resource name.",
+            "required": True,
+            "format": "string",
+        },
+        {
+            "name": "data",
+            "desc": "The drbd resource configuration file content.",
+            "required": True,
+            "format": "string",
+        },
+    ]
+    access = {}
+
+    def action(self, nodename, thr=None, **kwargs):
+        options = self.parse_options(kwargs)
+        cf = "/etc/drbd.d/%s.res" % options.res
+        with open(cf, "w") as f:
+            f.write(options.data)
+
+class AllocationsHandler(daemon.handler.BaseHandler):
+    """
+    Return the supported authentication methods.
+    """
+    routes = (
+        ("GET", "allocations"),
+    )
+    prototype = []
+    access = {}
+
+    def action(self, nodename, thr=None, **kwargs):
+        if "node.x.drbdadm" not in capabilities:
+            raise ex.Error("this node is not drbd capable")
+        out, err, ret = justcall(["drbdadm", "dump"])
+        re_minor = re.compile("^\s*device\s*/dev/drbd([0-9]+).*;")
+        re_port = re.compile("^\s*address.*:([0-9]+).*;")
+        minors = set()
+        ports = set()
+        for line in out.splitlines():
+            m = re_minor.match(line)
+            if m is not None:
+                minors.add(int(m.group(1)))
+            m = re_port.match(line)
+            if m is not None:
+                ports.add(int(m.group(1)))
+        return {
+            "minors": sorted(list(minors)),
+            "ports": sorted(list(ports)),
+        }
+
+
+DRIVER_HANDLERS = [
+    AllocationsHandler,
+    ConfigHandler,
+]
 
 class DiskDrbd(Resource):
     """ Drbd device resource
@@ -49,12 +143,14 @@ class DiskDrbd(Resource):
         Stop 'downs' the drbd devices.
     """
 
-    def __init__(self, res=None, **kwargs):
+    def __init__(self, res=None, disk=None, **kwargs):
         super(DiskDrbd, self).__init__(type="disk.drbd", **kwargs)
         self.res = res
+        self.disk = disk
         self.label = "drbd %s" % res
         self.drbdadm = None
         self.rollback_even_if_standby = True
+        self.can_rollback_role = False
 
     def __str__(self):
         return "%s resource=%s" % (
@@ -63,79 +159,74 @@ class DiskDrbd(Resource):
         )
 
     def files_to_sync(self):
-        cf = os.path.join(os.sep, 'etc', 'drbd.d', self.res+'.res')
-        if os.path.exists(cf):
-            return [cf]
-        self.log.error("%s does not exist", cf)
+        if os.path.exists(self.cf):
+            return [self.cf]
+        self.log.error("%s does not exist", self.cf)
         return []
 
     def drbdadm_cmd(self, cmd):
         if self.drbdadm is None:
-            if "node.x.drbadm" in capabilities:
-                self.drbdadm = 'drbdadm'
+            if "node.x.drbdadm" in capabilities:
+                self.drbdadm = "drbdadm"
             else:
                 raise ex.Error("drbdadm command not found")
         return [self.drbdadm] + cmd.split() + [self.res]
 
+    @cache("drbdadm.dump.xml")
+    def dump_xml(self):
+        return justcall(["drbdadm", "dump-xml"])[0]
+
+    def res_xml(self):
+        from xml.etree.ElementTree import fromstring
+        tree = fromstring(self.dump_xml())
+        for res in tree.getiterator("resource"):
+            if res.attrib["name"] != self.res:
+                continue
+            return res
+
     def exposed_devs(self):
         devps = set()
-
-        ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
-        if ret != 0:
-            raise ex.Error
-
-        from xml.etree.ElementTree import fromstring
-        tree = fromstring(out)
-
-        for res in tree.getiterator('resource'):
-            if res.attrib['name'] != self.res:
+        res = self.res_xml()
+        if res is None:
+            return set()
+        for host in res.getiterator("host"):
+            if host.attrib["name"] != Env.nodename:
                 continue
-            for host in res.getiterator('host'):
-                if host.attrib['name'] != Env.nodename:
+            d = host.find("device")
+            if d is not None:
+                devps |= set([d.text])
+                continue
+            for volume in res.getiterator("volume"):
+                d = volume.find("device")
+                if d is None:
                     continue
-                d = host.find('device')
-                if d is not None:
-                    devps |= set([d.text])
-                    continue
-                for volume in res.getiterator('volume'):
-                    d = volume.find('device')
-                    if d is None:
-                        continue
-                    devps |= set([d.text])
+                devps |= set([d.text])
         return devps
 
     def sub_devs(self):
         devps = set()
-
-        ret, out, err = self.call(self.drbdadm_cmd('dump-xml'))
-        if ret != 0:
-            raise ex.Error
-
-        from xml.etree.ElementTree import fromstring
-        tree = fromstring(out)
-
-        for res in tree.getiterator('resource'):
-            if res.attrib['name'] != self.res:
+        res = self.res_xml()
+        if res is None:
+            return set()
+        for host in res.getiterator("host"):
+            if host.attrib["name"] != Env.nodename:
                 continue
-            for host in res.getiterator('host'):
-                if host.attrib['name'] != Env.nodename:
-                    continue
-                d = host.find('disk')
-                if d is None:
-                    d = host.find('volume/disk')
-                if d is None:
-                    continue
-                devps |= set([d.text])
-
+            d = host.find("disk")
+            if d is None:
+                d = host.find("volume/disk")
+            if d is None:
+                continue
+            devps |= set([d.text])
         return devps
 
     def drbdadm_down(self):
-        ret, out, err = self.vcall(self.drbdadm_cmd('down'))
+        ret, out, err = self.vcall(self.drbdadm_cmd("down"))
         if ret != 0:
             raise ex.Error
+        self.svc.node.unset_lazy("devtree")
 
     def drbdadm_up(self):
-        ret, out, err = self.vcall(self.drbdadm_cmd('up'))
+        ret, out, err = self.vcall(self.drbdadm_cmd("up"))
         if ret != 0:
             raise ex.Error
         self.wait_for_kwown_dstate()
@@ -144,7 +235,7 @@ class DiskDrbd(Resource):
 
     def get_cstate(self):
         self.prereq()
-        out, err, ret = justcall(self.drbdadm_cmd('cstate'))
+        out, err, ret = justcall(self.drbdadm_cmd("cstate"))
         if ret != 0:
             if "Device minor not allocated" in err or ret == 10:
                 return "Unattached"
@@ -154,7 +245,7 @@ class DiskDrbd(Resource):
 
     def prereq(self):
         if not os.path.exists("/proc/drbd"):
-            ret, out, err = self.vcall(['modprobe', 'drbd'])
+            ret, out, err = self.vcall(["modprobe", "drbd"])
             if ret != 0: raise ex.Error
 
     def start_connection(self):
@@ -170,10 +261,11 @@ class DiskDrbd(Resource):
             self.log.info("drbd resource %s peer node is not listening", self.res)
             pass
         else:
+            self.log.info("cstate before connect: %s", cstate)
             self.drbdadm_up()
 
     def get_role(self):
-        out, err, ret = justcall(self.drbdadm_cmd('role'))
+        out, err, ret = justcall(self.drbdadm_cmd("role"))
         if ret != 0:
             raise ex.Error(err)
         out = out.strip()
@@ -181,7 +273,7 @@ class DiskDrbd(Resource):
             # drbd9
             return out
         try:
-            loc, rem = out.split("\n")[0].split('/')
+            loc, rem = out.split("\n")[0].split("/")
         except (IndexError, ValueError, AttributeError):
             raise ex.Error(out)
         return loc
@@ -202,29 +294,45 @@ class DiskDrbd(Resource):
         role = self.get_role()
         if role == "Primary":
             return
-        self.start_role('Secondary')
+        self.start_role("Secondary")
 
     def stopstandby(self):
-        self.go_secondary()
+        self.shutdown()
 
     def go_secondary(self):
         self.start_connection()
         role = self.get_role()
         if role == "Secondary":
             return
-        self.start_role('Secondary')
+        self.start_role("Secondary")
+
+    def drbdadm_connect_discard(self):
+        cmd = ["drbdadm", "--", "--discard-my-data", "connect", self.res]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error
+
+    def drbdadm_disconnect(self):
+        cmd = ["drbdadm", "disconnect", self.res]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error
 
     def start(self):
         self.start_connection()
-        self.start_role('Primary')
+        self.start_role("Primary")
 
     def stop(self):
+        if not os.path.exists(self.cf):
+            return
         if self.is_standby:
             self.stopstandby()
         else:
             self.drbdadm_down()
 
     def shutdown(self):
+        if not os.path.exists(self.cf):
+            return
         self.drbdadm_down()
 
     def rollback(self):
@@ -240,7 +348,7 @@ class DiskDrbd(Resource):
             self.drbdadm_down()
 
     def get_dstate(self):
-        ret, out, err = self.call(self.drbdadm_cmd('dstate'))
+        ret, out, err = self.call(self.drbdadm_cmd("dstate"))
         if ret != 0:
             raise ex.Error
         return out.splitlines()
@@ -258,6 +366,11 @@ class DiskDrbd(Resource):
             if dstate != "UpToDate/UpToDate":
                 return False
         return True
+
+    def dstate_bootstraping(self, dstates):
+        if len(dstates) != 1:
+            return False
+        return dstates[0] == "Inconsistent/DUnknown"
 
     def _status(self, verbose=False):
         try:
@@ -291,3 +404,208 @@ class DiskDrbd(Resource):
             return core.status.STDBY_UP
         else:
             return core.status.WARN
+
+
+    def pre_provision_stop(self):
+        """
+        Skip normal stop before a unprovision.
+        """
+        pass
+
+    def post_provision_start(self):
+        """
+        Skip normal start after a provision.
+        """
+        pass
+
+    def provisioner(self):
+        if self.svc.options.leader:
+            self.write_config()
+        elif not os.path.exists(self.cf):
+            raise ex.Error("%s does not exist. it should have been sent by the leader" % self.cf)
+        self.create_md()
+        self.drbdadm_up()
+        if self.svc.options.leader:
+            self.start_role("Primary --force")
+            cstate = self.get_cstate()
+        else:
+            self.drbdadm_disconnect()
+            self.drbdadm_connect_discard()
+        self.svc.node.unset_lazy("devtree")
+
+    def unprovisioner(self):
+        if not os.path.exists(self.cf):
+            return
+        self.drbdadm_down()
+        self.wipe_md()
+        self.del_config()
+        self.svc.node.unset_lazy("devtree")
+
+    def has_md(self):
+        cmd = ["drbdadm", "--", "--force", "dump-md", self.res]
+        ret, out, err = self.call(cmd, errlog=False, outlog=False)
+        if "No valid meta data found" in err:
+            return False
+        return True
+
+    def create_md(self):
+        if self.has_md():
+            self.log.info("resource %s already has metadata" % self.res)
+            return
+        cmd = ["drbdadm", "create-md", self.res]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error()
+
+    def wipe_md(self):
+        if not self.has_md():
+            self.log.info("resource %s already has no metadata" % self.res)
+            return
+        cmd = ["drbdadm", "--", "--force", "wipe-md", self.res]
+        self.log.info(" ".join(cmd))
+        out, err, ret = justcall(cmd, input=b'yes\n')
+        if ret == 20:
+            # sub dev not found. no need to fail, as the sub dev is surely
+            # flagged for unprovision too, which will wipe metadata.
+            # this situation happens on unprovision on a stopped instance,
+            # when drbd is stacked over another (stopped) disk resource.
+            return
+        if ret != 0:
+            raise ex.Error(err)
+
+    def res_create(self):
+        if self.res_exists():
+            self.log.info("resource %s already exists" % self.res)
+            return
+        cmd = ["drbdsetup", "new-resource", self.res]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error()
+
+    def res_delete(self):
+        if not self.res_exists():
+            self.log.info("resource %s already deleted" % self.res)
+            return
+        cmd = ["drbdsetup", "del-resource", self.res]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error()
+
+    def res_exists(self):
+        cmd = ["drbdsetup", "show", self.res]
+        ret, out, err = self.call(cmd)
+        if ret != 20:
+            return True
+        return False
+
+    def del_config(self):
+        if not os.path.exists(self.cf):
+            self.log.info("%s already deleted", self.res)
+            return
+        self.log.info("delete %s", self.cf)
+        os.unlink(self.cf)
+
+    def allocate_drbd(self):
+        for idx in range(MAX_DRBD):
+            if idx in self.allocations["minors"]:
+                continue
+            return "/dev/drbd%d" % idx
+        raise ex.Error("no free minor")
+
+    def allocate_port(self):
+        for idx in range(MIN_PORT, MAX_PORT):
+            if idx in self.allocations["ports"]:
+                continue
+            return idx
+        raise ex.Error("no free minor")
+
+    @lazy
+    def cf(self):
+        return "/etc/drbd.d/%s.res" % self.res
+
+    def write_config(self):
+        if os.path.exists(self.cf):
+            self.log.info("%s already exists", self.cf)
+            return
+        lock_name = "drivers.resources.disk.drbd.allocate"
+        lock_id = self.svc.node._daemon_lock(lock_name, timeout=120, on_error="raise")
+        self.log.info("lock acquire: name=%s id=%s", lock_name, lock_id)
+        try:
+            self._write_config()
+        finally:
+            self.svc.node._daemon_unlock(lock_name, lock_id)
+            self.log.info("lock released: name=%s id=%s", lock_name, lock_id)
+
+    def _write_config(self):
+        device = self.allocate_drbd()
+        port = self.allocate_port()
+        buff = self.format_config(device, port)
+        with open(self.cf, "w") as filep:
+            filep.write(buff)
+        self.log.info("%s created", self.cf)
+        self.unset_lazy("allocations")
+        self.clear_cache("drbdadm.dump.xml")
+        self.replicate_config(buff)
+
+    def replicate_config(self, buff):
+        data = self.svc.daemon_post(
+            {
+                "action": "/drivers/resource/disk/drbd/config",
+                "options": {
+                    "res": self.res,
+                    "data": buff,
+                },
+            },
+            node=[n for n in self.svc.node.cluster_nodes if n != Env.nodename],
+        )
+        if data.get("status", 1):
+            raise ex.Error("failed to replicate config on all nodes: %s" % data)
+    
+    @lazy
+    def allocations(self):
+        data = self.svc.daemon_get(
+            {"action": "/drivers/resource/disk/drbd/allocations"},
+            node=self.svc.node.cluster_nodes,
+        )
+        minors = set()
+        ports = set()
+        try:
+            items = data["nodes"].items()
+        except KeyError:
+            raise ex.Error("unable to get current allocations: %s" % data.get("error"))
+        for node, ndata in items:
+            try:
+                minors |= set(ndata["minors"])
+                ports |= set(ndata["ports"])
+            except KeyError:
+                raise ex.Error("node %s invalid allocations report: %s" % (node, ndata.get("error", "")))
+        data = {
+            "minors": sorted(list(minors)),
+            "ports": sorted(list(ports)),
+        }
+        return data
+
+    def format_config(self, device, freeport):
+        import socket
+        fmt_res =       "resource %s {\n%s}\n"
+        def format_on(node, disk, addr, port):
+            fmt_on =        "    on %s {\n%s    }\n"
+            fmt_on_device = "        device    %s;\n"
+            fmt_on_disk =   "        disk      %s;\n"
+            fmt_on_meta =   "        meta-disk internal;\n"
+            fmt_on_addr =   "        address   %s:%s;\n"
+            buff_content = fmt_on_device % device
+            buff_content += fmt_on_disk % disk
+            buff_content += fmt_on_meta
+            buff_content += fmt_on_addr % (addr, str(port))
+            buff_on = fmt_on % (node, buff_content)
+            return buff_on
+        buff_on = ""
+        for node in self.svc.node.cluster_nodes:
+            disk = self.oget("disk", impersonate=node)
+            addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
+            port = self.oget("port", impersonate=node) or freeport
+            buff_on += format_on(node, disk, addr, port)
+        buff = fmt_res % (self.res, buff_on)
+        return buff
+
