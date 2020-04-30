@@ -4386,7 +4386,12 @@ class Svc(BaseSvc):
             if resource is None:
                 continue
             for cat in categories:
-                devs = sorted(list(getattr(resource, cat+"_devs")()))
+                try:
+                    devs = sorted(list(getattr(resource, cat+"_devs")()))
+                except Exception as exc:
+                    import traceback
+                    traceback.print_exc()
+                    continue
                 if len(devs) == 0:
                     continue
                 if resource.rid not in data:
