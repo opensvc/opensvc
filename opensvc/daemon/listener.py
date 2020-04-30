@@ -291,6 +291,24 @@ class Listener(shared.OsvcThread):
         self.setup_socks()
 
     def register_handlers(self):
+        self.register_core_handlers()
+        self.register_driver_handlers()
+
+    def register_driver_handlers(self):
+        from utilities.drivers import iter_drivers
+        from core.objects.svcdict import KEYS, SECTIONS
+        for mod in iter_drivers(SECTIONS):
+            if not hasattr(mod, "DRIVER_HANDLERS"):
+                continue
+            for handler_class in mod.DRIVER_HANDLERS:
+                handler = handler_class()
+                for method, path in handler.routes:
+                    path = "drivers/resource/%s/%s/%s" % (mod.DRIVER_GROUP, mod.DRIVER_BASENAME, path)
+                    self.handlers[(method, path)] = handler
+                    if method:
+                        self.log.info("register handler %s /%s", method, path)
+
+    def register_core_handlers(self):
         def onerror(name):
             import traceback
             traceback.print_exc()
@@ -1765,7 +1783,7 @@ class ClientHandler(shared.OsvcThread):
 
         if handler is None:
             method = data.get("method")
-            action = data["action"]
+            action = data["action"].lstrip("/")
             handler = self.get_handler(method, action)
         else:
             method = handler.routes[0][0]
