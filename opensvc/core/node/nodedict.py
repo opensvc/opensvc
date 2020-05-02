@@ -935,7 +935,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual", "dorado"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual", "dorado", "drbd"],
         "text": "The pool type."
     },
     {
@@ -1022,21 +1022,46 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "rtype": "vg",
         "keyword": "name",
         "required": True,
-        "text": "The name of the volume group to allocate the pool logical volumes into."
+        "text": "The name of the volume group to allocate the pool volumes logical volumes into."
+    },
+    {
+        "section": "pool",
+        "rtype": "drbd",
+        "keyword": "vg",
+        "text": "The name of the volume group to allocate the pool volumes logical volumes into."
     },
     {
         "section": "pool",
         "rtype": "zpool",
         "keyword": "name",
         "required": True,
-        "text": "The name of the zpool to allocate the pool datasets into."
+        "text": "The name of the zpool to allocate the pool volumes zvol or datasets into."
+    },
+    {
+        "section": "pool",
+        "rtype": "drbd",
+        "keyword": "zpool",
+        "text": "The name of the zpool to allocate the pool volumes zvol into."
     },
     {
         "section": "pool",
         "keyword": "path",
-        "rtype": ["directory", "share"],
+        "rtype": "drbd",
+        "text": "The fullpath of the directory hosting the pool volumes loop files."
+    },
+    {
+        "section": "pool",
+        "keyword": "path",
+        "rtype": "share",
+        "default": "{var}/pool/share",
+        "text": "The fullpath of the shared directory hosting the pool volumes directories or loop files."
+    },
+    {
+        "section": "pool",
+        "keyword": "path",
+        "rtype": "directory",
         "default": "{var}/pool/directory",
-        "text": "The path to create the pool loop files in."
+        "text": "The fullpath of the directory hosting the pool volumes directories or loop files."
     },
     {
         "section": "pool",
