@@ -41,7 +41,7 @@ class Pool(BasePool):
             disk = {
                 "rtype": "disk",
                 "type": "zvol",
-                "name": "/".join(self.zpool, name),
+                "name": "/".join([self.zpool, name]),
                 "size": size,
             }
             if self.mkblk_opt:
