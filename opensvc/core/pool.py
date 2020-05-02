@@ -151,14 +151,14 @@ class BasePool(object):
             return []
         volume._update([{"rid": "sync#i0", "disable": True}])
 
-    def add_fs(self, name, shared=False):
+    def add_fs(self, name, shared=False, dev="disk#1"):
         data = []
         if self.fs_type == "zfs":
             disk = {
                 "rtype": "disk",
                 "type": "zpool",
                 "name": name,
-                "vdev": "{disk#1.exposed_devs[0]}",
+                "vdev": "{%s.exposed_devs[0]}" % dev,
                 "shared": shared,
             }
             fs = {
@@ -177,7 +177,7 @@ class BasePool(object):
             fs = {
                 "rtype": "fs",
                 "type": self.fs_type,
-                "dev": "{disk#1.exposed_devs[0]}",
+                "dev": "{%s.exposed_devs[0]}" % dev,
                 "mnt": self.mount_point(name),
                 "shared": shared,
             }
