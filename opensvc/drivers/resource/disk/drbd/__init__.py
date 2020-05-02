@@ -358,11 +358,21 @@ class DiskDrbd(Resource):
             raise ex.Error
 
     def start(self):
+        if not os.path.exists(self.cf):
+            self.log.info("skip: resource not configured")
+            return
+        if not self.res_defined():
+            self.log.info("skip: resource not defined (for this host)")
+            return
         self.start_connection()
         self.start_role("Primary")
 
     def stop(self):
         if not os.path.exists(self.cf):
+            self.log.info("skip: resource not configured")
+            return
+        if not self.res_defined():
+            self.log.info("skip: resource not defined (for this host)")
             return
         if self.is_standby:
             self.stopstandby()
@@ -371,6 +381,10 @@ class DiskDrbd(Resource):
 
     def shutdown(self):
         if not os.path.exists(self.cf):
+            self.log.info("skip: resource not configured")
+            return
+        if not self.res_defined():
+            self.log.info("skip: resource not defined (for this host)")
             return
         self.drbdadm_down()
 
@@ -477,11 +491,22 @@ class DiskDrbd(Resource):
 
     def unprovisioner(self):
         if not os.path.exists(self.cf):
+            self.log.info("skip: resource not configured")
+            return
+        if not self.res_defined():
+            self.log.info("skip: resource not defined (for this host)")
             return
         self.drbdadm_down()
         self.wipe_md()
         self.del_config()
         self.svc.node.unset_lazy("devtree")
+
+    def res_defined(self):
+        cmd = ["drbdadm", "--", "status", self.res]
+        out, err, ret = justcall(cmd)
+        if "not defined" in err:
+            return False
+        return True
 
     def has_md(self):
         cmd = ["drbdadm", "--", "--force", "dump-md", self.res]
