@@ -32,6 +32,7 @@ class Pool(BasePool):
                 "name": name,
                 "vg": self.vg,
                 "size": size,
+                "standby": True,
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
@@ -43,6 +44,7 @@ class Pool(BasePool):
                 "type": "zvol",
                 "name": "/".join([self.zpool, name]),
                 "size": size,
+                "standby": True,
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
@@ -54,6 +56,7 @@ class Pool(BasePool):
                 "type": "loop",
                 "file": os.path.join(self.path, name + ".img"),
                 "size": size,
+                "standby": True,
             }
             data.append(disk)
             disk = {
@@ -61,6 +64,7 @@ class Pool(BasePool):
                 "type": "vg",
                 "pvs": os.path.join(self.path, name + ".img"),
                 "name": name,
+                "standby": True,
             }
             data.append(disk)
             disk = {
@@ -69,6 +73,7 @@ class Pool(BasePool):
                 "name": "lv",
                 "vg": name,
                 "size": "100%FREE",
+                "standby": True,
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
