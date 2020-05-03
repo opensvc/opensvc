@@ -442,15 +442,17 @@ class DiskDrbd(Resource):
         else:
             status = None
             for idx, dstate in enumerate(dstates):
-                dstateset = set(dstate.split("/"))
+                dstatelist = dstate.split("/")
+                dstateset = set(dstatelist)
+                dstatelocal = dstatelist[0]
                 if set(["UpToDate"]) == dstateset:
                     pass
-                elif set(["Diskless", "DUnknown"]) & dstateset:
-                    self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
-                    status = core.status.DOWN
-                elif dstate == "Unconfigured":
+                elif dstatelocal in ["Diskless", "DUnknown", "Unconfigured"]:
                     status = core.status.DOWN
                 else:
+                    self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
+                # warnings
+                if set(["Diskless", "DUnknown", "Unconfigured"]) & dstateset:
                     self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
             if status is not None:
                 return status
