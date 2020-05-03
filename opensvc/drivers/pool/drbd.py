@@ -36,8 +36,16 @@ class Pool(BasePool):
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
-            dev = "disk#1"
             data.append(disk)
+            disk = {
+                "rtype": "disk",
+                "type": "drbd",
+                "res": name,
+                "disk": "/dev/%s/%s" % (self.vg, name),
+                "standby": True,
+            }
+            data.append(disk)
+            dev = "disk#2"
         elif self.zpool:
             disk = {
                 "rtype": "disk",
@@ -48,8 +56,16 @@ class Pool(BasePool):
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
-            dev = "disk#1"
             data.append(disk)
+            disk = {
+                "rtype": "disk",
+                "type": "drbd",
+                "res": name,
+                "disk": "/dev/%s/%s" % (self.zpool, name),
+                "standby": True,
+            }
+            data.append(disk)
+            dev = "disk#2"
         else:
             disk = {
                 "rtype": "disk",
@@ -77,8 +93,16 @@ class Pool(BasePool):
             }
             if self.mkblk_opt:
                 disk["create_options"] = " ".join(self.mkblk_opt)
-            dev = "disk#3"
             data.append(disk)
+            disk = {
+                "rtype": "disk",
+                "type": "drbd",
+                "res": name,
+                "disk": "/dev/%s/lv" % name,
+                "standby": True,
+            }
+            data.append(disk)
+            dev = "disk#4"
 
         if fmt:
             data += self.add_fs(name, shared, dev=dev)
