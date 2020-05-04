@@ -407,7 +407,7 @@ def print_color_config(fpath):
             line
         )
         line = re.sub(
-            r"^(\s*\w+)(@[\w\.]+\s*)=",
+            r"^(\s*\w+)(@[\w\.-]+\s*)=",
             colorize(r"\1", color.LIGHTBLUE)+colorize(r"\2", color.RED)+"=",
             line
         )
