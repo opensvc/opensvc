@@ -624,6 +624,8 @@ def get_extra_argv(argv=None):
 
 
 def call_log(buff="", log=None, level="info"):
+    if not buff:
+        return
     lines = buff.rstrip().split("\n")
     try:
         fn = getattr(log, level)
