@@ -267,49 +267,38 @@ def call(argv,
     if not empty_string(buff[1]):
         if err_to_info:
             log.info('stderr:')
-            for line in buff[1].split("\n"):
-                log.info("| " + line)
+            call_log(buff[1], log, "info")
         elif err_to_warn:
             log.warning('stderr:')
-            for line in buff[1].split("\n"):
-                log.warning("| " + line)
+            call_log(buff[1], log, "warning")
         elif errlog:
             if ret != 0:
-                for line in buff[1].split("\n"):
-                    log.error("| " + line)
+                call_log(buff[1], log, "error")
             elif warn_to_info:
                 log.info('command successful but stderr:')
-                for line in buff[1].split("\n"):
-                    log.info("| " + line)
+                call_log(buff[1], log, "info")
             else:
                 log.warning('command successful but stderr:')
-                for line in buff[1].split("\n"):
-                    log.warning("| " + line)
+                call_log(buff[1], log, "warning")
         elif errdebug:
             log.debug('stderr:')
-            for line in buff[1].split("\n"):
-                log.debug("| " + line)
+            call_log(buff[1], log, "debug")
     if not empty_string(buff[0]):
         if outlog:
             if ret == 0:
-                for line in buff[0].split("\n"):
-                    log.info("| " + line)
+                call_log(buff[0], log, "info")
             elif err_to_info:
                 log.info('command failed with stdout:')
-                for line in buff[0].split("\n"):
-                    log.info("| " + line)
+                call_log(buff[0], log, "info")
             elif err_to_warn:
                 log.warning('command failed with stdout:')
-                for line in buff[0].split("\n"):
-                    log.warning("| " + line)
+                call_log(buff[0], log, "warning")
             else:
                 log.error('command failed with stdout:')
-                for line in buff[0].split("\n"):
-                    log.error("| " + line)
+                call_log(buff[0], log, "error")
         elif outdebug:
             log.debug('output:')
-            for line in buff[0].split("\n"):
-                log.debug("| " + line)
+            call_log(buff[0], log, "debug")
 
     return (ret, buff[0], buff[1])
 
@@ -632,4 +621,14 @@ def get_extra_argv(argv=None):
         extra_argv = []
     argv = argv[:pos+1]
     return argv, extra_argv
+
+
+def call_log(buff="", log=None, level="info"):
+    lines = buff.rstrip().split("\n")
+    try:
+        fn = getattr(log, level)
+    except Exception:
+        return
+    for line in lines:
+        fn("| " + line)
 
