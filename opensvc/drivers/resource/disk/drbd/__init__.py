@@ -13,7 +13,7 @@ from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.lazy import lazy
-from utilities.proc import justcall
+from utilities.proc import justcall, call_log
 from utilities.converters import convert_size
 
 RE_MINOR = b"^\s*device\s*/dev/drbd([0-9]+).*;"
@@ -270,12 +270,14 @@ class DiskDrbd(Resource):
             out, err, ret = justcall(cmd)
             if ret == 11:
                 # cluster-wide drbd state change in-progress
-                self.log.info(err)
                 time.sleep(1)
                 continue
             elif ret != 0:
-                raise ex.Error
+                call_log(buff=err, log=self.log, level="error")
+                raise ex.Error()
+            call_log(buff=out, log=self.log, level="info")
             return out, err, ret
+        raise ex.excError("timeout waiting for action non-denied by peer")
 
     def drbdadm_down(self):
         cmd = self.drbdadm_cmd("down")
