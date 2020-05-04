@@ -277,7 +277,7 @@ class DiskDrbd(Resource):
                 raise ex.Error()
             call_log(buff=out, log=self.log, level="info")
             return out, err, ret
-        raise ex.excError("timeout waiting for action non-denied by peer")
+        raise ex.Error("timeout waiting for action non-denied by peer")
 
     def drbdadm_adjust(self):
         cmd = self.drbdadm_cmd("adjust")
