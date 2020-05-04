@@ -258,16 +258,32 @@ class DiskDrbd(Resource):
             devps |= set([d.text])
         return devps
 
+    def state_changing_action(self, cmd, timeout=10):
+        """
+        State changing action can be denied by a peer node during
+        commits. This method implement a retry loop waiting for
+        the action to be not-denied.
+        """
+        self.log.info(" ".join(cmd))
+        for i in range(timeout):
+            out, err, ret = justcall(cmd)
+            if ret == 11:
+                # cluster-wide drbd state change in-progress
+                self.log.info(err)
+                time.sleep(1)
+                continue
+            elif ret != 0:
+                raise ex.Error
+            return out, err, ret
+
     def drbdadm_down(self):
-        ret, out, err = self.vcall(self.drbdadm_cmd("down"))
-        if ret != 0:
-            raise ex.Error
+        cmd = self.drbdadm_cmd("down")
+        self.state_changing_action(cmd)
         self.svc.node.unset_lazy("devtree")
 
     def drbdadm_up(self):
-        ret, out, err = self.vcall(self.drbdadm_cmd("up"))
-        if ret != 0:
-            raise ex.Error
+        cmd = self.drbdadm_cmd("up")
+        self.state_changing_action(cmd)
         self.wait_for_kwown_dstate()
         self.can_rollback_connection = True
         self.can_rollback = True
@@ -320,9 +336,8 @@ class DiskDrbd(Resource):
     def start_role(self, role):
         cur_role = self.get_role()
         if cur_role != role:
-            ret, out, err = self.vcall(self.drbdadm_cmd(role.lower()))
-            if ret != 0:
-                raise ex.Error
+            cmd = self.drbdadm_cmd(role.lower())
+            self.state_changing_action(cmd)
             self.can_rollback_role = True
             self.can_rollback = True
         else:
@@ -336,7 +351,13 @@ class DiskDrbd(Resource):
         self.start_role("Secondary")
 
     def stopstandby(self):
-        self.shutdown()
+        if not os.path.exists(self.cf):
+            self.log.info("skip: resource not configured")
+            return
+        if not self.res_defined():
+            self.log.info("skip: resource not defined (for this host)")
+            return
+        self.go_secondary()
 
     def go_secondary(self):
         self.start_connection()
