@@ -247,6 +247,8 @@ class Scheduler(shared.OsvcThread):
 
     def queue_action(self, action, delay=0, path=None, rid=None, now=None):
         sig = (action, path, rid)
+        if delay is None:
+            delay = 0
         if sig in self.running:
             self.log.debug("skip already running action '%s'", sig)
             return
