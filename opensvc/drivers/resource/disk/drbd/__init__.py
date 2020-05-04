@@ -520,6 +520,7 @@ class DiskDrbd(Resource):
         elif not os.path.exists(self.cf) or not self.node_in_config():
             self.write_config_from_peer()
         self.create_md()
+        self.drbdadm_down()
         self.drbdadm_up()
         if self.svc.options.leader:
             self.start_role("Primary --force")
