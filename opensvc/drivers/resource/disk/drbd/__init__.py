@@ -279,6 +279,20 @@ class DiskDrbd(Resource):
             return out, err, ret
         raise ex.excError("timeout waiting for action non-denied by peer")
 
+    def drbdadm_adjust(self):
+        cmd = self.drbdadm_cmd("adjust")
+        self.vcall(cmd)
+
+    def drbdadm_down_force(self):
+        self.drbdadm_adjust()
+        cmd = self.drbdadm_cmd("disconnect")
+        self.state_changing_action(cmd)
+        cmd = self.drbdadm_cmd("detach --force")
+        self.state_changing_action(cmd)
+        cmd = self.drbdadm_cmd("down")
+        self.state_changing_action(cmd)
+        self.svc.node.unset_lazy("devtree")
+
     def drbdadm_down(self):
         cmd = self.drbdadm_cmd("down")
         self.state_changing_action(cmd)
@@ -522,7 +536,7 @@ class DiskDrbd(Resource):
         if not self.res_defined():
             self.log.info("skip: resource not defined (for this host)")
             return
-        self.drbdadm_down()
+        self.drbdadm_down_force()
         self.wipe_md()
         self.del_config()
         self.svc.node.unset_lazy("devtree")
