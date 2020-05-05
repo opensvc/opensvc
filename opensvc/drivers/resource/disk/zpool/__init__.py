@@ -126,6 +126,8 @@ class DiskZpool(BaseDisk):
         """
         if "node.x.zpool" not in capabilities:
             raise ex.Error("zpool command not found")
+        if not self.name:
+            raise ex.Error("zpool name undefined")
         _, _, ret = justcall(['zpool', 'list', self.name])
         if ret == 0 :
             return True
@@ -152,6 +154,8 @@ class DiskZpool(BaseDisk):
 
     @lazy
     def zpool_status(self):
+        if not self.name:
+            raise ex.Error("zpool name undefined")
         cmd = ["zpool", "status", "-v", self.name]
         out, err, ret = justcall(cmd)
         return out+err
