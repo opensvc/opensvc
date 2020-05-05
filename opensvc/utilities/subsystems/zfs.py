@@ -265,7 +265,7 @@ def zpool_devs(poolname, node=None):
     cmd += [poolname]
     out, err, ret = justcall(cmd)
     if ret != 0:
-        raise ex.Error(err)
+        return []
 
     import re
 

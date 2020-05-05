@@ -372,11 +372,7 @@ class Fs(BaseFs):
             from utilities.subsystems.btrfs import btrfs_devs
             return set(btrfs_devs(self.mount_point))
         if self.fs_type == "zfs":
-            try:
-                return set(zpool_devs(self.device.split("/")[0], self.svc.node))
-            except Exception:
-                # deported zpool
-                return set()
+            return set(zpool_devs(self.device.split("/")[0], self.svc.node))
 
         dev = self.realdev()
         if dev is None or dev.startswith("LABEL=") or dev.startswith("UUID="):
