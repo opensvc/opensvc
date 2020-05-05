@@ -1216,12 +1216,12 @@ class ExtConfigMixin(object):
                 return 1
             return 0
 
-        def get_val(key, section, option, verbose=True):
+        def get_val(key, section, option, verbose=True, impersonate=None):
             """
             Fetch the value and convert it to the expected type.
             """
             _option = option.split("@")[0]
-            value = self.conf_get(section, _option, cd=cd, verbose=verbose)
+            value = self.conf_get(section, _option, cd=cd, verbose=verbose, impersonate=impersonate)
             return value
 
         def check_candidates(key, section, option, value):
@@ -1256,8 +1256,15 @@ class ExtConfigMixin(object):
             if check_references(section, option) != 0:
                 err += 1
                 return err
+            impersonate = None
+            if hasattr(self, "encap"):
+                if self.encap and section not in self.resources_by_id:
+                    # encap node does not validate global resource values
+                    return err
+                elif not self.encap and section in self.encap_resources:
+                    impersonate = list(self.encapnodes)[0]
             try:
-                value = get_val(key, section, option, verbose=False)
+                value = get_val(key, section, option, verbose=False, impersonate=impersonate)
             except ValueError as exc:
                 self.log.warning(str(exc))
                 return 0
