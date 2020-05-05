@@ -69,7 +69,7 @@ class DataMixin(object):
         elif value_from:
             self.add_glob(key, value_from, append=append)
         else:
-            raise ex.Error("missing arguments")
+            self.add_key(key, "", append=append)
 
     def add_stdin(self, key, append=False):
         if append:
