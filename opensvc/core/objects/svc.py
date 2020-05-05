@@ -4477,6 +4477,10 @@ class Svc(BaseSvc):
     def slave_stop(self):
         self.encap_cmd(['stop'], verbose=True, unjoinable="continue")
 
+    @_slave_action
+    def slave_freezestop(self):
+        self.encap_cmd(['stop'], verbose=True, unjoinable="continue", error="continue")
+
     def boot(self):
         self.options.force = True
         self.options.no_daemon = True
@@ -5555,7 +5559,8 @@ class Svc(BaseSvc):
         The freezestop monitor action.
         """
         self.master_freeze()
-        self.stop()
+        self.slave_freezestop()
+        self.master_stop()
 
     def freeze(self):
         """
