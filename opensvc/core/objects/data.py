@@ -8,7 +8,8 @@ import tempfile
 import core.exceptions as ex
 import core.status
 from core.contexts import want_context
-from utilities.files import create_protected_file, makedirs
+from utilities.files import create_protected_file, makedirs, read_unicode_file
+from utilities.string import try_decode
 from utilities.naming import factory, split_path
 from utilities.proc import find_editor
 from utilities.string import bencode
@@ -129,19 +130,17 @@ class DataMixin(object):
             self.edit_config()
             return
         buff = self.decode_key(self.options.key)
-        no_newline = buff.count(os.linesep) == 0
         if buff is None:
             raise ex.Error("could not decode the secret key '%s'" % self.options.key)
+        if isinstance(buff, bytes):
+            raise ex.Error("binary keys are not editable")
+        no_newline = os.sep not in try_decode(buff)
         editor = find_editor()
         fpath = self.tempfilename()
-        try:
-            create_protected_file(fpath, buff, "wb")
-        except TypeError:
-            create_protected_file(fpath, buff, "w")
+        create_protected_file(fpath, buff)
         try:
             os.system(' '.join((editor, fpath)))
-            with open(fpath, "r") as f:
-                edited = f.read()
+            edited = read_unicode_file(fpath)
             if no_newline and edited.count(os.linesep) == 1 and edited.endswith(os.linesep):
                 self.log.debug("striping trailing newline from edited key value")
                 edited = edited.rstrip(os.linesep)
