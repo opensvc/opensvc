@@ -1657,8 +1657,31 @@ def find_editor():
     return editor
 
 
-def create_protected_file(filepath, buff, mode):
-    with open(filepath, mode) as f:
+def create_protected_file(filepath, buff):
+    def onfile(f):
         if os.name == 'posix':
             os.chmod(filepath, 0o0600)
         f.write(buff)
+
+    if six.PY2:
+        if isinstance(buff, unicode):
+            import codecs
+            with codecs.open(filepath, "w", "utf-8") as f:
+                onfile(f)
+        else:
+            with open(filepath, "w") as f:
+                onfile(f)
+    else:
+        with open(filepath, "w") as f:
+            onfile(f)
+
+
+def read_unicode_file(filepath):
+    if six.PY2:
+        import codecs
+        with codecs.open(filepath, "r", "utf-8") as f:
+            return f.read()
+    else:
+        with open(filepath, "r") as f:
+            return f.read()
+

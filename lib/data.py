@@ -5,7 +5,7 @@ import shutil
 import glob
 import tempfile
 
-from rcUtilities import bencode, create_protected_file, factory, find_editor, makedirs, split_path, want_context
+from rcUtilities import bencode, create_protected_file, factory, find_editor, makedirs, split_path, want_context, read_unicode_file, try_decode
 import rcExceptions as ex
 import rcStatus
 
@@ -127,20 +127,15 @@ class DataMixin(object):
         buff = self.decode_key(self.options.key)
         if buff is None:
             raise ex.excError("could not decode the secret key '%s'" % self.options.key)
-        try:
-            no_newline = os.sep not in buff.decode()
-        except Exception:
-            raise ex.excError("this key is not editable")
+        if isinstance(buff, bytes):
+            raise ex.excError("binary keys are not editable")
+        no_newline = os.sep not in try_decode(buff)
         editor = find_editor()
         fpath = self.tempfilename()
-        try:
-            create_protected_file(fpath, buff, "wb")
-        except TypeError:
-            create_protected_file(fpath, buff, "w")
+        create_protected_file(fpath, buff)
         try:
             os.system(' '.join((editor, fpath)))
-            with open(fpath, "r") as f:
-                edited = f.read()
+            edited = read_unicode_file(fpath)
             if no_newline and edited.count(os.linesep) == 1 and edited.endswith(os.linesep):
                 self.log.debug("striping trailing newline from edited key value")
                 edited = edited.rstrip(os.linesep)
