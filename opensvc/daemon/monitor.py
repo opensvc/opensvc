@@ -70,7 +70,482 @@ LEADER_ABORT_STATES = (
 
 ETC_NS_SKIP = len(os.path.join(Env.paths.pathetcns, ""))
 
-class Monitor(shared.OsvcThread):
+class Defer(Exception):
+    """
+    Raised from orchestration routines to signal the condition to
+    start the next step are not satisfied yet.
+    """
+    pass
+
+class MonitorObjectOrchestratorManualMixin(object):
+    def object_orchestrator_manual(self, svc, smon, status):
+        """
+        Take actions to meet global expect target, set by user or by
+        object_orchestrator_auto()
+        """
+        if smon.global_expect is None:
+            return
+        instance = self.get_service_instance(svc.path, Env.nodename)
+        kwargs = dict(svc=svc, smon=smon, status=status, instance=instance)
+        try:
+            base_global_expect, target = smon.global_expect.split("@", 1)
+            fnname = "_oom_{ge}_at".format(ge=base_global_expect)
+            kwargs["target"] = target
+        except Exception:
+            fnname = "_oom_{ge}".format(ge=smon.global_expect)
+        try:
+            fn = getattr(self, fnname)
+        except AttributeError:
+            self.log.warning("unsupported global expect on %s: %s",
+                             svc.path, smon.global_expect)
+            self.set_smon(global_expect="unset")
+            return
+        try:
+            fn(**kwargs)
+        except Defer as exc:
+            self.log.debug("%s %s defer %s", svc.path, fnname, exc.args[0])
+
+    def _oom_frozen(self, svc=None, smon=None, status=None, instance=None):
+        if not self.instance_frozen(svc.path):
+            self.event("instance_freeze", {
+                "reason": "target",
+                "path": svc.path,
+                "monitor": smon,
+            })
+            self.service_freeze(svc.path)
+
+    def _oom_thawed(self, svc=None, smon=None, status=None, instance=None):
+        if self.instance_frozen(svc.path):
+            self.event("instance_thaw", {
+                "reason": "target",
+                "path": svc.path,
+                "monitor": smon,
+            })
+            self.service_thaw(svc.path)
+
+    def _oom_shutdown(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_children():
+            if not self.children_down(svc):
+                self.set_smon(svc.path, status="wait children")
+                raise Defer("wait: children are not stopped yet")
+            elif smon.status == "wait children":
+                self.set_smon(svc.path, status="idle")
+        
+        def step_freeze():
+            if self.instance_frozen(svc.path):
+                return
+            self.event("instance_freeze", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_freeze(svc.path)
+            raise Defer("freeze: action started")
+
+        def step_shutdown():
+            if self.is_instance_shutdown(instance):
+                return
+            thawed_on = self.service_instances_thawed(svc.path)
+            if thawed_on:
+                self.duplog("info", "service %(path)s still has thawed "
+                            "instances on nodes %(thawed_on)s, delay "
+                            "shutdown",
+                            path=svc.path,
+                            thawed_on=", ".join(thawed_on))
+            else:
+                self.service_shutdown(svc.path)
+
+        step_wait_children()
+        step_freeze()
+        step_shutdown()
+
+    def _oom_stopped(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_children():
+            if not self.children_down(svc):
+                self.set_smon(svc.path, status="wait children")
+                raise Defer("wait: children are not stopped yet")
+            elif smon.status == "wait children":
+                self.set_smon(svc.path, status="idle")
+        
+        def step_freeze():
+            if self.instance_frozen(svc.path):
+                return
+            self.log.info("freeze service %s", svc.path)
+            self.event("instance_freeze", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_freeze(svc.path)
+            raise Defer("freeze: action started")
+
+        def step_stop():
+            if instance.avail in STOPPED_STATES:
+                return
+            thawed_on = self.service_instances_thawed(svc.path)
+            if thawed_on:
+                self.duplog("info", "service %(path)s still has thawed instances "
+                            "on nodes %(thawed_on)s, delay stop",
+                            path=svc.path,
+                            thawed_on=", ".join(thawed_on))
+            else:
+                self.event("instance_stop", {
+                    "reason": "target",
+                    "path": svc.path,
+                })
+                self.service_stop(svc.path)
+
+        step_wait_children()
+        step_freeze()
+        step_stop()
+
+    def _oom_started(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_parents():
+            if not self.parents_available(svc):
+                self.set_smon(svc.path, status="wait parents")
+                raise Defer("wait: parents are not started yet")
+            elif smon.status == "wait parents":
+                self.set_smon(svc.path, status="idle")
+
+        def step_thaw():
+            if not self.instance_frozen(svc.path):
+                return
+            self.event("instance_thaw", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_thaw(svc.path)
+            raise Defer("thaw: action started")
+
+        def step_start():
+            if status in STARTED_STATES:
+                return
+            if shared.AGG[svc.path].frozen != "thawed":
+                raise Defer("start: instance is not thawed yet")
+            self.object_orchestrator_auto(svc, smon, status)
+            raise Defer("start: action started")
+
+        step_wait_parents()
+        step_thaw()
+        step_start()
+
+    def _oom_unprovisioned(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_status():
+            if smon.status not in ("unprovisioning", "stopping"):
+                return
+            raise Defer("wait: incompatible monitor status: %s" % smon.status)
+
+        def step_wait_done():
+            if svc.path in shared.SERVICES and not self.instance_unprovisioned(instance):
+                return
+            if smon.status != "idle":
+                self.set_smon(svc.path, status="idle")
+            raise Defer("wait: instance does not exist or already unprovisioned")
+
+        def step_set_wait_children():
+            if self.children_unprovisioned(svc):
+                return
+            self.set_smon(svc.path, status="wait children")
+            raise Defer("wait: set wait children")
+
+        def step_stop():
+            if instance.avail in STOPPED_STATES:
+                return
+            self.event("instance_stop", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_stop(svc.path, force=True)
+            raise Defer("stop: action started")
+
+        def step_wait_stopped():
+            if shared.AGG[svc.path].avail in STOPPED_STATES:
+                return
+            raise Defer("wait: local instance not stopped yet")
+
+        def step_wait_children():
+            if smon.status != "wait children":
+                return
+            if self.children_unprovisioned(svc):
+                return
+            raise Defer("wait: children are not unprovisioned yet")
+
+        def step_wait_non_leader():
+            if smon.status != "wait non-leader":
+                return
+            if self.leader_last(svc, provisioned=False, silent=True):
+                return
+            self.log.info("service %s still waiting non leaders", svc.path)
+            raise Defer("wait: non-leader instances are not unprovisioned yet")
+
+        def step_set_wait_non_leader():
+            leader = self.leader_last(svc, provisioned=False)
+            if leader:
+                return leader
+            self.set_smon(svc.path, status="wait non-leader")
+            raise Defer("wait: set wait non-leader")
+
+        def step_unprovision():
+            self.event("instance_unprovision", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_unprovision(svc, leader)
+
+        step_wait_status()
+        step_wait_done()
+        step_set_wait_children()
+        step_stop()
+        step_wait_stopped()
+        step_wait_children()
+        leader = step_wait_non_leader()
+        step_set_wait_non_leader()
+        step_unprovision()
+
+    def _oom_provisioned(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_parents():
+            if smon.status == "wait parents":
+                if not self.parents_available(svc):
+                    raise Defer("wait: parents not available")
+
+        def step_wait_leader():
+            if smon.status == "wait leader":
+                if not self.leader_first(svc, provisioned=True, silent=True):
+                    raise Defer("wait: leader not provisioned yet")
+
+        def step_wait_sync():
+            if smon.status == "wait sync":
+                if not self.min_instances_reached(svc):
+                    raise Defer("wait: the object configuration is not synced yet")
+
+        def step_provision():
+            if self.instance_provisioned(instance):
+                self.set_smon(svc.path, status="idle")
+                raise Defer("provision: instance already provisioned")
+            if not self.min_instances_reached(svc):
+                self.set_smon(svc.path, status="wait sync")
+                raise Defer("provision: set wait sync")
+            if not self.parents_available(svc):
+                self.set_smon(svc.path, status="wait parents")
+                raise Defer("provision: set wait parents")
+            if not self.leader_first(svc, provisioned=True):
+                self.set_smon(svc.path, status="wait leader")
+                raise Defer("provision: set wait leader")
+            self.event("instance_provision", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_provision(svc)
+            raise Defer("provision: action started")
+
+        step_wait_parents()
+        step_wait_leader()
+        step_wait_sync()
+        step_provision()
+
+    def _oom_deleted(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_children():
+            if self.children_down(svc):
+                if smon.status == "wait children":
+                    self.set_smon(svc.path, status="idle")
+                return
+            self.set_smon(svc.path, status="wait children")
+            raise Defer("wait: children are not down yet")
+
+        def step_delete():
+            if svc.path not in shared.SERVICES:
+                raise Defer("delete: object does not exist")
+            self.event("instance_delete", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_delete(svc.path)
+            raise Defer("delete: action started")
+
+        step_wait_children()
+        step_delete()
+
+    def _oom_purged(self, svc=None, smon=None, status=None, instance=None):
+        def step_wait_status():
+            if smon.status not in ("purging", "deleting", "stopping"):
+                return
+            raise Defer("wait: incompatible monitor status: %s" % smon.status)
+
+        def step_wait_children():
+            if self.children_unprovisioned(svc):
+                return
+            self.set_smon(svc.path, status="wait children")
+            raise Defer("wait: children are not unprovisioned yet")
+
+        def step_stop():
+            if instance.avail in STOPPED_STATES:
+                return
+            self.event("instance_stop", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_stop(svc.path, force=True)
+            raise Defer("stop: action started")
+
+        def step_purge():
+            if shared.AGG[svc.path].avail not in STOPPED_STATES:
+                raise Defer("purge: object is not stopped")
+            if smon.status == "wait children":
+                if not self.children_unprovisioned(svc):
+                    raise Defer("purge: waiting children")
+            elif smon.status == "wait non-leader":
+                if not self.leader_last(svc, provisioned=False, silent=True, deleted=True):
+                    raise Defer("purge: waiting non-leader")
+            leader = self.leader_last(svc, provisioned=False, deleted=True)
+            if not leader:
+                self.set_smon(svc.path, status="wait non-leader")
+                raise Defer("purge: wait non-leader")
+            if svc.path in shared.SERVICES and svc.kind not in ("vol", "svc"):
+                # base services do not implement the purge action
+                self.event("instance_delete", {
+                    "reason": "target",
+                    "path": svc.path,
+                })
+                self.service_delete(svc.path)
+                raise Defer("purge: delete action started")
+            if svc.path not in shared.SERVICES or not instance:
+                if smon.status != "idle":
+                    self.set_smon(svc.path, status="idle")
+                raise Defer("purge: object or instance does not exist")
+            self.event("instance_purge", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_purge(svc, leader)
+            raise Defer("purge: action started")
+
+        step_wait_status()
+        step_wait_children()
+        step_stop()
+        step_purge()
+
+    def _oom_aborted(self, svc=None, smon=None, status=None, instance=None):
+        if smon.local_expect in (None, "started"):
+            return
+        self.event("instance_abort", {
+            "reason": "target",
+            "path": svc.path,
+        })
+        self.set_smon(svc.path, local_expect="unset")
+
+    def _oom_placed(self, svc=None, smon=None, status=None, instance=None):
+        """
+        Flex start new instances before stopping the old.
+        Failover stop old instance before stopping the new.
+        """
+        # refresh smon for placement attr change caused by a clear
+        smon = self.get_service_monitor(svc.path)
+
+        def step_thaw():
+            if not self.instance_frozen(svc.path):
+                return
+            self.event("instance_thaw", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_thaw(svc.path)
+            raise Defer("thaw: action started")
+
+        def step_stop():
+            if smon.placement == "leader":
+                return
+            if not self.has_leader(svc):
+                raise Defer("stop: no peer node can takeover")
+            if instance.avail in STOPPED_STATES:
+                raise Defer("stop: local instance already stopped")
+            if svc.topology == "flex" and not self.leaders_started(svc.path):
+                raise Defer("start: flex leader instances not started")
+            self.event("instance_stop", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_stop(svc.path)
+            raise Defer("stop: action started")
+
+        def step_start():
+            if instance.avail in STARTED_STATES:
+                return
+            if svc.topology == "failover" and not self.non_leaders_stopped(svc.path):
+                raise Defer("start: failover non-leader instances not stopped")
+            if shared.AGG[svc.path].placement in ("optimal", "n/a") and shared.AGG[svc.path].avail == "up":
+                raise Defer("start: aggregate placement is optimal and avail up")
+            self.object_orchestrator_auto(svc, smon, status)
+            raise Defer("start: action started")
+
+        step_thaw()
+        step_stop()
+        step_start()
+
+    def _oom_placed_at(self, svc=None, smon=None, status=None, instance=None, target=None):
+        """
+        Flex start new instances before stopping the old.
+        Failover stop old instance before stopping the new.
+        """
+        target = target.split(",")
+        candidates = self.placement_candidates(
+            svc, discard_frozen=False,
+            discard_overloaded=False,
+            discard_unprovisioned=False,
+            discard_constraints_violation=False,
+            discard_start_failed=False
+        )
+        def step_thaw():
+            if not self.instance_frozen(svc.path):
+                return
+            self.event("instance_thaw", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_thaw(svc.path)
+            raise Defer("thaw: action started")
+
+        def step_stop():
+            if Env.nodename in target:
+                return
+            if instance.avail in STOPPED_STATES:
+                return
+            if svc.topology == "flex" and not self.instances_started(svc.path, set(svc.peers) & set(target)):
+                raise Defer("stop: flex destination instances not started")
+            if smon.status == "stop failed":
+                raise Defer("stop: local instance blocking mon status (%s)" % smon.status)
+            if not (set(target) & set(candidates)):
+                raise Defer("stop: no candidate to takeover")
+            self.event("instance_stop", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            self.service_stop(svc.path)
+            raise Defer("stop: action started")
+
+        def step_start():
+            if Env.nodename not in target:
+                return
+            if instance.avail in STARTED_STATES:
+                return
+            if svc.topology == "failover" and not self.instances_stopped(svc.path, set(svc.peers) - set(target)):
+                raise Defer("start: failover source instances not stopped")
+            if Env.nodename not in target:
+                raise Defer("start: not a target")
+            if instance.avail not in STOPPED_STATES + ["warn"]:
+                raise Defer("start: local instance not stopped or warn")
+            if smon.status in ("start failed", "place failed"):
+                raise Defer("start: local instance blocking mon status (%s)" % smon.status)
+            self.event("instance_start", {
+                "reason": "target",
+                "path": svc.path,
+            })
+            err_status="place failed" if smon.global_expect == "placed" else "start failed"
+            self.service_start(svc.path, err_status=err_status)
+            raise Defer("start: action started")
+
+        step_thaw()
+        step_stop()
+        step_start()
+
+class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     """
     The monitoring thread collecting local service states and taking decisions.
     """
@@ -777,7 +1252,7 @@ class Monitor(shared.OsvcThread):
                 continue
             svc = self.get_service(path)
             self.resources_orchestrator(path, svc)
-            self.service_orchestrator(path, svc)
+            self.object_orchestrator(path, svc)
         self.sync_services_conf()
 
     def transitions_maxed(self):
@@ -969,7 +1444,7 @@ class Monitor(shared.OsvcThread):
                 self.freezer.node_thaw()
                 self.node_frozen = 0
 
-    def service_orchestrator(self, path, svc):
+    def object_orchestrator(self, path, svc):
         smon = self.get_service_monitor(path)
         if svc is None:
             if smon and path in shared.AGG:
@@ -993,11 +1468,11 @@ class Monitor(shared.OsvcThread):
             return
         self.set_smon_g_expect_from_status(svc.path, smon, status)
         if shared.NMON_DATA.status == "shutting":
-            self.service_orchestrator_shutting(svc, smon, status)
+            self.object_orchestrator_shutting(svc, smon, status)
         elif smon.global_expect:
-            self.service_orchestrator_manual(svc, smon, status)
+            self.object_orchestrator_manual(svc, smon, status)
         else:
-            self.service_orchestrator_auto(svc, smon, status)
+            self.object_orchestrator_auto(svc, smon, status)
 
     def abort_state(self, status, global_expect, placement):
         states = (status, global_expect)
@@ -1014,7 +1489,7 @@ class Monitor(shared.OsvcThread):
         name, namespace, kind = split_path(path)
         return fmt_path(str(idx)+"."+name, namespace, kind)
 
-    def service_orchestrator_auto(self, svc, smon, status):
+    def object_orchestrator_auto(self, svc, smon, status):
         """
         Automatic instance start decision.
         Verifies hard and soft affinity and anti-affinity, then routes to
@@ -1059,7 +1534,7 @@ class Monitor(shared.OsvcThread):
         if not self.rejoin_grace_period_expired:
             return
         if svc.scale_target is not None and smon.global_expect is None:
-            self.service_orchestrator_scaler(svc)
+            self.object_orchestrator_scaler(svc)
             return
         if status in (None, "undef", "n/a"):
             #self.log.info("service %s orchestrator out (agg avail status %s)",
@@ -1074,11 +1549,11 @@ class Monitor(shared.OsvcThread):
             return
 
         if svc.topology == "failover":
-            self.service_orchestrator_auto_failover(svc, smon, status, candidates)
+            self.object_orchestrator_auto_failover(svc, smon, status, candidates)
         elif svc.topology == "flex":
-            self.service_orchestrator_auto_flex(svc, smon, status, candidates)
+            self.object_orchestrator_auto_flex(svc, smon, status, candidates)
 
-    def service_orchestrator_auto_failover(self, svc, smon, status, candidates):
+    def object_orchestrator_auto_failover(self, svc, smon, status, candidates):
         if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
@@ -1176,7 +1651,7 @@ class Monitor(shared.OsvcThread):
                           status)
             self.set_smon(svc.path, "ready")
 
-    def service_orchestrator_auto_flex(self, svc, smon, status, candidates):
+    def object_orchestrator_auto_flex(self, svc, smon, status, candidates):
         if svc.orchestrate == "start":
             ranks = self.placement_ranks(svc, candidates=svc.peers)
             if ranks == []:
@@ -1233,7 +1708,9 @@ class Monitor(shared.OsvcThread):
         elif smon.status == "idle":
             if svc.orchestrate == "no" and smon.global_expect not in ("started", "placed"):
                 return
-            if n_up < svc.flex_target:
+            if n_up == svc.flex_target and smon.global_expect != "placed":
+                return
+            if n_up <= svc.flex_target:
                 if smon.global_expect in ("started", "placed"):
                     allowed_avail = STOPPED_STATES + ["warn"]
                 else:
@@ -1255,6 +1732,15 @@ class Monitor(shared.OsvcThread):
                     return
                 if instance.avail not in STARTED_STATES:
                     return
+                try:
+                    peer = self.place_in_progress(svc.path, discard_local=False)
+                    if peer:
+                        # don't auto-stop instance while a place is in progress
+                        # to allow for temporary excess of running instances and
+                        # thus avoid outages/performance degradation during moves.
+                        return
+                except ValueError:
+                    return
                 n_to_stop = n_up - svc.flex_target
                 overloaded_up_nodes = self.overloaded_up_service_instances(svc.path)
                 to_stop = self.placement_ranks(svc, candidates=overloaded_up_nodes)[-n_to_stop:]
@@ -1274,7 +1760,7 @@ class Monitor(shared.OsvcThread):
                 })
                 self.service_stop(svc.path)
 
-    def service_orchestrator_shutting(self, svc, smon, status):
+    def object_orchestrator_shutting(self, svc, smon, status):
         """
         Take actions to shutdown all local services instances marked with
         local_expect == "shutdown", even if frozen.
@@ -1295,275 +1781,6 @@ class Monitor(shared.OsvcThread):
                 self.set_smon(svc.path, status="idle")
             self.service_shutdown(svc.path)
 
-    def service_orchestrator_manual(self, svc, smon, status):
-        """
-        Take actions to meet global expect target, set by user or by
-        service_orchestrator_auto()
-        """
-        instance = self.get_service_instance(svc.path, Env.nodename)
-        if smon.global_expect == "frozen":
-            if not self.instance_frozen(svc.path):
-                self.event("instance_freeze", {
-                    "reason": "target",
-                    "path": svc.path,
-                    "monitor": smon,
-                })
-                self.service_freeze(svc.path)
-        elif smon.global_expect == "thawed":
-            if self.instance_frozen(svc.path):
-                self.event("instance_thaw", {
-                    "reason": "target",
-                    "path": svc.path,
-                    "monitor": smon,
-                })
-                self.service_thaw(svc.path)
-        elif smon.global_expect == "shutdown":
-            if not self.children_down(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
-            elif smon.status == "wait children":
-                self.set_smon(svc.path, status="idle")
-
-            if not self.instance_frozen(svc.path):
-                self.event("instance_freeze", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_freeze(svc.path)
-            elif not self.is_instance_shutdown(instance):
-                thawed_on = self.service_instances_thawed(svc.path)
-                if thawed_on:
-                    self.duplog("info", "service %(path)s still has thawed "
-                                "instances on nodes %(thawed_on)s, delay "
-                                "shutdown",
-                                path=svc.path,
-                                thawed_on=", ".join(thawed_on))
-                else:
-                    self.service_shutdown(svc.path)
-        elif smon.global_expect == "stopped":
-            if not self.children_down(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
-            elif smon.status == "wait children":
-                self.set_smon(svc.path, status="idle")
-
-            if not self.instance_frozen(svc.path):
-                self.log.info("freeze service %s", svc.path)
-                self.event("instance_freeze", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_freeze(svc.path)
-            elif instance.avail not in STOPPED_STATES:
-                thawed_on = self.service_instances_thawed(svc.path)
-                if thawed_on:
-                    self.duplog("info", "service %(path)s still has thawed instances "
-                                "on nodes %(thawed_on)s, delay stop",
-                                path=svc.path,
-                                thawed_on=", ".join(thawed_on))
-                else:
-                    self.event("instance_stop", {
-                        "reason": "target",
-                        "path": svc.path,
-                    })
-                    self.service_stop(svc.path)
-        elif smon.global_expect == "started":
-            if not self.parents_available(svc):
-                self.set_smon(svc.path, status="wait parents")
-                return
-            elif smon.status == "wait parents":
-                self.set_smon(svc.path, status="idle")
-            if self.instance_frozen(svc.path):
-                self.event("instance_thaw", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_thaw(svc.path)
-            elif status not in STARTED_STATES:
-                if shared.AGG[svc.path].frozen != "thawed":
-                    return
-                self.service_orchestrator_auto(svc, smon, status)
-        elif smon.global_expect == "unprovisioned":
-            if smon.status in ("unprovisioning", "stopping"):
-                return
-            if svc.path not in shared.SERVICES or self.instance_unprovisioned(instance):
-                if smon.status != "idle":
-                    self.set_smon(svc.path, status="idle")
-                return
-            if not self.children_unprovisioned(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
-            if instance.avail not in STOPPED_STATES:
-                self.event("instance_stop", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_stop(svc.path, force=True)
-                return
-            if shared.AGG[svc.path].avail not in STOPPED_STATES:
-                return
-            if smon.status == "wait children":
-                if not self.children_unprovisioned(svc):
-                    return
-            elif smon.status == "wait non-leader":
-                if not self.leader_last(svc, provisioned=False, silent=True):
-                    self.log.info("service %s still waiting non leaders", svc.path)
-                    return
-            leader = self.leader_last(svc, provisioned=False)
-            if not leader:
-                self.set_smon(svc.path, status="wait non-leader")
-                return
-            self.event("instance_unprovision", {
-                "reason": "target",
-                "path": svc.path,
-            })
-            self.service_unprovision(svc, leader)
-        elif smon.global_expect == "provisioned":
-            if smon.status == "wait parents":
-                if not self.parents_available(svc):
-                    return
-            elif smon.status == "wait leader":
-                if not self.leader_first(svc, provisioned=True, silent=True):
-                    return
-            elif smon.status == "wait sync":
-                if not self.min_instances_reached(svc):
-                    return
-            if self.instance_provisioned(instance):
-                self.set_smon(svc.path, status="idle")
-                return
-            if not self.min_instances_reached(svc):
-                self.set_smon(svc.path, status="wait sync")
-                return
-            if not self.parents_available(svc):
-                self.set_smon(svc.path, status="wait parents")
-                return
-            if not self.leader_first(svc, provisioned=True):
-                self.set_smon(svc.path, status="wait leader")
-                return
-            self.event("instance_provision", {
-                "reason": "target",
-                "path": svc.path,
-            })
-            self.service_provision(svc)
-        elif smon.global_expect == "deleted":
-            if not self.children_down(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
-            elif smon.status == "wait children":
-                self.set_smon(svc.path, status="idle")
-            if svc.path in shared.SERVICES:
-                self.event("instance_delete", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_delete(svc.path)
-        elif smon.global_expect == "purged":
-            if smon.status in ("purging", "deleting", "stopping"):
-                return
-            if not self.children_unprovisioned(svc):
-                self.set_smon(svc.path, status="wait children")
-                return
-            if instance.avail not in STOPPED_STATES:
-                self.event("instance_stop", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_stop(svc.path, force=True)
-                return
-            if shared.AGG[svc.path].avail not in STOPPED_STATES:
-                return
-            if smon.status == "wait children":
-                if not self.children_unprovisioned(svc):
-                    return
-            elif smon.status == "wait non-leader":
-                if not self.leader_last(svc, provisioned=False, silent=True, deleted=True):
-                    return
-            leader = self.leader_last(svc, provisioned=False, deleted=True)
-            if not leader:
-                self.set_smon(svc.path, status="wait non-leader")
-                return
-            if svc.path in shared.SERVICES and svc.kind not in ("vol", "svc"):
-                # base services do not implement the purge action
-                self.event("instance_delete", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_delete(svc.path)
-                return
-            if svc.path not in shared.SERVICES or not instance:
-                if smon.status != "idle":
-                    self.set_smon(svc.path, status="idle")
-                return
-            self.event("instance_purge", {
-                "reason": "target",
-                "path": svc.path,
-            })
-            self.service_purge(svc, leader)
-        elif smon.global_expect == "aborted" and \
-             smon.local_expect not in (None, "started"):
-            self.event("instance_abort", {
-                "reason": "target",
-                "path": svc.path,
-            })
-            self.set_smon(svc.path, local_expect="unset")
-        elif smon.global_expect == "placed":
-            # refresh smon for placement attr change caused by a clear
-            smon = self.get_service_monitor(svc.path)
-            if self.instance_frozen(svc.path):
-                self.event("instance_thaw", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_thaw(svc.path)
-            elif smon.placement != "leader":
-                if not self.has_leader(svc):
-                    # avoid stopping the instance if no peer node can takeover
-                    return
-                if instance.avail not in STOPPED_STATES:
-                    self.event("instance_stop", {
-                        "reason": "target",
-                        "path": svc.path,
-                    })
-                    self.service_stop(svc.path)
-            elif self.non_leaders_stopped(svc.path) and \
-                 (shared.AGG[svc.path].placement not in ("optimal", "n/a") or shared.AGG[svc.path].avail != "up") and \
-                 instance.avail not in STARTED_STATES:
-                self.service_orchestrator_auto(svc, smon, status)
-        elif smon.global_expect.startswith("placed@"):
-            target = smon.global_expect.split("@")[-1].split(",")
-            candidates = self.placement_candidates(
-                svc, discard_frozen=False,
-                discard_overloaded=False,
-                discard_unprovisioned=False,
-                discard_constraints_violation=False,
-                discard_start_failed=False
-            )
-            if self.instance_frozen(svc.path):
-                self.event("instance_thaw", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_thaw(svc.path)
-            elif Env.nodename not in target:
-                if smon.status == "stop failed":
-                    return
-                if instance.avail not in STOPPED_STATES and (set(target) & set(candidates)):
-                    self.event("instance_stop", {
-                        "reason": "target",
-                        "path": svc.path,
-                    })
-                    self.service_stop(svc.path)
-            elif self.instances_stopped(svc.path, set(svc.peers) - set(target)) and \
-                 Env.nodename in target and \
-                 instance.avail in STOPPED_STATES + ["warn"]:
-                if smon.status in ("start failed", "place failed"):
-                    return
-                self.event("instance_start", {
-                    "reason": "target",
-                    "path": svc.path,
-                })
-                self.service_start(svc.path, err_status="place failed" if smon.global_expect == "placed" else "start failed")
-
     def scaler_current_slaves(self, path):
         name, namespace, kind = split_path(path)
         pattern = r"[0-9]+\." + name + "$"
@@ -1573,7 +1790,7 @@ class Monitor(shared.OsvcThread):
             pattern = "^%s" % pattern
         return [slave for slave in shared.SERVICES if re.match(pattern, slave)]
 
-    def service_orchestrator_scaler(self, svc):
+    def object_orchestrator_scaler(self, svc):
         smon = self.get_service_monitor(svc.path)
         if smon.status != "idle":
             return
@@ -1603,27 +1820,27 @@ class Monitor(shared.OsvcThread):
                "path": svc.path,
                "delta": missing,
             })
-            self.service_orchestrator_scaler_up(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_up(svc, missing, current_slaves)
         else:
             self.event("scale_down", {
                "path": svc.path,
                "delta": -missing,
             })
-            self.service_orchestrator_scaler_down(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_down(svc, missing, current_slaves)
 
-    def service_orchestrator_scaler_up(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_up(self, svc, missing, current_slaves):
         if svc.topology == "flex":
-            self.service_orchestrator_scaler_up_flex(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_up_flex(svc, missing, current_slaves)
         else:
-            self.service_orchestrator_scaler_up_failover(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_up_failover(svc, missing, current_slaves)
 
-    def service_orchestrator_scaler_down(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_down(self, svc, missing, current_slaves):
         if svc.topology == "flex":
-            self.service_orchestrator_scaler_down_flex(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_down_flex(svc, missing, current_slaves)
         else:
-            self.service_orchestrator_scaler_down_failover(svc, missing, current_slaves)
+            self.object_orchestrator_scaler_down_failover(svc, missing, current_slaves)
 
-    def service_orchestrator_scaler_up_flex(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_up_flex(self, svc, missing, current_slaves):
         candidates = self.placement_candidates(svc, discard_preserved=False)
         width = len(candidates)
         if width == 0:
@@ -1685,7 +1902,7 @@ class Monitor(shared.OsvcThread):
             self.log.warning("failed to start a scaling thread for service "
                              "%s: %s", svc.path, exc)
 
-    def service_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
         excess = -missing
         for slavename in self.sort_scaler_slaves(current_slaves, reverse=True):
@@ -1717,7 +1934,7 @@ class Monitor(shared.OsvcThread):
     def sort_scaler_slaves(slaves, reverse=False):
         return sorted(slaves, key=lambda x: int(x.split("/")[-1].split(".")[0]), reverse=reverse)
 
-    def service_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_up_failover(self, svc, missing, current_slaves):
         slaves_count = missing
         n_current_slaves = len(current_slaves)
         new_slaves_list = [self.scale_path(svc.path, n_current_slaves+idx) for idx in range(slaves_count)]
@@ -1735,7 +1952,7 @@ class Monitor(shared.OsvcThread):
             self.log.warning("failed to start a scaling thread for service "
                              "%s: %s", svc.path, exc)
 
-    def service_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
+    def object_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
         slaves_count = -missing
         n_current_slaves = len(current_slaves)
         slaves_list = [self.scale_path(svc.path, n_current_slaves-1-idx) for idx in range(slaves_count)]
@@ -1835,7 +2052,7 @@ class Monitor(shared.OsvcThread):
     def orchestrator_auto_grace(self):
         """
         After daemon startup, wait for <rejoin_grace_period_expired> seconds
-        before allowing service_orchestrator_auto() to proceed.
+        before allowing object_orchestrator_auto() to proceed.
         """
         if self.rejoin_grace_period_expired:
             return False
@@ -1981,14 +2198,21 @@ class Monitor(shared.OsvcThread):
         return len(instances) >= len(min_instances)
 
     def instances_started_or_start_failed(self, path, nodes):
+        return self.instances_started(path, nodes, accept_start_failed=True)
+
+    def instances_started(self, path, nodes, accept_start_failed=False):
         for nodename in nodes:
             instance = self.get_service_instance(path, nodename)
             if instance is None:
                 continue
-            if instance.get("avail") in STOPPED_STATES and instance["monitor"].get("status") != "start failed":
-                return False
+            if instance.get("avail") in STOPPED_STATES:
+                if accept_start_failed:
+                    if instance["monitor"].get("status") != "start failed":
+                        return False
+                else:
+                    return False
         self.log.info("service '%s' instances on nodes '%s' are stopped",
-            path, ", ".join(nodes))
+                      path, ", ".join(nodes))
         return True
 
     def instances_stopped(self, path, nodes):
@@ -2008,12 +2232,37 @@ class Monitor(shared.OsvcThread):
                 return True
         return False
 
-    def non_leaders_stopped(self, path, exclude_status=None):
+    def leaders_started(self, path, exclude_status=None):
         svc = self.get_service(path)
+        exclude_status = exclude_status or []
         if svc is None:
             return True
-        if exclude_status is None:
-            exclude_status = []
+        for nodename in svc.peers:
+            if nodename == Env.nodename:
+                continue
+            instance = self.get_service_instance(svc.path, nodename)
+            if instance is None:
+                continue
+            if instance.get("monitor", {}).get("placement") != "leader":
+                continue
+            avail = instance.get("avail")
+            smon_status = instance.get("monitor", {}).get("status")
+            if avail not in STARTED_STATES and smon_status not in exclude_status:
+                if exclude_status:
+                    extra = "(%s/%s)" % (avail, smon_status)
+                else:
+                    extra = "(%s)" % avail
+                self.log.info("service '%s' leader instance on node '%s' "
+                              "is not started yet %s",
+                              svc.path, nodename, extra)
+                return False
+        return True
+
+    def non_leaders_stopped(self, path, exclude_status=None):
+        svc = self.get_service(path)
+        exclude_status = exclude_status or []
+        if svc is None:
+            return True
         for nodename in svc.peers:
             if nodename == Env.nodename:
                 continue
@@ -2257,6 +2506,24 @@ class Monitor(shared.OsvcThread):
                avail in STOPPED_STATES + STARTED_STATES:
                 nodenames.append(nodename)
         return nodenames
+
+    def place_in_progress(self, path, discard_local=True):
+        """
+        Return the nodename of any object instance that has its global expect
+        set to any kind of placed variants.
+        """
+        for nodename, instance in self.get_service_instances(path).items():
+            if discard_local and nodename == Env.nodename:
+                continue
+            ge_time = instance["monitor"].get("global_expect_updated") or 0
+            status_time = instance.get("updated") or 0
+            if ge_time > status_time:
+                # we don't have the lastest instance status. in doubt, avoid
+                # taking decision
+                raise ValueError
+            ge = instance["monitor"].get("global_expect") or ""
+            if ge.startswith("placed"):
+                return nodename
 
     def peer_transitioning(self, path, discard_local=True):
         """
@@ -3688,3 +3955,6 @@ class Monitor(shared.OsvcThread):
             except Exception as exc:
                 return True
         return False
+
+
+
