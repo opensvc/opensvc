@@ -2088,9 +2088,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pkg_format = exc.default
 
         if pkg_format == "tar":
-            modname = 'utilitities.packages.update.osf1'
+            modname = 'utilities.packages.update.osf1'
         else:
-            modname = 'utilitities.packages.update.'+Env.module_sysname
+            modname = 'utilities.packages.update.'+Env.module_sysname
 
         import importlib
         try:
