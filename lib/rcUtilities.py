@@ -1664,7 +1664,7 @@ def create_protected_file(filepath, buff):
         f.write(buff)
 
     if six.PY2:
-        if isinstance(buff, unicode):
+        if isinstance(buff, six.text_type):
             import codecs
             with codecs.open(filepath, "w", "utf-8") as f:
                 onfile(f)
