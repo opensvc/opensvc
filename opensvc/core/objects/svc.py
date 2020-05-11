@@ -5747,6 +5747,19 @@ class Svc(BaseSvc):
             return
 
     def replace_volname(self, buff, mode="file", strict=False, errors=None):
+        """
+        In a string starting with a volume name, replace the volume name with,
+        * the volume mount point path if mode=="file"
+        * the volume device path if mode=="blk"
+
+        If strict is True, raise if the string does not start with a volume
+        name (starts with / actually).
+
+        If errors is "ignore", ignore all errors:
+        * string does not start with a volume name (even if strict is True)
+        * volume does not have a mount point
+        * volume instance is down
+        """
         l = buff.split("/")
         volname = l[0]
         if not volname:
