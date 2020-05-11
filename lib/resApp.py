@@ -318,7 +318,9 @@ class App(Resource):
                 else:
                     cmd = shlex.split(val)
                 if "|" in cmd or "||" in cmd or "&&" in cmd or any([True for w in cmd if w.endswith(";")]):
+                    val, vol = self.replace_volname(val, strict=False, errors="ignore")
                     return val
+        cmd[0], vol = self.replace_volname(cmd[0], strict=False, errors="ignore")
         if validate:
             cmd = self.validate_on_action(cmd)
         return cmd
