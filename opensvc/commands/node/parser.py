@@ -400,6 +400,12 @@ ACTIONS = {
                    "and credentials are defined in the node or cluster "
                    "configuration.",
         },
+        "array_ls": {
+            "msg": "List the configured arrays.",
+        },
+        "array_show": {
+            "msg": "Show the configured arrays with their name and type properties.",
+        },
         "updatepkg": {
             "msg": "Upgrade the opensvc agent version. the packages must be "
                    "available behind the node.repo/packages url, or behind "

@@ -4833,6 +4833,29 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.log.warning("wake monitor failed: %s", str(exc))
 
 
+    def array_show(self):
+        from utilities.render.forest import Forest
+        from utilities.render.color import color
+        tree = Forest()
+        node = tree.add_node()
+        node.add_column("name", color.BOLD)
+        node.add_column("type", color.BOLD)
+        for name in self.array_names():
+            leaf = node.add_node()
+            leaf.add_column(name)
+            leaf.add_column(self.oget("array#"+name, "type"))
+        print(tree)
+
+    def array_ls(self):
+        for name in self.array_names():
+            print(name)
+
+    def array_names(self):
+        data = set()
+        for section in self.conf_sections("array"):
+            data.add(section.split("#")[-1])
+        return sorted(list(data))
+
     ##########################################################################
     #
     # Pool

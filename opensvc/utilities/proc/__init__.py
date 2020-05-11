@@ -605,6 +605,8 @@ def get_extra_argv(argv=None):
         return argv, []
 
     if "array" in argv:
+        if "ls" in argv or "show" in argv:
+            return argv, []
         pos = argv.index('array')
     elif "cli" in argv:
         pos = argv.index('cli')
