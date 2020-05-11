@@ -1312,9 +1312,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def log_action_header(self):
         argv = [] + sys.argv
         try:
-            if argv[0].endswith("mgr.py"):
-                if len(argv) > 2 and argv[1] in ("-s", "--service"):
-                    _begin = 3
+            if argv[0].endswith("__main__.py"):
+                if len(argv) > 3 and argv[2] in ("-s", "--service"):
+                    _begin = 4
+                elif len(argv) > 2 and argv[1] == self.path:
+                    _begin = 2
                 else:
                     _begin = 1
                 argv = self.log_action_obfuscate_secret(argv)
