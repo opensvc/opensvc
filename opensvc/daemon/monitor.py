@@ -296,7 +296,7 @@ class MonitorObjectOrchestratorManualMixin(object):
         step_stop()
         step_wait_stopped()
         step_wait_children()
-        leader = step_wait_non_leader()
+        leader = step_wait_non_leader() # pylint: disable=assignment-from-none
         step_set_wait_non_leader()
         step_unprovision()
 
