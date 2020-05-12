@@ -402,7 +402,8 @@ class ContainerZone(BaseContainer):
     @lazy
     def state(self):
         if self.zone_data is None:
-            raise ex.Error("zone %s does not exist" % self.name)
+            self.log.info("zone %s does not exist" % self.name)
+            return
         else:
             return self.zone_data.get("state")
 
