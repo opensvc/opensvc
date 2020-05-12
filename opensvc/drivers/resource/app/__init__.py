@@ -65,6 +65,13 @@ KEYWORDS = [
         "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
+    {
+        "keyword": "retcodes",
+        "at": True,
+        "default": "0:up 1:down",
+        "text": "The whitespace separated list of ``<retcode>=<status name>``. All undefined retcodes are mapped to the 'warn' status.",
+        "example": "0:up 1:down 3:n/a"
+    },
 ]
 
 def run_as_popen_kwargs(fpath, limits=None, user=None, group=None, cwd=None):
@@ -214,6 +221,7 @@ class App(Resource):
                  environment=None,
                  configs_environment=None,
                  secrets_environment=None,
+                 retcodes=None,
                  **kwargs):
 
         Resource.__init__(self, **kwargs)
@@ -235,6 +243,7 @@ class App(Resource):
         self.environment = environment
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
+        self.retcodes = retcodes
         if script:
             self.label += ": " + os.path.basename(script)
         elif start:
@@ -245,6 +254,19 @@ class App(Resource):
             self.sort_key = "app#%d" % int(self.start_seq)
         except (TypeError, ValueError):
             pass
+
+    @lazy
+    def retcodes_map(self):
+        data = {}
+        for element in self.retcodes.split():
+            try:
+                retcode, status = element.split(":")
+                value = core.status.status_value(status)
+                if value is not None:
+                    data[int(retcode)] = value
+            except Exception:
+                pass
+        return data
 
     @lazy
     def lockfile(self):
@@ -504,13 +526,11 @@ class App(Resource):
             self.log.debug("resource status forced to n/a: an action is running")
             return core.status.NA
 
-        if ret == 0:
-            return core.status.UP
-        elif ret == 1:
-            return core.status.DOWN
-
-        self.status_log("check reports errors (%d)" % ret)
-        return core.status.WARN
+        if ret in self.retcodes_map:
+            return self.retcodes_map[ret]
+        else:
+            self.status_log("check reports errors (%d)" % ret)
+            return core.status.WARN
 
     def set_executable(self, fpath):
         """
