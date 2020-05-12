@@ -890,7 +890,8 @@ class ContainerZone(BaseContainer):
         then install container_origin if required
         """
         zonename = self.container_origin
-        zone2clone = ContainerZone(rid="container#skelzone", name=zonename)
+        zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
+                                   zonepath='/zones/%s' % zonename)
         zone2clone.log = self.log
         if zone2clone.state == "installed":
             return
