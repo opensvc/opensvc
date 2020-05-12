@@ -408,17 +408,31 @@ class ContainerZone(BaseContainer):
 
     @lazy
     def zonepath(self):
-        zp = self.zone_data.get("zonepath")
-        if zp:
-            return zp
+        """
+        method that returns zonepath
+        from zoneadm output
+        or zonecfg info
+        or zonecfg exported info
+        or from resource kw_zonepath value
+        else return None (when creating zone2clone, we don't know zonepath before
+        zonecfg create command launched)
+        """
+        if self.zone_data is not None:
+            zp = self.zone_data.get("zonepath")
+            if zp:
+                return zp
         try:
-            zp = self.get_zonepath_from_zonecfg_cmd()
+            return self.get_zonepath_from_zonecfg_cmd()
         except ex.Error:
-            try:
-                zp = self.get_zonepath_from_zonecfg_export()
-            except ex.Error:
-                zp = "/etc/system/%s" % self.name
-        return zp
+            pass
+        try:
+            return self.get_zonepath_from_zonecfg_export()
+        except ex.Error:
+            pass
+        if self.kw_zonepath:
+            return self.kw_zonepath
+        else:
+            return None
 
     @lazy
     def brand(self):
