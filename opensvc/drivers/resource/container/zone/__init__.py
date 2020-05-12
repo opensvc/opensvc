@@ -96,6 +96,10 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+
+PROVISIONED_STATES = ['installed', 'running']
+
+
 def driver_capabilities(node=None):
     data = []
     if which("zoneadm"):
@@ -940,6 +944,12 @@ class ContainerZone(BaseContainer):
         - create sysidcfg
         - if need_boot boot and wait multiuser
         """
+        try:
+            if self.state in PROVISIONED_STATES:
+                return True
+        except:
+            pass
+        self.log.info('provisioner start')
         self.osver = utilities.os.sunos.get_solaris_version()
         self.zone_configure()
 
