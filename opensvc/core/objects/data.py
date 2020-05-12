@@ -313,6 +313,9 @@ class DataMixin(object):
         for _key in keys:
             self.install_key(_key, path)
 
+    def post_commit(self):
+        self.postinstall()
+
     def install(self):
         self.postinstall(self.options.key)
 
