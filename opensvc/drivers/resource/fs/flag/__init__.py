@@ -52,12 +52,6 @@ class BaseFsFlag(Resource):
             self.log.info("unlink flag %s", self.flag_f)
             os.unlink(self.flag_f)
 
-    def is_provisionned(self):
-        return True
-
-    def provisionned(self):
-        return True
-
     def abort_start(self):
         if self.svc.topology != "failover":
             return
@@ -76,3 +70,11 @@ class BaseFsFlag(Resource):
         except Exception as exc:
             self.log.exception(exc)
             return True
+
+    def provisioner(self):
+        pass
+
+    def unprovisioner(self):
+        pass
+
+
