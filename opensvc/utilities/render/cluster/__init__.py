@@ -967,9 +967,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         context = os.environ.get("OSVC_CONTEXT", "")
         if context:
             selectors.append(context)
-        buff = format_path_selector(selector, namespace)
-        if len(buff) > 15:
-            buff = buff[:12] + "..."
+        buff = format_path_selector(selector, namespace, maxlen=15)
         selectors.append(buff)
         load_header([
             "/".join(selectors),
