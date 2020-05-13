@@ -834,8 +834,8 @@ class ContainerZone(BaseContainer):
         else:
             cmd = "create"
 
-        if self.zonepath:
-            cmd += "; set zonepath=" + self.zonepath
+        if zone.zonepath:
+            cmd += "; set zonepath=" + zone.zonepath
 
         if zone.state is None:
             zone.zonecfg([cmd])
