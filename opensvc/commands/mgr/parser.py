@@ -406,6 +406,7 @@ ACTIONS = {
                 OPT.stats,
                 OPT.watch,
                 OPT.interval,
+                OPT.format,
             ],
         },
         "print_status": {
