@@ -490,13 +490,30 @@ class ContainerZone(BaseContainer):
 
     def boot_and_wait_reboot(self):
         """
-        Boot zone, then wait for automatic zone reboot
+        Boot freshly installed zones, then wait for automatic zone reboot
             boot zone
-            wait for zone init process end
+            ensure for zone init process is running
+            wait for 2 'system boot' (this is only usable on freshly installed zones)
             wait for zone running
             wait for zone operational
+
+        We wait for 2 'system boot', this is only usable on freshly installed zones
         """
-        self.log.info("wait for zone boot and reboot...")
+        def wait_boot_count(count, max_retries=240):
+            retries = 0
+            self.log.info('wait for %s boot count is %s (max retries %s)', self.name, count, max_retries)
+            cmd = ['zlogin', self.name, 'last', 'reboot']
+            while retries < max_retries:
+                out, err, st = justcall(cmd)
+                if st == 0:
+                    reboots = len([line for line in out.split('\n') if 'system boot' in line])
+                    self.log.info('%s boot count: %s', self.name, reboots)
+                    if reboots >= count:
+                        return True
+                time.sleep(1)
+                retries += 1
+
+        self.log.info("wait for zone %s boot and reboot...", self.name)
         self.zone_boot()
         if self.is_running is False:
             raise ex.Error("zone is not running")
@@ -504,12 +521,7 @@ class ContainerZone(BaseContainer):
         out, err, st = justcall(cmd)
         if st != 0:
             raise ex.Error("fail to detect zone init process")
-        pids = " ".join(out.split("\n")).rstrip()
-        cmd = [PWAIT, pids]
-        self.log.info("wait for zone init process %s termination" % (pids))
-        if qcall(cmd) != 0:
-            raise ex.Error("failed " + " ".join(cmd))
-        self.log.info("wait for zone running again")
+        wait_boot_count(2)
         self.wait_for_fn(self.is_up, self.start_timeout, 2)
         self.log.info("wait for zone operational")
         self.wait_for_fn(self.operational, self.start_timeout, 2)
