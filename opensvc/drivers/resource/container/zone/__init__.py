@@ -863,7 +863,7 @@ class ContainerZone(BaseContainer):
     def _create_zone2clone_11(self):
         zonename = self.container_origin
         zone2clone = ContainerZone(rid="container#skelzone", name=zonename)
-        zone2clone.log = self.log
+        zone2clone.svc = self.svc
         if zone2clone.state == "installed":
             return
         self.zone_configure(zone=zone2clone)
@@ -894,7 +894,7 @@ class ContainerZone(BaseContainer):
         zonename = self.container_origin
         zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
                                    zonepath='/zones/%s' % zonename)
-        zone2clone.log = self.log
+        zone2clone.svc = self.svc
         if zone2clone.state == "installed":
             return
         self.zone_configure(zone=zone2clone)
