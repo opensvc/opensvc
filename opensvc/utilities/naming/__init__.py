@@ -328,13 +328,16 @@ def parse_path_selector(selector, namespace=None):
     return _name, _namespace, _kind
 
 
-def format_path_selector(selector, namespace=None):
+def format_path_selector(selector, namespace=None, maxlen=None):
     try:
         _name, _namespace, _kind = parse_path_selector(selector, namespace)
+        buff = "%s/%s/%s" % (_namespace, _kind, _name)
     except ValueError:
-        return selector
-    return "%s/%s/%s" % (_namespace, _kind, _name)
-
+        buff = selector
+    if maxlen:
+        if len(buff) > maxlen:
+            buff = buff[:maxlen-3] + "..."
+    return buff
 
 def normalize_jsonpath(path):
     if path and path[0] == ".":
