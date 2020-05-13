@@ -712,6 +712,14 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     },
     {
         "section": "cluster",
+        "keyword": "default_mon_format",
+        "candidates": ["compact", "matrix"],
+        "example": "compact",
+        "at": True,
+        "text": "The renderer to use with monitor commands, if not explicitely set by the --format option. The compact renderer is optimized for large clusters."
+    },
+    {
+        "section": "cluster",
         "keyword": "dns",
         "convert": "list",
         "default": [],

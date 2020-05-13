@@ -224,7 +224,7 @@ def list_print(data, right=None):
     outs = ""
     if len(data) == 0:
         return ""
-    widths = [0] * len(data[0])
+    widths = [0] * len(data[-1])
     _data = []
     for line in data:
         _data.append(tuple(map(lambda x: x.encode("utf-8") if x is not None else "".encode("utf-8"), line)))
@@ -254,7 +254,8 @@ def print_section(data):
 
 
 def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
-                   stats_data=None, sections=None, selector=None, namespace=None):
+                   stats_data=None, sections=None, selector=None,
+                   namespace=None):
     if not data or data.get("status", 0) != 0:
         return
     if sections is None:
@@ -342,6 +343,51 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             fmt_svc_blk_wbps(path, prev_stats_data, stats_data),
             "|" if nodenames else "",
         ]
+        if not nodenames:
+            states = []
+            if data["frozen"] == "frozen":
+                frozen = "frozen"
+            elif data["frozen"] == "thawed":
+                frozen = ""
+            elif data["frozen"] == "n/a":
+                frozen = ""
+            elif data["frozen"] == "mixed":
+                frozen = "part-frozen"
+            else:
+                frozen = ""
+            if frozen:
+                states.append(frozen)
+
+            if data["provisioned"] is True:
+                provisioned = ""
+            elif data["provisioned"] is False:
+                provisioned = "unprovisioned"
+            elif data["provisioned"] == "n/a":
+                provisioned = ""
+            elif data["provisioned"] == "mixed":
+                provisioned = "part-provisioned"
+            else:
+                provisioned = ""
+            if provisioned:
+                states.append(provisioned)
+
+            mon_status_counts = {}
+            ge = None
+            for nodename in avail_nodenames:
+                _data = data["nodes"][nodename]
+                ge = _data.get("global_expect")
+                st = _data.get("mon")
+                if st not in ("idle", None):
+                    if st not in mon_status_counts:
+                        mon_status_counts[st] = 1
+                    else:
+                        mon_status_counts[st] += 1
+            if ge:
+                states.append(">"+ge)
+            for s, n in mon_status_counts.items():
+                states.append("%s(%d)" % (s, n))
+            line.append(", ".join(states))
+
         for nodename in nodenames:
             if nodename not in data["nodes"]:
                 line.append("")
@@ -710,7 +756,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             avail = data["monitor"]["nodes"].get(nodename, {}).get("stats", {}).get(key+"_avail")
             limit = 100 - data["monitor"]["nodes"].get(nodename, {}).get("min_avail_"+key, 0)
             if avail is None or total in (0, None):
-                line.append("-")
+                line.append(colorize("-", color.LIGHTBLUE))
                 continue
             usage = 100 - avail
             total = print_size(total, unit="MB", compact=True)
@@ -883,7 +929,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     services[path] = Storage({
                         "drp": _data.get("drp", False),
                         "topology": _data.get("topology", ""),
-                        "orchestrate": _data.get("orchestrate", "-"),
+                        "orchestrate": _data.get("orchestrate", ""),
                         "flex_target": _data.get("flex_target"),
                         "scale": _data.get("scale"),
                         "avail": "undef",
@@ -959,6 +1005,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             services[path].avail = _data.get("avail", "n/a")
             services[path].overall = _data.get("overall", "n/a")
             services[path].placement = _data.get("placement", "n/a")
+            services[path].frozen = _data.get("frozen", "n/a")
+            services[path].provisioned = _data.get("provisioned", "n/a")
 
     def load_services(selector, namespace=None):
         if "services" not in sections:
@@ -969,7 +1017,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             selectors.append(context)
         buff = format_path_selector(selector, namespace, maxlen=15)
         selectors.append(buff)
-        load_header([
+        header = [
             "/".join(selectors),
             "",
             "",
@@ -983,7 +1031,10 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             "blkrbps" if stats_data else "",
             "blkwbps" if stats_data else "",
             "",
-        ])
+        ]
+        if not nodenames:
+            header.append("")
+        load_header(header)
         for path in sorted(list(services.keys())):
             load_svc(path)
 

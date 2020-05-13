@@ -45,6 +45,13 @@ def setup_parser(node):
                       help="colorize output. possible values are : auto=guess based "
                            "on tty presence, always|yes=always colorize, never|no="
                            "never colorize")
+    parser.add_option("--format", default=None,
+                      action="store", dest="format",
+                      help="Specify a data formatter. Possible values are compact or "
+                           "matrix. The compact mode is best for large cluster. If "
+                           "not specified, the cluster.default_mon_format value is "
+                           "used as the default. If cluster.default_mon_format is not "
+                           "set, the default is the matrix renderer."),
     parser.add_option("--server", default="", action="store", dest="server",
                       help="The server uri to send a request to. If not "
                            "specified the local node is targeted. Supported "
@@ -79,7 +86,6 @@ def setup_parser(node):
                       help="the comma-separated list of sections to display. "
                            "if not set, all sections are displayed. sections "
                            "names are: threads,arbitrators,nodes,services.")
-
     parser.add_option(
         "-s", "--service", default="*",
         action="store", dest="parm_svcs",
@@ -177,7 +183,11 @@ def svcmon(node, options=None):
         raise ex.Error(error)
     nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
-    if not nodes:
+    if options.format is None:
+        options.format = node.oget("cluster", "default_mon_format")
+    if options.format == "compact":
+        nodes = []
+    elif not nodes:
         nodes = node.nodes_selector(options.node, data=nodes_info)
 
     if options.watch:
@@ -235,7 +245,8 @@ def svcmon(node, options=None):
                     continue
                 expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
                 nodes_info = nodes_info_from_cluster_data(status_data)
-                nodes = node.nodes_selector(options.node, data=nodes_info)
+                if options.format != "compact":
+                    nodes = node.nodes_selector(options.node, data=nodes_info)
             if stats_changed:
                 prev_stats_data = stats_data
                 stats_data = get_stats(options, node, expanded_svcs)
