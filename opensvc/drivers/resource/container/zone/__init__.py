@@ -841,8 +841,8 @@ class ContainerZone(BaseContainer):
         if zone is None:
             zone = self
 
-        if self.osver >= 11.0 and self.container_origin:
-            cmd = "create -t " + self.container_origin
+        if self.osver >= 11.0 and zone.container_origin:
+            cmd = "create -t " + zone.container_origin
         else:
             cmd = "create"
 
