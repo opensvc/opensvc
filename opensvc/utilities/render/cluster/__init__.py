@@ -260,9 +260,9 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
     if sections is None:
         sections = DEFAULT_SECTIONS
     out = []
-    nodenames = get_nodes(data)
-    nodenames = sorted([n for n in nodenames if n in node])
-    show_nodenames = abbrev([n for n in nodenames if n in node])
+    avail_nodenames = get_nodes(data)
+    nodenames = sorted([n for n in avail_nodenames if n in node])
+    show_nodenames = abbrev(nodenames)
     services = {}
 
     def load_header(title=""):
@@ -867,7 +867,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
     # init the services hash
     slave_parents = {}
     if "monitor" in data:
-        for _node in nodenames:
+        for _node in avail_nodenames:
             if _node not in data["monitor"]["nodes"]:
                 continue
             try:
