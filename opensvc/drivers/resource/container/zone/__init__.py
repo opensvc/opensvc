@@ -862,7 +862,7 @@ class ContainerZone(BaseContainer):
                 raise
 
     def create_zone2clone(self):
-        if os.path.exists(self.kw_zonepath):
+        if self.kw_zonepath and os.path.exists(self.kw_zonepath):
             try:
                 os.chmod(self.kw_zonepath, 0o0700)
             except:
