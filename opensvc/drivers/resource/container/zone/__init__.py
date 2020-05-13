@@ -894,7 +894,7 @@ class ContainerZone(BaseContainer):
         else:
             raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
-        zone2clone.stop()
+        zone2clone.halt()
         if zone2clone.state != "installed":
             raise(ex.Error("zone %s is not installed" % (zonename)))
 
@@ -924,7 +924,7 @@ class ContainerZone(BaseContainer):
         else:
             raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
         zone2clone.wait_multi_user()
-        zone2clone.stop()
+        zone2clone.halt()
         if zone2clone.state != "installed":
             raise(ex.Error("zone %s is not installed" % (zonename)))
 
