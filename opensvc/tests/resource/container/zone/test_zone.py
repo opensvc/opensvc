@@ -27,12 +27,12 @@ def zone_boot(mocker):
 
 
 @pytest.fixture(scope='function')
-def svc(mocker, tmp_path):
+def svc(mocker, tmp_dir):
     svc = mocker.Mock(name='svc')
     svc.namespace = ''
     svc.name = 's'
     svc.loggerpath = 'something'
-    svc.var_d = tmp_path
+    svc.var_d = tmp_dir
     return svc
 
 
@@ -97,7 +97,6 @@ class TestContainerZonepath:
         assert zone.zonepath is None
 
 
-@pytest.mark.zone
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestContainerProvision:

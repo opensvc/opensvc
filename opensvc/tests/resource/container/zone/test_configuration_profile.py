@@ -127,7 +127,7 @@ class TestConfigurationProfile:
         sc_profile = ScProfile(sc_profile_file=tmp_file)
         sc_profile.write()
         assert os.path.exists(tmp_file)
-        with open(tmp_file, 'r', encoding='US-ASCII') as f:
+        with open(tmp_file, 'r') as f:
             assert f.read() == EXPECTED_PROFILE_DEFAULT
 
     @staticmethod
@@ -146,5 +146,5 @@ class TestConfigurationProfile:
         sc_profile.write()
         sc_profile.write()
         assert os.path.exists(tmp_file)
-        with open(tmp_file, 'r', encoding='US-ASCII') as f:
+        with open(tmp_file, 'r') as f:
             assert f.read() == EXPECTED_PROFILE_CUSTOM
