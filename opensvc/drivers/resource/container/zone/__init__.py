@@ -85,7 +85,7 @@ KEYWORDS = [
     },
     {
         "keyword": "ai_manifest",
-        "text": "The Automated Installer manifest xml file for container provisioning. If not set, default manifest will be used.",
+        "text": "The Automated Installer manifest xml file for container provisioning.",
         "required": False,
         "provisioning": True
     },
