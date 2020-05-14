@@ -77,6 +77,12 @@ KEYWORDS = [
         "required": False,
         "provisioning": True
     },
+    {
+        "keyword": "sc_profile",
+        "text": "The system configuration profile xml file for container provisioning. If not set, a configuration profile will be automatically created.",
+        "required": False,
+        "provisioning": True
+    },
     KW_SNAP,
     KW_SNAPOF,
     KW_START_TIMEOUT,
