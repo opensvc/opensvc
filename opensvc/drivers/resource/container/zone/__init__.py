@@ -789,12 +789,12 @@ class ContainerZone(BaseContainer):
             self.svc.save_exc()
             raise ex.Error("exception from %s: %s during create_sc_profile" % (e.__class__.__name__, e.__str__()))
 
-    def create_sysidcfg(self, zone=None):
+    def create_sysidcfg(self):
         try:
             name_service = "name_service=NONE\n"
 
-            sysidcfg_filename = zone.zonepath + "/root" + SYSIDCFG
-            sysidcfg_file = open(sysidcfg_filename, "w" )
+            sysidcfg_filename = self.zonepath + "/root" + SYSIDCFG
+            sysidcfg_file = open(sysidcfg_filename, "w")
             contents = ""
             contents += "system_locale=C\n"
             contents += "timezone=MET\n"
@@ -803,7 +803,7 @@ class ContainerZone(BaseContainer):
             contents += "security_policy=NONE\n"
             contents += "root_password=NP\n"
             contents += "nfs4_domain=dynamic\n"
-            contents += "network_interface=NONE {hostname=%(zonename)s}\n" % {"zonename":zone.name}
+            contents += "network_interface=NONE {hostname=%(zonename)s}\n" % {"zonename":self.name}
             contents += name_service
 
             sysidcfg_file.write(contents)
@@ -835,31 +835,25 @@ class ContainerZone(BaseContainer):
                 if ret != 0:
                     self.zonecfg(['add net; set physical=%s; end' % r.ipdev])
 
-    def zone_configure(self, zone=None):
-        """
-            configure zone, if zone is None, configure self
-        """
-        if zone is None:
-            zone = self
-
-        if self.osver >= 11.0 and zone.container_origin:
-            cmd = "create -t " + zone.container_origin
+    def zone_configure(self):
+        if self.osver >= 11.0 and self.container_origin:
+            cmd = "create -t " + self.container_origin
         else:
             cmd = "create"
 
-        if zone.zonepath:
-            cmd += "; set zonepath=" + zone.zonepath
+        if self.zonepath:
+            cmd += "; set zonepath=" + self.zonepath
 
-        if zone.state is None:
-            zone.zonecfg([cmd])
-            if zone.state != "configured":
-                raise ex.Error("zone %s is not configured" % zone.name)
+        if self.state is None:
+            self.zonecfg([cmd])
+            if self.state != "configured":
+                raise ex.Error("zone %s is not configured" % self.name)
 
         if self.osver >= 11.0:
             try:
-                zone.zone_configure_net()
+                self.zone_configure_net()
             except:
-                zone.zonecfg(["delete", "-F"])
+                self.zonecfg(["delete", "-F"])
                 raise
 
     def create_zone2clone(self):
@@ -878,9 +872,11 @@ class ContainerZone(BaseContainer):
         zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
                                    sc_profile='', provision_net_type=None)
         zone2clone.svc = self.svc
+        zone2clone.osver = utilities.os.sunos.get_solaris_version()
+
         if zone2clone.state == "installed":
             return
-        self.zone_configure(zone=zone2clone)
+        zone2clone.zone_configure()
         if zone2clone.state != "configured":
             raise(ex.Error("zone %s is not configured" % (zonename)))
         zone2clone.zoneadm("install", option=['-c', '/usr/share/auto_install/sc_profiles/unconfig.xml'])
@@ -907,15 +903,16 @@ class ContainerZone(BaseContainer):
         zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
                                    zonepath='/zones/%s' % zonename)
         zone2clone.svc = self.svc
+        zone2clone.osver = utilities.os.sunos.get_solaris_version()
         if zone2clone.state == "installed":
             return
-        self.zone_configure(zone=zone2clone)
+        zone2clone.zone_configure()
         if zone2clone.state != "configured":
             raise(ex.Error("zone %s is not configured" % (zonename)))
         zone2clone.zoneadm("install")
         if zone2clone.state != "installed":
             raise(ex.Error("zone %s is not installed" % (zonename)))
-        self.create_sysidcfg(zone2clone)
+        zone2clone.create_sysidcfg()
         brand = zone2clone.brand
         if brand == "native":
             zone2clone.boot_and_wait_reboot()
@@ -929,30 +926,29 @@ class ContainerZone(BaseContainer):
             raise(ex.Error("zone %s is not installed" % (zonename)))
 
     def create_cloned_zone(self):
-        zone = self
-        if zone.state == "running":
-            self.log.info("zone %s already running"%zone.name)
+        if self.state == "running":
+            self.log.info("zone %s already running" % self.name)
             return
-        if zone.state == "configured":
+        if self.state == "configured":
             if self.osver >= 11.0:
-                self._create_cloned_zone_11(zone)
+                self._create_cloned_zone_11()
             else:
-                self._create_cloned_zone_10(zone)
-        if zone.state != "installed":
-            raise(ex.Error("zone %s is not installed" % (zone.name)))
+                self._create_cloned_zone_10()
+        if self.state != "installed":
+            raise(ex.Error("zone %s is not installed" % self.name))
 
-    def _create_cloned_zone_11(self, zone):
+    def _create_cloned_zone_11(self):
         self.create_sc_profile()
-        zone.zoneadm("clone", ['-c', self.sc_profile, self.container_origin])
+        self.zoneadm("clone", ['-c', self.sc_profile, self.container_origin])
 
-    def _create_cloned_zone_10(self, zone):
-        zone.zoneadm("clone", [self.container_origin])
+    def _create_cloned_zone_10(self):
+        self.zoneadm("clone", [self.container_origin])
         self.create_sysidcfg()
 
     def create_snaped_zone(self):
         self.create_zonepath()
         self.zoneadm("attach", ["-F"])
-        self.create_sysidcfg(self)
+        self.create_sysidcfg()
 
     def create_zonepath(self):
         """create zonepath dataset from clone of snapshot of self.snapof
