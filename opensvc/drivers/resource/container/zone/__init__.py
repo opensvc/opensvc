@@ -883,9 +883,7 @@ class ContainerZone(BaseContainer):
         self.zone_configure(zone=zone2clone)
         if zone2clone.state != "configured":
             raise(ex.Error("zone %s is not configured" % (zonename)))
-        self.create_sysidcfg(zone2clone)
-        #zone2clone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
-        zone2clone.zoneadm("install")
+        zone2clone.zoneadm("install", option=['-c', '/usr/share/auto_install/sc_profiles/unconfig.xml'])
         if zone2clone.state != "installed":
             raise(ex.Error("zone %s is not installed" % (zonename)))
         brand = zone2clone.brand
