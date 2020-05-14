@@ -660,6 +660,31 @@ class ContainerZone(BaseContainer):
     def post_provision_start(self):
         pass
 
+    def update_solaris_11_ip_tags(self):
+        ip_kws = []
+        need_save = False
+        for r in self.svc.get_resources(["ip"]):
+            # Add mandatory tags for sol11 zones
+            for tag in ['noaction', 'noalias', 'exclusive']:
+                r.tags.add(tag)
+                need_save = True
+            for tag in ['preboot', 'postboot']:
+                if tag in r.tags:
+                    r.tags.remove(tag)
+                    need_save = True
+
+            try:
+                self.svc.conf_get(r.rid, "gateway")
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
+                # Add nonrouted tag if no gateway provisioning keyword is passed
+                self.tags.add("nonrouted")
+                need_save = True
+
+            ip_kws += ["%s.tags=%s" % (r.rid, ' '.join(r.tags))]
+        if need_save and ip_kws:
+            # update service env file
+            self.svc.set_multi(ip_kws)
+
     def sysid_network(self):
         """
          network_interface=l226z1 {primary
@@ -671,20 +696,10 @@ class ContainerZone(BaseContainer):
         """
         cf = os.path.join(Env.paths.pathetc, self.svc.name+'.conf')
         s = ""
-        ip_kws = []
         for r in self.svc.get_resources(["ip"]):
-            # Add mandatory tags for sol11 zones
-            r.tags.add("noaction")
-            r.tags.add("noalias")
-            r.tags.add("exclusive")
-            r.tags.remove("preboot")
-            r.tags.remove("postboot")
-
             try:
                 default_route = self.svc.conf_get(r.rid, "gateway")
             except (ex.RequiredOptNotFound, ex.OptNotFound):
-                # Add nonrouted tag if no gateway provisioning keyword is passed
-                self.tags.add("nonrouted")
                 continue
 
             try:
@@ -700,10 +715,6 @@ class ContainerZone(BaseContainer):
                 s += " protocol_ipv6=no\n"
                 s += " default_route=%s}\n"%default_route
 
-            ip_kws += ["%s.tags=%s" % (r.rid, ' '.join(r.tags))]
-        if ip_kws:
-            # update service env file
-            self.svc.set_multi(ip_kws)
         return s
 
     def get_tz(self):
@@ -985,6 +996,7 @@ class ContainerZone(BaseContainer):
         self.zone_configure()
 
         if self.osver >= 11:
+            self.update_solaris_11_ip_tags()
             self.create_sysidcfg(self)
         else:
             if self.snapof is not None and self.brand == 'native':
