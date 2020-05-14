@@ -36,7 +36,6 @@ def zone_configure(mocker):
                                return_value=mocker.Mock('zone_configure'))
 
 
-@pytest.mark.zone
 @pytest.mark.ci
 @pytest.mark.usefixtures('with_installed_zone')
 class TestContainerZoneProvisionWhenZoneIsInstalled:
@@ -46,7 +45,6 @@ class TestContainerZoneProvisionWhenZoneIsInstalled:
         assert zone_configure.call_count == 0
 
 
-@pytest.mark.zone
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestContainerZonepath:
