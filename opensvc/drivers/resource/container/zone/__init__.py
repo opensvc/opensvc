@@ -10,6 +10,7 @@ import utilities.lock
 import utilities.os.sunos
 from env import Env
 from utilities.lazy import lazy
+from utilities.net.converters import to_cidr
 from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
 from core.objects.svcdict import KEYS
@@ -117,6 +118,7 @@ class ContainerZone(BaseContainer):
                  rootfs=None,
                  snap=None,
                  snapof=None,
+                 sc_profile=None,
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
         self.delete_on_stop = delete_on_stop
@@ -125,6 +127,7 @@ class ContainerZone(BaseContainer):
         self.snapof = snapof
         self.snap = snap
         self.kw_zonepath = zonepath
+        self.sc_profile = sc_profile
 
     @lazy
     def clone(self):
@@ -685,37 +688,36 @@ class ContainerZone(BaseContainer):
             # update service env file
             self.svc.set_multi(ip_kws)
 
-    def sysid_network(self):
+    def get_install_ipv4_interfaces(self):
         """
-         network_interface=l226z1 {primary
-          hostname=zone1-32
-          ip_address=172.30.5.232
-          netmask=255.255.255.0
-          protocol_ipv6=no
-          default_route=172.30.5.1}
+         returns list of InstallIpv4Interface tha will be used to create sc_profile
         """
-        cf = os.path.join(Env.paths.pathetc, self.svc.name+'.conf')
-        s = ""
+        from .configuration_profile import InstallIpv4Interface
+        ipv4_interfaces = []
         for r in self.svc.get_resources(["ip"]):
+            try:
+                ipdevext = self.svc.conf_get(r.rid, "ipdevext")
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
+                ipdevext = 'v4'
+
+            ipv4_name = '%s/%s' % (r.ipdev, ipdevext)
+
             try:
                 default_route = self.svc.conf_get(r.rid, "gateway")
             except (ex.RequiredOptNotFound, ex.OptNotFound):
-                continue
+                default_route = None
 
             try:
-                netmask = self.svc.oget(r.rid, "netmask")
+                netmask = to_cidr(self.svc.oget(r.rid, "netmask"))
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 continue
 
-            if s == "":
-                s += "network_interface=%s {primary\n"%r.ipdev
-                s += " hostname=%s\n"%r.ipname
-                s += " ip_address=%s\n"%r.addr
-                s += " netmask=%s\n"%netmask
-                s += " protocol_ipv6=no\n"
-                s += " default_route=%s}\n"%default_route
-
-        return s
+            ipv4_interface = InstallIpv4Interface(ipv4_name,
+                                                  static_address='%s/%s' % (r.addr, netmask),
+                                                  address_type='static',
+                                                  default_route=default_route)
+            ipv4_interfaces.append(ipv4_interface)
+        return ipv4_interfaces
 
     def get_tz(self):
         if "TZ" not in os.environ:
@@ -753,61 +755,33 @@ class ContainerZone(BaseContainer):
                         nameservers.append(l[1])
         return (domain, nameservers, search)
 
-    def create_sysidcfg(self, zone=None):
-        self.log.info("creating zone sysidcfg file")
-        if self.osver >= 11.0:
-            self._create_sysidcfg_11(zone)
+    def create_sc_profile(self):
+        if self.sc_profile:
+            if not os.path.exists(self.sc_profile):
+                message = 'sc_profile %s does not exists' % self.sc_profile
+                self.log.warning(message)
+                raise ex.Error(message)
+            return
         else:
-            self._create_sysidcfg_10(zone)
-
-    def _create_sysidcfg_11(self, zone=None):
+            self.sc_profile = os.path.join(self.var_d, 'sc_profile.xml')
         try:
-            domain, nameservers, search = self.get_ns()
-            if domain is None and len(search) > 0:
-                domain = search[0]
-            if domain is None or len(nameservers) == 0:
-                name_service="name_service=none"
-            else:
-                name_service = "name_service=DNS {domain_name=%s name_server=%s search=%s}\n" % (
-                  domain,
-                  ",".join(nameservers),
-                  ",".join(search)
-                )
-
-            sysidcfg_dir = os.path.join(self.var_d)
-            sysidcfg_filename = os.path.join(sysidcfg_dir, 'sysidcfg')
-            contents = ""
-            contents += "keyboard=US-English\n"
-            contents += "system_locale=C\n"
-            contents += "timezone=%s\n"%self.get_tz()
-            contents += "terminal=vt100\n"
-            contents += "timeserver=localhost\n"
-            contents += self.sysid_network()
-            contents += "root_password=NP\n"
-            contents += "security_policy=NONE\n"
-            contents += name_service
-
-            try:
-                os.makedirs(sysidcfg_dir)
-            except:
-                pass
-            with open(sysidcfg_filename, "w") as sysidcfg_file:
-                sysidcfg_file.write(contents)
-            os.chdir(sysidcfg_dir)
-            self.zonecfg_xml = os.path.join(sysidcfg_dir, "sc_profile.xml")
-            try:
-                os.unlink(self.zonecfg_xml)
-            except:
-                pass
-            cmd = ['/usr/sbin/js2ai', '-s']
-            out, err, ret = justcall(cmd)
-            if not os.path.exists(self.zonecfg_xml):
-                raise ex.Error("js2ai conversion error")
+            from .configuration_profile import ScProfile, InstallIpv4Interface
+            domain, nameservers, searchs = self.get_ns()
+            sc_profile = ScProfile(sc_profile_file=self.sc_profile)
+            sc_profile.set_nodename(self.name)
+            sc_profile.set_localtime('Europe/Paris')
+            for ipv4_interface in self.get_install_ipv4_interfaces():
+                sc_profile.add_ipv4_interface(ipv4_interface)
+            sc_profile.set_environment({'LANG': 'C'})
+            if searchs or nameservers:
+                sc_profile.set_dns_client(searches=searchs, nameservers=nameservers)
+                sc_profile.set_name_service_switch({'host': 'files dns'})
+            sc_profile.write()
         except Exception as e:
             self.svc.save_exc()
-            raise ex.Error("exception from %s: %s during create_sysidcfg file" % (e.__class__.__name__, e.__str__()))
+            raise ex.Error("exception from %s: %s during create_sc_profile" % (e.__class__.__name__, e.__str__()))
 
-    def _create_sysidcfg_10(self, zone=None):
+    def create_sysidcfg(self, zone=None):
         try:
             name_service = "name_service=NONE\n"
 
@@ -955,10 +929,17 @@ class ContainerZone(BaseContainer):
             raise(ex.Error("zone %s is not installed" % (zone.name)))
 
     def _create_cloned_zone_11(self, zone):
-        zone.zoneadm("clone", ['-c', self.zonecfg_xml, self.container_origin])
+        self.create_sc_profile()
+        zone.zoneadm("clone", ['-c', self.sc_profile, self.container_origin])
 
     def _create_cloned_zone_10(self, zone):
         zone.zoneadm("clone", [self.container_origin])
+        self.create_sysidcfg()
+
+    def create_snaped_zone(self):
+        self.create_zonepath()
+        self.zoneadm("attach", ["-F"])
+        self.create_sysidcfg(self)
 
     def create_zonepath(self):
         """create zonepath dataset from clone of snapshot of self.snapof
@@ -997,11 +978,9 @@ class ContainerZone(BaseContainer):
 
         if self.osver >= 11:
             self.update_solaris_11_ip_tags()
-            self.create_sysidcfg(self)
         else:
             if self.snapof is not None and self.brand == 'native':
-                self.create_zonepath()
-                self.zoneadm("attach", ["-F"])
+                self.create_snaped_zone()
             elif self.snapof is not None and self.brand == 'ipkg':
                 zones = utilities.subsystems.zone.Zones()
                 src_dataset = Dataset(self.snapof)
@@ -1025,12 +1004,10 @@ class ContainerZone(BaseContainer):
             utilities.lock.unlock(lockfd)
             self.create_cloned_zone()
 
-        if self.osver < 11:
-            self.create_sysidcfg(self)
-
         if need_boot is True:
             self.zone_boot()
             self.wait_multi_user()
 
         self.log.info("provisioned")
         return True
+
