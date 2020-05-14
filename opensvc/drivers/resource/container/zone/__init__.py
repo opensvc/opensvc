@@ -111,6 +111,10 @@ def driver_capabilities(node=None):
     data = []
     if which("zoneadm"):
         data.append("container.zone")
+    if os.path.exists('/etc/zones/SYSsolaris.xml'):
+        data.append("container.zone.brand-solaris")
+    elif os.path.exists('/etc/zones/SUNWdefault.xml'):
+        data.append("container.zone.brand-native")
     return data
 
 class ContainerZone(BaseContainer):
@@ -136,6 +140,12 @@ class ContainerZone(BaseContainer):
         self.kw_zonepath = zonepath
         self.sc_profile = sc_profile
         self.provision_net_type = provision_net_type
+        if self.has_capability("container.zone.brand-solaris"):
+            self.default_brand = 'solaris'
+        elif self.has_capability("container.zone.brand-native"):
+            self.default_brand = 'native'
+        else:
+            self.default_brand = None
 
     @lazy
     def clone(self):
@@ -1019,4 +1029,3 @@ class ContainerZone(BaseContainer):
 
         self.log.info("provisioned")
         return True
-
