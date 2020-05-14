@@ -14,7 +14,7 @@ stages:
     - apk add build-base sudo git procps
     - python -V
     - pip install -r test-requirements.txt codecov
-    - pytest -vvv --cov -m "ci"
+    - pytest --cov -m "ci"
     - pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
     - codecov
 
