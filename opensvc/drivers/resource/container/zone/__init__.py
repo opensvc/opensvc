@@ -83,6 +83,12 @@ KEYWORDS = [
         "required": False,
         "provisioning": True
     },
+    {
+        "keyword": "ai_manifest",
+        "text": "The Automated Installer manifest xml file for container provisioning. If not set, default manifest will be used.",
+        "required": False,
+        "provisioning": True
+    },
     KW_SNAP,
     KW_SNAPOF,
     KW_START_TIMEOUT,
@@ -129,6 +135,7 @@ class ContainerZone(BaseContainer):
                  snap=None,
                  snapof=None,
                  sc_profile=None,
+                 ai_manifest=None,
                  provision_net_type="anet",
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
@@ -139,6 +146,7 @@ class ContainerZone(BaseContainer):
         self.snap = snap
         self.kw_zonepath = zonepath
         self.sc_profile = sc_profile
+        self.ai_manifest = ai_manifest
         self.provision_net_type = provision_net_type
         if self.has_capability("container.zone.brand-solaris"):
             self.default_brand = 'solaris'
@@ -889,7 +897,10 @@ class ContainerZone(BaseContainer):
         zone2clone.zone_configure()
         if zone2clone.state != "configured":
             raise(ex.Error("zone %s is not configured" % (zonename)))
-        zone2clone.zoneadm("install", option=['-c', '/usr/share/auto_install/sc_profiles/unconfig.xml'])
+        install_options = ['-c', '/usr/share/auto_install/sc_profiles/unconfig.xml']
+        if self.ai_manifest:
+            install_options += ['-m', self.ai_manifest]
+        zone2clone.zoneadm("install", option=install_options)
         if zone2clone.state != "installed":
             raise(ex.Error("zone %s is not installed" % (zonename)))
         brand = zone2clone.brand
