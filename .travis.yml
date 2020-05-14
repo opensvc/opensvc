@@ -19,7 +19,7 @@ before_install:
 install:
 - pip install -r test-requirements.txt
 script:
-- sudo $(which pytest) -vvv --cov -m "ci"
+- sudo $(which pytest) --cov -m "ci"
 - PYTHONPATH=opensvc pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
 after_success:
 - pip install codecov
