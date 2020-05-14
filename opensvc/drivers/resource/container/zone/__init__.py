@@ -942,6 +942,7 @@ class ContainerZone(BaseContainer):
         if self.state == "configured":
             if self.osver >= 11.0:
                 self._create_cloned_zone_11()
+                self.update_solaris_11_ip_tags()
             else:
                 self._create_cloned_zone_10()
         if self.state != "installed":
@@ -989,16 +990,15 @@ class ContainerZone(BaseContainer):
 
     def provisioner(self, need_boot=True):
         """provision zone
-        - configure zone
         - if snapof and zone brand is native
+           configure zone
            then create zonepath from snapshot of snapof
            then attach zone
-        - if snapof and zone brand is ipkg
-           then try to detect zone associated with snapof
-           then define container_origin
-        - if container_origin
-           then clone  container_origin
-        - create sysidcfg
+        - else if container_origin
+           create clone container_origin if not yet created
+           configure zone
+           clone container origin to zone
+
         - if need_boot boot and wait multiuser
         """
         try:
@@ -1007,23 +1007,27 @@ class ContainerZone(BaseContainer):
         except:
             pass
         self.log.info('provisioner start')
+
+        # failfast setting for provisioning
+        if self.snapof and self.container_origin:
+            self.log.error('provision error: container_origin is not compatible with snapof')
+            return False
+        elif self.snapof and self.default_brand != 'native':
+            msg = 'provision error: snapof is only available with native zone, try container_origin instead'
+            self.log.error(msg)
+            return False
+        elif not self.snapof and not self.container_origin:
+            self.log.error('provision error: need container_origin or snapof property')
+            return False
+
         self.osver = utilities.os.sunos.get_solaris_version()
-        self.zone_configure()
-
-        if self.osver >= 11:
-            self.update_solaris_11_ip_tags()
-        else:
-            if self.snapof is not None and self.brand == 'native':
-                self.create_snaped_zone()
-            elif self.snapof is not None and self.brand == 'ipkg':
-                zones = utilities.subsystems.zone.Zones()
-                src_dataset = Dataset(self.snapof)
-                zonepath = src_dataset.getprop('mountpoint')
-                self.container_origin = zones.zonename_from_zonepath(zonepath).zonename
-                self.log.info("source zone is %s (detected from snapof %s)" % (self.container_origin, self.snapof))
-
-        if self.container_origin is not None:
+        if self.snapof:
+            # we are on default_brand native
+            self.zone_configure()
+            self.create_snaped_zone()
+        elif self.container_origin:
             self.create_container_origin()
+            self.zone_configure()
             self.create_cloned_zone()
 
         if need_boot is True:
