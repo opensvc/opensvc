@@ -125,6 +125,7 @@ class ContainerZone(BaseContainer):
                  snap=None,
                  snapof=None,
                  sc_profile=None,
+                 provision_net_type="anet",
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
         self.delete_on_stop = delete_on_stop
@@ -134,6 +135,7 @@ class ContainerZone(BaseContainer):
         self.snap = snap
         self.kw_zonepath = zonepath
         self.sc_profile = sc_profile
+        self.provision_net_type = provision_net_type
 
     @lazy
     def clone(self):
@@ -816,16 +818,22 @@ class ContainerZone(BaseContainer):
             return True
         return False
 
-    def zone_configure_net(self, zone=None):
-        if zone is None:
-            zone = self
-        cmds = []
+    def zone_configure_net(self):
+        if self.provision_net_type is None:
+            return
         for r in self.svc.get_resources(["ip"]):
             if not self.test_net_interface(r.ipdev):
                 raise ex.Error("Missing interface: %s" % r.ipdev)
-            cmds.append("add net ; set physical=%s ; end" % r.ipdev)
-        for cmd in cmds:
-            zone.zonecfg([cmd])
+            if self.provision_net_type == 'anet':
+                cmd = [ZONECFG, "-z", self.name, 'select anet lower-link=%s linkname=%s; info;end' % (r.ipdev, r.ipdev)]
+                out, err, ret = justcall(cmd)
+                if ret != 0:
+                    self.zonecfg(['add anet; set lower-link=%s; set linkname=%s; end' % (r.ipdev, r.ipdev)])
+            elif self.provision_net_type == 'net':
+                cmd = [ZONECFG, "-z", self.name, 'select net physical=%s; info; end' % r.ipdev]
+                out, err, ret = justcall(cmd)
+                if ret != 0:
+                    self.zonecfg(['add net; set physical=%s; end' % r.ipdev])
 
     def zone_configure(self, zone=None):
         """
@@ -849,7 +857,7 @@ class ContainerZone(BaseContainer):
 
         if self.osver >= 11.0:
             try:
-                self.zone_configure_net(zone)
+                zone.zone_configure_net()
             except:
                 zone.zonecfg(["delete", "-F"])
                 raise
@@ -867,7 +875,8 @@ class ContainerZone(BaseContainer):
 
     def _create_zone2clone_11(self):
         zonename = self.container_origin
-        zone2clone = ContainerZone(rid="container#skelzone", name=zonename)
+        zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
+                                   sc_profile='', provision_net_type=None)
         zone2clone.svc = self.svc
         if zone2clone.state == "installed":
             return
