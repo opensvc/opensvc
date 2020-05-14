@@ -1959,6 +1959,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 server=self.options.server,
                 node=self.options.node,
                 silent=True,
+                timeout=2,
             )
             status, error, info = self.parse_result(data)
             if status and data.get("errno") != ECONNREFUSED:
