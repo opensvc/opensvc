@@ -972,6 +972,21 @@ class ContainerZone(BaseContainer):
         snapshot = source_ds.snapshot(zonename)
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.kw_zonepath])
 
+    def create_container_origin(self):
+        lockname = 'create_zone2clone-' + self.container_origin
+        lockfile = os.path.join(Env.paths.pathlock, lockname)
+        self.log.info("wait get lock %s" % (lockname))
+        try:
+            lockfd = utilities.lock.lock(timeout=1200, delay=5, lockfile=lockfile)
+        except:
+            raise (ex.Error("failure in get lock %s" % (lockname)))
+        try:
+            self.create_zone2clone()
+        except:
+            utilities.lock.unlock(lockfd)
+            raise
+        utilities.lock.unlock(lockfd)
+
     def provisioner(self, need_boot=True):
         """provision zone
         - configure zone
@@ -1008,19 +1023,7 @@ class ContainerZone(BaseContainer):
                 self.log.info("source zone is %s (detected from snapof %s)" % (self.container_origin, self.snapof))
 
         if self.container_origin is not None:
-            lockname='create_zone2clone-' + self.container_origin
-            lockfile = os.path.join(Env.paths.pathlock, lockname)
-            self.log.info("wait get lock %s"%(lockname))
-            try:
-                lockfd = utilities.lock.lock(timeout=1200, delay=5, lockfile=lockfile)
-            except:
-                raise(ex.Error("failure in get lock %s"%(lockname)))
-            try:
-                self.create_zone2clone()
-            except:
-                utilities.lock.unlock(lockfd)
-                raise
-            utilities.lock.unlock(lockfd)
+            self.create_container_origin()
             self.create_cloned_zone()
 
         if need_boot is True:
