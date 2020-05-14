@@ -671,7 +671,7 @@ class ContainerZone(BaseContainer):
         """
         cf = os.path.join(Env.paths.pathetc, self.svc.name+'.conf')
         s = ""
-
+        ip_kws = []
         for r in self.svc.get_resources(["ip"]):
             # Add mandatory tags for sol11 zones
             r.tags.add("noaction")
@@ -700,8 +700,10 @@ class ContainerZone(BaseContainer):
                 s += " protocol_ipv6=no\n"
                 s += " default_route=%s}\n"%default_route
 
-            # save new service env file
-        self.svc.set_multi(["%s.tags=%s" % (r.rid, ' '.join(r.tags))])
+            ip_kws += ["%s.tags=%s" % (r.rid, ' '.join(r.tags))]
+        if ip_kws:
+            # update service env file
+            self.svc.set_multi(ip_kws)
         return s
 
     def get_tz(self):
