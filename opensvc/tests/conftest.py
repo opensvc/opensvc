@@ -55,6 +55,12 @@ def non_existing_file(tmp_path):
 
 
 @pytest.fixture(scope='function')
+def tmp_dir(tmp_path):
+    "return str for python < 3.6"
+    return str(tmp_path)
+
+
+@pytest.fixture(scope='function')
 def tmp_file(tmp_path):
     return os.path.join(str(tmp_path), 'tmp-file')
 
