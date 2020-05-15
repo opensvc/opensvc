@@ -374,7 +374,10 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             mon_status_counts = {}
             ge = None
             for nodename in avail_nodenames:
-                _data = data["nodes"][nodename]
+                try:
+                    _data = data["nodes"][nodename]
+                except KeyError:
+                    continue
                 ge = _data.get("global_expect")
                 st = _data.get("mon")
                 if st not in ("idle", None):
