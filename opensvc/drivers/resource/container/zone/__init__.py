@@ -837,7 +837,7 @@ class ContainerZone(BaseContainer):
         return False
 
     def zone_configure_net(self):
-        if self.provision_net_type is None:
+        if not self.provision_net_type:
             return
         for r in self.svc.get_resources(["ip"]):
             if not self.test_net_interface(r.ipdev):
@@ -854,15 +854,16 @@ class ContainerZone(BaseContainer):
                     self.zonecfg(['add net; set physical=%s; end' % r.ipdev])
 
     def zone_configure(self):
-        if self.osver >= 11.0 and self.container_origin:
-            cmd = "create -t " + self.container_origin
-        else:
-            cmd = "create"
-
-        if self.zonepath:
-            cmd += "; set zonepath=" + self.zonepath
-
+        "Ensure zone is at least configured"
         if self.state is None:
+            if self.osver >= 11.0 and self.container_origin:
+                cmd = "create -t " + self.container_origin
+            else:
+                cmd = "create"
+
+            if self.zonepath:
+                cmd += "; set zonepath=" + self.zonepath
+
             self.zonecfg([cmd])
             if self.state != "configured":
                 raise ex.Error("zone %s is not configured" % self.name)
@@ -871,85 +872,35 @@ class ContainerZone(BaseContainer):
             try:
                 self.zone_configure_net()
             except:
-                self.zonecfg(["delete", "-F"])
-                raise
+                raise ex.Error('Error during zone_configure_net')
 
-    def create_zone2clone(self):
-        if self.kw_zonepath and os.path.exists(self.kw_zonepath):
-            try:
-                os.chmod(self.kw_zonepath, 0o0700)
-            except:
-                pass
-        if self.osver >= 11.0:
-            self._create_zone2clone_11()
-        else:
-            self._create_zone2clone_10()
-
-    def _create_zone2clone_11(self):
-        zonename = self.container_origin
-        zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
-                                   sc_profile='', provision_net_type=None)
-        zone2clone.svc = self.svc
-        zone2clone.osver = utilities.os.sunos.get_solaris_version()
-
-        if zone2clone.state == "installed":
-            return
-        zone2clone.zone_configure()
-        if zone2clone.state != "configured":
-            raise(ex.Error("zone %s is not configured" % (zonename)))
-        install_options = ['-c', '/usr/share/auto_install/sc_profiles/unconfig.xml']
-        if self.ai_manifest:
-            install_options += ['-m', self.ai_manifest]
-        zone2clone.zoneadm("install", option=install_options)
-        if zone2clone.state != "installed":
-            raise(ex.Error("zone %s is not installed" % (zonename)))
-        brand = zone2clone.brand
-        if brand == "native":
-            zone2clone.boot_and_wait_reboot()
-        elif brand == "ipkg":
-            zone2clone.zone_boot()
-        else:
-            raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
-        zone2clone.wait_multi_user()
-        zone2clone.halt()
-        if zone2clone.state != "installed":
-            raise(ex.Error("zone %s is not installed" % (zonename)))
-
-    def _create_zone2clone_10(self):
-        """verify if self.container_origin zone is installed
+    def install_origin(self):
+        """
+        verify if self.container_origin zone is installed
         else configure container_origin if required
         then install container_origin if required
         """
-        zonename = self.container_origin
-        zone2clone = ContainerZone(rid="container#skelzone", name=zonename,
-                                   zonepath='/zones/%s' % zonename)
-        zone2clone.svc = self.svc
-        zone2clone.osver = utilities.os.sunos.get_solaris_version()
-        if zone2clone.state == "installed":
+        if self.state == "installed":
             return
-        zone2clone.zone_configure()
-        if zone2clone.state != "configured":
-            raise(ex.Error("zone %s is not configured" % (zonename)))
-        zone2clone.zoneadm("install")
-        if zone2clone.state != "installed":
-            raise(ex.Error("zone %s is not installed" % (zonename)))
-        zone2clone.create_sysidcfg()
-        brand = zone2clone.brand
+        self.install_zone()
+        brand = self.brand
         if brand == "native":
-            zone2clone.boot_and_wait_reboot()
-        elif brand == "ipkg":
-            zone2clone.zone_boot()
+            self.boot_and_wait_reboot()
+        elif brand in ["ipkg", "solaris"]:
+            self.zone_boot()
         else:
             raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
-        zone2clone.wait_multi_user()
-        zone2clone.halt()
-        if zone2clone.state != "installed":
-            raise(ex.Error("zone %s is not installed" % (zonename)))
+        self.wait_multi_user()
+        self.halt()
+        if self.state != "installed":
+            raise(ex.Error("zone %s is not installed" % (self.name)))
 
     def create_cloned_zone(self):
         if self.state == "running":
             self.log.info("zone %s already running" % self.name)
             return
+        if self.state is None:
+            self.zone_configure()
         if self.state == "configured":
             if self.osver >= 11.0:
                 self._create_cloned_zone_11()
@@ -969,11 +920,23 @@ class ContainerZone(BaseContainer):
 
     def create_snaped_zone(self):
         self.create_zonepath()
+        self.zone_configure()
         self.zoneadm("attach", ["-F"])
         self.create_sysidcfg()
 
     def install_zone(self):
         """provisioning zone"""
+        state = self.state
+        if state == "installed":
+            return
+        if state is None:
+            self.zone_configure()
+        zonepath = self.zonepath
+        if zonepath and os.path.exists(zonepath):
+            try:
+                os.chmod(zonepath, 0o0700)
+            except:
+                pass
         args = []
         if self.has_capability('container.zone.brand-solaris'):
             self.create_sc_profile()
@@ -997,19 +960,31 @@ class ContainerZone(BaseContainer):
         snapshot.clone(self.clone, ['-o', 'mountpoint=' + self.kw_zonepath])
 
     def create_container_origin(self):
-        lockname = 'create_zone2clone-' + self.container_origin
-        lockfile = os.path.join(Env.paths.pathlock, lockname)
-        self.log.info("wait get lock %s" % (lockname))
+        lockfile = os.path.join(self.var_d, 'create_zone2clone-' + self.container_origin)
         try:
-            lockfd = utilities.lock.lock(timeout=1200, delay=5, lockfile=lockfile)
-        except:
-            raise (ex.Error("failure in get lock %s" % (lockname)))
-        try:
-            self.create_zone2clone()
-        except:
-            utilities.lock.unlock(lockfd)
-            raise
-        utilities.lock.unlock(lockfd)
+            with utilities.lock.cmlock(timeout=1200, delay=4, lockfile=lockfile):
+                container = self.origin_factory()
+                container.install_origin()
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
+            raise ex.AbortAction(str(exc))
+
+    def origin_factory(self):
+        name = self.container_origin
+        if self.default_brand == 'solaris':
+            sc_profile = '/usr/share/auto_install/sc_profiles/unconfig.xml'
+            origin = ContainerZone(rid="container#skelzone",
+                                   name=name,
+                                   provision_net_type="",
+                                   sc_profile=sc_profile)
+        elif self.default_brand == 'native':
+            origin = ContainerZone(rid="container#skelzone",
+                                   name=name,
+                                   zonepath='/zones/%s' % name)
+        else:
+            raise ex.Error('Unsuported brand container: %s' % self.default_brand)
+        origin.svc = self.svc
+        origin.osver = self.osver
+        return origin
 
     def provisioner(self, need_boot=True):
         """provision zone
@@ -1024,11 +999,10 @@ class ContainerZone(BaseContainer):
 
         - if need_boot boot and wait multiuser
         """
-        try:
-            if self.state in PROVISIONED_STATES:
-                return True
-        except:
-            pass
+        state = self.state
+        if state in PROVISIONED_STATES:
+            self.log.info('zone already provisioned: state is %s', state)
+            return True
         self.log.info('provisioner start')
 
         # failfast setting for provisioning
@@ -1043,14 +1017,11 @@ class ContainerZone(BaseContainer):
         self.osver = utilities.os.sunos.get_solaris_version()
         if self.snapof:
             # we are on default_brand native
-            self.zone_configure()
             self.create_snaped_zone()
         elif self.container_origin:
             self.create_container_origin()
-            self.zone_configure()
             self.create_cloned_zone()
         else:
-            self.zone_configure()
             self.install_zone()
 
         if need_boot is True:
