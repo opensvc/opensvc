@@ -148,3 +148,10 @@ class TestConfigurationProfile:
         assert os.path.exists(tmp_file)
         with open(tmp_file, 'r') as f:
             assert f.read() == EXPECTED_PROFILE_CUSTOM
+
+    @staticmethod
+    def test_create_profile_without_ip(tmp_file):
+        sc_profile = ScProfile(sc_profile_file=tmp_file)
+        sc_profile.add_ipv4_interface()
+        sc_profile.write()
+        assert os.path.exists(tmp_file)
