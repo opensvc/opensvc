@@ -224,7 +224,7 @@ class BaseTask(Resource):
 
     def run(self):
         try:
-            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0):
+            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
                 self._run()
         except utilities.lock.LOCK_EXCEPTIONS:
             raise ex.Error("task is already running (maybe too long for the schedule)")
