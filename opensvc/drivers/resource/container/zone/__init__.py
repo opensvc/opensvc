@@ -972,6 +972,18 @@ class ContainerZone(BaseContainer):
         self.zoneadm("attach", ["-F"])
         self.create_sysidcfg()
 
+    def install_zone(self):
+        """provisioning zone"""
+        args = []
+        if self.has_capability('container.zone.brand-solaris'):
+            self.create_sc_profile()
+            args = ['-c', self.sc_profile]
+            if self.ai_manifest:
+                args += ['-m', self.ai_manifest]
+        self.zoneadm("install", args)
+        if self.has_capability('container.zone.brand-native'):
+            self.create_sysidcfg()
+
     def create_zonepath(self):
         """create zonepath dataset from clone of snapshot of self.snapof
         snapshot for self.snapof will be created
@@ -1027,9 +1039,6 @@ class ContainerZone(BaseContainer):
             msg = 'provision error: snapof is only available with native zone, try container_origin instead'
             self.log.error(msg)
             return False
-        elif not self.snapof and not self.container_origin:
-            self.log.error('provision error: need container_origin or snapof property')
-            return False
 
         self.osver = utilities.os.sunos.get_solaris_version()
         if self.snapof:
@@ -1040,6 +1049,9 @@ class ContainerZone(BaseContainer):
             self.create_container_origin()
             self.zone_configure()
             self.create_cloned_zone()
+        else:
+            self.zone_configure()
+            self.install_zone()
 
         if need_boot is True:
             self.zone_boot()
