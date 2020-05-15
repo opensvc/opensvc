@@ -177,20 +177,17 @@ class TestContainerProvision:
         assert create_cloned_zone.call_count == 0
 
     @staticmethod
-    def test_configure_install_from_scratch(
-            zone_configure,
+    def test_install_from_scratch(
             install_zone,
             zone):
         provisioned = zone.provisioner(need_boot=False)
 
         assert provisioned is True
-        assert zone_configure.call_count == 1
         assert install_zone.call_count == 1
 
     @staticmethod
     @pytest.mark.usefixtures('brand_native')
-    def test_configure_and_create_from_snap_if_snapof_when_brand_native(
-            zone_configure,
+    def test_create_snaped_zone_if_snapof_when_brand_native(
             create_snaped_zone,
             install_zone,
             svc):
@@ -199,7 +196,6 @@ class TestContainerProvision:
         provisioned = zone.provisioner(need_boot=False)
 
         assert provisioned is True
-        assert zone_configure.call_count == 1
         assert create_snaped_zone.call_count == 1
 
     @staticmethod
@@ -217,8 +213,7 @@ class TestContainerProvision:
         assert create_cloned_zone.call_count == 0
 
     @staticmethod
-    def test_create_origin_configure_and_clone_when_container_origin(
-            zone_configure,
+    def test_create_origin__then_create_clone_when_container_origin(
             create_container_origin,
             create_cloned_zone,
             svc):
@@ -228,7 +223,6 @@ class TestContainerProvision:
 
         assert provisioned is True
         assert create_container_origin.call_count == 1
-        assert zone_configure.call_count == 1
         assert create_cloned_zone.call_count == 1
 
 
@@ -237,8 +231,9 @@ class TestContainerProvision:
 @pytest.mark.usefixtures('brand_native')
 class TestContainerInstallZoneOnBrandNative:
     @staticmethod
-    def test_install_zone_with_sysidcfg(zoneadm, create_sysidcfg, zone):
+    def test_configure_then_install_zone_with_sysidcfg(zoneadm, zone_configure, create_sysidcfg, zone):
         zone.install_zone()
+        assert zone_configure.call_count == 1
         assert create_sysidcfg.call_count == 1
         zoneadm.assert_called_once_with('install', [])
 
@@ -248,16 +243,18 @@ class TestContainerInstallZoneOnBrandNative:
 @pytest.mark.usefixtures('brand_solaris')
 class TestContainerInstallZoneOnBrandSolaris:
     @staticmethod
-    def test_install_zone_with_existing_sc_profile(zoneadm, file1, zone):
+    def test_configure_then_install_zone_with_existing_sc_profile(zoneadm, zone_configure, file1, zone):
         zone.sc_profile = file1
         zone.install_zone()
+        assert zone_configure.call_count == 1
         zoneadm.assert_called_once_with('install', ['-c', file1])
 
     @staticmethod
-    def test_install_with_automatically_created_sc_profile(mocker, zoneadm, zone):
+    def test_configure_then_install_with_automatically_created_sc_profile(mocker, zoneadm, zone_configure, zone):
         # mock svc.get_resources(["ip"])
         zone.svc.get_resources = mocker.Mock(return_value=[])
         zone.install_zone()
+        assert zone_configure.call_count == 1
         zoneadm.assert_called_once_with('install', ['-c', zone.sc_profile])
         assert os.path.exists(zone.sc_profile)
         with open(zone.sc_profile, 'r') as f:
@@ -265,8 +262,9 @@ class TestContainerInstallZoneOnBrandSolaris:
         assert 'xml version' in xml_content
 
     @staticmethod
-    def test_install_using_ai_manifest(zoneadm, file1, file2, zone):
+    def test_configure_then_install_using_ai_manifest(zoneadm, zone_configure, file1, file2, zone):
         zone.sc_profile = file1
         zone.ai_manifest = file2
         zone.install_zone()
+        assert zone_configure.call_count == 1
         zoneadm.assert_called_once_with('install', ['-c', file1, '-m', file2])
