@@ -3531,31 +3531,30 @@ class Svc(BaseSvc):
         lockfile = os.path.join(self.var_d, "lock.generic")
         running = []
         running += [self._get_running(lockfile).get("rid")]
+
+        # sync
         lockfile = os.path.join(self.var_d, "lock.sync")
         running += [self._get_running(lockfile).get("rid")]
+
+        # tasks
         if rids is None:
             rids = [r.rid for r in self.get_resources("task")]
         else:
             rids = [rid for rid in rids if rid.startswith("task")]
         for rid in rids:
             lockfile = os.path.join(self.var_d, rid, "run.lock")
-            running += [self._get_running(lockfile).get("rid")]
+            if self._get_running(lockfile).get("intent") == "run":
+                running.append(rid)
         return [rid for rid in running if rid]
 
     def _get_running(self, lockfile):
         try:
-            with lock.cmlock(lockfile=lockfile, timeout=0):
-                return {}
+            with open(lockfile, "r") as ofile:
+                #ofile.seek(0)
+                lock_data = json.load(ofile)
+                return lock_data
         except Exception as exc:
-            # failing to open "w+", action in progress
-            try:
-                with open(lockfile, "r") as ofile:
-                    #ofile.seek(0)
-                    lock_data = json.load(ofile)
-                    return lock_data.get("progress", {})
-            except Exception:
-                pass
-            return {}
+            pass
         return {}
 
     def print_resource_status(self):
