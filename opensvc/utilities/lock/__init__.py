@@ -28,14 +28,15 @@ class LockAcquire(Exception):
     """
 
     # noinspection PyShadowingNames
-    def __init__(self, intent="", pid=0, progress=None):
+    def __init__(self, intent="", pid=0, progress=None, path=None):
         Exception.__init__(self)
         self.intent = intent
         self.pid = pid
         self.progress = progress
+        self.path = path
 
     def __str__(self):
-        s = "holder pid %(pid)d, holder intent '%(intent)s'" % dict(pid=self.pid, intent=self.intent)
+        s = "lock %(path)s holder pid %(pid)d, holder intent '%(intent)s'" % dict(pid=self.pid, intent=self.intent, path=self.path)
         if self.progress:
             s += ", progress '%s'" % str(self.progress)
         return s
@@ -112,6 +113,7 @@ def lock(timeout=30, delay=1, lockfile=None, intent=None):
         except LockAcquire as exc:
             err["intent"] = exc.intent
             err["pid"] = exc.pid
+            err["path"] = exc.path
         except Exception:
             raise
         if tick > 0:
@@ -191,7 +193,7 @@ def lock_nowait(lockfile=None, intent=None):
         return lockfd
     except IOError:
         os.close(lockfd)
-        raise LockAcquire(**prev_data)
+        raise LockAcquire(path=lockfile, **prev_data)
     except:
         os.close(lockfd)
         raise
@@ -204,6 +206,7 @@ def unlock(lockfd):
     if lockfd is None:
         return
     try:
+        os.ftruncate(lockfd, 0)
         os.close(lockfd)
     except Exception:
         # already released by a parent process ?
