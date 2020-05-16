@@ -378,6 +378,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     _data = data["nodes"][nodename]
                 except KeyError:
                     continue
+                if _data is None:
+                    continue
                 ge = _data.get("global_expect")
                 st = _data.get("mon")
                 if st not in ("idle", None):
