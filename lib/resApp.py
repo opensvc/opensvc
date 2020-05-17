@@ -472,7 +472,7 @@ class App(Resource):
             return self.retcodes_map[ret]
         else:
             self.status_log("check reports errors (%d)" % ret)
-            return core.status.WARN
+            return rcStatus.WARN
 
     def set_executable(self, fpath):
         """
