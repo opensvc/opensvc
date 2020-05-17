@@ -325,6 +325,10 @@ def add_volume(svc, s):
     kwargs["size"] = svc.oget(s, "size")
     kwargs["access"] = svc.oget(s, "access")
     kwargs["configs"] = svc.oget(s, "configs")
+    kwargs["user"] = svc.oget(s, "user")
+    kwargs["group"] = svc.oget(s, "group")
+    kwargs["perm"] = svc.oget(s, "perm")
+    kwargs["dirperm"] = svc.oget(s, "dirperm")
     try:
         kwargs["secrets"] = svc.oget(s, "secrets")
     except ValueError:
@@ -1635,6 +1639,7 @@ def add_app(svc, s):
     kwargs["environment"] = svc.oget(s, "environment")
     kwargs["secrets_environment"] = svc.oget(s, "secrets_environment")
     kwargs["configs_environment"] = svc.oget(s, "configs_environment")
+    kwargs["retcodes"] = svc.oget(s, "retcodes")
 
     if rtype == "simple":
         kwargs["kill"] = svc.oget(s, "kill")

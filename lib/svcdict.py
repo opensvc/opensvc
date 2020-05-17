@@ -407,6 +407,14 @@ KEYWORDS = [
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
+        "sections": ["app"],
+        "keyword": "retcodes",
+        "at": True,
+        "default": "0:up 1:down",
+        "text": "The whitespace separated list of ``<retcode>=<status name>``. All undefined retcodes are mapped to the 'warn' status.",
+        "example": "0:up 1:down 3:n/a"
+    },
+    {
         "sections": ["task", "container"],
         "keyword": "devices",
         "at": True,
@@ -3158,7 +3166,7 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of ``<config name>/<key>:<volume relative path>:<options>``.",
-        "example": "conf/mycnf:/etc/mysql/my.cnf:ro,mode=0640 conf/sysctl:/etc/sysctl.d/01-db.conf"
+        "example": "conf/mycnf:/etc/mysql/my.cnf:ro conf/sysctl:/etc/sysctl.d/01-db.conf"
     },
     {
         "section": "volume",
@@ -3168,7 +3176,35 @@ KEYWORDS = [
         "convert": "shlex",
         "default": [],
         "text": "The whitespace separated list of ``<secret name>/<key>:<volume relative path>:<options>``.",
-        "example": "cert/pem:server.pem cert/key:server.key:mode=0600"
+        "example": "cert/pem:server.pem cert/key:server.key"
+    },
+    {
+        "section": "volume",
+        "keyword": "user",
+        "at": True,
+        "text": "The user name or id that will own the volume root and installed files and directories.",
+        "example": "1001"
+    },
+    {
+        "section": "volume",
+        "keyword": "group",
+        "at": True,
+        "text": "The group name or id that will own the volume root and installed files and directories.",
+        "example": "1001"
+    },
+    {
+        "section": "volume",
+        "keyword": "perm",
+        "at": True,
+        "text": "The permissions, in octal notation, to apply to the installed files.",
+        "example": "660"
+    },
+    {
+        "section": "volume",
+        "keyword": "dirperm",
+        "at": True,
+        "text": "The permissions, in octal notation, to apply to the volume root and installed directories.",
+        "example": "750"
     },
     {
         "section": "expose",
