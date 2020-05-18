@@ -165,6 +165,9 @@ class Ip(Res.Ip):
         path = self.svc.node.oget("cni", "plugins")
         if os.path.exists(os.path.join(path, "bridge")):
             return path
+        altpath = os.path.join(os.sep, "usr", "lib", "cni")
+        if os.path.exists(os.path.join(altpath, "bridge")):
+            return altpath
         altpath = os.path.join(os.sep, "usr", "libexec", "cni")
         if os.path.exists(os.path.join(altpath, "bridge")):
             return altpath
