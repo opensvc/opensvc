@@ -1221,6 +1221,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def services_init_boot(self):
         proc = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
         self.push_proc(proc=proc)
+        proc = self.service_command(",".join(list_services(kinds=["usr", "cfg", "sec", "ccfg"])), ["status", "--refresh"])
+        self.push_proc(proc=proc)
 
 
     #########################################################################
