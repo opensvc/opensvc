@@ -1210,7 +1210,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except KeyError:
                 return False
             fpath = os.path.join(svc.var_d, "status.json")
-            mtime = os.path.getmtime(fpath)
+            try:
+                mtime = os.path.getmtime(fpath)
+            except Exception:
+                return False
             if self.startup > mtime:
                 return False
         return True
