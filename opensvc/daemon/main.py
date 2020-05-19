@@ -44,6 +44,9 @@ HEARTBEATS = (
 def printstack(sig, frame):
     try:
         import faulthandler
+    except ImportError:
+        return
+    try:
         faulthandler.dump_traceback()
         with open(os.path.join(Env.paths.pathvar, "daemon.stack"), "w") as f:
             faulthandler.dump_traceback(file=f)
