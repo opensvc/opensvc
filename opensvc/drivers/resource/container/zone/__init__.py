@@ -913,15 +913,18 @@ class ContainerZone(BaseContainer):
     def _create_cloned_zone_11(self):
         self.create_sc_profile()
         self.zoneadm("clone", ['-c', self.sc_profile, self.container_origin])
+        self.can_rollback = True
 
     def _create_cloned_zone_10(self):
         self.zoneadm("clone", [self.container_origin])
         self.create_sysidcfg()
+        self.can_rollback = True
 
     def create_snaped_zone(self):
         self.create_zonepath()
         self.zone_configure()
         self.zoneadm("attach", ["-F"])
+        self.can_rollback = True
         self.create_sysidcfg()
 
     def install_zone(self):
@@ -944,6 +947,7 @@ class ContainerZone(BaseContainer):
             if self.ai_manifest:
                 args += ['-m', self.ai_manifest]
         self.zoneadm("install", args)
+        self.can_rollback = True
         if self.has_capability('container.zone.brand-native'):
             self.create_sysidcfg()
 
