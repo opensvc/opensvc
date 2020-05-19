@@ -11,6 +11,7 @@ import utilities.os.sunos
 from env import Env
 from utilities.lazy import lazy
 from utilities.net.converters import to_cidr
+from utilities.net.getaddr import getaddr
 from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
 from core.objects.svcdict import KEYS
@@ -720,26 +721,28 @@ class ContainerZone(BaseContainer):
         """
         from .configuration_profile import InstallIpv4Interface
         ipv4_interfaces = []
-        for r in self.svc.get_resources(["ip"]):
+        for rid in self.svc.conf_sections(cat='ip'):
             try:
-                ipdevext = self.svc.conf_get(r.rid, "ipdevext")
+                ipdevext = self.svc.oget(rid, 'ipdevext', impersonate=self.name)
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 ipdevext = 'v4'
+            ipdev = self.svc.oget(rid, 'ipdev', impersonate=self.name)
 
-            ipv4_name = '%s/%s' % (r.ipdev, ipdevext)
+            ipv4_name = '%s/%s' % (ipdev, ipdevext)
 
             try:
-                default_route = self.svc.conf_get(r.rid, "gateway")
+                default_route = self.svc.oget(rid, 'gateway', impersonate=self.name)
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 default_route = None
 
             try:
-                netmask = to_cidr(self.svc.oget(r.rid, "netmask"))
+                netmask = to_cidr(self.svc.oget(rid, 'netmask', impersonate=self.name))
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 continue
-
+            ipname = self.svc.oget(rid, 'ipname', impersonate=self.name)
+            addr = getaddr(ipname, True)
             ipv4_interface = InstallIpv4Interface(ipv4_name,
-                                                  static_address='%s/%s' % (r.addr, netmask),
+                                                  static_address='%s/%s' % (addr, netmask),
                                                   address_type='static',
                                                   default_route=default_route)
             ipv4_interfaces.append(ipv4_interface)
@@ -839,19 +842,20 @@ class ContainerZone(BaseContainer):
     def zone_configure_net(self):
         if not self.provision_net_type:
             return
-        for r in self.svc.get_resources(["ip"]):
-            if not self.test_net_interface(r.ipdev):
-                raise ex.Error("Missing interface: %s" % r.ipdev)
+        for rid in self.svc.conf_sections(cat='ip'):
+            ipdev = self.svc.oget(rid, 'ipdev', impersonate=self.name)
+            if not self.test_net_interface(ipdev):
+                raise ex.Error("Missing interface: %s" % ipdev)
             if self.provision_net_type == 'anet':
-                cmd = [ZONECFG, "-z", self.name, 'select anet lower-link=%s linkname=%s; info;end' % (r.ipdev, r.ipdev)]
+                cmd = [ZONECFG, "-z", self.name, 'select anet lower-link=%s linkname=%s; info;end' % (ipdev, ipdev)]
                 out, err, ret = justcall(cmd)
                 if ret != 0:
-                    self.zonecfg(['add anet; set lower-link=%s; set linkname=%s; end' % (r.ipdev, r.ipdev)])
+                    self.zonecfg(['add anet; set lower-link=%s; set linkname=%s; end' % (ipdev, ipdev)])
             elif self.provision_net_type == 'net':
-                cmd = [ZONECFG, "-z", self.name, 'select net physical=%s; info; end' % r.ipdev]
+                cmd = [ZONECFG, "-z", self.name, 'select net physical=%s; info; end' % ipdev]
                 out, err, ret = justcall(cmd)
                 if ret != 0:
-                    self.zonecfg(['add net; set physical=%s; end' % r.ipdev])
+                    self.zonecfg(['add net; set physical=%s; end' % ipdev])
 
     def zone_configure(self):
         "Ensure zone is at least configured"
