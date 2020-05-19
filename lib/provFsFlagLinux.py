@@ -5,5 +5,14 @@ class Prov(provisioning.Prov):
         provisioning.Prov.__init__(self, r)
     
     def is_provisioned(self):
-        return True
+        flag = self.r.is_provisioned_flag()
+        if flag is None:
+            return False
+        return flag
+
+    def provisioner(self):
+        pass
+
+    def unprovisioner(self):
+        pass
 

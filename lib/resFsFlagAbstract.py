@@ -68,15 +68,3 @@ class Fs(resources.Resource):
             self.log.exception(exc)
             return True
 
-    def provisioned(self):
-        flag = self.is_provisioned_flag()
-        if flag is None:
-            return False
-        return flag
-
-    def provisioner(self):
-        pass
-
-    def unprovisioner(self):
-        pass
-
