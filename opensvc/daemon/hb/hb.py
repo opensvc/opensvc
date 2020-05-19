@@ -285,7 +285,7 @@ class Hb(shared.OsvcThread):
                 self.log.debug("already installed or beyond %s gen %d dataset: drop", nodename, data_gen)
                 return
             node_status = data.get("monitor", {}).get("status")
-            if node_status in ("init", "maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
+            if node_status in ("maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
                 self.duplog("info", "preserve last known instances status from "
                             "node %(nodename)s in %(node_status)s state",
                             nodename=nodename, node_status=node_status)
