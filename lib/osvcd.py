@@ -50,7 +50,7 @@ def printstack(sig, frame):
         return
     try:
         faulthandler.dump_traceback()
-        with open(os.path.join(Env.paths.pathvar, "daemon.stack"), "w") as f:
+        with open(os.path.join(rcEnv.paths.pathvar, "daemon.stack"), "w") as f:
             faulthandler.dump_traceback(file=f)
     except Exception:
         pass
