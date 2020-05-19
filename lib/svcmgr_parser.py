@@ -39,6 +39,12 @@ OPT.update({
         action="store_true", dest="cron",
         help="If set, the action is actually executed only if the scheduling"
              "constraints are satisfied."),
+    "confirm": Option(
+        "--confirm", default=False,
+        action="store_true", dest="confirm",
+        help="Confirm a run action configured to ask for confirmation. "
+             "This can be used when scripting the run or triggering it "
+             "from the api."),
     "downto": Option(
         "--downto", default=None,
         action="store", dest="upto",
@@ -271,6 +277,7 @@ ACTIONS["Service actions"].update({
         "msg": "Run all tasks, or tasks specified by --rid --tags and "
                "--subset, disregarding their schedule.",
         "options": mp.ACTION_OPTS + [
+            OPT.confirm,
             OPT.cron,
         ],
     },
