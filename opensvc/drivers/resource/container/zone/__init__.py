@@ -970,18 +970,17 @@ class ContainerZone(BaseContainer):
 
     def origin_factory(self):
         name = self.container_origin
+        kwargs = {}
         if self.default_brand == 'solaris':
-            sc_profile = '/usr/share/auto_install/sc_profiles/unconfig.xml'
-            origin = ContainerZone(rid="container#skelzone",
-                                   name=name,
-                                   provision_net_type="",
-                                   sc_profile=sc_profile)
+            kwargs['provision_net_type'] = ''
+            kwargs['sc_profile'] = '/usr/share/auto_install/sc_profiles/unconfig.xml'
+            if self.ai_manifest:
+                kwargs['ai_manifest'] = self.ai_manifest
         elif self.default_brand == 'native':
-            origin = ContainerZone(rid="container#skelzone",
-                                   name=name,
-                                   zonepath='/zones/%s' % name)
+            kwargs['zonepath'] = '/zones/%s' % name
         else:
             raise ex.Error('Unsuported brand container: %s' % self.default_brand)
+        origin = ContainerZone(rid="container#skelzone", name=name, **kwargs)
         origin.svc = self.svc
         origin.osver = self.osver
         return origin
