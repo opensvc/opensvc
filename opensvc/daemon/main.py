@@ -41,6 +41,20 @@ HEARTBEATS = (
     ("relay", HbRelayTx, HbRelayRx),
 )
 
+def printstack(sig, frame):
+    try:
+        import faulthandler
+        faulthandler.dump_traceback()
+        with open(os.path.join(Env.paths.pathvar, "daemon.stack"), "w") as f:
+            faulthandler.dump_traceback(file=f)
+    except Exception:
+        pass
+
+try:
+    import signal
+    signal.signal(signal.SIGUSR1, printstack)
+except ImportError:
+    pass
 
 def fork(func, args=None, kwargs=None):
     """
