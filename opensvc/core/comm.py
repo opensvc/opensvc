@@ -12,7 +12,7 @@ import zlib
 import time
 import select
 import sys
-from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY
+from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY, EAGAIN
 
 
 class DummyException(Exception):
@@ -53,6 +53,7 @@ else:
 
 # add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, EHOSTUNREACH, ECONNREFUSED, ?
 RETRYABLE = (
+    EAGAIN,
     EBUSY,
     EPIPE,
     EALREADY,
