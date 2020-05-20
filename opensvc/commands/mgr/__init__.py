@@ -227,7 +227,8 @@ class Mgr(object):
             expanded_svcs = None
             yield parser
         else:
-            expanded_svcs = self.node.svcs_selector(self.selector, namespace)
+            local = action == "boot"
+            expanded_svcs = self.node.svcs_selector(self.selector, namespace, local=local)
             self.expanded_svcs = expanded_svcs
         if expanded_svcs is not None:
             svc_by_kind = self.dispatch_svcs(expanded_svcs)
@@ -300,7 +301,8 @@ class Mgr(object):
                 options.svcs = options.svcs.split(",")
         else:
             if self.expanded_svcs is None:
-                expanded_svcs = self.node.svcs_selector(options.svcs, options.namespace)
+                local = action == "boot"
+                expanded_svcs = self.node.svcs_selector(options.svcs, options.namespace, local=local)
             else:
                 expanded_svcs = self.expanded_svcs
             if options.svcs in (None, "*") and expanded_svcs == []:
