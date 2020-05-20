@@ -471,9 +471,12 @@ class IpCni(IpHost):
     def start(self):
         self.unset_lazy("containerid")
         self.unset_lazy("netns")
-        with utilities.lock.cmlock(lockfile=self.lockfile, timeout=5):
-            self.add_netns()
-            self.add_cni()
+        try:
+            with utilities.lock.cmlock(lockfile=self.lockfile, timeout=20):
+                self.add_netns()
+                self.add_cni()
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
+            raise ex.Error("cni lock acquire: %s" % str(exc))
         self.wait_dns_records()
 
     def stop(self):
