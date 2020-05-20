@@ -10,6 +10,7 @@ from subprocess import Popen, PIPE
 import core.exceptions as ex
 import core.status
 import utilities.ifconfig
+import utilities.lock
 
 from drivers.resource.ip import \
     KW_WAIT_DNS, \
@@ -463,11 +464,16 @@ class IpCni(IpHost):
             self.log.info("rm %s", var_f)
             os.unlink(var_f)
 
+    @lazy
+    def lockfile(self):
+        return os.path.join(Env.paths.pathvar, "cni.lock")
+
     def start(self):
         self.unset_lazy("containerid")
         self.unset_lazy("netns")
-        self.add_netns()
-        self.add_cni()
+        with utilities.lock.cmlock(lockfile=self.lockfile, timeout=5):
+            self.add_netns()
+            self.add_cni()
         self.wait_dns_records()
 
     def stop(self):
