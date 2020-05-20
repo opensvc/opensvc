@@ -11,6 +11,7 @@ import resIpLinux as Res
 import rcExceptions as ex
 import rcIfconfigLinux as rcIfconfig
 import rcStatus
+import lock
 from rcGlobalEnv import rcEnv
 from rcUtilities import which, justcall, to_cidr, lazy, bencode, bdecode, makedirs
 from rcColor import format_str_flat_json
@@ -396,11 +397,16 @@ class Ip(Res.Ip):
             self.log.info("rm %s", var_f)
             os.unlink(var_f)
 
+    @lazy
+    def lockfile(self):
+        return os.path.join(rcEnv.paths.pathvar, "cni.lock")
+
     def start(self):
         self.unset_lazy("containerid")
         self.unset_lazy("netns")
-        self.add_netns()
-        self.add_cni()
+        with lock.cmlock(lockfile=self.lockfile, timeout=5):
+            self.add_netns()
+            self.add_cni()
         self.wait_dns_records()
 
     def stop(self):
