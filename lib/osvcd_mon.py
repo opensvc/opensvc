@@ -721,12 +721,22 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": "idle"},
         )
 
+    def services_purge_status(self, paths=None):
+        paths = paths or list_services()
+        for path in paths:
+            fpath = svc_pathvar(path, "status.json")
+            try:
+                os.unlink(fpath)
+            except Exception as exc:
+                pass
+
     def services_init_status(self):
         svcs = list_services()
         if not svcs:
             self.log.info("no objects to get an initial status from")
             self.services_init_status_callback()
             return
+        self.services_purge_status(paths=svcs)
         proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
         self.push_proc(
             proc=proc,
@@ -735,7 +745,9 @@ class Monitor(shared.OsvcThread):
         )
 
     def services_init_boot(self):
-        proc = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
+        paths = list_services(kinds=["vol", "svc"])
+        self.services_purge_status(paths=paths)
+        proc = self.service_command(",".join(paths), ["boot", "--parallel"])
         self.push_proc(
             proc=proc,
             on_success="services_init_status_callback",
