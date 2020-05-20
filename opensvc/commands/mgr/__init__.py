@@ -300,8 +300,8 @@ class Mgr(object):
             if options.svcs:
                 options.svcs = options.svcs.split(",")
         else:
-            local = action == "boot"
             if self.expanded_svcs is None:
+                local = action == "boot"
                 expanded_svcs = self.node.svcs_selector(options.svcs, options.namespace, local=local)
             else:
                 expanded_svcs = self.expanded_svcs
