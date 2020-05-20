@@ -404,9 +404,12 @@ class Ip(Res.Ip):
     def start(self):
         self.unset_lazy("containerid")
         self.unset_lazy("netns")
-        with lock.cmlock(lockfile=self.lockfile, timeout=5):
-            self.add_netns()
-            self.add_cni()
+        try:
+            with lock.cmlock(lockfile=self.lockfile, timeout=5):
+                self.add_netns()
+                self.add_cni()
+        except lock.LOCK_EXCEPTIONS as exc:
+            raise ex.excError("cni lock acquire: %s" % str(exc))
         self.wait_dns_records()
 
     def stop(self):
