@@ -1195,14 +1195,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             on_error_kwargs={"status": "idle"},
         )
 
-    def services_init_status(self):
-        svcs = list_services()
-        if not svcs:
-            self.log.info("no objects to get an initial status from")
-            return
-        proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
-        self.push_proc(proc=proc)
-
     def services_have_init_status(self):
         for path in list_services():
             try:
@@ -1218,7 +1210,26 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return False
         return True
 
+    def services_purge_status(self, paths=None):
+        paths = paths or list_services()
+        for path in paths:
+            fpath = svc_pathvar(path, "status.json")
+            try:
+                os.unlink(fpath)
+            except Exception as exc:
+                pass
+
+    def services_init_status(self):
+        svcs = list_services()
+        if not svcs:
+            self.log.info("no objects to get an initial status from")
+            return
+        self.services_purge_status(paths=svcs)
+        proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
+        self.push_proc(proc=proc)
+
     def services_init_boot(self):
+        self.services_purge_status()
         proc1 = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
         self.push_proc(proc=proc1)
         proc2 = self.service_command(",".join(list_services(kinds=["usr", "cfg", "sec", "ccfg"])), ["status", "--parallel", "--refresh"], local=False)
