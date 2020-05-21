@@ -70,6 +70,8 @@ class Volume(Res.Resource):
         return self.volsvc.device()
 
     def chown(self):
+        if self.mount_point is None:
+            return
         uid = self.uid if self.uid is not None else -1
         gid = self.gid if self.gid is not None else -1
         os.chown(self.mount_point, uid, gid)
