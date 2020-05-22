@@ -1377,6 +1377,8 @@ class ExtConfigMixin(object):
         Installs a service configuration file from section, keys and values
         fed from a data structure.
         """
+        import tempfile
+        import shutil
         if cd is None:
             try:
                 cd = self.private_cd
@@ -1401,7 +1403,12 @@ class ExtConfigMixin(object):
             if ret["errors"]:
                 raise ex.excError
 
-        makedirs(os.path.dirname(cf))
+        dirpath = os.path.dirname(cf)
+        makedirs(dirpath)
+        tmpf = tempfile.NamedTemporaryFile(delete=False, dir=dirpath, prefix=os.path.basename(cf)+".")
+        tmpfpath = tmpf.name
+        tmpf.close()
+        os.chmod(tmpfpath, 0o0600)
         lines = []
 
         for section_name, section in cd.items():
@@ -1418,15 +1425,20 @@ class ExtConfigMixin(object):
         try:
             buff = "\n".join(lines)
             if six.PY2:
-                with codecs.open(cf, "w", "utf-8") as ofile:
-                    os.chmod(cf, 0o0600)
+                with codecs.open(tmpfpath, "w", "utf-8") as ofile:
                     ofile.write(buff)
             else:
-                with open(cf, "w") as ofile:
-                    os.chmod(cf, 0o0600)
+                with open(tmpfpath, "w") as ofile:
                     ofile.write(buff)
+            shutil.move(tmpfpath, cf)
         except Exception as exc:
             raise ex.excError("failed to write %s: %s" % (cf, exc))
+        finally:
+            try:
+                os.unlink(tmpfpath)
+            except Exception:
+                pass
+
         self.unset_all_lazy()
         self.clear_ref_cache()
 
