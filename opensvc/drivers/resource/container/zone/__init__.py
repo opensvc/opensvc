@@ -326,6 +326,9 @@ class ContainerZone(BaseContainer):
     def delete(self):
         if not self.delete_on_stop:
             return 0
+        return self.zone_unconfigure()
+
+    def zone_unconfigure(self):
         if self.state is None:
             self.log.info("zone container %s already deleted" % self.name)
             return 0
@@ -1045,3 +1048,15 @@ class ContainerZone(BaseContainer):
 
         self.log.info("provisioned")
         return True
+
+    def unprovisioner(self):
+        self.log.info('unprovisioner start')
+        state = self.state
+        if state == 'configured':
+            self.zone_unconfigure()
+        elif state:
+            msg = 'unable to unprovision zone in state %s' % state
+            self.log.error(msg)
+            raise ex.Error(msg)
+        if os.path.exists(self.zone_cfg_path()):
+            os.remove(self.zone_cfg_path())
