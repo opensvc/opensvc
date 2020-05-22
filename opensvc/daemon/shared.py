@@ -1516,6 +1516,9 @@ class OsvcThread(threading.Thread, Crypt):
                 changes.append("%s.%s=%s" % (section, keyword, value))
         extraneous = []
         for kw in svc.print_config_data().get("ip#0", {}):
+            if kw == "tags":
+                # never discard tag customization (ex: tags=noaction)
+                continue
             _kw = "ip#0."+kw
             if _kw not in kws:
                 extraneous.append(_kw)
