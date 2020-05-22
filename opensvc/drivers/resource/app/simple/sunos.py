@@ -13,7 +13,7 @@ class AppSimple(ParentAppSimple):
     The simple App resource driver class.
     """
     def get_running(self, with_children=False):
-        cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
+        cmd = ["pgrep", "-f", " ".join(self.get_cmd("start", validate=False))]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return []
