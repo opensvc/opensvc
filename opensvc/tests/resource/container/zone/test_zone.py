@@ -2,8 +2,8 @@ import os
 
 import pytest
 
+import core.exceptions as ex
 from drivers.resource.container.zone import ContainerZone
-
 
 LIB_CLASS = 'drivers.resource.container.zone.ContainerZone'
 
@@ -11,6 +11,11 @@ LIB_CLASS = 'drivers.resource.container.zone.ContainerZone'
 @pytest.fixture(scope='function')
 def zone_configure(mocker):
     return mocker.patch.object(ContainerZone, 'zone_configure')
+
+
+@pytest.fixture(scope='function')
+def zone_unconfigure(mocker):
+    return mocker.patch.object(ContainerZone, 'zone_unconfigure')
 
 
 @pytest.fixture(scope='function')
@@ -148,7 +153,7 @@ class TestContainerZonepath:
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestContainerProvision:
     @staticmethod
-    def test_return_false_when_mixin_container_origin_and_snapof(
+    def test_return_false_when_mixing_container_origin_and_snapof(
             zone_configure,
             create_snaped_zone,
             create_cloned_zone,
@@ -224,6 +229,43 @@ class TestContainerProvision:
         assert provisioned is True
         assert create_container_origin.call_count == 1
         assert create_cloned_zone.call_count == 1
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestContainerUnprovision:
+    @staticmethod
+    def test_noop_when_no_zone(
+            zone_unconfigure,
+            mocker,
+            zone):
+        mocker.patch.object(ContainerZone, 'state', None)
+        zone.unprovisioner()
+        assert zone_unconfigure.call_count == 0
+
+    @staticmethod
+    def test_unconfigure_zone_when_zone_is_configured(
+            zone_unconfigure,
+            mocker,
+            zone):
+        mocker.patch.object(ContainerZone, 'state', 'configured')
+
+        zone.unprovisioner()
+
+        assert zone_unconfigure.call_count == 1
+
+    @staticmethod
+    @pytest.mark.parametrize('state', ('installed', 'running'))
+    def test_raise_when_zone_is_not_in_valid_state(
+            zone_unconfigure,
+            mocker,
+            zone,
+            state):
+        mocker.patch.object(ContainerZone, 'state', state)
+        with pytest.raises(ex.Error):
+            zone.unprovisioner()
+
+        assert zone_unconfigure.call_count == 0
 
 
 @pytest.mark.ci
