@@ -49,6 +49,8 @@ class Handler(daemon.handler.BaseHandler):
         options = self.parse_options(kwargs)
         duration = options.duration if (options.duration is not None and options.duration < MAX_DURATION) else MAX_DURATION
         timeout = time.time() + duration
+        if not options.condition:
+            return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": 0}}
         if not thr.event_queue:
             thr.event_queue = queue.Queue()
         if not thr in thr.parent.events_clients:
