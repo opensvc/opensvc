@@ -1606,9 +1606,16 @@ class ExtConfigMixin(object):
         pass
 
     def dump_config_data(self, cd=None, cf=None):
+        import tempfile
+        import shutil
         if cf is None:
             cf = self.paths.cf
-        makedirs(os.path.dirname(cf))
+        dirpath = os.path.dirname(cf)
+        makedirs(dirpath)
+        tmpf = tempfile.NamedTemporaryFile(delete=False, dir=dirpath, prefix=os.path.basename(cf)+".")
+        tmpfpath = tmpf.name
+        tmpf.close()
+        os.chmod(tmpfpath, 0o0600)
         lines = []
 
         for section_name, section in cd.items():
@@ -1625,12 +1632,16 @@ class ExtConfigMixin(object):
         try:
             buff = "\n".join(lines)
             if six.PY2:
-                with codecs.open(cf, "w", "utf-8") as ofile:
-                    os.chmod(cf, 0o0600)
+                with codecs.open(tmpfpath, "w", "utf-8") as ofile:
                     ofile.write(buff)
             else:
-                with open(cf, "w") as ofile:
-                    os.chmod(cf, 0o0600)
+                with open(tmpfpath, "w") as ofile:
                     ofile.write(buff)
+            shutil.move(tmpfpath, cf)
         except Exception as exc:
             raise ex.Error("failed to write %s: %s" % (cf, exc))
+        finally:
+            try:
+                os.unlink(tmpfpath)
+            except Exception:
+                pass
