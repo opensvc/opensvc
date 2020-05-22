@@ -489,7 +489,7 @@ class Volume(Resource):
         """
         lockfile = os.path.join(Env.paths.pathvar, "create_volume.lock")
         try:
-            with utilities.lock.cmlock(lockfile, timeout=20):
+            with utilities.lock.cmlock(lockfile=lockfile, timeout=20):
                 return self.create_volume_locked()
         except utilities.lock.LOCK_EXCEPTIONS as exc:
             raise ex.Error("acquire create volume lock error: %s" % str(exc))
