@@ -34,10 +34,12 @@ from .. import \
 SYSIDCFG="/etc/sysidcfg"
 ZONECFG = "/usr/sbin/zonecfg"
 ZONEADM = "/usr/sbin/zoneadm"
+ZLOGIN = "/usr/sbin/zlogin"
 PGREP = "/usr/bin/pgrep"
 PWAIT = "/usr/bin/pwait"
 INIT = "/sbin/init"
 SVCS = "/usr/bin/svcs"
+SYS_UNCONFIG = "/usr/sbin/sys-unconfig"
 MULTI_USER_SMF = "svc:/milestone/multi-user:default"
 VALID_ACTIONS = [
     "ready",
@@ -164,7 +166,7 @@ class ContainerZone(BaseContainer):
 
     @lazy
     def runmethod(self):
-        return ["/usr/sbin/zlogin", self.name]
+        return [ZLOGIN, self.name]
 
     @lazy
     def zone_cf(self):
@@ -399,10 +401,15 @@ class ContainerZone(BaseContainer):
         """ Need wait poststat after returning to installed state on ipkg
             example: /bin/ksh -p /usr/lib/brand/ipkg/poststate zonename zonepath 5 4
         """
-        if self.state != "running":
-            self.log.info("skip zone %s halt: state %s" % (self.name, self.state))
+        if self.state is None:
+            self.log.info("skip zone %s halt, no such zone", self.name)
             return 0
-        ret, out, err = self.vcall(["zlogin", self.name, "/sbin/init", "0"])
+        elif self.state == "running":
+            ret, out, err = self.vcall([ZLOGIN, self.name, "/sbin/init", "0"])
+        elif self.state not in ["shutting_down", "down", "installed"]:
+            self.log.warning("unable to halt zone %s state %s", self.name, self.state)
+            return 0
+
         for _ in range(self.stop_timeout):
             self.zone_refresh()
             if self.state == "installed":
@@ -535,7 +542,7 @@ class ContainerZone(BaseContainer):
         def wait_boot_count(count, max_retries=240):
             retries = 0
             self.log.info('wait for %s boot count is %s (max retries %s)', self.name, count, max_retries)
-            cmd = ['zlogin', self.name, 'last', 'reboot']
+            cmd = [ZLOGIN, self.name, 'last', 'reboot']
             while retries < max_retries:
                 out, err, st = justcall(cmd)
                 if st == 0:
@@ -906,6 +913,9 @@ class ContainerZone(BaseContainer):
         else:
             raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
         self.wait_multi_user()
+        if brand == "native":
+            self.log.info('call in zone %s %s' % (self.name, SYS_UNCONFIG))
+            justcall([ZLOGIN, self.name, SYS_UNCONFIG], input='y\n')
         self.halt()
         if self.state != "installed":
             raise(ex.Error("zone %s is not installed" % (self.name)))
