@@ -489,7 +489,7 @@ class ContainerZone(BaseContainer):
         from zoneadm -z zonename list -p
         zoneid:zonename:state:zonepath:uuid:brand:ip-type
         """
-        out, err, ret = justcall(["zoneadm", "-z", self.name, "list", "-p"])
+        out, err, ret = justcall([ZONEADM, "-z", self.name, "list", "-p"])
         if ret != 0:
             return None
         out = out.strip()
