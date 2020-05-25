@@ -762,7 +762,8 @@ class ContainerZone(BaseContainer):
             ipv4_interface = InstallIpv4Interface(ipv4_name,
                                                   static_address='%s/%s' % (addr, netmask),
                                                   address_type='static',
-                                                  default_route=default_route)
+                                                  default_route=default_route,
+                                                  id=len(ipv4_interfaces))
             ipv4_interfaces.append(ipv4_interface)
         return ipv4_interfaces
 
