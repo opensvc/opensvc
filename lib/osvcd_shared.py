@@ -983,6 +983,7 @@ class OsvcThread(threading.Thread, Crypt):
     #
     #########################################################################
     def placement_candidates(self, svc, discard_frozen=True,
+                             discard_na=True,
                              discard_overloaded=True,
                              discard_preserved=True,
                              discard_unprovisioned=True,
@@ -1030,6 +1031,8 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             if "avail" not in instance:
                 # deleting
+                continue
+            if discard_na and instance.avail == "n/a":
                 continue
             if discard_frozen and instance.frozen:
                 continue

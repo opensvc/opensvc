@@ -474,7 +474,7 @@ class Monitor(shared.OsvcThread):
 
     def service_status(self, path):
         if rcEnv.nodename not in shared.SERVICES[path].nodes:
-            self.log.info("skip service status refresh on foreign service")
+            self.log.info("skip status refresh on %s (foreign)", path)
             return
         smon = self.get_service_monitor(path)
         if smon.status and smon.status.endswith("ing"):
@@ -562,6 +562,7 @@ class Monitor(shared.OsvcThread):
         self.set_smon(svc.path, "unprovisioning")
         if leader is None:
             candidates = self.placement_candidates(svc, discard_frozen=False,
+                                                   discard_na=False,
                                                    discard_overloaded=False,
                                                    discard_unprovisioned=False,
                                                    discard_constraints_violation=False)
@@ -597,6 +598,7 @@ class Monitor(shared.OsvcThread):
     def service_provision(self, svc):
         self.set_smon(svc.path, "provisioning")
         candidates = self.placement_candidates(svc, discard_frozen=False,
+                                               discard_na=False,
                                                discard_overloaded=False,
                                                discard_unprovisioned=False,
                                                discard_constraints_violation=False)
@@ -618,6 +620,7 @@ class Monitor(shared.OsvcThread):
         self.set_smon(svc.path, "unprovisioning", local_expect="unset")
         if leader is None:
             candidates = self.placement_candidates(svc, discard_frozen=False,
+                                                   discard_na=False,
                                                    discard_overloaded=False,
                                                    discard_unprovisioned=False,
                                                    discard_constraints_violation=False)
@@ -1598,6 +1601,7 @@ class Monitor(shared.OsvcThread):
             return
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
+            discard_na=False,
             discard_overloaded=False,
             discard_unprovisioned=False,
             discard_constraints_violation=False,
@@ -1640,7 +1644,7 @@ class Monitor(shared.OsvcThread):
             self.service_orchestrator_scaler_down_failover(svc, missing, current_slaves)
 
     def service_orchestrator_scaler_up_flex(self, svc, missing, current_slaves):
-        candidates = self.placement_candidates(svc, discard_preserved=False)
+        candidates = self.placement_candidates(svc, discard_na=False, discard_preserved=False)
         width = len(candidates)
         if width == 0:
             return
@@ -3091,7 +3095,7 @@ class Monitor(shared.OsvcThread):
             if frozen != "thawed":
                 return
             if shared.AGG[path].placement in ("optimal", "n/a") and \
-               shared.AGG[path].avail == "up":
+               shared.AGG[path].avail in ("up", "n/a"):
                 self.set_smon(path, global_expect="unset")
                 return
             svc = self.get_service(path)
@@ -3402,8 +3406,12 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "shutdown":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
+                return False
             return not self.get_agg_shutdown(path)
         elif global_expect == "started":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
+                return False
             if smon.placement == "none":
                 return False
             local_frozen = instance.get("frozen", 0)
@@ -3457,6 +3465,8 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "placed":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
+                return False
             if smon.placement == "none":
                 return False
             if agg.placement == "non-optimal" or agg.avail != "up" or agg.frozen == "frozen":
@@ -3472,6 +3482,8 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect.startswith("placed@"):
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
+                return False
             target = global_expect.split("@")[-1].split(",")
             if rcEnv.nodename in target:
                 if instance["avail"] in STOPPED_STATES:
