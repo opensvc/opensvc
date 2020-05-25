@@ -1,3 +1,4 @@
+import json
 import socket
 import uuid
 import time
@@ -80,9 +81,11 @@ class TestRawDaemonRequestWithNoTimeout:
     @pytest.mark.usefixtures('recv_message')
     def test_it_sends_correct_message(created_socket, crypt, method):
         crypt.raw_daemon_request(data={'todo': 'start'}, method=method)
-        expected_msgs = {'GET': b'{"todo": "start", "method": "GET"}\x00',  # need to diag reason of \x00
-                         'POST': b'{"todo": "start", "method": "POST"}\x00'}
-        created_socket.sendall.assert_called_once_with(expected_msgs[method])
+        expected_payload = {'GET': {"todo": "start", "method": "GET"},
+                            'POST': {"todo": "start", "method": "POST"}}
+        sendall_string = created_socket.sendall.call_args[0][0].decode()
+        sendall_dict = json.loads(sendall_string.rstrip('\x00'))
+        assert sendall_dict == expected_payload[method]
 
     @staticmethod
     def test_retries_connect_until_succeed(time_sleep, created_socket, recv_message, crypt):

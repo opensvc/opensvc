@@ -356,6 +356,7 @@ ACTIONS_DO_MASTER = [
 ACTIONS_DO_MASTER_AND_SLAVE = [
     "boot",
     "migrate",
+    "provision",
     "prstart",
     "prstop",
     "restart",
@@ -4514,12 +4515,22 @@ class Svc(BaseSvc):
         self.purge_var_d()
 
     def provision(self):
+        self.master_provision()
+        self.slave_provision()
+
+    @_master_action
+    def master_provision(self):
         self.sub_set_action(START_GROUPS, "provision", xtags=set(["zone", "docker", "podman"]))
 
         if not self.options.disable_rollback and len(self.peers) > 1:
             # set by the daemon on the placement leaders.
             # return the service to standby if not a placement leader
             self.rollback()
+
+    @_slave_action
+    def slave_provision(self):
+        cmd = self.prepare_async_cmd()
+        self.encap_cmd(cmd, verbose=True)
 
     def set_provisioned(self):
         self.sub_set_action(START_GROUPS, "set_provisioned")
