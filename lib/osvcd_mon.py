@@ -1601,6 +1601,7 @@ class Monitor(shared.OsvcThread):
             return
         candidates = self.placement_candidates(
             svc, discard_frozen=False,
+            discard_na=False,
             discard_overloaded=False,
             discard_unprovisioned=False,
             discard_constraints_violation=False,
@@ -3405,11 +3406,11 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "shutdown":
-            if instance["avail"] == "n/a":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
                 return False
             return not self.get_agg_shutdown(path)
         elif global_expect == "started":
-            if instance["avail"] == "n/a":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
                 return False
             if smon.placement == "none":
                 return False
@@ -3464,7 +3465,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect == "placed":
-            if instance["avail"] == "n/a":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
                 return False
             if smon.placement == "none":
                 return False
@@ -3481,7 +3482,7 @@ class Monitor(shared.OsvcThread):
             else:
                 return False
         elif global_expect.startswith("placed@"):
-            if instance["avail"] == "n/a":
+            if instance["avail"] == "n/a" and instance.get("scale") is None:
                 return False
             target = global_expect.split("@")[-1].split(",")
             if rcEnv.nodename in target:
