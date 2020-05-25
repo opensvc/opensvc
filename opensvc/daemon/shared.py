@@ -985,6 +985,7 @@ class OsvcThread(threading.Thread, Crypt):
     #
     #########################################################################
     def placement_candidates(self, svc, discard_frozen=True,
+                             discard_na=True,
                              discard_overloaded=True,
                              discard_preserved=True,
                              discard_unprovisioned=True,
@@ -1017,6 +1018,8 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             if discard_preserved and \
                data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
+                continue
+            if discard_na and instance.avail == "n/a":
                 continue
             if discard_frozen and data.get("frozen"):
                 # node frozen
