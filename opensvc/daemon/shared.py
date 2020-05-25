@@ -1019,6 +1019,8 @@ class OsvcThread(threading.Thread, Crypt):
             if discard_preserved and \
                data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
                 continue
+            if discard_na and instance.avail == "n/a":
+                continue
             if discard_frozen and data.get("frozen"):
                 # node frozen
                 continue
