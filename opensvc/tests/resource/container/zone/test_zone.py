@@ -293,7 +293,7 @@ class TestContainerInstallZoneOnBrandSolaris:
 
     @staticmethod
     def test_configure_then_install_with_automatically_created_sc_profile(mocker, zoneadm, zone_configure, zone):
-        mocker.patch.object(ContainerZone, 'get_encaps_ip_rids', mocker.Mock(return_value=[]))
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
         zone.install_zone()
         assert zone_configure.call_count == 1
         zoneadm.assert_called_once_with('install', ['-c', zone.sc_profile])

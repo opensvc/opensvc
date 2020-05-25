@@ -703,9 +703,9 @@ class ContainerZone(BaseContainer):
     def update_solaris_11_ip_tags(self):
         ip_kws = []
         need_save = False
-        for rid in self.get_encaps_ip_rids():
+        for rid in self.get_encap_ip_rids():
             # Add mandatory tags for sol11 zones
-            tags = self.get_encaps_conf(rid, 'tags')
+            tags = self.get_encap_conf(rid, 'tags')
             for tag in ['noaction', 'noalias', 'exclusive']:
                 if tag not in tags:
                     tags.add(tag)
@@ -716,7 +716,7 @@ class ContainerZone(BaseContainer):
                     need_save = True
 
             try:
-                self.get_encaps_conf(rid, 'gateway')
+                self.get_encap_conf(rid, 'gateway')
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 # Add nonrouted tag if no gateway provisioning keyword is passed
                 tags.add("nonrouted")
@@ -727,11 +727,11 @@ class ContainerZone(BaseContainer):
             # update service env file
             self.svc.set_multi(ip_kws)
 
-    def get_encaps_ip_rids(self):
+    def get_encap_ip_rids(self):
         return [rid for rid in self.svc.conf_sections(cat='ip')
-                if 'encaps' in self.get_encaps_conf(rid, 'tags')]
+                if 'encap' in self.get_encap_conf(rid, 'tags')]
 
-    def get_encaps_conf(self, rid, kw):
+    def get_encap_conf(self, rid, kw):
         return self.svc.oget(rid, kw, impersonate=self.name)
 
     def get_install_ipv4_interfaces(self):
@@ -740,24 +740,24 @@ class ContainerZone(BaseContainer):
         """
         from .configuration_profile import InstallIpv4Interface
         ipv4_interfaces = []
-        for rid in self.get_encaps_ip_rids():
+        for rid in self.get_encap_ip_rids():
             try:
-                ipdevext = self.get_encaps_conf(rid, 'ipdevext')
+                ipdevext = self.get_encap_conf(rid, 'ipdevext')
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 ipdevext = 'v4'
-            ipdev = self.get_encaps_conf(rid, 'ipdev')
+            ipdev = self.get_encap_conf(rid, 'ipdev')
             ipv4_name = '%s/%s' % (ipdev, ipdevext)
 
             try:
-                default_route = self.get_encaps_conf(rid, 'gateway')
+                default_route = self.get_encap_conf(rid, 'gateway')
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 default_route = None
 
             try:
-                netmask = to_cidr(self.get_encaps_conf(rid, 'netmask'))
+                netmask = to_cidr(self.get_encap_conf(rid, 'netmask'))
             except (ex.RequiredOptNotFound, ex.OptNotFound):
                 continue
-            ipname = self.get_encaps_conf(rid, 'ipname')
+            ipname = self.get_encap_conf(rid, 'ipname')
             addr = getaddr(ipname, True)
             ipv4_interface = InstallIpv4Interface(ipv4_name,
                                                   static_address='%s/%s' % (addr, netmask),
