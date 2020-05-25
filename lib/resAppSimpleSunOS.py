@@ -21,7 +21,7 @@ class App(resAppSimple.App):
         resAppSimple.App.__init__(self, rid, **kwargs)
 
     def get_running(self, with_children=False):
-        cmd = ["pgrep", "-f", " ".join(self.get_cmd("start"))]
+        cmd = ["pgrep", "-f", " ".join(self.get_cmd("start", validate=False))]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return []
