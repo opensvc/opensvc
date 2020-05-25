@@ -1196,17 +1196,24 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         )
 
     def services_have_init_status(self):
+        need_log = (time.time() - self.startup) > 60
         for path in list_services():
             try:
                 svc = shared.SERVICES[path]
             except KeyError:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s daemon object allocation", path=path)
                 return False
             fpath = os.path.join(svc.var_d, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s status to exist", path=path)
                 return False
             if self.startup > mtime:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s status refresh", path=path)
                 return False
         return True
 
