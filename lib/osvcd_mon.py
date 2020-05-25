@@ -474,7 +474,7 @@ class Monitor(shared.OsvcThread):
 
     def service_status(self, path):
         if rcEnv.nodename not in shared.SERVICES[path].nodes:
-            self.log.info("skip service status refresh on foreign service")
+            self.log.info("skip status refresh on %s (foreign)", path)
             return
         smon = self.get_service_monitor(path)
         if smon.status and smon.status.endswith("ing"):
