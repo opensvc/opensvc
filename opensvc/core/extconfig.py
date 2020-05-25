@@ -1444,7 +1444,7 @@ class ExtConfigMixin(object):
                 except (ex.RequiredOptNotFound, ex.OptNotFound):
                     continue
                 except ValueError:
-                    pass
+                    raise
                 # ensure the data is json-exportable
                 if isinstance(val, set):
                     val = list(val)
