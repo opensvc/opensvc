@@ -369,6 +369,11 @@ class App(Resource):
             keyvals.append([elements[0].strip(), elements[1].strip()])
         return keyvals
 
+    def replace_volname(self, buff, **kwargs):
+        if os.sep not in buff:
+            return buff, None
+        return Resource.replace_volname(self, buff, **kwargs)
+
     def get_cmd(self, action, script_arg=None, validate=True):
         key = action + "_seq"
         val = getattr(self, key)
