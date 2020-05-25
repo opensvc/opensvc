@@ -70,15 +70,26 @@ def propval(name, attr_type, value):
 
 class InstallIpv4Interface:
     def __init__(self, name, static_address=None, address_type='static',
-                 default_route=None):
+                 default_route=None, id=0):
+        """
+        create fragment of xml system configuration profile for network
+        if id is not 0, then use 'multiple interface' fragment
+        """
         self.name = name
         self.static_address = static_address
         self.address_type = address_type
         self.default_route = default_route
+        self.id = id
 
     def element(self):
-        prop_group = property_group('install_ipv4_interface', 'application')
-        if self.default_route:
+        if self.id == 0:
+            attr_type = 'application'
+            name = 'install_ipv4_interface'
+        else:
+            attr_type = 'ipv4_interface'
+            name = 'install_ipv4_interface_%s' % str(self.id)
+        prop_group = property_group(name, attr_type)
+        if self.default_route and self.id == 0:
             prop_group.append(propval('default_route', 'net_address_v4', self.default_route))
         if self.static_address:
             prop_group.append(propval('static_address', 'net_address_v4', self.static_address))
