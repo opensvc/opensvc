@@ -1644,7 +1644,7 @@ class Monitor(shared.OsvcThread):
             self.service_orchestrator_scaler_down_failover(svc, missing, current_slaves)
 
     def service_orchestrator_scaler_up_flex(self, svc, missing, current_slaves):
-        candidates = self.placement_candidates(svc, discard_preserved=False)
+        candidates = self.placement_candidates(svc, discard_na=False, discard_preserved=False)
         width = len(candidates)
         if width == 0:
             return
