@@ -260,7 +260,6 @@ class OsvcThread(threading.Thread, Crypt):
         self._stop_event = threading.Event()
         self._node_conf_event = threading.Event()
         self.created = time.time()
-        self.configured = self.created
         self.threads = []
         self.procs = []
         self.tid = None
@@ -338,7 +337,6 @@ class OsvcThread(threading.Thread, Crypt):
         data = {
             "state": state,
             "created": self.created,
-            "configured": self.configured,
         }
         if self.alerts:
             data["alerts"] = self.alerts
@@ -504,14 +502,12 @@ class OsvcThread(threading.Thread, Crypt):
         self.arbitrators_data = None
         self.alerts = []
         if not hasattr(self, "reconfigure"):
-            self.configured = time.time()
             return
         try:
             getattr(self, "reconfigure")()
         except Exception as exc:
             self.log.error("reconfigure error: %s", str(exc))
             self.stop()
-        self.configured = time.time()
 
     @staticmethod
     def get_service(path):
@@ -983,6 +979,7 @@ class OsvcThread(threading.Thread, Crypt):
     #
     #########################################################################
     def placement_candidates(self, svc, discard_frozen=True,
+                             discard_na=True,
                              discard_overloaded=True,
                              discard_preserved=True,
                              discard_unprovisioned=True,
@@ -1030,6 +1027,8 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             if "avail" not in instance:
                 # deleting
+                continue
+            if discard_na and instance.avail == "n/a":
                 continue
             if discard_frozen and instance.frozen:
                 continue
