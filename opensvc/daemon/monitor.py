@@ -1207,6 +1207,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if need_log:
                     self.duplog("info", "init waiting for %(path)s daemon object allocation", path=path)
                 return False
+            if Env.nodename not in svc.nodes | svc.drpnodes:
+                # a configuration file is present, but foreign: don't wait for a status.json
+                continue
             fpath = os.path.join(svc.var_d, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
