@@ -3658,7 +3658,6 @@ class Svc(BaseSvc):
             "subsets": {},
             "resources": {},
         }
-        provisioned = None
         running = self.get_running()
         if running:
             data["running"] = running
@@ -3718,6 +3717,7 @@ class Svc(BaseSvc):
                 if hasattr(container, "vm_hostname"):
                     data["encap"][container.rid]["hostname"] = container.vm_hostname
 
+        prov_states = set()
         for rset in self.get_resourcesets(strict=True):
             for resource in rset.resources:
                 status = core.status.Status(resource.status(verbose=True))
@@ -3751,10 +3751,8 @@ class Svc(BaseSvc):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data.get("provisioned", {}).get("state") is False and not disable and hasattr(resource, "provisioner"):
-                    provisioned = False
-                elif _data.get("provisioned", {}).get("state") is True and not disable and provisioned is None:
-                    provisioned = True
+                if not disable:
+                    prov_states.add(_data.get("provisioned", {}).get("state"))
                 if resource.subset:
                     _data["subset"] = resource.subset
                 data["resources"][resource.rid] = _data
@@ -3763,8 +3761,14 @@ class Svc(BaseSvc):
         for group in group_status["status_group"]:
             group_status["status_group"][group] = str(group_status["status_group"][group])
         data.update(group_status)
-        if provisioned is not None:
-            data["provisioned"] = provisioned
+        if prov_states == set():
+            pass
+        elif prov_states <= set([True, None]):
+            data["provisioned"] = True
+        elif prov_states <= set([False, None]):
+            data["provisioned"] = False
+        else:
+            data["provisioned"] = "mixed"
         if self.stonith and self.topology == "failover" and data["avail"] == "up":
             data["stonith"] = True
         if write_data:

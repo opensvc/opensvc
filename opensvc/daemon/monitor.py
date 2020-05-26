@@ -2870,11 +2870,15 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         provisioned = 0
         total = 0
         for instance in self.get_service_instances(path).values():
-            if "provisioned" not in instance:
+            try:
+                instance_provisioned = instance["provisioned"]
+            except KeyError:
                 continue
             total += 1
-            if instance.get("provisioned", True):
+            if instance_provisioned is True:
                 provisioned += 1
+            elif instance_provisioned == "mixed":
+                return "mixed"
         if total == 0:
             return "n/a"
         elif provisioned == total:
