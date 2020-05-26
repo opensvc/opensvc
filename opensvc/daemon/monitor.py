@@ -3443,7 +3443,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         try:
             ge, at = smon.global_expect.split("@", 1)
-            handler = "handler_%s%s" % (ge, "_at" if at else "")
+            handler = "handle_%s_at" % ge
         except AttributeError:
             return
         except ValueError:
