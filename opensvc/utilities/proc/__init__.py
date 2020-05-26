@@ -350,6 +350,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'sync_update',
         'sync_restore',
         'run',
+        'on_error', # tasks use that as an action
         'command',  # tasks use that as an action
     ]
 
