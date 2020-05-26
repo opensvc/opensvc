@@ -3751,7 +3751,7 @@ class Svc(BaseSvc):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if _data.get("provisioned", {}).get("state") is False and not disable:
+                if _data.get("provisioned", {}).get("state") is False and not disable and hasattr(resource, "provisioner"):
                     provisioned = False
                 elif _data.get("provisioned", {}).get("state") is True and not disable and provisioned is None:
                     provisioned = True

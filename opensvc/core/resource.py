@@ -1093,6 +1093,8 @@ class Resource(object):
         Return the resource provisioned state from the on-disk cache and its
         state change time as a dictionnary.
         """
+        if not hasattr(self, "provisioner"):
+            return
         try:
             isprov = self.is_provisioned()
         except Exception as exc:
@@ -1111,6 +1113,8 @@ class Resource(object):
         Return the boolean provisioned state cached on disk.
         Return None if the file does not exist or is corrupted.
         """
+        if not hasattr(self, "provisioner"):
+            return
         try:
             with open(self.provisioned_flag, 'r') as filep:
                 return json.load(filep)
@@ -1122,6 +1126,8 @@ class Resource(object):
         Write a resource-private file containing the boolean provisioned
         state and state change time.
         """
+        if not hasattr(self, "provisioner"):
+            return
         if value is None:
             return
         try:
