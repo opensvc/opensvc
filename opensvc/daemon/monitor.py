@@ -3306,27 +3306,29 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         Align global_expect with the actual service states.
         """
-        if smon.global_expect is None:
-            return
         instance = self.get_service_instance(path, Env.nodename)
         if instance is None:
             return
-        local_frozen = instance.get("frozen", 0)
-        frozen = shared.AGG[path].frozen
-        provisioned = shared.AGG[path].provisioned
-        deleted = self.get_agg_deleted(path)
-        purged = self.get_agg_purged(provisioned, deleted)
-        stopped = status in STOPPED_STATES
-        if smon.global_expect == "stopped" and stopped and local_frozen:
+
+        def handle_stopped():
+            local_frozen = instance.get("frozen", 0)
+            stopped = status in STOPPED_STATES
+            if not stopped or not local_frozen:
+                return
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", path, smon.global_expect, status)
             self.set_smon(path, global_expect="unset")
-        elif smon.global_expect == "shutdown" and self.get_agg_shutdown(path) and \
-           local_frozen:
+
+        def handle_shutdown():
+            local_frozen = instance.get("frozen", 0)
+            if not self.get_agg_shutdown(path) or not local_frozen:
+                return
             self.log.info("service %s global expect is %s and its global "
                           "status is %s", path, smon.global_expect, status)
             self.set_smon(path, global_expect="unset")
-        elif smon.global_expect == "started":
+
+        def handle_started():
+            local_frozen = instance.get("frozen", 0)
             if smon.placement == "none":
                 self.set_smon(path, global_expect="unset")
             if status in STARTED_STATES and not local_frozen:
@@ -3334,19 +3336,43 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                               "status is %s", path, smon.global_expect, status)
                 self.set_smon(path, global_expect="unset")
                 return
+            frozen = shared.AGG[path].frozen
             if frozen != "thawed":
                 return
             svc = self.get_service(path)
             if self.peer_warn(path, with_self=True):
                 self.set_smon(path, global_expect="unset")
                 return
-        elif (smon.global_expect == "frozen" and frozen == "frozen") or \
-             (smon.global_expect == "thawed" and frozen == "thawed") or \
-             (smon.global_expect == "unprovisioned" and provisioned in (False, "n/a") and stopped):
+
+        def handle_frozen():
+            frozen = shared.AGG[path].frozen
+            if frozen != "frozen":
+                return
             self.log.debug("service %s global expect is %s, already is",
                            path, smon.global_expect)
             self.set_smon(path, global_expect="unset")
-        elif smon.global_expect == "provisioned" and provisioned in (True, "n/a"):
+
+        def handle_thawed():
+            frozen = shared.AGG[path].frozen
+            if frozen != "thawed":
+                return
+            self.log.debug("service %s global expect is %s, already is",
+                           path, smon.global_expect)
+            self.set_smon(path, global_expect="unset")
+
+        def handle_unprovisioned():
+            provisioned = shared.AGG[path].provisioned
+            stopped = status in STOPPED_STATES
+            if provisioned not in (False, "n/a") or not stopped:
+                return
+            self.log.debug("service %s global expect is %s, already is",
+                       path, smon.global_expect)
+            self.set_smon(path, global_expect="unset")
+
+        def handle_provisioned():
+            provisioned = shared.AGG[path].provisioned
+            if provisioned not in (True, "n/a"):
+                return
             if smon.placement == "none":
                 self.set_smon(path, global_expect="unset")
             if shared.AGG[path].avail in ("up", "n/a"):
@@ -3354,21 +3380,39 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.set_smon(path, global_expect="thawed")
             else:
                 self.set_smon(path, global_expect="started")
-        elif (smon.global_expect == "purged" and purged is True) or \
-             (smon.global_expect == "deleted" and deleted is True):
+
+        def handle_purged():
+            provisioned = shared.AGG[path].provisioned
+            deleted = self.get_agg_deleted(path)
+            purged = self.get_agg_purged(provisioned, deleted)
+            if not purged is True:
+                return
             self.log.debug("service %s global expect is %s, already is",
                            path, smon.global_expect)
             with shared.SMON_DATA_LOCK:
                 del shared.SMON_DATA[path]
-        elif smon.global_expect == "aborted" and \
-             self.get_agg_aborted(path):
+
+        def handle_deleted():
+            deleted = self.get_agg_deleted(path)
+            if not deleted is True:
+                return
+            self.log.debug("service %s global expect is %s, already is",
+                           path, smon.global_expect)
+            with shared.SMON_DATA_LOCK:
+                del shared.SMON_DATA[path]
+
+        def handle_aborted():
+            if not self.get_agg_aborted(path):
+                return
             self.log.info("service %s action aborted", path)
             self.set_smon(path, global_expect="unset")
             if smon.status and smon.status.startswith("wait "):
                 # don't leave lingering "wait" mon state when we no longer
                 # have a target state to reach
                 self.set_smon(path, status="idle")
-        elif smon.global_expect == "placed":
+
+        def handle_placed():
+            frozen = shared.AGG[path].frozen
             if frozen != "thawed":
                 return
             if shared.AGG[path].placement in ("optimal", "n/a") and \
@@ -3387,10 +3431,26 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                               "and no options left", path, smon.global_expect)
                 self.set_smon(path, global_expect="unset")
                 return
-        elif smon.global_expect.startswith("placed@"):
+
+        def handle_placed_at():
             target = smon.global_expect.split("@")[-1].split(",")
             if self.instances_started_or_start_failed(path, target):
                 self.set_smon(path, global_expect="unset")
+
+        try:
+            ge, at = smon.global_expect.split("@", 1)
+            handler = "handler_%s%s" % (ge, "_at" if at else "")
+        except AttributeError:
+            return
+        except ValueError:
+            handler = "handle_" + smon.global_expect
+
+        try:
+            fn = locals()[handler]
+        except KeyError:
+            return
+
+        fn()
 
     def set_smon_l_expect_from_status(self, data, path):
         if path not in data:
