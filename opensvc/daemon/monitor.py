@@ -3837,18 +3837,18 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def instance_provisioned(self, instance):
         if instance is None:
             return False
-        return instance.get("provisioned", True)
+        instance_provisioned = instance.get("provisioned", True)
+        if instance_provisioned == "mixed":
+            return False
+        return instance_provisioned
 
     def instance_unprovisioned(self, instance):
         if instance is None:
             return True
-        for resource in instance.get("resources", {}).values():
-            if resource.get("type") in ("disk.scsireserv", "task", "task.docker", "task.podman"):
-                # always provisioned
-                continue
-            if resource.get("provisioned", {}).get("state") is True:
-                return False
-        return not instance.get("provisioned", False)
+        instance_provisioned = instance.get("provisioned", False)
+        if instance_provisioned == "mixed":
+            return False
+        return not instance_provisioned
 
     def get_agg(self, path):
         data = self.get_agg_conf(path)
