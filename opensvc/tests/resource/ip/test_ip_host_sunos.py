@@ -38,7 +38,7 @@ class TestIpStartCmd:
                               ('net1', '255.255.0.0'),
                               ('net2', '255.0.0.0'),
                               ])
-    def test_call_with_correct_netmask(ip_class, ipdev, expected_netmask):
+    def test_call_ifconfig_with_correct_netmask_value(ip_class, ipdev, expected_netmask):
         ip = ip_class(ipname='192.168.0.149', ipdev=ipdev)
         ip.addr = ip.ipname
         ip.get_stack_dev()
