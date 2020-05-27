@@ -42,7 +42,7 @@ class Sec(DataMixin, BaseSvc):
             raise ex.Error("secret key name can not be empty")
         if data is None:
             raise ex.Error("secret value can not be empty")
-        data = "crypt:"+base64.urlsafe_b64encode(self.encrypt(data, cluster_name="join", encode=True)).decode()
+        data = "crypt:"+base64.urlsafe_b64encode(self.encrypt(data, cluster_name="join", encode=True, structured=False)).decode()
         self.set_multi(["data.%s=%s" % (key, data)])
         self.log.info("secret key '%s' added (%s)", key, print_size(len(data), compact=True, unit="b"))
         # refresh if in use
@@ -56,7 +56,7 @@ class Sec(DataMixin, BaseSvc):
             raise ex.Error("secret %s key %s does not exist or has no value" % (self.path, key))
         if data.startswith("crypt:"):
             data = data[6:]
-            return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")))[2]
+            return self.decrypt(base64.urlsafe_b64decode(data.encode("ascii")), structured=False)[2]
 
     def gen_cert(self):
         data = {}
