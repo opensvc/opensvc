@@ -36,6 +36,13 @@ STOPPED_STATES = [
     "unknown",     # slavers with deleted slaves
     None,          # base-kind services
 ]
+SHUTDOWN_STATES = [
+    "n/a",
+    "down",
+    "stdby down",
+    "unknown",     # slavers with deleted slaves
+    None,          # base-kind services
+]
 ORCHESTRATE_STATES = (
     "ready",
     "idle",
@@ -1452,6 +1459,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def node_orchestrator(self):
         if shared.NMON_DATA.status == "shutting":
             return
+        if shared.NMON_DATA.status == "draining":
+            self.node_orchestrator_clear_draining()
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
         if self.unfreeze_when_all_nodes_joined and self.node_frozen and len(self.cluster_nodes) == len(shared.CLUSTER_DATA):
@@ -1498,7 +1507,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         except KeyError:
             return
         self.set_smon_g_expect_from_status(svc.path, smon, status)
-        if shared.NMON_DATA.status == "shutting":
+        if shared.NMON_DATA.status in ("shutting", "draining"):
             self.object_orchestrator_shutting(svc, smon, status)
         elif smon.global_expect:
             self.object_orchestrator_manual(svc, smon, status)
@@ -1790,6 +1799,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     "up": n_up,
                 })
                 self.service_stop(svc.path)
+
+    def node_orchestrator_clear_draining(self):
+        for path in [path for path in shared.SMON_DATA]:
+            smon = self.get_service_monitor(path)
+            if not smon:
+                continue
+            if smon.status == "shutdown failed":
+                continue
+            if smon.local_expect == "shutdown":
+                return
+        self.set_nmon("idle")
 
     def object_orchestrator_shutting(self, svc, smon, status):
         """

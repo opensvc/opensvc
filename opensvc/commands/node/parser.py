@@ -341,6 +341,14 @@ ACTIONS = {
                 OPT.cron,
             ],
         },
+        "drain": {
+            "msg": "Freeze the selected nodes and shutdown all object "
+                   "instances they run. If not specified with --node, "
+                   "the local node is selected for drain.",
+            "options": [
+                OPT.wait,
+            ],
+        },
         "events": {
             "msg": "Follow the daemon events feed. Two kinds of event "
                    "can be received: event and patch. Patch data "

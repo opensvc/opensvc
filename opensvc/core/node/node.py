@@ -4186,9 +4186,31 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("%s is not alive" % node)
         return ret
 
+    def drain(self):
+        """
+        Tell the daemon to freeze and drain all local object instances.
+        """
+        if not self._daemon_running():
+            return
+        data = self.daemon_post(
+            {
+                "action": "node_drain",
+                "options": {
+                    "wait": self.options.wait,
+                }
+            },
+            server=self.options.server,
+        )
+        if data is None:
+            return 1
+        status, error, info = self.parse_result(data)
+        if error:
+            print(error, file=sys.stderr)
+        return status
+
     def daemon_shutdown(self):
         """
-        Tell the daemon to shutdown all local service instances then die.
+        Tell the daemon to shutdown all local object instances then die.
         """
         if not self._daemon_running():
             return
