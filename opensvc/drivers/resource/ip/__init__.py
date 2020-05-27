@@ -587,17 +587,10 @@ class Ip(Resource):
         """
         The start codepath fragment protected by the startip lock.
         """
-        ifconfig = self.get_ifconfig()
-        self.get_mask(ifconfig)
-        if 'noalias' in self.tags:
-            self.stacked_dev = self.ipdev
-        else:
-            self.stacked_dev = ifconfig.get_stacked_dev(self.ipdev,\
-                                                        self.addr,\
-                                                        self.log)
+        self.get_stack_dev()
         if self.stacked_dev is None:
             raise ex.Error("could not determine a stacked dev for parent "
-                              "interface %s" % self.ipdev)
+                           "interface %s" % self.ipdev)
 
         arp_announce = True
         try:
@@ -612,6 +605,16 @@ class Ip(Resource):
             raise ex.Error("failed")
 
         return arp_announce
+
+    def get_stack_dev(self):
+        ifconfig = self.get_ifconfig()
+        self.get_mask(ifconfig)
+        if 'noalias' in self.tags:
+            self.stacked_dev = self.ipdev
+        else:
+            self.stacked_dev = ifconfig.get_stacked_dev(self.ipdev,
+                                                        self.addr,
+                                                        self.log)
 
     def dns_update(self):
         """
