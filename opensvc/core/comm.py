@@ -340,7 +340,7 @@ class Crypt(object):
             return
         return json.loads(message)
 
-    def decrypt(self, message, cluster_name=None, secret=None, sender_id=None):
+    def decrypt(self, message, cluster_name=None, secret=None, sender_id=None, structured=True):
         """
         Validate the message meta, decrypt and return the data.
         """
@@ -393,12 +393,14 @@ class Crypt(object):
             return None, None, None
         if sender_id:
             self.blacklist_clear(sender_id)
+        if not structured:
+            return msg_clustername, msg_nodename, data
         try:
             return msg_clustername, msg_nodename, json.loads(bdecode(data))
         except ValueError as exc:
             return msg_clustername, msg_nodename, data
 
-    def encrypt(self, data, cluster_name=None, secret=None, encode=True):
+    def encrypt(self, data, cluster_name=None, secret=None, encode=True, structured=True):
         """
         Encrypt and return data in a wrapping structure.
         """
@@ -411,11 +413,18 @@ class Crypt(object):
         if cluster_key is None:
             return
         iv = self.gen_iv()
-        try:
-            data = json.dumps(data).encode()
-        except (UnicodeDecodeError, TypeError):
-            # already binary data
-            pass
+        if structured:
+            try:
+                data = json.dumps(data).encode()
+            except (UnicodeDecodeError, TypeError):
+                # already binary data
+                pass
+        else:
+            try:
+                data = data.encode()
+            except (UnicodeDecodeError, AttributeError):
+                # already binary data
+                pass
         message = {
             "clustername": cluster_name,
             "nodename": Env.nodename,
