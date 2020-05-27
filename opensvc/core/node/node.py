@@ -88,6 +88,7 @@ ACTION_ASYNC = {
     },
 }
 ACTIONS_CUSTOM_REMOTE = (
+    "drain",
     "ls",
     "logs",
     "ping",
@@ -4190,16 +4191,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Tell the daemon to freeze and drain all local object instances.
         """
-        if not self._daemon_running():
-            return
         data = self.daemon_post(
             {
                 "action": "node_drain",
                 "options": {
                     "wait": self.options.wait,
+                    "time": self.options.time,
                 }
             },
-            server=self.options.server,
+            server=self.options.server or self.options.node,
         )
         if data is None:
             return 1

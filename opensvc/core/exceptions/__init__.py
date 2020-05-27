@@ -27,6 +27,9 @@ class Version(OsvcException):
     def __str__(self):
         return str(self.value)
 
+class TimeOut(OsvcException):
+    pass
+
 class AlreadyDone(OsvcException):
     pass
 

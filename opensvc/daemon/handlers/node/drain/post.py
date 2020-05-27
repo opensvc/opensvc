@@ -2,6 +2,7 @@ import time
 
 import daemon.handler
 import daemon.shared as shared
+import core.exceptions as ex
 from utilities.naming import split_path
 
 class Handler(daemon.handler.BaseHandler):
@@ -20,6 +21,12 @@ class Handler(daemon.handler.BaseHandler):
             "default": False,
             "required": False,
             "format": "boolean",
+        },
+        {
+            "name": "time",
+            "desc": "The maximum wait time. If not specified, no timeout is set.",
+            "required": False,
+            "format": "duration",
         },
     ]
 
@@ -46,18 +53,24 @@ class Handler(daemon.handler.BaseHandler):
                     continue
                 thr.set_smon(path, local_expect="shutdown")
             if options.wait:
-                self.wait_shutdown()
+                try:
+                    self.wait_shutdown(timeout=options.time)
+                except ex.TimeOut:
+                    return {"status": 1, "error": "timeout"}
         except Exception as exc:
             thr.log.exception(exc)
 
         return {"status": 0}
 
-    def wait_shutdown(self):
+    def wait_shutdown(self, timeout=None):
         def still_shutting():
             for smon in shared.SMON_DATA.values():
                 if smon.local_expect == "shutdown":
                     return True
             return False
         while still_shutting():
+            if timeout is not None and timeout <= 0:
+                raise ex.TimeOut
+            timeout -= 1
             time.sleep(1)
 
