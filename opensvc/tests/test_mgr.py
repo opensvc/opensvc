@@ -239,6 +239,17 @@ class TestCreateAddDecode:
         with open(tmp_file) as output_file:
             assert output_file.read() == ''
 
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_create_empty_value(capture_stdout, tmp_file, obj):
+        open(tmp_file, 'w+').close()
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'empty']) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'empty']) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == ''
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
