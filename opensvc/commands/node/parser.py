@@ -299,10 +299,10 @@ OPT = Storage({
         help="Specify a target to scan for new block devices. Example: "
              "5000097358185088 or iqn.clementine.tgt1."),
     "time": Option(
-        "--time", default=300,
-        action="store", dest="time", type="int",
+        "--time", default="5m",
+        action="store", dest="time",
         help="Number of seconds to wait for an async action to "
-             "finish. Default is 300 seconds."),
+             "finish. The default is 5 minutes."),
     "user": Option(
         "--user", default=None, action="store", dest="user",
         help="Authenticate with the collector using the "
@@ -347,6 +347,7 @@ ACTIONS = {
                    "the local node is selected for drain.",
             "options": [
                 OPT.wait,
+                OPT.time,
             ],
         },
         "events": {
