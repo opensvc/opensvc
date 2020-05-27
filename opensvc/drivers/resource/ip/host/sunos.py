@@ -1,4 +1,5 @@
 import utilities.ping
+from utilities.net.converters import cidr_to_dotted, hexmask_to_dotted
 
 from .. import Ip
 
@@ -24,7 +25,7 @@ class IpHost(Ip):
         cmd = [
             "/usr/sbin/ifconfig", self.stacked_dev,
             "plumb", self.addr,
-            "netmask", "+", "broadcast", "+", "up",
+            "netmask", hexmask_to_dotted(self.netmask), "broadcast", "+", "up",
         ]
         return self.vcall(cmd)
 
