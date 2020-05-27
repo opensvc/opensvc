@@ -7,6 +7,7 @@ import tempfile
 
 import core.exceptions as ex
 import core.status
+import foreign.six
 from core.contexts import want_context
 from utilities.files import create_protected_file, makedirs, read_unicode_file
 from utilities.string import try_decode
@@ -76,9 +77,11 @@ class DataMixin(object):
         if append:
             data = self.decode_key(key)
         else:
-            data = ""
-        for line in sys.stdin.readlines():
-            data += line
+            data = b""
+        if foreign.six.PY2:
+            data += sys.stdin.read()
+        else:
+            data += sys.stdin.buffer.read()
         self.add_key(key, data)
 
     def add_file(self, key, path, append=None):

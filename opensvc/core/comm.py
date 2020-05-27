@@ -394,13 +394,19 @@ class Crypt(object):
         if sender_id:
             self.blacklist_clear(sender_id)
         if not structured:
-            return msg_clustername, msg_nodename, data
+            try:
+                loaded = json.loads(bdecode(data))
+            except ValueError as exc:
+                loaded = data
+            if not isinstance(loaded, foreign.six.text_type):
+                loaded = data
+            return msg_clustername, msg_nodename, loaded
         try:
             return msg_clustername, msg_nodename, json.loads(bdecode(data))
         except ValueError as exc:
             return msg_clustername, msg_nodename, data
 
-    def encrypt(self, data, cluster_name=None, secret=None, encode=True, structured=True):
+    def encrypt(self, data, cluster_name=None, secret=None, encode=True):
         """
         Encrypt and return data in a wrapping structure.
         """
@@ -413,18 +419,11 @@ class Crypt(object):
         if cluster_key is None:
             return
         iv = self.gen_iv()
-        if structured:
-            try:
-                data = json.dumps(data).encode()
-            except (UnicodeDecodeError, TypeError):
-                # already binary data
-                pass
-        else:
-            try:
-                data = data.encode()
-            except (UnicodeDecodeError, AttributeError):
-                # already binary data
-                pass
+        try:
+            data = json.dumps(data).encode()
+        except (UnicodeDecodeError, TypeError):
+            # already binary data
+            pass
         message = {
             "clustername": cluster_name,
             "nodename": Env.nodename,
