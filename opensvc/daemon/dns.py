@@ -173,11 +173,19 @@ class Dns(shared.OsvcThread):
             if data is None or not isinstance(data, dict):
                 continue
 
-            result = self.router(data)
+            try:
+                result = self.router(data)
+            except Exception as exc:
+                self.log.error("dns request: %s => handler error: %s", data, exc)
+                return {"error": "unexpected backend error", "result": False}
             if result is not None:
                 message = json.dumps(result) + "\n"
-                cw.write(message)
-                cw.flush()
+                try:
+                    cw.write(message)
+                    cw.flush()
+                except BrokenPipeError:
+                    self.log.info("client died (broken pipe)")
+                    break
                 self.log.debug("replied %s", message)
                 message_len = len(message)
                 self.stats.sessions.tx += message_len
