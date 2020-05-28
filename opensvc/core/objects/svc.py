@@ -8,7 +8,9 @@ import itertools
 import logging
 import os
 import signal
+import shutil
 import sys
+import tempfile
 import time
 from errno import ECONNREFUSED
 
@@ -1265,7 +1267,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Do the action.
         Finally, feed the log to the collector.
         """
-        import tempfile
         begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Provision a database entry to store action log later
@@ -1727,7 +1728,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.Error("could not fetch remote config")
-            import tempfile
             try:
                 tmpfile = tempfile.NamedTemporaryFile()
                 fname = tmpfile.name
@@ -1758,7 +1758,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         If the temp file already exists, propose the --discard
         or --recover options.
         """
-        import shutil
         makedirs(os.path.dirname(self.paths.tmp_cf))
         if os.path.exists(self.paths.tmp_cf):
             if self.options.recover:
@@ -1815,7 +1814,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             print(error, file=sys.stderr)
             return 1
         from utilities.files import fsum
-        import shutil
         if want_context() or not os.path.exists(self.paths.cf):
             refcf = self.remote_service_config_fetch()
             need_send = True
@@ -2018,7 +2016,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         buff = self.remote_service_config(nodename=nodename)
         if not buff:
             raise ex.Error
-        import tempfile
         tmpfile = tempfile.NamedTemporaryFile()
         fname = tmpfile.name
         tmpfile.close()
@@ -2189,7 +2186,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
           ('INC', self.var_d),
         ]
 
-        import shutil
         collect_d = os.path.join(Env.paths.pathvar, "support")
         try:
             shutil.rmtree(collect_d)
@@ -2436,15 +2432,23 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.volatile:
             return
         data["csum"] = self.csum_status_data(data)
+        fpath = None
         try:
-            with open(self.status_data_dump, "w") as filep:
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=self.var_d, prefix='status.json.') as filep:
+                fpath = filep.name
                 json.dump(data, filep)
-                filep.flush()
-            os.utime(self.status_data_dump, (-1, data["updated"]))
+            os.utime(fpath, (-1, data["updated"]))
+            shutil.move(fpath, self.status_data_dump)
             self.wake_monitor()
         except Exception as exc:
             self.log.warning("failed to update %s: %s",
                              self.status_data_dump, str(exc))
+        finally:
+            if fpath:
+                try:
+                    os.unlink(fpath)
+                except Exception:
+                    pass
         return data
 
     def update_status_data(self):
@@ -2554,7 +2558,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 os.unlink(fpath)
 
     def delete_service_sched(self):
-        import shutil
         dpath = os.path.join(self.var_d, "scheduler")
         self.log.info("remove %s", dpath)
         try:
@@ -2574,7 +2577,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Delete the service configuration files
         """
-        import shutil
         dpaths = [
             self.paths.alt_initd,
             self.paths.initd,
