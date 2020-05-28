@@ -2939,8 +2939,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if not os.path.exists(fpath):
             raise ex.Error("%s does not exists" % fpath)
         try:
-            return json.loads(fpath)
-        except Exception:
+            with open(fpath, "r") as f:
+                return json.load(f)
+        except Exception as exc:
             pass
         svc = factory(kind)(name, namespace=namespace, cf=fpath, node=self, volatile=True)
         svc.options.format = "json"
