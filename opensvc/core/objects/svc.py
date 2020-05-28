@@ -2052,7 +2052,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception:
             return
 
-    def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=0, collect=False, action_mode=True):
+    def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=None, collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
