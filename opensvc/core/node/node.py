@@ -2872,10 +2872,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Download a provisioning template from the collector's rest api,
         and installs it as the service configuration file.
         """
-        import tempfile
-        tmpf = tempfile.NamedTemporaryFile()
-        tmpfpath = tmpf.name
-        tmpf.close()
+        tmpfpath = self.svc_conf_tempfile()
         try:
             int(template)
             url = "/provisioning_templates/"+str(template)+"?props=tpl_definition&meta=0"
@@ -2903,11 +2900,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             except OSError:
                 pass
 
-    def svc_conf_from_uri(self, name, namespace, kind, fpath):
-        """
-        Download a provisioning template from an arbitrary uri,
-        and installs it as the service configuration file.
-        """
+    def svc_conf_tempfile(self, content=None):
         import tempfile
         tmpf = tempfile.NamedTemporaryFile()
         tmpfpath = tmpf.name
@@ -2915,6 +2908,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         with open(tmpfpath, "w"):
             pass
         os.chmod(tmpfpath, 0o0600)
+        if content is None:
+            return tmpfpath
+        with open(tmpfpath, "w") as f:
+            f.write(content)
+        return tmpfpath
+
+    def svc_conf_from_uri(self, name, namespace, kind, fpath):
+        """
+        Download a provisioning template from an arbitrary uri,
+        and installs it as the service configuration file.
+        """
+        tmpfpath = self.svc_conf_tempfile()
         print("get %s (%s)" % (fpath, tmpfpath))
         try:
             self.urlretrieve(fpath, tmpfpath)
@@ -2950,18 +2955,21 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         }
         return data
 
-    def svc_conf_from_stdin(self):
+    def svc_conf_from_stdin(self, name, namespace, kind):
         feed = ""
         for line in sys.stdin.readlines():
             feed += line
         data = None
-        if feed:
-            try:
-                data = json.loads("".join(feed))
-            except ValueError:
-                raise ex.Error("invalid json feed")
-        else:
+        if not feed:
             raise ex.Error("empty feed")
+        try:
+            data = json.loads("".join(feed))
+        except ValueError:
+            tmpfpath = self.svc_conf_tempfile(content=feed)
+            try:
+                data = self.svc_conf_from_file(name, namespace, kind, tmpfpath)
+            finally:
+                os.unlink(tmpfpath)
         return data
 
     def svc_conf_from_selector(self, selector):
@@ -3122,7 +3130,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             kind = "svc"
 
         if sys.stdin and env in (["-"], ["stdin"], ["/dev/stdin"]):
-            env_to_merge = self.svc_conf_from_stdin()
+            env_to_merge = self.svc_conf_from_stdin(name, namespace, kind)
             env = []
 
         if template and want_context():
@@ -3145,7 +3153,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         # convert to a pivotal dataset: dict of configs, indexed by path
         if sys.stdin and fpath in ("-", "stdin", "/dev/stdin"):
-            data = self.svc_conf_from_stdin()
+            data = self.svc_conf_from_stdin(name, namespace, kind)
         elif fpath and "://" not in fpath and not os.path.exists(fpath):
             data = self.svc_conf_from_selector(fpath)
         elif template is not None:
