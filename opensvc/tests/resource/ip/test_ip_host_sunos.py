@@ -33,13 +33,18 @@ def ip_class(mocker, mock_sysname):
 @pytest.mark.usefixtures('osvc_path_tests')
 class TestIpStartCmd:
     @staticmethod
-    @pytest.mark.parametrize('ipdev,expected_netmask',
-                             [('net0', '255.255.255.0'),
-                              ('net1', '255.255.0.0'),
-                              ('net2', '255.0.0.0'),
+    @pytest.mark.parametrize('ipdev, netmask, expected_netmask',
+                             [('net0', None, '255.255.255.0'),
+                              ('net1', None, '255.255.0.0'),
+                              ('net2', None, '255.0.0.0'),
+                              ('net2', '24', '255.255.255.0'),
+                              ('net2', '8', '255.0.0.0'),
                               ])
-    def test_call_ifconfig_with_correct_netmask_value(ip_class, ipdev, expected_netmask):
-        ip = ip_class(ipname='192.168.0.149', ipdev=ipdev)
+    def test_call_ifconfig_with_correct_netmask_value(ip_class, ipdev, netmask, expected_netmask):
+        kwargs = {'ipname': '192.168.0.149', 'ipdev': ipdev}
+        if netmask:
+            kwargs['netmask'] = netmask
+        ip = ip_class(**kwargs)
         ip.addr = ip.ipname
         ip.get_stack_dev()
         ip.startip_cmd()

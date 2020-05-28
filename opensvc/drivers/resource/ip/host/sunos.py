@@ -1,5 +1,5 @@
 import utilities.ping
-from utilities.net.converters import cidr_to_dotted, hexmask_to_dotted
+from utilities.net.converters import cidr_to_dotted, to_cidr
 
 from .. import Ip
 
@@ -25,11 +25,10 @@ class IpHost(Ip):
         cmd = [
             "/usr/sbin/ifconfig", self.stacked_dev,
             "plumb", self.addr,
-            "netmask", hexmask_to_dotted(self.netmask), "broadcast", "+", "up",
+            "netmask", cidr_to_dotted(to_cidr(self.netmask)), "broadcast", "+", "up",
         ]
         return self.vcall(cmd)
 
     def stopip_cmd(self):
         cmd = ["/usr/sbin/ifconfig", self.stacked_dev, "unplumb"]
         return self.vcall(cmd)
-
