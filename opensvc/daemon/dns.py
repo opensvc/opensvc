@@ -1,6 +1,7 @@
 """
 Listener Thread
 """
+import errno
 import os
 import sys
 import socket
@@ -183,7 +184,9 @@ class Dns(shared.OsvcThread):
                 try:
                     cw.write(message)
                     cw.flush()
-                except BrokenPipeError:
+                except socket.error as exc:
+                    if exc.errno != errno.EPIPE:
+                        raise
                     self.log.info("client died (broken pipe)")
                     break
                 self.log.debug("replied %s", message)
