@@ -365,6 +365,7 @@ ACTIONS_DO_MASTER_AND_SLAVE = [
     "startstandby",
     "stop",
     "toc",
+    "unprovision"
 ]
 
 ACTIONS_NEED_SNAP_TRIGGER = [
@@ -4511,12 +4512,22 @@ class Svc(BaseSvc):
         self.encap_cmd(['shutdown'], verbose=True, unjoinable="continue", error="continue")
 
     def unprovision(self):
+        self.slave_unprovision()
+        self.master_unprovision()
+
+    @_master_action
+    def master_unprovision(self):
         self.sub_set_action("disk.scsireserv", "stop", xtags=set(["zone", "docker", "podman"]))
         self.sub_set_action(STOP_GROUPS, "unprovision", xtags=set(["zone", "docker", "podman"]))
         if not self.command_is_scoped():
             self.pg_remove()
             self.delete_service_sched()
         self.purge_var_d()
+
+    @_slave_action
+    def slave_unprovision(self):
+        cmd = self.prepare_async_cmd()
+        self.encap_cmd(cmd, verbose=True)
 
     def provision(self):
         self.master_provision()
