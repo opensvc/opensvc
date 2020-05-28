@@ -940,7 +940,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             #
             self.log.debug("purge all resource status file caches before "
                            "action %s", action)
-            self.purge_status_caches()
+            self.purge_status_last()
 
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
@@ -2331,18 +2331,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         the service and monitor information. Fetch CRM status from cache if
         possible and allowed by kwargs.
         """
+        if self.status_data_dump_outdated():
+            return
         try:
-            lockfile = os.path.join(self.var_d, "lock.json.status")
-            with utilities.lock.cmlock(timeout=5, delay=0.5, lockfile=lockfile, intent="status from cache"):
-                if self.status_data_dump_outdated():
-                    return
-                try:
-                    with open(self.status_data_dump, 'r') as filep:
-                        data = json.load(filep)
-                except (OSError, ValueError):
-                    return
-        except utilities.lock.LOCK_EXCEPTIONS as exc:
-            raise ex.AbortAction(str(exc))
+            with open(self.status_data_dump, 'r') as filep:
+                data = json.load(filep)
+        except (OSError, ValueError):
+            return
         running = self.get_running(data.get("resources", {}).keys())
         if running:
             data["running"] = running
