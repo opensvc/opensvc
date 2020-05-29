@@ -1036,8 +1036,6 @@ class OsvcThread(threading.Thread, Crypt):
             if "avail" not in instance:
                 # deleting
                 continue
-            if discard_na and instance.avail == "n/a":
-                continue
             if discard_frozen and instance.frozen:
                 continue
             if discard_unprovisioned and instance.provisioned is False:
