@@ -13,7 +13,7 @@ test/
 tmp/
 out/
 bin/python
-lib/version.py
+opensvc/version.py
 bin/pkg/release_*
 bin/pkg/winbuilder/wxs/opensvcfiles.wxs
 .hg/
@@ -32,3 +32,7 @@ bin/init/opensvc.init
 .idea
 opensvc.iml
 .tox/
+usr/share/doc/template.*.*.conf
+usr/share/doc/template.*.*.example
+usr/share/doc/daemon.events
+usr/share/man/man?/*.?

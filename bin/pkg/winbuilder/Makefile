@@ -17,8 +17,9 @@ PRJMANUFACTURER=OpenSVC
 PRJBUILDER=Arnaud Veron
 PRJNAME=OpenSVC
 PRJFWRULE1NAME=OpenSVC Listener
+PRJFWRULE2NAME=OpenSVC API WebApp Listener
 PRJTITLE=OpenSVC Agent Distribution
-PRJWEBSITE=http://www.opensvc.com/
+PRJWEBSITE=https://www.opensvc.com/
 PRJVERSION=$(OSVCMAKEVERSION)
 PRJRELEASE=$(OSVCMAKERELEASE)
 
@@ -80,10 +81,12 @@ copy:
 		@del /s /q "$(OSVCPKGROOT)\python\*.pyc" 2>nul
 
 version:
-	    @echo =^> Generating version.py file in "$(OSVCPKGROOT)\lib\"
+	    @echo =^> Generating version.py file in "$(OSVCPKGROOT)\opensvc\utilities\version\"
 	    @if not exist "$(OSVCPKGROOT)" mkdir "$(OSVCPKGROOT)"
-	    @if not exist "$(OSVCPKGROOT)\lib" mkdir "$(OSVCPKGROOT)\lib"
-           echo version = "$(OSVCMAKEVERSION)-$(OSVCMAKERELEASE)" > "$(OSVCPKGROOT)\lib\version.py" 
+	    @if not exist "$(OSVCPKGROOT)\opensvc" mkdir "$(OSVCPKGROOT)\opensvc"
+	    @if not exist "$(OSVCPKGROOT)\opensvc\utilities" mkdir "$(OSVCPKGROOT)\opensvc\utilities"
+	    @if not exist "$(OSVCPKGROOT)\opensvc\utilities\version" mkdir "$(OSVCPKGROOT)\opensvc\utilities\version"
+           echo version = "$(OSVCMAKEVERSION)-$(OSVCMAKERELEASE)" > "$(OSVCPKGROOT)\opensvc\utilities\version\version.py" 
 
 
 clean:
@@ -101,7 +104,7 @@ heat:
 
 candle:
 		@echo =^> Compiling xml documents to object files
-		"$(WIXTOOLS)\candle.exe" -arch x64 -ext WiXFirewallExtension -dOSVCPKGROOT="$(OSVCPKGROOT)" -dPRJSVCNAME="$(PRJSVCNAME)" -dPRJSVCDESC="$(PRJSVCDESC)" -dPRJSVCDISPLAYNAME="$(PRJSVCDISPLAYNAME)" -dPRJFWRULE1NAME="$(PRJFWRULE1NAME)" -dPRJSVCPYEXECPATH="$(PRJSVCPYEXECPATH)" -dPRJSVCPYEXECBIN="$(PRJSVCPYEXECBIN)" -dPRJMANUFACTURER="$(PRJMANUFACTURER)" -dPRJNAME="$(PRJNAME)" -dPRJTITLE="$(PRJTITLE)" -dPRJVERSION="$(PRJVERSION)" -dPRJRELEASE="$(PRJRELEASE)"  "$(WXSDIR)\$(PRJNAME)product.wxs" "$(WXSDIR)\$(PRJNAME)files.wxs" -out "$(OUTDIR)\\"
+		"$(WIXTOOLS)\candle.exe" -arch x64 -ext WiXFirewallExtension -dOSVCPKGROOT="$(OSVCPKGROOT)" -dPRJSVCNAME="$(PRJSVCNAME)" -dPRJSVCDESC="$(PRJSVCDESC)" -dPRJSVCDISPLAYNAME="$(PRJSVCDISPLAYNAME)" -dPRJFWRULE1NAME="$(PRJFWRULE1NAME)" -dPRJFWRULE2NAME="$(PRJFWRULE2NAME)" -dPRJSVCPYEXECPATH="$(PRJSVCPYEXECPATH)" -dPRJSVCPYEXECBIN="$(PRJSVCPYEXECBIN)" -dPRJMANUFACTURER="$(PRJMANUFACTURER)" -dPRJNAME="$(PRJNAME)" -dPRJTITLE="$(PRJTITLE)" -dPRJVERSION="$(PRJVERSION)" -dPRJRELEASE="$(PRJRELEASE)"  "$(WXSDIR)\$(PRJNAME)product.wxs" "$(WXSDIR)\$(PRJNAME)files.wxs" -out "$(OUTDIR)\\"
 
 light:
 		@echo =^> Linking objects files to generate final msi

@@ -58,7 +58,7 @@ function deploy_cluster_manager {
 	# OSVC_CLUMGR_REPO can be set to use a custom repository
 	# OSVC_CURL_OPTS can be set to custom download parameters
         CLUMGR_DIR="$CHROOT/opt/opensvc/usr/share/html"
-        API_VERSION=$(grep ^API_VERSION $CHROOT/opt/opensvc/lib/osvcd_shared.py | awk '{print $3}')
+        API_VERSION=$(grep ^API_VERSION $CHROOT/opt/opensvc/opensvc/daemon/shared.py | awk '{print $3}')
 	CLUMGR_REPO=${OSVC_CLUMGR_REPO:-https://repo.opensvc.com/cluster-manager}
         CLUMGR_URL="${CLUMGR_REPO}/${API_VERSION}/current"
         CLUMGR_BUNDLE="$CHROOT/opt/opensvc/bundle.tar.gz"
@@ -108,7 +108,7 @@ function prepare_chroot {
 	git archive --format=tar HEAD | ( cd $CHROOT/opt/opensvc && tar xf - )
 
 	# install version.py
-	echo "version = \"$VERSION-$RELEASE\"" | tee $CHROOT/opt/opensvc/lib/version.py || return 1
+           echo "version = \"$VERSION-$RELEASE\"" | tee $CHROOT/opt/opensvc/opensvc/utilities/version/version.py || return 1
 
 	# compress docs
 	cd $CHROOT/opt/opensvc/usr/share/doc
@@ -130,7 +130,7 @@ function prepare_chroot {
 	cd /tmp
 	rm -f $CHROOT/opt/opensvc/*.tar.gz >> /dev/null 2>&1
 	rm -rf $CHROOT/opt/opensvc/bin/pkg
-	rm -rf $CHROOT/opt/opensvc/lib/tests
+	rm -rf $CHROOT/opt/opensvc/opensvc/tests
 	rm -f $CHROOT/opt/opensvc/bin/postinstall.cmd
 
 	DOCDIR=$CHROOT/usr/share/doc/opensvc
@@ -148,7 +148,7 @@ function prepare_chroot {
 	mkdir -p $CHROOT/usr/share/man/man1
 	mkdir -p $CHROOT/etc/bash_completion.d
 	mv $CHROOT/opt/opensvc/bin $CHROOT/usr/share/opensvc/
-	mv $CHROOT/opt/opensvc/lib $CHROOT/usr/share/opensvc/
+	mv $CHROOT/opt/opensvc/opensvc $CHROOT/usr/share/opensvc/
 	mv $CHROOT/opt/opensvc/var/compliance $CHROOT/var/lib/opensvc/
 	mv $CHROOT/opt/opensvc/usr/share/doc/* $DOCDIR/
 	mv $CHROOT/opt/opensvc/usr/share/man/man1/* $CHROOT/usr/share/man/man1/
