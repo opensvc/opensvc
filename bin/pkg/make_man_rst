@@ -134,7 +134,7 @@ def write(prog, parser):
         f.write(buff)
 
 def do(kind):
-    prog = kind+"mgr"
+    prog = kind
     mod = importlib.import_module("commands.%s.parser" % prog)
     classname = prog.capitalize() + "OptParser"
     parser = getattr(mod, classname)()

@@ -103,8 +103,8 @@
                             </Component>
                         </Directory>
                         <Directory Id="PKG" Name="pkg">
-                            <Component Id="MAKE.LIB" DiskId="1" Guid="96E55FF9-40F2-46F0-B9E4-835DBC99C6A9">
-                                <File Id="MAKE.LIB" Name="make.lib" Source="..\..\Program Files\opensvc\bin\pkg\make.lib" />
+                            <Component Id="MAKELIB.SH" DiskId="1" Guid="96E55FF9-40F2-46F0-B9E4-835DBC99C6A9">
+                                <File Id="MAKELIB.SH" Name="makelib.sh" Source="..\..\Program Files\opensvc\bin\pkg\makelib.sh" />
                             </Component>
                             <Component Id="MAKE_DEB" DiskId="1" Guid="AD48A523-65E6-4F58-9BFC-412485080DBC">
                                 <File Id="MAKE_DEB" Name="make_deb" Source="..\..\Program Files\opensvc\bin\pkg\make_deb" />
@@ -2459,7 +2459,7 @@
             <ComponentRef Id="SVCMON" />
             <ComponentRef Id="SVCTHAW" />
             <ComponentRef Id="OPENSVC" />
-            <ComponentRef Id="MAKE.LIB" />
+            <ComponentRef Id="MAKELIB.SH" />
             <ComponentRef Id="MAKE_DEB" />
             <ComponentRef Id="MAKE_DEPOT" />
             <ComponentRef Id="MAKE_KITS" />
