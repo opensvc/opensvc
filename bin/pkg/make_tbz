@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
-. $PATH_SCRIPT/make.lib
+. $PATH_SCRIPT/makelib.sh
 
 TBZ=$CHROOT/opensvc-$VERSION.$RELEASE.tbz
 CHROOT=$CHROOT/opensvc-$VERSION.$RELEASE

@@ -3,7 +3,7 @@
 typeset MYSELF="$(readlink -f -- "$0")"
 typeset PATH_SCRIPT="${MYSELF%/*}"
 
-. "$PATH_SCRIPT/make.lib"
+. "$PATH_SCRIPT/makelib.sh"
 
 set -o nounset -o noclobber
 
