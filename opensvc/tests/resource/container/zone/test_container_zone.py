@@ -14,6 +14,11 @@ def zone_configure(mocker):
 
 
 @pytest.fixture(scope='function')
+def provision_zone(mocker):
+    return mocker.patch.object(ContainerZone, 'provision_zone')
+
+
+@pytest.fixture(scope='function')
 def zone_unconfigure(mocker):
     return mocker.patch.object(ContainerZone, 'zone_unconfigure')
 
@@ -34,8 +39,28 @@ def create_sysidcfg(mocker):
 
 
 @pytest.fixture(scope='function')
+def update_ip_tags(mocker):
+    return mocker.patch.object(ContainerZone, 'update_ip_tags')
+
+
+@pytest.fixture(scope='function')
 def create_container_origin(mocker):
     return mocker.patch.object(ContainerZone, 'create_container_origin')
+
+
+@pytest.fixture(scope='function')
+def prepare_boot_config(mocker):
+    return mocker.patch.object(ContainerZone, 'prepare_boot_config')
+
+
+@pytest.fixture(scope='function')
+def install_boot_config(mocker):
+    return mocker.patch.object(ContainerZone, 'install_boot_config')
+
+
+@pytest.fixture(scope='function')
+def make_zone_installed(mocker):
+    return mocker.patch.object(ContainerZone, 'make_zone_installed')
 
 
 @pytest.fixture(scope='function')
@@ -65,6 +90,7 @@ def klass_has_capability(mocker):
             return cap in capabilities
 
         mocker.patch.object(klass, 'has_capability', has_capability)
+
     return func
 
 
@@ -90,7 +116,7 @@ def svc(mocker, tmp_dir):
 
 @pytest.fixture(scope='function')
 def zone(svc):
-    zone = ContainerZone(rid='container#1', zonepath='/z/zonepath_kw')
+    zone = ContainerZone(rid='container#1', name='zonex', zonepath='/z/zonepath_kw')
     zone.svc = svc
     return zone
 
@@ -103,23 +129,23 @@ def with_installed_zone(mocker):
 
 
 @pytest.fixture(scope='function')
+def set_zone_data(mocker):
+    def func(state='configured', zonepath='/zones/zonename', brand='solaris'):
+        return mocker.patch.object(ContainerZone, 'zone_data',
+                                   dict(state=state, zonepath=zonepath, brand=brand))
+
+    return func
+
+
+@pytest.fixture(scope='function')
 def zone_configure(mocker):
     return mocker.patch.object(ContainerZone, 'zone_configure',
                                return_value=mocker.Mock('zone_configure'))
 
 
 @pytest.mark.ci
-@pytest.mark.usefixtures('with_installed_zone')
-class TestContainerZoneProvisionWhenZoneIsInstalled:
-    @staticmethod
-    def test_returns_without_actions(zone_configure, zone):
-        zone.provisioner()
-        assert zone_configure.call_count == 0
-
-
-@pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
-class TestContainerZonepath:
+class TestZonepath:
     @staticmethod
     def test_is_value_from_zoneadm(zone, with_installed_zone):
         with_installed_zone['zonepath'] = '/z/fromzoneadm'
@@ -151,76 +177,66 @@ class TestContainerZonepath:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
-class TestContainerProvision:
+class TestProvisioner:
     @staticmethod
     def test_return_false_when_mixing_container_origin_and_snapof(
-            zone_configure,
-            create_snaped_zone,
-            create_cloned_zone,
+            provision_zone,
             svc):
         zone = ContainerZone(rid='container#1', snapof='something', container_origin='skel')
         zone.svc = svc
         provisioned = zone.provisioner()
 
         assert provisioned is False
-        assert zone_configure.call_count == 0
-        assert create_snaped_zone.call_count == 0
-        assert create_cloned_zone.call_count == 0
+        assert provision_zone.call_count == 0
 
     @staticmethod
+    @pytest.mark.usefixtures('with_installed_zone')
     def test_return_true_when_already_provisioned(
-            with_installed_zone,
-            zone_configure,
-            create_snaped_zone,
-            create_cloned_zone,
+            provision_zone,
             zone):
         provisioned = zone.provisioner(need_boot=False)
 
         assert provisioned is True
-        assert zone_configure.call_count == 0
-        assert create_snaped_zone.call_count == 0
-        assert create_cloned_zone.call_count == 0
+        assert provision_zone.call_count == 0
 
     @staticmethod
-    def test_install_from_scratch(
-            install_zone,
+    @pytest.mark.usefixtures('with_installed_zone')
+    def test_leave_can_rollback_to_false_when_already_provisioned(
+            zone):
+        zone.provisioner(need_boot=False)
+        assert zone.can_rollback is False
+
+    @staticmethod
+    def test_provision_zone_when_not_yet_provisioned(
+            provision_zone,
             zone):
         provisioned = zone.provisioner(need_boot=False)
 
         assert provisioned is True
-        assert install_zone.call_count == 1
+        assert provision_zone.call_count == 1
 
     @staticmethod
-    @pytest.mark.usefixtures('brand_native')
-    def test_create_snaped_zone_if_snapof_when_brand_native(
-            create_snaped_zone,
-            install_zone,
-            svc):
-        zone = ContainerZone(rid='container#1', snapof='something')
-        zone.svc = svc
-        provisioned = zone.provisioner(need_boot=False)
-
-        assert provisioned is True
-        assert create_snaped_zone.call_count == 1
+    @pytest.mark.usefixtures('provision_zone')
+    def test_set_can_roolback_after_provision_zone(zone):
+        zone.provisioner(need_boot=False)
+        assert zone.can_rollback is True
 
     @staticmethod
     @pytest.mark.usefixtures('brand_solaris')
     def test_refuse_snapof_when_no_brand_native_capability(
-            zone_configure,
-            create_cloned_zone,
+            provision_zone,
             svc):
         zone = ContainerZone(rid='container#1', snapof='something')
         zone.svc = svc
         provisioned = zone.provisioner(need_boot=False)
 
         assert provisioned is False
-        assert zone_configure.call_count == 0
-        assert create_cloned_zone.call_count == 0
+        assert provision_zone.call_count == 0
 
     @staticmethod
-    def test_create_origin__then_create_clone_when_container_origin(
+    def test_create_origin_then_provision_zone_when_container_origin(
             create_container_origin,
-            create_cloned_zone,
+            provision_zone,
             svc):
         zone = ContainerZone(rid='container#1', container_origin='skelzone')
         zone.svc = svc
@@ -228,12 +244,12 @@ class TestContainerProvision:
 
         assert provisioned is True
         assert create_container_origin.call_count == 1
-        assert create_cloned_zone.call_count == 1
+        assert provision_zone.call_count == 1
 
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
-class TestContainerUnprovision:
+class TestUnprovisioner:
     @staticmethod
     def test_noop_when_no_zone(
             zone_unconfigure,
@@ -270,42 +286,179 @@ class TestContainerUnprovision:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
-@pytest.mark.usefixtures('brand_native')
-class TestContainerInstallZoneOnBrandNative:
+class TestProvisionZone:
     @staticmethod
-    def test_configure_then_install_zone_with_sysidcfg(zoneadm, zone_configure, create_sysidcfg, zone):
-        zone.install_zone()
+    @pytest.mark.parametrize('state', ['installed', 'running'])
+    def test_does_nothing_when_already_provisioned(set_zone_data, state, zone):
+        set_zone_data(state=state)
+        zone.provision_zone()
+
+    @staticmethod
+    def test_it_configure_prepare_boot_config_make_installed_and_install_boot_config(
+            zone_configure,
+            prepare_boot_config,
+            make_zone_installed,
+            install_boot_config,
+            zone):
+        zone.provision_zone()
         assert zone_configure.call_count == 1
-        assert create_sysidcfg.call_count == 1
-        zoneadm.assert_called_once_with('install', [])
+        assert prepare_boot_config.call_count == 1
+        assert make_zone_installed.call_count == 1
+        assert install_boot_config.call_count == 1
 
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
-@pytest.mark.usefixtures('brand_solaris')
-class TestContainerInstallZoneOnBrandSolaris:
+class TestPrepareBootConfig:
     @staticmethod
-    def test_configure_then_install_zone_with_existing_sc_profile(zoneadm, zone_configure, file1, zone):
-        zone.sc_profile = file1
-        zone.install_zone()
-        assert zone_configure.call_count == 1
-        zoneadm.assert_called_once_with('install', ['-c', file1])
-
-    @staticmethod
-    def test_configure_then_install_with_automatically_created_sc_profile(mocker, zoneadm, zone_configure, zone):
+    @pytest.mark.parametrize('brand', ['solaris'])
+    def test_creates_sc_profile(set_zone_data, brand, mocker, zone):
         mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
-        zone.install_zone()
-        assert zone_configure.call_count == 1
-        zoneadm.assert_called_once_with('install', ['-c', zone.sc_profile])
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
         assert os.path.exists(zone.sc_profile)
         with open(zone.sc_profile, 'r') as f:
             xml_content = f.read()
-        assert 'xml version' in xml_content
+            assert 'xml version' in xml_content
 
     @staticmethod
-    def test_configure_then_install_using_ai_manifest(zoneadm, zone_configure, file1, file2, zone):
-        zone.sc_profile = file1
+    @pytest.mark.parametrize('brand', ['solaris'])
+    def test_set_boot_config_file_with_created_sc_profile(set_zone_data, brand, mocker, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert os.path.exists(zone.boot_config_file)
+        assert zone.boot_config_file == zone.sc_profile
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris10', 'native'])
+    def test_creates_sysidcfg(mocker, set_zone_data, brand, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert os.path.exists(zone.sysidcfg)
+        with open(zone.sysidcfg, 'r') as f:
+            sysidcfg_content = f.read()
+            assert 'name_service=' in sysidcfg_content
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris10'])
+    def test_set_boot_config_file_with_created_sysidcfg(mocker, set_zone_data, brand, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert os.path.exists(zone.boot_config_file)
+        assert zone.boot_config_file == zone.sysidcfg
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['native'])
+    def test_has_no_boot_config_file(mocker, set_zone_data, brand, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert zone.boot_config_file is None
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestMakeInstalled:
+    @staticmethod
+    def test_call_install_zone_when_no_snapof_or_container_origin(install_zone, zone):
+        zone.make_zone_installed()
+        assert install_zone.call_count == 1
+
+    @staticmethod
+    def test_call_create_cloned_zone_wehn_container_origin(create_cloned_zone, zone):
+        zone.container_origin = 'skelzone'
+        zone.make_zone_installed()
+        assert create_cloned_zone.call_count == 1
+
+    @staticmethod
+    def test_call_create_snaped_zone_wehn_container_origin(create_snaped_zone, zone):
+        zone.snapof = '/zones/skelzone'
+        zone.make_zone_installed()
+        assert create_snaped_zone.call_count == 1
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestInstallZone:
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
+    def test_install_zone_with_boot_config_file(brand, set_zone_data, zoneadm, file1, zone):
+        set_zone_data(brand=brand)
+        zone.boot_config_file = file1
+        zone.install_zone()
+        zoneadm.assert_called_once_with('install', ['-c', file1])
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris'])
+    def test_install_zone_with_ai_manifest(brand, set_zone_data, zoneadm, file1, zone):
+        set_zone_data(brand=brand)
+        zone.ai_manifest = file1
+        zone.install_zone()
+        zoneadm.assert_called_once_with('install', ['-m', file1])
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['native'])
+    def test_install_simple(brand, set_zone_data, zoneadm, zone):
+        set_zone_data(brand=brand)
+        zone.install_zone()
+        zoneadm.assert_called_once_with('install', [])
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris'])
+    def test_install_zone_boot_config_and_ai_manifest(brand, set_zone_data, zoneadm, file1, file2, zone):
+        set_zone_data(brand=brand)
+        zone.boot_config_file = file1
         zone.ai_manifest = file2
         zone.install_zone()
-        assert zone_configure.call_count == 1
         zoneadm.assert_called_once_with('install', ['-c', file1, '-m', file2])
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestCloneZone:
+    @staticmethod
+    @pytest.mark.usefixtures('update_ip_tags')
+    def test_clone_use_boot_config_file_if_present(set_zone_data, zoneadm, zone):
+        def zoneadm_side_effect(*args, **kwargs):
+            set_zone_data(state='installed')
+
+        set_zone_data(state='configured')
+        zoneadm.side_effect = zoneadm_side_effect
+        zone.boot_config_file = '/a_file'
+        zone.container_origin = 'skelzone'
+        zone.create_cloned_zone()
+        zoneadm.assert_called_once_with('clone', ['-c', zone.boot_config_file, 'skelzone'])
+
+    @staticmethod
+    @pytest.mark.usefixtures('update_ip_tags')
+    def test_clone_simple_clone_file_if_present(set_zone_data, zoneadm, zone):
+        def zoneadm_side_effect(*args, **kwargs):
+            set_zone_data(state='installed')
+
+        set_zone_data(state='configured')
+        zoneadm.side_effect = zoneadm_side_effect
+        zone.container_origin = 'skelzone'
+        zone.create_cloned_zone()
+        zoneadm.assert_called_once_with('clone', ['skelzone'])
+
+    @staticmethod
+    @pytest.mark.usefixtures('update_ip_tags')
+    def test_raise_if_final_zone_state_is_not_installed(set_zone_data, zoneadm, zone):
+        set_zone_data(state='configured')
+        zone.container_origin = 'skelzone'
+        with pytest.raises(ex.Error, match='zone %s is not installed' % zone.name):
+            zone.create_cloned_zone()
+
+
+@pytest.mark.ci
+class TestCreateContainerOrigin:
+    @staticmethod
+    @pytest.mark.usefixtures('brand_solaris')
+    def test_noop_when_origin_is_already_installed(set_zone_data, zoneadm, zone):
+        set_zone_data(state='installed')
+        zone.container_origin = 'skelzone'
+        zone.create_container_origin()
+        assert zoneadm.call_count == 0
