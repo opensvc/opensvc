@@ -35,7 +35,10 @@ def agent_version():
         out, err, ret = justcall(cmd)
         if ret != 0:
             return "dev"
-        _release = out.strip().split("-")[1]
+        try:
+            _release = out.strip().split("-")[1]
+        except IndexError:
+            _release = "0"
         return "-".join((_version, _release+"dev"))
 
     return "dev"
