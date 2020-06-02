@@ -38,7 +38,7 @@ def agent_version():
         try:
             _release = out.strip().split("-")[1]
         except IndexError:
-            _release = out
+            _release = "0"
         return "-".join((_version, _release+"dev"))
 
     return "dev"
