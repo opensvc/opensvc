@@ -6,7 +6,8 @@ cache: pip
 branches:
   only:
   - master
-  - next
+  - b2.0
+  - b2.1
 matrix:
   include:
   - os: linux
