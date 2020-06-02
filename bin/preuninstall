@@ -5,6 +5,10 @@ ARGS=$1
 OSFLAVOR=`uname`
 if [ $OSFLAVOR = 'SunOS' -o $OSFLAVOR = 'FreeBSD' ]
 then
+  if [ "$PKG_INSTALL_ROOT" != "/" -a "$PKG_INSTALL_ROOT" != "" ]; then
+    echo "skipped pre-install when PKG_INSTALL_ROOT=$PKG_INSTALL_ROOT"
+    exit 0
+  fi
 	ARGS=0
 fi
 

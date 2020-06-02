@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ "$PKG_INSTALL_ROOT" != "/" -a "$PKG_INSTALL_ROOT" != "" ]; then
+  echo "skipped pre-install when PKG_INSTALL_ROOT=$PKG_INSTALL_ROOT"
+  exit 0
+fi
+
 # set OSVC_ROOT_PATH
 test -f /etc/sysconfig/opensvc && . /etc/sysconfig/opensvc
 test -f /etc/default/opensvc && . /etc/default/opensvc
