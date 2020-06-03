@@ -1140,7 +1140,11 @@ class ClientHandler(shared.OsvcThread):
             "options": options,
         }
         data = self.update_data_from_path(data)
-        handler = self.get_handler(method, data["action"])
+        try:
+            handler = self.get_handler(method, data["action"])
+        except ex.HTTP as exc:
+            result = {"status": exc.status, "error": exc.msg}
+            return exc.status, content_type, result
 
         try:
             self.authenticate_client(headers)
