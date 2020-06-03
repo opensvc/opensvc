@@ -16,9 +16,9 @@ from utilities.lazy import lazy
 from utilities.proc import justcall, call_log
 from utilities.converters import convert_size
 
-RE_MINOR = b"^\s*device\s*/dev/drbd([0-9]+).*;"
-RE_PORT = b"^\s*address.*:([0-9]+).*;"
-RE_NODE_ID = b"^\s*node-id\s+([0-9]+)\s*;"
+RE_MINOR = r"^\s*device\s*/dev/drbd([0-9]+).*;"
+RE_PORT = r"^\s*address.*:([0-9]+).*;"
+RE_NODE_ID = r"^\s*node-id\s+([0-9]+)\s*;"
 MAX_NODES = 32
 MAX_DRBD = 512
 MIN_PORT = 7289
