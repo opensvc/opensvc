@@ -1,25 +1,54 @@
-#!/bin/bash
+#!/usr/bin/python
 
-PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+from __future__ import print_function
 
-echo "* update service templates"
-sudo python $PATH_SCRIPT/../../lib/svcdict.py
+import importlib
+import os
+import sys
 
-echo "* update user templates"
-sudo python $PATH_SCRIPT/../../lib/usrdict.py
+path = os.path.join(os.path.dirname(__file__), "..", "..", "opensvc")
+sys.path.insert(0, path)
 
-echo "* update secret templates"
-sudo python $PATH_SCRIPT/../../lib/secdict.py
+from env import Env
+import daemon.events
+from utilities.drivers import load_drivers
 
-echo "* update configmap templates"
-sudo python $PATH_SCRIPT/../../lib/cfgdict.py
 
-echo "* update cluster templates"
-sudo python $PATH_SCRIPT/../../lib/clusterdict.py
+def main(fmt="text"):
+    print("* update service templates")
+    from core.objects.svcdict import KEYS, SECTIONS, DATA_SECTIONS
+    load_drivers(SECTIONS + DATA_SECTIONS)
+    KEYS.write_templates(fmt=fmt)
 
-echo "* update node templates"
-sudo python $PATH_SCRIPT/../../lib/nodedict.py
+    print("* update user templates")
+    from core.objects.usrdict import KEYS
+    KEYS.write_templates(fmt=fmt)
 
-echo "* update daemon events"
-python $PATH_SCRIPT/../../lib/osvcd_events.py | sudo tee $PATH_SCRIPT/../../usr/share/doc/daemon.events >/dev/null
+    print("* update secret templates")
+    from core.objects.secdict import KEYS
+    KEYS.write_templates(fmt=fmt)
 
+    print("* update configmap templates")
+    from core.objects.cfgdict import KEYS
+    KEYS.write_templates(fmt=fmt)
+
+    print("* update cluster templates")
+    from core.objects.ccfgdict import KEYS
+    KEYS.write_templates(fmt=fmt)
+
+    print("* update node templates")
+    from core.node.nodedict import KEYS
+    KEYS.write_templates(fmt=fmt)
+
+    print("* update daemon events")
+    dpath = os.path.join(Env.paths.pathdoc, "daemon.events")
+    print("write %s" % dpath)
+    with open(dpath, "w") as f:
+        f.write(daemon.events.doc())
+
+if __name__ == "__main__":
+    try:
+       fmt = sys.argv[1]
+    except:
+       fmt = "text"
+    main(fmt=fmt)

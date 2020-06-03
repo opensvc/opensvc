@@ -1,11 +1,13 @@
 env:
-  - OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP=20
+  - OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP=25
 sudo: true
 language: python
 cache: pip
 branches:
   only:
   - master
+  - b2.0
+  - b2.1
 matrix:
   include:
   - os: linux
@@ -18,8 +20,8 @@ before_install:
 install:
 - pip install -r test-requirements.txt
 script:
-- sudo $(which pytest) -vvv --cov -m "ci"
-- pylint -E lib/*py
+- sudo $(which pytest) --cov -m "ci"
+- PYTHONPATH=opensvc pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
 after_success:
 - pip install codecov
 - codecov

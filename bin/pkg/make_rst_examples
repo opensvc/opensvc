@@ -5,19 +5,22 @@ import sys
 import os
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-pathlib = os.path.join(pathsvc, "lib")
+pathlib = os.path.join(pathsvc, "opensvc")
 
-sys.path = [pathlib] + sys.path
+sys.path.insert(0, pathlib)
 
-from rcGlobalEnv import rcEnv
-import svcdict
+from env import Env
+import core.objects.svcdict
+from utilities.drivers import load_drivers
+
+load_drivers(core.objects.svcdict.SECTIONS + core.objects.svcdict.DATA_SECTIONS)
 
 
 def generate_examples(fmt="text"):
-    dpath = rcEnv.paths.pathdoc
+    dpath = Env.paths.pathdoc
     if fmt == "rst":
-        dpath = os.path.join(rcEnv.paths.pathtmp, "rst")
-    svc_key = svcdict.KEYS
+        dpath = os.path.join(Env.paths.pathtmp, "rst")
+    svc_key = core.objects.svcdict.KEYS
 
     for section in svc_key.sections:
         svc_type_key = svc_key[str(section)].getkey("type", None)

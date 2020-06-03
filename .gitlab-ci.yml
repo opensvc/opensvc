@@ -3,6 +3,7 @@
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP: "15"
+  PYTHONPATH: "opensvc"
 
 stages:
   - "test"
@@ -13,8 +14,8 @@ stages:
     - apk add build-base sudo git procps
     - python -V
     - pip install -r test-requirements.txt codecov
-    - pytest -vvv --cov -m "ci"
-    - pylint -E lib/*py
+    - pytest --cov -m "ci"
+    - pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
     - codecov
 
 test-2.7:

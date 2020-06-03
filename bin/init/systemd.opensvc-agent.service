@@ -1,6 +1,6 @@
 [Unit]
 Description=OpenSVC agent
-Documentation=http://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
+Documentation=https://docs.opensvc.com/ file:/usr/share/doc/opensvc/ man:nodemgr(1) man:svcmgr(1) man:svcmon(1)
 Before=opensvc-services.service
 After=network-online.target
 After=time-sync.target
@@ -19,8 +19,8 @@ Requires=opensvc-services.service
 [Service]
 Type=forking
 TimeoutStopSec=5m
-ExecStart=/usr/share/opensvc/bin/nodemgr daemon start
-ExecStop=/usr/share/opensvc/bin/nodemgr daemon stop
+ExecStart=/usr/share/opensvc/bin/om daemon start
+ExecStop=/usr/share/opensvc/bin/om daemon stop
 KillMode=process
 Restart=on-failure
 OOMScoreAdjust=-1000

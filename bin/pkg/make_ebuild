@@ -3,7 +3,7 @@
 typeset MYSELF="$(readlink -f -- "$0")"
 typeset PATH_SCRIPT="${MYSELF%/*}"
 
-. "$PATH_SCRIPT/make.lib"
+. "$PATH_SCRIPT/makelib.sh"
 
 set -o nounset -o noclobber
 
@@ -51,9 +51,9 @@ PYTHON_COMPAT=( python2_{6,7} python3_{4,5,6} )
 
 if [ "\${PV}" == 9999 ] ; then
 	inherit git-r3
-	EGIT_REPO_URI="https://git.opensvc.com/opensvc/.git"
+	EGIT_REPO_URI="https://github.com/opensvc/opensvc.git"
 else
-	SRC_URI="https://repo.opensvc.com/tbz/1.9/opensvc-$VERSION-$RELEASE.tar.bz2"
+	SRC_URI="https://repo.opensvc.com/tbz/2.0/opensvc-$VERSION-$RELEASE.tar.bz2"
 fi
 
 DESCRIPTION="$SUMMARY"
@@ -89,7 +89,7 @@ src_install() {
 	doins -r usr/share/opensvc/bin/init
 
 	insinto /usr/share/opensvc
-	doins -r usr/share/opensvc/lib
+	doins -r usr/share/opensvc/opensvc
 
 	# Executables
 	exeinto /usr/share/opensvc/bin

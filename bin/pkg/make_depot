@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
-. $PATH_SCRIPT/make.lib
+. $PATH_SCRIPT/makelib.sh
 
 PSF=opensvc.psf
 DEPOT=opensvc-$VERSION-$RELEASE.depot
@@ -12,7 +12,7 @@ prepare_chroot || exit 1
 cat - <<-EOF >$CHROOT/../$PSF
 vendor
   tag           opensvc
-  title         Opensvc SARL
+  title         OpenSVC SAS
   description   opensvc nodeware
 end
 product
@@ -21,7 +21,7 @@ product
   revision       $VERSION-$RELEASE
   category       system_management
   description    $SUMMARY
-  copyright      Opensvc SARL
+  copyright      OpenSVC SAS
   architecture   HP-UX_10.20_700/800
   machine_type   *
   os_name        HP-UX

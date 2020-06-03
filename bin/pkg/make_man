@@ -7,12 +7,13 @@ import datetime
 import re
 
 pathsvc = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-pathlib = os.path.join(pathsvc, "lib")
+pathlib = os.path.join(pathsvc, "opensvc")
 pathman = os.path.join(pathsvc, "usr", "share", "man", "man1")
 
-sys.path = [pathlib] + sys.path
+sys.path.insert(0, pathlib)
 
-from rcUtilities import wipe_rest_markup
+from utilities.files import makedirs
+from utilities.optparser import wipe_rest_markup
 
 class ManPageFormatter(optparse.HelpFormatter):
     def __init__(self, indent_increment=2, max_help_position=24,
@@ -116,8 +117,8 @@ def do_svcmgr():
     desc = """OpenSVC agent's services instances management command."""
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmgr\\fP program provides commands to provision, configure, stop, start and replicate services instances on the local node."""
 
-    import svcmgr_parser
-    optparser = svcmgr_parser.SvcmgrOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    import commands.svc.parser
+    optparser = commands.svc.parser.SvcOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
     optparser.set_full_usage()
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
@@ -130,6 +131,7 @@ def do_svcmgr():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
@@ -138,8 +140,8 @@ def do_nodemgr():
     desc = """OpenSVC agent's node management command."""
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBnodemgr\\fP program provides commands to configure and execute all the agent functions that interact with the node."""
 
-    import nodemgr_parser
-    optparser = nodemgr_parser.NodemgrOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
+    import commands.node.parser
+    optparser = commands.node.parser.NodeOptParser(args=["-h"], colorize=False, width=10000, formatter=ManPageFormatter(), indent=0)
     optparser.set_full_usage()
     parser = optparser.parser
     parser.formatter = ManPageFormatter()
@@ -152,6 +154,7 @@ def do_nodemgr():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
@@ -160,9 +163,9 @@ def do_svcmon():
     desc = """OpenSVC agent's services instances status requesting command."""
     long_desc = """In the OpenSVC infrastructure, the node is an operating system instance with an OpenSVC agent installed. The node may host OpenSVC services instances. The \\fBsvcmon\\fP program prints the digested cluster and services status."""
 
-    import svcmon
-    from node import Node
-    parser = svcmon.setup_parser(Node())
+    import commands.svcmon
+    from core.node import Node
+    parser = commands.svcmon.setup_parser(Node())
     parser.formatter = ManPageFormatter()
     parser.formatter.set_parser(parser)
     parser.formatter.deprecated_options = []
@@ -173,6 +176,7 @@ def do_svcmon():
     fname = prog + ".1"
     fpath = os.path.join(pathman, fname)
     print "writing", fpath
+    makedirs(pathman)
     with open(fpath, "w") as f:
         f.write(l)
 
