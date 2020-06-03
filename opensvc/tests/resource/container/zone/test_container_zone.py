@@ -320,8 +320,8 @@ class TestConfigure:
     @pytest.mark.parametrize('brand, zonepath, expected_zonecfg_cmd',
                              [(None, None, 'create'),
                               (None, '/z/z1', 'create; set zonepath=/z/z1'),
-                              ('solaris', None, 'create -t SYSsolaris'),
-                              ('solaris', '/z/z1', 'create -t SYSsolaris; set zonepath=/z/z1'),
+                              ('solaris', None, 'create'),
+                              ('solaris', '/z/z1', 'create; set zonepath=/z/z1'),
                               ('solaris10', None, 'create -t SYSsolaris10'),
                               ('solaris10', '/zo/z1', 'create -t SYSsolaris10; set zonepath=/zo/z1'),
                               ('native', None, 'create'),
@@ -331,13 +331,14 @@ class TestConfigure:
         def zonecfg_side_effect(*args, **kwargs):
             set_zone_data(brand=brand, zonepath=zonepath)
 
-        zone = ContainerZone(rid='container#1', name='z1', brand=brand, zonepath=zonepath)
-        zone.svc = Svc(name='svc1', volatile=True)
-        zonecfg.side_effect = zonecfg_side_effect
         if brand == 'native':
             klass_has_capability(ContainerZone, ['container.zone.brand-native'])
         else:
-            klass_has_capability(ContainerZone, ['container.zone.brand-solaris'])
+            klass_has_capability(ContainerZone, ['container.zone.brand-solaris',
+                                                 'container.zone.brand-solaris10'])
+        zone = ContainerZone(rid='container#1', name='z1', brand=brand, zonepath=zonepath)
+        zone.svc = Svc(name='svc1', volatile=True)
+        zonecfg.side_effect = zonecfg_side_effect
         zone.zone_configure()
         zonecfg.assert_called_once_with([expected_zonecfg_cmd])
 
