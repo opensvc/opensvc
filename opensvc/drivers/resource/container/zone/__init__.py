@@ -2,6 +2,7 @@ import os
 import stat
 import time
 from datetime import datetime
+from shutil import copy
 
 import core.status
 import core.exceptions as ex
@@ -10,7 +11,7 @@ import utilities.lock
 import utilities.os.sunos
 from env import Env
 from utilities.lazy import lazy
-from utilities.net.converters import to_cidr
+from utilities.net.converters import to_cidr, cidr_to_dotted
 from utilities.net.getaddr import getaddr
 from utilities.subsystems.zfs import zfs_setprop, Dataset
 from core.resource import Resource
@@ -92,6 +93,19 @@ KEYWORDS = [
         "required": False,
         "provisioning": True
     },
+    {
+        "keyword": "brand",
+        "text": "The zone brand. If not set default brand will be used",
+        "candidates": ["solaris", "solaris10", "native"],
+        "required": False,
+        "provisioning": True
+    },
+    {
+        "keyword": "install_archive",
+        "text": "The install archive to use during zonedm install '-a <archive>'. If both container_origin and install_archive are set, but container_origin is not yet provisioned, container_origin will be created from <install_archive>.",
+        "required": False,
+        "provisioning": True
+    },
     KW_SNAP,
     KW_SNAPOF,
     KW_START_TIMEOUT,
@@ -140,8 +154,11 @@ class ContainerZone(BaseContainer):
                  sc_profile=None,
                  ai_manifest=None,
                  provision_net_type="anet",
+                 brand=None,
+                 install_archive=None,
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
+        self.sysidcfg = None
         self.delete_on_stop = delete_on_stop
         self.delayed_noaction = True
         self.container_origin = container_origin
@@ -157,6 +174,9 @@ class ContainerZone(BaseContainer):
             self.default_brand = 'native'
         else:
             self.default_brand = None
+        self.boot_config_file = None
+        self.kw_brand = brand
+        self.install_archive = install_archive
 
     @lazy
     def clone(self):
@@ -171,6 +191,10 @@ class ContainerZone(BaseContainer):
     @lazy
     def zone_cf(self):
         return "/etc/zones/%s.xml" % self.name
+
+    @lazy
+    def osver(self):
+        return utilities.os.sunos.get_solaris_version()
 
     def zone_cfg_dir(self):
         return os.path.join(self.var_d, "zonecfg")
@@ -347,6 +371,7 @@ class ContainerZone(BaseContainer):
             return 0
         self.wait_for_fn(self.is_zone_unlocked, self.stop_timeout, 2)
         return self.zoneadm("detach")
+        self.zone_refresh()
 
     def ready(self):
         if self.state == "ready" or self.state == "running":
@@ -693,17 +718,23 @@ class ContainerZone(BaseContainer):
 
         return {"vcpus": vcpus, "vmem": vmem}
 
-
     def pre_unprovision_stop(self):
         self._stop()
 
     def post_provision_start(self):
         pass
 
-    def update_solaris_11_ip_tags(self):
+    def update_ip_tags(self):
+        if self.osver < 11.0:
+            return
         ip_kws = []
         need_save = False
-        for rid in self.get_encap_ip_rids():
+        if self.brand in ['native', 'solaris10']:
+            # pickup only first rid because of sysidcfg only setup 1st nic
+            rids = self.get_encap_ip_rids()[:1]
+        else:
+            rids = self.get_encap_ip_rids()
+        for rid in rids:
             # Add mandatory tags for sol11 zones
             tags = self.get_encap_conf(rid, 'tags')
             for tag in ['noaction', 'noalias', 'exclusive']:
@@ -767,6 +798,32 @@ class ContainerZone(BaseContainer):
             ipv4_interfaces.append(ipv4_interface)
         return ipv4_interfaces
 
+    def get_sysidcfg_network_interfaces(self):
+        network_interfaces = []
+        for rid in self.get_encap_ip_rids():
+            ipdev = self.get_encap_conf(rid, 'ipdev')
+            try:
+                default_route = self.get_encap_conf(rid, 'gateway')
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
+                default_route = None
+
+            try:
+                netmask = cidr_to_dotted(to_cidr(self.get_encap_conf(rid, 'netmask')))
+            except (ex.RequiredOptNotFound, ex.OptNotFound):
+                continue
+            ipname = self.get_encap_conf(rid, 'ipname')
+            addr = getaddr(ipname, True)
+            if len(network_interfaces) == 0:
+                network_interface = "network_interface=PRIMARY {primary hostname=%s\n" % self.name
+                network_interface += "    default_route=%s\n" % default_route
+            else:
+                network_interface = "network_interface=%s {\n" % ipdev
+            network_interface += "    ip_address=%s\n" % addr
+            network_interface += "    netmask=%s\n" % netmask
+            network_interface += "    protocol_ipv6=no}\n"
+            network_interfaces.append(network_interface)
+        return network_interfaces
+
     def get_tz(self):
         if "TZ" not in os.environ:
             return "MET"
@@ -803,15 +860,34 @@ class ContainerZone(BaseContainer):
                         nameservers.append(l[1])
         return (domain, nameservers, search)
 
+    def prepare_boot_config(self):
+        if self.brand in ['solaris']:
+            self.create_sc_profile()
+            self.boot_config_file = self.sc_profile
+        elif self.brand in ['solaris10']:
+            self.create_sysidcfg()
+            self.boot_config_file = self.sysidcfg
+        elif self.brand in ['native']:
+            self.create_sysidcfg()
+
+    def install_boot_config(self):
+        if self.brand in ['native'] and self.sysidcfg:
+            sysidcfg_filename = self.zonepath + "/root" + SYSIDCFG
+            self.log.info('create %s', sysidcfg_filename)
+            copy(self.sysidcfg, sysidcfg_filename)
+            os.chmod(sysidcfg_filename, 0o0600)
+
     def create_sc_profile(self):
         if self.sc_profile:
             if not os.path.exists(self.sc_profile):
                 message = 'sc_profile %s does not exists' % self.sc_profile
                 self.log.warning(message)
                 raise ex.Error(message)
+            self.log.info('using provided sc_profile %s', self.sc_profile)
             return
         else:
             self.sc_profile = os.path.join(self.var_d, 'sc_profile.xml')
+            self.log.info('creating sc_profile %s', self.sc_profile)
         try:
             from .configuration_profile import ScProfile, InstallIpv4Interface
             domain, nameservers, searchs = self.get_ns()
@@ -829,12 +905,34 @@ class ContainerZone(BaseContainer):
             self.svc.save_exc()
             raise ex.Error("exception from %s: %s during create_sc_profile" % (e.__class__.__name__, e.__str__()))
 
-    def create_sysidcfg(self):
-        try:
-            name_service = "name_service=NONE\n"
+    def set_sysidcfg_unconfig(self):
+        self.sysidcfg = os.path.join(self.var_d, 'sysidcfg.unconfig')
+        self.log.info('creating sysidcfg %s', self.sysidcfg)
+        contents = "system_locale=C\n"
+        contents += "timezone=MET\n"
+        contents += "terminal=vt100\n"
+        contents += "timeserver=localhost\n"
+        contents += "security_policy=NONE\n"
+        contents += "root_password=NP\n"
+        contents += "auto_reg=disable\n"
+        contents += "nfs4_domain=dynamic\n"
+        contents += "network_interface=NONE {hostname=%s}\n" % self.name
+        contents += "name_service=NONE\n"
+        with open(self.sysidcfg, "w") as sysidcfg_file:
+            sysidcfg_file.write(contents)
 
-            sysidcfg_filename = self.zonepath + "/root" + SYSIDCFG
-            sysidcfg_file = open(sysidcfg_filename, "w")
+    def create_sysidcfg(self):
+        if self.sysidcfg:
+            if not os.path.exists(self.sysidcfg):
+                message = 'sysidcfg %s does not exists' % self.sysidcfg
+                self.log.warning(message)
+                raise ex.Error(message)
+            self.log.info('using provided sysidcfg %s', self.sc_profile)
+            return
+        else:
+            self.sysidcfg = os.path.join(self.var_d, 'sysidcfg')
+            self.log.info('creating sysidcfg %s', self.sysidcfg)
+        try:
             contents = ""
             contents += "system_locale=C\n"
             contents += "timezone=MET\n"
@@ -842,12 +940,18 @@ class ContainerZone(BaseContainer):
             contents += "timeserver=localhost\n"
             contents += "security_policy=NONE\n"
             contents += "root_password=NP\n"
+            contents += "auto_reg=disable\n"
             contents += "nfs4_domain=dynamic\n"
-            contents += "network_interface=NONE {hostname=%(zonename)s}\n" % {"zonename":self.name}
+            for network_interface in self.get_sysidcfg_network_interfaces()[:1]:
+                contents += network_interface
+            domain, nameservers, searchs = self.get_ns()
+            name_service = "name_service=DNS {domain_name=%s\n" % domain
+            name_service += "    name_server=%s\n" % ','.join(nameservers)
+            name_service += "    search=%s}\n" % ','.join(searchs)
             contents += name_service
 
-            sysidcfg_file.write(contents)
-            sysidcfg_file.close()
+            with open(self.sysidcfg, "w") as sysidcfg_file:
+                sysidcfg_file.write(contents)
         except Exception as exc:
             raise ex.Error("exception from %s: %s during create_sysidcfg file" % (exc.__class__.__name__, exc.__str__()))
 
@@ -876,11 +980,18 @@ class ContainerZone(BaseContainer):
                 if ret != 0:
                     self.zonecfg(['add net; set physical=%s; end' % ipdev])
 
+    def _brand_to_create(self):
+        return self.kw_brand or self.default_brand
+
     def zone_configure(self):
         "Ensure zone is at least configured"
         if self.state is None:
-            if self.osver >= 11.0 and self.container_origin:
+            if self.kw_brand == 'native' and not self.has_capability("container.zone.brand-native"):
+                raise ex.Error("node has no capability to create brand %s zone" % self.kw_brand)
+            if self.container_origin:
                 cmd = "create -t " + self.container_origin
+            elif self.kw_brand and self.kw_brand != self.default_brand and self.kw_brand not in ['native']:
+                cmd = "create -t SYS"+ self.kw_brand
             else:
                 cmd = "create"
 
@@ -888,10 +999,11 @@ class ContainerZone(BaseContainer):
                 cmd += "; set zonepath=" + self.zonepath
 
             self.zonecfg([cmd])
+            self.zone_refresh()
             if self.state != "configured":
                 raise ex.Error("zone %s is not configured" % self.name)
 
-        if self.osver >= 11.0:
+        if self.brand in ['solaris', 'solaris10']:
             try:
                 self.zone_configure_net()
             except:
@@ -905,16 +1017,13 @@ class ContainerZone(BaseContainer):
         """
         if self.state == "installed":
             return
-        self.install_zone()
-        brand = self.brand
-        if brand == "native":
+        self.provision_zone()
+        if self.brand == "native":
             self.boot_and_wait_reboot()
-        elif brand in ["ipkg", "solaris"]:
-            self.zone_boot()
         else:
-            raise(ex.Error("zone brand: %s not yet implemented" % (brand)))
+            self.zone_boot()
         self.wait_multi_user()
-        if brand == "native":
+        if self.brand == "native":
             self.log.info('call in zone %s %s' % (self.name, SYS_UNCONFIG))
             justcall([ZLOGIN, self.name, SYS_UNCONFIG], input='y\n')
         self.halt()
@@ -922,44 +1031,22 @@ class ContainerZone(BaseContainer):
             raise(ex.Error("zone %s is not installed" % (self.name)))
 
     def create_cloned_zone(self):
-        if self.state == "running":
-            self.log.info("zone %s already running" % self.name)
-            return
-        if self.state is None:
-            self.zone_configure()
         if self.state == "configured":
-            if self.osver >= 11.0:
-                self._create_cloned_zone_11()
-                self.update_solaris_11_ip_tags()
+            if self.boot_config_file:
+                self.zoneadm("clone", ['-c', self.boot_config_file, self.container_origin])
             else:
-                self._create_cloned_zone_10()
+                self.zoneadm("clone", [self.container_origin])
+            self.update_ip_tags()
+        self.zone_refresh()
         if self.state != "installed":
             raise(ex.Error("zone %s is not installed" % self.name))
 
-    def _create_cloned_zone_11(self):
-        self.create_sc_profile()
-        self.zoneadm("clone", ['-c', self.sc_profile, self.container_origin])
-        self.can_rollback = True
-
-    def _create_cloned_zone_10(self):
-        self.zoneadm("clone", [self.container_origin])
-        self.create_sysidcfg()
-        self.can_rollback = True
-
     def create_snaped_zone(self):
         self.create_zonepath()
-        self.zone_configure()
         self.zoneadm("attach", ["-F"])
-        self.can_rollback = True
-        self.create_sysidcfg()
+        self.zone_refresh()
 
     def install_zone(self):
-        """provisioning zone"""
-        state = self.state
-        if state == "installed":
-            return
-        if state is None:
-            self.zone_configure()
         zonepath = self.zonepath
         if zonepath and os.path.exists(zonepath):
             try:
@@ -967,15 +1054,14 @@ class ContainerZone(BaseContainer):
             except:
                 pass
         args = []
-        if self.has_capability('container.zone.brand-solaris'):
-            self.create_sc_profile()
-            args = ['-c', self.sc_profile]
-            if self.ai_manifest:
-                args += ['-m', self.ai_manifest]
+        if self.boot_config_file:
+            args = ['-c', self.boot_config_file]
+        if self.ai_manifest and self.brand in ['solaris']:
+            args += ['-m', self.ai_manifest]
+        if self.install_archive:
+            args += ['-a', self.install_archive]
         self.zoneadm("install", args)
-        self.can_rollback = True
-        if self.has_capability('container.zone.brand-native'):
-            self.create_sysidcfg()
+        self.zone_refresh()
 
     def create_zonepath(self):
         """create zonepath dataset from clone of snapshot of self.snapof
@@ -1000,19 +1086,20 @@ class ContainerZone(BaseContainer):
 
     def origin_factory(self):
         name = self.container_origin
-        kwargs = {}
-        if self.default_brand == 'solaris':
+        kwargs = {'brand': self._brand_to_create()}
+        if self._brand_to_create() == 'solaris':
             kwargs['provision_net_type'] = ''
             kwargs['sc_profile'] = '/usr/share/auto_install/sc_profiles/unconfig.xml'
             if self.ai_manifest:
                 kwargs['ai_manifest'] = self.ai_manifest
-        elif self.default_brand == 'native':
+        if self._brand_to_create() in ['native']:
             kwargs['zonepath'] = '/zones/%s' % name
-        else:
-            raise ex.Error('Unsuported brand container: %s' % self.default_brand)
+        if self.install_archive:
+            kwargs['install_archive'] = self.install_archive
         origin = ContainerZone(rid="container#skelzone", name=name, **kwargs)
         origin.svc = self.svc
-        origin.osver = self.osver
+        if self._brand_to_create() in ['native', 'solaris10']:
+            origin.set_sysidcfg_unconfig()
         return origin
 
     def provisioner(self, need_boot=True):
@@ -1038,20 +1125,15 @@ class ContainerZone(BaseContainer):
         if self.snapof and self.container_origin:
             self.log.error('provision error: container_origin is not compatible with snapof')
             return False
-        elif self.snapof and self.default_brand != 'native':
+        elif self.snapof and self._brand_to_create() != 'native':
             msg = 'provision error: snapof is only available with native zone, try container_origin instead'
             self.log.error(msg)
             return False
 
-        self.osver = utilities.os.sunos.get_solaris_version()
-        if self.snapof:
-            # we are on default_brand native
-            self.create_snaped_zone()
-        elif self.container_origin:
+        if self.container_origin:
             self.create_container_origin()
-            self.create_cloned_zone()
-        else:
-            self.install_zone()
+        self.provision_zone()
+        self.can_rollback = True
 
         if need_boot is True:
             self.zone_boot()
@@ -1059,6 +1141,24 @@ class ContainerZone(BaseContainer):
 
         self.log.info("provisioned")
         return True
+
+    def provision_zone(self):
+        if self.state in PROVISIONED_STATES:
+            self.log.info("zone %s already in state %s" % (self.name, self.state))
+            return
+        self.zone_configure()
+        self.prepare_boot_config()
+        self.make_zone_installed()
+        self.install_boot_config()
+
+    def make_zone_installed(self):
+        if self.snapof:
+            # we are on brand native
+            self.create_snaped_zone()
+        elif self.container_origin:
+            self.create_cloned_zone()
+        else:
+            self.install_zone()
 
     def unprovisioner(self):
         self.log.info('unprovisioner start')
