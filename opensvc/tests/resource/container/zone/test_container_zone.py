@@ -3,6 +3,7 @@ import os
 import pytest
 
 import core.exceptions as ex
+from core.objects.svc import Svc
 from drivers.resource.container.zone import ContainerZone
 
 LIB_CLASS = 'drivers.resource.container.zone.ContainerZone'
@@ -26,6 +27,11 @@ def zone_unconfigure(mocker):
 @pytest.fixture(scope='function')
 def zoneadm(mocker):
     return mocker.patch.object(ContainerZone, 'zoneadm')
+
+
+@pytest.fixture(scope='function')
+def zonecfg(mocker):
+    return mocker.patch.object(ContainerZone, 'zonecfg')
 
 
 @pytest.fixture(scope='function')
@@ -309,6 +315,35 @@ class TestProvisionZone:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestConfigure:
+    @staticmethod
+    @pytest.mark.parametrize('brand, zonepath, expected_zonecfg_cmd',
+                             [(None, None, 'create'),
+                              (None, '/z/z1', 'create; set zonepath=/z/z1'),
+                              ('solaris', None, 'create -t SYSsolaris'),
+                              ('solaris', '/z/z1', 'create -t SYSsolaris; set zonepath=/z/z1'),
+                              ('solaris10', None, 'create -t SYSsolaris10'),
+                              ('solaris10', '/zo/z1', 'create -t SYSsolaris10; set zonepath=/zo/z1'),
+                              ('native', None, 'create'),
+                              ('native', '/z/z1', 'create; set zonepath=/z/z1')])
+    def test_create_correct_zone(svc, klass_has_capability, set_zone_data, zonecfg, brand, zonepath, expected_zonecfg_cmd):
+        # noinspection PyUnusedLocal
+        def zonecfg_side_effect(*args, **kwargs):
+            set_zone_data(brand=brand, zonepath=zonepath)
+
+        zone = ContainerZone(rid='container#1', name='z1', brand=brand, zonepath=zonepath)
+        zone.svc = Svc(name='svc1', volatile=True)
+        zonecfg.side_effect = zonecfg_side_effect
+        if brand == 'native':
+            klass_has_capability(ContainerZone, ['container.zone.brand-native'])
+        else:
+            klass_has_capability(ContainerZone, ['container.zone.brand-solaris'])
+        zone.zone_configure()
+        zonecfg.assert_called_once_with([expected_zonecfg_cmd])
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestPrepareBootConfig:
     @staticmethod
     @pytest.mark.parametrize('brand', ['solaris'])
@@ -374,7 +409,7 @@ class TestMakeInstalled:
         assert create_cloned_zone.call_count == 1
 
     @staticmethod
-    def test_call_create_snaped_zone_wehn_container_origin(create_snaped_zone, zone):
+    def test_call_create_snaped_zone_when_container_origin(create_snaped_zone, zone):
         zone.snapof = '/zones/skelzone'
         zone.make_zone_installed()
         assert create_snaped_zone.call_count == 1
@@ -384,12 +419,17 @@ class TestMakeInstalled:
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestInstallZone:
     @staticmethod
+    @pytest.mark.parametrize('install_archive', [None, 'archive'])
     @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
-    def test_install_zone_with_boot_config_file(brand, set_zone_data, zoneadm, file1, zone):
+    def test_install_zone_with_boot_config_file_and_archive_if_archive_if_present(brand, install_archive, set_zone_data, zoneadm, file1, zone):
         set_zone_data(brand=brand)
         zone.boot_config_file = file1
+        zone.install_archive = install_archive
         zone.install_zone()
-        zoneadm.assert_called_once_with('install', ['-c', file1])
+        expected_install_args = ['-c', file1]
+        if install_archive:
+            expected_install_args += [ '-a', install_archive]
+        zoneadm.assert_called_once_with('install', expected_install_args)
 
     @staticmethod
     @pytest.mark.parametrize('brand', ['solaris'])
@@ -422,6 +462,7 @@ class TestCloneZone:
     @staticmethod
     @pytest.mark.usefixtures('update_ip_tags')
     def test_clone_use_boot_config_file_if_present(set_zone_data, zoneadm, zone):
+        # noinspection PyUnusedLocal
         def zoneadm_side_effect(*args, **kwargs):
             set_zone_data(state='installed')
 
@@ -435,6 +476,7 @@ class TestCloneZone:
     @staticmethod
     @pytest.mark.usefixtures('update_ip_tags')
     def test_clone_simple_clone_file_if_present(set_zone_data, zoneadm, zone):
+        # noinspection PyUnusedLocal
         def zoneadm_side_effect(*args, **kwargs):
             set_zone_data(state='installed')
 
@@ -462,3 +504,16 @@ class TestCreateContainerOrigin:
         zone.container_origin = 'skelzone'
         zone.create_container_origin()
         assert zoneadm.call_count == 0
+
+
+@pytest.mark.ci
+class TestOriginFactory:
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['native', 'solaris', 'solaris10'])
+    def test_propagate_brand_and_install_archive_to_container_origin_object(set_zone_data, zoneadm, zone, brand):
+        zone.container_origin = 'skelzone'
+        zone.kw_brand = brand
+        zone.install_archive = 'archive'
+        container_origin = zone.origin_factory()
+        assert container_origin.install_archive == 'archive'
+        assert container_origin.kw_brand == zone.kw_brand

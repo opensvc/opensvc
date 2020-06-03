@@ -93,6 +93,19 @@ KEYWORDS = [
         "required": False,
         "provisioning": True
     },
+    {
+        "keyword": "brand",
+        "text": "The zone brand. If not set default brand will be used",
+        "candidates": ["solaris", "solaris10", "native"],
+        "required": False,
+        "provisioning": True
+    },
+    {
+        "keyword": "install_archive",
+        "text": "The install archive to use during zonedm install '-a <archive>'. If both container_origin and install_archive are set, but container_origin is not yet provisioned, container_origin will be created from <install_archive>.",
+        "required": False,
+        "provisioning": True
+    },
     KW_SNAP,
     KW_SNAPOF,
     KW_START_TIMEOUT,
@@ -141,6 +154,8 @@ class ContainerZone(BaseContainer):
                  sc_profile=None,
                  ai_manifest=None,
                  provision_net_type="anet",
+                 brand=None,
+                 install_archive=None,
                  **kwargs):
         super(ContainerZone, self).__init__(type="container.zone", **kwargs)
         self.sysidcfg = None
@@ -160,6 +175,8 @@ class ContainerZone(BaseContainer):
         else:
             self.default_brand = None
         self.boot_config_file = None
+        self.kw_brand = brand
+        self.install_archive = install_archive
 
     @lazy
     def clone(self):
@@ -963,11 +980,18 @@ class ContainerZone(BaseContainer):
                 if ret != 0:
                     self.zonecfg(['add net; set physical=%s; end' % ipdev])
 
+    def _brand_to_create(self):
+        return self.kw_brand or self.default_brand
+
     def zone_configure(self):
         "Ensure zone is at least configured"
         if self.state is None:
-            if self.osver >= 11.0 and self.container_origin:
+            if self.kw_brand == 'native' and not self.has_capability("container.zone.brand-native"):
+                raise ex.Error("node has no capability to create brand %s zone" % self.kw_brand)
+            if self.container_origin:
                 cmd = "create -t " + self.container_origin
+            elif self.kw_brand and self.kw_brand != self.default_brand and self.kw_brand not in ['native']:
+                cmd = "create -t SYS"+ self.kw_brand
             else:
                 cmd = "create"
 
@@ -975,15 +999,15 @@ class ContainerZone(BaseContainer):
                 cmd += "; set zonepath=" + self.zonepath
 
             self.zonecfg([cmd])
+            self.zone_refresh()
             if self.state != "configured":
                 raise ex.Error("zone %s is not configured" % self.name)
 
-        if self.osver >= 11.0:
+        if self.brand in ['solaris', 'solaris10']:
             try:
                 self.zone_configure_net()
             except:
                 raise ex.Error('Error during zone_configure_net')
-        self.zone_refresh()
 
     def install_origin(self):
         """
@@ -1034,6 +1058,8 @@ class ContainerZone(BaseContainer):
             args = ['-c', self.boot_config_file]
         if self.ai_manifest and self.brand in ['solaris']:
             args += ['-m', self.ai_manifest]
+        if self.install_archive:
+            args += ['-a', self.install_archive]
         self.zoneadm("install", args)
         self.zone_refresh()
 
@@ -1060,19 +1086,19 @@ class ContainerZone(BaseContainer):
 
     def origin_factory(self):
         name = self.container_origin
-        kwargs = {}
-        if self.default_brand == 'solaris':
+        kwargs = {'brand': self._brand_to_create()}
+        if self._brand_to_create() == 'solaris':
             kwargs['provision_net_type'] = ''
             kwargs['sc_profile'] = '/usr/share/auto_install/sc_profiles/unconfig.xml'
             if self.ai_manifest:
                 kwargs['ai_manifest'] = self.ai_manifest
-        elif self.default_brand == 'native':
+        if self._brand_to_create() in ['native']:
             kwargs['zonepath'] = '/zones/%s' % name
-        else:
-            raise ex.Error('Unsuported brand container: %s' % self.default_brand)
+        if self.install_archive:
+            kwargs['install_archive'] = self.install_archive
         origin = ContainerZone(rid="container#skelzone", name=name, **kwargs)
         origin.svc = self.svc
-        if self.default_brand in ['native', 'solaris10']:
+        if self._brand_to_create() in ['native', 'solaris10']:
             origin.set_sysidcfg_unconfig()
         return origin
 
@@ -1099,7 +1125,7 @@ class ContainerZone(BaseContainer):
         if self.snapof and self.container_origin:
             self.log.error('provision error: container_origin is not compatible with snapof')
             return False
-        elif self.snapof and self.default_brand != 'native':
+        elif self.snapof and self._brand_to_create() != 'native':
             msg = 'provision error: snapof is only available with native zone, try container_origin instead'
             self.log.error(msg)
             return False
@@ -1127,7 +1153,7 @@ class ContainerZone(BaseContainer):
 
     def make_zone_installed(self):
         if self.snapof:
-            # we are on default_brand native
+            # we are on brand native
             self.create_snaped_zone()
         elif self.container_origin:
             self.create_cloned_zone()
