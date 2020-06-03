@@ -138,6 +138,8 @@ def driver_capabilities(node=None):
         data.append("container.zone.brand-solaris")
     elif os.path.exists('/etc/zones/SUNWdefault.xml'):
         data.append("container.zone.brand-native")
+    if os.path.exists('/etc/zones/SYSsolaris10.xml'):
+        data.append("container.zone.brand-solaris10")
     return data
 
 class ContainerZone(BaseContainer):
