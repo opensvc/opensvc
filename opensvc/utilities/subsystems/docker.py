@@ -74,11 +74,22 @@ class ContainerLib(object):
         """
         data = {}
         for container in self.container_ps:
-            for label in container.get("Labels", "").split(","):
-                try:
-                    data[label].append(container)
-                except KeyError:
-                    data[label] = [container]
+            labels = container.get("Labels", "")
+            if isinstance(labels, dict):
+                # podman
+                for lname, lvalue in labels.items():
+                    label = "%s=%s" % (lname, lvalue)
+                    try:
+                        data[label].append(container)
+                    except KeyError:
+                        data[label] = [container]
+            else:
+                # docker
+                for label in labels.split(","):
+                    try:
+                        data[label].append(container)
+                    except KeyError:
+                        data[label] = [container]
         return data
 
     @lazy
