@@ -317,16 +317,24 @@ class TestProvisionZone:
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestConfigure:
     @staticmethod
-    @pytest.mark.parametrize('brand, zonepath, expected_zonecfg_cmd',
-                             [(None, None, 'create'),
-                              (None, '/z/z1', 'create; set zonepath=/z/z1'),
-                              ('solaris', None, 'create'),
-                              ('solaris', '/z/z1', 'create; set zonepath=/z/z1'),
-                              ('solaris10', None, 'create -t SYSsolaris10'),
-                              ('solaris10', '/zo/z1', 'create -t SYSsolaris10; set zonepath=/zo/z1'),
-                              ('native', None, 'create'),
-                              ('native', '/z/z1', 'create; set zonepath=/z/z1')])
-    def test_create_correct_zone(svc, klass_has_capability, set_zone_data, zonecfg, brand, zonepath, expected_zonecfg_cmd):
+    @pytest.mark.parametrize(
+        'brand, zonepath, expected_zonecfg_cmd',
+        [(None, None, 'create'),
+         (None, '/z/z1', 'create; set zonepath=/z/z1'),
+         ('solaris', None, 'create'),
+         ('solaris', '/z/z1', 'create; set zonepath=/z/z1'),
+         ('solaris10', None, 'create -t SYSsolaris10'),
+         ('solaris10', '/zo/z1', 'create -t SYSsolaris10; set zonepath=/zo/z1'),
+         ('native', None, 'create'),
+         ('native', '/z/z1', 'create; set zonepath=/z/z1')])
+    def test_create_correct_zone(
+            svc,
+            klass_has_capability,
+            set_zone_data,
+            zonecfg,
+            brand,
+            zonepath,
+            expected_zonecfg_cmd):
         # noinspection PyUnusedLocal
         def zonecfg_side_effect(*args, **kwargs):
             set_zone_data(brand=brand, zonepath=zonepath)
@@ -421,7 +429,7 @@ class TestMakeInstalled:
 class TestInstallZone:
     @staticmethod
     @pytest.mark.parametrize('install_archive', [None, 'archive'])
-    @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
+    @pytest.mark.parametrize('brand', ['native', 'solaris', 'solaris10'])
     def test_install_zone_with_boot_config_file_and_archive_if_archive_if_present(brand, install_archive, set_zone_data, zoneadm, file1, zone):
         set_zone_data(brand=brand)
         zone.boot_config_file = file1
@@ -429,7 +437,7 @@ class TestInstallZone:
         zone.install_zone()
         expected_install_args = ['-c', file1]
         if install_archive:
-            expected_install_args += [ '-a', install_archive]
+            expected_install_args += [ '-a', install_archive, '-u']
         zoneadm.assert_called_once_with('install', expected_install_args)
 
     @staticmethod
@@ -518,3 +526,40 @@ class TestOriginFactory:
         container_origin = zone.origin_factory()
         assert container_origin.install_archive == 'archive'
         assert container_origin.kw_brand == zone.kw_brand
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
+    def test_define_zone_with_no_anet(set_zone_data, zoneadm, zone, brand):
+        zone.container_origin = 'skelzone'
+        zone.kw_brand = brand
+        zone.install_archive = 'archive'
+        container_origin = zone.origin_factory()
+        assert container_origin.provision_net_type == 'no-anet'
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['native'])
+    def test_define_zone_with_no_net(set_zone_data, zoneadm, zone, brand):
+        zone.container_origin = 'skelzone'
+        zone.kw_brand = brand
+        zone.install_archive = 'archive'
+        container_origin = zone.origin_factory()
+        assert container_origin.provision_net_type == 'no-net'
+
+
+@pytest.mark.ci
+class TestConfigureNet:
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
+    def test_remove_nets_when_no_net(zonecfg, zone, brand):
+        zone.kw_brand = brand
+        zone.provision_net_type = 'no-net'
+        zone.zone_configure_net()
+        zonecfg.assert_called_once_with(['remove -F net'])
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris', 'solaris10'])
+    def test_remove_anets_when_no_anet(zonecfg, zone, brand):
+        zone.kw_brand = brand
+        zone.provision_net_type = 'no-anet'
+        zone.zone_configure_net()
+        zonecfg.assert_called_once_with(['remove -F anet'])
