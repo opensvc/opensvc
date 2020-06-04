@@ -815,7 +815,7 @@ class DiskDrbd(Resource):
         if buff is None:
             with open(self.cf, "r") as f:
                 buff = f.read()
-        pattern = b"^\s*on\s+%s\s*{" % node
+        pattern = r"^\s*on\s+%s\s*{" % node
         for line in buff.splitlines():
             if re.match(pattern, line):
                 return True
