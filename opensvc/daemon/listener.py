@@ -1111,7 +1111,7 @@ class ClientHandler(shared.OsvcThread):
         req = stream["request"]
         req_data = stream["data"]
         headers = dict((bdecode(a), bdecode(b)) for a, b in req.headers)
-        path = headers.get(":path")
+        path = headers.get(":path").lstrip("/")
         parsed_path = urlparse(path)
         path = parsed_path.path.strip("/")
         query = parse_qs(parsed_path.query)
