@@ -903,7 +903,7 @@ class Crypt(object):
 
     @staticmethod
     def h2_path_from_data(data):
-        return "/"+data.get("action", "")
+        return "/" + data.get("action", "").lstrip("/")
 
     def h2_headers(self, node=None, secret=None, multiplexed=None, af=None):
         headers = HTTPHeaderMap()
