@@ -210,8 +210,12 @@ class DevTree(DevTreeVeritas, BaseDevTree):
             return
         lines = out.split('\n')
         lines = [l for l in lines if len(l) > 0]
-        self.zpool_used[poolname] = self.read_size(lines[-1].split()[1])
-        zpool_free = self.read_size(lines[-1].split()[2])
+        zpool_iostats = lines[-1].split()
+        if zpool_iostats[0] != poolname:
+            # may be a FAULTY zpool, so no stats
+            return
+        self.zpool_used[poolname] = self.read_size(zpool_iostats[1])
+        zpool_free = self.read_size(zpool_iostats[2])
         self.zpool_size[poolname] = self.zpool_used[poolname] + zpool_free
 
         out, err, ret = justcall(["zfs", "list", "-H", "-r", "-t", "filesystem", poolname])

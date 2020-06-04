@@ -138,6 +138,8 @@ def driver_capabilities(node=None):
         data.append("container.zone.brand-solaris")
     elif os.path.exists('/etc/zones/SUNWdefault.xml'):
         data.append("container.zone.brand-native")
+    if os.path.exists('/etc/zones/SYSsolaris10.xml'):
+        data.append("container.zone.brand-solaris10")
     return data
 
 class ContainerZone(BaseContainer):
@@ -808,9 +810,13 @@ class ContainerZone(BaseContainer):
                 default_route = None
 
             try:
-                netmask = cidr_to_dotted(to_cidr(self.get_encap_conf(rid, 'netmask')))
+                netmask_conf = self.get_encap_conf(rid, 'netmask')
             except (ex.RequiredOptNotFound, ex.OptNotFound):
-                continue
+                netmask_conf = None
+            if netmask_conf is None:
+                netmask = None
+            else:
+                netmask = cidr_to_dotted(to_cidr(netmask_conf))
             ipname = self.get_encap_conf(rid, 'ipname')
             addr = getaddr(ipname, True)
             if len(network_interfaces) == 0:
@@ -819,7 +825,8 @@ class ContainerZone(BaseContainer):
             else:
                 network_interface = "network_interface=%s {\n" % ipdev
             network_interface += "    ip_address=%s\n" % addr
-            network_interface += "    netmask=%s\n" % netmask
+            if netmask:
+                network_interface += "    netmask=%s\n" % netmask
             network_interface += "    protocol_ipv6=no}\n"
             network_interfaces.append(network_interface)
         return network_interfaces
@@ -965,6 +972,10 @@ class ContainerZone(BaseContainer):
     def zone_configure_net(self):
         if not self.provision_net_type:
             return
+        if self.provision_net_type in ['no-anet', 'no-net']:
+            self.zonecfg(['remove -F %s' % self.provision_net_type.replace('no-', '')])
+            return
+
         for rid in self.svc.conf_sections(cat='ip'):
             ipdev = self.svc.oget(rid, 'ipdev', impersonate=self.name)
             if not self.test_net_interface(ipdev):
@@ -1059,7 +1070,7 @@ class ContainerZone(BaseContainer):
         if self.ai_manifest and self.brand in ['solaris']:
             args += ['-m', self.ai_manifest]
         if self.install_archive:
-            args += ['-a', self.install_archive]
+            args += ['-a', self.install_archive, '-u']
         self.zoneadm("install", args)
         self.zone_refresh()
 
@@ -1088,11 +1099,14 @@ class ContainerZone(BaseContainer):
         name = self.container_origin
         kwargs = {'brand': self._brand_to_create()}
         if self._brand_to_create() == 'solaris':
-            kwargs['provision_net_type'] = ''
+            kwargs['provision_net_type'] = 'no-anet'
             kwargs['sc_profile'] = '/usr/share/auto_install/sc_profiles/unconfig.xml'
             if self.ai_manifest:
                 kwargs['ai_manifest'] = self.ai_manifest
+        if self._brand_to_create() in ['solaris10']:
+            kwargs['provision_net_type'] = 'no-anet'
         if self._brand_to_create() in ['native']:
+            kwargs['provision_net_type'] = 'no-net'
             kwargs['zonepath'] = '/zones/%s' % name
         if self.install_archive:
             kwargs['install_archive'] = self.install_archive
