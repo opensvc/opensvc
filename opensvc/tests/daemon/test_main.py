@@ -39,7 +39,7 @@ class TestDaemonRun:
         from multiprocessing import Process
         proc = Process(target=lock_holder)
         proc.start()
-        sleep(0.05)
+        sleep(0.5)
         with pytest.raises(SystemExit) as error:
             main(['--debug', '-f'])
         proc.terminate()
