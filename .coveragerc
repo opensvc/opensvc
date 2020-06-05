@@ -24,3 +24,6 @@ omit =
     lib/tabulate.py
     lib/wmi.py
     lib/ipaddress.py
+    opensvc/foreign/*
+    opensvc/tests/*
+    /home/travis/virtualenv/*
