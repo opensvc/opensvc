@@ -1,6 +1,5 @@
 env:
   - OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP=25
-sudo: true
 language: python
 cache: pip
 branches:
