@@ -213,6 +213,8 @@ class BaseTask(Resource):
               "understand its role and effects before confirming the run.")
         try:
             buff = input("Do you really want to run %s (yes/no) > " % self.rid)
+        except RuntimeError:
+            raise ex.Error("run aborted (no stdin)")
         except ex.Signal:
             raise ex.Error("timeout waiting for confirmation")
 

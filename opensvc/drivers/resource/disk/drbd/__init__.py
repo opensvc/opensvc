@@ -412,7 +412,7 @@ class DiskDrbd(Resource):
         if not self.res_defined():
             self.log.info("skip: resource not defined (for this host)")
             return
-        if self.is_standby:
+        if self.is_standby and not self.svc.options.force:
             self.stopstandby()
         else:
             self.drbdadm_down()
