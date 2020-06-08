@@ -3002,13 +3002,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         Extract service instance names from the locally maintained hb data.
         """
         paths = []
-        try:
-            with shared.CLUSTER_DATA_LOCK:
-                for path in shared.CLUSTER_DATA[Env.nodename]["services"]["status"]:
-                    if shared.CLUSTER_DATA[Env.nodename]["services"]["status"][path]["avail"] == "up":
-                        paths.append(path)
-        except KeyError:
-            return []
+        for path in list(shared.CLUSTER_DATA[Env.nodename]["services"]["status"]):
+            try:
+                status = shared.CLUSTER_DATA[Env.nodename]["services"]["status"][path]["avail"] 
+            except KeyError:
+                continue
+            if status == "up":
+                paths.append(path)
         return paths
 
     def get_services_configs(self):
