@@ -383,7 +383,19 @@ class TestPrepareBootConfig:
         assert os.path.exists(zone.sysidcfg)
         with open(zone.sysidcfg, 'r') as f:
             sysidcfg_content = f.read()
-            assert 'name_service=' in sysidcfg_content
+            assert 'system_locale=C' in sysidcfg_content
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris10', 'native'])
+    def test_creates_sysidcfg_with_no_config_when_no_ip(mocker, set_zone_data, brand, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert os.path.exists(zone.sysidcfg)
+        with open(zone.sysidcfg, 'r') as f:
+            sysidcfg_content = f.read()
+            assert 'network_interface=NONE {hostname=zonex}' in sysidcfg_content
+            assert 'name_service=NONE' in sysidcfg_content
 
     @staticmethod
     @pytest.mark.parametrize('brand', ['solaris10'])

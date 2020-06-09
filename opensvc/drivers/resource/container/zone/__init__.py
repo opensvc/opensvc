@@ -937,6 +937,11 @@ class ContainerZone(BaseContainer):
             self.log.info('using provided sysidcfg %s', self.sc_profile)
             return
         else:
+            sysidcfg_network_interfaces = self.get_sysidcfg_network_interfaces()
+            if not sysidcfg_network_interfaces:
+                self.log.info('no network interface found, use sysidcfg unconfig')
+                self.set_sysidcfg_unconfig()
+                return
             self.sysidcfg = os.path.join(self.var_d, 'sysidcfg')
             self.log.info('creating sysidcfg %s', self.sysidcfg)
         try:
@@ -949,7 +954,7 @@ class ContainerZone(BaseContainer):
             contents += "root_password=NP\n"
             contents += "auto_reg=disable\n"
             contents += "nfs4_domain=dynamic\n"
-            for network_interface in self.get_sysidcfg_network_interfaces()[:1]:
+            for network_interface in sysidcfg_network_interfaces[:1]:
                 contents += network_interface
             domain, nameservers, searchs = self.get_ns()
             name_service = "name_service=DNS {domain_name=%s\n" % domain
