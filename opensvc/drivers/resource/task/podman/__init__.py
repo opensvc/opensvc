@@ -11,7 +11,7 @@ from core.objects.svcdict import KEYS
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "podman"
 DRIVER_BASENAME_ALIASES = ["oci"]
-KEYWORDS = BASE_KEYWORDS + [kw for kw in DOCKER_KEYWORDS if kw["keyword"] != "start_timeout"]
+KEYWORDS = BASE_KEYWORDS + [kw for kw in PODMAN_KEYWORDS if kw["keyword"] != "start_timeout"]
 DEPRECATED_KEYWORDS = {
     "task.podman.run_image": "image",
     "task.podman.run_command": "command",
