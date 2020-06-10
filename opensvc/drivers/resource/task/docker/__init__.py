@@ -53,6 +53,7 @@ class TaskDocker(ContainerDocker, BaseTask):
         kwargs["type"] = "task.docker"
         ContainerDocker.__init__(self, *args, **kwargs)
         BaseTask.__init__(self, *args, **kwargs)
+        self.start_timeout = self.timeout
 
     _info = ContainerDocker._info
 
