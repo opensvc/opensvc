@@ -383,7 +383,19 @@ class TestPrepareBootConfig:
         assert os.path.exists(zone.sysidcfg)
         with open(zone.sysidcfg, 'r') as f:
             sysidcfg_content = f.read()
-            assert 'name_service=' in sysidcfg_content
+            assert 'system_locale=C' in sysidcfg_content
+
+    @staticmethod
+    @pytest.mark.parametrize('brand', ['solaris10', 'native'])
+    def test_creates_sysidcfg_with_no_config_when_no_ip(mocker, set_zone_data, brand, zone):
+        mocker.patch.object(ContainerZone, 'get_encap_ip_rids', mocker.Mock(return_value=[]))
+        set_zone_data(brand=brand)
+        zone.prepare_boot_config()
+        assert os.path.exists(zone.sysidcfg)
+        with open(zone.sysidcfg, 'r') as f:
+            sysidcfg_content = f.read()
+            assert 'network_interface=NONE {hostname=zonex}' in sysidcfg_content
+            assert 'name_service=NONE' in sysidcfg_content
 
     @staticmethod
     @pytest.mark.parametrize('brand', ['solaris10'])
@@ -563,3 +575,35 @@ class TestConfigureNet:
         zone.provision_net_type = 'no-anet'
         zone.zone_configure_net()
         zonecfg.assert_called_once_with(['remove -F anet'])
+
+
+@pytest.mark.ci
+class TestCreateSysidcfg:
+    @staticmethod
+    @pytest.mark.parametrize(
+        'domain, nameservers, searches, expected',
+        [
+            ['local', ['192.168.10.1', '192.168.10.2'], ['local', 'external'],
+             'name_service=DNS {domain_name=local\n    name_server=192.168.10.1,192.168.10.2\n    search=local,external\n    }\n'],
+            ['local', ['192.168.10.1'], [],
+             'name_service=DNS {domain_name=local\n    name_server=192.168.10.1\n    }\n'],
+            [None, [], [], 'name_service=NONE'],
+            [None, ['192.168.10.1'], [], 'name_service=NONE'],
+            [None, ['192.168.10.1'], ['local'], 'name_service=NONE'],
+            [None, [], ['local'], 'name_service=NONE'],
+            ['local', [], [], 'name_service=NONE'],
+            ['local', [], ['local'], 'name_service=NONE'],
+        ])
+    def test_create_correct_sysidcfg_name_service(
+            mocker,
+            domain,
+            nameservers,
+            searches,
+            expected,
+            zone):
+        mocker.patch.object(ContainerZone, 'get_ns', return_value=[domain, nameservers, searches])
+        mocker.patch.object(ContainerZone, 'get_sysidcfg_network_interfaces',
+                            return_value=['network_interface=NONE {hostname=zonex}'])
+        zone.create_sysidcfg()
+        with open(zone.sysidcfg, 'r') as sysidcfg_file:
+            assert expected in sysidcfg_file.read()
