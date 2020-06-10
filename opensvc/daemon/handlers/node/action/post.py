@@ -24,17 +24,10 @@ class Handler(daemon.handler.BaseHandler):
         },
         {
             "name": "action_mode",
-            "desc": "If true, adds --local if not already present in <cmd> or <options>.",
+            "desc": "If true, adds --local if not already present in <options>.",
             "required": False,
             "default": True,
             "format": "boolean",
-        },
-        {
-            "name": "cmd",
-            "desc": "The command vector.",
-            "required": False,
-            "format": "list",
-            "deprecated": True,
         },
         {
             "name": "action",
@@ -71,7 +64,27 @@ class Handler(daemon.handler.BaseHandler):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        from commands.node.parser import OPT
+
+        if options.action.startswith("daemon_"):
+            subsystem = "daemon"
+            action = options.action[7:]
+            from commands.daemon.parser import OPT
+        elif options.action.startswith("net_"):
+            subsystem = "net"
+            action = options.action[4:]
+            from commands.network.parser import OPT
+        elif options.action.startswith("network_"):
+            subsystem = "net"
+            action = options.action[8:]
+            from commands.network.parser import OPT
+        elif options.action.startswith("pool_"):
+            subsystem = "pool"
+            action = options.action[5:]
+            from commands.pool.parser import OPT
+        else:
+            subsystem = "node"
+            action = options.action
+            from commands.node.parser import OPT
 
         def find_opt(opt):
             for k, o in OPT.items():
@@ -80,39 +93,31 @@ class Handler(daemon.handler.BaseHandler):
                 if o.dest == "parm_" + opt:
                     return o
 
-        if options.cmd:
-            cmd = [] + options.cmd
-            cmd = drop_option("--node", cmd, drop_value=True)
-            cmd = drop_option("--server", cmd, drop_value=True)
-            cmd = drop_option("--daemon", cmd)
-            if options.action_mode and "--local" not in cmd:
-                cmd += ["--local"]
-        else:
-            cmd = [options.action]
-            for opt, val in options.options.items():
-                po = find_opt(opt)
-                if po is None:
-                    continue
-                if val == po.default:
-                    continue
-                if val is None:
-                    continue
-                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
-                if po.action == "append":
-                    cmd += [opt + "=" + str(v) for v in val]
-                elif po.action == "store_true" and val:
-                    cmd.append(opt)
-                elif po.action == "store_false" and not val:
-                    cmd.append(opt)
-                elif po.type == "string":
-                    opt += "=" + val
-                    cmd.append(opt)
-                elif po.type == "integer":
-                    opt += "=" + str(val)
-                    cmd.append(opt)
-            fullcmd = Env.om + ["node"] + cmd
+        cmd = [action]
+        for opt, val in options.options.items():
+            po = find_opt(opt)
+            if po is None:
+                continue
+            if val == po.default:
+                continue
+            if val is None:
+                continue
+            opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
+            if po.action == "append":
+                cmd += [opt + "=" + str(v) for v in val]
+            elif po.action == "store_true" and val:
+                cmd.append(opt)
+            elif po.action == "store_false" and not val:
+                cmd.append(opt)
+            elif po.type == "string":
+                opt += "=" + val
+                cmd.append(opt)
+            elif po.type == "integer":
+                opt += "=" + str(val)
+                cmd.append(opt)
+        fullcmd = Env.om + [subsystem] + cmd
 
-        thr.log_request("run 'om node %s'" % " ".join(cmd), nodename, **kwargs)
+        thr.log_request("run 'om %s %s'" % (subsystem, " ".join(cmd)), nodename, **kwargs)
         if options.sync:
             proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
             out, err = proc.communicate()
