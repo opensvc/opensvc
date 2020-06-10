@@ -52,6 +52,7 @@ class TaskPodman(ContainerPodman, BaseTask):
         kwargs["type"] = "task.podman"
         ContainerPodman.__init__(self, *args, **kwargs)
         BaseTask.__init__(self, *args, **kwargs)
+        self.start_timeout = self.timeout
 
     _info = ContainerPodman._info
 
