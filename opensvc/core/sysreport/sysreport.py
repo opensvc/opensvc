@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import hashlib
 import os
 import sys
 import shutil
@@ -319,6 +321,22 @@ class BaseSysReport(object):
         """
         return base_d + os.path.dirname(fpath)
 
+    def _digest_secret(self, name, data):
+        obfuscate = {}
+        if name in ['cluster.conf']:
+            rid_secrets = ['cluster']
+            rid_secrets.extend(self.node.conf_sections(cat='hb'))
+            rid_secrets.extend(self.node.conf_sections(cat='arbitrator'))
+            for rid in rid_secrets:
+                try:
+                    value = self.node.oget(rid, 'secret')
+                    obfuscate[value] = 'hexdigest-%s' % hashlib.md5(value.encode()).hexdigest()
+                except:
+                    pass
+        for secret, secret_md5 in obfuscate.items():
+            data = data.replace(secret, secret_md5)
+        return data
+
     def collect_file(self, fpath):
         if not os.path.exists(fpath):
             return
@@ -338,6 +356,8 @@ class BaseSysReport(object):
         try:
             with open(fpath, 'r') as f:
                 buff = f.read()
+                if fpath.endswith('cluster.conf'):
+                    buff = self._digest_secret('cluster.conf', buff)
             with open(dst_f, 'r') as f:
                 pbuff = f.read()
             if buff != pbuff:
@@ -349,6 +369,11 @@ class BaseSysReport(object):
             # binary file: skip
             pass
         shutil.copy2(fpath, dst_f)
+        if dst_f.endswith('cluster.conf'):
+            with open(dst_f, 'r') as src:
+                cluster_conf = src.read()
+            with open(dst_f, 'w') as dst:
+                dst.write(self._digest_secret('cluster.conf', cluster_conf))
         self.full.append(dst_f)
 
     def delete_collected(self, fpaths):
