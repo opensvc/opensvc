@@ -101,7 +101,7 @@ ACTIONS_CUSTOM_REMOTE = (
     "daemon_relay_status",
     "stonith",
 )
-ACTIONS_WAIT_RESULT = (
+ACTIONS_NOWAIT_RESULT = (
     "delete",
     "eval",
     "get",
@@ -112,6 +112,7 @@ ACTIONS_WAIT_RESULT = (
     "updatepkg",
     "updateclumgr",
     "updatecomp",
+    "daemon_restart",
 )
 ACTIONS_NO_PARALLEL = [
     "edit_config",
@@ -3734,7 +3735,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if (want_context() and action not in ACTIONS_CUSTOM_REMOTE and (self.options.node or action not in ACTION_ASYNC)) or \
            self.options.node and action not in ACTIONS_CUSTOM_REMOTE:
             options = self.prepare_async_options()
-            sync = action not in ACTIONS_WAIT_RESULT
+            sync = action not in ACTIONS_NOWAIT_RESULT
             ret = self.daemon_node_action(action=action, options=options, node=self.options.node, sync=sync, action_mode=False)
             if ret == 0:
                 raise ex.AbortAction()
