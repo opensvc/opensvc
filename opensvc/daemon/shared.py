@@ -990,7 +990,8 @@ class OsvcThread(threading.Thread, Crypt):
                              discard_preserved=True,
                              discard_unprovisioned=True,
                              discard_constraints_violation=True,
-                             discard_start_failed=True):
+                             discard_start_failed=True,
+                             discard_affinities=True):
         """
         Return the list of service nodes meeting the following criteria:
         * we have valid service instance data (not unknown, has avail)
@@ -1002,6 +1003,30 @@ class OsvcThread(threading.Thread, Crypt):
         * the service instance smon status is not "start failed" (default)
         * the service instance constraints are eval'ed True (default)
         """
+        def discard_hard_affinity(data):
+            if not svc.hard_affinity:
+                return False
+            for path in svc.hard_affinity:
+                try:
+                    status = data["services"]["status"][path]["avail"]
+                except KeyError:
+                    continue
+                if status != "up":
+                    return True
+            return False
+
+        def discard_hard_anti_affinity(data):
+            if not svc.hard_anti_affinity:
+                return False
+            for path in svc.hard_affinity:
+                try:
+                    status = data["services"]["status"][path]["avail"]
+                except KeyError:
+                    continue
+                if status == "up":
+                    return True
+            return False
+
         candidates = []
         if svc is None:
             return []
@@ -1045,7 +1070,13 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             if discard_overloaded and self.node_overloaded(nodename):
                 continue
+            if discard_affinities:
+                if discard_hard_affinity(data):
+                    continue
+                if discard_hard_anti_affinity(data):
+                    continue
             candidates.append(nodename)
+
         return candidates
 
     def placement_ranks(self, svc, candidates=None):
