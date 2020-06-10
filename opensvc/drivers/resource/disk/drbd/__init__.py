@@ -560,7 +560,7 @@ class DiskDrbd(Resource):
         if self.has_md():
             self.log.info("resource %s already has metadata" % self.res)
             return
-        cmd = ["drbdadm", "create-md", self.res]
+        cmd = ["drbdadm", "create-md", "--force", self.res]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error()
