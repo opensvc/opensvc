@@ -846,7 +846,7 @@ class ContainerZone(BaseContainer):
             return tz
 
     def get_ns(self):
-        "return (domain, nameservers) detected from resolv.conf"
+        "return (domain, nameservers, search) detected from resolv.conf"
         p = os.path.join(os.sep, 'etc', 'resolv.conf')
         domain = None
         search = []
@@ -955,11 +955,16 @@ class ContainerZone(BaseContainer):
             contents += "auto_reg=disable\n"
             contents += "nfs4_domain=dynamic\n"
             for network_interface in sysidcfg_network_interfaces[:1]:
-                contents += network_interface
+                contents += network_interface + '\n'
             domain, nameservers, searchs = self.get_ns()
-            name_service = "name_service=DNS {domain_name=%s\n" % domain
-            name_service += "    name_server=%s\n" % ','.join(nameservers)
-            name_service += "    search=%s}\n" % ','.join(searchs)
+            if not nameservers or not domain:
+                name_service = "name_service=NONE"
+            else:
+                name_service = "name_service=DNS {domain_name=%s" % domain
+                name_service += "\n    name_server=%s" % ','.join(nameservers)
+                if searchs:
+                    name_service += "\n    search=%s" % ','.join(searchs)
+                name_service += "\n    }\n"
             contents += name_service
 
             with open(self.sysidcfg, "w") as sysidcfg_file:
