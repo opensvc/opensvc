@@ -497,7 +497,8 @@ class MonitorObjectOrchestratorManualMixin(object):
             discard_overloaded=False,
             discard_unprovisioned=False,
             discard_constraints_violation=False,
-            discard_start_failed=False
+            discard_start_failed=False,
+            discard_affinities=False,
         )
         def step_thaw():
             if not self.instance_frozen(svc.path):
@@ -1054,6 +1055,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                                                    discard_na=False,
                                                    discard_overloaded=False,
                                                    discard_unprovisioned=False,
+                                                   discard_affinities=False,
                                                    discard_constraints_violation=False)
             leader = self.placement_leader(svc, candidates)
         else:
@@ -1589,9 +1591,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             #              svc.path, status)
             return
 
-        if not self.pass_hard_affinities(svc):
-            return
-
         candidates = self.placement_candidates(svc)
         if not self.pass_soft_affinities(svc, candidates):
             return
@@ -2062,21 +2061,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             break
         self.set_smon(svc.path, global_expect="unset", status="idle")
-
-    def pass_hard_affinities(self, svc):
-        if svc.hard_anti_affinity:
-            intersection = set(self.get_local_paths()) & set(svc.hard_anti_affinity)
-            if len(intersection) > 0:
-                #self.log.info("service %s orchestrator out (hard anti-affinity with %s)",
-                #              svc.path, ','.join(intersection))
-                return False
-        if svc.hard_affinity:
-            intersection = set(self.get_local_paths()) & set(svc.hard_affinity)
-            if len(intersection) < len(set(svc.hard_affinity)):
-                #self.log.info("service %s orchestrator out (hard affinity with %s)",
-                #              svc.path, ','.join(intersection))
-                return False
-        return True
 
     def pass_soft_affinities(self, svc, candidates):
         if candidates != [Env.nodename]:
