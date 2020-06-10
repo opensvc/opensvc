@@ -11,7 +11,7 @@ from core.objects.svcdict import KEYS
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "docker"
 DRIVER_BASENAME_ALIASES = ["oci"]
-KEYWORDS = BASE_KEYWORDS + DOCKER_KEYWORDS
+KEYWORDS = BASE_KEYWORDS + [kw for kw in DOCKER_KEYWORDS if kw["keyword"] != "start_timeout"]
 DEPRECATED_KEYWORDS = {
     "task.docker.run_image": "image",
     "task.docker.run_command": "command",
