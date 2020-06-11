@@ -8,15 +8,13 @@ import tempfile
 import core.exceptions as ex
 import core.status
 import foreign.six
+from core.comm import DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from utilities.files import create_protected_file, makedirs, read_unicode_file
 from utilities.string import try_decode
 from utilities.naming import factory, split_path
 from utilities.proc import find_editor
 from utilities.string import bencode
-
-
-DEFAULT_DAEMON_TIMEOUT = 5
 
 
 class DataMixin(object):

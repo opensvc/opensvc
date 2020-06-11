@@ -26,7 +26,7 @@ import core.exceptions as ex
 import core.logger
 import core.objects.builder
 from core.capabilities import capabilities
-from core.comm import Crypt
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -140,7 +140,6 @@ UNPRIVILEGED_ACTIONS = [
 ]
 
 STATS_INTERVAL = 30
-DEFAULT_DAEMON_TIMEOUT = 5
 
 
 class Node(Crypt, ExtConfigMixin, NetworksMixin):

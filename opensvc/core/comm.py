@@ -15,6 +15,9 @@ import sys
 from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY, EAGAIN
 
 
+DEFAULT_DAEMON_TIMEOUT = 5
+
+
 class DummyException(Exception):
     pass
 
@@ -1077,4 +1080,3 @@ class Crypt(object):
         if traceback:
             print("Server "+traceback, file=sys.stderr)
         return status, error.rstrip(), info.rstrip()
-
