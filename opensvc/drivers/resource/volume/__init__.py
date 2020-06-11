@@ -192,14 +192,20 @@ class Volume(Resource):
         if self.octal_dirmode:
             os.chmod(self.mount_point, self.octal_dirmode)
 
+    def pre_provision_stop(self):
+        self._stop(force=True)
+
     def stop(self):
+        self._stop()
+
+    def _stop(self, force=False):
         self.uninstall_flag()
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.volname)
             return
         if self.volsvc.topology == "flex":
             return
-        if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader}) != 0:
+        if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader, "force": force}) != 0:
             raise ex.Error
 
     def start(self):
