@@ -6,6 +6,7 @@ import time
 import core.exceptions as ex
 import core.status
 import daemon.handler
+from core.comm import DEFAULT_DAEMON_TIMEOUT
 from .. import BASE_KEYWORDS
 from env import Env
 from core.capabilities import capabilities
@@ -23,7 +24,6 @@ MAX_NODES = 32
 MAX_DRBD = 512
 MIN_PORT = 7289
 MAX_PORT = 7489
-DEFAULT_DAEMON_TIMEOUT = 5
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "drbd"
 KEYWORDS = BASE_KEYWORDS + [

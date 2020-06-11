@@ -18,7 +18,7 @@ import core.exceptions as ex
 import core.logger
 import core.status
 import utilities.lock
-from core.comm import Crypt
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -403,7 +403,6 @@ DRV_GRP_XLATE = {
 }
 
 STATS_INTERVAL = 1
-DEFAULT_DAEMON_TIMEOUT = 5
 
 init_locale()
 
