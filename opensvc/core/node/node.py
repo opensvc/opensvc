@@ -5037,7 +5037,21 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             candidates.append(pool)
         if not candidates:
             return
-        candidates = sorted(candidates, key=lambda x: x.get("free", 0))
+
+        def shared_weight(pool):
+            if not shared and "shared" in pool["capabilities"]:
+                # try not to select a shared capable pool when the resource
+                # doesn't require the shared cap
+                return 0
+            return 1
+
+        def free_weight(pool):
+            return pool.get("free", 0)
+
+        def weight(pool):
+            return (shared_weight(pool), free_weight(pool))
+
+        candidates = sorted(candidates, key=lambda x: weight(x))
         return self.get_pool(candidates[-1]["name"])
 
     def get_pool(self, poolname):
