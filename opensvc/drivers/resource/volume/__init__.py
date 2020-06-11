@@ -245,7 +245,8 @@ class Volume(Resource):
         if self.volsvc.print_status_data()["overall"] == "warn":
             self.status_log("%s has warnings" % self.volsvc.path)
         if not self.flag_installed():
-            self.status_log("%s is %s" % (self.volsvc.path, status), "info")
+            level = "warn" if status == "warn" else "info"
+            self.status_log("%s avail %s" % (self.volsvc.path, status), level)
             return core.status.DOWN
         return status
 
