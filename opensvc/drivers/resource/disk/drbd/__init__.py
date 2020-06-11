@@ -23,6 +23,7 @@ MAX_NODES = 32
 MAX_DRBD = 512
 MIN_PORT = 7289
 MAX_PORT = 7489
+DEFAULT_DAEMON_TIMEOUT = 5
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "drbd"
 KEYWORDS = BASE_KEYWORDS + [
@@ -702,6 +703,7 @@ class DiskDrbd(Resource):
                 },
             },
             node=[n for n in self.svc.nodes if n != Env.nodename],
+            timeout=DEFAULT_DAEMON_TIMEOUT
         )
         if data.get("status", 1):
             raise ex.Error("failed to replicate config on nodes: %s" % data)
