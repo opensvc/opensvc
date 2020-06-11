@@ -1227,7 +1227,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         else:
             status = "idle"
             if action == "start" and not self.command_is_scoped():
-                local_expect == "started"
+                local_expect = "started"
         try:
             self.set_service_monitor(local_expect=local_expect, status=status)
             self.log.debug("daemon notified of action '%s' end" % action)
