@@ -3148,7 +3148,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": env_to_merge,
                 }
             }
-            result = self.daemon_post(req)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3243,7 +3243,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_post(req)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3914,7 +3914,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "options": {"name": name, "lock_id": lock_id},
             },
             silent=silent,
-            timeout=10,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -4009,7 +4009,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "blacklist_clear"},
             server=self.options.server,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -4207,15 +4207,24 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Tell the daemon to freeze and drain all local object instances.
         """
+        wait = self.options.wait
+        time = self.options.time
+        if wait and time:
+            request_timeout = time + DEFAULT_DAEMON_TIMEOUT
+        elif wait:
+            request_timeout = None
+        else:
+            request_timeout = DEFAULT_DAEMON_TIMEOUT
         data = self.daemon_post(
             {
                 "action": "node_drain",
                 "options": {
-                    "wait": self.options.wait,
-                    "time": self.options.time,
+                    "wait": wait,
+                    "time": time,
                 }
             },
             server=self.options.server or self.options.node,
+            timeout=request_timeout
         )
         if data is None:
             return 1
@@ -4314,7 +4323,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "daemon_start", "options": options},
             server=self.options.server,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         if data.get("status") == 0:
             return
@@ -4422,7 +4431,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "daemon_stop", "options": options},
             server=Env.nodename,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
 
         errors = 0
@@ -4430,7 +4439,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data = self.daemon_post(
                 {"action": "leave"},
                 server=nodename,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             if data is None:
                 self.log.error("leave node %s failed", nodename)
@@ -4498,7 +4507,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             server=joined,
             cluster_name="join",
             secret=secret,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         if data is None:
             raise ex.Error("join node %s failed" % joined)
@@ -4659,7 +4668,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     server=nodename,
                     cluster_name="join",
                     secret=secret,
-                    timeout=5,
+                    timeout=DEFAULT_DAEMON_TIMEOUT,
                 )
                 if data is None:
                     self.log.error("join node %s failed", nodename)
@@ -4687,7 +4696,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 {"action": "node_monitor", "options": options},
                 server=self.options.server,
                 silent=True,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             if data is None:
                 raise ex.Error("the daemon is not running")
@@ -4731,7 +4740,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 server=server,
                 node=node,
                 silent=True,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
         except Exception as exc:
             self.log.error("node action on node %s failed: %s",
@@ -4859,7 +4868,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 },
                 server=self.options.server,
                 silent=True,
-                timeout=2,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             status, error, info = self.parse_result(data)
             if status and data.get("errno") != ECONNREFUSED:
