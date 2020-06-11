@@ -1143,12 +1143,15 @@ class Resource(object):
         if mtime:
             os.utime(self.provisioned_flag, (mtime, mtime))
 
+    def has_provisioned_flag(self):
+        return os.path.exists(self.provisioned_flag)
+
     def remove_is_provisioned_flag(self):
         """
         Remove the provisioned state cache file. Used in the Svc::delete_resource()
         code path.
         """
-        if not os.path.exists(self.provisioned_flag):
+        if not self.has_provisioned_flag():
             return
         os.unlink(self.provisioned_flag)
 
@@ -1290,9 +1293,12 @@ class Resource(object):
             flag = self.is_provisioned_flag()
             if flag is not None:
                 return flag
-        if not hasattr(self, "provisioned"):
+        if hasattr(self, "provisioned"):
+            value = getattr(self, "provisioned")()
+        elif hasattr(self, "provisioner") and not self.has_provisioned_flag():
+            value = False
+        else:
             return
-        value = getattr(self, "provisioned")()
         if not self.shared or self.svc.options.leader or \
            (self.shared and not refresh and value):
             self.write_is_provisioned_flag(value)
