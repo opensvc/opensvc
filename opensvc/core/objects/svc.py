@@ -400,8 +400,10 @@ DRV_GRP_XLATE = {
 }
 
 STATS_INTERVAL = 1
+DEFAULT_DAEMON_TIMEOUT = 5
 
 init_locale()
+
 
 def _slave_action(func):
     def need_specifier(self):
@@ -1914,7 +1916,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "path": self.path,
             }
         }
-        data = self.daemon_post(req, timeout=5, server=server, node=node)
+        data = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, server=server, node=node)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
@@ -1960,7 +1962,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 server=self.options.server,
                 node=self.options.node,
                 silent=True,
-                timeout=2,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             status, error, info = self.parse_result(data)
             if status and data.get("errno") != ECONNREFUSED:
