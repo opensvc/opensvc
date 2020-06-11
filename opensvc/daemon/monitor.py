@@ -528,6 +528,13 @@ class MonitorObjectOrchestratorManualMixin(object):
             self.service_stop(svc.path)
             raise Defer("stop: action started")
 
+        def step_wait_parents():
+            if not self.parents_available(svc):
+                self.set_smon(svc.path, status="wait parents")
+                raise Defer("wait: parents are not started yet")
+            elif smon.status == "wait parents":
+                self.set_smon(svc.path, status="idle")
+
         def step_start():
             if Env.nodename not in target:
                 return
@@ -551,6 +558,7 @@ class MonitorObjectOrchestratorManualMixin(object):
 
         step_thaw()
         step_stop()
+        step_wait_parents()
         step_start()
 
 class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):

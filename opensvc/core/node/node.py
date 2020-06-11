@@ -3894,7 +3894,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "options": {"name": name, "timeout": timeout},
             },
             silent=silent,
-            timeout=10,
+            timeout=timeout + 10,
         )
         lock_id = data.get("data", {}).get("id")
         if not lock_id and on_error == "raise":
