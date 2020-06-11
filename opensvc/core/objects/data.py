@@ -16,6 +16,9 @@ from utilities.proc import find_editor
 from utilities.string import bencode
 
 
+DEFAULT_DAEMON_TIMEOUT = 5
+
+
 class DataMixin(object):
     def add(self):
         self._add(self.options.key, self.options.value_from)
@@ -52,7 +55,7 @@ class DataMixin(object):
                 "data": data,
             }
         }
-        result = self.daemon_post(req, timeout=5)
+        result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
         status, error, info = self.parse_result(result)
         if info:
             print(info)
