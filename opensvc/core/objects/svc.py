@@ -234,6 +234,7 @@ ACTIONS_ALLOW_ON_INVALID_NODE = [
     "print_config",
     "print_status",
     "set",
+    "status",
     "unset",
     "update",
     "validate_config",
