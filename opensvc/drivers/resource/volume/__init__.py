@@ -242,6 +242,8 @@ class Volume(Resource):
             self.status_log("volume %s does not exist" % self.volname, "info")
             return core.status.DOWN
         status = core.status.Status(self.volsvc.print_status_data()["avail"])
+        if self.volsvc.print_status_data()["overall"] == "warn":
+            self.status_log("%s has warnings" % self.volsvc.path)
         if not self.flag_installed():
             self.status_log("%s is %s" % (self.volsvc.path, status), "info")
             return core.status.DOWN
