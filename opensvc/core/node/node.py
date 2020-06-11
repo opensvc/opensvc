@@ -140,6 +140,8 @@ UNPRIVILEGED_ACTIONS = [
 ]
 
 STATS_INTERVAL = 30
+DEFAULT_DAEMON_TIMEOUT = 5
+
 
 class Node(Crypt, ExtConfigMixin, NetworksMixin):
     """
@@ -3888,13 +3890,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return data
 
     def _daemon_lock(self, name, timeout=None, silent=False, on_error=None):
+        if timeout is not None:
+            request_timeout = timeout + DEFAULT_DAEMON_TIMEOUT
+        else:
+            request_timeout = timeout
         data = self.daemon_post(
             {
                 "action": "lock",
                 "options": {"name": name, "timeout": timeout},
             },
             silent=silent,
-            timeout=timeout + 10,
+            timeout=request_timeout,
         )
         lock_id = data.get("data", {}).get("id")
         if not lock_id and on_error == "raise":
