@@ -6,6 +6,7 @@ import time
 import core.exceptions as ex
 import core.status
 import daemon.handler
+from core.comm import DEFAULT_DAEMON_TIMEOUT
 from .. import BASE_KEYWORDS
 from env import Env
 from core.capabilities import capabilities
@@ -692,6 +693,7 @@ class DiskDrbd(Resource):
                 },
             },
             node=[n for n in self.svc.node.cluster_nodes if n != Env.nodename],
+            timeout=DEFAULT_DAEMON_TIMEOUT
         )
         if data.get("status", 1):
             raise ex.Error("failed to replicate config on all nodes: %s" % data)

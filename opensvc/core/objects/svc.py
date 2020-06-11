@@ -18,7 +18,7 @@ import core.exceptions as ex
 import core.logger
 import core.status
 import utilities.lock
-from core.comm import Crypt
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -42,12 +42,14 @@ from utilities.string import is_string
 if six.PY2:
     BrokenPipeError = IOError
 
+
 def signal_handler(*args):
     """
     A signal handler raising the Signal exception.
     Args can be signum and frame, but we don't use them.
     """
     raise ex.Signal
+
 
 # Actions with a special handling of remote/peer relaying
 ACTION_NO_ASYNC = [
@@ -403,6 +405,7 @@ STATS_INTERVAL = 1
 
 init_locale()
 
+
 def _slave_action(func):
     def need_specifier(self):
         """
@@ -425,14 +428,17 @@ def _slave_action(func):
             return
         need_specifier(self)
         if self.options.slaves or \
-           self.options.slave is not None or \
-           (not self.options.master and not self.options.slaves and self.options.slave is None and \
-           self.running_action in ACTIONS_DO_MASTER_AND_SLAVE):
+                self.options.slave is not None or \
+                (not self.options.master and
+                 not self.options.slaves and
+                 self.options.slave is None and
+                 self.running_action in ACTIONS_DO_MASTER_AND_SLAVE):
             try:
                 func(self)
             except Exception as exc:
                 raise ex.Error(str(exc))
     return _func
+
 
 def _master_action(func):
     def need_specifier(self):
@@ -454,10 +460,13 @@ def _master_action(func):
     def _func(self):
         need_specifier(self)
         if self.options.master or \
-           (not self.options.master and not self.options.slaves and self.options.slave is None and \
-           self.running_action in ACTIONS_DO_MASTER_AND_SLAVE + ACTIONS_DO_MASTER):
+                (not self.options.master and
+                 not self.options.slaves and
+                 self.options.slave is None
+                 and self.running_action in ACTIONS_DO_MASTER_AND_SLAVE + ACTIONS_DO_MASTER):
             func(self)
     return _func
+
 
 class ObjPaths(object):
     def __init__(self, path, name, cf):
@@ -475,6 +484,7 @@ class ObjPaths(object):
     def tmp_cf(self):
         nstmp = svc_pathtmp(self.path)
         return os.path.join(nstmp, self.name+".conf.tmp")
+
 
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
@@ -630,7 +640,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return Env.nodename+"."+self.path.replace("/", ".")
 
     @lazy
-    def log(self): # pylint: disable=method-hidden
+    def log(self):  # pylint: disable=method-hidden
         extra = {
             "path": self.path,
             "node": Env.nodename,
@@ -640,7 +650,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return logging.LoggerAdapter(self.logger, extra)
 
     @lazy
-    def logger(self): # pylint: disable=method-hidden
+    def logger(self):  # pylint: disable=method-hidden
         if self.volatile:
             handlers = ["stream"]
         else:
@@ -849,7 +859,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def systemd_join_agent_service(self):
         from utilities.systemd import systemd_system, systemd_join
         if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon" or not systemd_system():
-               return
+            return
         systemd_join("opensvc-agent.service")
 
     def action(self, action, options=None):
@@ -928,12 +938,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.node = Node()
 
         if action not in ACTIONS_NO_STATUS_CHANGE and \
-           'compliance' not in action and \
-           'collector' not in action and \
-            not options.dry_run and \
-            not action.startswith("oci") and \
-            not action.startswith("docker") and \
-            not action.startswith("podman"):
+                'compliance' not in action and \
+                'collector' not in action and \
+                not options.dry_run and \
+                not action.startswith("oci") and \
+                not action.startswith("docker") and \
+                not action.startswith("podman"):
             #
             # here we know we will run a resource state-changing action
             # purge the resource status file cache, so that we don't take
@@ -1065,7 +1075,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         if action == "sync_all" and self.command_is_scoped():
             for rid in self.action_rid:
-                resource = self.get_resource(rid) # pylint: disable=assignment-from-none
+                resource = self.get_resource(rid)  # pylint: disable=assignment-from-none
                 if not resource or not resource.type.startswith("sync"):
                     continue
                 try:
@@ -1238,7 +1248,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.disable_rollback:
             self.log.info("skip rollback %s: as instructed by DEFAULT.rollback=false", action)
             return
-        rids = [r.rid for r in self.get_resources() if r.can_rollback and (r.rollback_even_if_standby or not r.is_standby)]
+        rids = [r.rid for r in self.get_resources()
+                if r.can_rollback and (r.rollback_even_if_standby or not r.is_standby)]
         if len(rids) == 0:
             self.log.info("skip rollback %s: no resource activated", action)
             return
@@ -1354,7 +1365,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     options.resource[idx] = json.loads(resource)
                 except ValueError:
                     raise ex.Error("invalid json in resource definition: "
-                                      "%s" % options.resource[idx])
+                                   "%s" % options.resource[idx])
 
         self.options.update(options)
         options = self.options
@@ -1493,12 +1504,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 raise ex.Error("the --to <node>[,<node>,...] option is required")
             global_expect += self.options.to
         elif action == "switch":
-            dst = self.destination_node_sanity_checks() # pylint: disable=assignment-from-none
+            dst = self.destination_node_sanity_checks()  # pylint: disable=assignment-from-none
             if dst is None:
                 return
             global_expect += dst
         elif action == "takeover":
-            dst = self.destination_node_sanity_checks(Env.nodename) # pylint: disable=assignment-from-none
+            dst = self.destination_node_sanity_checks(Env.nodename)  # pylint: disable=assignment-from-none
             if dst is None:
                 return
             global_expect += dst
@@ -1512,32 +1523,33 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if timeout is None:
             timeout = self.options.time
         try:
-             if global_expect == "frozen":
-                 self.node._wait(path="monitor.services.'%s'.frozen=frozen" % self.path, duration=timeout)
-             elif global_expect == "thawed":
-                 self.node._wait(path="monitor.services.'%s'.frozen=thawed" % self.path, duration=timeout)
-             elif global_expect == "purged":
-                 self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
-             elif global_expect == "deleted":
-                 self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
-             elif global_expect == "aborted":
-                 self.node._wait(path="!monitor.services.'%s'.global_expect" % self.path, duration=timeout)
-             elif global_expect == "provisioned":
-                 self.node._wait(path="monitor.services.'%s'.provisioned=true" % self.path, duration=timeout)
-             elif global_expect == "unprovisioned":
-                 self.node._wait(path="monitor.services.'%s'.provisioned=false" % self.path, duration=timeout)
-             elif global_expect == "shutdown":
-                 self.node._wait(path="monitor.services.'%s'.avail~(down|n/a)" % self.path, duration=timeout)
-             elif global_expect == "stopped":
-                 self.node._wait(path="monitor.services.'%s'.avail~(down|stdby up|n/a)" % self.path, duration=timeout)
-             elif global_expect == "started":
-                 self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
-             elif global_expect == "placed":
-                 self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
-                 self.node._wait(path="monitor.services.'%s'.placement=optimal" % self.path, duration=timeout)
-             elif global_expect.startswith("placed@"):
-                 node = global_expect[7:]
-                 self.node._wait(path="monitor.nodes.'%s'.services.status.'%s'.avail~(up|n/a)" % (node, self.path), duration=timeout)
+            if global_expect == "frozen":
+                self.node._wait(path="monitor.services.'%s'.frozen=frozen" % self.path, duration=timeout)
+            elif global_expect == "thawed":
+                self.node._wait(path="monitor.services.'%s'.frozen=thawed" % self.path, duration=timeout)
+            elif global_expect == "purged":
+                self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
+            elif global_expect == "deleted":
+                self.node._wait(path="!monitor.services.'%s'" % self.path, duration=timeout)
+            elif global_expect == "aborted":
+                self.node._wait(path="!monitor.services.'%s'.global_expect" % self.path, duration=timeout)
+            elif global_expect == "provisioned":
+                self.node._wait(path="monitor.services.'%s'.provisioned=true" % self.path, duration=timeout)
+            elif global_expect == "unprovisioned":
+                self.node._wait(path="monitor.services.'%s'.provisioned=false" % self.path, duration=timeout)
+            elif global_expect == "shutdown":
+                self.node._wait(path="monitor.services.'%s'.avail~(down|n/a)" % self.path, duration=timeout)
+            elif global_expect == "stopped":
+                self.node._wait(path="monitor.services.'%s'.avail~(down|stdby up|n/a)" % self.path, duration=timeout)
+            elif global_expect == "started":
+                self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
+            elif global_expect == "placed":
+                self.node._wait(path="monitor.services.'%s'.avail~(up|n/a)" % self.path, duration=timeout)
+                self.node._wait(path="monitor.services.'%s'.placement=optimal" % self.path, duration=timeout)
+            elif global_expect.startswith("placed@"):
+                node = global_expect[7:]
+                self.node._wait(path="monitor.nodes.'%s'.services.status.'%s'.avail~(up|n/a)" %
+                                     (node, self.path), duration=timeout)
         except KeyboardInterrupt:
             raise ex.Error
 
@@ -1690,9 +1702,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if Env.nodename in self.drpnodes:
             return
         raise ex.Error("action '%s' aborted because this node's hostname "
-                          "'%s' is not a member of DEFAULT.nodes, "
-                          "DEFAULT.drpnode nor DEFAULT.drpnodes" % \
-                          (action, Env.nodename))
+                       "'%s' is not a member of DEFAULT.nodes, "
+                       "DEFAULT.drpnode nor DEFAULT.drpnodes" %
+                       (action, Env.nodename))
 
     def setup_environ(self, action=None, options=None):
         """
@@ -1769,7 +1781,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 self.edit_config_diff()
                 print("%s exists: service is already being edited. Set "
                       "--discard to edit from the current configuration, "
-                      "or --recover to open the unapplied config" % \
+                      "or --recover to open the unapplied config" %
                       self.paths.tmp_cf, file=sys.stderr)
                 raise ex.Error
         else:
@@ -1914,7 +1926,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 "path": self.path,
             }
         }
-        data = self.daemon_post(req, timeout=5, server=server, node=node)
+        data = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, server=server, node=node)
         status, error, info = self.parse_result(data)
         if info:
             print(info)
@@ -1960,7 +1972,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 server=self.options.server,
                 node=self.options.node,
                 silent=True,
-                timeout=2,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             status, error, info = self.parse_result(data)
             if status and data.get("errno") != ECONNREFUSED:
@@ -1972,7 +1984,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("wake monitor failed: %s", str(exc))
 
-    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, path=None, best_effort=False):
+    def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, path=None,
+                            best_effort=False):
         if path is None:
             path = self.path
         if best_effort:
@@ -2051,7 +2064,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception:
             return
 
-    def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=None, collect=False, action_mode=True):
+    def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=None,
+                              collect=False, action_mode=True):
         """
         Execute a service action on a peer node.
         If sync is set, wait for the action result.
@@ -2093,10 +2107,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         def print_node_data(nodename, data):
             if data.get("out") and len(data["out"]) > 0:
                 for line in data["out"].splitlines():
-                   print(line)
+                    print(line)
             if data.get("err") and len(data["err"]) > 0:
                 for line in data["err"].splitlines():
-                   print(line, file=sys.stderr)
+                    print(line, file=sys.stderr)
 
         if collect:
             if "data" not in data:
@@ -2143,8 +2157,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         try:
             self._followlogs(server=self.options.server, node=node,
-                       debug=self.options.debug,
-                       auto=auto)
+                             debug=self.options.debug, auto=auto)
         except ex.Signal:
             return
         except (OSError, IOError) as exc:
@@ -2208,14 +2221,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
         with open(tmpf, 'rb') as filep:
             files = {"upload": filep}
             headers = {
-                'Content-Type':'application/octet-stream',
-                'Content-Filename':"%s_%s_at_%s.tar.gz" % (self.namespace if self.namespace else "", self.name, Env.nodename),
+                'Content-Type': 'application/octet-stream',
+                'Content-Filename': "%s_%s_at_%s.tar.gz" %
+                                    (self.namespace if self.namespace else "", self.name, Env.nodename),
                 'Content-length': '%d' % content_size,
                 'Content-Range': 'bytes 0-%d/%d' % (content_size-1, content_size),
-                'Maxlife-Unit':"DAYS",
-                'Maxlife-Value':"7",
+                'Maxlife-Unit': "DAYS",
+                'Maxlife-Value': "7",
             }
-            resp = requests.post("https://sfx.opensvc.com/apis/rest/items", headers=headers, data=base64.b64encode(filep.read(content_size)), auth=("user", "support"))
+            resp = requests.post("https://sfx.opensvc.com/apis/rest/items",
+                                 headers=headers,
+                                 data=base64.b64encode(filep.read(content_size)),
+                                 auth=("user", "support"))
         loc = resp.headers.get("Content-Location")
         if not loc:
             print(json.dumps(resp.content, indent=4), file=sys.stderr)
@@ -2289,7 +2306,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
     @fcache
     def get_mon_data(self):
         paths = [self.path]
-        paths += [resolve_path(p.split("@")[0], namespace=self.namespace) for p in self.parents+self.children_and_slaves]
+        paths += [resolve_path(p.split("@")[0], namespace=self.namespace)
+                  for p in self.parents+self.children_and_slaves]
         selector = ",".join(paths)
         data = self.node._daemon_status(silent=True, selector=selector)
         if data is not None and "monitor" in data:
@@ -2304,10 +2322,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             data["service"] = mon_data["services"][self.path]
             data["instances"] = {}
             for nodename in mon_data["nodes"]:
-                 try:
-                     data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.path]["monitor"]
-                 except KeyError:
-                     pass
+                try:
+                    data["instances"][nodename] = mon_data["nodes"][nodename]["services"]["status"][self.path]["monitor"]
+                except KeyError:
+                    pass
             return data
         except Exception:
             return
@@ -2409,6 +2427,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def csum_status_data(self, data):
         h = hashlib.md5()
+
         def fn(h, val):
             if type(val) == dict:
                 for key in sorted(val.keys()):
@@ -2759,6 +2778,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def configure_scheduler(self, *args, **kwargs):
         pass
 
+
 class Svc(BaseSvc):
     """
     The svc kind class.
@@ -3005,23 +3025,23 @@ class Svc(BaseSvc):
     def flex_min(self):
         val = self.oget("DEFAULT", "flex_min")
         if val < 0:
-           val = 0
-        nb_nodes = len(self.nodes|self.drpnodes)
+            val = 0
+        nb_nodes = len(self.nodes | self.drpnodes)
         if val > nb_nodes:
-           val = nb_nodes
+            val = nb_nodes
         return val
 
     @lazy
     def flex_max(self):
         nb_nodes = len(self.peers)
         try:
-           val = self.conf_get("DEFAULT", "flex_max")
+            val = self.conf_get("DEFAULT", "flex_max")
         except ex.OptNotFound:
-           return nb_nodes
+            return nb_nodes
         if val > nb_nodes:
-           val = nb_nodes
+            val = nb_nodes
         if val < self.flex_min:
-           val = self.flex_min
+            val = self.flex_min
         return val
 
     @lazy
@@ -3140,7 +3160,12 @@ class Svc(BaseSvc):
         def need_configure(action):
             if action in (None, "print_schedule"):
                 return True
-            if self.options.cron and action in ("push_resinfo", "compliance_auto", "run", "resource_monitor", "sync_all", "status"):
+            if self.options.cron and action in ("push_resinfo",
+                                                "compliance_auto",
+                                                "run",
+                                                "resource_monitor",
+                                                "sync_all",
+                                                "status"):
                 return True
             return False
 
@@ -3471,7 +3496,7 @@ class Svc(BaseSvc):
                     _rsets.append(rset)
 
             if action in ["start", "startstandby", "provision"] or \
-                __type.startswith("sync"):
+                    __type.startswith("sync"):
                 _rsets.sort()
             else:
                 _rsets.sort(reverse=True)
@@ -4002,8 +4027,7 @@ class Svc(BaseSvc):
         Execute a command in a service container.
         """
         if container.pg_frozen():
-            raise ex.Error("can't join a frozen container. abort encap "
-                              "command.")
+            raise ex.Error("can't join a frozen container. abort encap command.")
         if cmd == ["start"] and container.booted:
             return '', '', 0
         if not self.has_encap_resources:
@@ -4018,8 +4042,8 @@ class Svc(BaseSvc):
             return '', '', 0
 
         if self.options.slave is not None and not \
-           (container.name in self.options.slave or \
-            container.rid in self.options.slave):
+                (container.name in self.options.slave or
+                 container.rid in self.options.slave):
             # no need to run encap cmd (container not specified in --slave)
             return '', '', 0
 
@@ -4094,11 +4118,10 @@ class Svc(BaseSvc):
             cmd = container.runmethod + cmd
             out, err, ret = justcall(cmd, stdin=self.node.devnull)
         else:
-            raise ex.EncapUnjoinable("undefined rcmd/runmethod in "
-                                         "resource %s"%container.rid)
+            raise ex.EncapUnjoinable("undefined rcmd/runmethod in resource %s" % container.rid)
 
         if verbose:
-            #self.log.info('logs from %s child service:', container.name)
+            # self.log.info('logs from %s child service:', container.name)
             print(out)
             if len(err) > 0:
                 print(err)
@@ -4120,7 +4143,7 @@ class Svc(BaseSvc):
                 pass
         if ret != 0:
             raise ex.Error("error from encap service command '%s': "
-                              "%d\n%s\n%s"%(' '.join(cmd), ret, out, err))
+                           "%d\n%s\n%s" % (' '.join(cmd), ret, out, err))
         return out, err, ret
 
     def get_encap_json_status_path(self, rid):
@@ -4557,15 +4580,15 @@ class Svc(BaseSvc):
         their rebutal of the action before it begins.
         """
         self.abort_start_done = True
-        resources = [res for res in self.get_resources() if \
-                     not res.skip and not res.is_disabled() and \
-                     hasattr(res, "abort_start")]
+        resources = [res for res in self.get_resources()
+                     if not res.skip and not res.is_disabled() and hasattr(res, "abort_start")]
         if Env.sysname == "Windows" or len(resources) < 2:
             parallel = False
         else:
             try:
                 from multiprocessing import Process
                 parallel = True
+
                 def wrapper(func):
                     try:
                         if func():
@@ -4580,7 +4603,7 @@ class Svc(BaseSvc):
             if not parallel:
                 if resource.abort_start():
                     raise ex.Error("start aborted due to resource %s "
-                                      "conflict" % resource.rid)
+                                   "conflict" % resource.rid)
             else:
                 proc = Process(target=wrapper, args=[resource.abort_start])
                 proc.start()
@@ -4594,7 +4617,7 @@ class Svc(BaseSvc):
                     err.append(rid)
             if len(err) > 0:
                 raise ex.Error("start aborted due to resource %s "
-                                  "conflict" % ",".join(err))
+                               "conflict" % ",".join(err))
 
     def refresh_ip_status(self):
         """ Used after start/stop container because the ip resource
@@ -4832,7 +4855,7 @@ class Svc(BaseSvc):
                 if rid not in data:
                     data[rid] = []
                 data[rid].append(__data)
-        if not "env" in self.cd:
+        if "env" not in self.cd:
             return data
         for key in self.cd["env"]:
             try:
@@ -5039,8 +5062,7 @@ class Svc(BaseSvc):
 
     def all_rids(self):
         self.init_resources()
-        return [rid for rid in self.resources_by_id if rid is not None] + \
-               list(self.encap_resources.keys())
+        return [rid for rid in self.resources_by_id if rid is not None] + list(self.encap_resources.keys())
 
     def expand_rid(self, rid):
         """
@@ -5358,14 +5380,14 @@ class Svc(BaseSvc):
             # if we set <section>.disable = <bool>,
             # remove <section>.disable@<scope> = <not bool>
             #
-            if not rid in self.cd:
+            if rid not in self.cd:
                 items = {}
             else:
                 items = self.cd[rid]
             for option, value in items.items():
                 if not option.startswith("disable@"):
                     continue
-                if value == True:
+                if value is True:
                     continue
                 self.log.info("remove %s.%s = false", rid, option)
                 unsets.append("DEFAULT.%s" % option)
@@ -5537,7 +5559,7 @@ class Svc(BaseSvc):
             """
             import re
             for idx, arg in enumerate(argv):
-                if re.match(r'[%\{][#\.-_\w]+[%\}]', arg):
+                if re.match(r'[%{][#.-_\w]+[%\}]', arg):
                     container_rid = arg.strip("{}%")
                     if not container_rid.startswith("container#"):
                         container_rid = "container#" + container_rid
@@ -5742,7 +5764,8 @@ class Svc(BaseSvc):
         Return the unambiguous exposed device. Volume services naturally
         have such a device.
         """
-        candidates = sorted([res for res in self.get_resources("disk") if res.type != "disk.scsireserv"], key=lambda r: r.rid)
+        candidates = sorted([res for res in self.get_resources("disk")
+                             if res.type != "disk.scsireserv"], key=lambda r: r.rid)
         if not candidates:
             return
         try:
@@ -5763,7 +5786,8 @@ class Svc(BaseSvc):
         return candidates[0]
 
     def get_volume_rid(self, volname):
-        candidates = [rid for rid, res in self.resources_by_id.items() if rid.startswith("volume#") and res.name == volname]
+        candidates = [rid for rid, res in self.resources_by_id.items()
+                      if rid.startswith("volume#") and res.name == volname]
         try:
             return candidates[0]
         except IndexError:
@@ -5794,8 +5818,7 @@ class Svc(BaseSvc):
         if mode == "file" and vol.mount_point is None:
             if errors == "ignore":
                 return buff, None
-            raise ex.Error("referenced volume %s has no "
-                              "mount point" % l[0])
+            raise ex.Error("referenced volume %s has no mount point" % l[0])
         volstatus = vol.status()
         if volstatus not in (core.status.UP, core.status.STDBY_UP, core.status.NA):
             if errors != "ignore":

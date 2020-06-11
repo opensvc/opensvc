@@ -9,13 +9,9 @@ The node
 """
 from __future__ import absolute_import, division, print_function
 
-import datetime
 import fnmatch
-import json
 import logging
 import os
-import re
-import shlex
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
@@ -26,7 +22,7 @@ import core.exceptions as ex
 import core.logger
 import core.objects.builder
 from core.capabilities import capabilities
-from core.comm import Crypt
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -140,6 +136,7 @@ UNPRIVILEGED_ACTIONS = [
 ]
 
 STATS_INTERVAL = 30
+
 
 class Node(Crypt, ExtConfigMixin, NetworksMixin):
     """
@@ -437,7 +434,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return exc.default
 
     def get_min_avail(self, keyword, metric, limit=100):
-        total = self.stats().get(metric) # mb
+        total = self.stats().get(metric)  # mb
         if total in (0, None):
             return 0
         try:
@@ -447,7 +444,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if str(val).endswith("%"):
             val = int(val.rstrip("%"))
         else:
-            val = val // 1024 // 1024 # b > mb
+            val = val // 1024 // 1024  # b > mb
             val = int(val/total*100)
             if val > limit:
                 # unreasonable
@@ -702,7 +699,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             for path in self.__svcs_selector(_selector, paths, namespace=namespace):
                 if path not in result:
                     result.append(path)
-        if len(result) == 0 and not re.findall(r"[,\+\*=\^:~><]", selector):
+        if len(result) == 0 and not re.findall(r"[,+*=^:~><]", selector):
             raise ex.Error("object not found")
         return result
 
@@ -855,7 +852,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             else:
                 return []
             _selector = "/".join((_namespace, _kind, _name))
-            filtered_paths = [path  for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
+            filtered_paths = [path for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
             return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
         elif len(elts) != 3:
             return []
@@ -881,8 +878,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         the node.
         """
         if self.svcs is not None and \
-           ('paths' not in kwargs or \
-           (isinstance(kwargs['paths'], list) and len(kwargs['paths']) == 0)):
+                ('paths' not in kwargs or
+                 (isinstance(kwargs['paths'], list) and len(kwargs['paths']) == 0)):
             return
 
         if 'paths' in kwargs and \
@@ -964,7 +961,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if thr.name == 'QueueFeederThread' and thr.ident is not None:
                 thr.join(1)
 
-
     def make_temp_config(self):
         """
         Copy the current service configuration file to a temporary
@@ -982,7 +978,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 self.edit_config_diff()
                 print("%s exists: node conf is already being edited. Set "
                       "--discard to edit from the current configuration, "
-                      "or --recover to open the unapplied config" % \
+                      "or --recover to open the unapplied config" %
                       self.paths.tmp_cf, file=sys.stderr)
                 raise ex.Error
         else:
@@ -1302,7 +1298,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         tree.out()
 
-
     def pushnsr(self):
         """
         The pushnsr action entrypoint.
@@ -1449,11 +1444,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         statinfo = os.stat(self.paths.reboot_flag)
         if statinfo.st_uid != 0:
             os.chown(self.paths.reboot_flag, 0, -1)
-            print("set %s root ownership"%self.paths.reboot_flag)
+            print("set %s root ownership" % self.paths.reboot_flag)
         if statinfo.st_mode & stat.S_IWOTH:
             mode = statinfo.st_mode ^ stat.S_IWOTH
             os.chmod(self.paths.reboot_flag, mode)
-            print("set %s not world-writable"%self.paths.reboot_flag)
+            print("set %s not world-writable" % self.paths.reboot_flag)
         print("reboot scheduled")
 
     def schedule_reboot_status(self):
@@ -1773,7 +1768,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if len(hostid) > 18 or not hostid.startswith("0x") or \
                len(set(hostid[2:]) - set("0123456789abcdefABCDEF")) > 0:
                 raise ex.Error("prkey in node.conf must have 16 significant"
-                                  " hex digits max (ex: 0x90520a45138e85)")
+                               " hex digits max (ex: 0x90520a45138e85)")
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
         hostid = "0x"+self.hostid()
@@ -1844,7 +1839,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                               file=sys.stderr)
                         continue
                     if req.send():
-                        print("Sent Wake On Lan packet to mac address <%s>"%req.mac)
+                        print("Sent Wake On Lan packet to mac address <%s>" % req.mac)
                     else:
                         print("Error while trying to send Wake On Lan packet to "
                               "mac address <%s>" % req.mac, file=sys.stderr)
@@ -2030,7 +2025,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         specified by the pkg_name argument. The download destination file
         is specified by fpath. The caller is responsible for its deletion.
         """
-        print("get %s (%s)"%(pkg_name, fpath))
+        print("get %s (%s)" % (pkg_name, fpath))
         try:
             self.urlretrieve(pkg_name, fpath)
         except IOError as exc:
@@ -2114,7 +2109,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         tmpf = tempfile.NamedTemporaryFile()
         fpath = tmpf.name
         tmpf.close()
-        print("get %s (%s)"%(pkg_name, fpath))
+        print("get %s (%s)" % (pkg_name, fpath))
         try:
             self.urlretrieve(pkg_name, fpath)
         except IOError as exc:
@@ -2171,7 +2166,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         specified by the bundle_name argument. The download destination file
         is specified by fpath. The caller is responsible for its deletion.
         """
-        print("get %s (%s)"%(bundle_name, fpath))
+        print("get %s (%s)" % (bundle_name, fpath))
         try:
             self.urlretrieve(bundle_name, fpath)
         except IOError as exc:
@@ -2197,7 +2192,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return 1
         os.chdir("/")
 
-        print("install new cluster manager in %s"%htmlp)
+        print("install new cluster manager in %s" % htmlp)
         for root, dirs, files in os.walk(tmpp):
             for fpath in dirs:
                 os.chown(os.path.join(root, fpath), 0, 0)
@@ -2394,7 +2389,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         if not section.startswith("cloud#"):
             raise ex.InitError("cloud sections must have a unique name in "
-                                  "the form '[cloud#n] in %s" % Env.paths.nodeconf)
+                               "the form '[cloud#n] in %s" % Env.paths.nodeconf)
 
         if self.clouds and section in self.clouds:
             return self.clouds[section]
@@ -2410,7 +2405,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             mod = driver_import("cloud", cloud_type.lower())
         except ImportError:
-            raise ex.InitError("cloud type '%s' is not supported"%cloud_type)
+            raise ex.InitError("cloud type '%s' is not supported" % cloud_type)
 
         if self.clouds is None:
             self.clouds = {}
@@ -2744,7 +2739,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         url = api["url"]
         if not url.startswith("https"):
             raise ex.Error("refuse to submit auth tokens through a "
-                              "non-encrypted transport")
+                           "non-encrypted transport")
         request = Request(url+rpath)
         auth_string = '%s:%s' % (api["username"], api["password"])
         if six.PY3:
@@ -3028,7 +3023,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for _kw in kw:
             if "=" not in _kw:
                 continue
-            _kw, val =  _kw.split("=", 1)
+            _kw, val = _kw.split("=", 1)
             if "." in _kw:
                 section, option = _kw.split(".", 1)
             else:
@@ -3146,7 +3141,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": env_to_merge,
                 }
             }
-            result = self.daemon_post(req)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3189,12 +3184,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     _data[tmppath] = __data
         elif isinstance(data, list):
             for __data in data:
-                 try:
-                     tmppath = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
-                 except (ValueError, KeyError):
-                     raise ex.Error("invalid injected data format: list need a metadata section in each entry")
-                 del __data["metadata"]
-                 _data[tmppath] = __data
+                try:
+                    tmppath = fmt_path(__data["metadata"]["name"], __data["metadata"]["namespace"], __data["metadata"]["kind"])
+                except (ValueError, KeyError):
+                    raise ex.Error("invalid injected data format: list need a metadata section in each entry")
+                del __data["metadata"]
+                _data[tmppath] = __data
 
         if _data:
             if path:
@@ -3241,7 +3236,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_post(req)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3523,7 +3518,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                         sys.stdout.flush()
                 elif kind == "event":
                     for key, val in msg.get("data", {}).items():
-                        print("  %s=%s" % ((str(key).upper(), str(val))))
+                        print("  %s=%s" % (str(key).upper(), str(val)))
 
     def logs(self):
         node = "*"
@@ -3614,7 +3609,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if isinstance(selector, (list, tuple, set)):
             return selector
         selector = selector.strip()
-        if not re.search(r"[\*?=,\+]", selector):
+        if not re.search(r"[*?=,+]", selector):
             if re.search(r"\s", selector):
                 # simple node list
                 return selector.split()
@@ -3888,13 +3883,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return data
 
     def _daemon_lock(self, name, timeout=None, silent=False, on_error=None):
+        if timeout is not None:
+            request_timeout = timeout + DEFAULT_DAEMON_TIMEOUT
+        else:
+            request_timeout = timeout
         data = self.daemon_post(
             {
                 "action": "lock",
                 "options": {"name": name, "timeout": timeout},
             },
             silent=silent,
-            timeout=timeout + 10,
+            timeout=request_timeout,
         )
         lock_id = data.get("data", {}).get("id")
         if not lock_id and on_error == "raise":
@@ -3908,7 +3907,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "options": {"name": name, "lock_id": lock_id},
             },
             silent=silent,
-            timeout=10,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -4003,7 +4002,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "blacklist_clear"},
             server=self.options.server,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -4201,15 +4200,24 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Tell the daemon to freeze and drain all local object instances.
         """
+        wait = self.options.wait
+        time = self.options.time
+        if wait and time:
+            request_timeout = time + DEFAULT_DAEMON_TIMEOUT
+        elif wait:
+            request_timeout = None
+        else:
+            request_timeout = DEFAULT_DAEMON_TIMEOUT
         data = self.daemon_post(
             {
                 "action": "node_drain",
                 "options": {
-                    "wait": self.options.wait,
-                    "time": self.options.time,
+                    "wait": wait,
+                    "time": time,
                 }
             },
             server=self.options.server or self.options.node,
+            timeout=request_timeout
         )
         if data is None:
             return 1
@@ -4308,7 +4316,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "daemon_start", "options": options},
             server=self.options.server,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         if data.get("status") == 0:
             return
@@ -4416,7 +4424,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data = self.daemon_post(
             {"action": "daemon_stop", "options": options},
             server=Env.nodename,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
 
         errors = 0
@@ -4424,7 +4432,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data = self.daemon_post(
                 {"action": "leave"},
                 server=nodename,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             if data is None:
                 self.log.error("leave node %s failed", nodename)
@@ -4492,7 +4500,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             server=joined,
             cluster_name="join",
             secret=secret,
-            timeout=5,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         if data is None:
             raise ex.Error("join node %s failed" % joined)
@@ -4653,7 +4661,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     server=nodename,
                     cluster_name="join",
                     secret=secret,
-                    timeout=5,
+                    timeout=DEFAULT_DAEMON_TIMEOUT,
                 )
                 if data is None:
                     self.log.error("join node %s failed", nodename)
@@ -4681,7 +4689,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 {"action": "node_monitor", "options": options},
                 server=self.options.server,
                 silent=True,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             if data is None:
                 raise ex.Error("the daemon is not running")
@@ -4725,7 +4733,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 server=server,
                 node=node,
                 silent=True,
-                timeout=5,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
         except Exception as exc:
             self.log.error("node action on node %s failed: %s",
@@ -4853,7 +4861,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 },
                 server=self.options.server,
                 silent=True,
-                timeout=2,
+                timeout=DEFAULT_DAEMON_TIMEOUT,
             )
             status, error, info = self.parse_result(data)
             if status and data.get("errno") != ECONNREFUSED:
