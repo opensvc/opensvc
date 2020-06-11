@@ -40,10 +40,14 @@ class Handler(daemon.handler.BaseHandler):
             thr.log.info("already %s", shared.NMON_DATA.status)
             # wait for service shutdown to finish before releasing the dup client
             if options.wait:
+                elapse = 0.0
                 while True:
                     if shared.THREADS["monitor"]._shutdown or shared.NMON_DATA.status not in ("draining", "shutting"):
                         break
+                    if options.time and elapse > options.time:
+                        return {"status": 1, "error": "timeout"}
                     time.sleep(0.3)
+                    elapse += 0.3
             return {"status": 0}
         try:
             thr.set_nmon("draining")
