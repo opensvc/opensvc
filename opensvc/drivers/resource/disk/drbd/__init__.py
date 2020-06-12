@@ -29,7 +29,11 @@ KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "res",
         "required": True,
-        "text": "The name of the drbd resource associated with this service resource. OpenSVC expect the resource configuration file to reside in ``/etc/drbd.d/resname.res``. The :c-res:`sync#i0` resource will take care of replicating this file to remote nodes."
+        "text": "The name of the drbd resource associated with this service "
+                "resource. OpenSVC expect the resource configuration file to "
+                "reside in ``/etc/drbd.d/resname.res``. The :c-res:`sync#i0` "
+                "resource will take care of replicating this file to remote "
+                "nodes."
     },
     {
         "keyword": "disk",
@@ -41,7 +45,8 @@ KEYWORDS = BASE_KEYWORDS + [
         "keyword": "addr",
         "required": False,
         "provisioning": True,
-        "text": "The addr to use to connect a peer. Use scoping to define each non-default address.",
+        "text": "The addr to use to connect a peer. Use scoping to define "
+                "each non-default address.",
         "default_text": "The ipaddr resolved for the nodename.",
     },
     {
@@ -64,6 +69,7 @@ KEYS.register_driver(
     deprecated_sections=DEPRECATED_SECTIONS,
 )
 
+
 def driver_capabilities(node=None):
     data = []
     from utilities.proc import which
@@ -73,6 +79,7 @@ def driver_capabilities(node=None):
         if "Version: 9" in out:
             data.append("disk.drbd.mesh")
     return data
+
 
 class PostConfigHandler(daemon.handler.BaseHandler):
     """
@@ -104,6 +111,7 @@ class PostConfigHandler(daemon.handler.BaseHandler):
         with open(cf, "w") as f:
             f.write(options.data)
 
+
 class GetConfigHandler(daemon.handler.BaseHandler):
     """
     Read a resource configuration file. Used by the provisioner to
@@ -131,6 +139,7 @@ class GetConfigHandler(daemon.handler.BaseHandler):
         with open(cf, "r") as f:
             buff = f.read()
         return {"data": buff}
+
 
 class AllocationsHandler(daemon.handler.BaseHandler):
     """
@@ -168,6 +177,7 @@ DRIVER_HANDLERS = [
     GetConfigHandler,
     PostConfigHandler,
 ]
+
 
 class DiskDrbd(Resource):
     """ Drbd device resource
@@ -318,7 +328,8 @@ class DiskDrbd(Resource):
     def prereq(self):
         if not os.path.exists("/proc/drbd"):
             ret, out, err = self.vcall(["modprobe", "drbd"])
-            if ret != 0: raise ex.Error
+            if ret != 0:
+                raise ex.Error
 
     def start_connection(self):
         cstate = self.get_cstate()
@@ -473,7 +484,7 @@ class DiskDrbd(Resource):
         try:
             dstates = self.get_dstate()
         except ex.Error:
-            self.status_log("drbdadm dstate %s failed"%self.res)
+            self.status_log("drbdadm dstate %s failed" % self.res)
             return core.status.WARN
         if self.dstate_uptodate(dstates):
             pass
@@ -488,10 +499,10 @@ class DiskDrbd(Resource):
                 elif dstatelocal in ["Diskless", "DUnknown", "Unconfigured"]:
                     status = core.status.DOWN
                 else:
-                    self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
+                    self.status_log("unexpected drbd resource %s/%d state: %s" % (self.res, idx, dstate))
                 # warnings
                 if set(["Diskless", "DUnknown", "Unconfigured"]) & dstateset:
-                    self.status_log("unexpected drbd resource %s/%d state: %s"%(self.res, idx, dstate))
+                    self.status_log("unexpected drbd resource %s/%d state: %s" % (self.res, idx, dstate))
             if status is not None:
                 return status
         if role == "Primary":
@@ -500,7 +511,6 @@ class DiskDrbd(Resource):
             return core.status.STDBY_UP
         else:
             return core.status.WARN
-
 
     def pre_provision_stop(self):
         """
@@ -534,11 +544,11 @@ class DiskDrbd(Resource):
         if not os.path.exists(self.cf):
             self.log.info("skip: resource not configured")
             return
-        if not self.res_defined():
+        if self.res_defined():
+            self.drbdadm_down_force()
+            self.wipe_md()
+        else:
             self.log.info("skip: resource not defined (for this host)")
-            return
-        self.drbdadm_down_force()
-        self.wipe_md()
         self.del_config()
         self.svc.node.unset_lazy("devtree")
 
@@ -691,11 +701,11 @@ class DiskDrbd(Resource):
                     "data": buff,
                 },
             },
-            node=[n for n in self.svc.node.cluster_nodes if n != Env.nodename],
+            node=[n for n in self.svc.nodes if n != Env.nodename],
         )
         if data.get("status", 1):
-            raise ex.Error("failed to replicate config on all nodes: %s" % data)
-    
+            raise ex.Error("failed to replicate config on nodes: %s" % data)
+
     @lazy
     def allocations(self):
         data = self.svc.daemon_get(
@@ -722,12 +732,12 @@ class DiskDrbd(Resource):
 
     @staticmethod
     def format_on(node, device, disk, addr, port, node_id=None):
-        fmt_on =        "    on %s {\n%s    }\n"
-        fmt_on_device = "        device    %s;\n"
-        fmt_on_disk =   "        disk      %s;\n"
-        fmt_on_meta =   "        meta-disk internal;\n"
-        fmt_on_addr =   "        address   %s:%s;\n"
-        fmt_on_nid =    "        node-id   %d;\n"
+        fmt_on =        "    on %s {\n%s    }\n"         # pep8: disable=E222
+        fmt_on_device = "        device    %s;\n"        # pep8: disable=E222
+        fmt_on_disk =   "        disk      %s;\n"        # pep8: disable=E222
+        fmt_on_meta =   "        meta-disk internal;\n"  # pep8: disable=E222
+        fmt_on_addr =   "        address   %s:%s;\n"     # pep8: disable=E222
+        fmt_on_nid =    "        node-id   %d;\n"        # pep8: disable=E222
         buff_content = fmt_on_device % device
         buff_content += fmt_on_disk % disk
         buff_content += fmt_on_meta
@@ -747,12 +757,12 @@ class DiskDrbd(Resource):
         import socket
         fmt_res =       "resource %s {\n%s%s}\n"
         buff_on = ""
-        for node_id, node in enumerate(self.svc.node.cluster_nodes):
+        for node_id, node in enumerate(self.svc.ordered_nodes):
             disk = self.oget("disk", impersonate=node)
             addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
             port = self.oget("port", impersonate=node) or freeport
             buff_on += self.format_on(node, device, disk, addr, port, node_id=node_id)
-        buff_mesh = "    connection-mesh {\n        hosts %s;\n    }\n" % " ".join(self.svc.cluster_nodes)
+        buff_mesh = "    connection-mesh {\n        hosts %s;\n    }\n" % " ".join(self.svc.ordered_nodes)
         buff = fmt_res % (self.res, buff_on, buff_mesh)
         return buff
 
@@ -760,7 +770,7 @@ class DiskDrbd(Resource):
         import socket
         fmt_res =       "resource %s {\n%s}\n"
         buff_on = ""
-        for node in self.svc.node.cluster_nodes:
+        for node in self.svc.ordered_nodes:
             disk = self.oget("disk", impersonate=node)
             addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
             port = self.oget("port", impersonate=node) or freeport
@@ -820,4 +830,3 @@ class DiskDrbd(Resource):
             if re.match(pattern, line):
                 return True
         return False
-
