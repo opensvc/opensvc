@@ -540,7 +540,7 @@ class ContainerDocker(BaseContainer):
         cfg_env = {}
         cmd = self.lib.docker_cmd + []
         if action == "start":
-            if not self.detach:
+            if not self.detach and self.start_timeout is not None:
                 signal.signal(signal.SIGALRM, alarm_handler)
                 signal.alarm(self.start_timeout)
             if self.rm:
