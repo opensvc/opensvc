@@ -948,6 +948,11 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
+        "keyword": "status_schedule",
+        "text": "The value to set to the status_schedule keyword of the volume objects allocated from the pool. See usr/share/doc/schedule for the schedule syntax."
+    },
+    {
+        "section": "pool",
         "keyword": "mnt_opt",
         "at": True,
         "text": "The mount options of the fs created over the pool devices."
