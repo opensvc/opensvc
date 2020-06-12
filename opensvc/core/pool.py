@@ -53,6 +53,10 @@ class BasePool(object):
     def mnt_opt(self):
         return self.oget("mnt_opt")
 
+    @lazy
+    def status_schedule(self):
+        return self.oget("status_schedule")
+
     def mount_point(self, name):
         return os.path.join(os.sep, "srv", name)
 
@@ -77,6 +81,8 @@ class BasePool(object):
             defaults["flex_min"] = 0
         if nodes:
             defaults["nodes"] = nodes
+        if self.status_schedule is not None:
+            defaults["status_schedule"] = self.status_schedule
         data.append(defaults)
         volume._update(data)
         self.disable_sync_internal(volume)
