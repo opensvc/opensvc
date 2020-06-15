@@ -5,7 +5,7 @@ import re
 import time
 import rcStatus
 import rcExceptions as ex
-from rcUtilities import which, bdecode, lazy
+from rcUtilities import which, bdecode, lazy, justcall
 from subprocess import *
 import resScsiReserv
 from rcGlobalEnv import rcEnv
@@ -118,8 +118,20 @@ class ScsiReserv(resScsiReserv.ScsiReserv):
 
     @lazy
     def has_mpathpersist(self):
-        return which("mpathpersist")
-
+        multipath = rcEnv.syspaths.multipath
+        if multipath and not which(multipath):
+            return False
+        try:
+            out, err, ret = justcall([multipath, "-h"])
+            for line in err.splitlines():
+                version = [int(v) for v in line.split()[1].strip("v").split(".")]
+                break
+            if version > [0, 7, 8]:
+                return True
+            else:
+                return False
+        except:
+            return False
 
     def use_mpathpersist(self, disk):
         if not self.has_mpathpersist:
