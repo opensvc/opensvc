@@ -5,13 +5,15 @@ language: python
 cache: pip
 branches:
   only:
-  - master
+  - b2.0
 matrix:
   include:
   - os: linux
     python: '2.7'
+    dist: focal
   - os: linux
     python: '3.6'
+    dist: focal
 before_install:
   - sudo apt-get update
   - sudo apt-get -y install procps
