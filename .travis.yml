@@ -5,7 +5,7 @@ language: python
 cache: pip
 branches:
   only:
-  - master
+  - b2.0
 matrix:
   include:
   - os: linux
