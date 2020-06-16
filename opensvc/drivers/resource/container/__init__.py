@@ -413,6 +413,7 @@ class BaseContainer(Resource):
     def dns_options(self, options):
         ndots_done = False
         edns0_done = False
+        usevc_done = False
         for co, i in enumerate(options):
             try:
                 if co.startswith("ndots:"):
@@ -424,9 +425,13 @@ class BaseContainer(Resource):
                 pass
             if co == "edns0":
                 edns0_done = True
+            elif co == "use-vc":
+                usevc_done = True
         if not ndots_done:
             options.append("ndots:2")
         if not edns0_done:
             options.append("edns0")
+        if not usevc_done:
+            options.append("use-vc")
         return options
 
