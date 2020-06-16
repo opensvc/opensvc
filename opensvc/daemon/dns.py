@@ -92,7 +92,16 @@ class Dns(shared.OsvcThread):
                 sys.exit(0)
 
     def cache_key(self):
-        return tuple(sorted(self.get_gen(inc=False).values()))
+        data = self.get_gen(inc=False)
+        key = []
+        for node in self.cluster_nodes:
+            try:
+                key.append(data[node])
+            except KeyError:
+                continue
+            except AttributeError:
+                break
+        return tuple(key)
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)
@@ -437,8 +446,7 @@ class Dns(shared.OsvcThread):
                             names.append(gen_name)
         return names
 
-    def set_cache(self, kind, data):
-        key = self.cache_key()
+    def set_cache(self, key, kind, data):
         if key not in self.cache:
             self.cache = {}
         self.cache[key] = {kind: data}
@@ -461,6 +469,7 @@ class Dns(shared.OsvcThread):
         if data is not None:
             return data
         names = {}
+        key = self.cache_key()
         for nodename in self.cluster_nodes:
             try:
                 node = shared.CLUSTER_DATA[nodename]
@@ -507,7 +516,7 @@ class Dns(shared.OsvcThread):
                 self.log.warning("dns (%s) and dnsnodes (%s) are not aligned"
                                  "" % (shared.NODE.dns, shared.NODE.dnsnodes))
                 break
-        self.set_cache("a", names)
+        self.set_cache(key, "a", names)
         return names
 
     def srv_records(self):
@@ -515,6 +524,7 @@ class Dns(shared.OsvcThread):
         if data is not None:
             return data
         names = {}
+        key = self.cache_key()
         for nodename in self.cluster_nodes:
             try:
                 node = shared.CLUSTER_DATA[nodename]
@@ -580,7 +590,7 @@ class Dns(shared.OsvcThread):
                                 # avoid multiple SRV entries pointing to the same ip:port
                                 continue
                             names[qname].add(content)
-        self.set_cache("srv", names)
+        self.set_cache(key, "srv", names)
         return names
 
     def svc_ips(self):
