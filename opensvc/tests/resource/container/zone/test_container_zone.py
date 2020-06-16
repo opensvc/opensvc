@@ -90,17 +90,6 @@ def zone_boot(mocker):
 
 
 @pytest.fixture(scope='function')
-def klass_has_capability(mocker):
-    def func(klass, capabilities):
-        def has_capability(_, cap):
-            return cap in capabilities
-
-        mocker.patch.object(klass, 'has_capability', has_capability)
-
-    return func
-
-
-@pytest.fixture(scope='function')
 def brand_native(klass_has_capability):
     klass_has_capability(ContainerZone, ['container.zone.brand-native'])
 
