@@ -97,6 +97,7 @@ class Resource(object):
         self.driver_group = self.format_driver_group()
         self.driver_basename = self.format_driver_basename()
         self.rset_id = self.format_rset_id()
+        self.last_status_info = {}
 
     def on_add(self):
         """
@@ -650,6 +651,9 @@ class Resource(object):
 
         self.status_logs = data.get("log", [])
 
+        if "info" in data:
+            self.last_status_info = data["info"]
+
         return status
 
     def write_status_last(self):
@@ -660,6 +664,7 @@ class Resource(object):
             "status": str(core.status.Status(self.rstatus)),
             "label": self.label,
             "log": self.status_logs,
+            "info": self.last_status_info,
         }
         dpath = os.path.dirname(self.fpath_status_last)
         if not os.path.exists(dpath):
@@ -1034,13 +1039,16 @@ class Resource(object):
     def status_info(self):
         data = self._status_info()
         if not self.shared:
+            self.last_status_info = data
             return data
         sopts = self.schedule_options()
         if not sopts:
+            self.last_status_info = data
             return data
         data["sched"] = {}
         for saction, sopt in sopts.items():
             data["sched"][saction] = self.schedule_info(sopt)
+        self.last_status_info = data
         return data
 
     def info(self):
