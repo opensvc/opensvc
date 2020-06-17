@@ -183,6 +183,7 @@ class Ip(Resource):
             return
         left = self.wait_dns
         time_max = self._current_time() + left
+        self.status_info()
         self.svc.print_status_data_eval()
         self.log.info("wait address propagation to peers (wait_dns=%s)", print_duration(left))
         path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (Env.nodename, self.svc.path, self.rid)
