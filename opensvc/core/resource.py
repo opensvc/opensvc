@@ -650,6 +650,9 @@ class Resource(object):
 
         self.status_logs = data.get("log", [])
 
+        if "info" in data:
+            set_lazy(self, "status_log", data["info"])
+
         return status
 
     def write_status_last(self):
@@ -660,6 +663,7 @@ class Resource(object):
             "status": str(core.status.Status(self.rstatus)),
             "label": self.label,
             "log": self.status_logs,
+            "info": self.status_info,
         }
         dpath = os.path.dirname(self.fpath_status_last)
         if not os.path.exists(dpath):
@@ -1031,6 +1035,7 @@ class Resource(object):
         """
         return {}
 
+    @lazy
     def status_info(self):
         data = self._status_info()
         if not self.shared:

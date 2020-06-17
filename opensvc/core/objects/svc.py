@@ -3749,7 +3749,7 @@ class Svc(BaseSvc):
             for resource in rset.resources:
                 status = core.status.Status(resource.status(verbose=True))
                 log = resource.status_logs_strlist()
-                info = resource.status_info()
+                info = resource.status_info
                 tags = sorted(list(resource.tags))
                 disable = resource.is_disabled()
                 _data = {
