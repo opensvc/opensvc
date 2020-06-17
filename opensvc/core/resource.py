@@ -651,7 +651,7 @@ class Resource(object):
         self.status_logs = data.get("log", [])
 
         if "info" in data:
-            set_lazy(self, "status_log", data["info"])
+            set_lazy(self, "status_info", data["info"])
 
         return status
 
