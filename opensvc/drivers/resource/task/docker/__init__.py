@@ -77,3 +77,9 @@ class TaskDocker(ContainerDocker, BaseTask):
     def _status(self, *args, **kwargs):
         return BaseTask._status(self, *args, **kwargs)
 
+    def post_provision_start(self):
+        pass
+
+    def pre_provision_stop(self):
+        pass
+
