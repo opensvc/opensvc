@@ -5027,7 +5027,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                                pool["name"], pooltype)
                 continue
             if not pooltype and pool["type"] == "shm":
-                self.log.debug("discard volatile pool %s: type not requested, assume persistance is expected.",
+                self.log.debug("discard volatile pool %s: type not requested, assume persistence is expected.",
                                pool["name"], pooltype)
                 continue
             if poolname and pool["name"] != poolname:
