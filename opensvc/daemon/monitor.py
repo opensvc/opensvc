@@ -850,10 +850,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.error("service %s fetched config validation "
                                    "error: %s", path, exc)
                     return
-                try:
-                    svc.postinstall()
-                except Exception as exc:
-                    self.log.error("service %s postinstall failed: %s", path, exc)
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
@@ -867,6 +863,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", path, nodename)
                 return
+            try:
+                with shared.SERVICES_LOCK:
+                    name, namespace, kind = split_path(path)
+                    shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
+                shared.SERVICES[path].postinstall()
+            except Exception as exc:
+                self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
             os.unlink(tmpfpath)
 
