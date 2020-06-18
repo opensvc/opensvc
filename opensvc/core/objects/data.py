@@ -11,7 +11,7 @@ import foreign.six
 from core.contexts import want_context
 from utilities.files import create_protected_file, makedirs, read_unicode_file
 from utilities.string import try_decode
-from utilities.naming import factory, split_path
+from utilities.naming import factory, split_path, list_services
 from utilities.proc import find_editor
 from utilities.string import bencode
 
@@ -326,7 +326,7 @@ class DataMixin(object):
         """
         Refresh installed keys
         """
-        for path in self.node.svcs_selector("*/svc/*", namespace=self.namespace, local=True):
+        for path in list_services(namespace=self.namespace, kinds=["svc"]):
             name, _, _ = split_path(path)
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
