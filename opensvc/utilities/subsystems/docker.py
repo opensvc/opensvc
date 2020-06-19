@@ -27,11 +27,15 @@ class ContainerLib(object):
     docker_cmd = ["/bin/true"]
     json_opt = ["--format", "{{json .}}"]
     container_type = "none"
+    config_args_position_head = True
 
     def __init__(self, svc=None):
         self.svc = svc
         self.docker_info_done = False
         self.raw_container_data_dir = self.svc.oget("DEFAULT", "container_data_dir")
+
+    def client_config_args(self, path):
+        return ["--config", os.path.dirname(path)]
 
     @lazy
     def container_data_dir(self):
@@ -265,10 +269,17 @@ class ContainerLib(object):
             return
         justcall(cmd)
 
-    def image_pull(self, ref):
-        self.docker_login(ref)
+    def image_pull(self, ref, config=None):
+        if config:
+            extra = self.client_config_args(config)
+        else:
+            extra = []
+            self.docker_login(ref)
         self.svc.log.info("pulling image %s" % ref)
-        cmd = self.docker_cmd + ["pull", ref]
+        if self.config_args_position_head:
+            cmd = self.docker_cmd + extra + ["pull", ref]
+        else:
+            cmd = self.docker_cmd + ["pull"] + extra + [ref]
         results = justcall(cmd)
         if results[2] != 0:
             raise ex.Error(results[1])
@@ -780,6 +791,7 @@ class DockerLib(ContainerLib):
 class PodmanLib(ContainerLib):
     json_opt = ["--format=json"]
     container_type = ["container.podman", "task.podman"]
+    config_args_position_head = False
 
     def __init__(self, svc=None):
         ContainerLib.__init__(self, svc=svc)
@@ -830,5 +842,8 @@ class PodmanLib(ContainerLib):
         args = ["-u", self.svc.path+"@"+Env.nodename]
         args += ["-p", uuid]
         return args
+
+    def client_config_args(self, path):
+        return ["--authfile", path]
 
 
