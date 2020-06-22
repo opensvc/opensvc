@@ -292,7 +292,10 @@ def driver_capabilities(node=None):
     data = []
     from utilities.proc import which
     if which("docker") or which("docker.io"):
-        data.append("container.docker")
+        data += [
+            "container.docker",
+            "container.docker.registry_creds",
+        ]
     return data
 
 def alarm_handler(signum, frame):
