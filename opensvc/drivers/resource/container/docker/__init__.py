@@ -654,6 +654,8 @@ class ContainerDocker(BaseContainer):
             if not elements[0].startswith(os.sep):
                 # vol service
                 elements[0], vol = self.replace_volname(elements[0], mode="blk", strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 devices.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
@@ -681,6 +683,8 @@ class ContainerDocker(BaseContainer):
                 # vol service
                 wants_ro = False
                 elements[0], vol = self.replace_volname(elements[0], strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 try:
                     options = elements[2].split(",")
                     if 'ro' in options:
