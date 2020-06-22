@@ -43,7 +43,10 @@ def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
     if which("docker") or which("docker.io"):
-        data.append("task.docker")
+        data += [
+            "task.docker",
+            "task.docker.registry_creds",
+        ]
     return data
 
 

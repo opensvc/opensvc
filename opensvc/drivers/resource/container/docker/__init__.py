@@ -292,7 +292,10 @@ def driver_capabilities(node=None):
     data = []
     from utilities.proc import which
     if which("docker") or which("docker.io"):
-        data.append("container.docker")
+        data += [
+            "container.docker",
+            "container.docker.registry_creds",
+        ]
     return data
 
 def alarm_handler(signum, frame):
@@ -651,6 +654,8 @@ class ContainerDocker(BaseContainer):
             if not elements[0].startswith(os.sep):
                 # vol service
                 elements[0], vol = self.replace_volname(elements[0], mode="blk", strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 devices.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
@@ -678,6 +683,8 @@ class ContainerDocker(BaseContainer):
                 # vol service
                 wants_ro = False
                 elements[0], vol = self.replace_volname(elements[0], strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 try:
                     options = elements[2].split(",")
                     if 'ro' in options:

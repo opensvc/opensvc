@@ -15,6 +15,7 @@ class Handler(daemon.handler.BaseHandler):
         {
             "name": "kind",
             "format": "string",
+            "required": True,
             "candidates": ["node", "svc", "vol", "usr", "sec", "cfg", "ccfg"],
             "desc": "The object kind or 'node'.",
         },
