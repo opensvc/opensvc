@@ -43,7 +43,10 @@ def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
     if which("podman"):
-        data.append("task.podman")
+        data += [
+            "task.podman",
+            "task.podman.registry_creds",
+        ]
     return data
 
 class TaskPodman(ContainerPodman, BaseTask):
