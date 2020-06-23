@@ -29,7 +29,7 @@ class BaseCapabilities(object):
             data.append("node.x.exportfs")
         if which("findfs"):
             data.append("node.x.findfs")
-        if which("/sbin/podman"):
+        if which("/usr/bin/podman"):
             data.append("node.x.podman")
         if which("/sbin/ip"):
             data.append("node.x.ip")
