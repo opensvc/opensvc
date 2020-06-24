@@ -39,14 +39,25 @@ class LockMixin(object):
         thr.log.warning("claim timeout on %s lock", name)
         self.lock_release(name, lock_id, silent=True, thr=thr)
 
-    def lock_release(self, name, lock_id, silent=False, thr=None):
+    def lock_release(self, name, lock_id, timeout=None, silent=False, thr=None):
+        released = False
+        if timeout is None:
+            timeout = 5
+        deadline = time.time() + timeout
         with shared.LOCKS_LOCK:
             if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
                 return
             del shared.LOCKS[name]
         shared.wake_monitor(reason="unlock", immediate=True)
         if not silent:
-            thr.log.info("released %s", name)
+            thr.log.info("released locally %s", name)
+        while time.time() < deadline:
+            if self._lock_released(name, lock_id):
+                released = True
+                break
+            time.sleep(0.5)
+        if released is False:
+            thr.log.warning('timeout waiting for lock %s %s release on peers', name, lock_id)
 
     def lock_accepted(self, name, lock_id):
         for nodename, node in shared.CLUSTER_DATA.items():
@@ -54,6 +65,17 @@ class LockMixin(object):
             if not lock:
                 return False
             if lock.get("id") != lock_id:
+                return False
+        return True
+
+    @staticmethod
+    def _lock_released(name, lock_id):
+        """Verify if lock release has been propated to shared.CLUSTER_DATA"""
+        for nodename, node in shared.CLUSTER_DATA.items():
+            lock = node.get("locks", {}).get(name)
+            if not lock:
+                continue
+            if lock.get("id") == lock_id:
                 return False
         return True
 
