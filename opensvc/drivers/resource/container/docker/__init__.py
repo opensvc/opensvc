@@ -604,10 +604,7 @@ class ContainerDocker(BaseContainer):
                 if self.run_command:
                     cmd += self.run_command
             else:
-                cmd += ["start"]
-                if not self.lib.config_args_position_head:
-                    cmd += self.client_config()
-                cmd += [self.container_id]
+                cmd += ["start", self.container_id]
         elif action == "stop":
             cmd += ["stop", self.container_id]
         elif action == "kill":
