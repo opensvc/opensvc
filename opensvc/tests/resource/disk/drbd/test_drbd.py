@@ -418,7 +418,7 @@ class TestDrbdProvisionerAlternateTestMethod:
         disk.drbdadm = 'drbdadm'
         disk.provisioner()
 
-        disk.write_config.assert_called_once()
+        assert disk.write_config.call_count == 1
         assert just_call.call_args_list == [call(['drbdadm', 'down', 'foo']),
                                             call(['drbdadm', 'down', 'foo']),
                                             call(['drbdadm', 'up', 'foo']),
