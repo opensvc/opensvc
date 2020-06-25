@@ -45,7 +45,10 @@ def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
     if which("podman"):
-        data.append("container.podman")
+        data += [
+            "container.podman",
+            "container.podman.registry_creds",
+        ]
     return data
 
 

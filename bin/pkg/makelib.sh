@@ -110,7 +110,8 @@ function prepare_chroot {
 	# install version.py
            echo "version = \"$VERSION-$RELEASE\"" | tee $CHROOT/opt/opensvc/opensvc/utilities/version/version.py || return 1
 
-	# compress docs
+	# make and compress docs
+	$CHROOT/opt/opensvc/bin/pkg/make_doc
 	cd $CHROOT/opt/opensvc/usr/share/doc
 	for f in $(echo template*conf)
 	do

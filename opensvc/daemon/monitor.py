@@ -330,7 +330,7 @@ class MonitorObjectOrchestratorManualMixin(object):
             if not self.min_instances_reached(svc):
                 self.set_smon(svc.path, status="wait sync")
                 raise Defer("provision: set wait sync")
-            if not self.parents_available(svc):
+            if self.is_natural_leader(svc) and not self.parents_available(svc):
                 self.set_smon(svc.path, status="wait parents")
                 raise Defer("provision: set wait parents")
             if not self.leader_first(svc, provisioned=True):
@@ -850,10 +850,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.error("service %s fetched config validation "
                                    "error: %s", path, exc)
                     return
-                try:
-                    svc.postinstall()
-                except Exception as exc:
-                    self.log.error("service %s postinstall failed: %s", path, exc)
             else:
                 results = {"errors": 0}
             if results["errors"] == 0:
@@ -867,6 +863,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", path, nodename)
                 return
+            try:
+                with shared.SERVICES_LOCK:
+                    name, namespace, kind = split_path(path)
+                    shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
+                shared.SERVICES[path].postinstall()
+            except Exception as exc:
+                self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
             os.unlink(tmpfpath)
 
@@ -1051,13 +1054,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def service_purge(self, svc, leader=None):
         self.set_smon(svc.path, "unprovisioning")
         if leader is None:
-            candidates = self.placement_candidates(svc, discard_frozen=False,
-                                                   discard_na=False,
-                                                   discard_overloaded=False,
-                                                   discard_unprovisioned=False,
-                                                   discard_affinities=False,
-                                                   discard_constraints_violation=False)
-            leader = self.placement_leader(svc, candidates)
+            leader = self.is_natural_leader(svc)
         else:
             leader = Env.nodename == leader
         cmd = ["unprovision"]
@@ -1088,13 +1085,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_provision(self, svc):
         self.set_smon(svc.path, "provisioning")
-        candidates = self.placement_candidates(svc, discard_frozen=False,
-                                               discard_na=False,
-                                               discard_overloaded=False,
-                                               discard_unprovisioned=False,
-                                               discard_constraints_violation=False)
+        leader = self.is_natural_leader(svc)
         cmd = ["provision"]
-        if self.placement_leader(svc, candidates):
+        if leader:
             cmd += ["--leader", "--disable-rollback"]
         proc = self.service_command(svc.path, cmd)
         self.push_proc(
@@ -1107,15 +1100,23 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             on_error_kwargs={"status": "provision failed"},
         )
 
+    def is_natural_leader(self, svc):
+        candidates = self.placement_candidates(
+            svc,
+            discard_frozen=False,
+            discard_na=False,
+            discard_overloaded=False,
+            discard_unprovisioned=False,
+            discard_affinities=False,
+            discard_start_failed=False,
+            discard_constraints_violation=False
+        )
+        return self.placement_leader(svc, candidates)
+
     def service_unprovision(self, svc, leader=None):
         self.set_smon(svc.path, "unprovisioning", local_expect="unset")
         if leader is None:
-            candidates = self.placement_candidates(svc, discard_frozen=False,
-                                                   discard_na=False,
-                                                   discard_overloaded=False,
-                                                   discard_unprovisioned=False,
-                                                   discard_constraints_violation=False)
-            leader = self.placement_leader(svc, candidates)
+            leader = self.is_natural_leader(svc)
         else:
             leader = Env.nodename == leader
         cmd = ["unprovision"]

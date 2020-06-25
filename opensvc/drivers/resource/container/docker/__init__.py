@@ -21,6 +21,8 @@ from .. import \
     KW_SCSIRESERV, \
     BaseContainer
 from utilities.lazy import unset_lazy, lazy
+from utilities.naming import factory, svc_pathvar
+from utilities.files import makedirs
 from core.resource import Resource
 from utilities.converters import print_duration
 from core.objects.svcdict import KEYS
@@ -203,6 +205,12 @@ KEYWORDS = [
         "default": "120",
         "example": "180"
     },
+    {
+        "keyword": "registry_creds",
+        "at": True,
+        "text": "The name of a secret in the same namespace having a config.json key which value is used to login to the container image registry. If not specified, the node-level registry credential store is used.",
+        "example": "creds-registry-opensvc-com"
+    },
     KW_NO_PREEMPT_ABORT,
     KW_OSVC_ROOT_PATH,
     KW_GUESTOS,
@@ -284,7 +292,10 @@ def driver_capabilities(node=None):
     data = []
     from utilities.proc import which
     if which("docker") or which("docker.io"):
-        data.append("container.docker")
+        data += [
+            "container.docker",
+            "container.docker.registry_creds",
+        ]
     return data
 
 def alarm_handler(signum, frame):
@@ -323,6 +334,7 @@ class ContainerDocker(BaseContainer):
                  environment=None,
                  secrets_environment=None,
                  configs_environment=None,
+                 registry_creds=None,
                  guestos="Linux",
                  **kwargs):
         super(ContainerDocker, self).__init__(
@@ -354,6 +366,7 @@ class ContainerDocker(BaseContainer):
         self.environment = environment
         self.secrets_environment = secrets_environment
         self.configs_environment = configs_environment
+        self.registry_creds = registry_creds
         if not self.detach:
             self.rm = True
 
@@ -530,6 +543,27 @@ class ContainerDocker(BaseContainer):
             self.log.info(" ".join(cmd))
         self.is_up_clear_cache()
 
+    def client_config(self):
+        if not self.registry_creds:
+            return []
+        self.install_client_config()
+        args = self.lib.client_config_args(self.registry_creds_path)
+        return args
+
+    def install_client_config(self):
+        buff = self.registry_creds_sec.decode_key("config.json")
+        makedirs(os.path.dirname(self.registry_creds_path), uid=0, gid=0, mode=0o600)
+        self.registry_creds_sec.write_key(self.registry_creds_path, buff, uid=0, gid=0, mode=0o600)
+
+    @lazy
+    def registry_creds_path(self):
+        var_d = svc_pathvar(self.registry_creds_sec.path)
+        return os.path.join(var_d, "registry_creds", "config.json")
+
+    @lazy
+    def registry_creds_sec(self):
+        return factory("sec")(self.registry_creds, namespace=self.svc.namespace, volatile=True)
+
     def docker(self, action):
         """
         Wrap docker commands to honor <action>.
@@ -540,6 +574,8 @@ class ContainerDocker(BaseContainer):
         cfg_env = {}
         cmd = self.lib.docker_cmd + []
         if action == "start":
+            if self.lib.config_args_position_head:
+                cmd += self.client_config()
             if not self.detach and self.start_timeout is not None:
                 signal.signal(signal.SIGALRM, alarm_handler)
                 signal.alarm(self.start_timeout)
@@ -552,11 +588,13 @@ class ContainerDocker(BaseContainer):
                     image_id = self.lib.get_image_id(self.image)
                 except ValueError as exc:
                     raise ex.Error(str(exc))
-                if image_id is None:
+                if image_id is None and not self.registry_creds:
                     self.lib.docker_login(self.image)
                 sec_env = self.kind_environment_env("sec", self.secrets_environment)
                 cfg_env = self.kind_environment_env("cfg", self.configs_environment)
                 cmd += ["run"]
+                if not self.lib.config_args_position_head:
+                    cmd += self.client_config()
                 cmd += self._add_run_args()
                 for var in sec_env:
                     cmd += ["-e", var]
@@ -613,6 +651,8 @@ class ContainerDocker(BaseContainer):
             if not elements[0].startswith(os.sep):
                 # vol service
                 elements[0], vol = self.replace_volname(elements[0], mode="blk", strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 devices.append(":".join(elements))
             elif not os.path.exists(elements[0]):
                 # host path
@@ -640,6 +680,8 @@ class ContainerDocker(BaseContainer):
                 # vol service
                 wants_ro = False
                 elements[0], vol = self.replace_volname(elements[0], strict=False, errors=errors)
+                if not elements[0]:
+                    continue
                 try:
                     options = elements[2].split(",")
                     if 'ro' in options:
@@ -824,7 +866,8 @@ class ContainerDocker(BaseContainer):
         return os.sep + self.svc.pg.get_cgroup_relpath(self)
 
     def image_pull(self):
-        self.lib.image_pull(self.image)
+        self.client_config()
+        self.lib.image_pull(self.image, config=self.registry_creds_path)
 
     def container_start(self):
         self.docker('start')

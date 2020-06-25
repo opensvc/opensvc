@@ -43,7 +43,10 @@ def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
     if which("podman"):
-        data.append("task.podman")
+        data += [
+            "task.podman",
+            "task.podman.registry_creds",
+        ]
     return data
 
 class TaskPodman(ContainerPodman, BaseTask):
@@ -75,4 +78,10 @@ class TaskPodman(ContainerPodman, BaseTask):
 
     def _status(self, *args, **kwargs):
         return BaseTask._status(self, *args, **kwargs)
+
+    def post_provision_start(self):
+        pass
+
+    def pre_provision_stop(self):
+        pass
 
