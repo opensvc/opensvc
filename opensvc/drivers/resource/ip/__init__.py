@@ -181,10 +181,14 @@ class Ip(Resource):
     def wait_dns_records(self):
         if not self.wait_dns:
             return
+
+        # refresh the ipaddr advertized in status.json
+        self.status_info()
+        self.write_status_last()
+        self.svc.print_status_data_eval()
+
         left = self.wait_dns
         time_max = self._current_time() + left
-        self.status_info()
-        self.svc.print_status_data_eval()
         self.log.info("wait address propagation to peers (wait_dns=%s)", print_duration(left))
         path = ".monitor.nodes.'%s'.services.status.'%s'.resources.'%s'.info.ipaddr~[0-9]" % (Env.nodename, self.svc.path, self.rid)
         try:
