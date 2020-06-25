@@ -6,6 +6,7 @@ import time
 import core.exceptions as ex
 import core.status
 import daemon.handler
+from core.comm import DEFAULT_DAEMON_TIMEOUT
 from .. import BASE_KEYWORDS
 from env import Env
 from core.capabilities import capabilities
@@ -361,10 +362,13 @@ class DiskDrbd(Resource):
             raise ex.Error(out)
         return loc
 
-    def start_role(self, role):
+    def start_role(self, role, extra_args=None):
         cur_role = self.get_role()
         if cur_role != role:
-            cmd = self.drbdadm_cmd(role.lower())
+            if extra_args:
+                cmd = self.drbdadm_cmd("%s %s" % (role.lower(), ' '.join(extra_args)))
+            else:
+                cmd = self.drbdadm_cmd(role.lower())
             self.state_changing_action(cmd)
             self.can_rollback_role = True
             self.can_rollback = True
@@ -533,7 +537,7 @@ class DiskDrbd(Resource):
         self.drbdadm_down()
         self.drbdadm_up()
         if self.svc.options.leader:
-            self.start_role("Primary --force")
+            self.start_role("Primary", extra_args=["--force"])
             cstate = self.get_cstate()
         else:
             self.drbdadm_disconnect()
@@ -702,16 +706,14 @@ class DiskDrbd(Resource):
                 },
             },
             node=[n for n in self.svc.nodes if n != Env.nodename],
+            timeout=DEFAULT_DAEMON_TIMEOUT
         )
         if data.get("status", 1):
             raise ex.Error("failed to replicate config on nodes: %s" % data)
 
     @lazy
     def allocations(self):
-        data = self.svc.daemon_get(
-            {"action": "/drivers/resource/disk/drbd/allocations"},
-            node=self.svc.node.cluster_nodes,
-        )
+        data = self.daemon_get_allocations()
         minors = set()
         ports = set()
         try:
@@ -729,6 +731,12 @@ class DiskDrbd(Resource):
             "ports": sorted(list(ports)),
         }
         return data
+
+    def daemon_get_allocations(self):
+        return self.svc.daemon_get(
+            {"action": "/drivers/resource/disk/drbd/allocations"},
+            node=self.svc.node.cluster_nodes,
+        )
 
     @staticmethod
     def format_on(node, device, disk, addr, port, node_id=None):
@@ -748,7 +756,7 @@ class DiskDrbd(Resource):
         return buff_on
 
     def format_config(self, device, freeport):
-        if "drivers.resource.disk.drbd.mesh" in capabilities:
+        if self.has_capability("disk.drbd.mesh"):
             return self.format_config_v9(device, freeport)
         else:
             return self.format_config_v8(device, freeport)

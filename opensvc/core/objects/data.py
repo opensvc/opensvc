@@ -8,6 +8,7 @@ import tempfile
 import core.exceptions as ex
 import core.status
 import foreign.six
+from core.comm import DEFAULT_DAEMON_TIMEOUT
 from core.contexts import want_context
 from utilities.files import create_protected_file, makedirs, read_unicode_file
 from utilities.string import try_decode
@@ -52,7 +53,7 @@ class DataMixin(object):
                 "data": data,
             }
         }
-        result = self.daemon_post(req, timeout=5)
+        result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
         status, error, info = self.parse_result(result)
         if info:
             print(info)
