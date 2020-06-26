@@ -529,11 +529,13 @@ class MonitorObjectOrchestratorManualMixin(object):
             raise Defer("stop: action started")
 
         def step_wait_parents():
-            if not self.parents_available(svc):
+            dep = self.parents_available(svc)
+            if not dep and instance.avail not in STARTED_STATES:
                 self.set_smon(svc.path, status="wait parents")
                 raise Defer("wait: parents are not started yet")
-            elif smon.status == "wait parents":
-                self.set_smon(svc.path, status="idle")
+            if smon.status == "wait parents":
+                if dep or instance.avail in STARTED_STATES:
+                    self.set_smon(svc.path, status="idle")
 
         def step_start():
             if Env.nodename not in target:
