@@ -4467,12 +4467,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_join(self):
         if self.options.secret is None:
             raise ex.Error("--secret must be set")
-        if self.options.node is None:
+        if not self.options.node:
             raise ex.Error("--node must be set")
         self._daemon_join(self.options.node, self.options.secret)
 
     def daemon_rejoin(self):
-        if self.options.node is None:
+        if not self.options.node:
             raise ex.Error("--node must be set")
         self._daemon_join(self.options.node, self.cluster_key)
 
