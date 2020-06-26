@@ -779,6 +779,9 @@ class OsvcThread(threading.Thread, Crypt):
         return proc
 
     def add_cluster_node(self, nodename):
+        if not nodename:
+            self.log.warning('add_cluster_node called with empty nodename')
+            return
         NODE.unset_lazy("cd")
         NODE.unset_lazy("private_cd")
         unset_lazy(self, "cluster_nodes")
@@ -794,6 +797,9 @@ class OsvcThread(threading.Thread, Crypt):
             del svc
 
     def remove_cluster_node(self, nodename):
+        if not nodename:
+            self.log.warning('remove_cluster_node called with empty nodename')
+            return
         NODE.unset_lazy("cd")
         NODE.unset_lazy("private_cd")
         unset_lazy(self, "cluster_nodes")
