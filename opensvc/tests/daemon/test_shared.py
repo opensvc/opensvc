@@ -22,7 +22,7 @@ class TestSharedAddClusterNode:
     @staticmethod
     def test_update_cluster_config_file_with_added_node(osvc_path_tests, thr):
         thr.add_cluster_node('node2')
-        with open(os.path.join(osvc_path_tests, 'etc', 'cluster.conf'), 'r') as f:
+        with open(os.path.join(str(osvc_path_tests), 'etc', 'cluster.conf'), 'r') as f:
             assert 'nodes = %s node2' % Env.nodename in f.read()
 
     @staticmethod
