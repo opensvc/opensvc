@@ -2283,6 +2283,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.unset_lazy("ordered_peers")
         self.unset_lazy("flex")
         self.unset_lazy("flex_max")
+        self.unset_lazy("flex_target")
 
     def unset_all_lazy(self):
         self.clear_ref_cache()
