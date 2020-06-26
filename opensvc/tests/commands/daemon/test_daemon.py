@@ -8,6 +8,44 @@ import commands.daemon
 from daemon.main import main as daemon_main
 
 
+@pytest.fixture(scope='function')
+def daemon_join(mocker):
+    return mocker.patch('commands.daemon.Node._daemon_join')
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests', 'has_node_config', 'has_euid_0')
+class TestNodemgrDaemonJoin:
+    @staticmethod
+    def test_need_option_node(daemon_join):
+        assert commands.daemon.main(argv=["join", "--secret", "xxxx"]) == 1
+        assert daemon_join.call_count == 0
+
+    @staticmethod
+    def test_need_option_secret(daemon_join):
+        assert commands.daemon.main(argv=["join", "--node", "node1"]) == 1
+        assert daemon_join.call_count == 0
+
+    @staticmethod
+    def test_run_join(daemon_join):
+        assert commands.daemon.main(argv=["join", "--secret", "xxx", "--node", "node1"]) == 0
+        assert daemon_join.call_count == 1
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests', 'has_node_config', 'has_euid_0')
+class TestNodemgrDaemonReJoin:
+    @staticmethod
+    def test_need_option_node(daemon_join):
+        assert commands.daemon.main(argv=["rejoin"]) == 1
+        assert daemon_join.call_count == 0
+
+    @staticmethod
+    def test_run_join(daemon_join):
+        assert commands.daemon.main(argv=["rejoin", "--node", "node1"]) == 0
+        assert daemon_join.call_count == 1
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests', 'has_node_config', 'has_euid_0')
 class TestNodemgrDaemonActions:
