@@ -6,11 +6,12 @@ PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 DEB=opensvc-$VERSION-$RELEASE.deb
 
 [[ ! -z $CHROOT ]] && {
-  MCWD=$(pwd)
-  cd $CHROOT/.. && rm -rf opensvc*
-  cd $MCWD
+  test -d $CHROOT && {
+    MCWD=$(pwd)
+    cd $CHROOT/.. && rm -rf opensvc*
+    cd $MCWD
+  }
 }
-
 
 function changelog {
 	git log -n 100 --pretty=format:"opensvc (__V__) unstable; urgency=medium%n%n  * %s%n%n -- %an <%ae>  %ad%n" | \

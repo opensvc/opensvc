@@ -6,6 +6,8 @@ import time
 import pytest
 
 from core.comm import Crypt, PAUSE, SOCK_TMO_REQUEST
+from core.node import Node
+from env import Env
 
 MSG_TIMEOUT_CONNECT = 'timeout daemon request (connect error)'
 MSG_TIMEOUT_RECV = 'timeout daemon request (recv_message error)'
@@ -189,3 +191,12 @@ class TestRawDaemonRequestWithTimeoutParamZero:
         recv_message.side_effect = socket.timeout
         assert crypt.raw_daemon_request(data={}, timeout=0) == {'status': 1, 'err': MSG_TIMEOUT_RECV}
         assert time_sleep.call_count == 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')
+class TestClusterNodes:
+    @staticmethod
+    def test_is_array_with_nodename(mocker):
+        mocker.patch.object(Crypt, 'get_node', return_value=Node())
+        assert Crypt().cluster_nodes == [Env.nodename]
