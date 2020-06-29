@@ -230,9 +230,9 @@ class DataMixin(object):
     def install_key(self, key, path, uid=None, gid=None, mode=None, dirmode=None):
         if key["type"] == "file":
             vpath = self.key_path(key, path)
-            self.install_file_key(key["path"], vpath, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
+            return self.install_file_key(key["path"], vpath, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
         elif key["type"] == "dir":
-            self.install_dir_key(key, path, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
+            return self.install_dir_key(key, path, uid=uid, gid=gid, mode=mode, dirmode=dirmode)
 
     def install_dir_key(self, data, path, uid=None, gid=None, mode=None, dirmode=None):
         """
@@ -244,8 +244,10 @@ class DataMixin(object):
         else:
             dirpath = path + "/"
         makedirs(dirpath, uid=uid, gid=gid, mode=dirmode)
+        changed = False
         for key in data["keys"]:
-            self.install_key(key, dirpath, uid=uid, gid=uid, mode=mode, dirmode=dirmode)
+            changed |= self.install_key(key, dirpath, uid=uid, gid=uid, mode=mode, dirmode=dirmode)
+        return changed
 
     def install_file_key(self, key, vpath, uid=None, gid=None, mode=None, dirmode=None):
         """
@@ -265,7 +267,7 @@ class DataMixin(object):
             self.log.info("remove %s key %s file at parent location %s", self.desc, key, vdir)
             os.unlink(vdir)
         makedirs(vdir, uid=uid, gid=gid, mode=dirmode)
-        self.write_key(vpath, data, key=key, uid=uid, gid=gid, mode=mode)
+        return self.write_key(vpath, data, key=key, uid=uid, gid=gid, mode=mode)
 
     @staticmethod
     def key_path(key, path):
@@ -280,6 +282,10 @@ class DataMixin(object):
         return npath
 
     def write_key(self, vpath, data, key=None, uid=None, gid=None, mode=None):
+        """
+        Return False if the file did not change.
+        Return True if the file changed.
+        """
         mtime = os.path.getmtime(self.paths.cf)
         try:
             data = data.encode()
@@ -289,17 +295,18 @@ class DataMixin(object):
         if os.path.exists(vpath):
             self.set_perm(vpath, uid, gid, mode)
             if mtime == os.path.getmtime(vpath):
-                return
+                return False
             with open(vpath, "rb") as ofile:
                 current = ofile.read()
             if current == data:
                 os.utime(vpath, (mtime, mtime))
-                return
+                return False
         self.log.info("install %s/%s in %s", self.name, key, vpath)
         with open(vpath, "wb") as ofile:
             self.set_perm(vpath, uid, gid, mode)
             ofile.write(data)
             os.utime(vpath, (mtime, mtime))
+        return True
 
     def set_perm(self, path, uid=None, gid=None, mode=None):
         os.chmod(path, mode or self.default_mode)
@@ -332,4 +339,6 @@ class DataMixin(object):
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
             for vol in svc.get_resources("volume"):
                 if vol.has_data(self.kind, self.path, key) and vol._status() == core.status.UP:
-                    vol._install_data(self.kind)
+                    installed = vol._install_data(self.kind)
+                    if installed:
+                        vol.send_signals()
