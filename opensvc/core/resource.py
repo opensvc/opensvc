@@ -1442,6 +1442,11 @@ class Resource(object):
     def has_capability(self, cap):
         return capabilities.has("drivers.resource.%s" % cap)
 
+    def clear_status_cache(self):
+        self.rstatus = None
+        self.status_logs = []
+        self.last_status_info = {}
+
 class DataResource(Resource):
     def __init__(self, rid, type="data", **kwargs):
         Resource.__init__(self, rid, type=type)

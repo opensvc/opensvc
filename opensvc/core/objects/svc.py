@@ -3672,7 +3672,7 @@ class Svc(BaseSvc):
             # Used by the daemon which holds long lived Svc objects that can
             # have outdated in-mem caches.
             for res in self.get_resources():
-                res.rstatus = None
+                res.clear_status_cache()
 
         group_status = self.group_status(refresh=refresh)
 
