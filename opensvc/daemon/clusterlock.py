@@ -1,5 +1,6 @@
 import time
 import uuid
+from copy import deepcopy
 
 import daemon.shared as shared
 from env import Env
@@ -92,4 +93,5 @@ class LockMixin(object):
         shared.wake_monitor(reason="lock", immediate=True)
         return lock_id
 
-
+    def locks(self):
+        return deepcopy(shared.LOCKS)
