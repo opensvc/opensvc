@@ -14,6 +14,7 @@ tmp/
 out/
 bin/python
 opensvc/version.py
+opensvc/utilities/version/version.py
 bin/pkg/release_*
 bin/pkg/winbuilder/wxs/opensvcfiles.wxs
 .hg/
