@@ -106,6 +106,12 @@ KEYWORDS = [
         "text": "The permissions, in octal notation, to apply to the volume root and installed directories.",
         "example": "750"
     },
+    {
+        "keyword": "signal",
+        "at": True,
+        "text": "A <signal>:<target> whitespace separated list, where signal is a signal name or number (ex. 1, hup or sighup), and target is the comma separated list of resource ids to send the signal to (ex: container#1,container#2). If only the signal is specified, all candidate resources will be signaled. This keyword is usually used to reload daemons on certicate or configuration files changes.",
+        "example": "hup:container#1"
+    },
 ]
 
 KEYS.register_driver(
@@ -138,7 +144,7 @@ class Volume(Resource):
     def __init__(self, name=None, pool=None, pooltype=None, size=None,
                  format=True, access="rwo", secrets=None, configs=None,
                  user=None, group=None, perm=None, dirperm=None,
-                 **kwargs):
+                 signal=None, **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
         self.pooltype = pooltype
         self.access = access
@@ -154,6 +160,7 @@ class Volume(Resource):
         self.group = group
         self.perm = perm
         self.dirperm = dirperm
+        self.signal = signal
 
     def __str__(self):
         return "%s name=%s" % (super(Volume, self).__str__(), self.volname)
@@ -163,6 +170,39 @@ class Volume(Resource):
 
     def on_add(self):
         self.set_label()
+
+    @lazy
+    def signal_data(self):
+        import signal as signal_mod
+        data = {}
+        if self.signal is None:
+            return data
+        for e in self.signal.split():
+            try:
+                sig, tgt = e.split(":", 1)
+            except Exception:
+                continue
+            try:
+                sig = int(sig)
+            except ValueError:
+                sig = sig.upper()
+                if not sig.startswith("SIG"):
+                    sig = "SIG%s" % sig
+                try:
+                    sig = int(getattr(signal_mod, sig))
+                except AttributeError:
+                    continue
+            if sig not in data:
+                data[sig] = []
+            for rid in tgt.split(","):
+                if rid in data[sig]:
+                    continue
+                res = self.svc.get_resource(rid)
+                if not res:
+                    continue
+                if hasattr(res, "send_signal"):
+                    data[sig].append(rid)
+        return data
 
     @lazy
     def volname(self):
@@ -366,6 +406,7 @@ class Volume(Resource):
         return gid
 
     def _install_data(self, kind):
+        changed = False
         for data in self.data_data(kind):
             name, _, kind = split_path(data["obj"])
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
@@ -382,7 +423,8 @@ class Volume(Resource):
                 continue
             self.log.debug("install ./%s/%s/%s in %s", kind, name, data["key"], data["path"])
             for key in keys:
-                obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode, dirmode=self.octal_dirmode)
+                changed |= obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode, dirmode=self.octal_dirmode)
+        return changed
 
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):
@@ -394,14 +436,22 @@ class Volume(Resource):
         return False
 
     def install_data(self):
-        self.install_secrets()
-        self.install_configs()
+        changed = self.install_secrets()
+        changed |= self.install_configs()
+        if changed:
+            self.send_signals()
+
+    def send_signals(self):
+        for sig, rids in self.signal_data.items():
+            for rid in rids:
+                res = self.svc.get_resource(rid)
+                res.send_signal(sig)
 
     def install_configs(self):
-        self._install_data("cfg")
+        return self._install_data("cfg")
 
     def install_secrets(self):
-        self._install_data("sec")
+        return self._install_data("sec")
 
     def has_config(self, name, key=None):
         return self.has_data("cfg", name, key)
