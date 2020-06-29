@@ -8,6 +8,9 @@ import pytest  # nopep8
 import env  # nopep8
 
 
+# avoid computation of version from git describe
+open(os.path.join(os.path.dirname(__file__), "..", "..", "opensvc", "utilities", "version", "version.py"), "w").write("version = 'dev'")
+
 @pytest.fixture(scope='function')
 def which(mocker):
     mocker.patch('utilities.proc.which')
