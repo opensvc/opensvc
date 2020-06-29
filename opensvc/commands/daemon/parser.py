@@ -42,6 +42,9 @@ ACTIONS = {
         "blacklist_clear": {
             "msg": "Empty the content of the daemon senders blacklist.",
         },
+        "lock_show": {
+            "msg": "Show cluster locks.",
+        },
         "lock_release": {
             "msg": "Release a lock. Beware locks should be released automatically.",
             "options": [
