@@ -4866,7 +4866,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 lines += logs
         else:
             lines = result
-        return sorted(lines, key=lambda x: x.get("t", 0))
+        try:
+            return sorted(lines, key=lambda x: x.get("t", 0))
+        except AttributeError:
+            return []
 
     def daemon_logs(self, server=None, node=None, debug=False):
         req = {
