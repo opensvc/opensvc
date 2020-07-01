@@ -419,31 +419,34 @@ class Dns(shared.OsvcThread):
             return []
         names = []
         ref = ".".join(reversed(qname[:-PTR_SUFFIX_LEN].split(".")))
-        with shared.CLUSTER_DATA_LOCK:
-            for nodename, node in shared.CLUSTER_DATA.items():
-                status = node.get("services", {}).get("status", {})
-                for path, svc in status.items():
-                    name, namespace, kind = split_path(path)
-                    if kind != "svc":
+        for nodename in self.cluster_nodes:
+            try:
+                node = shared.CLUSTER_DATA[nodename]
+            except KeyError:
+                continue
+            status = node.get("services", {}).get("status", {})
+            for path, svc in status.items():
+                name, namespace, kind = split_path(path)
+                if kind != "svc":
+                    continue
+                if not namespace:
+                    namespace = "root"
+                for rid, resource in status[path].get("resources", {}).items():
+                    addr = resource.get("info", {}).get("ipaddr")
+                    if addr is None:
                         continue
-                    if not namespace:
-                        namespace = "root"
-                    for rid, resource in status[path].get("resources", {}).items():
-                        addr = resource.get("info", {}).get("ipaddr")
-                        if addr is None:
-                            continue
-                        if addr != ref:
-                            continue
-                        try:
-                            hostname = resource.get("info", {}).get("hostname").split(".")[0].lower()
-                        except Exception:
-                            hostname = None
-                        gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
-                        gen_name = gen_name.lower()
-                        if hostname and hostname != name:
-                            names.append("%s.%s" % (hostname, gen_name))
-                        else:
-                            names.append(gen_name)
+                    if addr != ref:
+                        continue
+                    try:
+                        hostname = resource.get("info", {}).get("hostname").split(".")[0].lower()
+                    except Exception:
+                        hostname = None
+                    gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
+                    gen_name = gen_name.lower()
+                    if hostname and hostname != name:
+                        names.append("%s.%s" % (hostname, gen_name))
+                    else:
+                        names.append(gen_name)
         return names
 
     def set_cache(self, key, kind, data):
