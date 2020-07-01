@@ -198,7 +198,7 @@ class Ip(Resource):
         left = time_max - self._current_time()
         self.log.info("wait cluster sync (time left is %s)", print_duration(left))
         while left > 0:
-            result = self.svc.node.daemon_get({"action": "sync"}, timeout=left)
+            result = self.svc.node.daemon_get({"action": "sync", "timeout": left}, timeout=left+10)
             if result["status"] == 0:
                 return
             left = time_max - self._current_time()
