@@ -99,19 +99,20 @@ def driver_capabilities(node=None):
     return data
 
 
-def lookup_snap_mod():
+def snap_factory():
     if Env.sysname == 'Linux':
-        return __import__('utilities.snap.lvm.linux')
+        from utilities.snap.lvm.linux import Snap
     elif Env.sysname == 'HP-UX':
-        return __import__('utilities.snap.vxfs.hpux')
+        from utilities.snap.vxfs.hpux import Snap
     elif Env.sysname == 'AIX':
-        return __import__('utilities.snap.jfs2.aix')
+        from utilities.snap.jfs2.aix import Snap
     elif Env.sysname in ['SunOS', 'FreeBSD']:
-        return __import__('utilities.snap.zfs.sunos')
+        from utilities.snap.zfs.sunos import Snap
     elif Env.sysname in ['OSF1']:
-        return __import__('utilities.snap.advfs.osf1')
+        from utilities.snap.advfs.osf1 import Snap
     else:
         raise ex.Error
+    return Snap
 
 def get_timestamp_filename(self, node):
     sync_timestamp_f = os.path.join(self.var_d, "last_sync_"+node)
@@ -338,8 +339,8 @@ class SyncRsync(Sync):
 
         if "delay_snap" in self.tags:
             if not hasattr(self.rset, 'snaps'):
-                mod = lookup_snap_mod()
-                self.rset.snaps = mod.Snap(self.rid)
+                Snap = snap_factory()
+                self.rset.snaps = Snap(self.rid)
                 self.rset.snaps.set_logger(self.log)
             self.rset.snaps.try_snap(self.rset, target, rid=self.rid)
 
@@ -433,9 +434,9 @@ class SyncRsync(Sync):
             self.rset.log.debug("snap not needed")
             return
 
-        mod = lookup_snap_mod()
+        Snap = snap_factory()
         try:
-            self.rset.snaps = mod.Snap(self.rid)
+            self.rset.snaps = Snap(self.rid)
             self.rset.snaps.set_logger(self.rset.log)
             self.rset.snaps.try_snap(self.rset, action)
         except ex.syncNotSnapable:
