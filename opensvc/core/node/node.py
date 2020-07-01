@@ -3944,6 +3944,41 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         )
         return data
 
+    @formatter
+    def daemon_lock_show(self):
+        data = self.daemon_get(
+            {
+                "action": "cluster/locks",
+            },
+            timeout=DEFAULT_DAEMON_TIMEOUT,
+            with_result=True,
+            server=self.options.server
+        )
+        status, error, info = self.parse_result(data)
+        if error:
+            raise ex.Error(error)
+        if status != 0:
+            raise ex.Error("cluster/locks api return status %s" % status)
+        locks = data['data']
+        if self.options.format in ("json", "flat_json"):
+            return locks
+        from utilities.render.forest import Forest
+        from utilities.render.color import color
+        tree = Forest()
+        node = tree.add_node()
+        node.add_column("name", color.BOLD)
+        node.add_column("id", color.BOLD)
+        node.add_column("requester", color.BOLD)
+        node.add_column("requested", color.BOLD)
+        for name in sorted(locks.keys()):
+            lock_info = locks[name]
+            leaf = node.add_node()
+            leaf.add_column(name, color.BROWN)
+            leaf.add_column(lock_info['id'])
+            leaf.add_column(lock_info['requester'])
+            leaf.add_column(lock_info['requested'])
+        print(tree)
+
     def daemon_lock_release(self):
         self._daemon_unlock(self.options.name, self.options.id)
 
