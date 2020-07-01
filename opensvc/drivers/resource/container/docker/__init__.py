@@ -1019,6 +1019,12 @@ class ContainerDocker(BaseContainer):
         self._status_inspect()
         return sta
 
+    def send_signal(self, sig):
+        if self.container_id is None:
+            return
+        cmd = self.lib.docker_cmd + ["kill", "-s", str(sig), self.container_id]
+        self.vcall(cmd)
+
     def container_forcestop(self):
         self.docker('kill')
 
