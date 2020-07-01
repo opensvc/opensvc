@@ -1,9 +1,11 @@
 import json
 import os
+import sys
 import time
 
 import pytest
 import commands.daemon
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 
 from daemon.main import main as daemon_main
 
@@ -11,6 +13,82 @@ from daemon.main import main as daemon_main
 @pytest.fixture(scope='function')
 def daemon_join(mocker):
     return mocker.patch('commands.daemon.Node._daemon_join')
+
+
+@pytest.fixture(scope='function')
+def daemon_get(mocker):
+    return mocker.patch.object(Crypt,
+                               'daemon_get',
+                               return_value={
+                                   "data": {
+                                       "ploc": {
+                                           "id": "01e4491d-083f-48ba-8cdf-c5c8771e6b92",
+                                           "requested": 1593425914.0323133,
+                                           "requester": "u2004-1"
+                                       },
+                                       "plic": {
+                                           "id": "01e4491d-083f-48ba-8cdf-c5c8771e6b99",
+                                           "requested": 1593425914.0423133,
+                                           "requester": "u2004-1"
+                                       }
+                                   },
+                                   "status": 0
+                               })
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests', 'has_node_config', 'has_euid_0')
+class TestDaemonLockShow:
+    @staticmethod
+    @pytest.mark.parametrize('server', ['', 'https://u2004-15:1215'])
+    def test_calls_daemon_get_on_correct_api_path(daemon_get, server):
+        argv = ["lock", "show"]
+        if server:
+            argv += ["--server", server]
+        assert commands.daemon.main(argv=argv) == 0
+        daemon_get.assert_called_once_with(
+            {'action': 'cluster/locks'},
+            timeout=DEFAULT_DAEMON_TIMEOUT,
+            server=server,
+            with_result=True)
+
+    @staticmethod
+    def test_return_non_0_if_daemon_get_status_has_error(daemon_get):
+        daemon_get.return_value = {"data": {}, "status": 0, "error": "blah"}
+        assert commands.daemon.main(argv=["lock", "show"]) == 1
+
+    @staticmethod
+    def test_return_non_0_if_daemon_get_status_is_not_0(daemon_get):
+        daemon_get.return_value = {"data": {}, "status": 1}
+        assert commands.daemon.main(argv=["lock", "show"]) == 1
+
+    @staticmethod
+    def test_has_correct_default_format_forest(daemon_get, capture_stdout, tmp_file):
+        with capture_stdout(tmp_file):
+            commands.daemon.main(argv=["lock", "show"])
+        if int(sys.version[0]) > 2:
+            expected_output = '''
+name     id                                    requester  requested           
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.0323133  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.0423133  
+
+'''
+        else:
+            expected_output = '''
+name     id                                    requester  requested     
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
+
+'''
+        with open(tmp_file, 'r') as output_file:
+            '\n' + output_file.read() == expected_output
+
+    @staticmethod
+    def test_output_with_format_json(daemon_get, capture_stdout, tmp_file):
+        with capture_stdout(tmp_file):
+            commands.daemon.main(argv=["lock", "show", "--format", "json"])
+        with open(tmp_file, 'r') as output_file:
+            assert json.load(output_file) == daemon_get.return_value['data']
 
 
 @pytest.mark.ci

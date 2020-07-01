@@ -13,6 +13,12 @@ class Handler(daemon.handler.BaseHandler):
         ("GET", "sync"),
     )
     prototype = [
+        {
+            "name": "timeout",
+            "desc": "Time to wait for the current local dataset generation number to reach all nodes. Return a status 1 response if the timeout is exceeded.",
+            "default": "60s",
+            "format": "duration",
+        }
     ]
     access = {
         "roles": ["guest"],
@@ -20,6 +26,7 @@ class Handler(daemon.handler.BaseHandler):
     }
 
     def action(self, nodename, thr=None, stream_id=None, **kwargs):
+        options = self.parse_options(kwargs)
         thr.selector = ""
         ref_gen = shared.GEN
         if not thr.event_queue:
@@ -28,7 +35,7 @@ class Handler(daemon.handler.BaseHandler):
             thr.parent.events_clients.append(thr)
         if self.match(ref_gen):
             return {"status": 0, "data": {"satisfied": True, "gen": ref_gen}}
-        timeout = time.time() + 60
+        timeout = time.time() + options.timeout
         end = False
         while True:
             left = timeout - time.time()

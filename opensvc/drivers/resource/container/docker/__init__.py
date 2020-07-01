@@ -743,6 +743,11 @@ class ContainerDocker(BaseContainer):
         args = drop_option("-n", args, drop_value=True)
         args += ['--name=' + self.container_name]
         args += ['--label=' + self.container_label_id]
+        args += ['--label=com.opensvc.path=' + self.svc.path]
+        args += ['--label=com.opensvc.namespace=%s' % (self.svc.namespace if self.svc.namespace else "root")]
+        args += ['--label=com.opensvc.name=' + self.svc.name]
+        args += ['--label=com.opensvc.kind=' + self.svc.kind]
+        args += ['--label=com.opensvc.rid=' + self.rid]
 
         args = drop_option("--hostname", args, drop_value=True)
         args = drop_option("-h", args, drop_value=True)
@@ -1018,6 +1023,12 @@ class ContainerDocker(BaseContainer):
         sta = super(ContainerDocker, self)._status(verbose)
         self._status_inspect()
         return sta
+
+    def send_signal(self, sig):
+        if self.container_id is None:
+            return
+        cmd = self.lib.docker_cmd + ["kill", "-s", str(sig), self.container_id]
+        self.vcall(cmd)
 
     def container_forcestop(self):
         self.docker('kill')
