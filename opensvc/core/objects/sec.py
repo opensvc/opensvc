@@ -48,6 +48,22 @@ class Sec(DataMixin, BaseSvc):
         # refresh if in use
         self.postinstall(key)
 
+    def _add_keys(self, data):
+        if not data:
+            return
+        sdata = []
+        for key, val in data:
+            if not key:
+                raise ex.Error("secret key name can not be empty")
+            if val is None:
+                raise ex.Error("secret value can not be empty")
+            val = "crypt:"+base64.urlsafe_b64encode(self.encrypt(val, cluster_name="join", encode=True)).decode()
+            sdata.append("data.%s=%s" % (key, val))
+        self.set_multi(sdata)
+        self.log.info("secret keys '%s' added", ",".join([k for k, v in data]))
+        # refresh if in use
+        self.postinstall(key)
+
     def decode_key(self, key):
         if not key:
             raise ex.Error("secret key name can not be empty")
@@ -80,6 +96,7 @@ class Sec(DataMixin, BaseSvc):
             data["cnf"] = self.tempfilename()
 
         try:
+            add_data = []
             if casec:
                 for key, kw in (("cacrt", "certificate"), ("cakey", "private_key")):
                     if kw not in casec.data_keys():
@@ -89,30 +106,30 @@ class Sec(DataMixin, BaseSvc):
                     with open(data[key], "w") as ofile:
                         ofile.write(buff)
             gen_cert(log=self.log, **data)
-            self._add("private_key", value_from=data["key"])
+            with open(data["key"], "r") as ofile:
+                buff = ofile.read()
+            add_data.append(("private_key", buff))
             if data.get("crt") is not None:
-                self._add("certificate", value_from=data["crt"])
+                with open(data["crt"], "r") as ofile:
+                    buff = ofile.read()
+                add_data.append(("certificate", buff))
             if data.get("csr") is not None:
-                self._add("certificate_signing_request", value_from=data["csr"])
+                with open(data["csr"], "r") as ofile:
+                    buff = ofile.read()
+                add_data.append(("certificate_signing_request", buff))
             if data.get("cakey") is None:
-                self._add("certificate_chain", value_from=data["crt"])
+                with open(data["crt"], "r") as ofile:
+                    buff = ofile.read()
+                add_data.append(("certificate_chain", buff))
             else:
                 # merge cacrt and crt
-                chain = self.tempfilename()
-                try:
-                    with open(data["crt"], "r") as ofile:
-                        buff = ofile.read()
-                    with open(data["cacrt"], "r") as ofile:
-                        buff += ofile.read()
-                    with open(chain, "w") as ofile:
-                        ofile.write(buff)
-                    self._add("certificate_chain", value_from=chain)
-                finally:
-                    try:
-                        os.unlink(chain)
-                    except Exception:
-                        pass
-            self.add_key("fullpem", self._fullpem())
+                with open(data["crt"], "r") as ofile:
+                    buff = ofile.read()
+                with open(data["cacrt"], "r") as ofile:
+                    buff += ofile.read()
+                add_data.append(("certificate_chain", buff))
+            add_data.append(("fullpem", self._fullpem()))
+            self._add_keys(add_data)
         finally:
             for key in ("crt", "key", "cacrt", "cakey", "csr", "cnf"):
                 if key not in data:
