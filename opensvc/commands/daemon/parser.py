@@ -28,6 +28,10 @@ OPT = Storage({
         "--thread-id", default=None, action="store", dest="thr_id",
         help="Specify a daemon thread, as listed in the :cmd:`om daemon "
              "status` output."),
+    "timeout": Option(
+        "--timeout",
+        action="store", dest="time",
+        help="Maximum wait time."),
 })
 OPT.update(GLOBAL_OPT)
 
@@ -50,6 +54,7 @@ ACTIONS = {
             "options": [
                 OPT.id,
                 OPT.name,
+                OPT.timeout,
             ],
         },
         "restart": {
