@@ -295,6 +295,7 @@ def driver_capabilities(node=None):
         data += [
             "container.docker",
             "container.docker.registry_creds",
+            "container.docker.signal",
         ]
     return data
 
