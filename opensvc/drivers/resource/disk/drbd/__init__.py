@@ -682,7 +682,7 @@ class DiskDrbd(Resource):
         try:
             self._write_config()
         finally:
-            self.svc.node._daemon_unlock(lock_name, lock_id)
+            self.svc.node._daemon_unlock(lock_name, lock_id, timeout=120)
             self.log.info("lock released: name=%s id=%s", lock_name, lock_id)
 
     def _write_config(self):
