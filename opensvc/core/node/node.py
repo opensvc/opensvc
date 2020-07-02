@@ -3900,14 +3900,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             raise ex.Error("cluster lock error")
         return lock_id
 
-    def _daemon_unlock(self, name, lock_id, silent=False):
+    def _daemon_unlock(self, name, lock_id, timeout=None, silent=False):
+        if timeout is not None:
+            request_timeout = timeout + DEFAULT_DAEMON_TIMEOUT
+        else:
+            request_timeout = timeout
         data = self.daemon_post(
             {
                 "action": "unlock",
-                "options": {"name": name, "lock_id": lock_id},
+                "options": {"name": name, "lock_id": lock_id, "timeout": timeout},
             },
             silent=silent,
-            timeout=DEFAULT_DAEMON_TIMEOUT,
+            timeout=request_timeout,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -3980,7 +3984,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         print(tree)
 
     def daemon_lock_release(self):
-        self._daemon_unlock(self.options.name, self.options.id)
+        timeout = convert_duration(self.options.timeout)
+        self._daemon_unlock(self.options.name, self.options.id, timeout=timeout)
 
     def daemon_stats(self, paths=None, node=None):
         if node:
