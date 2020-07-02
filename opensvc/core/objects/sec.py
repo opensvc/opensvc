@@ -108,6 +108,8 @@ class Sec(DataMixin, BaseSvc):
             gen_cert(log=self.log, **data)
             with open(data["key"], "r") as ofile:
                 buff = ofile.read()
+            fullpem = ""
+            fullpem += buff
             add_data.append(("private_key", buff))
             if data.get("crt") is not None:
                 with open(data["crt"], "r") as ofile:
@@ -120,6 +122,7 @@ class Sec(DataMixin, BaseSvc):
             if data.get("cakey") is None:
                 with open(data["crt"], "r") as ofile:
                     buff = ofile.read()
+                fullpem += buff
                 add_data.append(("certificate_chain", buff))
             else:
                 # merge cacrt and crt
@@ -127,8 +130,9 @@ class Sec(DataMixin, BaseSvc):
                     buff = ofile.read()
                 with open(data["cacrt"], "r") as ofile:
                     buff += ofile.read()
+                fullpem += buff
                 add_data.append(("certificate_chain", buff))
-            add_data.append(("fullpem", self._fullpem()))
+            add_data.append(("fullpem", fullpem))
             self._add_keys(add_data)
         finally:
             for key in ("crt", "key", "cacrt", "cakey", "csr", "cnf"):
