@@ -799,7 +799,7 @@ class Crypt(object):
                 except AttributeError:
                     errno = None
                 if errno in RETRYABLE and \
-                   (timeout == 0 or elapsed < timeout):
+                   (timeout == 0 or (timeout and elapsed < timeout)):
                     # Resource temporarily unavailable (busy, overflow)
                     # Retry after a delay, if the daemon is still
                     # running and timeout is not exhausted
@@ -848,7 +848,7 @@ class Crypt(object):
                     continue
                 except socket.error as exc:
                     if exc.errno in RETRYABLE and \
-                       (timeout == 0 or elapsed < timeout):
+                       (timeout == 0 or (timeout and elapsed < timeout)):
                         # Resource temporarily unavailable (busy, overflow)
                         # Retry after a delay, if the daemon is still
                         # running and timeout is not exhausted
