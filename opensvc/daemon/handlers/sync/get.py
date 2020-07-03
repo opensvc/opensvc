@@ -35,21 +35,20 @@ class Handler(daemon.handler.BaseHandler):
             thr.parent.events_clients.append(thr)
         if self.match(ref_gen):
             return {"status": 0, "data": {"satisfied": True, "gen": ref_gen}}
-        timeout = time.time() + options.timeout
-        end = False
+        limit = time.time() + options.timeout
         while True:
-            left = timeout - time.time()
-            if left < 0:
-                left = 0
-            try:
-                thr.event_queue.get(True, left if left < 3 else 3)
-            except queue.Empty:
-                if left < 3:
-                    end = True
             if self.match(ref_gen):
                 return {"status": 0, "data": {"satisfied": True, "gen": ref_gen}}
-            if end:
-                return {"status": 1, "data": {"satisfied": False, "gen": ref_gen}}
+            left = limit - time.time()
+            if left <= 0:
+                break
+            if left > 3:
+                left = 3
+            try:
+                thr.event_queue.get(True, left)
+            except queue.Empty:
+                pass
+        return {"status": 1, "data": {"satisfied": False, "gen": ref_gen}}
 
     def match(self, ref_gen):
         for node, gen in shared.LOCAL_GEN.items():

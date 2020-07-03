@@ -3900,14 +3900,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             raise ex.Error("cluster lock error")
         return lock_id
 
-    def _daemon_unlock(self, name, lock_id, silent=False):
+    def _daemon_unlock(self, name, lock_id, timeout=None, silent=False):
+        if timeout is not None:
+            request_timeout = timeout + DEFAULT_DAEMON_TIMEOUT
+        else:
+            request_timeout = timeout
         data = self.daemon_post(
             {
                 "action": "unlock",
-                "options": {"name": name, "lock_id": lock_id},
+                "options": {"name": name, "lock_id": lock_id, "timeout": timeout},
             },
             silent=silent,
-            timeout=DEFAULT_DAEMON_TIMEOUT,
+            timeout=request_timeout,
         )
         status, error, info = self.parse_result(data)
         if error:
@@ -3980,7 +3984,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         print(tree)
 
     def daemon_lock_release(self):
-        self._daemon_unlock(self.options.name, self.options.id)
+        timeout = convert_duration(self.options.timeout)
+        self._daemon_unlock(self.options.name, self.options.id, timeout=timeout)
 
     def daemon_stats(self, paths=None, node=None):
         if node:
@@ -4053,7 +4058,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except Exception:
             return
         from utilities.dns import zone_list
-        data = zone_list(self.cluster_name + ".", dns)
+        data = zone_list("", dns)
+        if data is None:
+            return
         if self.options.format in ("json", "flat_json"):
             self.print_data(data)
             return
@@ -4866,7 +4873,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 lines += logs
         else:
             lines = result
-        return sorted(lines, key=lambda x: x.get("t", 0))
+        try:
+            return sorted(lines, key=lambda x: x.get("t", 0))
+        except AttributeError:
+            return []
 
     def daemon_logs(self, server=None, node=None, debug=False):
         req = {

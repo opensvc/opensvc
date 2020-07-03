@@ -334,11 +334,14 @@ class DataMixin(object):
         """
         Refresh installed keys
         """
+        changed_volumes = set()
         for path in list_services(namespace=self.namespace, kinds=["svc"]):
             name, _, _ = split_path(path)
             svc = factory("svc")(name, namespace=self.namespace, volatile=True, node=self.node, log=self.log)
-            for vol in svc.get_resources("volume"):
-                if vol.has_data(self.kind, self.path, key) and vol._status() == core.status.UP:
-                    installed = vol._install_data(self.kind)
+            for res in svc.get_resources("volume"):
+                if res.has_data(self.kind, self.path, key) and res._status() == core.status.UP:
+                    installed = res._install_data(self.kind)
                     if installed:
-                        vol.send_signals()
+                        changed_volumes.add(res.volsvc.path)
+                    if res.volsvc.path in changed_volumes:
+                        res.send_signals()

@@ -295,6 +295,7 @@ def driver_capabilities(node=None):
         data += [
             "container.docker",
             "container.docker.registry_creds",
+            "container.docker.signal",
         ]
     return data
 
@@ -1025,7 +1026,7 @@ class ContainerDocker(BaseContainer):
         return sta
 
     def send_signal(self, sig):
-        if self.container_id is None:
+        if not self.is_up():
             return
         cmd = self.lib.docker_cmd + ["kill", "-s", str(sig), self.container_id]
         self.vcall(cmd)

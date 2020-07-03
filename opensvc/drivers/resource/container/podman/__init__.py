@@ -48,6 +48,7 @@ def driver_capabilities(node=None):
         data += [
             "container.podman",
             "container.podman.registry_creds",
+            "container.podman.signal",
         ]
     return data
 
