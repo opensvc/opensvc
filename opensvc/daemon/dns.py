@@ -36,6 +36,7 @@ class Dns(shared.OsvcThread):
     def run(self):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.dns"), {"node": Env.nodename, "component": self.name})
+        self.wait_monitor()
         self.cache = {}
         if not os.path.exists(Env.paths.dnsuxsockd):
             os.makedirs(Env.paths.dnsuxsockd)
@@ -90,6 +91,12 @@ class Dns(shared.OsvcThread):
                 self.join_threads()
                 self.sock.close()
                 sys.exit(0)
+
+    def wait_monitor(self):
+        while True:
+            if shared.NMON_DATA.get("status") != "init":
+                break
+            time.sleep(0.2)
 
     def cache_key(self):
         data = self.get_gen(inc=False)
