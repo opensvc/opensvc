@@ -10,6 +10,7 @@ import threading
 import shutil
 import json
 import re
+import time
 
 import foreign.six as six
 import daemon.shared as shared
@@ -36,6 +37,7 @@ class Dns(shared.OsvcThread):
     def run(self):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.dns"), {"node": Env.nodename, "component": self.name})
+        self.wait_monitor()
         self.cache = {}
         if not os.path.exists(Env.paths.dnsuxsockd):
             os.makedirs(Env.paths.dnsuxsockd)
@@ -90,6 +92,12 @@ class Dns(shared.OsvcThread):
                 self.join_threads()
                 self.sock.close()
                 sys.exit(0)
+
+    def wait_monitor(self):
+        while True:
+            if shared.NMON_DATA.get("status") != "init":
+                break
+            time.sleep(0.2)
 
     def cache_key(self):
         data = self.get_gen(inc=False)
@@ -294,12 +302,18 @@ class Dns(shared.OsvcThread):
         return data
 
     def _action_list(self, suffix):
-        data = self.soa_record({"qname": suffix})
-        if len(data) == 0:
-            return data
-        data += self.zone_ns_records(suffix)
+        """
+        Empty suffix is what "dns dump" uses.
+        """
+        data = []
+        if suffix:
+            data += self.soa_record({"qname": suffix})
+            if len(data) == 0:
+                return data
+            # don't include NS record in dump, as those depend on suffix
+            data += self.zone_ns_records(suffix)
         for qname, contents in self.a_records().items():
-            if not qname.endswith(suffix):
+            if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
                 data.append({
@@ -309,11 +323,21 @@ class Dns(shared.OsvcThread):
                     "ttl": 60
                 })
         for qname, contents in self.srv_records().items():
-            if not qname.endswith(suffix):
+            if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
                 data.append({
                     "qtype": "SRV",
+                    "qname": qname,
+                    "content": content,
+                    "ttl": 60
+                })
+        for qname, contents in self.ptr_records().items():
+            if suffix and not qname.endswith(suffix):
+                continue
+            for content in contents:
+                data.append({
+                    "qtype": "PTR",
                     "qname": qname,
                     "content": content,
                     "ttl": 60
@@ -353,9 +377,14 @@ class Dns(shared.OsvcThread):
         return [self.zone]
 
     def soa_records_rev(self):
-        addrs = []
+        addrs = set([PTR_SUFFIX[1:]])
         for addr in set(self.svc_ips()):
-            addrs.append(".".join(reversed(addr.split(".")[:-1]))+PTR_SUFFIX)
+            z1 = ".".join(reversed(addr.split(".")[:-1]))+PTR_SUFFIX
+            z2 = ".".join(reversed(addr.split(".")[:-2]))+PTR_SUFFIX
+            z3 = ".".join(reversed(addr.split(".")[:-3]))+PTR_SUFFIX
+            addrs.add(z1)
+            addrs.add(z2)
+            addrs.add(z3)
         return addrs
 
     def soa_record(self, parameters):
@@ -401,7 +430,7 @@ class Dns(shared.OsvcThread):
             "qname": qname,
             "content": name,
             "ttl": 60
-        } for name in self.svc_ptr_record(qname)]
+        } for name in self.ptr_records().get(qname, [])]
 
     def a_record(self, parameters):
         qname = parameters.get("qname").lower()
@@ -414,11 +443,12 @@ class Dns(shared.OsvcThread):
             "ttl": 60
         } for addr in self.a_records().get(qname, [])]
 
-    def svc_ptr_record(self, qname):
-        if not qname.endswith(PTR_SUFFIX):
-            return []
-        names = []
-        ref = ".".join(reversed(qname[:-PTR_SUFFIX_LEN].split(".")))
+    def ptr_records(self):
+        data = self.get_cache("ptr")
+        if data is not None:
+            return data
+        names = {}
+        key = self.cache_key()
         for nodename in self.cluster_nodes:
             try:
                 node = shared.CLUSTER_DATA[nodename]
@@ -435,8 +465,12 @@ class Dns(shared.OsvcThread):
                     addr = resource.get("info", {}).get("ipaddr")
                     if addr is None:
                         continue
-                    if addr != ref:
-                        continue
+                    qname = "%s%s" % (
+                        ".".join(reversed(addr.split("."))),
+                        PTR_SUFFIX,
+                    )
+                    if qname not in names:
+                        names[qname] = []
                     try:
                         hostname = resource.get("info", {}).get("hostname").split(".")[0].lower()
                     except Exception:
@@ -444,9 +478,10 @@ class Dns(shared.OsvcThread):
                     gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
                     gen_name = gen_name.lower()
                     if hostname and hostname != name:
-                        names.append("%s.%s" % (hostname, gen_name))
+                        names[qname].append("%s%s" % (hostname, gen_name))
                     else:
-                        names.append(gen_name)
+                        names[qname].append(gen_name)
+        self.set_cache(key, "ptr", names)
         return names
 
     def set_cache(self, key, kind, data):
