@@ -1,13 +1,10 @@
-from __future__ import print_function
-
-import sys
-import os
-mod_d = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, mod_d)
+import pytest
 
 from core.extconfig import eval_expr
 
-class TestExpr:
+
+@pytest.mark.ci
+class TestEvalExpr:
     def test_expr(self):
         """
         Arithmetic expressions eval
@@ -37,6 +34,4 @@ class TestExpr:
             ("0 & 1", False),
         )
         for expr, expected in expressions:
-            result = eval_expr(expr)
-            print(expr, "=>", result, "expect:", expected)
-            assert result == expected
+            assert eval_expr(expr) == expected
