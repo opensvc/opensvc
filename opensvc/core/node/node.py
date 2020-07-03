@@ -4058,7 +4058,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except Exception:
             return
         from utilities.dns import zone_list
-        data = zone_list(self.cluster_name + ".", dns)
+        data = zone_list("", dns)
+        if data is None:
+            return
         if self.options.format in ("json", "flat_json"):
             self.print_data(data)
             return
