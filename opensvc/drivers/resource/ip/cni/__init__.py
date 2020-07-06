@@ -114,6 +114,12 @@ def driver_capabilities(node=None):
     return []
 
 
+class NoIpAddrAvail(ex.OsvcException):
+    pass
+
+class DupAlloc(ex.OsvcException):
+    pass
+
 class IpCni(IpHost):
     def __init__(self,
                  network=None,
@@ -302,9 +308,14 @@ class IpCni(IpHost):
             if proc.returncode == 0:
                 # for example a del portmap outs nothing
                 return
-            raise ex.Error(err)
+            raise ex.Error("%s (retcode %d)" % (err, proc.returncode))
         if "code" in data:
-            raise ex.Error(data.get("msg", ""))
+            msg = data.get("msg", "")
+            if "no IP addresses available" in msg:
+                raise NoIpAddrAvail(msg)
+            elif "duplicate allocation" in msg:
+                raise DupAlloc(msg)
+            raise ex.Error("%s (retcode %d)" % (msg, proc.returncode))
         for line in format_str_flat_json(data).splitlines():
             self.log.info(line)
         return data
@@ -410,7 +421,17 @@ class IpCni(IpHost):
             data["name"] = self.cni_data["name"]
             if result is not None:
                 data["prevResult"] = result
-            result = self.cni_cmd(_env, data)
+            try:
+                result = self.cni_cmd(_env, data)
+            except DupAlloc as exc:
+                self.log.info("%s => retry", exc)
+                self._del_cni()
+                result = self.cni_cmd(_env, data)
+            except NoIpAddrAvail as exc:
+                self.log.info("%s => clean allocation and retry", exc)
+                self._del_cni()
+                self.cleanup_var_cni()
+                result = self.cni_cmd(_env, data)
 
         if self.expose and result:
             data = {}
@@ -420,6 +441,21 @@ class IpCni(IpHost):
             if data["runtimeConfig"]:
                 result = self.cni_cmd(_env, data)
 
+    def cleanup_var_cni(self):
+        import glob
+        pattern = "/var/lib/cni/networks/%s/*.*.*.*" % self.cni_data["name"]
+        for path in glob.glob(pattern):
+            try:
+                with open(path, "r") as f:
+                    buff = f.read()
+                lines = buff.split(os.linesep)
+                pid = int(lines[0])
+                if not os.path.exists("/proc/%d" % pid):
+                    self.log.info("free %s allocation for dead pid %d", os.path.basename(path), pid)
+                    os.unlink(path)
+            except Exception as exc:
+                continue
+
     def del_cni(self):
         if not self.has_netns():
             self.log.info("already no ip dev %s" % self.ipdev)
@@ -427,11 +463,10 @@ class IpCni(IpHost):
         if not self.has_ip():
             self.log.info("already no ip on dev %s" % self.ipdev)
             return
-        intf = self.get_ipdev()
-        if intf and len(intf.ipaddr) > 0:
-            ipaddr = intf.ipaddr[0]
-        else:
-            ipaddr = None
+        self._del_cni()
+        self.cleanup_var_cni_ip()
+
+    def _del_cni(self):
         _env = {
             "CNI_COMMAND": "DEL",
             "CNI_IFNAME": self.ipdev,
@@ -459,6 +494,12 @@ class IpCni(IpHost):
             data["name"] = self.cni_data["name"]
             result = self.cni_cmd(_env, data)
 
+    def cleanup_var_cni_ip(self):
+        intf = self.get_ipdev()
+        if intf and len(intf.ipaddr) > 0:
+            ipaddr = intf.ipaddr[0]
+        else:
+            ipaddr = None
         var_f = "/var/lib/cni/networks/%s/%s" % (self.network, ipaddr)
         if os.path.exists(var_f):
             self.log.info("rm %s", var_f)
