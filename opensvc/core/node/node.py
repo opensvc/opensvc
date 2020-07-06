@@ -4245,7 +4245,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         wait = self.options.wait
         time = self.options.time
         if wait and time:
-            request_timeout = time + DEFAULT_DAEMON_TIMEOUT
+            request_timeout = convert_duration(time) + DEFAULT_DAEMON_TIMEOUT
         elif wait:
             request_timeout = None
         else:
