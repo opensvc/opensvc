@@ -1399,6 +1399,7 @@ class ClientHandler(shared.OsvcThread):
             result = {"status": exc.status, "error": exc.msg}
         except Exception as exc:
             result = {"status": 500, "error": str(exc), "traceback": traceback.format_exc()}
+            self.log.exception(exc)
         self.raw_send_result(result)
 
     def raw_send_result(self, result):
