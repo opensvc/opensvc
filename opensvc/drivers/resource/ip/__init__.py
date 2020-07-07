@@ -198,9 +198,15 @@ class Ip(Resource):
         left = time_max - self._current_time()
         self.log.info("wait cluster sync (time left is %s)", print_duration(left))
         while left > 0:
-            result = self.svc.node.daemon_get({"action": "sync", "timeout": left}, timeout=left+10)
+            result = self.svc.node.daemon_get({
+                "action": "sync",
+                "options": {
+                    "timeout": left
+                },
+            }, timeout=left+10)
             if result["status"] == 0:
                 return
+            time.sleep(0.3) # avoid fast-looping the listener
             left = time_max - self._current_time()
         raise ex.Error("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
 
