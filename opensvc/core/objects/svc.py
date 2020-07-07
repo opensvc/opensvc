@@ -4982,57 +4982,98 @@ class Svc(BaseSvc):
         configuration file, and copy the most recent version over the least
         recent.
         """
-        cmd = ['print', 'config', 'mtime']
-        try:
-            cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
-            out = cmd_results[0]
-            ret = cmd_results[2]
-        except (ex.EncapUnjoinable, ex.Error) as exc:
-            out = None
-            ret = 1
+        def pulled_config_sanity_check(cf):
+            """
+            If the encap cf is flushed at the time of the copy,
+            avoid installing it, and hope the new version will
+            arrive later.
+            """
+            if os.path.getsize(cf) <= 60:
+                raise ex.Error("pulled an empty configuration from %s. "
+                               "abort install." % container.name)
 
-        if out == "":
-            # this is what happens when the container is down
-            return
+        def encap_config_mtime():
+            cmd = ['print', 'config', 'mtime']
+            try:
+                cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
+                out = cmd_results[0]
+                ret = cmd_results[2]
+            except (ex.EncapUnjoinable, ex.Error) as exc:
+                out = None
+                ret = 1
 
-        if ret == 0:
-            encap_mtime = int(float(out.strip()))
-            local_mtime = os.path.getmtime(self.paths.cf)
-            if encap_mtime > local_mtime:
-                paths = Paths(osvc_root_path=container.osvc_root_path)
-                encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(Env.paths.pathetc)+1:])
+            if out == "":
+                # this is what happens when the container is down
+                return
 
+            try:
+                return int(float(out.strip()))
+            except Exception:
+                return
+
+        def pull_encap_config():
+            paths = Paths(osvc_root_path=container.osvc_root_path)
+            encap_cf = os.path.join(paths.pathetc, self.paths.cf[len(Env.paths.pathetc)+1:])
+            tmpfile = tempfile.NamedTemporaryFile(delete=False,
+                                                  dir=os.path.dirname(self.paths.cf),
+                                                  prefix="." + self.name + ".conf.")
+            tmpcf = tmpfile.name
+            tmpfile.close()
+            try:
                 if hasattr(container, 'rcp_from'):
-                    cmd_results = container.rcp_from(encap_cf, self.paths.cf)
+                    cmd_results = container.rcp_from(encap_cf, tmpcf)
                 else:
-                    cmd = Env.rcp.split() + [container.name+':'+encap_cf, self.paths.cf]
+                    cmd = Env.rcp.split() + [container.name+':'+encap_cf, tmpcf]
                     cmd_results = justcall(cmd)
-                os.utime(self.paths.cf, (encap_mtime, encap_mtime))
                 self.log.info("fetch %s from %s", encap_cf, container.name)
                 if cmd_results[2] != 0:
                     raise ex.Error()
+                pulled_config_sanity_check(tmpcf)
+                os.utime(tmpcf, (encap_mtime, encap_mtime))
+                shutil.move(tmpcf, self.paths.cf)
                 return
-            elif encap_mtime == local_mtime:
-                return
+            finally:
+                try:
+                    os.unlink(tmpcf)
+                except Exception:
+                    pass
 
-        # use a tempory conf staging to not have to care about ns dir create
-        paths = Paths(osvc_root_path=container.osvc_root_path)
-        encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
-        if hasattr(container, 'rcp'):
-            cmd_results = container.rcp(self.paths.cf, encap_cf)
-        else:
-            cmd = Env.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
-            cmd_results = justcall(cmd)
-        if cmd_results[2] != 0:
-            raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
-        self.log.info("send %s to %s", self.paths.cf, container.name)
+        def push_encap_config():
+            """
+            Use a tempory conf staging to not have to care about ns dir create
+            """
+            paths = Paths(osvc_root_path=container.osvc_root_path)
+            encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
+            if hasattr(container, 'rcp'):
+                cmd_results = container.rcp(self.paths.cf, encap_cf)
+            else:
+                cmd = Env.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
+                cmd_results = justcall(cmd)
+            if cmd_results[2] != 0:
+                raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
+            self.log.info("send %s to %s", self.paths.cf, container.name)
 
-        cmd = ["create", "--restore", "--config", encap_cf]
-        try:
-            cmd_results = self._encap_cmd(cmd, container=container, push_config=False, fwd_options=False)
-        except ex.Error:
-            raise ex.Error("failed to create %s slave service" % container.name)
-        self.log.info("create %s slave service", container.name)
+            cmd = ["create", "--restore", "--config", encap_cf]
+            try:
+                cmd_results = self._encap_cmd(cmd, container=container,
+                                              push_config=False, fwd_options=False)
+            except ex.Error:
+                raise ex.Error("failed to create %s slave service" % container.name)
+            self.log.info("create %s slave service", container.name)
+
+        encap_mtime = encap_config_mtime()
+        if encap_mtime is None:
+            return
+
+        local_mtime = os.path.getmtime(self.paths.cf)
+        if encap_mtime == local_mtime:
+            return
+
+        if encap_mtime > local_mtime:
+            pull_encap_config()
+            return
+
+        push_encap_config()
 
     @staticmethod
     def _tag_match(rtags, keeptags):
