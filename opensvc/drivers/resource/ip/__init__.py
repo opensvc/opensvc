@@ -206,6 +206,7 @@ class Ip(Resource):
             }, timeout=left+10)
             if result["status"] == 0:
                 return
+            time.sleep(0.3) # avoid fast-looping the listener
             left = time_max - self._current_time()
         raise ex.Error("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
 
