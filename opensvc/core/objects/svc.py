@@ -4997,14 +4997,12 @@ class Svc(BaseSvc):
             try:
                 cmd_results = self._encap_cmd(cmd, container, push_config=False, fwd_options=False)
                 out = cmd_results[0]
-                ret = cmd_results[2]
-            except (ex.EncapUnjoinable, ex.Error) as exc:
-                out = None
-                ret = 1
+            except ex.Error as exc:
+                return
 
             if out == "":
                 # this is what happens when the container is down
-                return
+                raise ex.EncapUnjoinable
 
             try:
                 return int(float(out.strip()))
@@ -5061,15 +5059,16 @@ class Svc(BaseSvc):
                 raise ex.Error("failed to create %s slave service" % container.name)
             self.log.info("create %s slave service", container.name)
 
-        encap_mtime = encap_config_mtime()
-        if encap_mtime is None:
+        try:
+            encap_mtime = encap_config_mtime()
+        except ex.EncapUnjoinable:
             return
 
         local_mtime = os.path.getmtime(self.paths.cf)
         if encap_mtime == local_mtime:
             return
 
-        if encap_mtime > local_mtime:
+        if encap_mtime and encap_mtime > local_mtime:
             pull_encap_config()
             return
 
