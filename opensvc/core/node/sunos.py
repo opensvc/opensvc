@@ -1,3 +1,5 @@
+import os
+import threading
 import time
 
 from utilities.proc import justcall
@@ -6,6 +8,10 @@ from .node import Node as BaseNode
 
 
 class Node(BaseNode):
+    @staticmethod
+    def get_tid():
+        return "%s.%s" % (os.getpid(), threading.current_thread().ident)
+
     def sys_reboot(self, delay=0):
         if delay:
             self.log.info("sysrq reboot in %s seconds", delay)
