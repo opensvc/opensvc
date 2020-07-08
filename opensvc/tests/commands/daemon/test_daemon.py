@@ -4,9 +4,11 @@ import sys
 import time
 
 import pytest
-import commands.daemon
-from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 
+import commands.daemon
+import core.exceptions as ex
+from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
+from core.node import Node
 from daemon.main import main as daemon_main
 
 
@@ -34,6 +36,21 @@ def daemon_get(mocker):
                                    },
                                    "status": 0
                                })
+
+
+@pytest.fixture(scope='function')
+def daemon_start_native(mocker):
+    return mocker.patch.object(Node, 'daemon_start_native', return_value=None)
+
+
+@pytest.fixture(scope='function')
+def daemon_is_running(mocker):
+    return mocker.patch.object(Node, 'daemon_running', return_value=0)
+
+
+@pytest.fixture(scope='function')
+def daemon_is_not_running(mocker):
+    return mocker.patch.object(Node, 'daemon_running', return_value=1)
 
 
 @pytest.mark.ci
@@ -69,19 +86,19 @@ class TestDaemonLockShow:
         if int(sys.version[0]) > 2:
             expected_output = '''
 name     id                                    requester  requested           
-|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.0323133  
-`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.0423133  
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.0423133  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.0323133  
 
 '''
         else:
             expected_output = '''
-name     id                                    requester  requested     
-|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
-`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
+name     id                                    requester  requested      
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
 
 '''
         with open(tmp_file, 'r') as output_file:
-            '\n' + output_file.read() == expected_output
+            assert '\n' + output_file.read() == expected_output
 
     @staticmethod
     def test_output_with_format_json(daemon_get, capture_stdout, tmp_file):
@@ -189,3 +206,22 @@ class TestNodemgrDaemonActions:
 
         print('daemon is not running...')
         assert commands.daemon.main(argv=["running", "--debug"]) > 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests', 'has_node_config', 'has_euid_0')
+class TestDaemonStart:
+    @staticmethod
+    def test_does_nothing_if_already_started(daemon_is_running, daemon_start_native):
+        assert commands.daemon.main(argv=["start"]) == 0
+        assert daemon_start_native.call_count == 0
+
+    @staticmethod
+    def test_start_native_if_not_yet_running(daemon_is_not_running, daemon_start_native):
+        assert commands.daemon.main(argv=["start"]) == 0
+        assert daemon_start_native.call_count == 1
+
+    @staticmethod
+    def test_return_1_if_errors_during_start_native(daemon_is_not_running, daemon_start_native):
+        daemon_start_native.side_effect = ex.Error
+        assert commands.daemon.main(argv=["start"]) == 1
