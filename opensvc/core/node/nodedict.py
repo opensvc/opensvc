@@ -1004,6 +1004,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "rtype": "freenas",
         "keyword": "insecure_tpc",
+        "convert": "boolean",
         "default": False,
         "text": "Allow initiators to xcopy without authenticating to foreign targets."
     },
@@ -1019,6 +1020,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "rtype": "freenas",
         "keyword": "sparse",
+        "convert": "boolean",
         "default": False,
         "text": "Create zvol in sparse mode."
     },
@@ -1301,7 +1303,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "keyword": "timeout",
         "convert": "duration",
         "example": "10s",
-        "default": 10,
+        "default": 120,
         "text": "The api request timeout."
     },
     {
