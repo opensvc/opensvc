@@ -108,6 +108,11 @@ def refresh_multipath(dev, log=None):
         raise ex.Error
 
 def multipath_flush(dev, log=None):
+    """
+    Settle udev before running a "multipath -f <dev>" to avoid
+    the "in use" error.
+    """
+    udevadm_settle()
     cmd = [Env.syspaths.multipath, "-f", dev]
     ret, out, err = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
