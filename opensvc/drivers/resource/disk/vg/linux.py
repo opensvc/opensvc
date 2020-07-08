@@ -259,13 +259,16 @@ class DiskVg(BaseDisk):
              self.remove_dev_holders(lvdev, tree)
 
     def do_stop(self):
-        if not self.is_up():
-            self.log.info("%s is already down" % self.label)
-            return
-        self.remove_holders()
-        self.remove_tags([self.tag])
-        utilities.devices.linux.udevadm_settle()
-        self.deactivate_vg()
+        need_deactivate = self.is_up()
+        if need_deactivate:
+            self.remove_holders()
+            utilities.devices.linux.udevadm_settle()
+            self.deactivate_vg()
+        need_remove_tag = self.tag in self.get_tags()[self.name]
+        if need_remove_tag:
+            self.remove_tag(self.tag)
+        if not need_deactivate and not need_remove_tag:
+            self.log.info("vg %s is already down", self.name)
 
     @cache("vg.lvs")
     def vg_lvs(self):
