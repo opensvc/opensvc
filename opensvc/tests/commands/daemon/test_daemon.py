@@ -92,7 +92,7 @@ name     id                                    requester  requested
 '''
         else:
             expected_output = '''
-name     id                                    requester  requested     
+name     id                                    requester  requested      
 |- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
 `- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
 
