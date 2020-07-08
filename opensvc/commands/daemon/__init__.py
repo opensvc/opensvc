@@ -1,10 +1,9 @@
 from __future__ import print_function
 
-import os
 import sys
 
-import utilities.render.color
 import core.exceptions as ex
+import utilities.render.color
 from commands.daemon.parser import DaemonOptParser
 from core.node import Node
 
@@ -18,23 +17,21 @@ def _main(node, argv=None):
 
     node.check_privs(action)
 
-    err = 0
     try:
-        err = node.action("daemon_"+action)
+        return node.action("daemon_"+action)
     except KeyboardInterrupt:
-        sys.stderr.write("Keybord Interrupt\n")
-        err = 1
+        sys.stderr.write("Keyboard Interrupt\n")
+        return 1
     except ex.Error:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()
         es = str(exc_value)
         if len(es) > 0:
             sys.stderr.write(str(exc_value)+'\n')
-        err = 1
+        return 1
     except:
         raise
-        err = 1
-    return err
+
 
 def main(argv=None):
     node = Node()
@@ -50,7 +47,7 @@ def main(argv=None):
     finally:
         node.close()
 
+
 if __name__ == "__main__":
     ret = main()
     sys.exit(ret)
-
