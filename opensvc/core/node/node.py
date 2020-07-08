@@ -4335,6 +4335,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_start(self):
         if self.options.thr_id:
             return self.daemon_start_thread()
+        if self.daemon_running() == 0:
+            self.log.info('daemon is already started')
+            return
         if self.options.foreground:
             return self.daemon_start_foreground()
         return self.daemon_start_native()
@@ -4366,9 +4369,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def daemon_running(self):
         if self._daemon_running():
-            return
+            return 0
         else:
-            raise ex.Error
+            return 1
 
     def _daemon_running(self):
         if self.options.thr_id:
