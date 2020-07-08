@@ -143,7 +143,7 @@ class BasePool(object):
                 if mapping["tgt_id"] not in tgts:
                     continue
                 data.append(":".join((mapping["hba_id"], mapping["tgt_id"])))
-        self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), ",".join(data))
+        self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), " ".join(data))
         return data
 
     def disable_sync_internal(self, volume):
