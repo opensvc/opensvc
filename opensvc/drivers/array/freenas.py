@@ -710,6 +710,7 @@ class Freenas(object):
         if id is None:
             raise ex.Error("'id' in mandatory")
         self.delete('/iscsi/targetextent/%d' % id)
+        return data
 
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
