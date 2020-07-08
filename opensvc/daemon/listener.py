@@ -1781,6 +1781,7 @@ class ClientHandler(shared.OsvcThread):
         translate into a method name, and execute this method with options
         passed as keyword args.
         """
+        self.parent.stats.sessions.alive[self.sid]['tid'] = shared.NODE.get_tid()
         if not isinstance(data, dict):
             return {"error": "invalid data format", "status": 1}
         if "action" not in data:
