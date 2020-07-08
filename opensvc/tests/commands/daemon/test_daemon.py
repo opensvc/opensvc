@@ -86,19 +86,19 @@ class TestDaemonLockShow:
         if int(sys.version[0]) > 2:
             expected_output = '''
 name     id                                    requester  requested           
-|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.0323133  
-`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.0423133  
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.0423133  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.0323133  
 
 '''
         else:
             expected_output = '''
 name     id                                    requester  requested     
-|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
-`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
+|- plic  01e4491d-083f-48ba-8cdf-c5c8771e6b99  u2004-1    1593425914.04  
+`- ploc  01e4491d-083f-48ba-8cdf-c5c8771e6b92  u2004-1    1593425914.03  
 
 '''
         with open(tmp_file, 'r') as output_file:
-            '\n' + output_file.read() == expected_output
+            assert '\n' + output_file.read() == expected_output
 
     @staticmethod
     def test_output_with_format_json(daemon_get, capture_stdout, tmp_file):
