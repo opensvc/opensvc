@@ -4,6 +4,7 @@ import sys
 import json
 
 import core.exceptions as ex
+from foreign.six.moves.urllib.parse import quote_plus # pylint: disable=import-error
 from utilities.storage import Storage
 from utilities.naming import factory, split_path
 from utilities.converters import convert_size
@@ -280,7 +281,6 @@ class Freenass(object):
             objects = []
         self.objects = objects
         self.filtering = len(objects) > 0
-        self.timeout = 10
         if node:
             self.node = node
         else:
@@ -340,95 +340,112 @@ class Freenas(object):
                      'iscsi_targettoextents',
                      'iscsi_extents']
 
-    def delete(self, uri, data=None):
-        api = self.api+uri+"/"
+    def delete(self, uri, data=None, timeout=None):
+        timeout = timeout or self.timeout
+        ep = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.delete(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
-        return r
+        try:
+            r = requests.delete(ep, data=data, auth=self.auth, timeout=timeout, verify=VERIFY, headers=headers)
+        except Exception as exc:
+            raise ex.Error("DELETE %s %s => %s" % (ep, data, exc))
+        content = bdecode(r.content)
+        if r.status_code != 200:
+            raise ex.Error("DELETE %s %s => %d: %s" % (ep, data, r.status_code, content))
+        return content
 
-    def put(self, uri, data=None):
-        api = self.api+uri+"/"
+    def put(self, uri, data=None, timeout=None):
+        timeout = timeout or self.timeout
+        ep = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.put(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
-        return bdecode(r.content)
+        try:
+            r = requests.put(ep, data=data, auth=self.auth, timeout=timeout, verify=VERIFY, headers=headers)
+        except Exception as exc:
+            raise ex.Error("PUT %s %s => %s" % (ep, data, exc))
+        content = bdecode(r.content)
+        if r.status_code != 200:
+            raise ex.Error("PUT %s %s => %d: %s" % (ep, data, r.status_code, content))
+        return content
 
-    def post(self, uri, data=None):
-        api = self.api+uri+"/"
+    def post(self, uri, data=None, timeout=None):
+        timeout = timeout or self.timeout
+        ep = self.api+uri+"/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
-        r = requests.post(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY, headers=headers)
-        return bdecode(r.content)
+        try:
+            r = requests.post(ep, data=data, auth=self.auth, timeout=timeout, verify=VERIFY, headers=headers)
+        except Exception as exc:
+            raise ex.Error("POST %s %s => %s" % (ep, data, exc))
+        content = bdecode(r.content)
+        if r.status_code != 200:
+            raise ex.Error("POST %s %s => %d: %s" % (ep, data, r.status_code, content))
+        return content
 
-    def post2(self, uri, data=None):
-        api = self.api.replace("api/v1.0", "")+uri
-        s = requests.Session()
-        r = s.get(api)
-        csrf_token = r.cookies['csrftoken']
-        data["csrfmiddlewaretoken"] = csrf_token
-        if data:
-            data = json.dumps(data)
-        r = requests.post(api, data=data, auth=self.auth, timeout=self.timeout, verify=VERIFY)
-        return bdecode(r.content)
+    def get(self, uri, params=None, timeout=None):
+        timeout = timeout or self.timeout
+        ep = self.api+uri+"/"
+        try:
+            r = requests.get(ep, params=params, auth=self.auth, timeout=timeout, verify=VERIFY)
+        except Exception as exc:
+            raise ex.Error("GET %s %s => %s" % (ep, params, exc))
+        content = bdecode(r.content)
+        if r.status_code != 200:
+            raise ex.Error("GET %s %s => %d: %s" % (ep, params, r.status_code, content))
+        return content
 
-    def get(self, uri, params=None):
-        r = requests.get(self.api+uri+"/?format=json", params=params, auth=self.auth, timeout=self.timeout, verify=VERIFY)
-        return bdecode(r.content)
-
+    # OK
     def get_version(self):
         buff = self.get("/system/version")
         return buff
 
-    def get_volume(self, name):
-        buff = self.get("/storage/volume/%s" % name, {"limit": 0})
-        return buff
-
-    def get_volume_datasets(self, name):
-        buff = self.get("/storage/volume/%s/datasets" % name, {"limit": 0})
-        return buff
-
+    # OK
     def get_volumes(self):
-        buff = self.get("/storage/volume", {"limit": 0})
+        buff = self.get("/pool/dataset", {"limit": 0})
         return buff
 
     def get_iscsi_target_id(self, tgt_id):
-        buff = self.get("/services/iscsi/target/%d" % tgt_id)
+        buff = self.get("/iscsi/target/id/%d" % tgt_id)
         return buff
 
+    # OK
     def get_iscsi_targets(self):
-        buff = self.get("/services/iscsi/target", {"limit": 0})
+        buff = self.get("/iscsi/target", {"limit": 0})
         return buff
 
+    # OK
     def get_iscsi_targettoextents(self):
-        buff = self.get("/services/iscsi/targettoextent", {"limit": 0})
+        buff = self.get("/iscsi/targetextent", {"limit": 0})
         return buff
 
+    # OK
     def get_iscsi_extents(self):
-        buff = self.get("/services/iscsi/extent", {"limit": 0})
+        buff = self.get("/iscsi/extent", {"limit": 0})
         return buff
 
+    # OK
     def get_iscsi_portal(self):
-        buff = self.get("/services/iscsi/portal", {"limit": 0})
+        buff = self.get("/iscsi/portal", {"limit": 0})
         return buff
 
+    # OK
     def get_iscsi_targetgroup(self):
-        buff = self.get("/services/iscsi/targetgroup", {"limit": 0})
+        buff = self.get("/iscsi/target", {"limit": 0})
         return buff
 
     def get_iscsi_targetgroup_id(self, tg_id):
-        buff = self.get("/services/iscsi/targetgroup/%d" % tg_id)
+        buff = self.get("/iscsi/target/id/%d" % tg_id)
         return buff
 
     def get_iscsi_authorizedinitiator(self):
-        buff = self.get("/services/iscsi/authorizedinitiator", {"limit": 0})
+        buff = self.get("/iscsi/initiator", {"limit": 0})
         return buff
 
     def get_iscsi_authorizedinitiator_id(self, initiator_id):
-        buff = self.get("/services/iscsi/authorizedinitiator/%d" % initiator_id)
+        buff = self.get("/iscsi/initiator/id/%d" % initiator_id)
         return buff
 
     def get_iscsi_target_ids(self, target_names):
@@ -436,7 +453,7 @@ class Freenas(object):
         data = json.loads(buff)
         l = []
         for target in data:
-            if target["iscsi_target_name"] in target_names:
+            if target["name"] in target_names:
                 l.append(target["id"])
         return l
 
@@ -445,7 +462,7 @@ class Freenas(object):
         data = json.loads(buff)
         l = []
         for initiator in data:
-            if initiator["iscsi_target_initiator_initiators"] in initiator_names:
+            if initiator["initiators"] in initiator_names:
                 l.append(initiator["id"])
         return l
 
@@ -459,16 +476,14 @@ class Freenas(object):
         if naa and not naa.startswith("0x"):
             naa = "0x" + naa
         for extent in data:
-            if name and name == extent["iscsi_target_extent_name"]:
+            if name and name == extent["name"]:
                 return extent
-            if naa and naa == extent["iscsi_target_extent_naa"]:
+            if naa and naa == extent["naa"]:
                 return extent
 
     def del_iscsi_extent(self, extent_id):
-        path = "/services/iscsi/extent/%d" % extent_id
-        response = self.delete(path)
-        if response.status_code != 204:
-            raise ex.Error("delete error: %s (%d)" % (path, response.status_code))
+        path = "/iscsi/extent/id/%d" % extent_id
+        self.delete(path)
 
     def add_iscsi_zvol_extent(self, name=None, size=None, volume=None,
                               insecure_tpc=True, blocksize=512, sparse=False, compression="inherit", **kwargs):
@@ -477,13 +492,13 @@ class Freenas(object):
                 raise ex.Error("'%s' key is mandatory" % key)
         data = self.add_zvol(name=name, size=size, volume=volume, sparse=sparse, compression=compression, **kwargs)
         d = {
-            "iscsi_target_extent_type": "Disk",
-            "iscsi_target_extent_name": name,
-            "iscsi_target_extent_insecure_tpc": insecure_tpc,
-            "iscsi_target_extent_blocksize": blocksize,
-            "iscsi_target_extent_disk": "zvol/%s/%s" % (volume, name),
+            "type": "DISK",
+            "name": name,
+            "insecure_tpc": insecure_tpc,
+            "blocksize": blocksize,
+            "disk": "zvol/%s/%s" % (volume, name),
         }
-        buff = self.post("/services/iscsi/extent", d)
+        buff = self.post("/iscsi/extent", d)
         data = json.loads(buff)
         return data
 
@@ -493,16 +508,16 @@ class Freenas(object):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
-        size = convert_size(size, _to="MiB")
+        size = convert_size(size, _to="B")
         d = {
-            "iscsi_target_extent_type": "File",
-            "iscsi_target_extent_name": name,
-            "iscsi_target_extent_insecure_tpc": insecure_tpc,
-            "iscsi_target_extent_blocksize": blocksize,
-            "iscsi_target_extent_filesize": str(size)+"MB",
-            "iscsi_target_extent_path": "/mnt/%s/%s" % (volume, name),
+            "type": "FILE",
+            "name": name,
+            "insecure_tpc": insecure_tpc,
+            "blocksize": blocksize,
+            "filesize": size,
+            "path": "/mnt/%s/%s" % (volume, name),
         }
-        buff = self.post("/services/iscsi/extent", d)
+        buff = self.post("/iscsi/extent", d)
         data = json.loads(buff)
         return data
 
@@ -519,24 +534,38 @@ class Freenas(object):
             data.append(self.add_iscsi_target_to_extent(target_id, extent_id, lun=lun))
         return data
 
+    def del_iscsi_targetextent(self, id):
+        buff = self.delete("/iscsi/targetextent/id/%d" % id, data=True)
+        data = json.loads(buff)
+        return data
+
     def add_iscsi_target_to_extent(self, target_id, extent_id, lun=None):
         d = {
-            "iscsi_target": target_id,
-            "iscsi_extent": extent_id,
-            "iscsi_lunid": lun,
+            "target": target_id,
+            "extent": extent_id,
+            "lunid": lun,
         }
-        buff = self.post("/services/iscsi/targettoextent", d)
+        buff = self.post("/iscsi/targetextent", d)
         data = json.loads(buff)
+        return data
+
+    def del_iscsi_targetextent_of_extent(self, extent_id):
+        d = {
+            "extent": extent_id,
+        }
+        buff = self.get("/iscsi/targetextent", d)
+        data = json.loads(buff)
+        for d in data:
+            self.del_iscsi_targetextent(d["id"])
         return data
 
     def del_zvol(self, name=None, volume=None, **kwargs):
         for key in ["name", "volume"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
-        path = '/storage/volume/%s/zvols/%s' % (volume, name)
-        response = self.delete(path)
-        if response.status_code != 204:
-            raise ex.Error("delete error: %s (%d)" % (path, response.status_code))
+        data = self.get_zvol(volume, name)
+        path = '/pool/dataset/id/%s' % quote_plus(data["id"])
+        self.delete(path)
 
     def add_zvol(self, name=None, size=None, volume=None,
                  compression="inherit", dedup="off", sparse=False,
@@ -544,66 +573,82 @@ class Freenas(object):
         for key in ["name", "size", "volume"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
-        size = convert_size(size, _to="MiB")
+        size = convert_size(size, _to="B")
         d = {
-            "name": name,
-            "volsize": str(size)+"MiB",
-            "compression": compression,
+            "name": "%s/%s" % (volume, name),
+            "type": "VOLUME",
+            "volsize": size,
             "sparse": sparse,
-            "dedup": dedup,
+            "deduplication": dedup.upper(),
         }
-        buff = self.post('/storage/volume/%s/zvols/' % volume, d)
+        if compression != "inherit":
+            d["compression"] = compression.upper()
+        buff = self.post('/pool/dataset', d)
         try:
             return json.loads(buff)
         except ValueError:
             raise ex.Error(buff)
 
     def get_zvol(self, volume=None, name=None):
-        buff = self.get('/storage/volume/%s/zvols/%s' % (volume, name))
+        params = {
+            "name": "%s/%s" % (volume, name),
+        }
+        buff = self.get('/pool/dataset', params)
         try:
-            return json.loads(buff)
-        except ValueError:
+            return json.loads(buff)[0]
+        except (IndexError, ValueError):
             raise ex.Error(buff)
 
     def get_aligned_lun(self, target_ids):
         tte_data = json.loads(self.get_iscsi_targettoextents())
-        luns = [d["iscsi_lunid"] for d in tte_data if d["iscsi_target"] in target_ids]
+        luns = [d["lunid"] for d in tte_data if d["target"] in target_ids]
         for lun in range(2^16):
             if luns.count(lun) == 0:
                 return lun
         return
 
+    # OK
     def list_mappings(self, name=None, naa=None, **kwargs):
         tte_data = json.loads(self.get_iscsi_targettoextents())
+        #print("tte_data <%s>"%tte_data)
         if name is not None or naa is not None:
             data = self.get_iscsi_extent(name=name, naa=naa)
             if data is None:
                 raise ex.Error("extent not found")
             extent_id = data["id"]
-            tte_data = [d for d in tte_data if d["iscsi_extent"] == extent_id]
+            tte_data = [d for d in tte_data if d["extent"] == extent_id]
         extent_data = {}
         for d in json.loads(self.get_iscsi_extents()):
             extent_data[d["id"]] = d
+        #print("\nextent_data <%s>"%extent_data)
         target_data = {}
         for d in json.loads(self.get_iscsi_targets()):
             target_data[d["id"]] = d
+        #print("\ntarget_data <%s>"%target_data)
         tg_by_target = {}
         for d in json.loads(self.get_iscsi_targetgroup()):
-            if d["iscsi_target"] in tg_by_target:
-                tg_by_target[d["iscsi_target"]].append(d)
-            else:
-                tg_by_target[d["iscsi_target"]] = [d]
+            tg_by_target[d["id"]] = d["groups"]
+        #print("\ntg_by_target <%s>"%tg_by_target)
         ig_data = {}
         for d in json.loads(self.get_iscsi_authorizedinitiator()):
             ig_data[d["id"]] = d
+        #print("\nig_data <%s>"%ig_data)
         mappings = {}
+        #print("\nSTART LOOP")
         for d in tte_data:
-            disk_id = extent_data[d["iscsi_extent"]]["iscsi_target_extent_naa"].replace("0x", "")
-            for tg in tg_by_target.get(d["iscsi_target"], []):
-                ig_id = tg["iscsi_target_initiatorgroup"]
+            #print("d <%s>"%d)
+            disk_id = extent_data[d["extent"]]["naa"].replace("0x", "")
+            #print("disk_id <%s>"%disk_id)
+            #for tg in tg_by_target.get(d["id"], []):
+            for tg in tg_by_target.get(d["target"], []):
+                #print("current_tg <%s>"%tg)
+                ig_id = tg["initiator"]
                 ig = ig_data[ig_id]
-                for hba_id in ig["iscsi_target_initiator_initiators"].split("\n"):
-                    tgt_id = target_data[tg["iscsi_target"]]["iscsi_target_name"]
+                #print("ig_id <%s>   ig <%s>"%(ig_id, ig))
+                #for hba_id in ig["initiators"].split("\n"):
+                for hba_id in ig["initiators"]:
+                    tgt_id = target_data[d["target"]]["name"]
+                    #tgt_id = "tgtid"
                     mappings[hba_id+":"+tgt_id+":"+disk_id] = {
                        "targetgroup": tg,
                        "extent": d,
@@ -624,9 +669,11 @@ class Freenas(object):
         volume = self.extent_volume(data)
         if volume is None:
             raise ex.Error("volume not found")
+        zvol_data = self.get_zvol(volume=volume, name=data["name"])
+        if zvol_data is None:
+            raise ex.Error("zvol not found")
         if size.startswith("+"):
             incr = convert_size(size.lstrip("+"), _to="MiB")
-            zvol_data = self.get_zvol(volume=volume, name=data["iscsi_target_extent_name"])
             current_size = convert_size(int(zvol_data["volsize"]), _to="MiB")
             size = str(current_size + incr) + "MiB"
         else:
@@ -635,7 +682,7 @@ class Freenas(object):
         d = {
             "volsize": size,
         }
-        buff = self.put('/storage/volume/%s/zvols/%s' % (volume, data["iscsi_target_extent_name"]), d)
+        buff = self.put('/pool/dataset/id/%s' % quote_plus(zvol_data["id"]), d)
         try:
             return json.loads(buff)
         except ValueError:
@@ -653,9 +700,7 @@ class Freenas(object):
     def _del_iscsi_initiatorgroup(self, ig_id=None, **kwargs):
         if ig_id is None:
             raise ex.Error("'id' in mandatory")
-        response = self.delete('/services/iscsi/authorizedinitiator/%d' % ig_id)
-        if response.status_code != 204:
-            raise ex.Error(str(response))
+        self.delete('/iscsi/initiator/%d' % ig_id)
 
     def _del_iscsi_targettoextent(self, id=None, **kwargs):
         try:
@@ -664,15 +709,13 @@ class Freenas(object):
             data = {"error": str(exc)}
         if id is None:
             raise ex.Error("'id' in mandatory")
-        response = self.delete('/services/iscsi/targettoextent/%d' % id)
-        if response.status_code != 204:
-            raise ex.Error(str(response))
+        self.delete('/iscsi/targetextent/%d' % id)
         return data
 
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
             raise ex.Error("'id' in mandatory")
-        content = self.get('/services/iscsi/targettoextent/%d' % id)
+        content = self.get('/iscsi/targetextent/%d' % id)
         try:
             data = json.loads(content)
         except ValueError:
@@ -695,7 +738,7 @@ class Freenas(object):
         if comment:
             d["iscsi_target_initiator_comment"] = comment
 
-        buff = self.post('/services/iscsi/authorizedinitiator/', d)
+        buff = self.post('/iscsi/initiator/', d)
         try:
             return json.loads(buff)
         except ValueError:
@@ -714,9 +757,7 @@ class Freenas(object):
     def _del_iscsi_targetgroup(self, tg_id=None, **kwargs):
         if tg_id is None:
             raise ex.Error("'tg_id' is mandatory")
-        response = self.delete('/services/iscsi/targetgroup/%d' % tg_id)
-        if response.status_code != 204:
-            raise ex.Error(str(response))
+        self.delete('/iscsi/target/%d' % tg_id)
 
     def add_iscsi_targetgroup(self, **kwargs):
         if kwargs.get("portal_id") is None:
@@ -767,14 +808,17 @@ class Freenas(object):
         if authgroup_id:
             d["iscsi_target_authgroup"] = authgroup_id
 
-        buff = self.post('/services/iscsi/targetgroup/', d)
+        buff = self.post('/iscsi/target/', d)
         try:
             return json.loads(buff)
         except ValueError:
             raise ex.Error(buff)
 
     # target
+    # OK
     def del_iscsi_target(self, id=None, **kwargs):
+        if id is None:
+            raise ex.Error("'id' is mandatory")
         content = self.get_iscsi_target_id(id)
         try:
             data = json.loads(content)
@@ -783,28 +827,29 @@ class Freenas(object):
         self._del_iscsi_target(id=id, **kwargs)
         return data
 
+    # OK
     def _del_iscsi_target(self, id=None, **kwargs):
         if id is None:
             raise ex.Error("'id' is mandatory")
-        response = self.delete('/services/iscsi/target/%d' % id)
-        if response.status_code != 204:
-            raise ex.Error(str(response))
+        self.delete('/iscsi/target/id/%d' % id)
 
+    # OK
     def add_iscsi_target(self, **kwargs):
         data = self._add_iscsi_target(**kwargs)
         return data
 
+    # OK
     def _add_iscsi_target(self, name=None, alias=None, **kwargs):
         for key in ["name"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
         d = {
-            "iscsi_target_name": name,
+            "name": name,
         }
         if alias:
-            d["iscsi_target_alias"] = alias
+            d["alias"] = alias
 
-        buff = self.post('/services/iscsi/target/', d)
+        buff = self.post('/iscsi/target/', d)
         try:
             return json.loads(buff)
         except ValueError:
@@ -825,13 +870,14 @@ class Freenas(object):
         data = self.add_iscsi_file_extent(name=name, size=size, volume=volume, **kwargs)
 
         if "id" not in data:
-            if "iscsi_target_extent_name" in data:
-                if isinstance(data["iscsi_target_extent_name"], list):
-                    raise ex.Error("\n".join(data["iscsi_target_extent_name"]))
-                raise ex.Error(data["iscsi_target_extent_name"])
+            if "name" in data:
+                if isinstance(data["name"], list):
+                    raise ex.Error("\n".join(data["name"]))
+                raise ex.Error(data["name"])
             raise ex.Error(str(data))
+
         self.add_iscsi_targets_to_extent(extent_id=data["id"], targets=targets, lun=lun, **kwargs)
-        disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
+        disk_id = data["naa"].replace("0x", "")
         results = {
             "driver_data": data,
             "disk_id": disk_id,
@@ -846,6 +892,7 @@ class Freenas(object):
         data = self.get_iscsi_extent(name=name, naa=naa)
         if data is None:
             return
+        self.del_iscsi_targetextent_of_extent(data["id"])
         self.del_iscsi_extent(data["id"])
         return data
 
@@ -892,7 +939,7 @@ class Freenas(object):
             raise ex.Error("no extent found for disk : %s" % (name))
         results = []
         for mapping in self.split_mappings(mappings):
-            mapping = ":".join(mapping)+":"+extent["iscsi_target_extent_naa"].replace("0x", "")
+            mapping = ":".join(mapping)+":"+extent["naa"].replace("0x", "")
             tg = current_mappings.get(mapping)
             if not tg:
                 continue
@@ -926,10 +973,10 @@ class Freenas(object):
         data = self.add_iscsi_zvol_extent(name=name, size=size, volume=volume, sparse=sparse, **kwargs)
 
         if "id" not in data:
-            if "iscsi_target_extent_name" in data:
-                if isinstance(data["iscsi_target_extent_name"], list):
-                    raise ex.Error("\n".join(data["iscsi_target_extent_name"]))
-                raise ex.Error(data["iscsi_target_extent_name"])
+            if "name" in data:
+                if isinstance(data["name"], list):
+                    raise ex.Error("\n".join(data["name"]))
+                raise ex.Error(data["name"])
             raise ex.Error(str(data))
 
         # mappings
@@ -944,7 +991,7 @@ class Freenas(object):
             self.add_diskinfo(data, size, volume)
         except Exception as exc:
             warnings.append(str(exc))
-        disk_id = data["iscsi_target_extent_naa"].replace("0x", "")
+        disk_id = data["naa"].replace("0x", "")
         results = {
             "driver_data": data,
             "disk_id": disk_id,
@@ -968,13 +1015,14 @@ class Freenas(object):
             except ValueError:
                 raise ex.Error("failed to identify zvol. may be a file ?")
         if data:
+            self.del_iscsi_targetextent_of_extent(data["id"])
             self.del_iscsi_extent(data["id"])
         else:
             data = {}
         self.del_zvol(name=name, volume=volume)
         warnings = []
         try:
-            self.del_diskinfo(data["iscsi_target_extent_naa"].replace("0x", ""))
+            self.del_diskinfo(data["naa"].replace("0x", ""))
         except Exception as exc:
             warnings.append(str(exc))
         if warnings:
@@ -982,7 +1030,7 @@ class Freenas(object):
         return data
 
     def extent_volume(self, data):
-        path = data["iscsi_target_extent_path"].split("/")
+        path = data["path"].split("/")
         volume = path[path.index("zvol")+1]
         return volume
 
@@ -1025,9 +1073,9 @@ class Freenas(object):
             return
         try:
             result = self.node.collector_rest_post("/disks", {
-                "disk_id": data["iscsi_target_extent_naa"].replace("0x", ""),
+                "disk_id": data["naa"].replace("0x", ""),
                 "disk_devid": data["id"],
-                "disk_name": data["iscsi_target_extent_name"],
+                "disk_name": data["name"],
                 "disk_size": convert_size(size, _to="MB"),
                 "disk_alloc": 0,
                 "disk_arrayid": self.name,
