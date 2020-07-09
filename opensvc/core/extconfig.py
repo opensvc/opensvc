@@ -21,6 +21,13 @@ from utilities.string import is_string, try_decode
 
 SECRETS = []
 
+DEFER = [
+    "exposed_devs",
+    "sub_devs",
+    "base_devs",
+    "mnt",
+]
+
 # supported operators in arithmetic expressions
 operators = {
     ast.Add: op.add,
@@ -712,7 +719,7 @@ class ExtConfigMixin(object):
                 try:
                     return val[index]
                 except IndexError:
-                    if _v is not None and _v in ("exposed_devs", "sub_devs", "base_devs"):
+                    if _v is not None and _v in DEFER:
                         return
                     return ""
 
@@ -749,14 +756,18 @@ class ExtConfigMixin(object):
 
         # deferrable refs
         if hasattr(self, "path"):
-            for dref in ("exposed_devs", "base_devs", "sub_devs"):
+            for dref in DEFER:
                 if _v != dref:
                     continue
                 try:
                     self.init_resources()
                     res = self.resources_by_id[_section]
-                    devs = getattr(res, dref)()
-                    return list(devs)
+                    fn = getattr(res, dref)
+                    result = fn()
+                    if isinstance(result, set):
+                        return list(result)
+                    else:
+                        return result
                 except Exception as exc:
                     return
 
