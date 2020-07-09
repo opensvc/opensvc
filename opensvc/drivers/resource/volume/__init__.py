@@ -219,6 +219,13 @@ class Volume(Resource):
     def mount_point(self):
         return self.volsvc.mount_point()
 
+    def mnt(self):
+        """
+        Expose the mount_point lazy as a callable for the '<volrid>.mnt'
+        reference.
+        """
+        return self.mount_point
+
     @lazy
     def device(self):
         return self.volsvc.device()
