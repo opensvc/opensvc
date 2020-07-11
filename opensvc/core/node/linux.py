@@ -129,6 +129,12 @@ class Node(BaseNode):
             for line in out.splitlines():
                 self.log.info(line)
 
+    def mac_from_ip(self, ip):
+        mac = "0a:58"
+        for i in ip.split("/", 1)[0].split("."):
+            mac += ":%.2x" % int(i)
+        return mac
+
     def network_bridge_add(self, name, ip):
         cmd = ["ip", "link", "show", name]
         _, _, ret = justcall(cmd)
@@ -142,6 +148,10 @@ class Node(BaseNode):
             self.vcall(cmd)
         cmd = ["ip", "link", "show", "dev", name]
         out, _, _ = justcall(cmd)
+        mac = self.mac_from_ip(ip)
+        if mac not in out:
+            cmd = ["ip", "link", "set", "dev", name, "address", self.mac_from_ip(ip)]
+            self.vcall(cmd)
         if "DOWN" in out:
             cmd = ["ip", "link", "set", "dev", name, "up"]
             self.vcall(cmd)
