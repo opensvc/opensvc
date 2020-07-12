@@ -558,11 +558,15 @@ class ContainerDocker(BaseContainer):
 
     @lazy
     def registry_creds_path(self):
+        if not self.registry_creds:
+            return
         var_d = svc_pathvar(self.registry_creds_sec.path)
         return os.path.join(var_d, "registry_creds", "config.json")
 
     @lazy
     def registry_creds_sec(self):
+        if not self.registry_creds:
+            return
         return factory("sec")(self.registry_creds, namespace=self.svc.namespace, volatile=True)
 
     def docker(self, action):
