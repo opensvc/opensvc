@@ -580,6 +580,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self._shutdown = False
         self.compat = True
         self.last_node_data = None
+        self.init_steps = set()
 
     def init(self):
         self.set_tid()
@@ -1252,6 +1253,19 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except Exception as exc:
                 pass
 
+    def init_steps_done(self):
+        """
+        Return true if both boot and status commands are finished.
+        Used to determine if we can run service_status() from the monitor loop.
+        """
+        return len(self.init_steps) == 2
+
+    def add_init_step(self, step):
+        """
+        Used as a callback of initial boot and status commands.
+        """
+        self.init_steps.add(step)
+
     def services_init_status(self):
         svcs = list_services()
         if not svcs:
@@ -1259,14 +1273,34 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
         self.services_purge_status(paths=svcs)
         proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
-        self.push_proc(proc=proc)
+        self.add_init_step("boot")
+        self.push_proc(
+            proc=proc,
+            cmd="init status",
+            on_success="add_init_step",
+            on_success_args=["status"],
+            on_error="add_init_step",
+            on_error_args=["status"],
+        )
 
     def services_init_boot(self):
         self.services_purge_status()
         proc1 = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
-        self.push_proc(proc=proc1)
+        self.push_proc(
+            proc=proc1,
+            on_success="add_init_step",
+            on_success_args=["boot"],
+            on_error="add_init_step",
+            on_error_args=["boot"],
+        )
         proc2 = self.service_command(",".join(list_services(kinds=["usr", "cfg", "sec", "ccfg"])), ["status", "--parallel", "--refresh"], local=False)
-        self.push_proc(proc=proc2)
+        self.push_proc(
+            proc=proc2,
+            on_success="add_init_step",
+            on_success_args=["status"],
+            on_error="add_init_step",
+            on_error_args=["status"],
+        )
 
 
     #########################################################################
@@ -3226,7 +3260,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if idata:
                 data[path] = idata
             else:
-                self.service_status(path)
+                if self.init_steps_done():
+                    self.service_status(path)
                 continue
 
             # update the frozen instance attribute
