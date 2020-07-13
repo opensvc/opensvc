@@ -2312,7 +2312,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def unset_all_lazy(self):
         self.clear_ref_cache()
         self.init_nodes()
-        unset_all_lazy(self)
+        if self.volatile:
+            exclude = ["cd"]
+        else:
+            exclude = []
+        unset_all_lazy(self, exclude=exclude)
         for res in self.resources_by_id.values():
             unset_all_lazy(res)
 
