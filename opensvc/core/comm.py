@@ -1050,7 +1050,7 @@ class Crypt(object):
         """
         def _fmt(_data, key, node=None):
             _buff = ""
-            if not isinstance(data, dict):
+            if not data or not isinstance(data, dict):
                 return _buff
             entries = _data.get(key, [])
             if not isinstance(entries, (list, tuple, set)):
