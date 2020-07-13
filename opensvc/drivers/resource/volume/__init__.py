@@ -15,7 +15,7 @@ from utilities.files import makedirs
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.string import is_string, is_glob
+from utilities.string import is_glob
 
 DRIVER_GROUP = "volume"
 DRIVER_BASENAME = None
@@ -213,7 +213,15 @@ class Volume(Resource):
 
     @lazy
     def volsvc(self):
-        return factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        if not volume.exists():
+            volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, volatile=True)
+            try:
+                volume = self._configure_volume(volume)
+            except Exception as exc:
+                import traceback
+                traceback.print_exc()
+        return volume
 
     @lazy
     def mount_point(self):
@@ -591,6 +599,9 @@ class Volume(Resource):
                         self.volname, self.pool, self.pooltype, self.access,
                         print_size(self.size, unit="B", compact=True),
                         self.format, self.shared)
+        return self._configure_volume(volume)
+
+    def _configure_volume(self, volume):
         pool = self.svc.node.find_pool(poolname=self.pool,
                                        pooltype=self.pooltype,
                                        access=self.access,
@@ -604,26 +615,11 @@ class Volume(Resource):
             nodes = self.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
-        env = {}
-        for mapping in pool.volume_env:
-            try:
-                src, dst = mapping.split(":", 1)
-            except Exception:
-                continue
-            args = src.split(".", 1)
-            val = self.svc.oget(*args)
-            if val is None:
-                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
-            if is_string(val) and ".." in val:
-                raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
-            env[dst] = val
-        pool.configure_volume(volume,
-                              fmt=self.format,
-                              size=self.size,
-                              access=self.access,
-                              nodes=nodes,
-                              shared=self.shared,
-                              env=env)
-        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        volume = pool.configure_volume(volume,
+                                       fmt=self.format,
+                                       size=self.size,
+                                       access=self.access,
+                                       nodes=nodes,
+                                       shared=self.shared)
         return volume
 
