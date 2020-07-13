@@ -676,7 +676,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         shared.NODE.unset_lazy("labels")
         shared.CLUSTER_DATA[Env.nodename]["labels"] = shared.NODE.labels
         self.on_nodes_info_change()
-        for path in shared.SERVICES:
+        for path in [p for p in shared.SERVICES]:
             try:
                 name, namespace, kind = split_path(path)
                 svc = factory(kind)(name, namespace, node=shared.NODE)
