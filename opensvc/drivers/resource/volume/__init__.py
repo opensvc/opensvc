@@ -15,7 +15,7 @@ from utilities.files import makedirs
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.string import is_glob
+from utilities.string import is_glob, is_string
 
 DRIVER_GROUP = "volume"
 DRIVER_BASENAME = None
@@ -601,6 +601,22 @@ class Volume(Resource):
                         self.format, self.shared)
         return self._configure_volume(volume)
 
+    def volume_env_data(self, pool):
+        env = {}
+        for mapping in pool.volume_env:
+            try:
+                src, dst = mapping.split(":", 1)
+            except Exception:
+                continue
+            args = src.split(".", 1)
+            val = self.svc.oget(*args)
+            if val is None:
+                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
+            if is_string(val) and ".." in val:
+                raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
+            env[dst] = val
+        return env
+
     def _configure_volume(self, volume):
         pool = self.svc.node.find_pool(poolname=self.pool,
                                        pooltype=self.pooltype,
@@ -615,11 +631,13 @@ class Volume(Resource):
             nodes = self.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
+        env = self.volume_env_data(pool)
         volume = pool.configure_volume(volume,
                                        fmt=self.format,
                                        size=self.size,
                                        access=self.access,
                                        nodes=nodes,
-                                       shared=self.shared)
+                                       shared=self.shared,
+                                       env=env)
         return volume
 
