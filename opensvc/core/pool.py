@@ -6,7 +6,6 @@ import core.exceptions as ex
 from utilities.naming import factory
 from utilities.lazy import lazy
 from utilities.converters import convert_size
-from utilities.string import is_string
 
 class BasePool(object):
     type = None
@@ -23,22 +22,6 @@ class BasePool(object):
     @lazy
     def volume_env(self):
         return []
-
-    def volume_env_data(self):
-        env = {}
-        for mapping in self.volume_env:
-            try:
-                src, dst = mapping.split(":", 1)
-            except Exception:
-                continue
-            args = src.split(".", 1)
-            val = self.svc.oget(*args)
-            if val is None:
-                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
-            if is_string(val) and ".." in val:
-                raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
-            env[dst] = val
-        return env
 
     @lazy
     def array(self):
@@ -85,9 +68,6 @@ class BasePool(object):
         )
 
     def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None, env=None):
-        env_data = self.volume_env_data()
-        if env:
-            env_data.update(env)
         name = self.default_disk_name(volume)
         data = self.translate(name=name, size=size, fmt=fmt, shared=shared)
         defaults = {
@@ -104,8 +84,8 @@ class BasePool(object):
         if self.status_schedule is not None:
             defaults["status_schedule"] = self.status_schedule
         data.append(defaults)
-        if env_data:
-            data.append(env_data)
+        if env:
+            data.append(env)
         volume._update(data)
         self.disable_sync_internal(volume)
         if volume.volatile:
