@@ -209,7 +209,6 @@ class DiskDrbd(Resource):
     def files_to_sync(self):
         if os.path.exists(self.cf):
             return [self.cf]
-        self.log.error("%s does not exist", self.cf)
         return []
 
     def drbdadm_cmd(self, cmd):
