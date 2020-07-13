@@ -1761,7 +1761,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         The 'print config' action entry point.
         Print the service configuration in the format specified by --format.
         """
-        if want_context() or not os.path.exists(self.paths.cf):
+        if want_context() or (not self.cd and not os.path.exists(self.paths.cf)):
             buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.Error("could not fetch remote config")
