@@ -358,11 +358,28 @@ class BaseFs(Resource):
         return False
 
     def check_writable(self):
-        if self.testfile is None:
-            return True
         if not self.can_check_writable():
             return False
+        try:
+            return self.check_writable_xattr()
+        except Exception:
+            return self.check_writable_file()
 
+    def check_writable_xattr(self):
+        try:
+            os.setxattr(self.mount_point, "user.opensvc", str(time.time()).encode())
+            return True
+        except IOError as exc:
+            if exc.errno == 28:
+                self.log.error('No space left on device. Invalidate writable test.')
+                return True
+            return False
+        except (AttributeError, Exception):
+            raise
+
+    def check_writable_file(self):
+        if self.testfile is None:
+            return True
         try:
             f = open(self.testfile, 'w')
             f.write(' ')
