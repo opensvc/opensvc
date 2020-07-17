@@ -104,7 +104,7 @@ class Pool(BasePool):
         return data
 
     def get_targets(self):
-        return [tgt["iscsi_target_name"] for tgt in self.array.list_iscsi_target()]
+        return [tgt["name"] for tgt in self.array.list_iscsi_target()]
 
     def get_mappings(self, nodes):
         return self._get_mappings(nodes, transport="iscsi")

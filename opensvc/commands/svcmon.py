@@ -32,9 +32,9 @@ def setup_parser(node):
         "\n" \
         "Flags:\n" \
         "  O  up\n" \
-        "  o  stdby up\n" \
+        "  S  stdby up\n" \
         "  X  down\n" \
-        "  x  stdby down\n" \
+        "  s  stdby down\n" \
         "  !  warn\n" \
         "  P  unprovisioned\n" \
         "  *  frozen\n" \
