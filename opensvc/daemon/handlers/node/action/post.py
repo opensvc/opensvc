@@ -3,9 +3,10 @@ from copy import deepcopy
 from subprocess import Popen, PIPE
 
 import daemon.handler
+from daemon.handler_action_helper import get_action_args_from_parser
 from env import Env
-from utilities.proc import drop_option
 from utilities.string import bdecode
+
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -87,35 +88,7 @@ class Handler(daemon.handler.BaseHandler):
             action = options.action
             from commands.node.parser import OPT
 
-        def find_opt(opt):
-            for k, o in OPT.items():
-                if o.dest == opt:
-                    return o
-                if o.dest == "parm_" + opt:
-                    return o
-
-        cmd = [action]
-        for opt, val in options.options.items():
-            po = find_opt(opt)
-            if po is None:
-                continue
-            if val == po.default:
-                continue
-            if val is None:
-                continue
-            opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
-            if po.action == "append":
-                cmd += [opt + "=" + str(v) for v in val]
-            elif po.action == "store_true" and val:
-                cmd.append(opt)
-            elif po.action == "store_false" and not val:
-                cmd.append(opt)
-            elif po.type == "string":
-                opt += "=" + val
-                cmd.append(opt)
-            elif po.type == "integer":
-                opt += "=" + str(val)
-                cmd.append(opt)
+        cmd = get_action_args_from_parser(OPT, action, options)
         fullcmd = Env.om + [subsystem] + cmd
 
         thr.log_request("run 'om %s %s'" % (subsystem, " ".join(cmd)), nodename, **kwargs)
@@ -148,4 +121,3 @@ class Handler(daemon.handler.BaseHandler):
                 "info": "started node action %s" % " ".join(cmd),
             }
         return result
-
