@@ -264,7 +264,10 @@ class DiskVg(BaseDisk):
             self.remove_holders()
             utilities.devices.linux.udevadm_settle()
             self.deactivate_vg()
-        need_remove_tag = self.tag in self.get_tags()[self.name]
+        try:
+            need_remove_tag = self.tag in self.get_tags()[self.name]
+        except KeyError:
+            need_remove_tag = False
         if need_remove_tag:
             self.remove_tag(self.tag)
         if not need_deactivate and not need_remove_tag:
