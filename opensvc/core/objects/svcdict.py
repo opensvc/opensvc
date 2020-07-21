@@ -205,6 +205,13 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
+        "keyword": "registry_creds",
+        "at": True,
+        "text": "The name of a secret in the same namespace having a config.json key which value is used to login to the container image registry. If not specified, the node-level registry credential store is used.",
+        "example": "creds-registry-opensvc-com"
+    },
+    {
+        "section": "DEFAULT",
         "keyword": "access",
         "inheritance": "head",
         "depends": [("kind", "vol")],
