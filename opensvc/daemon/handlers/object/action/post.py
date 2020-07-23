@@ -235,10 +235,19 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                     },
                 }
         else:
-            proc = Popen(fullcmd, stdin=None, close_fds=True)
+            import uuid
+            session_id = str(uuid.uuid4())
+            env = {}
+            env.update(os.environ)
+            env["OSVC_PARENT_SESSION_UUID"] = session_id
+            proc = Popen(fullcmd, stdin=None, close_fds=True, env=env)
             thr.push_proc(proc)
             result = {
                 "status": 0,
+                "data": {
+                    "pid": proc.pid,
+                    "session_id": session_id,
+                },
                 "info": "started %s action %s" % (options.path, " ".join(cmd)),
             }
         return result
