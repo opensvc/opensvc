@@ -4102,7 +4102,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     continue
 
         data = self.daemon_get(
-            {"action": "daemon_relay_status"},
+            {"action": "relay_status"},
             server=self.options.server,
             secret=secret,
             cluster_name=cluster_name,
