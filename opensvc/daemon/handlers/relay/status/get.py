@@ -7,6 +7,7 @@ class Handler(daemon.handler.BaseHandler):
     """
     routes = (
         ("GET", "relay_status"),
+        ("GET", "daemon_relay_status"),
         (None, "daemon_relay_status"),
     )
     prototype = []
