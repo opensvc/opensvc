@@ -780,7 +780,7 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "text": "Should a split segment of the cluster commit suicide. Default is False. If set to ``true``, please set at least 2 arbitrators so you can rolling upgrade the opensvc daemons."
     },
     {
-        "section": "cluster",
+        "section": "node",
         "keyword": "split_action",
         "candidates": ["crash", "reboot"],
         "default": "crash",
