@@ -1724,6 +1724,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if ret != 0:
             raise ex.Error((ret, out, err))
 
+    def suicide(self, method, delay=0):
+        self.log.info('node commit suicide in %s seconds using method %s', delay, method)
+        _suicide = {
+            "crash": self.sys_crash,
+            "reboot": self.sys_reboot,
+        }.get(method)
+        if _suicide:
+            _suicide(delay)
+        else:
+            self.log.warning("invalid commit suicide method %s", method)
+
     def sys_reboot(self, delay=0):
         pass
 
