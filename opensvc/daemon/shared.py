@@ -822,7 +822,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     @lazy
     def split_action(self):
-        return NODE.oget("cluster", "split_action")
+        return NODE.oget("node", "split_action")
 
     @lazy
     def maintenance_grace_period(self):
