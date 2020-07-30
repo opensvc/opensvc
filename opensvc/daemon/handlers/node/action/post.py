@@ -55,7 +55,7 @@ class Handler(daemon.handler.BaseHandler):
             }
 
         for opt in ("node", "server", "daemon"):
-            if opt in options.options:
+            if opt in options.options and options.action not in ("daemon_join", "daemon_rejoin"):
                 del options.options[opt]
         if options.action_mode and options.options.get("local"):
             if "local" in options.options:
