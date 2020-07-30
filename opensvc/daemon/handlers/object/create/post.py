@@ -37,7 +37,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
         },
         {
             "name": "data",
-            "desc": "The dictionnary of object configurations, indexed by object path.",
+            "desc": "The dictionnary of object configurations, indexed by object path. If template is set, the data option can be used to pass env section overrides. Examples: {'k': 'v'} or {'env': {'k': 'v'}} or {'ns1/svc/svc1': {'k': 'v'}} or {'ns1/svc/svc1': {'env': {'k': 'v'}}}",
             "required": False,
             "format": "dict",
             "default": {},
