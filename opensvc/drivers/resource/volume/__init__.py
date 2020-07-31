@@ -15,7 +15,7 @@ from utilities.files import makedirs
 from utilities.lazy import lazy
 from core.resource import Resource
 from core.objects.svcdict import KEYS
-from utilities.string import is_string, is_glob
+from utilities.string import is_glob, is_string
 
 DRIVER_GROUP = "volume"
 DRIVER_BASENAME = None
@@ -213,11 +213,26 @@ class Volume(Resource):
 
     @lazy
     def volsvc(self):
-        return factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        if not volume.exists():
+            volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, volatile=True)
+            try:
+                volume = self._configure_volume(volume)
+            except Exception as exc:
+                import traceback
+                traceback.print_exc()
+        return volume
 
     @lazy
     def mount_point(self):
         return self.volsvc.mount_point()
+
+    def mnt(self):
+        """
+        Expose the mount_point lazy as a callable for the '<volrid>.mnt'
+        reference.
+        """
+        return self.mount_point
 
     @lazy
     def device(self):
@@ -584,19 +599,9 @@ class Volume(Resource):
                         self.volname, self.pool, self.pooltype, self.access,
                         print_size(self.size, unit="B", compact=True),
                         self.format, self.shared)
-        pool = self.svc.node.find_pool(poolname=self.pool,
-                                       pooltype=self.pooltype,
-                                       access=self.access,
-                                       size=self.size,
-                                       fmt=self.format,
-                                       shared=self.shared)
-        if pool is None:
-            raise ex.Error("could not find a pool matching criteria")
-        pool.log = self.log
-        try:
-            nodes = self.svc._get("DEFAULT.nodes")
-        except ex.OptNotFound:
-            nodes = None
+        return self._configure_volume(volume)
+
+    def volume_env_data(self, pool):
         env = {}
         for mapping in pool.volume_env:
             try:
@@ -610,13 +615,29 @@ class Volume(Resource):
             if is_string(val) and ".." in val:
                 raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
-        pool.configure_volume(volume,
-                              fmt=self.format,
-                              size=self.size,
-                              access=self.access,
-                              nodes=nodes,
-                              shared=self.shared,
-                              env=env)
-        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        return env
+
+    def _configure_volume(self, volume):
+        pool = self.svc.node.find_pool(poolname=self.pool,
+                                       pooltype=self.pooltype,
+                                       access=self.access,
+                                       size=self.size,
+                                       fmt=self.format,
+                                       shared=self.shared)
+        if pool is None:
+            raise ex.Error("could not find a pool matching criteria")
+        pool.log = self.log
+        try:
+            nodes = self.svc._get("DEFAULT.nodes")
+        except ex.OptNotFound:
+            nodes = None
+        env = self.volume_env_data(pool)
+        volume = pool.configure_volume(volume,
+                                       fmt=self.format,
+                                       size=self.size,
+                                       access=self.access,
+                                       nodes=nodes,
+                                       shared=self.shared,
+                                       env=env)
         return volume
 

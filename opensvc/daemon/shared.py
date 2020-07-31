@@ -491,6 +491,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.event("node_config_change")
         unset_lazy(self, "config")
         unset_lazy(self, "quorum")
+        unset_lazy(self, "split_action")
         unset_lazy(self, "vip")
         unset_lazy(NODE, "arbitrators")
         unset_lazy(self, "cluster_name")
@@ -820,6 +821,10 @@ class OsvcThread(threading.Thread, Crypt):
         return NODE.oget("cluster", "quorum")
 
     @lazy
+    def split_action(self):
+        return NODE.oget("node", "split_action")
+
+    @lazy
     def maintenance_grace_period(self):
         return NODE.oget("node", "maintenance_grace_period")
 
@@ -847,6 +852,14 @@ class OsvcThread(threading.Thread, Crypt):
                 votes.append(arbitrator["name"])
         return votes
 
+    @staticmethod
+    def live_nodes_count():
+        return len(CLUSTER_DATA)
+
+    @staticmethod
+    def arbitrators_config_count():
+        return len(NODE.arbitrators)
+
     def split_handler(self):
         if not self.quorum:
             self.duplog("info",
@@ -858,8 +871,8 @@ class OsvcThread(threading.Thread, Crypt):
                         "cluster is split, ignore as the node is frozen",
                         msgid="quorum disabled")
             return
-        total = len(self.cluster_nodes) + len(NODE.arbitrators)
-        live = len(CLUSTER_DATA)
+        total = len(self.cluster_nodes) + self.arbitrators_config_count()
+        live = self.live_nodes_count()
         extra_votes = self.arbitrators_votes()
         n_extra_votes = len(extra_votes)
         if live + n_extra_votes > total / 2:
@@ -868,7 +881,7 @@ class OsvcThread(threading.Thread, Crypt):
                         live=live, avote=n_extra_votes, total=total,
                         a=",".join(extra_votes))
             return
-        self.event("crash", {
+        self.event(self.split_action, {
             "reason": "split",
             "node_votes": live,
             "arbitrator_votes": n_extra_votes,
@@ -876,7 +889,7 @@ class OsvcThread(threading.Thread, Crypt):
             "pro_voters": [nod for nod in CLUSTER_DATA] + extra_votes,
         })
         # give a little time for log flush
-        NODE.sys_crash(delay=2)
+        NODE.suicide(method=self.split_action, delay=2)
 
     def forget_peer_data(self, nodename, change=False):
         """

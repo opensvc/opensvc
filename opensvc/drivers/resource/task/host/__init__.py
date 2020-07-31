@@ -5,6 +5,8 @@ import core.exceptions as ex
 from .. import BaseTask, KEYWORDS as BASE_KEYWORDS
 from env import Env
 from core.objects.svcdict import KEYS
+from drivers.resource.app import preexec
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "host"
@@ -40,6 +42,72 @@ KEYWORDS = BASE_KEYWORDS + [
         "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
+    {
+        "keyword": "limit_as",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_cpu",
+        "convert": "duration",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_core",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_data",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_fsize",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_memlock",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_nofile",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_nproc",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_rss",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_stack",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
+    {
+        "keyword": "limit_vmem",
+        "convert": "size",
+        "at": True,
+        "text": ""
+    },
 ]
 
 KEYS.register_driver(
@@ -50,7 +118,8 @@ KEYS.register_driver(
 )
 
 
-def run_as_popen_kwargs(user):
+def run_as_popen_kwargs(user, limits=None):
+    limits = limits or {}
     if Env.sysname == "Windows":
         return {}
     if user is None:
@@ -70,25 +139,39 @@ def run_as_popen_kwargs(user):
     env['LOGNAME']  = user_name
     env['PWD']  = cwd
     env['USER']  = user_name
-    return {'preexec_fn': demote(user_uid, user_gid), 'cwd': cwd, 'env': env}
-
-def demote(user_uid, user_gid):
-    def result():
-        os.setgid(user_gid)
-        os.setuid(user_uid)
-    return result
+    return {'preexec_fn': preexec(user_uid, user_gid, limits), 'cwd': cwd, 'env': env}
 
 class TaskHost(BaseTask):
     def __init__(self, *args, **kwargs):
         kwargs["type"] = "task.host"
         BaseTask.__init__(self, *args, **kwargs)
 
+    @lazy
+    def limits(self):
+        data = {}
+        try:
+            import resource
+        except ImportError:
+            return data
+        for key in ("as", "cpu", "core", "data", "fsize", "memlock", "nofile", "nproc", "rss", "stack", "vmem"):
+            try:
+                data[key] = self.conf_get("limit_"+key)
+            except ex.OptNotFound:
+                continue
+            rlim = getattr(resource, "RLIMIT_"+key.upper())
+            _vs, _vg = resource.getrlimit(rlim)
+            if data[key] > _vs:
+                if data[key] > _vg:
+                    _vg = data[key]
+                resource.setrlimit(rlim, (data[key], _vg))
+        return data
+
     def _run_call(self):
         kwargs = {
             'timeout': self.timeout,
             'blocking': True,
         }
-        kwargs.update(run_as_popen_kwargs(self.user))
+        kwargs.update(run_as_popen_kwargs(self.user, self.limits))
         if self.configs_environment or self.secrets_environment:
             if "env" not in kwargs:
                 kwargs["env"] = {}

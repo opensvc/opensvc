@@ -1614,9 +1614,18 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return rid
 
     def update(self):
-        return self._update(self.options.resource,
-                            interactive=self.options.interactive,
-                            provision=self.options.provision)
+        result = self._update(self.options.resource,
+                              interactive=self.options.interactive,
+                              provision=self.options.provision)
+        buff = " "
+        if result["created"]:
+            buff += "created: %s" % ",".join(result["created"])
+        if result["updated"]:
+            if buff:
+                buff += " "
+            buff += "updated: %s" % ",".join(result["updated"])
+        if buff:
+            self.log.info("%s", buff)
 
     def _update(self, resources, interactive=False, provision=False):
         """
@@ -1625,6 +1634,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         instructed to do so.
         """
 
+        result = {
+            "created": [],
+            "updated": [],
+        }
         rtypes = {}
         for section in self.cd:
             elements = section.split('#')
@@ -1651,28 +1664,34 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 del data['rid']
                 if section in self.cd:
                     self.cd[section].update(data)
+                    result["updated"].append(section)
                 else:
                     self.cd[section] = data
+                    result["created"].append(section)
                 is_resource = True
             elif 'rtype' in data and data["rtype"] == "env":
                 del data["rtype"]
                 if "env" in self.cd:
                     self.cd["env"].update(data)
+                    result["updated"].append("env")
                 else:
                     self.cd["env"] = data
+                    result["created"].append("env")
             elif 'rtype' in data and data["rtype"] != "DEFAULT":
                 section = self.allocate_rid(data['rtype'], self.cd)
-                self.log.info("allocated rid %s" % section)
                 del data['rtype']
                 self.cd[section] = data
+                result["created"].append(section)
                 is_resource = True
             else:
                 if "rtype" in data:
                     del data["rtype"]
                 if "DEFAULT" in self.cd:
                     self.cd["DEFAULT"].update(data)
+                    result["updated"].append("DEFAULT")
                 else:
                     self.cd["DEFAULT"] = data
+                    result["created"].append("DEFAULT")
 
             if is_resource:
                 rid.append(section)
@@ -1687,6 +1706,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
             options = Storage(self.options)
             options.rid = rid
             self.action("provision", options)
+
+        return result
 
     def allow_on_this_node(self, action):
         """
@@ -1740,7 +1761,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         The 'print config' action entry point.
         Print the service configuration in the format specified by --format.
         """
-        if want_context() or not os.path.exists(self.paths.cf):
+        if want_context() or (not self.cd and not os.path.exists(self.paths.cf)):
             buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.Error("could not fetch remote config")
@@ -2291,7 +2312,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def unset_all_lazy(self):
         self.clear_ref_cache()
         self.init_nodes()
-        unset_all_lazy(self)
+        if self.volatile:
+            exclude = ["cd"]
+        else:
+            exclude = []
+        unset_all_lazy(self, exclude=exclude)
         for res in self.resources_by_id.values():
             unset_all_lazy(res)
 

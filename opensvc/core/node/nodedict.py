@@ -780,6 +780,16 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "text": "Should a split segment of the cluster commit suicide. Default is False. If set to ``true``, please set at least 2 arbitrators so you can rolling upgrade the opensvc daemons."
     },
     {
+        "section": "node",
+        "keyword": "split_action",
+        "candidates": ["crash", "reboot"],
+        "default": "crash",
+        "text": "Commit suicide method when cluster split occur."
+                " Default is crash."
+                " reboot method may be used instead of crash when it is not"
+                " simple to poweron node after crash."
+    },
+    {
         "section": "arbitrator",
         "keyword": "name",
         "required": True,
@@ -1004,6 +1014,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "rtype": "freenas",
         "keyword": "insecure_tpc",
+        "convert": "boolean",
         "default": False,
         "text": "Allow initiators to xcopy without authenticating to foreign targets."
     },
@@ -1019,6 +1030,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "rtype": "freenas",
         "keyword": "sparse",
+        "convert": "boolean",
         "default": False,
         "text": "Create zvol in sparse mode."
     },
@@ -1301,7 +1313,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "keyword": "timeout",
         "convert": "duration",
         "example": "10s",
-        "default": 10,
+        "default": 120,
         "text": "The api request timeout."
     },
     {

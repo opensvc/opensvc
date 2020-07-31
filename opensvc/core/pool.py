@@ -84,8 +84,13 @@ class BasePool(object):
         if self.status_schedule is not None:
             defaults["status_schedule"] = self.status_schedule
         data.append(defaults)
+        if env:
+            data.append(env)
         volume._update(data)
         self.disable_sync_internal(volume)
+        if volume.volatile:
+            return volume
+        return factory("vol")(name=volume.name, namespace=volume.namespace, node=self.node, volatile=volume.volatile)
 
     def pool_status(self):
         pass
@@ -143,7 +148,7 @@ class BasePool(object):
                 if mapping["tgt_id"] not in tgts:
                     continue
                 data.append(":".join((mapping["hba_id"], mapping["tgt_id"])))
-        self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), ",".join(data))
+        self.log.info("mappings for nodes %s: %s", ",".join(sorted(list(nodes))), " ".join(data))
         return data
 
     def disable_sync_internal(self, volume):

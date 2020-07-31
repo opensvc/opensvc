@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from subprocess import Popen, PIPE
 
 import daemon.handler
@@ -54,7 +55,7 @@ class Handler(daemon.handler.BaseHandler):
             }
 
         for opt in ("node", "server", "daemon"):
-            if opt in options.options:
+            if opt in options.options and options.action not in ("daemon_join", "daemon_rejoin"):
                 del options.options[opt]
         if options.action_mode and options.options.get("local"):
             if "local" in options.options:
@@ -118,8 +119,11 @@ class Handler(daemon.handler.BaseHandler):
         fullcmd = Env.om + [subsystem] + cmd
 
         thr.log_request("run 'om %s %s'" % (subsystem, " ".join(cmd)), nodename, **kwargs)
+        new_env = deepcopy(os.environ)
+        if new_env.get('LOGNAME') is None:
+            new_env['LOGNAME'] = "root"
         if options.sync:
-            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True, env=new_env)
             out, err = proc.communicate()
             result = {
                 "status": 0,
@@ -130,7 +134,7 @@ class Handler(daemon.handler.BaseHandler):
                 },
             }
         else:
-            proc = Popen(fullcmd, stdin=None, close_fds=True)
+            proc = Popen(fullcmd, stdin=None, close_fds=True, env=new_env)
             thr.push_proc(proc)
             result = {
                 "status": 0,

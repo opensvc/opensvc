@@ -31,12 +31,13 @@ def set_lazy(self, attr, value):
     setattr(self, attr_name, value)
 
 
-def unset_all_lazy(self):
+def unset_all_lazy(self, exclude=None):
     """
     Unset all lazy property hidden property, iow flush the cache
     """
+    exclude = exclude or []
     for attr in [attr for attr in self.__dict__]:
-        if attr.startswith("_lazy_"):
+        if attr.startswith("_lazy_") and attr[6:] not in exclude:
             delattr(self, attr)
 
 
