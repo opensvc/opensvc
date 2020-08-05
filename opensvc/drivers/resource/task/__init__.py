@@ -234,6 +234,7 @@ class BaseTask(Resource):
             self.svc.notify_done("run", rids=[self.rid])
 
     def _run(self):
+        self.svc.print_status_data_eval()
         self.create_pg()
         if self.snooze:
             try:
