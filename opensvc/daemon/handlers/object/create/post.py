@@ -109,7 +109,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 },
             }
         else:
-            thr.push_proc(proc)
+            thr.parent.push_proc(proc)
             result = {
                 "status": 0,
                 "info": "started %s action %s" % (options.path, " ".join(cmd)),
