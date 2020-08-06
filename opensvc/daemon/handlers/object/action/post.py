@@ -241,7 +241,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             env.update(os.environ)
             env["OSVC_PARENT_SESSION_UUID"] = session_id
             proc = Popen(fullcmd, stdin=None, close_fds=True, env=env)
-            thr.push_proc(proc)
+            thr.parent.push_proc(proc, cmd=fullcmd, session_id=session_id)
             result = {
                 "status": 0,
                 "data": {

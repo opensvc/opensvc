@@ -135,7 +135,7 @@ class Handler(daemon.handler.BaseHandler):
             }
         else:
             proc = Popen(fullcmd, stdin=None, close_fds=True, env=new_env)
-            thr.push_proc(proc)
+            thr.parent.push_proc(proc)
             result = {
                 "status": 0,
                 "info": "started node action %s" % " ".join(cmd),
