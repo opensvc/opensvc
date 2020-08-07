@@ -134,10 +134,17 @@ class Handler(daemon.handler.BaseHandler):
                 },
             }
         else:
+            import uuid
+            session_id = str(uuid.uuid4())
+            new_env["OSVC_PARENT_SESSION_UUID"] = session_id
             proc = Popen(fullcmd, stdin=None, close_fds=True, env=new_env)
-            thr.parent.push_proc(proc)
+            thr.parent.push_proc(proc, cmd=fullcmd, session_id=session_id)
             result = {
                 "status": 0,
+                "data": {
+                    "pid": proc.pid,
+                    "session_id": session_id,
+                },
                 "info": "started node action %s" % " ".join(cmd),
             }
         return result
