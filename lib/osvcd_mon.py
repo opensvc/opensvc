@@ -2702,7 +2702,7 @@ class Monitor(shared.OsvcThread):
         try:
             with shared.CLUSTER_DATA_LOCK:
                 for path in shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"]:
-                    if shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path]["avail"] == "up":
+                    if shared.CLUSTER_DATA[rcEnv.nodename]["services"]["status"][path].get("avail") == "up":
                         paths.append(path)
         except KeyError:
             return []
