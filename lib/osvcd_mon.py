@@ -91,6 +91,7 @@ class Monitor(shared.OsvcThread):
         self._shutdown = False
         self.compat = True
         self.last_node_data = None
+        self.init_steps = set()
 
     def init(self):
         self.set_tid()
@@ -186,7 +187,7 @@ class Monitor(shared.OsvcThread):
         shared.NODE.unset_lazy("labels")
         shared.CLUSTER_DATA[rcEnv.nodename]["labels"] = shared.NODE.labels
         self.on_nodes_info_change()
-        for path in shared.SERVICES:
+        for path in [p for p in shared.SERVICES]:
             try:
                 name, namespace, kind = split_path(path)
                 svc = factory(kind)(name, namespace, node=shared.NODE)
@@ -198,6 +199,9 @@ class Monitor(shared.OsvcThread):
     def do(self):
         terminated = self.janitor_procs() + self.janitor_threads()
         changed = self.mon_changed()
+        if shared.NMON_DATA.status == "init" and self.services_have_init_status():
+            self.set_nmon(status="rejoin")
+            self.rejoin_grace_period_expired = False
         if terminated == 0 and not changed and self.shortloops < self.max_shortloops:
             self.shortloops += 1
             if self.shortloops == self.max_shortloops:
@@ -724,6 +728,31 @@ class Monitor(shared.OsvcThread):
             on_error_kwargs={"status": "idle"},
         )
 
+    def services_have_init_status(self):
+        need_log = (time.time() - self.startup) > 60
+        for path in list_services():
+            try:
+                svc = shared.SERVICES[path]
+            except KeyError:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s daemon object allocation", path=path)
+                return False
+            if rcEnv.nodename not in svc.nodes | svc.drpnodes:
+                # a configuration file is present, but foreign: don't wait for a status.json
+                continue
+            fpath = os.path.join(svc.var_d, "status.json")
+            try:
+                mtime = os.path.getmtime(fpath)
+            except Exception:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s status to exist", path=path)
+                return False
+            if self.startup > mtime:
+                if need_log:
+                    self.duplog("info", "init waiting for %(path)s status refresh", path=path)
+                return False
+        return True
+
     def services_purge_status(self, paths=None):
         paths = paths or list_services()
         for path in paths:
@@ -733,35 +762,54 @@ class Monitor(shared.OsvcThread):
             except Exception as exc:
                 pass
 
+    def init_steps_done(self):
+        """
+        Return true if both boot and status commands are finished.
+        Used to determine if we can run service_status() from the monitor loop.
+        """
+        return len(self.init_steps) == 2
+
+    def add_init_step(self, step):
+        """
+        Used as a callback of initial boot and status commands.
+        """
+        self.init_steps.add(step)
+
     def services_init_status(self):
         svcs = list_services()
         if not svcs:
             self.log.info("no objects to get an initial status from")
-            self.services_init_status_callback()
             return
         self.services_purge_status(paths=svcs)
         proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
+        self.add_init_step("boot")
         self.push_proc(
             proc=proc,
-            on_success="services_init_status_callback",
-            on_error="services_init_status_callback",
+            cmd="init status",
+            on_success="add_init_step",
+            on_success_args=["status"],
+            on_error="add_init_step",
+            on_error_args=["status"],
         )
 
     def services_init_boot(self):
-        paths = list_services(kinds=["vol", "svc"])
-        self.services_purge_status(paths=paths)
-        proc = self.service_command(",".join(paths), ["boot", "--parallel"])
+        self.services_purge_status()
+        proc1 = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
         self.push_proc(
-            proc=proc,
-            on_success="services_init_status_callback",
-            on_error="services_init_status_callback",
+            proc=proc1,
+            on_success="add_init_step",
+            on_success_args=["boot"],
+            on_error="add_init_step",
+            on_error_args=["boot"],
         )
-
-    def services_init_status_callback(self, *args, **kwargs):
-        self.update_hb_data()
-        if shared.NMON_DATA.status == "init":
-            self.set_nmon(status="rejoin")
-        self.rejoin_grace_period_expired = False
+        proc2 = self.service_command(",".join(list_services(kinds=["usr", "cfg", "sec", "ccfg"])), ["status", "--parallel", "--refresh"], local=False)
+        self.push_proc(
+            proc=proc2,
+            on_success="add_init_step",
+            on_success_args=["status"],
+            on_error="add_init_step",
+            on_error_args=["status"],
+        )
 
 
     #########################################################################
@@ -792,7 +840,9 @@ class Monitor(shared.OsvcThread):
             if self.status_older_than_cf(path):
                 #self.log.info("%s status dump is older than its config file",
                 #              path)
-                self.service_status(path)
+                instance = self.get_service_instance(path, rcEnv.nodename)
+                if instance:
+                    self.service_status(path)
                 continue
             svc = self.get_service(path)
             self.resources_orchestrator(path, svc)
@@ -2892,10 +2942,6 @@ class Monitor(shared.OsvcThread):
 
         Also update the monitor 'local_expect' field for each service.
         """
-
-        if shared.NMON_DATA.status == "init":
-            return {}
-
         # purge data cached by the @cache decorator
         purge_cache()
 
@@ -2908,6 +2954,8 @@ class Monitor(shared.OsvcThread):
             fpath = svc_pathvar(path, "status.json")
             try:
                 mtime = os.path.getmtime(fpath)
+                if mtime < self.startup:
+                    continue
             except Exception as exc:
                 # preserve previous status data if any (an action may be running)
                 mtime = 0
@@ -2930,7 +2978,8 @@ class Monitor(shared.OsvcThread):
             if idata:
                 data[path] = idata
             else:
-                self.service_status(path)
+                if self.init_steps_done():
+                    self.service_status(path)
                 continue
 
             # update the frozen instance attribute
