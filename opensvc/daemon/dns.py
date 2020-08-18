@@ -275,7 +275,8 @@ class Dns(shared.OsvcThread):
                 return self.ptr_record(parameters)
             if parameters["qname"].startswith("*."):
                 return []
-            return self.a_record(parameters) + \
+            return self.ns_record(parameters) + \
+                   self.a_record(parameters) + \
                    self.srv_record(parameters) + \
                    self.txt_record(parameters) + \
                    self.cname_record(parameters)
@@ -312,6 +313,8 @@ class Dns(shared.OsvcThread):
                 return data
             # don't include NS record in dump, as those depend on suffix
             data += self.zone_ns_records(suffix)
+        else:
+            data += self.zone_ns_records(self.zone)
         for qname, contents in self.a_records().items():
             if suffix and not qname.endswith(suffix):
                 continue
@@ -363,8 +366,8 @@ class Dns(shared.OsvcThread):
 
     def zone_ns_records(self, zonename):
         data = []
-        for dns in shared.NODE.dnsnodes:
-            dns = dns.split(".")[0] + "." + zonename
+        for i, dns in enumerate(shared.NODE.dns):
+            dns = "ns%d.%s" % (i, zonename)
             data.append({
                 "qtype": "NS",
                 "qname": zonename,
@@ -478,9 +481,12 @@ class Dns(shared.OsvcThread):
                     gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
                     gen_name = gen_name.lower()
                     if hostname and hostname != name:
-                        names[qname].append("%s%s" % (hostname, gen_name))
+                        target = "%s%s" % (hostname, gen_name)
                     else:
-                        names[qname].append(gen_name)
+                        target = "%s" % gen_name
+                    if target in names[qname]:
+                        continue
+                    names[qname].append(target)
         self.set_cache(key, "ptr", names)
         return names
 
@@ -546,15 +552,15 @@ class Dns(shared.OsvcThread):
                         if name not in names:
                             names[name] = set()
                         names[name].add(addr)
-        for i, ip in enumerate(shared.NODE.dns):
-            try:
-                dns = "%s.%s." % (shared.NODE.dnsnodes[i].split(".")[0], self.cluster_name)
-                names[dns] = set([ip])
-            except IndexError:
-                self.log.warning("dns (%s) and dnsnodes (%s) are not aligned"
-                                 "" % (shared.NODE.dns, shared.NODE.dnsnodes))
-                break
+        names.update(self.dns_a_records())
         self.set_cache(key, "a", names)
+        return names
+
+    def dns_a_records(self):
+        names = {}
+        for i, ip in enumerate(shared.NODE.dns):
+            dns = "ns%d.%s." % (i, self.cluster_name)
+            names[dns] = set([ip])
         return names
 
     def srv_records(self):
