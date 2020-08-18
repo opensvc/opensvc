@@ -287,6 +287,13 @@ class Hb(shared.OsvcThread):
             if last_gen is not None and last_gen >= data_gen:
                 self.log.debug("already installed or beyond %s gen %d dataset: drop", nodename, data_gen)
                 return
+            node_status = data.get("monitor", {}).get("status")
+            if node_status in ("init", "maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
+                for path, idata in shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {}).items():
+                    if path in data["services"]["status"]:
+                        continue
+                    idata["preserved"] = True
+                    data["services"]["status"][path] = idata
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[nodename] = data
                 new_gen = data.get("gen", {}).get(nodename, 0)
