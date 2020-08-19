@@ -414,6 +414,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                         avail_icon = colorize("?", color.RED)
                     else:
                         avail_icon = colorize_status(avail, lpad=0, agg_status=data["avail"]).replace(avail, unicons[avail])
+                    if data["nodes"][nodename].get("preserved"):
+                        avail_icon += colorize("?", color.LIGHTBLUE)
                 # overall status unicon
                 if data["wrapper"]:
                     overall_icon = ""
@@ -975,6 +977,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     global_expect = global_expect[:global_expect.index("@")+1]
                 services[path].nodes[_node] = {
                     "avail": _data.get("avail", "undef"),
+                    "preserved": _data.get("preserved"),
                     "overall": _data.get("overall", "undef"),
                     "frozen": _data.get("frozen", False),
                     "mon": _data["monitor"].get("status", ""),
