@@ -289,10 +289,11 @@ class Hb(shared.OsvcThread):
                 return
             node_status = data.get("monitor", {}).get("status")
             if node_status in ("init", "maintenance", "upgrade") and nodename in shared.CLUSTER_DATA:
-                self.duplog("info", "preserve last known instances status from "
-                            "node %(nodename)s in %(node_status)s state",
-                            nodename=nodename, node_status=node_status)
-                data["services"]["status"] = shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {})
+                for path, idata in shared.CLUSTER_DATA[nodename].get("services", {}).get("status", {}).items():
+                    if path in data["services"]["status"]:
+                        continue
+                    idata["preserved"] = True
+                    data["services"]["status"][path] = idata
             with shared.CLUSTER_DATA_LOCK:
                 shared.CLUSTER_DATA[nodename] = data
                 new_gen = data.get("gen", {}).get(nodename, 0)
