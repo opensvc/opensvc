@@ -67,7 +67,7 @@ OPT = Storage({
         "--initiator", action="append", dest="initiators",
         help="An initiator iqn. Can be specified multiple times."),
     "auth_network": Option(
-        "--auth-network", default="ALL", action="store", dest="auth_network",
+        "--auth-network", default="", action="store", dest="auth_network",
         help="Network authorized to access to the iSCSI target. ip or cidr addresses or 'ALL' for any ips"),
     "comment": Option(
         "--comment", action="store", dest="comment",
@@ -90,10 +90,10 @@ OPT = Storage({
     "authgroup_id": Option(
         "--auth-group-id", action="store", type=int, dest="authgroup_id",
         help="The auth group object id"),
-    "authtype": Option(
-        "--auth-type", action="store", default="None", dest="authtype",
-        choices=["None", "CHAP", "CHAP Mutual"],
-        help="None, CHAP, CHAP Mutual"),
+    "authmethod": Option(
+        "--auth-method", action="store", default="NONE", dest="authmethod",
+        choices=["NONE", "CHAP", "CHAP Mutual"],
+        help="NONE, CHAP, CHAP Mutual"),
     "portal_id": Option(
         "--portal-id", action="store", type=int, dest="portal_id",
         help="The portal object id"),
@@ -172,13 +172,14 @@ ACTIONS = {
         "add_iscsi_targetgroup": {
             "msg": "Declare a iscsi target group, which is a portal-target-initiator relation",
             "options": [
+                OPT.name,
                 OPT.portal_id,
                 OPT.target_id,
                 OPT.target,
                 OPT.initiatorgroup,
                 OPT.initiatorgroup_id,
                 OPT.authgroup_id,
-                OPT.authtype,
+                OPT.authmethod,
             ],
         },
     },
@@ -222,6 +223,7 @@ ACTIONS = {
             "msg": "Delete a iscsi target, used in targets which are portal-target-initiator relations",
             "options": [
                 OPT.id,
+                OPT.name,
             ],
         },
         "del_iscsi_targetgroup": {
@@ -257,9 +259,6 @@ ACTIONS = {
         },
         "list_iscsi_target": {
             "msg": "List configured targets",
-        },
-        "list_iscsi_targetgroup": {
-            "msg": "List configured target groups",
         },
         "list_iscsi_targettoextent": {
             "msg": "List configured target-to-extent relations",
@@ -461,9 +460,10 @@ class Freenas(object):
         buff = self.get_iscsi_authorizedinitiator()
         data = json.loads(buff)
         l = []
-        for initiator in data:
-            if initiator["initiators"] in initiator_names:
-                l.append(initiator["id"])
+        for initiator in initiator_names:
+            for item in data:
+                if initiator in item["initiators"]:
+                    l.append(item["id"])
         return l
 
     def get_iscsi_extents_data(self):
@@ -726,17 +726,18 @@ class Freenas(object):
         data = self._add_iscsi_initiatorgroup(**kwargs)
         return data
 
-    def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="ALL", comment=None,
+    def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="", comment=None,
                                   **kwargs):
         for key in ["initiators"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
+        anet = list(auth_network.split(","))
         d = {
-            "iscsi_target_initiator_initiators": ",".join(initiators),
-            "iscsi_target_initiator_auth_network": auth_network,
+            "initiators": initiators,
+            "auth_network": anet,
         }
         if comment:
-            d["iscsi_target_initiator_comment"] = comment
+            d["comment"] = comment
 
         buff = self.post('/iscsi/initiator/', d)
         try:
@@ -786,29 +787,29 @@ class Freenas(object):
                     portal_id=kwargs.get("portal_id"),
                     initiatorgroup_id=igid,
                     target_id=tid,
-                    authtype=kwargs.get("authtype"),
+                    authmethod=kwargs.get("authmethod"),
                     authgroup_id=kwargs.get("authgroup_id"),
                 )
                 data.append(_data)
         return data
 
-        return data
-
     def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
-                               target_id=None, authtype="None",
+                               target_id=None, authmethod="NONE",
                                authgroup_id=None, **kwargs):
+        buff = self.get_iscsi_target_id(target_id)
+        data = json.loads(buff)
+        for g in data["groups"]:
+            if portal_id == g["portal"] and initiatorgroup_id == g["initiator"]:
+                return data
         d = {
-            "iscsi_target": target_id,
-            "iscsi_target_initiatorgroup": initiatorgroup_id,
-            "iscsi_target_portalgroup": portal_id,
-            "iscsi_target_authtype": authtype,
-            "iscsi_target_authgroup": -1,
-            "iscsi_target_initialdigest": "Auto",
+            "initiator": initiatorgroup_id,
+            "portal": portal_id,
+            "authmethod": authmethod,
+            "auth": authgroup_id,
         }
-        if authgroup_id:
-            d["iscsi_target_authgroup"] = authgroup_id
-
-        buff = self.post('/iscsi/target/', d)
+        data["groups"].append(d)
+        del data["id"]
+        buff = self.put('/iscsi/target/id/%d' % target_id, data)
         try:
             return json.loads(buff)
         except ValueError:
@@ -816,7 +817,12 @@ class Freenas(object):
 
     # target
     # OK
-    def del_iscsi_target(self, id=None, **kwargs):
+    def del_iscsi_target(self, id=None, name=None, **kwargs):
+        if id is None and name:
+            try:
+                id = self.get_iscsi_target_ids([name])[0]
+            except IndexError:
+                return
         if id is None:
             raise ex.Error("'id' is mandatory")
         content = self.get_iscsi_target_id(id)
@@ -1045,9 +1051,6 @@ class Freenas(object):
 
     def list_iscsi_portal(self, **kwargs):
         return json.loads(self.get_iscsi_portal())
-
-    def list_iscsi_targetgroup(self, **kwargs):
-        return json.loads(self.get_iscsi_targetgroup())
 
     def list_iscsi_extent(self, **kwargs):
         return json.loads(self.get_iscsi_extents())
