@@ -702,16 +702,6 @@ class Freenas(object):
             raise ex.Error("'id' in mandatory")
         self.delete('/iscsi/initiator/%d' % ig_id)
 
-    def _del_iscsi_targettoextent(self, id=None, **kwargs):
-        try:
-            data = self.get_iscsi_targettoextent(id)
-        except Exception as exc:
-            data = {"error": str(exc)}
-        if id is None:
-            raise ex.Error("'id' in mandatory")
-        self.delete('/iscsi/targetextent/%d' % id)
-        return data
-
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
             raise ex.Error("'id' in mandatory")
@@ -949,7 +939,7 @@ class Freenas(object):
             tg = current_mappings.get(mapping)
             if not tg:
                 continue
-            result = self._del_iscsi_targettoextent(tg["extent"]["id"])
+            result = self.del_iscsi_targetextent(tg["extent"]["id"])
             results.append(result)
         return results
 
