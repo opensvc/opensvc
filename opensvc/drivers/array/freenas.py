@@ -673,11 +673,11 @@ class Freenas(object):
         if zvol_data is None:
             raise ex.Error("zvol not found")
         if size.startswith("+"):
-            incr = convert_size(size.lstrip("+"), _to="MiB")
-            current_size = convert_size(int(zvol_data["volsize"]), _to="MiB")
-            size = str(current_size + incr) + "MiB"
+            incr = convert_size(size.lstrip("+"), _to="B")
+            current_size = int(zvol_data["volsize"]["parsed"])
+            size = current_size + incr
         else:
-            size = str(convert_size(size, _to="MiB")) + "MiB"
+            size = convert_size(size, _to="B")
 
         d = {
             "volsize": size,
