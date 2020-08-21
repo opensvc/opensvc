@@ -673,11 +673,11 @@ class Freenas(object):
         if zvol_data is None:
             raise ex.Error("zvol not found")
         if size.startswith("+"):
-            incr = convert_size(size.lstrip("+"), _to="MiB")
-            current_size = convert_size(int(zvol_data["volsize"]), _to="MiB")
-            size = str(current_size + incr) + "MiB"
+            incr = convert_size(size.lstrip("+"), _to="B")
+            current_size = int(zvol_data["volsize"]["parsed"])
+            size = current_size + incr
         else:
-            size = str(convert_size(size, _to="MiB")) + "MiB"
+            size = convert_size(size, _to="B")
 
         d = {
             "volsize": size,
@@ -701,16 +701,6 @@ class Freenas(object):
         if ig_id is None:
             raise ex.Error("'id' in mandatory")
         self.delete('/iscsi/initiator/%d' % ig_id)
-
-    def _del_iscsi_targettoextent(self, id=None, **kwargs):
-        try:
-            data = self.get_iscsi_targettoextent(id)
-        except Exception as exc:
-            data = {"error": str(exc)}
-        if id is None:
-            raise ex.Error("'id' in mandatory")
-        self.delete('/iscsi/targetextent/%d' % id)
-        return data
 
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
@@ -949,7 +939,7 @@ class Freenas(object):
             tg = current_mappings.get(mapping)
             if not tg:
                 continue
-            result = self._del_iscsi_targettoextent(tg["extent"]["id"])
+            result = self.del_iscsi_targetextent(tg["extent"]["id"])
             results.append(result)
         return results
 
