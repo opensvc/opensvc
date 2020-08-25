@@ -154,8 +154,8 @@ cd $REPODIR
 
 cat > $REPODIR/postinstall <<EOF
 #!/sbin/sh
-
-su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
+which python3 > /dev/null 2>&1 && PYTHON=python3 || PYTHON=python
+su root -c "PATH=\${PKG_INSTALL_ROOT}/usr/local/bin:$PATH:/usr/sfw/bin:/usr/local/bin \$PYTHON \${PKG_INSTALL_ROOT}$BASE/usr/share/opensvc/bin/postinstall"
 EOF
 
 cp $CHROOT/usr/share/opensvc/bin/preinstall $REPODIR/preinstall
