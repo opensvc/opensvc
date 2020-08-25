@@ -86,7 +86,8 @@ class syncSymSrdfS(resSync.Sync):
     def promote_devs_rw(self):
         if rcEnv.sysname != "Linux":
             return
-        devs = [d for d in self.list_pd() if d.startswith("/dev/mapper/") or d.startswith("/dev/rdsk/")]
+        devs = self.list_pd()
+        devs = [d for d in devs if d.startswith("/dev/mapper/") or d.startswith("/dev/dm-") or d.startswith("/dev/rdsk/")]
         for dev in devs:
             self.promote_dev_rw(dev)
 
