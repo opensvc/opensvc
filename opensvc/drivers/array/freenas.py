@@ -328,7 +328,7 @@ class Freenas(object):
     def __init__(self, name, api, username, password, timeout, node=None):
         self.node = node
         self.name = name
-        self.api = api
+        self.api = api.split("/api")[0]
         self.username = username
         self.password = password
         self.auth = (username, password)
@@ -339,9 +339,9 @@ class Freenas(object):
                      'iscsi_targettoextents',
                      'iscsi_extents']
 
-    def delete(self, uri, data=None, timeout=None):
+    def delete(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -354,9 +354,9 @@ class Freenas(object):
             raise ex.Error("DELETE %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def put(self, uri, data=None, timeout=None):
+    def put(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -369,9 +369,9 @@ class Freenas(object):
             raise ex.Error("PUT %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def post(self, uri, data=None, timeout=None):
+    def post(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -384,9 +384,9 @@ class Freenas(object):
             raise ex.Error("POST %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def get(self, uri, params=None, timeout=None):
+    def get(self, uri, params=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         try:
             r = requests.get(ep, params=params, auth=self.auth, timeout=timeout, verify=VERIFY)
         except Exception as exc:
@@ -404,6 +404,10 @@ class Freenas(object):
     # OK
     def get_volumes(self):
         buff = self.get("/pool/dataset", {"limit": 0})
+        return buff
+
+    def get_pools(self):
+        buff = self.get("/storage/volume", {"limit": 0}, api="v1.0")
         return buff
 
     def get_iscsi_target_id(self, tgt_id):
@@ -1029,6 +1033,9 @@ class Freenas(object):
         path = data["path"].split("/")
         volume = path[path.index("zvol")+1]
         return volume
+
+    def list_pools(self, **kwargs):
+        return json.loads(self.get_pools())
 
     def list_volume(self, **kwargs):
         return json.loads(self.get_volumes())

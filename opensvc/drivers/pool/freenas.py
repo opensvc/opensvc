@@ -94,7 +94,7 @@ class Pool(BasePool):
             "capabilities": self.capabilities,
         }
         try:
-            dg = [dg for dg in self.array.list_volume() if dg["name"] == self.diskgroup][0]
+            dg = [dg for dg in self.array.list_pools() if dg["name"] == self.diskgroup][0]
         except Exception as exc:
             print(exc, file=sys.stderr)
             return data
