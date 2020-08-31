@@ -1338,7 +1338,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 else:
                     _begin = 1
                 argv = self.log_action_obfuscate_secret(argv)
-                runlog = "do "+" ".join(argv[_begin:])
+                runlog = "do "+" ".join(argv[_begin:]).replace("%", "%%")
                 if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
                     runlog += " (daemon origin)"
                 else:
