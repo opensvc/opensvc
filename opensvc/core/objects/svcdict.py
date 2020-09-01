@@ -1120,6 +1120,14 @@ KEYWORDS = [
         "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
+        "section": "DEFAULT",
+        "keyword": "stat_timeout",
+        "convert": "duration",
+        "default": 5,
+        "at": True,
+        "text": "The maximum wait time for a stat call to respond. When expired, the resource status is degraded is to warn, which might cause a TOC if the resource is monitored."
+    },
+    {
         "sections": ["DEFAULT"],
         "prefixes": ["run"],
         "keyword": "_requires",
