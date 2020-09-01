@@ -1212,9 +1212,11 @@ class ExtConfigMixin(object):
             """
             Verify the specified option references.
             """
-            value = cd.get(section, option)
+            value = cd.get(section, {}).get(option)
+            if not is_string(value) or ".exposed_devs" in value or ".base_devs" in value or ".sub_devs" in value or re.match("volume#.*\.mnt", value):
+                return 0
             try:
-                value = self.handle_references(value, scope=True, cd=cd,
+                deref = self.handle_references(value, scope=True, cd=cd,
                                                section=section)
             except ex.Error as exc:
                 if not option.startswith("pre_") and \
@@ -1225,6 +1227,8 @@ class ExtConfigMixin(object):
             except Exception as exc:
                 self.log.error(str(exc))
                 return 1
+            if deref is None:
+                self.log.warning("broken reference: %s.%s", section, option)
             return 0
 
         def get_val(key, section, option, verbose=True, impersonate=None):
