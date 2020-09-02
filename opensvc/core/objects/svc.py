@@ -1338,11 +1338,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 else:
                     _begin = 1
                 argv = self.log_action_obfuscate_secret(argv)
-                runlog = "do "+" ".join(argv[_begin:]).replace("%", "%%")
-                if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-                    runlog += " (daemon origin)"
-                else:
-                    runlog += " (user origin)"
+                cmd = " ".join(argv[_begin:]).replace("%", "%%")
+                origin = os.environ.get("OSVC_ACTION_ORIGIN", "user")
+                runlog = "do %s (%s origin)" % (cmd, origin)
                 self.log.info(runlog, {"f_stream": False})
         except IndexError:
             pass
@@ -4142,7 +4140,7 @@ class Svc(BaseSvc):
         if verbose:
             self.log.info(" ".join(cmd))
 
-        cmd = ["env", "OSVC_DETACHED=1"] + cmd
+        cmd = ["env", "OSVC_DETACHED=1", "OSVC_ACTION_ORIGIN=master %s" % os.environ.get("OSVC_ACTION_ORIGIN", "user")] + cmd
         if container is not None and hasattr(container, "rcmd") and callable(container.rcmd):
             try:
                 out, err, ret = container.rcmd(cmd)
