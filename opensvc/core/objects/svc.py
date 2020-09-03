@@ -364,6 +364,7 @@ ACTIONS_DO_MASTER = [
 ACTIONS_DO_MASTER_AND_SLAVE = [
     "boot",
     "migrate",
+    "pg_update",
     "provision",
     "prstart",
     "prstop",
@@ -3920,6 +3921,9 @@ class Svc(BaseSvc):
 
     def pg_pids(self):
         return sorted(self.pg.pids(self))
+
+    def pg_update(self):
+        self.sub_set_action(START_GROUPS, "create_pg", xtags=set(["zone", "docker", "podman"]))
 
     @lazy
     def pg(self):
