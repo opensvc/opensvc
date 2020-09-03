@@ -5076,38 +5076,34 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False):
         candidates = []
+        cause = []
         for pool in self.pool_status_data().values():
             if shared is True and "shared" not in pool["capabilities"]:
-                self.log.debug("discard pool %s: not shared capable",
-                               pool["name"])
+                cause.append((pool["name"], "not shared capable"))
                 continue
             if fmt is False and "blk" not in pool["capabilities"]:
-                self.log.debug("discard pool %s: not blk capable",
-                               pool["name"])
+                cause.append((pool["name"], "not blk capable"))
                 continue
             if access and access not in pool["capabilities"]:
-                self.log.debug("discard pool %s: not %s capable (%s)",
-                               pool["name"], access, ','.join(pool["capabilities"]))
+                caps = ','.join(pool["capabilities"])
+                cause.append((pool["name"], "not %s capable (%s)" % (access, caps)))
                 continue
             if pooltype and pool["type"] != pooltype:
-                self.log.debug("discard pool %s: not typed %s",
-                               pool["name"], pooltype)
+                cause.append((pool["name"], "wrong type: %s, requested %s" % (pool["type"], pooltype)))
                 continue
             if not pooltype and pool["type"] == "shm":
-                self.log.debug("discard volatile pool %s: type not requested, assume persistence is expected.",
-                               pool["name"], pooltype)
+                cause.append((pool["name"], "volatile, type not requested, assume persistence is expected."))
                 continue
             if poolname and pool["name"] != poolname:
-                self.log.debug("discard pool %s: not named %s",
-                               pool["name"], poolname)
+                cause.append((pool["name"], "not named %s" % poolname))
                 continue
             if size and "free" in pool and pool["free"] < size//1024+1:
-                self.log.debug("discard pool %s: not enough free space %d/%d",
-                               pool["name"], pool["free"], size)
+                cause.append((pool["name"], "not enough free space: %s free, %s requested" % (print_size(pool["free"], unit="KB", compact=True), print_size(size, unit="B", compact=True))))
                 continue
             candidates.append(pool)
         if not candidates:
-            return
+            cause = "\n".join(["    discard pool %s: %s" % (name, reason) for name, reason in cause])
+            raise ex.Error(cause)
 
         def shared_weight(pool):
             if not shared and "shared" in pool["capabilities"]:

@@ -218,6 +218,8 @@ class Volume(Resource):
             volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, volatile=True)
             try:
                 volume = self._configure_volume(volume)
+            except ex.Error as exc:
+                raise
             except Exception as exc:
                 import traceback
                 traceback.print_exc()
@@ -618,14 +620,15 @@ class Volume(Resource):
         return env
 
     def _configure_volume(self, volume):
-        pool = self.svc.node.find_pool(poolname=self.pool,
-                                       pooltype=self.pooltype,
-                                       access=self.access,
-                                       size=self.size,
-                                       fmt=self.format,
-                                       shared=self.shared)
-        if pool is None:
-            raise ex.Error("could not find a pool matching criteria")
+        try:
+            pool = self.svc.node.find_pool(poolname=self.pool,
+                                           pooltype=self.pooltype,
+                                           access=self.access,
+                                           size=self.size,
+                                           fmt=self.format,
+                                           shared=self.shared)
+        except ex.Error as exc:
+            raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
         pool.log = self.log
         try:
             nodes = self.svc._get("DEFAULT.nodes")
