@@ -576,6 +576,10 @@ ACTIONS["Service and volume object actions"] = {
         "msg": "Kill the tasks of a process group.",
         "options": mp.ACTION_OPTS,
     },
+    "pg_update": {
+        "msg": "Update cappings of process groups to reflect configuration changes.",
+        "options": mp.ACTION_OPTS,
+    },
 }
 ACTIONS.update({
     "Compliance": {
