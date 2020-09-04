@@ -4,10 +4,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-import logging
 
 import pytest
 import commands.node
+from core.node import Env, Node
 
 from utilities.string import try_decode
 
@@ -46,6 +46,29 @@ class TestNodemgr:
         assert commands.node.get_extra_argv(["array", '--', 'value=1']) == (['array', '--'], ['value=1'])
         assert commands.node.get_extra_argv(["array", 'value=1']) == (['array'], ['value=1'])
         assert commands.node.get_extra_argv(["myaction", 'value=1']) == (['myaction', 'value=1'], [])
+
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        'hook, value, reboot_counts, expected_exit_code', [
+            ['blocking_pre', Env.syspaths.true, 1, 0],
+            ['blocking_pre', Env.syspaths.false, 0, 1],
+            ['pre', Env.syspaths.true, 1, 0],
+            ['pre', Env.syspaths.false, 1, 0],
+         ])
+    def test_auto_reboot_respect_hook_result(
+            mocker,
+            has_node_config,
+            hook,
+            value,
+            reboot_counts,
+            expected_exit_code):
+        _reboot = mocker.patch.object(Node, '_reboot')
+        open(Node().paths.reboot_flag, 'w+')
+        mocker.patch('core.node.node.assert_file_is_root_only_writeable')
+        assert commands.node.main(argv=["set", "--kw", "reboot.%s=%s" % (hook, value)]) == 0
+        assert commands.node.main(argv=["auto", "reboot"]) == expected_exit_code
+        assert _reboot.call_count == reboot_counts
 
     @staticmethod
     def test_print_schedule():
