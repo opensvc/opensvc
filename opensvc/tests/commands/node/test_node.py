@@ -4,6 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+import os
 
 import pytest
 import commands.node
@@ -69,6 +70,25 @@ class TestNodemgr:
         assert commands.node.main(argv=["set", "--kw", "reboot.%s=%s" % (hook, value)]) == 0
         assert commands.node.main(argv=["auto", "reboot"]) == expected_exit_code
         assert _reboot.call_count == reboot_counts
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        'once_value, remove_reboot_flag', [
+            [None, True],
+            [True, True],
+            [False, False]])
+    def test_auto_reboot_respect_reboot_once_keyword(mocker, once_value, remove_reboot_flag):
+        mocker.patch.object(Node, '_reboot')
+        reboot_flag = Node().paths.reboot_flag
+        open(reboot_flag, 'w+')
+        mocker.patch('core.node.node.assert_file_is_root_only_writeable')
+        if once_value is not None:
+            assert commands.node.main(argv=["set", "--kw", "reboot.once=%s" % once_value]) == 0
+        assert commands.node.main(argv=["auto", "reboot"]) == 0
+        if remove_reboot_flag:
+            assert not os.path.exists(reboot_flag)
+        else:
+            assert os.path.exists(reboot_flag)
 
     @staticmethod
     def test_print_schedule():
