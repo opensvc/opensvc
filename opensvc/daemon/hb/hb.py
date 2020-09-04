@@ -15,7 +15,7 @@ class Hb(shared.OsvcThread):
     """
     Heartbeat parent class
     """
-    default_hb_period = 5
+    interval = 5
     timeout = None
 
     def __init__(self, name, role=None):
@@ -127,9 +127,12 @@ class Hb(shared.OsvcThread):
             else:
                 self.event("hb_stale", data={
                     "nodename": nodename,
-                    "hb": {"name": self.name, "id": self.id,
-                           "timeout": self.timeout,
-                           "last": self.peers[nodename].last},
+                    "hb": {
+                        "name": self.name, "id": self.id,
+                        "timeout": self.timeout,
+                        "interval": self.interval,
+                        "last": self.peers[nodename].last,
+                    },
                 }, level="warning")
         self.peers[nodename].beating = beating
         if not beating and self.peers[nodename].last > 0:

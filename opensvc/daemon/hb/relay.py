@@ -19,6 +19,7 @@ class HbRelay(Hb):
         data["stats"] = self.stats
         data["config"] = {
             "timeout": self.timeout,
+            "interval": self.interval,
         }
         if hasattr(self, "relay"):
             data["config"]["relay"] = self.relay
@@ -38,6 +39,7 @@ class HbRelay(Hb):
         self.get_hb_nodes()
         self.peer_config = {}
         self.timeout = shared.NODE.oget(self.name, "timeout")
+        self.interval = shared.NODE.oget(self.name, "interval")
         try:
             self.relay = shared.NODE.oget(self.name, "relay")
         except Exception:
@@ -73,7 +75,7 @@ class HbRelayTx(HbRelay):
                 if self.stopped():
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
-                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+                    shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
             self.log.exception(exc)
 
@@ -143,7 +145,7 @@ class HbRelayRx(HbRelay):
             if self.stopped():
                 sys.exit(0)
             with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(self.default_hb_period)
+                shared.HB_TX_TICKER.wait(self.interval)
 
     def do(self):
         self.janitor_procs()
