@@ -1,5 +1,5 @@
 import os
-
+import stat
 
 PROTECTED_DIRS = [
     '/',
@@ -101,3 +101,17 @@ def read_unicode_file(filepath):
         with open(filepath, "r") as f:
             return f.read()
 
+
+def assert_file_exists(filename):
+    if not os.path.exists(filename):
+        raise Exception("%s is not present" % filename)
+
+
+def assert_file_is_root_only_writeable(filename):
+    if not os.path.exists(filename):
+        raise Exception("%s is not present." % filename)
+    stat_info = os.stat(filename)
+    if stat_info.st_uid != 0:
+        raise Exception("%s does not belong to root" % filename)
+    if stat_info.st_mode & stat.S_IWOTH:
+        raise Exception("%s is world writable" % filename)

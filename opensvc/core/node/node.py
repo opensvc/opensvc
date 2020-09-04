@@ -42,7 +42,7 @@ from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
 from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, init_locale
-from utilities.files import makedirs
+from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
 from utilities.string import bdecode
@@ -1375,16 +1375,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The scheduler task executing the node reboot if the scheduler
         constraints are satisfied and the reboot flag is set.
         """
-        if not os.path.exists(self.paths.reboot_flag):
-            print("%s is not present. no reboot scheduled" % self.paths.reboot_flag)
-            return
-        import stat
-        statinfo = os.stat(self.paths.reboot_flag)
-        if statinfo.st_uid != 0:
-            print("%s does not belong to root. abort scheduled reboot" % self.paths.reboot_flag)
-            return
-        if statinfo.st_mode & stat.S_IWOTH:
-            print("%s is world writable. abort scheduled reboot" % self.paths.reboot_flag)
+        try:
+            assert_file_exists(self.paths.reboot_flag)
+            assert_file_is_root_only_writeable(self.paths.reboot_flag)
+        except Exception as error:
+            print('%s. abort scheduled reboot' % error)
             return
         once = self.oget("reboot", "once")
         if once:

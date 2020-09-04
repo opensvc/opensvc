@@ -626,14 +626,12 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "reboot",
         "keyword": "pre",
-        "convert": "shlex",
         "example": "yum upgrade -y",
         "text": "A command to execute before reboot. Errors are ignored."
     },
     {
         "section": "reboot",
         "keyword": "blocking_pre",
-        "convert": "shlex",
         "example": "yum upgrade -y",
         "text": "A command to execute before reboot. Abort the reboot on error."
     },
