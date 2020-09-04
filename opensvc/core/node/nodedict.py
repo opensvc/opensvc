@@ -879,6 +879,14 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "hb",
+        "keyword": "interval",
+        "convert": "duration",
+        "at": True,
+        "default": 5,
+        "text": "The interval between tx threads data sends."
+    },
+    {
+        "section": "hb",
         "keyword": "addr",
         "rtype": "multicast",
         "at": True,

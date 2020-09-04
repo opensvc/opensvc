@@ -27,7 +27,6 @@ class HbMcast(Hb):
     src_addr = None
     port = None
     intf = None
-    timeout = None
     addr = None
     sock = None
     max_data = 1000
@@ -41,6 +40,7 @@ class HbMcast(Hb):
             "intf": self.intf,
             "src_addr": self.src_addr,
             "timeout": self.timeout,
+            "interval": self.interval,
         }
         return data
 
@@ -64,11 +64,13 @@ class HbMcast(Hb):
             "port": self.port,
             "addr": self.addr,
             "intf": self.intf,
-            "timeout": self.timeout
+            "timeout": self.timeout,
+            "interval": self.interval
         }
         self.port = shared.NODE.oget(self.name, "port")
         self.addr = shared.NODE.oget(self.name, "addr")
         self.timeout = shared.NODE.oget(self.name, "timeout")
+        self.interval = shared.NODE.oget(self.name, "interval")
         group = socket.inet_aton(self.addr)
         try:
             self.intf = shared.NODE.conf_get(self.name, "intf")
@@ -156,7 +158,7 @@ class HbMcastTx(HbMcast):
                     self.sock.close()
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
-                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+                    shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
             self.log.exception(exc)
 
