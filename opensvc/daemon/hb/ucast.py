@@ -71,10 +71,14 @@ class HbUcast(Hb):
             self.peer_config = peer_config
 
         timeout = shared.NODE.oget(self.name, "timeout")
-
         if timeout != self.timeout:
             self.config_change = True
             self.timeout = timeout
+
+        interval = shared.NODE.oget(self.name, "interval")
+        if interval != self.interval:
+            self.config_change = True
+            self.interval = interval
 
         self.max_handlers = len(self.hb_nodes) * 4
 
@@ -100,7 +104,7 @@ class HbUcastTx(HbUcast):
                 if self.stopped():
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
-                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+                    shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
             self.log.exception(exc)
 

@@ -35,6 +35,7 @@ class HbDisk(Hb):
         data["config"] = {
             "dev": self.dev,
             "timeout": self.timeout,
+            "interval": self.interval,
         }
         for peer in data["peers"]:
             data["peers"][peer].update(self.peer_config.get(peer, {}))
@@ -62,6 +63,7 @@ class HbDisk(Hb):
             self.slot_buff = mmap.mmap(-1, self.SLOTSIZE)
 
         self.timeout = shared.NODE.oget(self.name, "timeout")
+        self.interval = shared.NODE.oget(self.name, "interval")
         try:
             new_dev = shared.NODE.oget(self.name, "dev")
         except ex.RequiredOptNotFound:
@@ -232,7 +234,7 @@ class HbDiskTx(HbDisk):
                 if self.stopped():
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
-                    shared.HB_TX_TICKER.wait(self.default_hb_period)
+                    shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
             self.log.exception(exc)
 
@@ -301,7 +303,7 @@ class HbDiskRx(HbDisk):
             if self.stopped():
                 sys.exit(0)
             with shared.HB_TX_TICKER:
-                shared.HB_TX_TICKER.wait(self.default_hb_period)
+                shared.HB_TX_TICKER.wait(self.interval)
 
     def missing_peers(self):
         return [nodename for nodename, data in self.peer_config.items() if hasattr(data, "slot") and data.slot < 0]
