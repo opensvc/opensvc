@@ -637,3 +637,19 @@ def call_log(buff="", log=None, level="info"):
     for line in lines:
         fn("| " + line)
 
+
+def get_popen_args_from_str(cmd, shell=False):
+    """
+    Return the cmd arg usable by subprocess Popen
+    """
+    if shell:
+        return cmd
+    else:
+        if six.PY2:
+            cmdv = shlex.split(cmd.encode('utf8'))
+            return [elem.decode('utf8') for elem in cmdv]
+        else:
+            return shlex.split(cmd)
+
+def does_popen_args_need_shell(cmd):
+    return "|" in cmd or "&&" in cmd or ";" in cmd
