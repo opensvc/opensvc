@@ -145,9 +145,7 @@ def has_node_config(osvc_path_tests):
         """This fixture set non default port and tls_port for listener.
         This avoid port conflict with live daemon.
         """
-        config_txt = """[DEFAULT]
-id = nodeuuid
-
+        config_txt = """
 [listener]
 port = 1224
 tls_port = 1225
