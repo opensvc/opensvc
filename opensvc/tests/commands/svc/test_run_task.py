@@ -23,10 +23,10 @@ class TestRun:
                   ' && /usr/bin/touch {private_var}/complex_cmd2'],
          ['complex_cmd1', 'complex_cmd2']],
         [['--kw', 'task#1.command=/usr/bin/touch {private_var}/complex_cmd1'
-                  ' ; /usr/bin/touch {private_var}/complex_cmd2'],
+                  ';/usr/bin/touch {private_var}/complex_cmd2'],  # no space before ';' to avoid comment
          ['complex_cmd1', 'complex_cmd2']],
-        [['--kw', 'task#1.command=/usr/bin/touch {private_var}/complex_cmd1;'
-                  '/usr/bin/touch {private_var}/complex_cmd2'],
+        [['--kw', 'task#1.command=/usr/bin/touch {private_var}/complex_cmd1'
+                  '; /usr/bin/touch {private_var}/complex_cmd2'],
          ['complex_cmd1', 'complex_cmd2']],
     ])
     def test_cmd(mocker, osvc_path_tests, service_kws, success_flags):
@@ -50,10 +50,8 @@ class TestRun:
     def test_hooks(mocker, osvc_path_tests, service_hooks, success_flags):
         svcname = "pytest"
         mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
-        args = ['create',
-                '--kw',
-                'task#1.command=/usr/bin/touch {private_var}/task_cmd']
-        args.extend(service_hooks)
+        # noinspection PyTypeChecker
+        args = ['create', '--kw', 'task#1.command=/usr/bin/touch {private_var}/task_cmd'] + service_hooks
         assert_run_cmd_success(svcname, args)
         assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
         if len(success_flags) == 0:
