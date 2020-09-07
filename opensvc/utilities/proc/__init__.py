@@ -354,13 +354,6 @@ def action_triggers(self, trigger="", action=None, shell=False, **kwargs):
         'command',  # tasks use that as an action
     ]
 
-    compat_triggers = [
-        'pre_syncnodes', 'pre_syncdrp',
-        'post_syncnodes', 'post_syncdrp',
-        'post_syncresync', 'pre_syncresync',
-        'post_syncupdate', 'pre_syncupdate',
-    ]
-
     if hasattr(self, "svc"):
         svc = self.svc
         section = self.rid
@@ -385,10 +378,6 @@ def action_triggers(self, trigger="", action=None, shell=False, **kwargs):
         attr = action
     else:
         attr = trigger + "_" + action
-
-    # translate deprecated actions
-    if attr in compat_triggers:
-        attr = compat_triggers[attr]
 
     try:
         if attr in self.skip_triggers:
