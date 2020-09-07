@@ -42,7 +42,7 @@ from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
 from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, \
-    init_locale, does_popen_args_need_shell, get_popen_args_from_str
+    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
@@ -1606,9 +1606,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The trigger execution wrapper.
         """
         shell = False
-        if does_popen_args_need_shell(cmd):
+        if does_call_cmd_need_shell(cmd):
             shell = True
-        cmd = get_popen_args_from_str(cmd, shell=shell)
+        cmd = get_call_cmd_from_str(cmd, shell=shell)
         ret, out, err = self.vcall(cmd, err_to_warn=err_to_warn, shell=shell)
         if ret != 0:
             raise ex.Error((ret, out, err))
