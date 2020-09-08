@@ -29,8 +29,12 @@ def svc():
 
 
 @pytest.fixture()
-def node_wait_method(mocker, svc):
-    return mocker.patch.object(svc.node, '_wait')
+def node_wait_get_time(mocker):
+    now = int(time.time())
+    path = 'core.node.node'
+    mocker.patch('%s._wait_delay' % path)
+    return mocker.patch('%s._wait_get_time' % path,
+                        side_effect=range(now, now + 100))
 
 
 @pytest.fixture()
@@ -70,6 +74,10 @@ def current_time(mocker, ip_class):
     now = int(time.time())
     return mocker.patch.object(ip_class, '_current_time',
                                side_effect=range(now, now + 100))
+
+@pytest.fixture()
+def wait_dns_records_delay(mocker, ip_class):
+    return mocker.patch('drivers.resource.ip.wait_dns_records_delay_func')
 
 
 # mock external utilities.ping.check_ping
@@ -143,7 +151,8 @@ class TestIpStartWhenNoIpLocalAndNoPing:
         assert wait_dns_records.call_count == 1
 
     @staticmethod
-    @pytest.mark.usefixtures('node_wait_method')
+    @pytest.mark.usefixtures('node_wait_get_time')
+    @pytest.mark.usefixtures('wait_dns_records_delay')
     def test_raise_when_all_daemon_get_calls_fails_also_ensure_no_call_daemon_get_call_with_negative_timeout(
             node_daemon_get,
             current_time,
@@ -157,15 +166,16 @@ class TestIpStartWhenNoIpLocalAndNoPing:
         assert len([timeout for timeout in timeout_args if timeout <= 0]) == 0
 
     @staticmethod
-    @pytest.mark.usefixtures('node_wait_method')
+    @pytest.mark.usefixtures('node_wait_get_time')
     def test_wait_dns_make_retries_on_daemon_get_until_daemon_get_succeed(
             node_daemon_get,
             svc):
-        daemon_result = [{"status": 1, "errors": {}, "info": {}}] * 3
-        daemon_result += [{"status": 0, "errors": {}, "info": {}}]
+        daemon_result = [{"status": 1, "errors": {}, "info": {}}] * 3  # for action wait
+        daemon_result += [{"status": 0, "errors": {}, "info": {}, "data": {"satisfied": True}}]  # for action wait
+        daemon_result += [{"status": 0, "errors": {}, "info": {}}]  # for action sync
         node_daemon_get.side_effect = daemon_result
         svc.start()
-        assert node_daemon_get.call_count > 1
+        assert node_daemon_get.call_count == 5
 
 
 @pytest.mark.ci
