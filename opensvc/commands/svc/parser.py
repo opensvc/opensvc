@@ -557,6 +557,9 @@ ACTIONS["Service and volume object actions"] = {
             OPT.verbose,
         ],
     },
+}
+
+PG_ACTIONS = {
     "pg_pids": {
         "msg": "Display the tasks of the service process groups or selected resources process groups.",
         "options": [
@@ -580,7 +583,19 @@ ACTIONS["Service and volume object actions"] = {
         "msg": "Update cappings of process groups to reflect configuration changes.",
         "options": mp.ACTION_OPTS,
     },
+    "pg_remove": {
+        "msg": "Remove the process group, if empty.",
+        "options": mp.ACTION_OPTS,
+    },
+    "pg_stats": {
+        "msg": "Display key statistics of the process group.",
+        "options": mp.ACTION_OPTS + [
+            OPT.format,
+        ],
+    },
 }
+ACTIONS["Service and volume object actions"].update(PG_ACTIONS)
+
 ACTIONS.update({
     "Compliance": {
         "compliance_auto": {

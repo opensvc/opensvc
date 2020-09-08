@@ -2530,7 +2530,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     if need_aggregate:
                         if ret is not None:
                             data.outs[svc.path] = ret
-                    elif action.startswith("print_"):
+                    elif action.startswith("print_") or action == "pg_stats":
                         self.print_data(ret)
                         if isinstance(ret, dict):
                             if "error" in ret:
