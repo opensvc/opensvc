@@ -70,6 +70,8 @@ def list_services(namespace=None, kinds=None):
                 continue
             if kind not in kinds:
                 continue
+        if path.endswith("/namespace") and path.count("/") == 1:
+            path = path[:-9]
         l.append(path)
     return l
 
@@ -90,23 +92,33 @@ def glob_root_config():
 
 
 def glob_ns_config(namespace=None):
-    GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, "*", "*", "*.conf")
-    GLOB_CONF_NS_ONE = os.path.join(Env.paths.pathetcns, "%s", "*", "*.conf")
     if namespace is None:
-        return glob.iglob(GLOB_CONF_NS)
+        GLOB_CONF_NSCFG_CONF = os.path.join(Env.paths.pathetcns, "*", "namespace.conf")
+        GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, "*", "*", "*.conf")
     else:
-        return glob.iglob(GLOB_CONF_NS_ONE % namespace)
+        GLOB_CONF_NSCFG_CONF = os.path.join(Env.paths.pathetcns, namespace, "namespace.conf")
+        GLOB_CONF_NS = os.path.join(Env.paths.pathetcns, namespace, "*", "*.conf")
+    return chain(
+        glob.iglob(GLOB_CONF_NSCFG_CONF),
+        glob.iglob(GLOB_CONF_NS),
+    )
 
 
 def glob_services_config():
     return chain(glob_root_config(), glob_ns_config())
 
 
+def is_ns_path(path):
+    try:
+        return path.endswith("/") and path.count("/") == 1
+    except ValueError:
+        return False
+
 def split_path(path):
+    if is_ns_path(path):
+        return "namespace", path.strip("/") or None, "nscfg"
     path = path.strip("/")
     if path in ("node", "auth"):
-        raise ValueError
-    if not path:
         raise ValueError
     if "," in path or "+" in path:
         raise ValueError
@@ -126,17 +138,25 @@ def split_path(path):
         namespace = None
         if name == "cluster":
             kind = "ccfg"
+        elif name == "namespace":
+            kind = "nscfg"
     return name, namespace, kind
 
 
 def svc_pathcf(path, namespace=None):
     name, _namespace, kind = split_path(path)
     if namespace:
+        if kind == "nscfg":
+            return os.path.join(Env.paths.pathetcns, namespace, "namespace.conf")
         return os.path.join(Env.paths.pathetcns, namespace, kind, name + ".conf")
     elif _namespace:
+        if kind == "nscfg":
+            return os.path.join(Env.paths.pathetcns, _namespace, "namespace.conf")
         return os.path.join(Env.paths.pathetcns, _namespace, kind, name + ".conf")
     elif kind in ("svc", "ccfg"):
         return os.path.join(Env.paths.pathetc, name + ".conf")
+    elif kind == "nscfg":
+        return os.path.join(Env.paths.pathetc, "namespace.conf")
     else:
         return os.path.join(Env.paths.pathetc, kind, name + ".conf")
 
@@ -178,8 +198,15 @@ def svc_pathvar(path, relpath=""):
 
 def fmt_path(name, namespace, kind):
     if namespace:
-        return "/".join((namespace.strip("/"), kind, name))
+        ns = namespace.strip("/")
+        if kind == "nscfg":
+            if ns == "root":
+                return "/"
+            return ns + "/"
+        return "/".join((ns, kind, name))
     elif kind not in ("svc", "ccfg"):
+        if kind == "nscfg":
+            return "/"
         return "/".join((kind, name))
     else:
         return name
@@ -373,7 +400,8 @@ def factory(kind):
     try:
         mod = importlib.import_module("core.objects."+kind)
         return getattr(mod, kind.capitalize())
-    except Exception:
+    except Exception as exc:
+        print(exc)
         pass
     raise ValueError("unknown kind: %s" % kind)
 
