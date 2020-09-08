@@ -63,15 +63,21 @@ class Nscfg(PgMixin, BaseSvc):
         return data
 
     def pg_status(self):
+        if not self.pg:
+            return []
         data = self.pg_data()
         return data
 
     def pg_update(self):
+        if not self.pg:
+            return
         self.pg._create_pg(self)
         for obj in self.iterate_objects(volatile=False):
             obj.pg_update()
 
     def pg_remove(self):
+        if not self.pg:
+            return
         if self.options.force:
             self.pg_kill()
         for obj in self.iterate_objects(volatile=False):
@@ -82,6 +88,8 @@ class Nscfg(PgMixin, BaseSvc):
         """
         Freeze all process of the process groups of the service.
         """
+        if not self.pg:
+            return
         self._pg_freeze()
         for obj in self.iterate_objects(volatile=False):
             obj.print_status_data_eval()
@@ -90,6 +98,8 @@ class Nscfg(PgMixin, BaseSvc):
         """
         Thaw all process of the process groups of the service.
         """
+        if not self.pg:
+            return
         self._pg_thaw()
         for obj in self.iterate_objects(volatile=False):
             obj.print_status_data_eval()
@@ -98,6 +108,8 @@ class Nscfg(PgMixin, BaseSvc):
         """
         Kill all process of the process groups of the service.
         """
+        if not self.pg:
+            return
         self._pg_kill()
         for obj in self.iterate_objects(volatile=False):
             obj.print_status_data_eval()
