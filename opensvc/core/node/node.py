@@ -29,6 +29,7 @@ from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
+from utilities.loop_delay import delay
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, new_id, paths_data,
                               resolve_path, split_path, strip_path, svc_pathetc,
@@ -3352,7 +3353,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = 0
             left = 0
         else:
-            timeout = time.time() + duration
+            timeout = _wait_get_time() + duration
             left = duration
         while True:
             if left is None:
@@ -3378,13 +3379,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if result.get("data", {}).get("satisfied"):
                 break
             if left is not None:
-                left = timeout - time.time()
+                left = timeout - _wait_get_time()
             if left is not None and left < 1:
                 print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt()
-            time.sleep(0.2) # short-loop prevention
+            _wait_delay(0.2)  # short-loop prevention
             if left is not None:
-                left = timeout - time.time()
+                left = timeout - _wait_get_time()
 
     def events(self, server=None):
         try:
@@ -5181,3 +5182,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def post_commit(self):
         self.unset_all_lazy()
+
+
+# helper for tests mock
+_wait_get_time = time.time
+_wait_delay = delay
