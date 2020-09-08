@@ -59,3 +59,26 @@ class TestRun:
         else:
             for name in success_flags:
                 assert os.path.exists(os.path.join(str(osvc_path_tests), 'var', 'svc', svcname, str(name)))
+
+    @staticmethod
+    def test_ensure_service_default_hook_is_run_only_once_even_multiple_resources(
+            mocker,
+    ):
+        svcname = "pytest"
+        lcall_svc = mocker.patch('core.objects.svc.lcall', return_value=0)
+        lcall_task = mocker.patch('drivers.resource.task.lcall', return_value=0)
+        mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
+        args = ['create',
+                '--kw', 'DEFAULT.pre_run=/default_pre_run',
+                '--kw', 'DEFAULT.post_run=/default_post_run',
+                '--kw', 'task#1.command=/task1',
+                '--kw', 'task#2.command=/task2',
+                ]
+        assert_run_cmd_success(svcname, args)
+        assert_run_cmd_success(svcname, ['run', '--local'])
+        assert lcall_svc.call_count == 2
+        assert lcall_svc.call_args_list[0][0] == (['/default_pre_run'],)
+        assert lcall_svc.call_args_list[1][0] == (['/default_post_run'],)
+        assert lcall_task.call_count == 2
+        assert set([lcall_task.call_args_list[0][0][0][0],
+                    lcall_task.call_args_list[1][0][0][0]]) == set(['/task1', '/task2'])
