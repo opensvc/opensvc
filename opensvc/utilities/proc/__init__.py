@@ -18,6 +18,9 @@ from utilities.string import bencode, bdecode, empty_string, is_string
 # Os where os.access is invalid
 OS_WITHOUT_OS_ACCESS = ['SunOS']
 
+# lcall checkio() default timeout
+LCALL_CHECK_IO_TIMEOUT = 0.2
+
 if os.name == 'nt':
     close_fds = False
 else:
@@ -114,7 +117,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
 
     def check_io():
         logged = 0
-        rlist, _, xlist = select.select([rout, rerr], [], [], 0.2)
+        rlist, _, xlist = select.select([rout, rerr], [], [], LCALL_CHECK_IO_TIMEOUT)
         if xlist:
             return logged
         for io in rlist:
@@ -341,6 +344,7 @@ def action_triggers(self, trigger="", action=None, shell=False, **kwargs):
         'provision',
         'unprovision',
         'start',
+        'startstandby',
         'stop',
         'shutdown',
         'sync_nodes',
@@ -363,8 +367,6 @@ def action_triggers(self, trigger="", action=None, shell=False, **kwargs):
 
     if action not in actions:
         return
-    elif action == "startstandby":
-        action = "start"
     elif action == "shutdown":
         action = "stop"
 
