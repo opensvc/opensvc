@@ -197,11 +197,9 @@ def svc_pathvar(path, relpath=""):
 
 
 def fmt_path(name, namespace, kind):
-    if namespace:
+    if namespace not in (None, "root"):
         ns = namespace.strip("/")
         if kind == "nscfg":
-            if ns == "root":
-                return "/"
             return ns + "/"
         return "/".join((ns, kind, name))
     elif kind not in ("svc", "ccfg"):
@@ -236,16 +234,23 @@ def strip_path(paths, namespace):
         return re.sub("^svc/", "", path)  # strip default kind
 
 
-def normalize_path(path):
+def path_data(path):
     name, namespace, kind = split_path(path)
     if namespace is None:
         namespace = "root"
-    return fmt_path(name, namespace, kind)
+    return {
+        "path": path,
+        "name": name,
+        "namespace": namespace,
+        "kind": kind,
+        "normalized": "%s/%s/%s" % (namespace, kind, name),
+        "display": fmt_path(name, namespace, kind),
+    }
 
 
-def normalize_paths(paths):
+def paths_data(paths):
     for path in paths:
-        yield normalize_path(path)
+        yield path_data(path)
 
 
 def resolve_path(path, namespace=None):

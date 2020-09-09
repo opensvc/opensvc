@@ -30,7 +30,7 @@ from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
-                              is_service, new_id, normalize_paths,
+                              is_service, new_id, paths_data,
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name)
 from utilities.cache import purge_cache_expired
@@ -662,7 +662,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         if not local:
             try:
-                data = self._daemon_object_selector(selector, namespace)
+                data = self._daemon_object_selector(selector, namespace, kind=os.environ.get("OSVC_KIND"))
                 if isinstance(data, list):
                     return data
             except Exception as exc:
@@ -811,49 +811,44 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return False
 
         if len(elts) == 1:
-            norm_paths = normalize_paths(paths)
             norm_elts = selector.split("/")
             norm_elts_count = len(norm_elts)
+            kind = os.environ.get("OSVC_KIND")
             if norm_elts_count == 3:
-                _namespace, _kind, _name = norm_elts
-                if not _name:
+                if norm_elts[1] == "nscfg":
+                    # pg1/nscfg/foo
+                    _selector = "%s/nscfg/namespace" % norm_elts[0]
+                elif not norm_elts[2]:
                     # test/svc/
-                    _name = "*"
+                    _selector = "%s/%s/*" % (norm_elts[0], norm_elts[1])
+                else:
+                    # a*/b*/c*
+                    _selector = selector
             elif norm_elts_count == 2:
                 if not norm_elts[1]:
-                    # svc/
-                    _name = "*"
-                    _kind = norm_elts[0]
-                    _namespace = "*"
+                    # pg1/
+                    _selector = "%s/nscfg/namespace" % norm_elts[0]
                 elif norm_elts[1] == "**":
                     # prod/**
-                    _name = "*"
-                    _kind = "*"
-                    _namespace = norm_elts[0]
+                    _selector = "%s/*/*" % norm_elts[0]
                 elif norm_elts[0] == "**":
                     # **/s*
-                    _name = norm_elts[1]
-                    _kind = "*"
-                    _namespace = "*"
+                    _selector = "*/*/%s" % norm_elts[1]
                 else:
                     # svc/s*
-                    _name = norm_elts[1]
-                    _kind = norm_elts[0]
-                    _namespace = "*"
+                    _selector = "%s/%s/%s" % (namespace or "root", norm_elts[0], norm_elts[1])
             elif norm_elts_count == 1:
                 if norm_elts[0] == "**":
-                    _name = "*"
-                    _kind = "*"
-                    _namespace = "*"
+                    _selector = "*/*/*"
                 else:
-                    _name = norm_elts[0]
-                    _kind = os.environ.get("OSVC_KIND", "svc")
-                    _namespace = "*"
+                    _selector = "%s/%s/%s" % (namespace or "root", kind or "svc", norm_elts[0])
             else:
                 return []
-            _selector = "/".join((_namespace, _kind, _name))
-            filtered_paths = [path for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
-            return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
+            pds = paths_data(paths)
+            filtered_paths = [pd for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
+            if kind:
+                filtered_paths = [pd for pd in filtered_paths if pd["kind"] == kind]
+            return [pd["display"] for pd in filtered_paths]
         elif len(elts) != 3:
             return []
         param, op, value = elts
@@ -3929,13 +3924,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print(error, file=sys.stderr)
         return status
 
-    def _daemon_object_selector(self, selector="*", namespace=None, server=None):
+    def _daemon_object_selector(self, selector="*", namespace=None, kind=None, server=None):
         data = self.daemon_get(
             {
                 "action": "object_selector",
                 "options": {
                     "selector": selector,
                     "namespace": namespace,
+                    "kind": kind,
                 },
             },
             server=server,
