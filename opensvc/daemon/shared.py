@@ -21,7 +21,7 @@ import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
-from utilities.naming import split_path, normalize_paths, factory
+from utilities.naming import split_path, paths_data, factory
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -1660,7 +1660,7 @@ class OsvcThread(threading.Thread, Crypt):
             selector = "**"
         return path in self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces, paths=[path])
 
-    def object_selector(self, selector=None, namespace=None, namespaces=None, paths=None):
+    def object_selector(self, selector=None, namespace=None, namespaces=None, kind=None, paths=None):
         if not selector:
             return []
         if namespace:
@@ -1673,13 +1673,18 @@ class OsvcThread(threading.Thread, Crypt):
 
         if paths is None:
             # all objects
-            paths = [p for p in AGG if split_path(p)[1] in namespaces]
+            paths = [p for p in AGG]
+        pds = paths_data(paths)
+        pds = [pd for pd in pds if pd["namespace"] in namespaces]
+        if kind:
+            pds = [pd for pd in pds if pd["kind"] == kind]
         if selector == "**":
-            return paths
+            return [pd["display"] for pd in pds]
 
         # all services
         if selector == "*":
-            return [p for p in paths if split_path(p)[2] == "svc"]
+            kind = kind or "svc"
+            return [pd["display"] for pd in pds if pd["kind"] == kind]
 
         def or_fragment_selector(s):
             expanded = []
@@ -1717,49 +1722,42 @@ class OsvcThread(threading.Thread, Crypt):
             s = s.lstrip("!")
             elts = re.split(ops, s)
             if len(elts) == 1:
-                norm_paths = normalize_paths(paths)
                 norm_elts = s.split("/")
                 norm_elts_count = len(norm_elts)
                 if norm_elts_count == 3:
-                    _namespace, _kind, _name = norm_elts
-                    if not _name:
+                    if norm_elts[1] == "nscfg":
+                        # */nscfg/*
+                        _selector = "%s/nscfg/namespace" % norm_elts[0]
+                    elif not norm_elts[2]:
                         # test/svc/
-                        _name = "*"
+                        _selector = "%s/%s/*" % (norm_elts[0], norm_elts[1])
+                    else:
+                        # a*/b*/c*
+                        _selector = s
                 elif norm_elts_count == 2:
                     if not norm_elts[1]:
-                        # svc/
-                        _name = "*"
-                        _kind = norm_elts[0]
-                        _namespace = "*"
+                        # pg1/
+                        _selector = "%s/nscfg/namespace" % norm_elts[0]
                     elif norm_elts[1] == "**":
                         # prod/**
-                        _name = "*"
-                        _kind = "*"
-                        _namespace = norm_elts[0]
+                        _selector = "%s/*/*" % norm_elts[0]
                     elif norm_elts[0] == "**":
                         # **/s*
-                        _name = norm_elts[1]
-                        _kind = "*"
-                        _namespace = "*"
+                        _selector = "*/*/%s" % norm_elts[1]
                     else:
                         # svc/s*
-                        _name = norm_elts[1]
-                        _kind = norm_elts[0]
-                        _namespace = "*"
+                        _selector = "%s/%s/%s" % (namespace or "root", norm_elts[0], norm_elts[1])
                 elif norm_elts_count == 1:
                     if norm_elts[0] == "**":
-                        _name = "*"
-                        _kind = "*"
-                        _namespace = "*"
+                        _selector = "*/*/*"
                     else:
-                        _name = norm_elts[0]
-                        _kind = "svc"
-                        _namespace = namespace if namespace else "root"
+                        _selector = "%s/%s/%s" % (namespace or "root", kind or "svc", norm_elts[0])
                 else:
                     return []
-                _selector = "/".join((_namespace, _kind, _name))
-                filtered_paths = [path for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
-                return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
+                filtered_paths = [pd for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
+                if kind:
+                    filtered_paths = [pd for pd in filtered_paths if pd["kind"] == kind]
+                return [pd["display"] for pd in filtered_paths]
             elif len(elts) != 3:
                 return []
 
