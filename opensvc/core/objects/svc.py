@@ -4144,7 +4144,7 @@ class Svc(BaseSvc):
         if verbose:
             self.log.info(" ".join(cmd))
 
-        cmd = ["env", "OSVC_DETACHED=1", "OSVC_ACTION_ORIGIN=master %s" % os.environ.get("OSVC_ACTION_ORIGIN", "user")] + cmd
+        cmd = ["env", "OSVC_DETACHED=1", "OSVC_ACTION_ORIGIN='master %s'" % os.environ.get("OSVC_ACTION_ORIGIN", "user")] + cmd
         if container is not None and hasattr(container, "rcmd") and callable(container.rcmd):
             try:
                 out, err, ret = container.rcmd(cmd)
