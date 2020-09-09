@@ -3260,7 +3260,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     _namespace = namespace
                 else:
                     name, _namespace, kind = split_path(_path)
-                info = self.install_service_info(name, namespace, kind)
+                info = self.install_service_info(name, _namespace, kind)
                 print("create %s" % info.path)
                 self.install_svc_conf_from_data(name, _namespace, kind, _data, restore, info)
                 installed.append(info.path)
