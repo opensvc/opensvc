@@ -20,7 +20,14 @@ class ObjectCreateMixin(object):
         errors = []
         name, namespace, kind = split_path(path)
         grants = thr.user_grants(all_ns | set([namespace]))
-        if namespace not in all_ns:
+        if kind == "nscfg":
+            if "squatter" not in grants:
+                errors.append("%s: create the namespace %s config requires the squatter cluster role" % (path, namespace))
+                return errors
+            elif namespace not in grants["admin"]:
+                thr.usr.set_multi(["grant+=admin:%s" % namespace])
+                grants["admin"].add(namespace)
+        elif namespace not in all_ns:
             if namespace == "system":
                 errors.append("%s: create the new namespace system requires the root cluster role")
                 return errors
@@ -61,7 +68,7 @@ class ObjectCreateMixin(object):
                     errors.append("%s: resource %s type %s requires the root privilege" % (path, r.rid, r.type))
         for section, sdata in cd.items():
             rtype = cd[section].get("type")
-            errors += thr.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj, all_ns, thr=thr)
+            errors += self.rbac_create_data_section(path, section, rtype, sdata, grants, obj, orig_obj, all_ns, thr=thr)
         return errors
 
     def rbac_create_data_section(self, path, section, rtype, sdata, user_grants, obj, orig_obj, all_ns, thr=None):
