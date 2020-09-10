@@ -357,10 +357,17 @@ def thaw(o):
 def pids(o, controller="memory"):
     cgp = get_cgroup_path(o, controller)
     _pids = set()
-    for p in glob.glob(cgp+"/cgroup.procs") + glob.glob(cgp+"/*/cgroup.procs") + glob.glob(cgp+"/*/*/cgroup.procs") + glob.glob(cgp+"/*/*/*/cgroup.procs") + glob.glob(cgp+"/*/*/*/*/cgroup.procs"):
-        with open(p, "r") as f:
-            for pid in f.readlines():
-                _pids.add(pid.strip())
+    fname = "cgroup.procs"
+    for path, _, files in os.walk(cgp):
+        fpath = os.path.join(path, fname)
+        if fname not in files:
+            continue
+        try:
+            with open(fpath, "r") as f:
+                for pid in f.readlines():
+                    _pids.add(pid.strip())
+        except Exception:
+            pass
     return list(_pids)
 
 def kill(o):
