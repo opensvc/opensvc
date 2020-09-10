@@ -972,6 +972,34 @@ KEYWORDS = [
     },
     {
         "sections": SECTIONS,
+        "keyword": "pre_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`startstandby` action. Errors do not interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "post_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`startstandby` action. Errors do not interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "blocking_pre_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`startstandby` action. Errors interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "blocking_post_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`startstandby` action. Errors interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
         "keyword": "pre_stop",
         "generic": True,
         "at": True,

@@ -18,6 +18,9 @@ from utilities.string import bencode, bdecode, empty_string, is_string
 # Os where os.access is invalid
 OS_WITHOUT_OS_ACCESS = ['SunOS']
 
+# lcall checkio() default timeout
+LCALL_CHECK_IO_TIMEOUT = 0.2
+
 if os.name == 'nt':
     close_fds = False
 else:
@@ -114,7 +117,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
 
     def check_io():
         logged = 0
-        rlist, _, xlist = select.select([rout, rerr], [], [], 0.2)
+        rlist, _, xlist = select.select([rout, rerr], [], [], LCALL_CHECK_IO_TIMEOUT)
         if xlist:
             return logged
         for io in rlist:
@@ -331,7 +334,7 @@ def check_privs():
     sys.exit(1)
 
 
-def action_triggers(self, trigger="", action=None, **kwargs):
+def action_triggers(self, trigger="", action=None, shell=False, **kwargs):
     """
     Executes a service or resource trigger. Guess if the shell mode is needed
     from the trigger syntax.
@@ -341,6 +344,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'provision',
         'unprovision',
         'start',
+        'startstandby',
         'stop',
         'shutdown',
         'sync_nodes',
@@ -354,27 +358,6 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         'command',  # tasks use that as an action
     ]
 
-    compat_triggers = [
-        'pre_syncnodes', 'pre_syncdrp',
-        'post_syncnodes', 'post_syncdrp',
-        'post_syncresync', 'pre_syncresync',
-        'post_syncupdate', 'pre_syncupdate',
-    ]
-
-    def get_trigger_cmdv(cmd, kwargs):
-        """
-        Return the cmd arg useable by subprocess Popen
-        """
-        if not kwargs.get("shell", False):
-            if six.PY2:
-                cmdv = shlex.split(cmd.encode('utf8'))
-                cmdv = [elem.decode('utf8') for elem in cmdv]
-            else:
-                cmdv = shlex.split(cmd)
-        else:
-            cmdv = cmd
-        return cmdv
-
     if hasattr(self, "svc"):
         svc = self.svc
         section = self.rid
@@ -384,8 +367,6 @@ def action_triggers(self, trigger="", action=None, **kwargs):
 
     if action not in actions:
         return
-    elif action == "startstandby":
-        action = "start"
     elif action == "shutdown":
         action = "stop"
 
@@ -399,10 +380,6 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         attr = action
     else:
         attr = trigger + "_" + action
-
-    # translate deprecated actions
-    if attr in compat_triggers:
-        attr = compat_triggers[attr]
 
     try:
         if attr in self.skip_triggers:
@@ -422,11 +399,10 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         svc.log.warning("empty trigger: %s.%s", section, attr)
         return
 
-    if "|" in cmd or "&&" in cmd or ";" in cmd:
-        kwargs["shell"] = True
-
     try:
-        cmdv = get_trigger_cmdv(cmd, kwargs)
+        if does_call_cmd_need_shell(cmd):
+            shell = True
+        cmdv = get_call_cmd_from_str(cmd, shell=shell)
     except ValueError as exc:
         raise ex.Error(str(exc))
 
@@ -437,7 +413,7 @@ def action_triggers(self, trigger="", action=None, **kwargs):
         return
 
     try:
-        ret = self.lcall(cmdv, **kwargs)
+        ret = self.lcall(cmdv, shell=shell, **kwargs)
     except OSError as osexc:
         ret = 1
         if osexc.errno == 8:
@@ -637,3 +613,19 @@ def call_log(buff="", log=None, level="info"):
     for line in lines:
         fn("| " + line)
 
+
+def get_call_cmd_from_str(cmd, shell=False):
+    """
+    Return the cmd arg usable by ?call
+    """
+    if shell:
+        return cmd
+    else:
+        if six.PY2:
+            cmdv = shlex.split(cmd.encode('utf8'))
+            return [elem.decode('utf8') for elem in cmdv]
+        else:
+            return shlex.split(cmd)
+
+def does_call_cmd_need_shell(cmd):
+    return "|" in cmd or "&&" in cmd or ";" in cmd

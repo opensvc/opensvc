@@ -29,6 +29,7 @@ from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
+from utilities.loop_delay import delay
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, new_id, paths_data,
                               resolve_path, split_path, strip_path, svc_pathetc,
@@ -41,8 +42,9 @@ from utilities.drivers import driver_import
 from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
-from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, init_locale
-from utilities.files import makedirs
+from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, \
+    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
+from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
 from utilities.string import bdecode
@@ -1375,16 +1377,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The scheduler task executing the node reboot if the scheduler
         constraints are satisfied and the reboot flag is set.
         """
-        if not os.path.exists(self.paths.reboot_flag):
-            print("%s is not present. no reboot scheduled" % self.paths.reboot_flag)
-            return
-        import stat
-        statinfo = os.stat(self.paths.reboot_flag)
-        if statinfo.st_uid != 0:
-            print("%s does not belong to root. abort scheduled reboot" % self.paths.reboot_flag)
-            return
-        if statinfo.st_mode & stat.S_IWOTH:
-            print("%s is world writable. abort scheduled reboot" % self.paths.reboot_flag)
+        try:
+            assert_file_exists(self.paths.reboot_flag)
+            assert_file_is_root_only_writeable(self.paths.reboot_flag)
+        except Exception as error:
+            print('%s. abort scheduled reboot' % error)
             return
         once = self.oget("reboot", "once")
         if once:
@@ -1609,8 +1606,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         The trigger execution wrapper.
         """
-        _cmd = shlex.split(cmd)
-        ret, out, err = self.vcall(_cmd, err_to_warn=err_to_warn)
+        shell = False
+        if does_call_cmd_need_shell(cmd):
+            shell = True
+        cmd = get_call_cmd_from_str(cmd, shell=shell)
+        ret, out, err = self.vcall(cmd, err_to_warn=err_to_warn, shell=shell)
         if ret != 0:
             raise ex.Error((ret, out, err))
 
@@ -3353,7 +3353,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = 0
             left = 0
         else:
-            timeout = time.time() + duration
+            timeout = _wait_get_time() + duration
             left = duration
         while True:
             if left is None:
@@ -3379,13 +3379,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if result.get("data", {}).get("satisfied"):
                 break
             if left is not None:
-                left = timeout - time.time()
+                left = timeout - _wait_get_time()
             if left is not None and left < 1:
                 print("timeout", file=sys.stderr)
                 raise KeyboardInterrupt()
-            time.sleep(0.2) # short-loop prevention
+            _wait_delay(0.2)  # short-loop prevention
             if left is not None:
-                left = timeout - time.time()
+                left = timeout - _wait_get_time()
 
     def events(self, server=None):
         try:
@@ -5182,3 +5182,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def post_commit(self):
         self.unset_all_lazy()
+
+
+# helper for tests mock
+_wait_get_time = time.time
+_wait_delay = delay

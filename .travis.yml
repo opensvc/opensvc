@@ -12,16 +12,18 @@ matrix:
   - os: linux
     python: '2.7'
     dist: focal
+    env: PYTEST_EXTRA_ARGS=""
   - os: linux
     python: '3.6'
     dist: focal
+    env: PYTEST_EXTRA_ARGS="--cov"
 before_install:
   - sudo apt-get update
   - sudo apt-get -y install procps
 install:
 - pip install -r test-requirements.txt
 script:
-- sudo $(which pytest) --cov -m "ci"
+- sudo $(which pytest) $PYTEST_EXTRA_ARGS -m "ci"
 - PYTHONPATH=opensvc pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
 after_success:
 - pip install codecov

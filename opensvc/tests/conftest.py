@@ -120,7 +120,8 @@ def create_driver_resource(mock_sysname):
 @pytest.fixture(scope='function')
 def has_cluster_config(osvc_path_tests):
     pathetc = env.Env.paths.pathetc
-    os.mkdir(pathetc)
+    if not os.path.exists(pathetc):
+        os.mkdir(pathetc)
     config_lines = [
         '[DEFAULT]',
         'id = ' + str(uuid.uuid4()),
@@ -138,14 +139,13 @@ def has_cluster_config(osvc_path_tests):
 def has_node_config(osvc_path_tests):
 
     pathetc = env.Env.paths.pathetc
-    os.mkdir(pathetc)
+    if not os.path.exists(pathetc):
+        os.mkdir(pathetc)
     with open(os.path.join(pathetc, 'node.conf'), mode='w+') as node_config_file:
         """This fixture set non default port and tls_port for listener.
         This avoid port conflict with live daemon.
         """
-        config_txt = """[DEFAULT]
-id = nodeuuid
-
+        config_txt = """
 [listener]
 port = 1224
 tls_port = 1225
