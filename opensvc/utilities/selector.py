@@ -1,6 +1,6 @@
 import re
 
-def object_selector_value_match(current, op, value):
+def selector_value_match(current, op, value):
     if op in ("<", ">", ">=", "<="):
         try:
             current = float(current)
@@ -42,4 +42,9 @@ def object_selector_value_match(current, op, value):
         match = False
     return match
 
-
+def selector_parse_fragment(s):
+    ops = r"(<=|>=|~=|<|>|=|~|:)"
+    negate = s[0] == "!"
+    s = s.lstrip("!")
+    elts = re.split(ops, s)
+    return negate, s, elts

@@ -7,7 +7,6 @@ import time
 import fnmatch
 import hashlib
 import json
-import re
 import tempfile
 import shutil
 from subprocess import Popen, PIPE
@@ -22,7 +21,7 @@ from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
-from utilities.selector import object_selector_value_match
+from utilities.selector import selector_value_match, selector_parse_fragment
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -1718,10 +1717,7 @@ class OsvcThread(threading.Thread, Crypt):
                 return [s]
 
             # fnmatch expression
-            ops = r"(<=|>=|~=|<|>|=|~|:)"
-            negate = s[0] == "!"
-            s = s.lstrip("!")
-            elts = re.split(ops, s)
+            negate, s, elts = selector_parse_fragment(s)
 
             if len(elts) == 1:
                 return object_path_glob(s, pds=pds, namespace=namespace, kind=kind, negate=negate)
@@ -1762,7 +1758,7 @@ class OsvcThread(threading.Thread, Crypt):
                     matches = jsonpath_expr.find(data)
                     for match in matches:
                         current = match.value
-                        if object_selector_value_match(current, op, value):
+                        if selector_value_match(current, op, value):
                             return True
                 except Exception:
                     pass
@@ -1790,12 +1786,12 @@ class OsvcThread(threading.Thread, Crypt):
                                 _current = svc._get(rid+"."+_param, evaluate=True)
                             except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                                 continue
-                            if object_selector_value_match(_current, op, value):
+                            if selector_value_match(_current, op, value):
                                 return True
                     return False
                 if current is None:
                     return op == ":"
-                if object_selector_value_match(current, op, value):
+                if selector_value_match(current, op, value):
                     return True
             return False
 
