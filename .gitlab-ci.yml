@@ -13,6 +13,7 @@ stages:
     - id
     - apk add build-base sudo git procps
     - python -V
+    - ln -s /bin/touch /usr/bin/touch
     - pip install -r test-requirements.txt codecov
     - pytest --cov -m "ci"
     - pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
