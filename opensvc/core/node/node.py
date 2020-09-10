@@ -34,7 +34,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name,
                               object_path_glob)
-from utilities.selector import selector_value_match, selector_parse_fragment
+from utilities.selector import selector_config_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
 from utilities.drivers import driver_import
@@ -737,37 +737,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Given a basic selector string (no AND nor OR), return a list of service
         names.
         """
-        def svc_matching(svc, param, op, value):
-            if not param:
-                return False
-            try:
-                current = svc._get(param, evaluate=True)
-            except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                current = None
-            if current is None:
-                if "." in param:
-                    group, _param = param.split(".", 1)
-                else:
-                    group = param
-                    _param = None
-                rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
-                if op == ":" and len(rids) > 0 and _param is None:
-                    return True
-                elif _param:
-                    for rid in rids:
-                        try:
-                            _current = svc._get(rid+"."+_param, evaluate=True)
-                        except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                            continue
-                        if selector_value_match(_current, op, value):
-                            return True
-                return False
-            if current is None:
-                return op == ":"
-            if selector_value_match(current, op, value):
-                return True
-            return False
-
         pds = paths_data(paths)
         kind = os.environ.get("OSVC_KIND")
         if kind:
@@ -780,20 +749,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return object_path_glob(selector, pds=pds, namespace=namespace, kind=kind, negate=negate)
 
         try:
-            param, op, value = elts
+            param, op, value = selector_parse_op_fragment(elts)
         except ValueError:
             return []
-
-        if op in ("<", ">", ">=", "<="):
-            try:
-                value = float(value)
-            except (TypeError, ValueError):
-                return []
 
         # config keyword match
         result = []
         for svc in self.svcs:
-            ret = svc_matching(svc, param, op, value)
+            ret = selector_config_match(svc, param, op, value)
             if ret ^ negate:
                 result.append(svc.path)
 

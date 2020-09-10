@@ -21,7 +21,7 @@ from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
-from utilities.selector import selector_value_match, selector_parse_fragment
+from utilities.selector import selector_config_match, selector_value_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -1705,6 +1705,16 @@ class OsvcThread(threading.Thread, Crypt):
                     expanded = [p for p in expanded if p in _expanded]
             return expanded
 
+        def selector_parse_jsonpath_expr(param):
+            if param.startswith("."):
+                param = "$"+param
+
+            if param.startswith("$."):
+                jsonpath_expr = parse(param)
+            else:
+                jsonpath_expr = None
+            return jsonpath_expr
+
         def fragment_selector(s):
             # empty
             if not s:
@@ -1723,24 +1733,12 @@ class OsvcThread(threading.Thread, Crypt):
                 return object_path_glob(s, pds=pds, namespace=namespace, kind=kind, negate=negate)
 
             try:
-                param, op, value = elts
+                param, op, value = selector_parse_op_fragment(elts)
             except ValueError:
                 return []
 
-            if op in ("<", ">", ">=", "<="):
-                try:
-                    value = float(value)
-                except (TypeError, ValueError):
-                    return []
-
             expanded = []
-
-            if param.startswith("."):
-                param = "$"+param
-            if param.startswith("$."):
-                jsonpath_expr = parse(param)
-            else:
-                jsonpath_expr = None
+            jsonpath_expr = selector_parse_jsonpath_expr(param)
 
             for path in paths:
                 ret = svc_matching(path, param, op, value, jsonpath_expr)
@@ -1749,51 +1747,27 @@ class OsvcThread(threading.Thread, Crypt):
 
             return expanded
 
-        def svc_matching(path, param, op, value, jsonpath_expr):
-            if not param:
+        def selector_status_matching(path, jsonpath_expr, op, value):
+            try:
+                data = self.object_data(path)
+                matches = jsonpath_expr.find(data)
+                for match in matches:
+                    current = match.value
+                    if selector_value_match(current, op, value):
+                        return True
+            except Exception:
                 return False
-            if param.startswith("$."):
-                try:
-                    data = self.object_data(path)
-                    matches = jsonpath_expr.find(data)
-                    for match in matches:
-                        current = match.value
-                        if selector_value_match(current, op, value):
-                            return True
-                except Exception:
-                    pass
+            return False
+
+        def svc_matching(path, param, op, value, jsonpath_expr):
+            if jsonpath_expr:
+                return selector_status_matching(path, jsonpath_expr, op, value)
             else:
                 try:
                     svc = SERVICES[path]
                 except KeyError:
                     return False
-                try:
-                    current = svc._get(param, evaluate=True)
-                except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                    current = None
-                if current is None:
-                    if "." in param:
-                        group, _param = param.split(".", 1)
-                    else:
-                        group = param
-                        _param = None
-                    rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
-                    if op == ":" and len(rids) > 0 and _param is None:
-                        return True
-                    elif _param:
-                        for rid in rids:
-                            try:
-                                _current = svc._get(rid+"."+_param, evaluate=True)
-                            except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                                continue
-                            if selector_value_match(_current, op, value):
-                                return True
-                    return False
-                if current is None:
-                    return op == ":"
-                if selector_value_match(current, op, value):
-                    return True
-            return False
+                return selector_config_match(svc, param, op, value)
 
         expanded = or_fragment_selector(selector)
         return expanded
