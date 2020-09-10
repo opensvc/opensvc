@@ -21,7 +21,7 @@ import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
-from utilities.naming import split_path, paths_data, factory
+from utilities.naming import split_path, paths_data, factory, object_path_glob
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -1721,47 +1721,15 @@ class OsvcThread(threading.Thread, Crypt):
             negate = s[0] == "!"
             s = s.lstrip("!")
             elts = re.split(ops, s)
+
             if len(elts) == 1:
-                norm_elts = s.split("/")
-                norm_elts_count = len(norm_elts)
-                if norm_elts_count == 3:
-                    if norm_elts[1] == "nscfg":
-                        # */nscfg/*
-                        _selector = "%s/nscfg/namespace" % norm_elts[0]
-                    elif not norm_elts[2]:
-                        # test/svc/
-                        _selector = "%s/%s/*" % (norm_elts[0], norm_elts[1])
-                    else:
-                        # a*/b*/c*
-                        _selector = s
-                elif norm_elts_count == 2:
-                    if not norm_elts[1]:
-                        # pg1/
-                        _selector = "%s/nscfg/namespace" % norm_elts[0]
-                    elif norm_elts[1] == "**":
-                        # prod/**
-                        _selector = "%s/*/*" % norm_elts[0]
-                    elif norm_elts[0] == "**":
-                        # **/s*
-                        _selector = "*/*/%s" % norm_elts[1]
-                    else:
-                        # svc/s*
-                        _selector = "%s/%s/%s" % (namespace or "root", norm_elts[0], norm_elts[1])
-                elif norm_elts_count == 1:
-                    if norm_elts[0] == "**":
-                        _selector = "*/*/*"
-                    else:
-                        _selector = "%s/%s/%s" % (namespace or "root", kind or "svc", norm_elts[0])
-                else:
-                    return []
-                filtered_paths = [pd for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
-                if kind:
-                    filtered_paths = [pd for pd in filtered_paths if pd["kind"] == kind]
-                return [pd["display"] for pd in filtered_paths]
-            elif len(elts) != 3:
+                return object_path_glob(s, pds=pds, namespace=namespace, kind=kind, negate=negate)
+
+            try:
+                param, op, value = elts
+            except ValueError:
                 return []
 
-            param, op, value = elts
             if op in ("<", ">", ">=", "<="):
                 try:
                     value = float(value)

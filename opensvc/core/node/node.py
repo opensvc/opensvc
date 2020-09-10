@@ -32,7 +32,8 @@ from env import Env
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, new_id, paths_data,
                               resolve_path, split_path, strip_path, svc_pathetc,
-                              validate_kind, validate_name, validate_ns_name)
+                              validate_kind, validate_name, validate_ns_name,
+                              object_path_glob)
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
 from utilities.drivers import driver_import
@@ -810,48 +811,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 return True
             return False
 
+        pds = paths_data(paths)
+        kind = os.environ.get("OSVC_KIND")
+        if kind:
+            pds = [pd for pd in pds if pd["kind"] == kind]
+            paths = [pd["display"] for pd in pds]
+
         if len(elts) == 1:
-            norm_elts = selector.split("/")
-            norm_elts_count = len(norm_elts)
-            kind = os.environ.get("OSVC_KIND")
-            if norm_elts_count == 3:
-                if norm_elts[1] == "nscfg":
-                    # pg1/nscfg/foo
-                    _selector = "%s/nscfg/namespace" % norm_elts[0]
-                elif not norm_elts[2]:
-                    # test/svc/
-                    _selector = "%s/%s/*" % (norm_elts[0], norm_elts[1])
-                else:
-                    # a*/b*/c*
-                    _selector = selector
-            elif norm_elts_count == 2:
-                if not norm_elts[1]:
-                    # pg1/
-                    _selector = "%s/nscfg/namespace" % norm_elts[0]
-                elif norm_elts[1] == "**":
-                    # prod/**
-                    _selector = "%s/*/*" % norm_elts[0]
-                elif norm_elts[0] == "**":
-                    # **/s*
-                    _selector = "*/*/%s" % norm_elts[1]
-                else:
-                    # svc/s*
-                    _selector = "%s/%s/%s" % (namespace or "root", norm_elts[0], norm_elts[1])
-            elif norm_elts_count == 1:
-                if norm_elts[0] == "**":
-                    _selector = "*/*/*"
-                else:
-                    _selector = "%s/%s/%s" % (namespace or "root", kind or "svc", norm_elts[0])
-            else:
-                return []
-            pds = paths_data(paths)
-            filtered_paths = [pd for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
-            if kind:
-                filtered_paths = [pd for pd in filtered_paths if pd["kind"] == kind]
-            return [pd["display"] for pd in filtered_paths]
-        elif len(elts) != 3:
+            return object_path_glob(selector, pds=pds, namespace=namespace, kind=kind, negate=negate)
+
+        try:
+            param, op, value = elts
+        except ValueError:
             return []
-        param, op, value = elts
+
         if op in ("<", ">", ">=", "<="):
             try:
                 value = float(value)

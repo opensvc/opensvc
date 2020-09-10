@@ -1,6 +1,7 @@
 """
 Namespaces functions
 """
+import fnmatch
 import glob
 import importlib
 import os
@@ -414,4 +415,42 @@ def factory(kind):
 def new_id():
     import uuid
     return str(uuid.uuid4())
+
+def object_path_glob(pattern, pds=None, namespace=None, kind=None, negate=False):
+    pds = pds or []
+    if kind:
+        pds = [pd for pd in pds if pd["kind"] == kind]
+    l = pattern.split("/")
+    n = len(l)
+    if n == 3:
+        if l[1] == "nscfg":
+            # */nscfg/*
+            _selector = "%s/nscfg/namespace" % l[0]
+        elif not l[2]:
+            # test/svc/
+            _selector = "%s/%s/*" % (l[0], l[1])
+        else:
+            # a*/b*/c*
+            _selector = pattern
+    elif n == 2:
+        if not l[1]:
+            # pg1/
+            _selector = "%s/nscfg/namespace" % l[0]
+        elif l[1] == "**":
+            # prod/**
+            _selector = "%s/*/*" % l[0]
+        elif l[0] == "**":
+            # **/s*
+            _selector = "*/*/%s" % l[1]
+        else:
+            # svc/s*
+            _selector = "%s/%s/%s" % (namespace or "root", l[0], l[1])
+    elif n == 1:
+        if l[0] == "**":
+            _selector = "*/*/*"
+        else:
+            _selector = "%s/%s/%s" % (namespace or "root", kind or "svc", l[0])
+    else:
+        return []
+    return [pd["display"] for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
 
