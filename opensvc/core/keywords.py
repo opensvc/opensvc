@@ -435,28 +435,18 @@ class KeywordStore(dict):
                  deprecated_sections=None, template_prefix="template.",
                  base_sections=None, has_default_section=True):
         dict.__init__(self)
-        if base_sections is None:
-            base_sections = []
-        if deprecated_sections is None:
-            deprecated_sections = {}
-        if reverse_deprecated_keywords is None:
-            reverse_deprecated_keywords = {}
-        if deprecated_keywords is None:
-            deprecated_keywords = {}
-        if keywords is None:
-            keywords = []
         self.name = name
         self.sections = {}
-        self.deprecated_sections = deprecated_sections
-        self.deprecated_keywords = deprecated_keywords
-        self.reverse_deprecated_keywords = reverse_deprecated_keywords
+        self.deprecated_sections = deprecated_sections or {}
+        self.deprecated_keywords = deprecated_keywords or {}
+        self.reverse_deprecated_keywords = reverse_deprecated_keywords or {}
         self.template_prefix = template_prefix
-        self.base_sections = base_sections
+        self.base_sections = base_sections or ["DEFAULT"]
         self.provision = provision
         self.has_default_section = has_default_section
         self.modules = set()
 
-        for keyword in keywords:
+        for keyword in keywords or []:
             sections = keyword.get("sections", [keyword.get("section")])
             prefixes = keyword.get("prefixes", [""])
             for section in sections:

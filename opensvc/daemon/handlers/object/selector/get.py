@@ -1,5 +1,7 @@
 import daemon.handler
 
+from env import Env
+
 class Handler(daemon.handler.BaseHandler):
     """
     Return the object list expanded from the <selector> expression.
@@ -21,6 +23,13 @@ class Handler(daemon.handler.BaseHandler):
             "format": "string",
             "desc": "A namespace to limit the expansion to.",
         },
+        {
+            "name": "kind",
+            "required": False,
+            "format": "string",
+            "candidates": Env.kinds,
+            "desc": "A kind of object to limit the expansion to.",
+        },
     ]
     access = {
         "roles": ["guest"],
@@ -30,5 +39,5 @@ class Handler(daemon.handler.BaseHandler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         namespaces = thr.get_namespaces()
-        return thr.object_selector(options.selector, options.namespace, namespaces)
+        return thr.object_selector(options.selector, namespace=options.namespace, namespaces=namespaces, kind=options.kind)
 
