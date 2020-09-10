@@ -34,6 +34,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name,
                               object_path_glob)
+from utilities.selector import object_selector_value_match
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
 from utilities.drivers import driver_import
@@ -741,45 +742,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         selector = selector.lstrip("!")
         elts = re.split(ops, selector)
 
-        def matching(current, op, value):
-            if op in ("<", ">", ">=", "<="):
-                try:
-                    current = float(current)
-                except (ValueError, TypeError):
-                    return False
-            if op == "=":
-                if str(current).lower() in ("true", "false"):
-                    match = str(current).lower() == value.lower()
-                else:
-                    match = current == value
-            elif op == "~=":
-                if isinstance(current, (set, list, tuple)):
-                    match = value in current
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == "~":
-                if isinstance(current, (set, list, tuple)):
-                    match = any([True for v in current if re.search(value, v)])
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == ">":
-                match = current > value
-            elif op == ">=":
-                match = current >= value
-            elif op == "<":
-                match = current < value
-            elif op == "<=":
-                match = current <= value
-            elif op == ":":
-                match = True
-            return match
-
         def svc_matching(svc, param, op, value):
             if not param:
                 return False
@@ -802,12 +764,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                             _current = svc._get(rid+"."+_param, evaluate=True)
                         except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                             continue
-                        if matching(_current, op, value):
+                        if object_selector_value_match(_current, op, value):
                             return True
                 return False
             if current is None:
                 return op == ":"
-            if matching(current, op, value):
+            if object_selector_value_match(current, op, value):
                 return True
             return False
 

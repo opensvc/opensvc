@@ -454,3 +454,4 @@ def object_path_glob(pattern, pds=None, namespace=None, kind=None, negate=False)
         return []
     return [pd["display"] for pd in pds if negate ^ fnmatch.fnmatch(pd["normalized"], _selector)]
 
+
