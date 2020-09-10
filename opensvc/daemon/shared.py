@@ -22,6 +22,7 @@ from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
+from utilities.selector import object_selector_value_match
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -1752,48 +1753,6 @@ class OsvcThread(threading.Thread, Crypt):
 
             return expanded
 
-        def matching(current, op, value):
-            if op in ("<", ">", ">=", "<="):
-                try:
-                    current = float(current)
-                except (ValueError, TypeError):
-                    return False
-            if op == "=":
-                if str(current).lower() in ("true", "false"):
-                    match = str(current).lower() == value.lower()
-                else:
-                    match = current == value
-            elif op == "~=":
-                if isinstance(current, (set, list, tuple)):
-                    match = value in current
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == "~":
-                if isinstance(current, (set, list, tuple)):
-                    match = any([True for v in current if re.search(value, v)])
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == ">":
-                match = current > value
-            elif op == ">=":
-                match = current >= value
-            elif op == "<":
-                match = current < value
-            elif op == "<=":
-                match = current <= value
-            elif op == ":":
-                match = True
-            else:
-                # unknown op value
-                match = False
-            return match
-
         def svc_matching(path, param, op, value, jsonpath_expr):
             if not param:
                 return False
@@ -1803,7 +1762,7 @@ class OsvcThread(threading.Thread, Crypt):
                     matches = jsonpath_expr.find(data)
                     for match in matches:
                         current = match.value
-                        if matching(current, op, value):
+                        if object_selector_value_match(current, op, value):
                             return True
                 except Exception:
                     pass
@@ -1831,12 +1790,12 @@ class OsvcThread(threading.Thread, Crypt):
                                 _current = svc._get(rid+"."+_param, evaluate=True)
                             except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
                                 continue
-                            if matching(_current, op, value):
+                            if object_selector_value_match(_current, op, value):
                                 return True
                     return False
                 if current is None:
                     return op == ":"
-                if matching(current, op, value):
+                if object_selector_value_match(current, op, value):
                     return True
             return False
 
