@@ -1,4 +1,5 @@
-from core.objects.svc import BaseSvc, PgMixin
+from core.objects.svc import BaseSvc
+from core.objects.pg import PgMixin
 from utilities.lazy import lazy
 from utilities.drivers import driver_import
 from utilities.naming import list_services, factory, split_path
@@ -26,6 +27,10 @@ class Nscfg(PgMixin, BaseSvc):
     def full_kwstore(self):
         from .nscfgdict import KEYS
         return KEYS
+
+    @lazy
+    def nscfg(self):
+        return lambda x: x
 
     @lazy
     def pg(self):
@@ -68,10 +73,12 @@ class Nscfg(PgMixin, BaseSvc):
         data = self.pg_data()
         return data
 
-    def pg_update(self):
+    def pg_update(self, children=True):
         if not self.pg:
             return
         self.pg._create_pg(self)
+        if not children:
+            return
         for obj in self.iterate_objects(volatile=False):
             obj.pg_update()
 
