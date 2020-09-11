@@ -551,6 +551,7 @@ class Resource(object):
             self.status_logs = []
             self.rstatus = self.try_status(verbose)
             self.rstatus = self.status_stdby(self.rstatus)
+            self.last_status_info = self.status_info()
             self.log.debug("refresh status: %s => %s",
                            core.status.Status(last_status),
                            core.status.Status(self.rstatus))

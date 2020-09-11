@@ -3773,10 +3773,7 @@ class Svc(PgMixin, BaseSvc):
             for resource in rset.resources:
                 status = core.status.Status(resource.status(verbose=True))
                 log = resource.status_logs_strlist()
-                if refresh:
-                    info = resource.status_info()
-                else:
-                    info = resource.last_status_info
+                info = resource.last_status_info # refreshed by resource.status() if necessary
                 tags = sorted(list(resource.tags))
                 disable = resource.is_disabled()
                 _data = {
@@ -3888,7 +3885,7 @@ class Svc(PgMixin, BaseSvc):
         nscfg = self.nscfg()
         if not nscfg:
             return
-        nscfg.pg_update()
+        nscfg.pg_update(children=False)
 
     def do_pre_monitor_action(self):
         if self.pre_monitor_action is None:
