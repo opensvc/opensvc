@@ -108,7 +108,11 @@ def _set_cgroup(o, t, name, key, force=False):
     cgp = get_cgroup_path(o, t)
     if value is None:
         return
-    if not force and get_cgroup(o, t, name).strip() == str(value):
+    if name == "memory.oom_control":
+        current = get_cgroup(o, t, name).split(os.linesep)[0].split()[-1]
+    else:
+        current = get_cgroup(o, t, name).strip()
+    if not force and current == str(value):
         return
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
