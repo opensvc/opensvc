@@ -964,46 +964,47 @@ class Scheduler(object):
         if self.obj.cd is None:
             print("you are not allowed to print schedules", file=sys.stderr)
             raise ex.Error()
-        if self.options.format is None:
-            self._print_schedule_default()
-            return
         data = self.print_schedule_data()
+        if self.options.format is None:
+            self.format_schedule(data, verbose=self.options.verbose)
+            return
         if self.svc and not self.svc.options.single_service:
             # let the Node object do the formatting (for aggregation)
             return data
         # format ourself
-        return self._print_schedule(data)
+        return self.format_schedule_data(data)
 
     @formatter
-    def _print_schedule(self, data):
+    def format_schedule_data(self, data):
         """
         Display the scheduling table using the formatter specified in
         command line --format option.
         """
         return data
 
-    def _print_schedule_default(self):
+    @staticmethod
+    def format_schedule(data, verbose=False):
         """
-        Print the scheduling table in normal or detailed mode.
+        Print the scheduling table as a tree, in normal or verbose mode.
         """
         from utilities.render.forest import Forest
         tree = Forest()
         head_node = tree.add_node()
         head_node.add_column("Action", color.BOLD)
         head_node.add_column("Last Run", color.BOLD)
-        if self.options.verbose:
+        if verbose:
             head_node.add_column("Next Run", color.BOLD)
         head_node.add_column("Config Parameter", color.BOLD)
         head_node.add_column("Schedule Definition", color.BOLD)
 
-        for data in self.print_schedule_data():
+        for _data in data:
             node = head_node.add_node()
-            node.add_column(data["action"], color.LIGHTBLUE)
-            node.add_column(data["last_run"])
-            if self.options.verbose:
-                node.add_column(data["next_run"])
-            node.add_column(data["config_parameter"])
-            node.add_column(data["schedule_definition"])
+            node.add_column(_data["action"], color.LIGHTBLUE)
+            node.add_column(_data["last_run"])
+            if verbose:
+                node.add_column(_data["next_run"])
+            node.add_column(_data["config_parameter"])
+            node.add_column(_data["schedule_definition"])
 
         tree.out()
 
@@ -1013,7 +1014,7 @@ class Scheduler(object):
         """
         self.configure()
         data = []
-        for action in sorted(self.scheduler_actions):
+        for action in self.scheduler_actions:
             data += self._print_schedule_data(action)
         return data
 
@@ -1029,7 +1030,7 @@ class Scheduler(object):
         else:
             sopt = self.scheduler_actions[action]
             data += [self.__print_schedule_data(action, sopt)]
-        return data
+        return sorted(data, key=lambda x: x["config_parameter"])
 
     def __print_schedule_data(self, action, sopt):
         """
