@@ -1062,23 +1062,23 @@ class Scheduler(object):
         else:
             param = schedule_option
         param = '.'.join((section, param))
+
+        data = dict(
+            action=action,
+            last_run=last_s,
+            config_parameter=param,
+            schedule_definition=schedule_s,
+        )
+
         if self.options.verbose:
-            result = self.get_next_schedule(action)
-            if result["next_sched"]:
+            if schedule_s in ("-", "@0", "malformed"):
+                result = None
+            else:
+                result = self.get_next_schedule(action)
+            if result and result["next_sched"]:
                 next_s = result["next_sched"].strftime("%Y-%m-%d %H:%M")
             else:
                 next_s = "-"
-            return dict(
-                action=action,
-                last_run=last_s,
-                next_run=next_s,
-                config_parameter=param,
-                schedule_definition=schedule_s
-            )
-        else:
-            return dict(
-                action=action,
-                last_run=last_s,
-                config_parameter=param,
-                schedule_definition=schedule_s,
-            )
+            data["next_run"] = next_s
+
+        return data
