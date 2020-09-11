@@ -3885,7 +3885,7 @@ class Svc(PgMixin, BaseSvc):
         nscfg = self.nscfg()
         if not nscfg:
             return
-        nscfg.pg_update()
+        nscfg.pg_update(children=False)
 
     def do_pre_monitor_action(self):
         if self.pre_monitor_action is None:
