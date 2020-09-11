@@ -1,6 +1,13 @@
 import sys
 from env import Env
 from core.keywords import KeywordStore
+from core.objects.svcdict import PG_KEYWORDS
+
+KEYWORDS = []
+
+for d in PG_KEYWORDS:
+    d["sections"] = ["DEFAULT"]
+    KEYWORDS.append(d)
 
 # deprecated => supported
 DEPRECATED_KEYWORDS = {
@@ -14,10 +21,9 @@ DEPRECATED_SECTIONS = {
 }
 
 BASE_SECTIONS = [
-    "data",
 ]
 
-KEYWORDS = [
+PRIVATE_KEYWORDS = [
     {
         "section": "DEFAULT",
         "keyword": "id",
@@ -29,13 +35,14 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "disable",
         "protoname": "disabled",
+        "protoname": "disabled",
         "inheritance": "leaf",
         "generic": True,
         "at": True,
         "candidates": (True, False),
         "default": False,
         "convert": "boolean",
-        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor :c-action:`start` and :c-action:`stop` actions. These actions immediately return success.\n\n:cmd:`om <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`om <path> enable` does not enable disabled resources."
+        "text": "A disabled resource will be ignored on service startup and shutdown. Its status is always reported ``n/a``.\n\nSet in DEFAULT, the whole service is disabled. A disabled service does not honor start and stop actions. These actions immediately return success.\n\n:cmd:`om <path> disable` only sets :kw:`DEFAULT.disable`. As resources disabled state is not changed, :cmd:`om <path> enable` does not enable disabled resources."
     },
     {
         "section": "DEFAULT",
@@ -51,7 +58,6 @@ KEYWORDS = [
         "default": 60,
         "convert": "duration",
         "text": "A duration expression, like ``1m30s``. The maximum wait time for the action lock acquire. The :cmd:`--waitlock` option overrides this parameter."
-
     },
     {
         "section": "DEFAULT",
@@ -74,22 +80,16 @@ KEYWORDS = [
         "text": "Alternate backup nodes, where the service could be activated in a DRP situation if the 'drpnode' is not available. These nodes are also data synchronization targets for :c-res:`sync` resources.",
         "example": "node1 node2"
     },
-    {
-        "section": "DEFAULT",
-        "keyword": "comment",
-        "default": "",
-        "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
-    },
 ]
 
 
 KEYS = KeywordStore(
-    name="cfg",
-    keywords=KEYWORDS,
+    name="nscfg",
+    keywords=PRIVATE_KEYWORDS+KEYWORDS,
     deprecated_keywords=DEPRECATED_KEYWORDS,
     reverse_deprecated_keywords=REVERSE_DEPRECATED_KEYWORDS,
     deprecated_sections=DEPRECATED_SECTIONS,
-    template_prefix="template.cfg.",
+    template_prefix="template.nscfg.",
     base_sections=BASE_SECTIONS,
     has_default_section=False,
 )

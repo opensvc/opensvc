@@ -162,6 +162,7 @@ class TestNodemgrDaemonActions:
             proc = Process(target=daemon_main_target)
             proc.start()
             proc.join()
+            time.sleep(0.5)
             return 0
 
         mocker.patch.object(commands.daemon.Node, 'daemon_start_native', daemon_start_native)

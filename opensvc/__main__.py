@@ -13,6 +13,7 @@ HELP = """Usage:
   om ctx                      Manage Remote Connections contexts
   om node                     Manage Cluster Nodes
   om cluster                  Manage Cluster Configuration
+  om nscfg                    Manage Namespace Configuration
   om svc                      Manage Services
   om vol                      Manage Persistent Data Volumes
   om cfg                      Manage Configurations
@@ -68,6 +69,11 @@ def main():
         return ret
     elif arg1 == "vol":
         from commands.vol import Mgr
+        os.environ["OSVC_KIND"] = arg1
+        ret = Mgr()(argv=sys.argv[2:])
+        return ret
+    elif arg1 == "nscfg":
+        from commands.nscfg import Mgr
         os.environ["OSVC_KIND"] = arg1
         ret = Mgr()(argv=sys.argv[2:])
         return ret

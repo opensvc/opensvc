@@ -82,6 +82,9 @@ cfgmgr)
 ccfgmgr)
 	KIND=ccfg
 	;;
+nscfgmgr)
+	KIND=nscfg
+	;;
 svcmon)
 	KIND=mon
 	;;
@@ -98,7 +101,7 @@ main() {
 			;;
 		esac
 	fi
-	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE"
+	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE OSVC_KIND=$OSVC_KIND"
 	if test -n "$KIND"
 	then
 		$SUDO PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"

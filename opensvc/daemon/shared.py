@@ -7,7 +7,6 @@ import time
 import fnmatch
 import hashlib
 import json
-import re
 import tempfile
 import shutil
 from subprocess import Popen, PIPE
@@ -21,7 +20,8 @@ import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
-from utilities.naming import split_path, normalize_paths, factory
+from utilities.naming import split_path, paths_data, factory, object_path_glob
+from utilities.selector import selector_config_match, selector_value_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
@@ -387,7 +387,7 @@ class OsvcThread(threading.Thread, Crypt):
                   on_success=None, on_success_args=None,
                   on_success_kwargs=None, on_error=None,
                   on_error_args=None, on_error_kwargs=None,
-                  cmd=None):
+                  cmd=None, session_id=None):
         """
         Enqueue a structure including a Popen() result and the success and
         error callbacks.
@@ -395,6 +395,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.procs.append(Storage({
             "proc": proc,
             "cmd": cmd,
+            "session_id": session_id,
             "on_success": on_success,
             "on_success_args": on_success_args if on_success_args else [],
             "on_success_kwargs": on_success_kwargs if on_success_kwargs else {},
@@ -1659,7 +1660,7 @@ class OsvcThread(threading.Thread, Crypt):
             selector = "**"
         return path in self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces, paths=[path])
 
-    def object_selector(self, selector=None, namespace=None, namespaces=None, paths=None):
+    def object_selector(self, selector=None, namespace=None, namespaces=None, kind=None, paths=None):
         if not selector:
             return []
         if namespace:
@@ -1672,13 +1673,18 @@ class OsvcThread(threading.Thread, Crypt):
 
         if paths is None:
             # all objects
-            paths = [p for p in AGG if split_path(p)[1] in namespaces]
+            paths = [p for p in AGG]
+        pds = paths_data(paths)
+        pds = [pd for pd in pds if pd["namespace"] in namespaces]
+        if kind:
+            pds = [pd for pd in pds if pd["kind"] == kind]
         if selector == "**":
-            return paths
+            return [pd["display"] for pd in pds]
 
         # all services
         if selector == "*":
-            return [p for p in paths if split_path(p)[2] == "svc"]
+            kind = kind or "svc"
+            return [pd["display"] for pd in pds if pd["kind"] == kind]
 
         def or_fragment_selector(s):
             expanded = []
@@ -1699,6 +1705,16 @@ class OsvcThread(threading.Thread, Crypt):
                     expanded = [p for p in expanded if p in _expanded]
             return expanded
 
+        def selector_parse_jsonpath_expr(param):
+            if param.startswith("."):
+                param = "$"+param
+
+            if param.startswith("$."):
+                jsonpath_expr = parse(param)
+            else:
+                jsonpath_expr = None
+            return jsonpath_expr
+
         def fragment_selector(s):
             # empty
             if not s:
@@ -1711,72 +1727,18 @@ class OsvcThread(threading.Thread, Crypt):
                 return [s]
 
             # fnmatch expression
-            ops = r"(<=|>=|~=|<|>|=|~|:)"
-            negate = s[0] == "!"
-            s = s.lstrip("!")
-            elts = re.split(ops, s)
+            negate, s, elts = selector_parse_fragment(s)
+
             if len(elts) == 1:
-                norm_paths = normalize_paths(paths)
-                norm_elts = s.split("/")
-                norm_elts_count = len(norm_elts)
-                if norm_elts_count == 3:
-                    _namespace, _kind, _name = norm_elts
-                    if not _name:
-                        # test/svc/
-                        _name = "*"
-                elif norm_elts_count == 2:
-                    if not norm_elts[1]:
-                        # svc/
-                        _name = "*"
-                        _kind = norm_elts[0]
-                        _namespace = "*"
-                    elif norm_elts[1] == "**":
-                        # prod/**
-                        _name = "*"
-                        _kind = "*"
-                        _namespace = norm_elts[0]
-                    elif norm_elts[0] == "**":
-                        # **/s*
-                        _name = norm_elts[1]
-                        _kind = "*"
-                        _namespace = "*"
-                    else:
-                        # svc/s*
-                        _name = norm_elts[1]
-                        _kind = norm_elts[0]
-                        _namespace = "*"
-                elif norm_elts_count == 1:
-                    if norm_elts[0] == "**":
-                        _name = "*"
-                        _kind = "*"
-                        _namespace = "*"
-                    else:
-                        _name = norm_elts[0]
-                        _kind = "svc"
-                        _namespace = namespace if namespace else "root"
-                else:
-                    return []
-                _selector = "/".join((_namespace, _kind, _name))
-                filtered_paths = [path for path in norm_paths if negate ^ fnmatch.fnmatch(path, _selector)]
-                return [re.sub("^(root/svc/|root/)", "", path) for path in filtered_paths]
-            elif len(elts) != 3:
+                return object_path_glob(s, pds=pds, namespace=namespace, kind=kind, negate=negate)
+
+            try:
+                param, op, value = selector_parse_op_fragment(elts)
+            except ValueError:
                 return []
 
-            param, op, value = elts
-            if op in ("<", ">", ">=", "<="):
-                try:
-                    value = float(value)
-                except (TypeError, ValueError):
-                    return []
-
             expanded = []
-
-            if param.startswith("."):
-                param = "$"+param
-            if param.startswith("$."):
-                jsonpath_expr = parse(param)
-            else:
-                jsonpath_expr = None
+            jsonpath_expr = selector_parse_jsonpath_expr(param)
 
             for path in paths:
                 ret = svc_matching(path, param, op, value, jsonpath_expr)
@@ -1785,93 +1747,27 @@ class OsvcThread(threading.Thread, Crypt):
 
             return expanded
 
-        def matching(current, op, value):
-            if op in ("<", ">", ">=", "<="):
-                try:
-                    current = float(current)
-                except (ValueError, TypeError):
-                    return False
-            if op == "=":
-                if str(current).lower() in ("true", "false"):
-                    match = str(current).lower() == value.lower()
-                else:
-                    match = current == value
-            elif op == "~=":
-                if isinstance(current, (set, list, tuple)):
-                    match = value in current
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == "~":
-                if isinstance(current, (set, list, tuple)):
-                    match = any([True for v in current if re.search(value, v)])
-                else:
-                    try:
-                        match = re.search(value, current)
-                    except TypeError:
-                        match = False
-            elif op == ">":
-                match = current > value
-            elif op == ">=":
-                match = current >= value
-            elif op == "<":
-                match = current < value
-            elif op == "<=":
-                match = current <= value
-            elif op == ":":
-                match = True
-            else:
-                # unknown op value
-                match = False
-            return match
+        def selector_status_matching(path, jsonpath_expr, op, value):
+            try:
+                data = self.object_data(path)
+                matches = jsonpath_expr.find(data)
+                for match in matches:
+                    current = match.value
+                    if selector_value_match(current, op, value):
+                        return True
+            except Exception:
+                return False
+            return False
 
         def svc_matching(path, param, op, value, jsonpath_expr):
-            if not param:
-                return False
-            if param.startswith("$."):
-                try:
-                    data = self.object_data(path)
-                    matches = jsonpath_expr.find(data)
-                    for match in matches:
-                        current = match.value
-                        if matching(current, op, value):
-                            return True
-                except Exception:
-                    pass
+            if jsonpath_expr:
+                return selector_status_matching(path, jsonpath_expr, op, value)
             else:
                 try:
                     svc = SERVICES[path]
                 except KeyError:
                     return False
-                try:
-                    current = svc._get(param, evaluate=True)
-                except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                    current = None
-                if current is None:
-                    if "." in param:
-                        group, _param = param.split(".", 1)
-                    else:
-                        group = param
-                        _param = None
-                    rids = [section for section in svc.conf_sections() if group == "" or section.split('#')[0] == group]
-                    if op == ":" and len(rids) > 0 and _param is None:
-                        return True
-                    elif _param:
-                        for rid in rids:
-                            try:
-                                _current = svc._get(rid+"."+_param, evaluate=True)
-                            except (ex.Error, ex.OptNotFound, ex.RequiredOptNotFound):
-                                continue
-                            if matching(_current, op, value):
-                                return True
-                    return False
-                if current is None:
-                    return op == ":"
-                if matching(current, op, value):
-                    return True
-            return False
+                return selector_config_match(svc, param, op, value)
 
         expanded = or_fragment_selector(selector)
         return expanded

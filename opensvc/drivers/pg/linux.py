@@ -108,7 +108,11 @@ def _set_cgroup(o, t, name, key, force=False):
     cgp = get_cgroup_path(o, t)
     if value is None:
         return
-    if not force and get_cgroup(o, t, name).strip() == str(value):
+    if name == "memory.oom_control":
+        current = get_cgroup(o, t, name).split(os.linesep)[0].split()[-1]
+    else:
+        current = get_cgroup(o, t, name).strip()
+    if not force and current == str(value):
         return
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
@@ -248,12 +252,16 @@ def get_log(o):
         log = None
     return log
 
-def get_cgroup_svc_relpath(o, suffix=".slice"):
-    name = get_name(o)
+def get_cgroup_ns_relpath(o, suffix=".slice"):
     namespace = get_namespace(o)
     elements = ["opensvc" + suffix]
     if namespace:
         elements.append(namespace + suffix)
+    return os.path.join(*elements)
+
+def get_cgroup_svc_relpath(o, suffix=".slice"):
+    name = get_name(o)
+    elements = [get_cgroup_ns_relpath(o, suffix=suffix)]
     elements.append(name + suffix)
     return os.path.join(*elements)
 
@@ -262,11 +270,14 @@ def get_cgroup_relpath(o, suffix=".slice"):
        hasattr(o, "name") and not o.capable("cgroup_dir"):
         return os.path.join("lxc", o.name)
 
-    elements = [get_cgroup_svc_relpath(o, suffix=suffix)]
-    if hasattr(o, "rset") and o.rset is not None:
-        elements.append(o.rset.rid.replace(":", ".") + suffix)
-    if hasattr(o, "rid") and o.rid is not None:
-        elements.append(o.rid.replace("#", ".") + suffix)
+    if hasattr(o, "kind") and o.kind == "nscfg":
+        elements = [get_cgroup_ns_relpath(o, suffix=suffix)]
+    else:
+        elements = [get_cgroup_svc_relpath(o, suffix=suffix)]
+        if hasattr(o, "rset") and o.rset is not None:
+            elements.append(o.rset.rid.replace(":", ".") + suffix)
+        if hasattr(o, "rid") and o.rid is not None:
+            elements.append(o.rid.replace("#", ".") + suffix)
     return os.path.join(*elements)
 
 def get_cgroup_path(o, t, create=True):
@@ -287,9 +298,9 @@ def get_cgroup_path(o, t, create=True):
 def remove_pg(o):
     log = o.log
     for t in CONTROLLERS:
-        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_svc_relpath(o))
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_relpath(o))
         remove_cgroup(cgp, log)
-        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_svc_relpath(o, suffix=""))
+        cgp = os.path.join(os.sep, "sys", "fs", "cgroup", t, get_cgroup_relpath(o, suffix=""))
         remove_cgroup(cgp, log)
 
 def remove_cgroup(cgp, log):
@@ -350,10 +361,17 @@ def thaw(o):
 def pids(o, controller="memory"):
     cgp = get_cgroup_path(o, controller)
     _pids = set()
-    for p in glob.glob(cgp+"/cgroup.procs") + glob.glob(cgp+"/*/cgroup.procs") + glob.glob(cgp+"/*/*/cgroup.procs") + glob.glob(cgp+"/*/*/*/cgroup.procs"):
-        with open(p, "r") as f:
-            for pid in f.readlines():
-                _pids.add(pid.strip())
+    fname = "cgroup.procs"
+    for path, _, files in os.walk(cgp):
+        fpath = os.path.join(path, fname)
+        if fname not in files:
+            continue
+        try:
+            with open(fpath, "r") as f:
+                for pid in f.readlines():
+                    _pids.add(pid.strip())
+        except Exception:
+            pass
     return list(_pids)
 
 def kill(o):

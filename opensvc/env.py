@@ -138,6 +138,7 @@ class Env(object):
         "sec",
         "usr",
         "ccfg",
+        "nscfg",
     ]
     allowed_svc_envs = [
         'DEV',

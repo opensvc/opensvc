@@ -167,7 +167,7 @@ KEYWORDS = [
         "example": "ca",
     },
     {
-        "sections": ["DEFAULT"],
+        "section": "DEFAULT",
         "keyword": "comment",
         "default": "",
         "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."

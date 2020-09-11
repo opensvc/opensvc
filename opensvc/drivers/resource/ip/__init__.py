@@ -18,6 +18,7 @@ from core.resource import Resource
 from env import Env
 from utilities.converters import convert_duration, print_duration
 from utilities.lazy import lazy
+from utilities.loop_delay import delay
 from utilities.net.converters import to_cidr
 from utilities.net.getaddr import getaddr
 
@@ -206,7 +207,7 @@ class Ip(Resource):
             }, timeout=left+10)
             if result["status"] == 0:
                 return
-            time.sleep(0.3) # avoid fast-looping the listener
+            wait_dns_records_delay_func(0.3)  # avoid fast-looping the listener
             left = time_max - self._current_time()
         raise ex.Error("dns resolution not ready after %s (cluster sync timeout)" % print_duration(self.wait_dns))
 
@@ -916,3 +917,7 @@ class Ip(Resource):
 
     def _current_time(self):
         return time.time()
+
+
+# helper for mock
+wait_dns_records_delay_func = delay

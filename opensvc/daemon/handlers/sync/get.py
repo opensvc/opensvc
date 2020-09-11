@@ -52,7 +52,10 @@ class Handler(daemon.handler.BaseHandler):
 
     def match(self, ref_gen):
         for node, gen in shared.LOCAL_GEN.items():
-            if gen < ref_gen:
-                return False
+            try:
+                if gen < ref_gen:
+                    return False
+            except TypeError:
+                continue
         return True
 

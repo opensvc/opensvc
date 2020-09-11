@@ -67,7 +67,7 @@ OPT = Storage({
         "--initiator", action="append", dest="initiators",
         help="An initiator iqn. Can be specified multiple times."),
     "auth_network": Option(
-        "--auth-network", default="ALL", action="store", dest="auth_network",
+        "--auth-network", default="", action="store", dest="auth_network",
         help="Network authorized to access to the iSCSI target. ip or cidr addresses or 'ALL' for any ips"),
     "comment": Option(
         "--comment", action="store", dest="comment",
@@ -90,10 +90,10 @@ OPT = Storage({
     "authgroup_id": Option(
         "--auth-group-id", action="store", type=int, dest="authgroup_id",
         help="The auth group object id"),
-    "authtype": Option(
-        "--auth-type", action="store", default="None", dest="authtype",
-        choices=["None", "CHAP", "CHAP Mutual"],
-        help="None, CHAP, CHAP Mutual"),
+    "authmethod": Option(
+        "--auth-method", action="store", default="NONE", dest="authmethod",
+        choices=["NONE", "CHAP", "CHAP Mutual"],
+        help="NONE, CHAP, CHAP Mutual"),
     "portal_id": Option(
         "--portal-id", action="store", type=int, dest="portal_id",
         help="The portal object id"),
@@ -172,13 +172,14 @@ ACTIONS = {
         "add_iscsi_targetgroup": {
             "msg": "Declare a iscsi target group, which is a portal-target-initiator relation",
             "options": [
+                OPT.name,
                 OPT.portal_id,
                 OPT.target_id,
                 OPT.target,
                 OPT.initiatorgroup,
                 OPT.initiatorgroup_id,
                 OPT.authgroup_id,
-                OPT.authtype,
+                OPT.authmethod,
             ],
         },
     },
@@ -222,6 +223,7 @@ ACTIONS = {
             "msg": "Delete a iscsi target, used in targets which are portal-target-initiator relations",
             "options": [
                 OPT.id,
+                OPT.name,
             ],
         },
         "del_iscsi_targetgroup": {
@@ -257,9 +259,6 @@ ACTIONS = {
         },
         "list_iscsi_target": {
             "msg": "List configured targets",
-        },
-        "list_iscsi_targetgroup": {
-            "msg": "List configured target groups",
         },
         "list_iscsi_targettoextent": {
             "msg": "List configured target-to-extent relations",
@@ -329,7 +328,7 @@ class Freenas(object):
     def __init__(self, name, api, username, password, timeout, node=None):
         self.node = node
         self.name = name
-        self.api = api
+        self.api = api.split("/api")[0]
         self.username = username
         self.password = password
         self.auth = (username, password)
@@ -340,9 +339,9 @@ class Freenas(object):
                      'iscsi_targettoextents',
                      'iscsi_extents']
 
-    def delete(self, uri, data=None, timeout=None):
+    def delete(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -355,9 +354,9 @@ class Freenas(object):
             raise ex.Error("DELETE %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def put(self, uri, data=None, timeout=None):
+    def put(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -370,9 +369,9 @@ class Freenas(object):
             raise ex.Error("PUT %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def post(self, uri, data=None, timeout=None):
+    def post(self, uri, data=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         headers = {'Content-Type': 'application/json'}
         if data:
             data = json.dumps(data)
@@ -385,9 +384,9 @@ class Freenas(object):
             raise ex.Error("POST %s %s => %d: %s" % (ep, data, r.status_code, content))
         return content
 
-    def get(self, uri, params=None, timeout=None):
+    def get(self, uri, params=None, timeout=None, api="v2.0"):
         timeout = timeout or self.timeout
-        ep = self.api+uri+"/"
+        ep = self.api + "/api/" + api + uri + "/"
         try:
             r = requests.get(ep, params=params, auth=self.auth, timeout=timeout, verify=VERIFY)
         except Exception as exc:
@@ -405,6 +404,10 @@ class Freenas(object):
     # OK
     def get_volumes(self):
         buff = self.get("/pool/dataset", {"limit": 0})
+        return buff
+
+    def get_pools(self):
+        buff = self.get("/storage/volume", {"limit": 0}, api="v1.0")
         return buff
 
     def get_iscsi_target_id(self, tgt_id):
@@ -461,9 +464,10 @@ class Freenas(object):
         buff = self.get_iscsi_authorizedinitiator()
         data = json.loads(buff)
         l = []
-        for initiator in data:
-            if initiator["initiators"] in initiator_names:
-                l.append(initiator["id"])
+        for initiator in initiator_names:
+            for item in data:
+                if initiator in item["initiators"]:
+                    l.append(item["id"])
         return l
 
     def get_iscsi_extents_data(self):
@@ -673,11 +677,11 @@ class Freenas(object):
         if zvol_data is None:
             raise ex.Error("zvol not found")
         if size.startswith("+"):
-            incr = convert_size(size.lstrip("+"), _to="MiB")
-            current_size = convert_size(int(zvol_data["volsize"]), _to="MiB")
-            size = str(current_size + incr) + "MiB"
+            incr = convert_size(size.lstrip("+"), _to="B")
+            current_size = int(zvol_data["volsize"]["parsed"])
+            size = current_size + incr
         else:
-            size = str(convert_size(size, _to="MiB")) + "MiB"
+            size = convert_size(size, _to="B")
 
         d = {
             "volsize": size,
@@ -702,16 +706,6 @@ class Freenas(object):
             raise ex.Error("'id' in mandatory")
         self.delete('/iscsi/initiator/%d' % ig_id)
 
-    def _del_iscsi_targettoextent(self, id=None, **kwargs):
-        try:
-            data = self.get_iscsi_targettoextent(id)
-        except Exception as exc:
-            data = {"error": str(exc)}
-        if id is None:
-            raise ex.Error("'id' in mandatory")
-        self.delete('/iscsi/targetextent/%d' % id)
-        return data
-
     def get_iscsi_targettoextent(self, id=None, **kwargs):
         if id is None:
             raise ex.Error("'id' in mandatory")
@@ -726,17 +720,18 @@ class Freenas(object):
         data = self._add_iscsi_initiatorgroup(**kwargs)
         return data
 
-    def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="ALL", comment=None,
+    def _add_iscsi_initiatorgroup(self, initiators=None, auth_network="", comment=None,
                                   **kwargs):
         for key in ["initiators"]:
             if locals()[key] is None:
                 raise ex.Error("'%s' key is mandatory" % key)
+        anet = list(auth_network.split(","))
         d = {
-            "iscsi_target_initiator_initiators": ",".join(initiators),
-            "iscsi_target_initiator_auth_network": auth_network,
+            "initiators": initiators,
+            "auth_network": anet,
         }
         if comment:
-            d["iscsi_target_initiator_comment"] = comment
+            d["comment"] = comment
 
         buff = self.post('/iscsi/initiator/', d)
         try:
@@ -786,29 +781,29 @@ class Freenas(object):
                     portal_id=kwargs.get("portal_id"),
                     initiatorgroup_id=igid,
                     target_id=tid,
-                    authtype=kwargs.get("authtype"),
+                    authmethod=kwargs.get("authmethod"),
                     authgroup_id=kwargs.get("authgroup_id"),
                 )
                 data.append(_data)
         return data
 
-        return data
-
     def _add_iscsi_targetgroup(self, portal_id=None, initiatorgroup_id=None,
-                               target_id=None, authtype="None",
+                               target_id=None, authmethod="NONE",
                                authgroup_id=None, **kwargs):
+        buff = self.get_iscsi_target_id(target_id)
+        data = json.loads(buff)
+        for g in data["groups"]:
+            if portal_id == g["portal"] and initiatorgroup_id == g["initiator"]:
+                return data
         d = {
-            "iscsi_target": target_id,
-            "iscsi_target_initiatorgroup": initiatorgroup_id,
-            "iscsi_target_portalgroup": portal_id,
-            "iscsi_target_authtype": authtype,
-            "iscsi_target_authgroup": -1,
-            "iscsi_target_initialdigest": "Auto",
+            "initiator": initiatorgroup_id,
+            "portal": portal_id,
+            "authmethod": authmethod,
+            "auth": authgroup_id,
         }
-        if authgroup_id:
-            d["iscsi_target_authgroup"] = authgroup_id
-
-        buff = self.post('/iscsi/target/', d)
+        data["groups"].append(d)
+        del data["id"]
+        buff = self.put('/iscsi/target/id/%d' % target_id, data)
         try:
             return json.loads(buff)
         except ValueError:
@@ -816,7 +811,12 @@ class Freenas(object):
 
     # target
     # OK
-    def del_iscsi_target(self, id=None, **kwargs):
+    def del_iscsi_target(self, id=None, name=None, **kwargs):
+        if id is None and name:
+            try:
+                id = self.get_iscsi_target_ids([name])[0]
+            except IndexError:
+                return
         if id is None:
             raise ex.Error("'id' is mandatory")
         content = self.get_iscsi_target_id(id)
@@ -943,7 +943,7 @@ class Freenas(object):
             tg = current_mappings.get(mapping)
             if not tg:
                 continue
-            result = self._del_iscsi_targettoextent(tg["extent"]["id"])
+            result = self.del_iscsi_targetextent(tg["extent"]["id"])
             results.append(result)
         return results
 
@@ -1034,6 +1034,9 @@ class Freenas(object):
         volume = path[path.index("zvol")+1]
         return volume
 
+    def list_pools(self, **kwargs):
+        return json.loads(self.get_pools())
+
     def list_volume(self, **kwargs):
         return json.loads(self.get_volumes())
 
@@ -1045,9 +1048,6 @@ class Freenas(object):
 
     def list_iscsi_portal(self, **kwargs):
         return json.loads(self.get_iscsi_portal())
-
-    def list_iscsi_targetgroup(self, **kwargs):
-        return json.loads(self.get_iscsi_targetgroup())
 
     def list_iscsi_extent(self, **kwargs):
         return json.loads(self.get_iscsi_extents())

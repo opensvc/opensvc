@@ -23,6 +23,7 @@ from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
 from core.node import Node
+from core.objects.pg import PgMixin
 from core.resource import Resource
 from core.resourceset import ResourceSet
 from core.scheduler import SchedOpts, Scheduler, sched_action
@@ -33,7 +34,7 @@ from utilities.fcache import fcache
 from utilities.files import makedirs
 from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
 from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
-                              svc_pathlog, svc_pathtmp, svc_pathvar, new_id)
+                              svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory)
 from utilities.proc import (action_triggers, drop_option, find_editor,
                             init_locale, justcall, lcall, vcall)
 from utilities.storage import Storage
@@ -364,6 +365,7 @@ ACTIONS_DO_MASTER = [
 ACTIONS_DO_MASTER_AND_SLAVE = [
     "boot",
     "migrate",
+    "pg_update",
     "provision",
     "prstart",
     "prstop",
@@ -404,7 +406,6 @@ DRV_GRP_XLATE = {
     "vxvol": ["disk", "vxvol"],
 }
 
-STATS_INTERVAL = 1
 
 init_locale()
 
@@ -958,7 +959,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         self.setup_signal_handlers()
         self.set_skip_resources(keeprid=self.action_rid, xtags=options.xtags)
-        if action in ("status", "decode", "pg_pids") or \
+        if action in ("status", "decode", "pg_pids", "pg_stats") or \
            action.startswith("print_") or \
            action.startswith("collector") or \
            action.startswith("json_"):
@@ -1338,11 +1339,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 else:
                     _begin = 1
                 argv = self.log_action_obfuscate_secret(argv)
-                runlog = "do "+" ".join(argv[_begin:])
-                if os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
-                    runlog += " (daemon origin)"
-                else:
-                    runlog += " (user origin)"
+                cmd = " ".join(argv[_begin:]).replace("%", "%%")
+                origin = os.environ.get("OSVC_ACTION_ORIGIN", "user")
+                runlog = "do %s (%s origin)" % (cmd, origin)
                 self.log.info(runlog, {"f_stream": False})
         except IndexError:
             pass
@@ -2811,7 +2810,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         pass
 
 
-class Svc(BaseSvc):
+class Svc(PgMixin, BaseSvc):
     """
     The svc kind class.
     A service is a collection of resources.
@@ -2872,10 +2871,6 @@ class Svc(BaseSvc):
     @lazy
     def comment(self):
         return self.oget("DEFAULT", "comment")
-
-    @lazy
-    def create_pg(self):
-        return self.oget("DEFAULT", "create_pg")
 
     @lazy
     def aws(self):
@@ -3778,10 +3773,7 @@ class Svc(BaseSvc):
             for resource in rset.resources:
                 status = core.status.Status(resource.status(verbose=True))
                 log = resource.status_logs_strlist()
-                if refresh:
-                    info = resource.status_info()
-                else:
-                    info = resource.last_status_info
+                info = resource.last_status_info # refreshed by resource.status() if necessary
                 tags = sorted(list(resource.tags))
                 disable = resource.is_disabled()
                 _data = {
@@ -3882,108 +3874,18 @@ class Svc(BaseSvc):
         """
         self.node.sys_crash()
 
-    def _pg_freeze(self):
-        """
-        Wrapper function for the process group freeze method.
-        """
-        return self._pg_freezer("freeze")
-
-    def _pg_thaw(self):
-        """
-        Wrapper function for the process group thaw method.
-        """
-        return self._pg_freezer("thaw")
-
-    def _pg_kill(self):
-        """
-        Wrapper function for the process group kill method.
-        """
-        return self._pg_freezer("kill")
-
-    def _pg_freezer(self, action):
-        """
-        Wrapper function for the process group methods.
-        """
-        if not self.create_pg:
-            return
-        if self.pg is None:
-            return
-        if action == "freeze":
-            self.pg.freeze(self)
-        elif action == "thaw":
-            self.pg.thaw(self)
-        elif action == "kill":
-            self.pg.kill(self)
-
-    def pg_remove(self):
-        if self.pg is None:
-            return
-        self.pg.remove_pg(self)
-
-    def pg_pids(self):
-        return sorted(self.pg.pids(self))
-
     @lazy
-    def pg(self):
-        """
-        A lazy property to import the system-specific process group module
-        on-demand and expose it as self.pg
-        """
-        try:
-            mod = driver_import("pg", fallback=False)
-        except ImportError:
+    def nscfgpath(self):
+        return fmt_path("", self.namespace, "nscfg")
+
+    def nscfg(self):
+        return factory("nscfg")("", self.namespace, volatile=True, node=self.node)
+
+    def ns_pg_update(self):
+        nscfg = self.nscfg()
+        if not nscfg:
             return
-        except Exception as exc:
-            print(exc)
-            raise
-        try:
-            mod.DRIVER_BASENAME
-        except AttributeError:
-            return
-        return mod
-
-    def pg_stats(self):
-        if self.pg is None:
-            return {}
-        now = time.time()
-        if now - self.stats_updated < STATS_INTERVAL:
-            return self.stats_data
-        self.stats_data = self.pg.get_stats(self)
-        self.stats_updated = now
-        return self.stats_data
-
-    def pg_freeze(self):
-        """
-        Freeze all process of the process groups of the service.
-        """
-        if self.command_is_scoped():
-            self.sub_set_action(["app", "container"], "_pg_freeze")
-        else:
-            self._pg_freeze()
-            for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True)
-
-    def pg_thaw(self):
-        """
-        Thaw all process of the process groups of the service.
-        """
-        if self.command_is_scoped():
-            self.sub_set_action(["app", "container"], "_pg_thaw")
-        else:
-            self._pg_thaw()
-            for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True)
-
-    def pg_kill(self):
-        """
-        Kill all process of the process groups of the service.
-        """
-        if self.command_is_scoped():
-            self.sub_set_action(["app", "container"], "_pg_kill")
-        else:
-            self._pg_kill()
-            for resource in self.get_resources(["app", "container"]):
-                resource.status(refresh=True)
+        nscfg.pg_update(children=False)
 
     def do_pre_monitor_action(self):
         if self.pre_monitor_action is None:
@@ -4142,7 +4044,7 @@ class Svc(BaseSvc):
         if verbose:
             self.log.info(" ".join(cmd))
 
-        cmd = ["env", "OSVC_DETACHED=1"] + cmd
+        cmd = ["env", "OSVC_DETACHED=1", "OSVC_ACTION_ORIGIN='master %s'" % os.environ.get("OSVC_ACTION_ORIGIN", "user")] + cmd
         if container is not None and hasattr(container, "rcmd") and callable(container.rcmd):
             try:
                 out, err, ret = container.rcmd(cmd)
@@ -4517,6 +4419,7 @@ class Svc(BaseSvc):
 
     @_master_action
     def master_start(self):
+        self.ns_pg_update()
         self.sub_set_action(START_GROUPS, "start", xtags=set(["zone", "docker", "podman"]))
 
     @_slave_action
@@ -5742,35 +5645,6 @@ class Svc(BaseSvc):
 
         if self.options.provision:
             self.action("provision")
-
-    def get_pg_settings(self, s):
-        d = {}
-        options = (
-            "cpus",
-            "cpu_shares",
-            "cpu_quota",
-            "mems",
-            "mem_oom_control",
-            "mem_limit",
-            "mem_swappiness",
-            "vmem_limit",
-            "blkio_weight",
-        )
-
-        for option in options:
-            try:
-                d[option] = self.conf_get(s, "pg_"+option)
-            except ex.OptNotFound as exc:
-                pass
-            except ValueError:
-                # keyword not supported. data resource for example.
-                pass
-
-        return d
-
-    @lazy
-    def pg_settings(self):
-        return self.get_pg_settings("DEFAULT")
 
     @lazy
     def slave_num(self):

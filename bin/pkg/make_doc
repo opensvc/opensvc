@@ -32,6 +32,10 @@ def main(fmt="text"):
     from core.objects.cfgdict import KEYS
     KEYS.write_templates(fmt=fmt)
 
+    print("* update nscfg templates")
+    from core.objects.nscfgdict import KEYS
+    KEYS.write_templates(fmt=fmt)
+
     print("* update cluster templates")
     from core.objects.ccfgdict import KEYS
     KEYS.write_templates(fmt=fmt)

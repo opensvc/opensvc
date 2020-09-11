@@ -380,12 +380,12 @@ class ExtConfigMixin(object):
                 keyword, right = keyword.split("[", 1)
                 if not right.endswith("]"):
                     raise ex.Error("malformed kw expression: %s: no trailing"
-                                      " ']' at the end of keyword" % kw)
+                                   " ']' at the end of keyword" % kw)
                 try:
                     index = int(right[:-1])
                 except ValueError:
                     raise ex.Error("malformed kw expression: %s: index is "
-                                      "not integer" % kw)
+                                   "not integer" % kw)
             if "." in keyword and "#" not in keyword:
                 # <group>.keyword[@<scope>] format => loop over all rids in group
                 group = keyword.split(".", 1)[0]
@@ -749,10 +749,9 @@ class ExtConfigMixin(object):
                 self.get_node()
                 return self.node.conf_get("node", _v)
             except Exception as exc:
-                raise ex.Error("%s: unresolved reference (%s)"
-                                  "" % (ref, str(exc)))
+                raise ex.Error("%s: unresolved reference (%s)" % (ref, str(exc)))
 
-        if _section != "DEFAULT" and not _section in cd:
+        if _section != "DEFAULT" and _section not in cd:
             raise ex.Error("%s: section %s does not exist" % (ref, _section))
 
         # deferrable refs
@@ -778,8 +777,7 @@ class ExtConfigMixin(object):
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)
         except ex.RequiredOptNotFound as exc:
-            raise ex.Error("%s: unresolved reference (%s)"
-                              "" % (ref, str(exc)))
+            raise ex.Error("%s: unresolved reference (%s)" % (ref, str(exc)))
 
         raise ex.Error("%s: unknown reference" % ref)
 
@@ -849,8 +847,7 @@ class ExtConfigMixin(object):
                                           cd=cd, section=section)
         except Exception as e:
             raise
-            raise ex.Error("%s: reference evaluation failed: %s"
-                              "" % (s, str(e)))
+            raise ex.Error("%s: reference evaluation failed: %s" % (s, str(e)))
         if val is not None and cacheable:
             self.ref_cache[key] = val
         return val
@@ -952,7 +949,7 @@ class ExtConfigMixin(object):
             raise ex.RequiredOptNotFound
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, cd=None, section=None, rtype=None):
+                  use_default=True, cd=None, section=None, rtype=None):
         """
         Get keyword properties and handle inheritance.
         """
@@ -1081,7 +1078,6 @@ class ExtConfigMixin(object):
                                               cd=cd)
         raise ex.OptNotFound("unscoped keyword %s.%s not found." % (s, o))
 
-
     def conf_has_option_scoped(self, s, o, nodename=None, cd=None, scope_order=None):
         """
         Handles the keyword scope_order property, at and impersonate
@@ -1139,7 +1135,8 @@ class ExtConfigMixin(object):
             if option in options and condition:
                 return option
 
-    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, cd=None, scope_order=None, default_keyword=None):
+    def conf_get_val_scoped(self, s, o, impersonate=None, use_default=True, cd=None, scope_order=None,
+                            default_keyword=None):
         if cd is None:
             try:
                 cd = self.private_cd
@@ -1170,7 +1167,7 @@ class ExtConfigMixin(object):
         try:
             val = cd[s][option]
         except KeyError:
-            raise ex.Error("param %s.%s is not set"%(s, o))
+            raise ex.Error("param %s.%s is not set" % (s, o))
 
         return val
 
@@ -1212,9 +1209,15 @@ class ExtConfigMixin(object):
             """
             Verify the specified option references.
             """
-            value = cd.get(section, option)
+            value = cd.get(section, {}).get(option)
+            if not is_string(value) \
+                    or ".exposed_devs" in value \
+                    or ".base_devs" in value \
+                    or ".sub_devs" in value \
+                    or re.match(r"volume#.*\.mnt", value):
+                return 0
             try:
-                value = self.handle_references(value, scope=True, cd=cd,
+                deref = self.handle_references(value, scope=True, cd=cd,
                                                section=section)
             except ex.Error as exc:
                 if not option.startswith("pre_") and \
@@ -1225,6 +1228,8 @@ class ExtConfigMixin(object):
             except Exception as exc:
                 self.log.error(str(exc))
                 return 1
+            if deref is None:
+                self.log.warning("broken reference: %s.%s", section, option)
             return 0
 
         def get_val(key, section, option, verbose=True, impersonate=None):

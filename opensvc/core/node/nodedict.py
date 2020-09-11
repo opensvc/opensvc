@@ -626,14 +626,12 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "reboot",
         "keyword": "pre",
-        "convert": "shlex",
         "example": "yum upgrade -y",
         "text": "A command to execute before reboot. Errors are ignored."
     },
     {
         "section": "reboot",
         "keyword": "blocking_pre",
-        "convert": "shlex",
         "example": "yum upgrade -y",
         "text": "A command to execute before reboot. Abort the reboot on error."
     },
@@ -876,6 +874,14 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "at": True,
         "default": 15,
         "text": "The delay since the last received heartbeat from a node before considering this node is gone."
+    },
+    {
+        "section": "hb",
+        "keyword": "interval",
+        "convert": "duration",
+        "at": True,
+        "default": 5,
+        "text": "The interval between tx threads data sends."
     },
     {
         "section": "hb",

@@ -7,6 +7,7 @@ import daemon.handler
 import daemon.rbac
 import daemon.shared as shared
 import core.exceptions as ex
+from daemon.handler_action_helper import get_action_args_from_parser
 from utilities.naming import split_path
 from env import Env
 from utilities.string import bdecode
@@ -62,6 +63,7 @@ ADMIN_ACTIONS = (
     "unprovision",
     "unset",
 )
+
 
 class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
     """
@@ -126,7 +128,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             # load current config
             try:
                 cf = shared.SERVICES[options.path].print_config_data()
-            except Exception as exc:
+            except Exception:
                 cf = {}
 
             # purge unwanted sections
@@ -162,7 +164,6 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             kwargs["roles"] = ["root"]
             thr.rbac_requires(**kwargs)
 
-
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         name, namespace, kind = split_path(options.path)
@@ -182,41 +183,12 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 options.options[ropt] = options.options[opt]
                 del options.options[opt]
         options.options["local"] = True
-        pmod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
-        popt = pmod.OPT
-
-        def find_opt(opt):
-            for k, o in popt.items():
-                if o.dest == opt:
-                    return o
-                if o.dest == "parm_" + opt:
-                    return o
 
         if options.cmd:
             cmd = [options.cmd]
         else:
-            cmd = [options.action]
-            for opt, val in options.options.items():
-                po = find_opt(opt)
-                if po is None:
-                    continue
-                if val == po.default:
-                    continue
-                if val is None:
-                    continue
-                opt = po._long_opts[0] if po._long_opts else po._short_opts[0]
-                if po.action == "append":
-                    cmd += [opt + "=" + str(v) for v in val]
-                elif po.action == "store_true" and val:
-                    cmd.append(opt)
-                elif po.action == "store_false" and not val:
-                    cmd.append(opt)
-                elif po.type == "string":
-                    opt += "=" + val
-                    cmd.append(opt)
-                elif po.type == "integer":
-                    opt += "=" + str(val)
-                    cmd.append(opt)
+            pmod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
+            cmd = get_action_args_from_parser(pmod.OPT, options.action, options)
 
         fullcmd = Env.om + ["svc", "-s", options.path] + cmd
         thr.log_request("run 'om %s %s'" % (options.path, " ".join(cmd)), nodename, **kwargs)
@@ -241,7 +213,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             env.update(os.environ)
             env["OSVC_PARENT_SESSION_UUID"] = session_id
             proc = Popen(fullcmd, stdin=None, close_fds=True, env=env)
-            thr.push_proc(proc)
+            thr.parent.push_proc(proc, cmd=fullcmd, session_id=session_id)
             result = {
                 "status": 0,
                 "data": {
@@ -251,4 +223,3 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 "info": "started %s action %s" % (options.path, " ".join(cmd)),
             }
         return result
-

@@ -50,6 +50,113 @@ REVERSE_DEPRECATED_KEYWORDS = {
 
 DEPRECATED_SECTIONS = {}
 
+PG_KEYWORDS = [
+    {
+        "section": "DEFAULT",
+        "keyword": "create_pg",
+        "default": True,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_cpus",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "depends": [('create_pg', [True])],
+        "text": "Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
+        "example": "0-2"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_mems",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "depends": [('create_pg', [True])],
+        "text": "Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
+        "example": "0-2"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_cpu_shares",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "integer",
+        "depends": [('create_pg', [True])],
+        "text": "Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
+        "example": "512"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_cpu_quota",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "depends": [('create_pg', [True])],
+        "text": "The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, ``-1`` means unlimited, and a positive absolute value means the number of microseconds to allocate each period. ``50%@all`` means 50% of all cores, and ``50%@2`` means 50% of two cores.",
+        "example": "50%@all"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_mem_oom_control",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "integer",
+        "depends": [('create_pg', [True])],
+        "text": "A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
+        "example": "1"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_mem_limit",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "size",
+        "depends": [('create_pg', [True])],
+        "text": "Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
+        "example": "512000000"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_vmem_limit",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "size",
+        "depends": [('create_pg', [True])],
+        "text": "Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than :kw:`pg_mem_limit`.",
+        "example": "1024000000"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_mem_swappiness",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "integer",
+        "depends": [('create_pg', [True])],
+        "text": "Set a swappiness value for the process group.",
+        "example": "40"
+    },
+    {
+        "sections": SECTIONS + ["subset"],
+        "keyword": "pg_blkio_weight",
+        "generic": True,
+        "inheritance": "leaf",
+        "at": True,
+        "convert": "integer",
+        "depends": [('create_pg', [True])],
+        "text": "Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
+        "example": "50"
+    },
+]
+
 KEYWORDS = [
     {
         "section": "DEFAULT",
@@ -583,14 +690,6 @@ KEYWORDS = [
         "example": "/bin/true"
     },
     {
-        "section": "DEFAULT",
-        "keyword": "create_pg",
-        "default": True,
-        "convert": "boolean",
-        "candidates": (True, False),
-        "text": "Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
-    },
-    {
         "section": "app",
         "keyword": "type",
         "inheritance": "leaf",
@@ -873,6 +972,34 @@ KEYWORDS = [
     },
     {
         "sections": SECTIONS,
+        "keyword": "pre_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`startstandby` action. Errors do not interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "post_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`startstandby` action. Errors do not interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "blocking_pre_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute before the resource :c-action:`startstandby` action. Errors interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
+        "keyword": "blocking_post_startstandby",
+        "generic": True,
+        "at": True,
+        "text": "A command or script to execute after the resource :c-action:`startstandby` action. Errors interrupt the action."
+    },
+    {
+        "sections": SECTIONS,
         "keyword": "pre_stop",
         "generic": True,
         "at": True,
@@ -1120,6 +1247,14 @@ KEYWORDS = [
         "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
+        "section": "DEFAULT",
+        "keyword": "stat_timeout",
+        "convert": "duration",
+        "default": 5,
+        "at": True,
+        "text": "The maximum wait time for a stat call to respond. When expired, the resource status is degraded is to warn, which might cause a TOC if the resource is monitored."
+    },
+    {
         "sections": ["DEFAULT"],
         "prefixes": ["run"],
         "keyword": "_requires",
@@ -1140,108 +1275,12 @@ KEYWORDS = [
         "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
     {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_cpus",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "depends": [('create_pg', [True])],
-        "text": "Allow service process to bind only the specified cpus. Cpus are specified as list or range : 0,1,2 or 0-2",
-        "example": "0-2"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_mems",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "depends": [('create_pg', [True])],
-        "text": "Allow service process to bind only the specified memory nodes. Memory nodes are specified as list or range : 0,1,2 or 0-2",
-        "example": "0-2"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_cpu_shares",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "integer",
-        "depends": [('create_pg', [True])],
-        "text": "Kernel default value is used, which usually is 1024 shares. In a cpu-bound situation, ensure the service does not use more than its share of cpu ressource. The actual percentile depends on shares allowed to other services.",
-        "example": "512"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_cpu_quota",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "depends": [('create_pg', [True])],
-        "text": "The percent ratio of one core to allocate to the process group if % is specified, else the absolute value to set in the process group parameter. For example, on Linux cgroups, ``-1`` means unlimited, and a positive absolute value means the number of microseconds to allocate each period. ``50%@all`` means 50% of all cores, and ``50%@2`` means 50% of two cores.",
-        "example": "50%@all"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_mem_oom_control",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "integer",
-        "depends": [('create_pg', [True])],
-        "text": "A flag (0 or 1) that enables or disables the Out of Memory killer for a cgroup. If enabled (0), tasks that attempt to consume more memory than they are allowed are immediately killed by the OOM killer. The OOM killer is enabled by default in every cgroup using the memory subsystem; to disable it, write 1.",
-        "example": "1"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_mem_limit",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "size",
-        "depends": [('create_pg', [True])],
-        "text": "Ensures the service does not use more than specified memory (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing.",
-        "example": "512000000"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_vmem_limit",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "size",
-        "depends": [('create_pg', [True])],
-        "text": "Ensures the service does not use more than specified memory+swap (in bytes). The Out-Of-Memory killer get triggered in case of tresspassing. The specified value must be greater than :kw:`pg_mem_limit`.",
-        "example": "1024000000"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_mem_swappiness",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "integer",
-        "depends": [('create_pg', [True])],
-        "text": "Set a swappiness value for the process group.",
-        "example": "40"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
-        "keyword": "pg_blkio_weight",
-        "generic": True,
-        "inheritance": "leaf",
-        "at": True,
-        "convert": "integer",
-        "depends": [('create_pg', [True])],
-        "text": "Block IO relative weight. Value: between 10 and 1000. Kernel default: 1000.",
-        "example": "50"
-    },
-    {
-        "sections": SECTIONS + ["subset"],
+        "sections": DATA_SECTIONS + SECTIONS + ["subset"],
         "keyword": "comment",
         "default": "",
         "text": "Helps users understand the role of the service and resources, which is nice to on-call support people having to operate on a service they are not usually responsible for."
     },
-]
+] + PG_KEYWORDS
 
 
 KEYS = KeywordStore(

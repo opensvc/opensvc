@@ -291,7 +291,7 @@ class Mgr(object):
         except AttributeError:
             pass
         if action not in ("ls", "monitor", "create") and options.svcs is None and options.status is None:
-            raise ex.Error("no service selected.")
+            raise ex.Error("no object selected.")
         if action in ("ls", "monitor") and options.svcs is None:
             kind = os.environ.get("OSVC_KIND", "svc")
             options.svcs = "*/%s/*" % kind
