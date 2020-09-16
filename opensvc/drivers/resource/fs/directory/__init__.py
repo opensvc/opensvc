@@ -102,15 +102,21 @@ class FsDirectory(Resource):
 
     def get_gid(self):
         if is_string(self.group):
-            info = grp.getgrnam(self.group)
-            self.gid = info[2]
+            try:
+                info = grp.getgrnam(self.group)
+                self.gid = info[2]
+            except KeyError:
+                self.gid = None
         else:
             self.gid = int(self.group)
 
     def get_uid(self):
         if is_string(self.user):
-            info = pwd.getpwnam(self.user)
-            self.uid = info[2]
+            try:
+                info = pwd.getpwnam(self.user)
+                self.uid = info[2]
+            except KeyError:
+                self.uid = None
         else:
             self.uid = int(self.user)
 
@@ -134,6 +140,9 @@ class FsDirectory(Resource):
         if not os.path.exists(self.path):
             return True
         self.get_uid()
+        if self.uid is None:
+            self.status_log('user %s does not exist' % self.user)
+            return True
         uid = os.stat(self.path).st_uid
         if uid != self.uid:
             self.status_log('uid should be %s but is %s'%(str(self.uid), str(uid)))
@@ -146,6 +155,9 @@ class FsDirectory(Resource):
         if not os.path.exists(self.path):
             return True
         self.get_gid()
+        if self.gid is None:
+            self.status_log('group %s does not exist' % self.group)
+            return True
         gid = os.stat(self.path).st_gid
         if gid != self.gid:
             self.status_log('gid should be %s but is %s'%(str(self.gid), str(gid)))
