@@ -53,8 +53,8 @@ class Fs(BaseFs):
     def is_up(self):
         return Mounts().has_mount(self.device, self.mount_point)
 
-    def start(self):
-        super(Fs, self).start()
+    def start_mount(self):
+        self.prepare_mount()
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
             return 0

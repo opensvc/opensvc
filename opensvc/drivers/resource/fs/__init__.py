@@ -13,6 +13,7 @@ from utilities.files import protected_dir
 from utilities.drivers import driver_import
 from utilities.lazy import lazy
 from utilities.proc import justcall, which
+from .directory import FsDirectory
 
 
 KW_PRKEY = {
@@ -112,6 +113,27 @@ KW_ZONE = {
     "text": "The zone name the fs refers to. If set, the fs mount point is reparented into the zonepath rootfs."
 }
 
+KW_USER = {
+    "keyword": "user",
+    "at": True,
+    "example": "root",
+    "text": "The user that should be owner of the mnt directory. Either in numeric or symbolic form."
+}
+
+KW_GROUP = {
+    "keyword": "group",
+    "at": True,
+    "example": "sys",
+    "text": "The group that should be owner of the mnt directory. Either in numeric or symbolic form."
+}
+
+KW_PERM = {
+    "keyword": "perm",
+    "at": True,
+    "example": "1777",
+    "text": "The permissions the mnt directory should have. A string representing the octal permissions."
+}
+
 
 KWS_VIRTUAL = [
     KW_MNT,
@@ -136,6 +158,9 @@ KEYWORDS = [
     KW_CREATE_OPTIONS,
     KW_VG,
     KW_ZONE,
+    KW_USER,
+    KW_GROUP,
+    KW_PERM,
 ]
 
 KWS_POOLING = [
@@ -178,6 +203,9 @@ class BaseFs(Resource):
                  vg=None,
                  size=None,
                  mkfs_opt=None,
+                 user=None,
+                 group=None,
+                 perm=None,
                  **kwargs):
         super(BaseFs, self).__init__(type="fs", **kwargs)
         self.raw_mount_point = mount_point
@@ -194,6 +222,16 @@ class BaseFs(Resource):
         if self.zone is not None:
             self.tags.add(self.zone)
             self.tags.add("zone")
+        self.user = user
+        self.group = group
+        self.perm = perm
+
+    @lazy
+    def mnt_dir(self):
+        mnt_dir = FsDirectory(path=self.mount_point, user=self.user, group=self.group, perm=self.perm)
+        mnt_dir.svc = self.svc
+        mnt_dir.rid = self.rid
+        return mnt_dir
 
     @lazy
     def mount_point(self):
@@ -265,10 +303,18 @@ class BaseFs(Resource):
         ]
         return data
 
+
     def start(self):
+        self.start_mount()
+        self.mnt_dir.start()
+
+    def prepare_mount(self):
         self.validate_dev()
         self.promote_rw()
         self.create_mntpt()
+
+    def start_mount(self):
+        pass
 
     def validate_dev(self):
         if self.fs_type in ["zfs", "advfs"] + Env.fs_net:
@@ -408,6 +454,9 @@ class BaseFs(Resource):
             if self.need_check_writable() and not self.check_writable():
                 self.status_log("fs is not writable")
                 return core.status.WARN
+            if self.fs_type not in ["zfs", "advfs"]:
+                self.mnt_dir._status()
+                self.status_logs += self.mnt_dir.status_logs
             return core.status.UP
         else:
             return core.status.DOWN
@@ -448,7 +497,7 @@ class BaseFs(Resource):
 
     """
     Provisioning:
-    
+
     required attributes from child classes:
     *  mkfs = ['mkfs.ext4', '-F']
     *  queryfs = ['tune2fs', '-l']
@@ -634,5 +683,4 @@ class BaseFs(Resource):
             vg = None
         if vg:
             self.unprovision_dev()
-
 

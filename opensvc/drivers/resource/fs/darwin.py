@@ -146,10 +146,10 @@ class Fs(BaseFs):
     def can_check_writable(self):
         return True
 
-    def start(self):
+    def start_mount(self):
         if self.Mounts is None:
             self.Mounts = Mounts()
-        super(Fs, self).start()
+        self.prepare_mount()
 
         if self.fs_type in Env.fs_net or self.device == "none":
             # TODO showmount -e
