@@ -22,12 +22,12 @@ class DataMixin(object):
         self._add(self.options.key, self.options.value_from)
 
     def remove(self):
-        return self._remove(self.options.key)
+        return self.remove_key(self.options.key)
 
     def append(self):
         self._add(self.options.key, self.options.value_from, append=True)
 
-    def _remove(self, key):
+    def remove_key(self, key):
         if key not in self.data_keys():
             return
         return self.unset_multi(["data." + key])
