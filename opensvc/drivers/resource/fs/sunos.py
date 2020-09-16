@@ -44,8 +44,8 @@ class Fs(BaseFs):
         mounts = Mounts()
         return mounts.has_mount(self.device, self.mount_point)
 
-    def start(self):
-        super(Fs, self).start()
+    def start_mount(self):
+        self.prepare_mount()
         m = re.match(r"<(\w+)>", self.raw_mount_point)
         if m:
             # the zone was not created when the service was built. now it should,
