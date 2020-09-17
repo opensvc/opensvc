@@ -1,5 +1,4 @@
 import json
-import time
 
 from utilities.kv_store.kv_abstract import KvAbstract, NoKey
 from utilities.lazy import lazy
@@ -19,12 +18,7 @@ class KvSec(KvAbstract):
         return factory('sec')(name=name, namespace=namespace, node=self.node)
 
     def create(self, key, value):
-        now = time.time()
-        data = {
-            "value": value,
-            "updated_at": now
-        }
-        self.sec.add_key(key, json.dumps(data))
+        self.sec.add_key(key, json.dumps(value))
 
     def read(self, key):
         try:
