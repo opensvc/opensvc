@@ -493,7 +493,8 @@ class ObjPaths(object):
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
-    def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None):
+    def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None, log_handlers=None):
+        self.log_handlers = log_handlers
         self.raw_cd = cd
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.name = name
@@ -658,7 +659,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.volatile:
             handlers = ["stream"]
         else:
-            handlers = None
+            handlers = self.log_handlers
         log_file = os.path.join(self.log_d, self.name+".log")
         return core.logger.initLogger(self.loggerpath, log_file, handlers=handlers)
 

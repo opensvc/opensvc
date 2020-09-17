@@ -15,7 +15,7 @@ class KvSec(KvAbstract):
     @lazy
     def sec(self):
         name, namespace, kind = split_path(self.secpath)
-        return factory('sec')(name=name, namespace=namespace, node=self.node)
+        return factory('sec')(name=name, namespace=namespace, node=self.node, log_handlers=["file"])
 
     def create(self, key, value):
         self.sec.add_key(key, json.dumps(value))
