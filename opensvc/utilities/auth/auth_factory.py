@@ -14,17 +14,14 @@ class AuthFactory:
     def _get_auth(self, **auth_info: dict) -> dict:
         key = self.auth_provider.auth_info_to_key(**auth_info)
         try:
-            value = self.kv_store.read_not_expired(key)
+            data = self.kv_store.read_not_expired(key)
         except NoKey:
             args, kwargs = self.auth_provider.creator_args(**auth_info)
-            value = self.auth_provider.creator(*args, **kwargs)
-            self.kv_store.create(key, value)
-        return value
+            data = self.auth_provider.creator(*args, **kwargs)
+            self.kv_store.create(key, data)
+        return data
 
     def get_headers(self, auth_info):
-        auth = self._get_auth(**auth_info)
-        return self._auth_to_headers(**auth)
+        data = self._get_auth(**auth_info)
+        return self.auth_provider.data_to_header(**data)
 
-    @staticmethod
-    def _auth_to_headers(**auth):
-        return {"Authorization": "Bearer %s" % auth.get('token', "none")}
