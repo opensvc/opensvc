@@ -363,8 +363,11 @@ class ResourceSet(object):
         """
         try:
             getattr(resource, 'action')(action)
-        except Exception as exc:
+        except ex.Error as exc:
             self.log.error(str(exc))
+            sys.exit(1)
+        except Exception as exc:
+            self.log.exception(exc)
             sys.exit(1)
         if resource.can_rollback:
             sys.exit(2)
