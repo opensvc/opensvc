@@ -4,7 +4,7 @@ import pkgutil
 from env import Env
 
 DEFAULT_HEAD = "drivers"
-SITE_HEAD = "site-opensvc.drivers"
+SITE_HEAD = "site_opensvc.drivers"
 
 
 def driver_import(*args, **kwargs):
