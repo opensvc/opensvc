@@ -4,8 +4,8 @@ from utilities.kv_store.kv_abstract import KvAbstract, NoKey
 
 
 class KvSimple(KvAbstract):
-    def __init__(self, **kwargs):
-        super(KvSimple, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(KvSimple, self).__init__(*args, **kwargs)
         self.cache = {}
 
     def create(self, key, value):
