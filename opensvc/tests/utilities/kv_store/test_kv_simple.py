@@ -6,7 +6,7 @@ from utilities.kv_store.kv_simple import KvSimple
 
 @pytest.fixture(scope='function')
 def simple():
-    return KvSimple(is_expired=lambda x: True, name='tst')
+    return KvSimple(name='tst', is_expired=lambda x: True)
 
 
 @pytest.mark.ci

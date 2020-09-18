@@ -1,6 +1,6 @@
-class UrlUtilAbstract:
-    def get_url(self, url: str) -> str:
-        raise NotImplemented
+class UrlUtilAbstract(object):
+    def get_url(self, url):
+        raise NotImplementedError
 
-    def get_header(self, url: str) -> str:
-        raise NotImplemented
+    def get_header(self, url):
+        raise NotImplementedError

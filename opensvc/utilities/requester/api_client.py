@@ -3,7 +3,7 @@ import requests
 import utilities.noop_log as noop_log
 
 
-class ApiClient:
+class ApiClient(object):
     def __init__(self,
                  auth_factory,
                  url_util,
