@@ -5138,7 +5138,7 @@ class Svc(PgMixin, BaseSvc):
                     unions.append(intersection)
 
         for intersection in unions:
-            for resource in self.resources_by_id.values() + self.encap_resources.values():
+            for resource in itertools.chain(self.resources_by_id.values(), self.encap_resources.values()):
                 if set(intersection) & resource.tags == set(intersection):
                     retained_rids.add(resource.rid)
         if len(retained_rids) > 0:
