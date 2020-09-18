@@ -481,7 +481,7 @@ class Dns(shared.OsvcThread):
                     gen_name = "%s.%s.%s.%s." % (name, namespace, kind, self.cluster_name)
                     gen_name = gen_name.lower()
                     if hostname and hostname != name:
-                        target = "%s%s" % (hostname, gen_name)
+                        target = "%s.%s" % (hostname, gen_name)
                     else:
                         target = "%s" % gen_name
                     if target in names[qname]:
