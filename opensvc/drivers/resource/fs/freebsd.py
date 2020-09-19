@@ -112,10 +112,10 @@ class Fs(BaseFs):
     def can_check_writable(self):
         return True
 
-    def start(self):
+    def start_mount(self):
         if self.Mounts is None:
             self.Mounts = Mounts()
-        super(Fs, self).start()
+        self.prepare_mount()
         if self.is_up() is True:
             self.log.info("%s is already mounted" % self.label)
             return 0

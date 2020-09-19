@@ -747,6 +747,12 @@ class ExtConfigMixin(object):
             try:
                 # set BaseSvc::node if not already set
                 self.get_node()
+                if "." in _v:
+                    __section, __v = _v.split(".", 1)
+                    if __section in ("env", "labels"):
+                        # allowed explicit section
+                        return self.node.conf_get(__section, __v)
+                # use "node" as the implicit section
                 return self.node.conf_get("node", _v)
             except Exception as exc:
                 raise ex.Error("%s: unresolved reference (%s)" % (ref, str(exc)))

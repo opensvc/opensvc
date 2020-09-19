@@ -4,7 +4,7 @@ import pkgutil
 from env import Env
 
 DEFAULT_HEAD = "drivers"
-SITE_HEAD = "site-opensvc.drivers"
+SITE_HEAD = "site_opensvc.drivers"
 
 
 def driver_import(*args, **kwargs):
@@ -80,16 +80,20 @@ def driver_class(mod):
 
     For example:
     mod.DRIVER_GROUP = "fs"
-    mod.DRIVER_BASENAME = "xfs"
+    mod.DRIVER_BASENAME = "xfs_two"
 
-    formats and return the "FsXfs" classname.
+    formats and return the "FsXfsTwo" classname.
     """
+    def pascalize(s):
+        l = [e.capitalize() for e in s.split("_")]
+        return "".join(l)
+
     try:
-        classname = mod.DRIVER_GROUP.capitalize()
+        classname = pascalize(mod.DRIVER_GROUP)
     except AttributeError:
         return
     try:
-        classname += mod.DRIVER_BASENAME.capitalize()
+        classname += pascalize(mod.DRIVER_BASENAME)
     except AttributeError:
         pass
     return getattr(mod, classname)
