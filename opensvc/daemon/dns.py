@@ -176,14 +176,14 @@ class Dns(shared.OsvcThread):
                 break
 
             self.log.debug("received %s", data)
-    
+
             try:
                 data = bdecode(data)
                 data = json.loads(data)
             except Exception as exc:
                 self.log.error(exc)
                 data = None
-    
+
             if self.stopped():
                 self.log.info("stop event received (handler thread)")
                 break
