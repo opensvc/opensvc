@@ -533,16 +533,24 @@ class Dns(shared.OsvcThread):
                     _name = name[name.index(".")+1:]
                 else:
                     _name = name
+
                 zone = "%s.%s.%s." % (namespace, kind, self.cluster_name)
                 qname = "%s.%s" % (_name, zone)
                 if qname not in names:
                     names[qname] = set()
+
+                local_zone = "%s.%s.%s.node.%s." % (namespace, kind, nodename, self.cluster_name)
+                local_qname = "%s.%s" % (_name, local_zone)
+                if local_qname not in names:
+                    names[local_qname] = set()
+
                 for rid, resource in status.get(path, {}).get("resources", {}).items():
                     addr = resource.get("info", {}).get("ipaddr")
                     if addr is None:
                         continue
                     hostname = resource.get("info", {}).get("hostname")
                     names[qname].add(addr)
+                    names[local_qname].add(addr)
                     rname = self.unique_name(addr) + "." + qname
                     if rname not in names:
                         names[rname] = set()
