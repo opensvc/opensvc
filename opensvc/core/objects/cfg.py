@@ -8,9 +8,6 @@ from core.objects.data import DataMixin
 from utilities.string import bencode, bdecode, is_string
 import core.exceptions as ex
 
-DEFAULT_STATUS_GROUPS = [
-]
-
 class Cfg(DataMixin, BaseSvc):
     kind = "cfg"
     desc = "configuration"

@@ -173,9 +173,8 @@ def read_cf_comments(fpath):
 
 
 class ExtConfigMixin(object):
-    def __init__(self, default_status_groups=None):
+    def __init__(self):
         self.ref_cache = {}
-        self.default_status_groups = default_status_groups
 
     def clear_ref_cache(self):
         self.ref_cache = {}
@@ -389,7 +388,7 @@ class ExtConfigMixin(object):
             if "." in keyword and "#" not in keyword:
                 # <group>.keyword[@<scope>] format => loop over all rids in group
                 group = keyword.split(".", 1)[0]
-                if group in self.default_status_groups:
+                if group in self.kwstore:
                     for rid in [rid for rid in cd if rid.startswith(group+"#")]:
                         keyword = rid + keyword[keyword.index("."):]
                         changes.append(self.set_mangle(keyword, op, value, index, eval))
@@ -430,7 +429,7 @@ class ExtConfigMixin(object):
         if "." in keyword and "#" not in keyword:
             # <group>.keyword[@<scope>] format => loop over all rids in group
             group = keyword.split(".", 1)[0]
-            if group in self.default_status_groups:
+            if group in self.kwstore:
                 for rid in [rid for rid in cd if rid.startswith(group+"#")]:
                     keyword = rid + keyword[keyword.index("."):]
                     changes.append(self.set_mangle(keyword, op, value, index, eval))

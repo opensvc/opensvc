@@ -63,10 +63,6 @@ if six.PY2:
 
 init_locale()
 
-DEFAULT_STATUS_GROUPS = [
-    "hb",
-    "arbitrator",
-]
 
 ACTION_ANY_NODE = (
     "collector_cli",
@@ -151,7 +147,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return self.nodename
 
     def __init__(self):
-        ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        ExtConfigMixin.__init__(self)
         self.listener = None
         self.clouds = None
         self.paths = Storage(

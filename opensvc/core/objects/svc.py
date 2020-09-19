@@ -152,18 +152,6 @@ TOP_STATUS_GROUPS = [
     "optional",
 ]
 
-DEFAULT_STATUS_GROUPS = [
-    "ip",
-    "volume",
-    "disk",
-    "fs",
-    "share",
-    "container",
-    "app",
-    "sync",
-    "task",
-]
-
 CONFIG_DEFAULTS = {
     'sync#i0_schedule': '@60',
     'sync_schedule': '04:00-06:00',
@@ -496,7 +484,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None, log_handlers=None):
         self.log_handlers = log_handlers
         self.raw_cd = cd
-        ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
+        ExtConfigMixin.__init__(self)
         self.name = name
         self.namespace = namespace.strip("/") if namespace else None
         self.node = node
@@ -4246,7 +4234,7 @@ class Svc(PgMixin, BaseSvc):
         if excluded_groups is None:
             excluded_groups = set()
         if groups is None:
-            groups = set(DEFAULT_STATUS_GROUPS)
+            groups = set([s for s in self.kwstore])
 
         status = {
             "status_group": {},
@@ -4260,7 +4248,7 @@ class Svc(PgMixin, BaseSvc):
         for group in groups:
             status["status_group"][group] = core.status.Status(core.status.NA)
 
-        for group in DEFAULT_STATUS_GROUPS:
+        for group in self.kwstore:
             if group not in groups:
                 continue
             for resource in self.get_resources(group):

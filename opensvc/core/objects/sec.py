@@ -15,9 +15,6 @@ from utilities.naming import factory, split_path
 from utilities.ssl import gen_cert, get_expire
 from utilities.string import bdecode, bencode
 
-DEFAULT_STATUS_GROUPS = [
-]
-
 class Sec(DataMixin, BaseSvc):
     kind = "sec"
     desc = "secret"

@@ -1,9 +1,6 @@
 from utilities.lazy import lazy
 from core.objects.svc import BaseSvc
 
-DEFAULT_STATUS_GROUPS = [
-]
-
 class Ccfg(BaseSvc):
     kind = "ccfg"
 

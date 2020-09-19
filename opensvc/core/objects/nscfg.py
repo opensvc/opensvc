@@ -4,9 +4,6 @@ from utilities.lazy import lazy
 from utilities.drivers import driver_import
 from utilities.naming import list_services, factory, split_path
 
-DEFAULT_STATUS_GROUPS = [
-]
-
 class Nscfg(PgMixin, BaseSvc):
     kind = "nscfg"
 

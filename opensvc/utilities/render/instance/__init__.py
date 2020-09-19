@@ -7,7 +7,18 @@ from env import Env
 from utilities.naming import split_path, strip_path, resolve_path, is_service
 from utilities.render.color import color, colorize, STATUS_COLOR
 from utilities.storage import Storage
-from core.objects.svc import DEFAULT_STATUS_GROUPS
+
+DEFAULT_STATUS_GROUPS = [
+    "ip",
+    "volume",
+    "disk",
+    "fs",
+    "share",
+    "container",
+    "app",
+    "sync",
+    "task",
+]
 
 def fmt_flags(resource, idata):
     """
@@ -54,8 +65,6 @@ def dispatch_resources(idata, discard_disabled=False):
     Honor the --discard-disabled arg.
     """
     subsets = {}
-    for group in DEFAULT_STATUS_GROUPS:
-        subsets[group] = {}
 
     for rid, resource in idata.get("resources", {}).items():
         if discard_disabled and resource.get("disable", False):

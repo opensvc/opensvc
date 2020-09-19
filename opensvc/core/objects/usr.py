@@ -7,9 +7,6 @@ from core.objects.svc import BaseSvc
 from .sec import Sec
 import core.exceptions as ex
 
-DEFAULT_STATUS_GROUPS = [
-]
-
 OPENSSL_CRL_CONF = """
 [ ca ]
 default_ca = %(clustername)s
