@@ -4246,7 +4246,7 @@ class Svc(PgMixin, BaseSvc):
         if excluded_groups is None:
             excluded_groups = set()
         if groups is None:
-            groups = set(DEFAULT_STATUS_GROUPS)
+            groups = set(self.kwstore.sections)
 
         status = {
             "status_group": {},
@@ -4260,7 +4260,7 @@ class Svc(PgMixin, BaseSvc):
         for group in groups:
             status["status_group"][group] = core.status.Status(core.status.NA)
 
-        for group in DEFAULT_STATUS_GROUPS:
+        for group in self.kwstore.sections:
             if group not in groups:
                 continue
             for resource in self.get_resources(group):
