@@ -597,10 +597,11 @@ class Dns(shared.OsvcThread):
                         if "#" in expose:
                             # expose data by reference
                             expose_data = status[path].get("resources", {}).get(expose, {}).get("info")
+
                             try:
                                 port = expose_data["port"]
                                 proto = expose_data["protocol"]
-                            except KeyError:
+                            except (KeyError, TypeError):
                                 continue
                         else:
                             # expose data inline
