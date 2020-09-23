@@ -632,7 +632,7 @@ class BaseAsset(object):
         l = out.split()
 
         i = 0
-        for s in ("days,", "day(s),"):
+        for s in ("days,", "day(s),", "day,", "days", "day"):
             try:
                 i = l.index(s)
                 break
