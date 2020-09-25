@@ -558,7 +558,7 @@ class Resource(object):
             self.write_status()
 
         if self.rstatus in (core.status.UP, core.status.STDBY_UP) and \
-           self.is_provisioned_flag() is False:
+           not self._is_provisioned_flag():
             self.write_is_provisioned_flag(True)
 
         return self.rstatus
@@ -1124,6 +1124,9 @@ class Resource(object):
         """
         if not hasattr(self, "provisioner"):
             return
+        return self._is_provisioned_flag()
+
+    def _is_provisioned_flag(self):
         try:
             with open(self.provisioned_flag, 'r') as filep:
                 return json.load(filep)
