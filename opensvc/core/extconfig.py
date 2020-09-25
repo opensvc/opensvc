@@ -1504,7 +1504,7 @@ class ExtConfigMixin(object):
                 kwargs[keyword.protoname] = self.conf_get(section, keyword.keyword, rtype=rtype, verbose=False)
             except ex.RequiredOptNotFound:
                 try:
-                    if keyword.provisioning and self.running_action != "provision":
+                    if keyword.provisioning and (self.running_action != "provision" or self.oget(section, "provision") == False):
                         continue
                 except AttributeError:
                     # not a BaseSvc

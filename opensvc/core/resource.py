@@ -53,8 +53,8 @@ class Resource(object):
                  restart=0,
                  tags=None,
                  standby=None,
-                 skip_provision=False,
-                 skip_unprovision=False,
+                 enable_provision=False,
+                 enable_unprovision=False,
                  shared=False,
                  promote_rw=False,
                  encap=False,
@@ -76,8 +76,8 @@ class Resource(object):
         self.monitor = monitor
         self.nb_restart = restart
         self.rstatus = None
-        self.skip_provision = skip_provision
-        self.skip_unprovision = skip_unprovision
+        self.skip_provision = not enable_provision
+        self.skip_unprovision = not enable_unprovision
         self.shared = shared
         self.need_promote_rw = promote_rw
         self.encap = encap or "encap" in self.tags
@@ -558,7 +558,7 @@ class Resource(object):
             self.write_status()
 
         if self.rstatus in (core.status.UP, core.status.STDBY_UP) and \
-           self.is_provisioned_flag() is False:
+           not self._is_provisioned_flag():
             self.write_is_provisioned_flag(True)
 
         return self.rstatus
@@ -1124,6 +1124,9 @@ class Resource(object):
         """
         if not hasattr(self, "provisioner"):
             return
+        return self._is_provisioned_flag()
+
+    def _is_provisioned_flag(self):
         try:
             with open(self.provisioned_flag, 'r') as filep:
                 return json.load(filep)
