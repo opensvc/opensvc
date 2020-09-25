@@ -260,6 +260,13 @@ class Volume(Resource):
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.volname)
             return
+        users = self.volsvc.users(exclude=[self.svc.path])
+        if users:
+            self.log.info("skip %s stop: active users: %s",
+                          self.volsvc.path, ",".join(users))
+            return
+        self.log.info("last user of %s on this node: stop the volume instance",
+                      self.volsvc.path)
         if self.volsvc.topology == "flex":
             return
         if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader, "force": force}) != 0:
