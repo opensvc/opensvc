@@ -841,22 +841,24 @@ KEYWORDS = [
     {
         "sections": SECTIONS,
         "keyword": "provision",
+        "protoname": "enable_provision",
         "generic": True,
         "at": True,
         "candidates": (True, False),
         "default": True,
         "convert": "boolean",
-        "text": "Set to false to skip the resource on provision and unprovision actions. Warning: provisioning implies destructive operations like formating. Unprovisioning does not keep a copy of the service data."
+        "text": "Set to false to skip the resource on provision and unprovision actions. Warning: Provision implies destructive operations like formating. Unprovision destroys service data."
     },
     {
         "sections": SECTIONS,
         "keyword": "unprovision",
+        "protoname": "enable_unprovision",
         "generic": True,
         "at": True,
         "candidates": (True, False),
         "default": True,
         "convert": "boolean",
-        "text": "Set to false to skip the resource on unprovision actions. Warning: Unprovisioning does not keep a copy of the service data."
+        "text": "Set to false to skip the resource on unprovision actions. Warning: Unprovision destroys service data."
     },
     {
         "sections": SECTIONS,
