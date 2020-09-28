@@ -45,7 +45,7 @@ class ShareNfs(Resource):
     @cache("showmount.e")
     def get_showmount(self):
         self.data = {}
-        cmd = ["showmount", "-e", "--no-headers"]
+        cmd = ["showmount", "-e", "--no-headers", "127.0.0.1"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.Error("nfs server not operational")
@@ -135,10 +135,10 @@ class ShareNfs(Resource):
                 continue
 
             if client in self.issues_wrong_opts:
-                cmd = [ 'exportfs', '-u', ':'.join((client, self.path)) ]
+                cmd = ["exportfs", "-i", "-u", ":".join((client, self.path))]
                 ret, out, err = self.vcall(cmd)
 
-            cmd = [ 'exportfs', '-o', ','.join(opts), ':'.join((client, self.path)) ]
+            cmd = ["exportfs", "-i", "-o", ",".join(opts), ":".join((client, self.path))]
             ret, out, err = self.vcall(cmd)
             clear_cache("exportfs.v")
             clear_cache("showmount.e")
