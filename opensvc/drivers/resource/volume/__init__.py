@@ -31,7 +31,6 @@ KEYWORDS = [
         "protoname": "pooltype",
         "provisioning": True,
         "at": True,
-        "required": False,
         "text": "The type of the pool to allocate from. The selected pool will be the one matching type and capabilities and with the maximum available space."
     },
     {
@@ -40,7 +39,6 @@ KEYWORDS = [
         "candidates": ["rwo", "roo", "rwx", "rox"],
         "provisioning": True,
         "at": True,
-        "required": False,
         "text": "The access mode of the volume. ``rwo`` is Read Write Once, ``roo`` is Read Only Once, ``rwx`` is Read Write Many, ``rox`` is Read Only Many. ``rox`` and ``rwx`` modes are served by flex volume services.",
     },
     {
@@ -48,7 +46,6 @@ KEYWORDS = [
         "at": True,
         "convert": "size",
         "provisioning": True,
-        "required": True,
         "text": "The size to allocate in the pool."
     },
     {
@@ -267,8 +264,6 @@ class Volume(Resource):
             return
         self.log.info("last user of %s on this node: stop the volume instance",
                       self.volsvc.path)
-        if self.volsvc.topology == "flex":
-            return
         if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader, "force": force}) != 0:
             raise ex.Error
 
@@ -513,14 +508,30 @@ class Volume(Resource):
             return False
         return True
 
+    def incompatible_claims(self, volume=None):
+        if not volume:
+            volume = self.volsvc
+        l = set()
+        for e in volume.children:
+            c1 = e + "@" + Env.nodename
+            c2 = split_path(e)[0] + "@" + Env.nodename
+            if c1 not in self.svc.parents and \
+               c2 not in self.svc.parents:
+                l.add(e)
+        return l
+
     def claim(self, volume):
         if self.shared:
-            if self.owned_exclusive(volume):
-                self.log.info("volume %s is already claimed exclusively by %s",
-                                volume.path, self.svc.path)
+            if self.owned(volume):
+                self.log.info("shared volume %s is already claimed by %s",
+                              volume.path, self.svc.path)
                 return
-            if self.claimed(volume):
-                raise ex.Error("shared volume %s is already claimed by %s" % (volume.name, ",".join(volume.children)))
+            parents = self.incompatible_claims(volume)
+            if parents:
+                raise ex.Error("shared volume %s is already claimed by %s, not local parents of this service" % (volume.name, ",".join(parents)))
+            else:
+                self.log.info("shared volume %s current claims are compatible: %s",
+                              volume.path, volume.children)
         else:
             if self.owned(volume):
                 self.log.info("volume %s is already claimed by %s",
@@ -603,12 +614,23 @@ class Volume(Resource):
                                "non leader instance waited for too long for the "
                                "volume to appear")
             return volume
+        self.check_configure_requirements()
         self.log.info("create new volume %s (pool name: %s, pool type: %s, "
                         "access: %s, size: %s, format: %s, shared: %s)",
                         self.volname, self.pool, self.pooltype, self.access,
                         print_size(self.size, unit="B", compact=True),
                         self.format, self.shared)
         return self._configure_volume(volume)
+
+    def check_configure_requirements(self):
+        missing = []
+        if not self.size:
+            missing.append("size")
+        if missing:
+            raise ex.Error("missing provisioning keywords required to create "
+                           "the volume object: %s. if another svc is responsible "
+                           "for creating the volume add a parent relation."
+                           "" % ",".join(missing))
 
     def volume_env_data(self, pool):
         env = {}
