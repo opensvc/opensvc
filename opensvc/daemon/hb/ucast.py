@@ -262,7 +262,7 @@ class HbUcastRx(HbUcast):
             self.set_beating(nodename)
             return
         try:
-            self.store_rx_data(data, nodename)
+            self.queue_rx_data(data, nodename)
             self.set_last(nodename)
         except Exception as exc:
             if self.get_last(nodename).success:

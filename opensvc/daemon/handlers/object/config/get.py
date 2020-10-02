@@ -76,8 +76,9 @@ class Handler(daemon.handler.BaseHandler):
             return {"status": "1", "error": str(exc), "traceback": traceback.format_exc()}
 
     def _object_config_file(self, nodename, path, thr=None, **kwargs):
-        if shared.SMON_DATA.get(path, {}).get("status") in ("purging", "deleting") or \
-           shared.SMON_DATA.get(path, {}).get("global_expect") in ("purged", "deleted"):
+        smon = thr.get_service_monitor(path)
+        if smon.status in ("purging", "deleting") or \
+           smon.global_expect in ("purged", "deleted"):
             return {"error": "delete in progress", "status": 2}
         fpath = svc_pathcf(path)
         if not os.path.exists(fpath):

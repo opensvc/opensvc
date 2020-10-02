@@ -33,6 +33,7 @@ from utilities.lazy import lazy, unset_lazy
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
 STATS_INTERVAL = 1
+CP = None
 
 HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
@@ -141,6 +142,16 @@ class Daemon(object):
         self.pid = os.getpid()
         self.stats_data = None
         self.last_stats_refresh = 0
+        self.init_data()
+
+    def init_data(self):
+        initial_data = {
+            "monitor": {
+                "nodes": {},
+                "services": {},
+            }
+        }
+        shared.DAEMON_STATUS.set([], initial_data)
 
     def stop(self):
         """
@@ -304,9 +315,10 @@ class Daemon(object):
         Return True if a thread need restarting, ie not signalled to stop
         and not alive.
         """
-        if thr_id not in self.threads:
+        try:
+            thr = self.threads[thr_id]
+        except KeyError:
             return True
-        thr = self.threads[thr_id]
         if thr.stopped():
             return False
         if thr.is_alive():
@@ -331,7 +343,11 @@ class Daemon(object):
         Start threads or restart threads dead of an unexpected cause.
         Stop and delete heartbeat threads whose configuration was deleted.
         """
-        if shared.NMON_DATA.status not in (None, "idle", "init"):
+        try:
+            nmon_status = shared.DAEMON_STATUS.get(["monitor", "nodes", Env.nodename, "monitor", "status"])
+        except (KeyError, TypeError):
+            nmon_status = None
+        if nmon_status not in (None, "idle", "init"):
             return
 
         config_changed = self.read_config()

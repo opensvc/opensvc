@@ -61,20 +61,23 @@ class LockMixin(object):
             thr.log.warning('timeout waiting for lock %s %s release on peers', name, lock_id)
 
     def lock_accepted(self, name, lock_id):
-        for nodename, node in shared.CLUSTER_DATA.items():
-            lock = node.get("locks", {}).get(name)
-            if not lock:
+        for nodename in self.list_nodes():
+            try:
+                lock = self.nodes_data.get([nodename, "locks", name])
+            except KeyError:
                 return False
             if lock.get("id") != lock_id:
                 return False
         return True
 
-    @staticmethod
-    def _lock_released(name, lock_id):
-        """Verify if lock release has been propated to shared.CLUSTER_DATA"""
-        for nodename, node in shared.CLUSTER_DATA.items():
-            lock = node.get("locks", {}).get(name)
-            if not lock:
+    def _lock_released(self, name, lock_id):
+        """
+        Verify if lock release has been written to cluster data.
+        """
+        for nodename in self.list_nodes():
+            try:
+                lock = self.nodes_data.get([nodename, "locks", name])
+            except KeyError:
                 continue
             if lock.get("id") == lock_id:
                 return False

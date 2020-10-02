@@ -98,7 +98,8 @@ class Scheduler(shared.OsvcThread):
             future = self.now + FUTURE
             self.janitor_run_done()
             self.janitor_certificates()
-            if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
+            nmon = self.get_node_monitor()
+            if nmon and nmon.status not in ("init", "upgrade", "shutting"):
                 if init:
                     init = False
                     last = now
@@ -144,7 +145,7 @@ class Scheduler(shared.OsvcThread):
                 continue
             if ca != self.cluster_ca:
                 continue
-            cf_mtime = shared.CLUSTER_DATA.get(Env.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
+            cf_mtime = self.get_service_config(obj.path, Env.nodename).updated
             if cf_mtime is None:
                 continue
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
@@ -318,6 +319,7 @@ class Scheduler(shared.OsvcThread):
 
     def janitor_delayed(self):
         drop = []
+        cluster_data = self.nodes_data.get()
         for sig, task in self.delayed.items():
             action, path, rid = sig
             if not path:
@@ -325,7 +327,7 @@ class Scheduler(shared.OsvcThread):
             if not rid:
                 continue
             try:
-                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=shared.CLUSTER_DATA)
+                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=cluster_data)
             except KeyError:
                 # deleted during previous iterations
                 drop.append(sig)
@@ -416,19 +418,18 @@ class Scheduler(shared.OsvcThread):
                 continue
             svc.options.cron = True
             svc.sched.configure()
-            try:
-                provisioned = shared.AGG[path].provisioned
-            except KeyError:
+            agg = self.get_service_agg(path)
+            if not agg:
                 continue
             lasts = self.get_lasts(svc)
             for action, parms in svc.sched.actions.items():
-                if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
+                if agg.provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+path)
                     continue
                 try:
                     data = svc.sched.validate_action(action, lasts=lasts, now=now)
                 except ex.AbortAction as exc:
-                    self.log.debug("skip %s on %s: validation", action, path)
+                    #self.log.debug("skip %s on %s: validation", action, path)
                     continue
                 try:
                     rids, delay = data

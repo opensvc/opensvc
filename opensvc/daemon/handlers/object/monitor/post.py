@@ -102,7 +102,7 @@ class Handler(daemon.handler.BaseHandler):
         options = self.parse_options(kwargs)
         paths = set([options.path])
         if options.global_expect != "scaled":
-            paths |= self.get_service_slaves(options.path)
+            paths |= self.get_service_slaves(options.path, thr=thr)
         errors = []
         info = []
         data = {"data": {}}
@@ -134,7 +134,7 @@ class Handler(daemon.handler.BaseHandler):
             data["error"] = errors
         return data
 
-    def get_service_slaves(self, path, slaves=None):
+    def get_service_slaves(self, path, slaves=None, thr=None):
         """
         Recursive lookup of object slaves.
         """
@@ -149,17 +149,13 @@ class Handler(daemon.handler.BaseHandler):
             else:
                 return fmt_path(name, parent_ns, kind)
 
-        for nodename in shared.CLUSTER_DATA:
-            try:
-                data = shared.CLUSTER_DATA[nodename]["services"]["status"][path]
-            except KeyError:
-                continue
+        for nodename, data in thr.iter_service_instances(path):
             slaves.add(path)
             new_slaves = set(data.get("slaves", [])) | set(data.get("scaler_slaves", []))
             new_slaves = set([set_ns(slave, namespace) for slave in new_slaves])
             new_slaves -= slaves
             for slave in new_slaves:
-                slaves |= self.get_service_slaves(slave, slaves)
+                slaves |= self.get_service_slaves(slave, slaves, thr=thr)
         return slaves
 
     def validate_global_expect(self, path, global_expect, thr=None):
@@ -201,7 +197,7 @@ class Handler(daemon.handler.BaseHandler):
 
         if global_expect not in ("started", "stopped"):
             return
-        agg = Storage(shared.AGG.get(path, {}))
+        agg = thr.get_service_agg(path)
         if global_expect == "started" and agg.avail == "up":
             raise ex.AbortAction("%s is already started" % path)
         elif global_expect == "stopped" and agg.avail in ("down", "stdby down", "stdby up"):

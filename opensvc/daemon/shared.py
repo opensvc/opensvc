@@ -16,7 +16,6 @@ import foreign.six as six
 from foreign.six.moves import queue
 
 import core.exceptions as ex
-import foreign.json_delta as json_delta
 from foreign.jsonpath_ng.ext import parse
 from env import Env
 from utilities.lazy import lazy, unset_lazy
@@ -26,6 +25,7 @@ from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS
+from .data import JournaledData
 
 
 class DebugRLock(object):
@@ -64,11 +64,20 @@ RLock = threading.RLock
 # a global to store the Daemon() instance
 DAEMON = None
 
-# daemon_status cache
-LAST_DAEMON_STATUS = {}
-DAEMON_STATUS_LOCK = RLock()
-DAEMON_STATUS = {}
-PATCH_ID = 0
+# the event queue to feed to clients listening for changes
+EVENT_Q = queue.Queue()
+
+# daemon_status data
+DAEMON_STATUS = JournaledData(
+    event_q=EVENT_Q,
+    journal_head=["monitor", "nodes", Env.nodename],
+    journal_exclude=[
+        ["gen"],
+        ["updated"],
+    ],
+    # disable journaling if we have no peer, as nothing purges the journal
+    journal_condition=lambda: bool(LOCAL_GEN),
+)
 
 # disable orchestration if a peer announces a different compat version than
 # ours
@@ -80,9 +89,6 @@ API_VERSION = 6
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
 CONFIG_LOCK = RLock()
-
-# the event queue to feed to clients listening for changes
-EVENT_Q = queue.Queue()
 
 # current generation of the dataset on the local node
 GEN = 1
@@ -114,27 +120,11 @@ NODE_LOCK = RLock()
 SERVICES = {}
 SERVICES_LOCK = RLock()
 
-# Per service aggretated data of instances.
-# Refresh on monitor status eval, and embedded in the returned data
-AGG = {}
-AGG_LOCK = RLock()
-
 # The encrypted message all the heartbeat tx threads send.
 # It is refreshed in the monitor thread loop.
 HB_MSG = None
 HB_MSG_LEN = 0
 HB_MSG_LOCK = RLock()
-
-# the local service monitor data, where the listener can set expected states
-SMON_DATA = {}
-SMON_DATA_LOCK = RLock()
-
-# the local node monitor data, where the listener can set expected states
-NMON_DATA = Storage({
-    "status": "init",
-    "status_updated": time.time(),
-})
-NMON_DATA_LOCK = RLock()
 
 # the node monitor states evicting a node from ranking algorithms
 NMON_STATES_PRESERVED = (
@@ -152,12 +142,8 @@ MON_CHANGED = []
 LOCKS = {}
 LOCKS_LOCK = RLock()
 
-# The per-threads configuration, stats and states store
-# The monitor thread states include cluster-wide aggregated data
-CLUSTER_DATA = {Env.nodename: {}}
-CLUSTER_DATA_LOCK = RLock()
-
-# The lock to serialize CLUSTER_DATA updates from rx threads
+# The lock to serialize data updates from rx threads
+RX = queue.Queue()
 RX_LOCK = RLock()
 
 # thread loop conditions and helpers
@@ -191,17 +177,12 @@ RELAY_JANITOR_INTERVAL = 10 * 60
 # try to give a name to the locks, for debugging when using
 # the pure python locks (native locks don't support setattr)
 try:
-    DAEMON_STATUS_LOCK.name = "DAEMON_STATUS"
     CONFIG_LOCK.name = "CONFIG"
     THREADS_LOCK.name = "THREADS"
     NODE_LOCK.name = "NODE"
     SERVICES_LOCK.name = "SERVICES"
-    AGG_LOCK.name = "AGG"
     HB_MSG_LOCK.name = "HB_MSG"
-    SMON_DATA_LOCK.name = "SMON_DATA"
-    NMON_DATA_LOCK.name = "NMON_DATA"
     LOCKS_LOCK.name = "LOCKS_LOCK"
-    CLUSTER_DATA_LOCK.name = "CLUSTER_DATA"
     RUN_DONE_LOCK.name = "RUN_DONE"
 except AttributeError:
     pass
@@ -280,6 +261,12 @@ class OsvcThread(threading.Thread, Crypt):
             "load avg": "placement_ranks_load_avg",
             "none": "placement_ranks_none",
         }
+
+        self.daemon_status_data = DAEMON_STATUS
+        self.node_data = self.daemon_status_data.view(["monitor", "nodes", Env.nodename])
+        self.nodes_data = self.daemon_status_data.view(["monitor", "nodes"])
+        self.instances_status_data = self.node_data.view(["services", "status"])
+        self.thread_data = DAEMON_STATUS.view([self.name])
 
     def alert(self, lvl, fmt, *args):
         if lvl == "info":
@@ -471,23 +458,30 @@ class OsvcThread(threading.Thread, Crypt):
                 done.append(idx)
         for idx in sorted(done, reverse=True):
             del self.threads[idx]
-        if len(self.threads) > 2:
-            self.log.debug("threads queue length %d", len(self.threads))
         return len(done)
 
     @lazy
     def freezer(self):
         return Freezer("node")
 
+    def node_busy(self):
+        return self.get_node_monitor().status not in (None, "idle")
+
+    def instances_busy(self):
+        data = self.node_data.get(["services", "status"])
+        for path, sdata in data.items():
+            status = sdata.get("monitor", {}).get("status") 
+            if status not in (None, "idle") and "failed" not in data.status:
+                return True
+        return False
+            
     def reload_config(self):
         if not self._node_conf_event.is_set():
             return
-        if NMON_DATA.status not in (None, "idle"):
+        if self.node_busy():
             return
-        with SMON_DATA_LOCK:
-            for data in SMON_DATA.values():
-                if data.status not in (None, "idle") and "failed" not in data.status:
-                    return
+        if self.instances_busy():
+            return
         self._node_conf_event.clear()
         self.event("node_config_change")
         unset_lazy(self, "config")
@@ -539,57 +533,60 @@ class OsvcThread(threading.Thread, Crypt):
         return False
 
     def set_nmon(self, status=None, local_expect=None, global_expect=None):
-        global NMON_DATA
         changed = False
-        with NMON_DATA_LOCK:
-            if status:
-                if status != NMON_DATA.status:
-                    self.log.info(
-                        "node monitor status change: %s => %s",
-                        NMON_DATA.status if
-                        NMON_DATA.status else "none",
-                        status
-                    )
-                    changed = True
-                    NMON_DATA.status = status
-                    NMON_DATA.status_updated = time.time()
-                    NMON_DATA.global_expect_updated = time.time()
+        nmon = self.get_node_monitor()
+        if status:
+            if status != nmon.status:
+                self.log.info(
+                    "node monitor status change: %s => %s",
+                    nmon.status if
+                    nmon.status else "none",
+                    status
+                )
+                changed = True
+                nmon.status = status
+                nmon.status_updated = time.time()
+                nmon.global_expect_updated = time.time()
 
-            if local_expect:
-                if local_expect == "unset":
-                    local_expect = None
-                if local_expect != NMON_DATA.local_expect:
-                    self.log.info(
-                        "node monitor local expect change: %s => %s",
-                        NMON_DATA.local_expect if
-                        NMON_DATA.local_expect else "none",
-                        local_expect
-                    )
-                    changed = True
-                    NMON_DATA.local_expect = local_expect
+        if local_expect:
+            if local_expect == "unset":
+                local_expect = None
+            if local_expect != nmon.local_expect:
+                self.log.info(
+                    "node monitor local expect change: %s => %s",
+                    nmon.local_expect if
+                    nmon.local_expect else "none",
+                    local_expect
+                )
+                changed = True
+                nmon.local_expect = local_expect
 
-            if global_expect:
-                if global_expect == "unset":
-                    global_expect = None
-                if global_expect != NMON_DATA.global_expect:
-                    self.log.info(
-                        "node monitor global expect change: %s => %s",
-                        NMON_DATA.global_expect if
-                        NMON_DATA.global_expect else "none",
-                        global_expect
-                    )
-                    changed = True
-                    NMON_DATA.global_expect = global_expect
-                    NMON_DATA.global_expect_updated = time.time()
+        if global_expect:
+            if global_expect == "unset":
+                global_expect = None
+            if global_expect != nmon.global_expect:
+                self.log.info(
+                    "node monitor global expect change: %s => %s",
+                    nmon.global_expect if
+                    nmon.global_expect else "none",
+                    global_expect
+                )
+                changed = True
+                nmon.global_expect = global_expect
+                nmon.global_expect_updated = time.time()
 
         if changed:
+            self.node_data.set(["monitor"], nmon)
             wake_monitor(reason="node mon change")
 
     def set_smon(self, path, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
                  stonith=None, expected_status=None):
-        global SMON_DATA
         instance = self.get_service_instance(path, Env.nodename)
+        if not instance:
+            self.node_data.set(["services", "status", path], {"resources": {}})
+        smon_view = self.node_data.view(["services", "status", path, "monitor"])
+        smon = Storage(smon_view.get([], default={}))
         if instance and not instance.get("resources", {}) \
                 and not status \
                 and ((global_expect is None and local_expect is None and status == "idle")  # TODO refactor this
@@ -604,116 +601,172 @@ class OsvcThread(threading.Thread, Crypt):
             return
         # will set changed to True if an update occur, this will avoid wake_monitor calls
         changed = False
-        with SMON_DATA_LOCK:
-            if path not in SMON_DATA:
-                SMON_DATA[path] = Storage({
-                    "status": "idle",
-                    "status_updated": time.time(),
-                    "global_expect_updated": time.time(),
-                })
+        if not smon:
+            smon_view.set([], {
+                "status": "idle",
+                "status_updated": time.time(),
+                "global_expect_updated": time.time(),
+            })
+            changed = True
+        if status:
+            reset_placement = False
+            if status != smon.status \
+                    and (not expected_status or expected_status == smon.status):
+                self.log.info(
+                    "service %s monitor status change: %s => %s",
+                    path,
+                    smon.status if
+                    smon.status else "none",
+                    status
+                )
+                if smon.status is not None \
+                        and "failed" in smon.status \
+                        and "failed" not in status:
+                    # the placement might become "leader" after transition
+                    # from "failed" to "not-failed". recompute asap so the
+                    # orchestrator won't take an undue "stop_instance"
+                    # decision.
+                    reset_placement = True
+                smon.status = status
+                smon.status_updated = time.time()
                 changed = True
-            if status:
-                reset_placement = False
-                if status != SMON_DATA[path].status \
-                        and (not expected_status or expected_status == SMON_DATA[path].status):
-                    self.log.info(
-                        "service %s monitor status change: %s => %s",
-                        path,
-                        SMON_DATA[path].status if
-                        SMON_DATA[path].status else "none",
-                        status
-                    )
-                    if SMON_DATA[path].status is not None \
-                            and "failed" in SMON_DATA[path].status \
-                            and "failed" not in status:
-                        # the placement might become "leader" after transition
-                        # from "failed" to "not-failed". recompute asap so the
-                        # orchestrator won't take an undue "stop_instance"
-                        # decision.
-                        reset_placement = True
-                    SMON_DATA[path].status = status
-                    SMON_DATA[path].status_updated = time.time()
-                    changed = True
-                if reset_placement:
-                    SMON_DATA[path].placement = \
-                        self.get_service_placement(path)
-                    SMON_DATA[path].status_updated = time.time()
-                    changed = True
-
-            if local_expect:
-                if local_expect == "unset":
-                    local_expect = None
-                if local_expect != SMON_DATA[path].local_expect:
-                    self.log.info(
-                        "service %s monitor local expect change: %s => %s",
-                        path,
-                        SMON_DATA[path].local_expect if
-                        SMON_DATA[path].local_expect else "none",
-                        local_expect
-                    )
-                    SMON_DATA[path].local_expect = local_expect
-                    changed = True
-
-            if global_expect:
-                if global_expect == "unset":
-                    global_expect = None
-                if global_expect != SMON_DATA[path].global_expect:
-                    self.log.info(
-                        "service %s monitor global expect change: %s => %s",
-                        path,
-                        SMON_DATA[path].global_expect if
-                        SMON_DATA[path].global_expect else "none",
-                        global_expect
-                    )
-                    SMON_DATA[path].global_expect = global_expect
-                    SMON_DATA[path].global_expect_updated = time.time()
-                    changed = True
-            if reset_retries and "restart" in SMON_DATA[path]:
-                self.log.info("service %s monitor resources restart count "
-                              "reset", path)
-                del SMON_DATA[path]["restart"]
+            if reset_placement:
+                smon.placement = \
+                    self.get_service_placement(path)
+                smon.status_updated = time.time()
                 changed = True
 
-            if stonith:
-                if stonith == "unset":
-                    stonith = None
-                if stonith != SMON_DATA[path].stonith:
-                    self.log.info(
-                        "service %s monitor stonith change: %s => %s",
-                        path,
-                        SMON_DATA[path].stonith if
-                        SMON_DATA[path].stonith else "none",
-                        stonith
-                    )
-                    SMON_DATA[path].stonith = stonith
-                    changed = True
+        if local_expect:
+            if local_expect == "unset":
+                local_expect = None
+            if local_expect != smon.local_expect:
+                self.log.info(
+                    "service %s monitor local expect change: %s => %s",
+                    path,
+                    smon.local_expect if
+                    smon.local_expect else "none",
+                    local_expect
+                )
+                smon.local_expect = local_expect
+                changed = True
+
+        if global_expect:
+            if global_expect == "unset":
+                global_expect = None
+            if global_expect != smon.global_expect:
+                self.log.info(
+                    "service %s monitor global expect change: %s => %s",
+                    path,
+                    smon.global_expect if
+                    smon.global_expect else "none",
+                    global_expect
+                )
+                smon.global_expect = global_expect
+                smon.global_expect_updated = time.time()
+                changed = True
+        if reset_retries and "restart" in smon:
+            self.log.info("service %s monitor resources restart count "
+                          "reset", path)
+            del smon["restart"]
+            changed = True
+
+        if stonith:
+            if stonith == "unset":
+                stonith = None
+            if stonith != smon.stonith:
+                self.log.info(
+                    "service %s monitor stonith change: %s => %s",
+                    path,
+                    smon.stonith if
+                    smon.stonith else "none",
+                    stonith
+                )
+                smon.stonith = stonith
+                changed = True
         if changed:
+            smon_view.set([], smon)
             wake_monitor(reason="service %s mon change" % path)
 
     def get_node_monitor(self, nodename=None):
         """
         Return the Monitor data of the node.
         """
-        if nodename is None:
-            with NMON_DATA_LOCK:
-                data = Storage(NMON_DATA)
-        else:
-            with CLUSTER_DATA_LOCK:
-                if nodename not in CLUSTER_DATA:
-                    return
-                data = Storage(CLUSTER_DATA[nodename].get("monitor", {}))
-        return data
+        nodename = nodename or Env.nodename
+        return Storage(self.daemon_status_data.get(["monitor", "nodes", nodename, "monitor"], default={}))
+
+    def iter_service_monitors(self, path, nodenames=None):
+        for _, nodename, data in self.iter_services_monitors(paths=[path], nodenames=nodenames):
+            yield (nodename, data)
+
+    def iter_local_services_monitors(self):
+        for path, _, data in self.iter_services_monitors(nodenames=[Env.nodename]):
+            yield (path, data)
+
+    def iter_services_monitors(self, paths=None, nodenames=None):
+        for path, nodename, data in self.iter_services_instances(paths=paths, nodenames=nodenames):
+            try:
+                yield (path, nodename, Storage(data.monitor))
+            except (TypeError, KeyError):
+                continue
+
+    def iter_local_services_instances(self):
+        for path, _, data in self.iter_services_instances(nodenames=[Env.nodename]):
+            yield (path, data)
+
+    def iter_service_instances(self, path, nodenames=None):
+        for _, nodename, data in self.iter_services_instances(paths=[path], nodenames=nodenames):
+            yield (nodename, data)
+
+    def iter_services_instances(self, paths=None, nodenames=None):
+        nodenames = nodenames or self.cluster_nodes
+        for nodename in nodenames:
+            for path in self.daemon_status_data.keys_safe(["monitor", "nodes", nodename, "services", "status"]):
+                if paths and path not in paths:
+                    continue
+                try:
+                    yield (path, nodename, Storage(self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "status", path])))
+                except KeyError:
+                    continue
+
+    def iter_services_configs(self, paths=None, nodenames=None):
+        nodenames = nodenames or self.cluster_nodes
+        for nodename in nodenames:
+            for path in self.daemon_status_data.keys_safe(["monitor", "nodes", nodename, "services", "config"]):
+                if paths and path not in paths:
+                    continue
+                try:
+                    yield (path, nodename, Storage(self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "config", path])))
+                except KeyError:
+                    continue
+
+    def iter_nodes(self, nodenames=None):
+        nodenames = nodenames or self.cluster_nodes
+        for nodename in nodenames:
+            try:
+                yield (nodename, self.daemon_status_data.get(["monitor", "nodes", nodename]))
+            except KeyError:
+                continue
+
+    def iter_nodes_monitor(self, nodenames=None):
+        nodenames = nodenames or self.cluster_nodes
+        for nodename in nodenames:
+            try:
+                yield (nodename, self.daemon_status_data.get(["monitor", "nodes", nodename, "monitor"]))
+            except KeyError:
+                continue
 
     def get_service_monitor(self, path):
         """
         Return the Monitor data of a service.
         """
         try:
-            data = Storage(SMON_DATA[path])
+            data = Storage(self.node_data.get(["services", "status", path, "monitor"]))
+            data.placement = self.get_service_placement(path)
         except KeyError:
-            self.set_smon(path, "idle")
-            data = Storage(SMON_DATA[path])
-        data["placement"] = self.get_service_placement(path)
+            data = Storage({
+                "status": "idle",
+                "placement": self.get_service_placement(path),
+            })
         return data
 
     def get_service_placement(self, path):
@@ -853,9 +906,8 @@ class OsvcThread(threading.Thread, Crypt):
                 votes.append(arbitrator["name"])
         return votes
 
-    @staticmethod
-    def live_nodes_count():
-        return len(CLUSTER_DATA)
+    def live_nodes_count(self):
+        return len(self.daemon_status_data.keys(["monitor", "nodes"]))
 
     @staticmethod
     def arbitrators_config_count():
@@ -887,19 +939,19 @@ class OsvcThread(threading.Thread, Crypt):
             "node_votes": live,
             "arbitrator_votes": n_extra_votes,
             "voting": total,
-            "pro_voters": [nod for nod in CLUSTER_DATA] + extra_votes,
+            "pro_voters": self.list_nodes() + extra_votes,
         })
         # give a little time for log flush
         NODE.suicide(method=self.split_action, delay=2)
 
-    def forget_peer_data(self, nodename, change=False):
+    def forget_peer_data(self, nodename, change=False, origin=None):
         """
         Purge a stale peer data if all rx threads are down.
         """
-        nmon = self.get_node_monitor(nodename=nodename)
-        if nmon is None:
+        if not self.nodes_data.exists([nodename]):
             return
-        if not self.peer_down(nodename):
+        nmon = self.get_node_monitor(nodename=nodename)
+        if not self.peer_down(nodename, exclude=[origin]):
             if change:
                 self.log.info("other rx threads still receive from node %s",
                               nodename)
@@ -919,11 +971,8 @@ class OsvcThread(threading.Thread, Crypt):
                 "peer": nodename,
             }
         )
-        with CLUSTER_DATA_LOCK:
-            try:
-                del CLUSTER_DATA[nodename]
-            except KeyError:
-                pass
+        with RX_LOCK:
+            self.nodes_data.unset_safe([nodename])
             try:
                 del LOCAL_GEN[nodename]
             except KeyError:
@@ -940,47 +989,52 @@ class OsvcThread(threading.Thread, Crypt):
         else:
             self.split_handler()
 
-    def peer_down(self, nodename):
+    def peer_down(self, nodename, exclude=None):
         """
         Return True if no rx threads receive data from the specified peer
         node.
         """
-        with THREADS_LOCK:
-            thr_ids = [key for key in THREADS if key.endswith(".rx")]
-        for thr_id in thr_ids:
+        exclude = exclude or []
+        for thr_id in list(THREADS):
+            if not thr_id.endswith(".rx"):
+                continue
+            if thr_id in exclude:
+                continue
             try:
-                rx_status = THREADS[thr_id].status()
-                peer_status = rx_status["peers"][nodename]["beating"]
+                peer_status = self.daemon_status_data.get([thr_id, "peers", nodename, "beating"])
             except KeyError:
                 continue
             if peer_status:
                 return False
         return True
 
-    @staticmethod
-    def get_service_instance(path, nodename):
+    def get_service_config(self, path, nodename):
         """
         Return the specified service status structure on the specified node.
         """
         try:
             return Storage(
-                CLUSTER_DATA[nodename]["services"]["status"][path]
+                self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "config", path])
             )
         except (TypeError, KeyError):
             return
+
+    def get_service_instance(self, path, nodename):
+        """
+        Return the specified service status structure on the specified node.
+        """
+        data = self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "status", path], None)
+        if data is None:
+            return
+        return Storage(data)
 
     def get_service_instances(self, path, discard_empty=False):
         """
         Return the specified service status structures on all nodes.
         """
         instances = {}
-        for nodename in self.cluster_nodes:
-            try:
-                instance = CLUSTER_DATA[nodename]["services"]["status"][path]
-                # provoke a KeyError on foreign instance, to discard them
-                # noinspection PyStatementEffect
-                instance["updated"]
-            except (TypeError, KeyError):
+        for nodename, instance in self.iter_service_instances(path):
+            if not instance.updated:
                 # foreign
                 continue
             if discard_empty and not instance:
@@ -988,16 +1042,23 @@ class OsvcThread(threading.Thread, Crypt):
             instances[nodename] = instance
         return instances
 
-    @staticmethod
-    def get_service_agg(path):
+    def get_service_nodes(self, path):
+        return [n for (n, _) in self.iter_service_instances(path)]
+
+    def list_nodes(self):
+        return self.daemon_status_data.keys_safe(["monitor", "nodes"])
+
+    def list_cluster_paths(self):
+        paths = set()
+        for path, _, _ in self.iter_services_configs():
+            paths.add(path)
+        return paths
+
+    def get_service_agg(self, path):
         """
         Return the specified service aggregated status structure.
         """
-        try:
-            with AGG_LOCK:
-                return AGG[path]
-        except KeyError:
-            return
+        return Storage(self.daemon_status_data.get(["monitor", "services", path], default={}))
 
     #########################################################################
     #
@@ -1023,24 +1084,24 @@ class OsvcThread(threading.Thread, Crypt):
         * the service instance smon status is not "start failed" (default)
         * the service instance constraints are eval'ed True (default)
         """
-        def discard_hard_affinity(data):
+        def discard_hard_affinity(nodename):
             if not svc.hard_affinity:
                 return False
             for path in svc.hard_affinity:
                 try:
-                    status = data["services"]["status"][path]["avail"]
+                    status = self.nodes_data.get([nodename, "services", "status", path, "avail"])
                 except KeyError:
                     continue
                 if status != "up":
                     return True
             return False
 
-        def discard_hard_anti_affinity(data):
+        def discard_hard_anti_affinity(nodename):
             if not svc.hard_anti_affinity:
                 return False
             for path in svc.hard_affinity:
                 try:
-                    status = data["services"]["status"][path]["avail"]
+                    status = self.nodes_data.get([nodename, "services", "status", path, "avail"])
                 except KeyError:
                     continue
                 if status == "up":
@@ -1050,21 +1111,17 @@ class OsvcThread(threading.Thread, Crypt):
         candidates = []
         if svc is None:
             return []
-        for nodename in self.cluster_nodes:
+        for nodename in svc.peers:
+            nmon = self.get_node_monitor(nodename)
+            if not nmon:
+                continue
+            if discard_preserved and nmon.status in NMON_STATES_PRESERVED:
+                continue
             try:
-                data = CLUSTER_DATA[nodename]
+                frozen = self.daemon_status_data.get(["monitor", "nodes", nodename, "frozen"])
             except KeyError:
                 continue
-            if nodename not in svc.peers:
-                # can happen if the same service is deployed on
-                # differrent cluster segments
-                continue
-            if data == "unknown":
-                continue
-            if discard_preserved and \
-               data.get("monitor", {}).get("status") in NMON_STATES_PRESERVED:
-                continue
-            if discard_frozen and data.get("frozen"):
+            if discard_frozen and frozen:
                 # node frozen
                 continue
             instance = self.get_service_instance(svc.path, nodename)
@@ -1091,9 +1148,9 @@ class OsvcThread(threading.Thread, Crypt):
             if discard_overloaded and self.node_overloaded(nodename):
                 continue
             if discard_affinities:
-                if discard_hard_affinity(data):
+                if discard_hard_affinity(nodename):
                     continue
-                if discard_hard_anti_affinity(data):
+                if discard_hard_anti_affinity(nodename):
                     continue
             candidates.append(nodename)
 
@@ -1214,31 +1271,25 @@ class OsvcThread(threading.Thread, Crypt):
 
     def placement_ranks_score(self, svc, candidates, silent=False):
         data = []
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
-                if nodename not in candidates:
-                    continue
-                try:
-                    load = CLUSTER_DATA[nodename]["stats"]["score"]
-                except KeyError:
-                    pass
-                data.append((nodename, load))
+        for nodename in candidates:
+            try:
+                load = self.daemon_status_data.get(["monitor", "nodes", nodename, "stats", "score"])
+            except KeyError:
+                continue
+            data.append((nodename, load))
         return [nodename for nodename, _ in sorted(data, key=lambda x: -x[1])]
 
     def placement_ranks_load_avg(self, svc, candidates, silent=False):
         data = []
-        with CLUSTER_DATA_LOCK:
-            for nodename in CLUSTER_DATA:
-                if nodename not in candidates:
-                    continue
+        for nodename in candidates:
+            try:
+                load = self.daemon_status_data.get(["monitor", "nodes", nodename, "stats", "load_15m"])
+            except KeyError:
                 try:
-                    load = CLUSTER_DATA[nodename]["stats"]["load_15m"]
+                    load = self.daemon_status_data.get(["monitor", "nodes", nodename, "load", "15m"])
                 except KeyError:
-                    try:
-                        load = CLUSTER_DATA[nodename]["load"]["15m"]
-                    except KeyError:
-                        continue
-                data.append((nodename, load))
+                    continue
+            data.append((nodename, load))
         return [nodename for nodename, _ in sorted(data, key=lambda x: x[1])]
 
     def placement_ranks_nodes_order(self, svc, candidates, silent=False):
@@ -1256,13 +1307,9 @@ class OsvcThread(threading.Thread, Crypt):
         return ranks[idx:idx+n_candidates]
 
     def first_available_node(self):
-        for n in self.cluster_nodes:
-            try:
-                # noinspection PyStatementEffect
-                CLUSTER_DATA[n]["monitor"]["status"]
-                return n
-            except KeyError:
-                continue
+        for nodename, nmon in self.iter_nodes_monitor():
+            if nmon:
+                return nodename
 
     def get_oldest_gen(self, nodename=None):
         """
@@ -1313,29 +1360,22 @@ class OsvcThread(threading.Thread, Crypt):
         return gen
 
     def node_overloaded(self, nodename=None):
-        if nodename is None:
-            nodename = Env.nodename
-        node_data = CLUSTER_DATA.get(nodename)
-        if node_data is None:
-            return False
+        nodename = nodename or Env.nodename
         for key in ("mem", "swap"):
-            limit = node_data.get("min_avail_"+key, 0)
-            total = node_data.get("stats", {}).get(key+"_total", 0)
-            val = node_data.get("stats", {}).get(key+"_avail", 0)
+            limit = self.daemon_status_data.get(["monitor", "nodes", nodename, "min_avail_" + key], default=0)
+            total = self.daemon_status_data.get(["monitor", "nodes", nodename, "stats", key + "_total"], default=0)
+            val = self.daemon_status_data.get(["monitor", "nodes", nodename, "stats", key + "_avail"], default=0)
             if total > 0 and val < limit:
                 return True
         return False
 
     def nodes_info(self):
         data = {}
-        for node in self.cluster_nodes:
-            data[node] = {}
-        with CLUSTER_DATA_LOCK:
-            for node, _data in CLUSTER_DATA.items():
-                data[node] = {
-                    "labels": _data.get("labels", {}),
-                    "targets": _data.get("targets", {}),
-                }
+        for nodename in self.cluster_nodes:
+            data[nodename] = {
+                "labels": self.daemon_status_data.get(["monitor", "nodes", nodename, "labels"], default={}),
+                "targets": self.daemon_status_data.get(["monitor", "nodes", nodename, "targets"], default={}),
+            }
         return data
 
     def dump_nodes_info(self):
@@ -1390,24 +1430,19 @@ class OsvcThread(threading.Thread, Crypt):
                 # deleted
                 continue
             svc.unset_conf_lazy()
-            if NMON_DATA.status != "init":
-                svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
+            if self.get_node_monitor().status != "init":
+                data = svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
+                data["frozen"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "frozen"])
+                data["monitor"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "monitor"])
                 try:
                     # trigger status.json reload by the mon thread
-                    CLUSTER_DATA[Env.nodename]["services"]["status"][path]["updated"] = 0
+                    self.daemon_status_data.set(["monitor", "nodes", Env.nodename, "services", "status", path], data)
                 except KeyError:
                     pass
         wake_monitor(reason="nodes info change")
 
     def speaker(self):
-        nodename = None
-        for nodename in self.sorted_cluster_nodes:
-            if nodename in CLUSTER_DATA and \
-               CLUSTER_DATA[nodename] != "unknown":
-                break
-        if nodename == Env.nodename:
-            return True
-        return False
+        return self.first_available_node() == Env.nodename
 
     def event(self, eid, data=None, log_data=None, level="info"):
         """
@@ -1431,18 +1466,8 @@ class OsvcThread(threading.Thread, Crypt):
                 data["service"] = Storage(self.get_service_agg(path))
             except TypeError:
                 data["service"] = Storage()
-            try:
-                data["instance"] = Storage(
-                    self.get_service_instance(path, Env.nodename)
-                )
-            except TypeError:
-                data["instance"] = Storage()
-            try:
-                data["instance"]["monitor"] = Storage(
-                    self.get_service_monitor(path)
-                )
-            except TypeError:
-                data["instance"]["monitor"] = Storage()
+            data["instance"] = self.get_service_instance(path, Env.nodename) or Storage()
+            data["instance"].monitor = Storage(data["instance"].get("monitor", {}))
             rid = data.get("rid")
             resource = data.get("resource")
             if resource:
@@ -1595,49 +1620,30 @@ class OsvcThread(threading.Thread, Crypt):
         """
         return NODE
 
-    def _daemon_status(self):
+    def update_daemon_status(self):
         """
         Return a hash indexed by thead id, containing the status data
         structure of each thread.
         """
-        data = {
-            "pid": DAEMON.pid,
-            "cluster": {
-                "name": self.cluster_name,
-                "id": self.cluster_id,
-                "nodes": self.cluster_nodes,
-            }
-        }
+        #self.daemon_status_data.set(["pid"], DAEMON.pid)
+        self.daemon_status_data.set(["cluster"], {
+            "name": self.cluster_name,
+            "id": self.cluster_id,
+            "nodes": self.cluster_nodes,
+        })
         for thr_id in list(THREADS):
             try:
-                data[thr_id] = THREADS[thr_id].status()
+                thr = THREADS[thr_id]
+                thr.update_status()
             except KeyError:
                 continue
-        return data
 
-    def update_daemon_status(self):
-        global LAST_DAEMON_STATUS
-        global DAEMON_STATUS
-        global EVENT_Q
-        global PATCH_ID
-        LAST_DAEMON_STATUS = json.loads(json.dumps(DAEMON_STATUS))
-        DAEMON_STATUS = self._daemon_status()
-        diff = json_delta.diff(
-            LAST_DAEMON_STATUS, DAEMON_STATUS,
-            verbose=False, array_align=False, compare_lengths=False
-        )
-        if not diff:
-            return
-        PATCH_ID += 1
-        EVENT_Q.put({
-            "kind": "patch",
-            "id": PATCH_ID,
-            "ts": time.time(),
-            "data": diff,
-        })
+    def update_status(self):
+        data = self.status()
+        self.thread_data.set([], data)
 
     def daemon_status(self):
-        return json.loads(json.dumps(LAST_DAEMON_STATUS))
+        return self.daemon_status_data.get()
 
     def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
         if selector is None:
@@ -1673,7 +1679,7 @@ class OsvcThread(threading.Thread, Crypt):
 
         if paths is None:
             # all objects
-            paths = [p for p in AGG]
+            paths = self.list_cluster_paths()
         pds = paths_data(paths)
         pds = [pd for pd in pds if pd["namespace"] in namespaces]
         if kind:
@@ -1721,7 +1727,7 @@ class OsvcThread(threading.Thread, Crypt):
                 return []
 
             # explicit object path
-            if s in AGG:
+            if s in self.list_cluster_paths():
                 if s not in paths:
                     return []
                 return [s]
@@ -1778,16 +1784,18 @@ class OsvcThread(threading.Thread, Crypt):
         path.
         """
         try:
-            data = AGG[path]
+            data = self.get_service_agg(path)
             data["nodes"] = {}
         except KeyError:
             return
         for node in self.cluster_nodes:
             try:
                 data["nodes"][node] = {
-                    "status": CLUSTER_DATA[node]["services"]["status"][path],
-                    "config": CLUSTER_DATA[node]["services"]["config"][path],
+                    "status": self.daemon_status_data.get(["monitor", "nodes", node, "services", "status", path]),
+                    "config": self.daemon_status_data.get(["monitor", "nodes", node, "services", "config", path]),
                 }
             except KeyError:
                 pass
         return data
+
+

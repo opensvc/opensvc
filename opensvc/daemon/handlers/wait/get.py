@@ -56,7 +56,7 @@ class Handler(daemon.handler.BaseHandler):
         if not thr in thr.parent.events_clients:
             thr.parent.events_clients.append(thr)
         neg, jsonpath_expr, oper, val = self.parse_condition(options.condition)
-        if neg ^ self.match(jsonpath_expr, oper, val, {"kind": "patch"}):
+        if neg ^ self.match(jsonpath_expr, oper, val, {"kind": "patch"}, thr=thr):
             return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": 0}}
         end = False
         while True:
@@ -69,7 +69,7 @@ class Handler(daemon.handler.BaseHandler):
                 msg = {"kind": "patch"}
                 if left < 3:
                     end = True
-            if neg ^ self.match(jsonpath_expr, oper, val, msg):
+            if neg ^ self.match(jsonpath_expr, oper, val, msg, thr=thr):
                 return {"status": 0, "data": {"satisfied": True, "duration": duration, "elapsed": duration-left}}
             if end:
                 return {"status": 1, "data": {"satisfied": False, "duration": duration, "elapsed": duration-left}}
@@ -152,10 +152,10 @@ class Handler(daemon.handler.BaseHandler):
                     return True
         return False
 
-    def match(self, jsonpath_expr, oper, val, msg):
+    def match(self, jsonpath_expr, oper, val, msg, thr=None):
         kind = msg.get("kind")
         if kind == "patch":
-            if self.eval_condition(jsonpath_expr, oper, val, shared.LAST_DAEMON_STATUS):
+            if self.eval_condition(jsonpath_expr, oper, val, thr.daemon_status_data.get()):
                 return True
         elif kind == "event":
             if self.eval_condition(jsonpath_expr, oper, val, msg):
