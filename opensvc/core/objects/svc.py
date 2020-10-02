@@ -1764,7 +1764,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Print the service configuration in the format specified by --format.
         """
         if want_context() or (not self.cd and not os.path.exists(self.paths.cf)):
-            buff = self.remote_service_config(self.options.node)
+            node, buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.Error("could not fetch remote config")
             try:
@@ -1854,7 +1854,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return 1
         from utilities.files import fsum
         if want_context() or not os.path.exists(self.paths.cf):
-            refcf = self.remote_service_config_fetch()
+            node, refcf = self.remote_service_config_fetch()
             need_send = True
             tmpcf = refcf + ".tmp"
             shutil.copy2(refcf, tmpcf)
@@ -1862,6 +1862,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             refcf = self.paths.cf
             need_send = False
             tmpcf = self.make_temp_config()
+            node = None
         os.system(' '.join((editor, tmpcf)))
         if fsum(tmpcf) == fsum(refcf):
             os.unlink(tmpcf)
@@ -1871,7 +1872,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if need_send:
             try:
                 return self.node.install_service(self.path, fpath=tmpcf,
-                                                 restore=True)
+                                                 restore=True, node=node)
             finally:
                 os.unlink(refcf)
                 os.unlink(tmpcf)
@@ -2056,7 +2057,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 raise
 
     def remote_service_config_fetch(self, nodename=None):
-        buff = self.remote_service_config(nodename=nodename)
+        node, buff = self.remote_service_config(nodename=nodename)
         if not buff:
             raise ex.Error
         tmpfile = tempfile.NamedTemporaryFile()
@@ -2064,7 +2065,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         tmpfile.close()
         with open(fname, "w") as tmpfile:
             tmpfile.write(buff)
-        return fname
+        return node, fname
 
     def remote_service_config(self, nodename=None):
         req = {
@@ -2085,13 +2086,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
             for node in data["nodes"]:
                 break
             try:
-                return data["nodes"][node]["data"]
+                return node, data["nodes"][node]["data"]
             except Exception:
-                return
+                return None, None
         try:
-            return data["data"]
+            return None, data["data"]
         except Exception:
-            return
+            return None, None
 
     def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=None,
                               collect=False, action_mode=True):
