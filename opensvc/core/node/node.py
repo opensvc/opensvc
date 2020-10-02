@@ -664,7 +664,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             paths = self.filter_ns([path], namespace)
             return paths
 
-        if not local:
+        if not local and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
+            # the daemon always submits actions with simple, local selector.
+            # avoid round trips.
             try:
                 data = self._daemon_object_selector(selector, namespace, kind=os.environ.get("OSVC_KIND"))
                 if isinstance(data, list):
