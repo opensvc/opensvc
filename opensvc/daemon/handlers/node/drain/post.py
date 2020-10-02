@@ -35,14 +35,16 @@ class Handler(daemon.handler.BaseHandler):
         thr.log_request("drain node", nodename, **kwargs)
         thr.event("node_freeze", data={"reason": "drain"})
         thr.freezer.node_freeze()
+        nmon = thr.get_node_monitor()
 
-        if thr.stopped() or shared.NMON_DATA.status in ("draining", "shutting"):
-            thr.log.info("already %s", shared.NMON_DATA.status)
+        if thr.stopped() or nmon.status in ("draining", "shutting"):
+            thr.log.info("already %s", nmon.status)
             # wait for service shutdown to finish before releasing the dup client
             if options.wait:
                 elapse = 0.0
                 while True:
-                    if shared.THREADS["monitor"]._shutdown or shared.NMON_DATA.status not in ("draining", "shutting"):
+                    nmon = thr.get_node_monitor()
+                    if shared.THREADS["monitor"]._shutdown or nmon.status not in ("draining", "shutting"):
                         break
                     if options.time and elapse > options.time:
                         return {"status": 1, "error": "timeout"}
@@ -51,14 +53,14 @@ class Handler(daemon.handler.BaseHandler):
             return {"status": 0}
         try:
             thr.set_nmon("draining")
-            for path in shared.SMON_DATA:
+            for path, smon in thr.iter_local_services_monitors():
                 _, _, kind = split_path(path)
                 if kind not in ("svc", "vol"):
                     continue
                 thr.set_smon(path, local_expect="shutdown")
             if options.wait:
                 try:
-                    self.wait_shutdown(timeout=options.time)
+                    self.wait_shutdown(timeout=options.time, thr=thr)
                 except ex.TimeOut:
                     return {"status": 1, "error": "timeout"}
         except Exception as exc:
@@ -66,9 +68,9 @@ class Handler(daemon.handler.BaseHandler):
 
         return {"status": 0}
 
-    def wait_shutdown(self, timeout=None):
+    def wait_shutdown(self, timeout=None, thr=None):
         def still_shutting():
-            for smon in shared.SMON_DATA.values():
+            for path, smon in thr.iter_local_services_monitors():
                 if smon.local_expect == "shutdown":
                     return True
             return False

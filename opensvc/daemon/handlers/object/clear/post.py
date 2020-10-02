@@ -25,6 +25,8 @@ class Handler(daemon.handler.BaseHandler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         smon = thr.get_service_monitor(options.path)
+        if not smon.status:
+            return {"info": "skip clear on instance (no monitor data)" % smon.status, "status": 0}
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
         thr.log_request("clear %s monitor status" % options.path, nodename, **kwargs)

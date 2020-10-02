@@ -873,10 +873,7 @@ class ClientHandler(shared.OsvcThread):
             raise RuntimeError("couldn't negotiate h2: %s" % negotiated_protocol)
 
     def current_usr_cf_sum(self):
-        try:
-            return shared.CLUSTER_DATA[Env.nodename]["services"]["config"][self.usr.path]["csum"]
-        except:
-            return "unknown"
+        return self.node_data.get(["services", "config", self.usr.path, "csum"], default="unknown")
 
     def authenticate_client(self, headers):
         if self.usr is False:
@@ -1460,14 +1457,11 @@ class ClientHandler(shared.OsvcThread):
     #########################################################################
     def get_all_ns(self):
         data = set()
-        try:
-            for path in shared.CLUSTER_DATA[Env.nodename].get("services", {}).get("config", {}):
-                _, ns, _ = split_path(path)
-                if ns is None:
-                    ns = "root"
-                data.add(ns)
-        except KeyError:
-            return set()
+        for path in self.list_cluster_paths():
+            _, ns, _ = split_path(path)
+            if ns is None:
+                ns = "root"
+            data.add(ns)
         return data
 
     def get_namespaces(self, role="guest"):
@@ -1593,7 +1587,7 @@ class ClientHandler(shared.OsvcThread):
         result = {"nodes": {}, "status": 0}
         path = self.options_path(options, required=False)
         if node == "ANY" and path:
-            svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+            svcnodes = self.get_service_nodes(path)
             try:
                 if Env.nodename in svcnodes:
                     # prefer to not relay, if possible
@@ -1605,11 +1599,11 @@ class ClientHandler(shared.OsvcThread):
         elif node == "ANY":
             nodenames = [Env.nodename]
         else:
-            nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+            nodenames = shared.NODE.nodes_selector(node, data=self.nodes_data.get())
             if not nodenames:
                 return {"info": "empty node selection", "status": 0}
             if path:
-                svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+                svcnodes = self.get_service_nodes(path)
                 nodenames = [n for n in nodenames if n in svcnodes]
 
         def do_node(nodename):
@@ -1683,9 +1677,9 @@ class ClientHandler(shared.OsvcThread):
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
             placement = svcdata.get("DEFAULT", {}).get("placement", "nodes order")
             if nodes:
-                nodes = shared.NODE.nodes_selector(nodes, data=shared.CLUSTER_DATA)
+                nodes = shared.NODE.nodes_selector(nodes, data=self.nodes_data.get())
             else:
-                nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+                nodes = self.get_service_nodes(path)
             if nodes:
                 if Env.nodename in nodes:
                     node = Env.nodename
