@@ -3003,7 +3003,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def install_service(self, path, fpath=None, template=None,
                         restore=False, resources=None, kw=None, namespace=None,
-                        env=None, interactive=False, provision=False):
+                        env=None, interactive=False, provision=False, node=None):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
@@ -3044,7 +3044,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": env_to_merge,
                 }
             }
-            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, node=node)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3129,7 +3129,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     else:
                         data[tmppath]["env"].update(_env_to_merge)
 
-        if want_context():
+        if want_context() or node:
             req = {
                 "action": "create",
                 "options": {
@@ -3139,7 +3139,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, node=node)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
