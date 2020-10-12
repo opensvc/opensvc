@@ -3273,7 +3273,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             data[path]["frozen"] = shared.SERVICES[path].frozen()
 
             # embed the updated smon data
-            data[path]["monitor"] = self.get_service_monitor(path)
+            smon = self.get_service_monitor(path)
+
+            if idata.get("avail") == "up" and \
+               smon.global_expect is None and \
+               smon.status == "idle" and \
+               smon.local_expect not in ("started", "shutdown"):
+                self.log.info("set %s local expect to 'started'", path)
+                smon.local_expect = "started"
+
+            data[path]["monitor"] = smon
 
             # forget the stonith target node if we run the service
             if data[path].get("avail", "n/a") == "up":
@@ -3284,7 +3293,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         if data:
             self.node_data.merge(["services", "status"], data)
-            self.set_smon_l_expect_from_status(data, path)
         else:
             self.node_data.set(["services", "status"], {})
 
@@ -3485,22 +3493,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
 
         fn()
-
-    def set_smon_l_expect_from_status(self, data, path):
-        if path not in data:
-            return
-        if data.get(path, {}).get("avail") != "up":
-            return
-        smon = self.get_service_monitor(path)
-        if not smon:
-            return
-        if smon.global_expect is not None or \
-           smon.status != "idle" or \
-           smon.local_expect in ("started", "shutdown"):
-            return
-        self.log.info("service %s monitor local_expect %s => %s",
-                      path, smon.local_expect, "started")
-        self.node_data.set(["services", "status", path, "monitor", "local_expect"], "started")
 
     def get_arbitrators_data(self):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
@@ -3715,11 +3707,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         for path, instance in self.iter_local_services_instances():
             if not instance:
                 continue
-            current_global_expect = instance["monitor"].get("global_expect")
-            if current_global_expect == "aborted":
+            smon = Storage(instance.get("monitor", {}))
+            if smon.global_expect == "aborted":
                 # refuse a new global expect if aborting
                 continue
-            current_global_expect_updated = instance["monitor"].get("global_expect_updated")
             for nodename in nodenames:
                 rinstance = self.get_service_instance(path, nodename)
                 if rinstance is None:
@@ -3727,19 +3718,19 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if rinstance.get("stonith") is True and \
                    instance["monitor"].get("stonith") != nodename:
                     self.set_smon(path, stonith=nodename)
-                global_expect = rinstance["monitor"].get("global_expect")
+                global_expect = rinstance.get("monitor", {}).get("global_expect")
                 if global_expect is None:
                     continue
-                global_expect_updated = rinstance["monitor"].get("global_expect_updated")
-                if current_global_expect and global_expect_updated and \
-                   current_global_expect_updated and \
-                   global_expect_updated < current_global_expect_updated:
+                global_expect_updated = rinstance.get("monitor", 0).get("global_expect_updated")
+                if smon.global_expect and global_expect_updated and \
+                   smon.global_expect_updated and \
+                   global_expect_updated < smon.global_expect_updated:
                     # we have a more recent update
                     continue
                 if path in shared.SERVICES and shared.SERVICES[path].disabled and \
                    global_expect not in ("frozen", "thawed", "aborted", "deleted", "purged"):
                     continue
-                if global_expect == current_global_expect:
+                if global_expect == smon.global_expect:
                     self.log.debug("node %s wants service %s %s, already targeting that",
                                    nodename, path, global_expect)
                     continue

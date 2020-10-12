@@ -586,7 +586,7 @@ class OsvcThread(threading.Thread, Crypt):
         if not instance:
             self.node_data.set(["services", "status", path], {"resources": {}})
         smon_view = self.node_data.view(["services", "status", path, "monitor"])
-        smon = Storage(smon_view.get([], default={}))
+        smon = Storage(smon_view.get([], default={"status": "idle"}))
         if instance and not instance.get("resources", {}) \
                 and not status \
                 and ((global_expect is None and local_expect is None and status == "idle")  # TODO refactor this
@@ -1130,7 +1130,7 @@ class OsvcThread(threading.Thread, Crypt):
             if discard_na and instance.avail == "n/a":
                 continue
             if discard_start_failed and \
-               instance["monitor"].get("status") in (
+               instance.get("monitor", {}).get("status") in (
                    "start failed",
                    "place failed"
                ):
@@ -1431,14 +1431,14 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             svc.unset_conf_lazy()
             if self.get_node_monitor().status != "init":
-                data = svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
-                data["frozen"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "frozen"])
-                data["monitor"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "monitor"])
                 try:
                     # trigger status.json reload by the mon thread
+                    data = svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
+                    data["monitor"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "monitor"])
                     self.daemon_status_data.set(["monitor", "nodes", Env.nodename, "services", "status", path], data)
-                except KeyError:
-                    pass
+                except Exception as exc:
+                    self.log.error("on nodes info change, object %s status refresh:", path)
+                    self.log.exception(exc)
         wake_monitor(reason="nodes info change")
 
     def speaker(self):
