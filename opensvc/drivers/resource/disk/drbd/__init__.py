@@ -14,7 +14,7 @@ from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.lazy import lazy
-from utilities.proc import justcall, call_log
+from utilities.proc import justcall, call_log, which
 from utilities.converters import convert_size
 
 RE_MINOR = r"^\s*device\s*/dev/drbd([0-9]+).*;"
@@ -73,12 +73,16 @@ KEYS.register_driver(
 
 def driver_capabilities(node=None):
     data = []
-    from utilities.proc import which
     if which("drbdadm"):
         data.append("disk.drbd")
         out, err, ret = justcall(["drbdadm"])
         if "Version: 9" in out:
-            data.append("disk.drbd.mesh")
+            out, err, ret = justcall(["modinfo", "drbd"])
+            if ret == 0:
+                for line in out.splitlines():
+                    details = line.split()
+                    if details[0] == 'version:' and details[1].startswith('9.'):
+                        data.append("disk.drbd.mesh")
     return data
 
 
