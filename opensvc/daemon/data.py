@@ -113,9 +113,6 @@ class JournaledData(object):
             return self.get_ref(path or [], self.data)
         except (TypeError, KeyError, IndexError):
             if default == Exception:
-                #print("GET", path)
-                #import traceback
-                #traceback.print_stack()
                 raise
             return default
 
@@ -156,9 +153,6 @@ class JournaledData(object):
             try:
                 self._set_lk(path=path, value=value)
             except:
-                #print("SET", path)
-                #import traceback
-                #traceback.print_stack()
                 raise
 
     def _set_lk(self, path=None, value=None):
@@ -177,9 +171,10 @@ class JournaledData(object):
         try:
             current = self.get_ref(path, self.data)
         except (KeyError, IndexError, TypeError):
-            current = None
+            absolute_diff = [[path, value]]
+        else:
+            absolute_diff = self._diff(current, value, prefix=path)
 
-        absolute_diff = self._diff(current, value, prefix=path)
         if not absolute_diff:
             return
 
@@ -246,9 +241,6 @@ class JournaledData(object):
             try:
                 self._unset_lk(path)
             except:
-                #print("UNSET", path)
-                #import traceback
-                #traceback.print_stack()
                 raise
 
     def _unset_lk(self, path):
@@ -412,7 +404,9 @@ class JournaledData(object):
             except (KeyError, IndexError, TypeError):
                 yield [path, d1]
             else:
-                if isinstance(d1, dict):
+                if ref_v is None and d1 is not None:
+                    yield [path, d1]
+                elif isinstance(d1, dict):
                     for k, v in d1.items():
                         for _ in recurse(v, d2, path=path+[k], changes=changes):
                             yield _
@@ -438,6 +432,7 @@ if __name__ == '__main__':
         ("set", dict(path=None, value={"a": {"b": 0, "c": [1, 2], "d": {"da": ""}}})),
         ("set", dict(path=["a"], value={"b": 1, "c": [1, 2, 3]})),
         ("set", dict(path=["a", "b"], value=2)),
+        ("set", dict(path=["a", "d"], value=["f"])),
         ("get", dict(path=["a"])),
         ("inc", dict(path=["a", "d"])),
         ("inc", dict(path=["a", "d"])),
