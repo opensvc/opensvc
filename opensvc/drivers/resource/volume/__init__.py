@@ -501,13 +501,6 @@ class Volume(Resource):
             return False
         return True
 
-    def owned_exclusive(self, volume=None):
-        if not volume:
-            volume = self.volsvc
-        if set(volume.children) != set([self.svc.path]):
-            return False
-        return True
-
     def incompatible_claims(self, volume=None):
         if not volume:
             volume = self.volsvc
