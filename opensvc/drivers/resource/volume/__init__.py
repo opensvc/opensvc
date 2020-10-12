@@ -31,7 +31,8 @@ KEYWORDS = [
         "protoname": "pooltype",
         "provisioning": True,
         "at": True,
-        "text": "The type of the pool to allocate from. The selected pool will be the one matching type and capabilities and with the maximum available space."
+        "text": "The type of the pool to allocate from. The selected pool will be the one matching type"
+                " and capabilities and with the maximum available space."
     },
     {
         "keyword": "access",
@@ -39,7 +40,12 @@ KEYWORDS = [
         "candidates": ["rwo", "roo", "rwx", "rox"],
         "provisioning": True,
         "at": True,
-        "text": "The access mode of the volume. ``rwo`` is Read Write Once, ``roo`` is Read Only Once, ``rwx`` is Read Write Many, ``rox`` is Read Only Many. ``rox`` and ``rwx`` modes are served by flex volume services.",
+        "text": "The access mode of the volume. "
+                "``rwo`` is Read Write Once, "
+                "``roo`` is Read Only Once, "
+                "``rwx`` is Read Write Many, "
+                "``rox`` is Read Only Many. "
+                "``rox`` and ``rwx`` modes are served by flex volume services.",
     },
     {
         "keyword": "size",
@@ -60,7 +66,8 @@ KEYWORDS = [
         "provisioning": True,
         "default": True,
         "convert": "boolean",
-        "text": "If true the volume translator will also produce a fs resource layered over the disk allocated in the pool."
+        "text": "If true the volume translator will also produce a fs resource layered over the disk allocated in the"
+                " pool."
     },
     {
         "keyword": "configs",
@@ -106,7 +113,10 @@ KEYWORDS = [
     {
         "keyword": "signal",
         "at": True,
-        "text": "A <signal>:<target> whitespace separated list, where signal is a signal name or number (ex. 1, hup or sighup), and target is the comma separated list of resource ids to send the signal to (ex: container#1,container#2). If only the signal is specified, all candidate resources will be signaled. This keyword is usually used to reload daemons on certicate or configuration files changes.",
+        "text": "A <signal>:<target> whitespace separated list, where signal is a signal name or number "
+                "(ex. 1, hup or sighup), and target is the comma separated list of resource ids to send the signal "
+                "to (ex: container#1,container#2). If only the signal is specified, all candidate resources will be "
+                "signaled. This keyword is usually used to reload daemons on certicate or configuration files changes.",
         "example": "hup:container#1"
     },
 ]
@@ -215,9 +225,9 @@ class Volume(Resource):
             volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, volatile=True)
             try:
                 volume = self._configure_volume(volume)
-            except ex.Error as exc:
+            except ex.Error:
                 raise
-            except Exception as exc:
+            except Exception:
                 import traceback
                 traceback.print_exc()
         return volume
@@ -290,7 +300,7 @@ class Volume(Resource):
     def uninstall_flag(self):
         try:
             os.unlink(self.flag_path)
-        except Exception as exc:
+        except Exception:
             pass
 
     def install_flag(self):
@@ -374,7 +384,8 @@ class Volume(Resource):
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
             if not obj.exists():
                 self.status_log("referenced %s %s does not exist: "
-                                "expected data %s can not be installed in the volume" % (kind, name, data["key"]), "warn")
+                                "expected data %s can not be installed in the volume" % (kind, name, data["key"]),
+                                "warn")
                 continue
             keys = obj.resolve_key(data["key"])
             if not keys and not is_glob(data["key"]):
@@ -419,10 +430,10 @@ class Volume(Resource):
             pass
         try:
             info = grp.getgrnam(self.group)
-            gid = info.gr_gid
+            return info.gr_gid
         except Exception:
             pass
-        return gid
+        return
 
     def _install_data(self, kind):
         changed = False
@@ -442,7 +453,8 @@ class Volume(Resource):
                 continue
             self.log.debug("install ./%s/%s/%s in %s", kind, name, data["key"], data["path"])
             for key in keys:
-                changed |= obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode, dirmode=self.octal_dirmode)
+                changed |= obj.install_key(key, data["path"], uid=self.uid, gid=self.gid, mode=self.octal_mode,
+                                           dirmode=self.octal_dirmode)
         return changed
 
     def has_data(self, kind, name, key=None):
@@ -504,14 +516,14 @@ class Volume(Resource):
     def incompatible_claims(self, volume=None):
         if not volume:
             volume = self.volsvc
-        l = set()
+        volume_children_not_in_svc_parents = set()
         for e in volume.children:
             c1 = e + "@" + Env.nodename
             c2 = split_path(e)[0] + "@" + Env.nodename
             if c1 not in self.svc.parents and \
                c2 not in self.svc.parents:
-                l.add(e)
-        return l
+                volume_children_not_in_svc_parents.add(e)
+        return volume_children_not_in_svc_parents
 
     def claim(self, volume):
         if self.shared:
@@ -521,14 +533,14 @@ class Volume(Resource):
                 return
             parents = self.incompatible_claims(volume)
             if parents:
-                raise ex.Error("shared volume %s is already claimed by %s, not local parents of this service" % (volume.name, ",".join(parents)))
+                raise ex.Error("shared volume %s is already claimed by %s, not local parents of this service"
+                               % (volume.name, ",".join(parents)))
             else:
                 self.log.info("shared volume %s current claims are compatible: %s",
                               volume.path, volume.children)
         else:
             if self.owned(volume):
-                self.log.info("volume %s is already claimed by %s",
-                                volume.path, self.svc.path)
+                self.log.info("volume %s is already claimed by %s", volume.path, self.svc.path)
                 return
         self.log.info("claim volume %s", volume.name)
         volume.set_multi(["DEFAULT.children+=%s" % self.svc.path])
@@ -603,16 +615,16 @@ class Volume(Resource):
             return volume
         elif not self.svc.options.leader:
             self.log.info("volume %s does not exist, we are not leader: wait its propagation", self.volname)
-            self.wait_for_fn(lambda: volume.exists(), 10, 1,
-                               "non leader instance waited for too long for the "
-                               "volume to appear")
+            self.wait_for_fn(lambda: volume.exists(),
+                             10,
+                             1,
+                             "non leader instance waited for too long for the volume to appear")
             return volume
         self.check_configure_requirements()
         self.log.info("create new volume %s (pool name: %s, pool type: %s, "
-                        "access: %s, size: %s, format: %s, shared: %s)",
-                        self.volname, self.pool, self.pooltype, self.access,
-                        print_size(self.size, unit="B", compact=True),
-                        self.format, self.shared)
+                      "access: %s, size: %s, format: %s, shared: %s)",
+                      self.volname, self.pool, self.pooltype,
+                      self.access, print_size(self.size, unit="B", compact=True), self.format, self.shared)
         return self._configure_volume(volume)
 
     def check_configure_requirements(self):
