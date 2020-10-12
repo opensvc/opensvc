@@ -103,7 +103,7 @@ class Fs(BaseFs):
     def is_up(self):
         return Mounts(wmi=self.svc.node.wmi()).has_mount(self.device_id, self.mount_point)
 
-    def start(self):
+    def start_mount(self):
         if self.is_online():
             self.log.info("%s is already online", self.device)
         if self.is_up():

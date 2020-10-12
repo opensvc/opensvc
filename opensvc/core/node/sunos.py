@@ -56,8 +56,8 @@ class Node(BaseNode):
             if line[0] != "/":
                 continue
             elem = line.split()
-            swap_avail += int(elem[-1]) // 2
-            swap_total += int(elem[-2]) // 2
+            swap_avail += int(elem[4]) // 2
+            swap_total += int(elem[3]) // 2
         data["swap_avail"] = 100 - swap_avail // swap_total
         data["swap_total"] = swap_total // 1024
 

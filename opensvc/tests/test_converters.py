@@ -115,40 +115,58 @@ class TestConverters:
             assert False
 
     @staticmethod
-    def test_convert_size():
-        """
-        Converter, size
-        """
-        assert convert_size("1k") == 1024
-        assert convert_size("1K") == 1024
-        assert convert_size("1KB") == 1024
-        assert convert_size("1 K") == 1024
-        assert convert_size("1 Ki") == 1000
-        assert convert_size("1 KiB") == 1000
-        assert convert_size("1.1 Ki") == 1100
-        assert convert_size(1000000, _to="Ki") == 1000
-        assert convert_size(1000, _to="B") == 1000
-        assert convert_size(None) is None
-        assert convert_size(1100) == 1100
-        assert convert_size(1100.0) == 1100
-        assert convert_size("50%FREE") == "50%FREE"
-        assert convert_size("") == 0
-        assert convert_size("0") == 0
-        assert convert_size(10000, _round=4096) == 8192
-        try:
-            convert_size("1j")
-            assert False
-        except ValueError:
-            pass
-        except Exception:
-            assert False
-        try:
-            convert_size("1", _to="j")
-            assert False
-        except ValueError:
-            pass
-        except Exception:
-            assert False
+    @pytest.mark.parametrize("size, expected_size, kwargs", [
+        ["0B", 0, {}],
+        ["10B", 10, {}],
+        ["1k", 1024, {}],
+        ["1mb", 1048576, {}],
+        ["1MB", 1048576, {}],
+        ["1GB", 1073741824, {}],
+        ["1Gb", 1073741824, {}],
+        ["1 GB", 1073741824, {}],
+        ["1 G", 1073741824, {}],
+        ["1K", 1024, {}],
+        ["1KB", 1024, {}],
+        ["1 k", 1024, {}],
+        ["1 K", 1024, {}],
+        ["1 Ki", 1000, {}],
+        ["1 KiB", 1000, {}],
+        ["1 KiB", 1000, {}],
+        ["1.1 Ki", 1100, {}],
+        ["1.1 ki", 1100, {}],
+        ["1000000", 1000, {"_to": "Ki"}],
+        ["1000", 1000, {"_to": "B"}],
+        [None, None, {}],
+        ["1100", 1100, {}],
+        ["1100.0", 1100, {}],
+        ["50%FREE", "50%FREE", {}],
+        ["", 0, {}],
+        ["0", 0, {}],
+        ["10000", 8192, {"_round": 4096}],
+    ])
+    def test_convert_size_is_correct(size, expected_size, kwargs):
+        assert convert_size(size, **kwargs) == expected_size
+
+    @staticmethod
+    @pytest.mark.parametrize("value", [
+        "1j",
+        "1d",
+        "100y",
+    ])
+    def test_convert_size_raise_value_error_when_value_has_invalid_unit(value):
+        with pytest.raises(ValueError):
+            convert_size(value)
+
+    @staticmethod
+    @pytest.mark.parametrize("to", [
+        "j",
+        "d",
+        "y",
+        "a",
+    ])
+    def test_convert_size_raise_value_error_when_to_has_invalid_unit(to):
+        with pytest.raises(ValueError):
+            convert_size("1", _to=to)
 
     @staticmethod
     def test_print_size():

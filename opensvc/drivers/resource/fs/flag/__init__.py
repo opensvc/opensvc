@@ -9,8 +9,8 @@ from utilities.proc import justcall
 
 
 class BaseFsFlag(Resource):
-    def __init__(self, **kwargs):
-        super(BaseFsFlag, self).__init__(type="fs.flag", **kwargs)
+    def __init__(self, type='fs.flag', **kwargs):
+        super(BaseFsFlag, self).__init__(type=type, **kwargs)
 
     @lazy
     def base_flag_d(self):

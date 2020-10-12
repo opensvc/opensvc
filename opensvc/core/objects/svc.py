@@ -493,7 +493,8 @@ class ObjPaths(object):
 class BaseSvc(Crypt, ExtConfigMixin):
     kind = "base"
 
-    def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None):
+    def __init__(self, name=None, namespace=None, node=None, cf=None, cd=None, volatile=False, log=None, log_handlers=None):
+        self.log_handlers = log_handlers
         self.raw_cd = cd
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.name = name
@@ -658,7 +659,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.volatile:
             handlers = ["stream"]
         else:
-            handlers = None
+            handlers = self.log_handlers
         log_file = os.path.join(self.log_d, self.name+".log")
         return core.logger.initLogger(self.loggerpath, log_file, handlers=handlers)
 
@@ -4245,7 +4246,7 @@ class Svc(PgMixin, BaseSvc):
         if excluded_groups is None:
             excluded_groups = set()
         if groups is None:
-            groups = set(DEFAULT_STATUS_GROUPS)
+            groups = set(self.kwstore.sections)
 
         status = {
             "status_group": {},
@@ -4259,7 +4260,7 @@ class Svc(PgMixin, BaseSvc):
         for group in groups:
             status["status_group"][group] = core.status.Status(core.status.NA)
 
-        for group in DEFAULT_STATUS_GROUPS:
+        for group in self.kwstore.sections:
             if group not in groups:
                 continue
             for resource in self.get_resources(group):
@@ -5137,7 +5138,7 @@ class Svc(PgMixin, BaseSvc):
                     unions.append(intersection)
 
         for intersection in unions:
-            for resource in self.resources_by_id.values() + self.encap_resources.values():
+            for resource in itertools.chain(self.resources_by_id.values(), self.encap_resources.values()):
                 if set(intersection) & resource.tags == set(intersection):
                     retained_rids.add(resource.rid)
         if len(retained_rids) > 0:

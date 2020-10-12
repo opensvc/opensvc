@@ -3,19 +3,36 @@ import pkgutil
 
 from env import Env
 
+DEFAULT_HEAD = "drivers"
+SITE_HEAD = "site_opensvc.drivers"
+
 
 def driver_import(*args, **kwargs):
+    fallback = kwargs.get('fallback', True)
+    head = kwargs.get('head', DEFAULT_HEAD)
     try:
-        return _driver_import(*args, **kwargs)
-    except ImportError as exc:
-        kwargs["head"] = "site-opensvc.drivers"
-        kwargs["initial_modname"] = "drivers." + ".".join(args)
-        return _driver_import(*args, **kwargs)
+        return _driver_import(*args, head=head)
+    except ImportError:
+        pass
+
+    initial_modname = "drivers." + ".".join(args)
+
+    if head != SITE_HEAD:
+        try:
+            return _driver_import(*args, head=SITE_HEAD, initial_modname=initial_modname)
+        except ImportError:
+            pass
+
+    if not fallback or len(args) <= 2:
+        raise ImportError
+
+    args = args[:-1]
+    return driver_import(*args, head=head)
+
 
 def _driver_import(*args, **kwargs):
-    head = kwargs.get("head", "drivers")
-    fallback = kwargs.get("fallback", True)
-    initial_modname = kwargs.get("initial_modname")
+    head = kwargs.get('head', DEFAULT_HEAD)
+    initial_modname = kwargs.get('head')
     def fmt_element(s):
         if s is None:
             return ""
@@ -24,9 +41,9 @@ def _driver_import(*args, **kwargs):
         # HP-UX => hpux
         return s.lower().replace("-", "")
 
-    def fmt_modname(args):
+    def fmt_modname(elements):
         l = [head]
-        for i, e in enumerate(args):
+        for i, e in enumerate(elements):
             if e == "":
                 continue
             if i == 0:
@@ -37,28 +54,23 @@ def _driver_import(*args, **kwargs):
                 l.append(fmt_element(e))
         return ".".join(l).rstrip(".")
 
-    def import_mod(modname):
-        for mn in (modname + "." + fmt_element(Env.sysname), modname):
+    def import_mod(module_name):
+        for mn in (module_name + "." + fmt_element(Env.sysname), module_name):
             try:
                 m = importlib.import_module(mn)
                 return m
-            except ImportError as exc:
+            except ImportError:
                 pass
 
     modname = fmt_modname(args)
-    if not initial_modname:
-        initial_modname = modname
+    initial_modname = initial_modname or modname
 
     mod = import_mod(modname)
     if mod:
         if not hasattr(mod, "DRIVER_BASENAME") and "drivers.resource." in mod.__name__:
             raise ImportError("module %s does not set DRIVER_BASENAME" % mod.__file__)
         return mod
-    if fallback and len(args) > 2:
-        args = args[:-1]
-        return _driver_import(*args, fallback=fallback, initial_modname=initial_modname)
-    else:
-        raise ImportError("no module found: %s" % initial_modname)
+    raise ImportError("no module found: %s" % initial_modname)
 
 
 def driver_class(mod):
@@ -68,16 +80,20 @@ def driver_class(mod):
 
     For example:
     mod.DRIVER_GROUP = "fs"
-    mod.DRIVER_BASENAME = "xfs"
+    mod.DRIVER_BASENAME = "xfs_two"
 
-    formats and return the "FsXfs" classname.
+    formats and return the "FsXfsTwo" classname.
     """
+    def pascalize(s):
+        l = [e.capitalize() for e in s.split("_")]
+        return "".join(l)
+
     try:
-        classname = mod.DRIVER_GROUP.capitalize()
+        classname = pascalize(mod.DRIVER_GROUP)
     except AttributeError:
         return
     try:
-        classname += mod.DRIVER_BASENAME.capitalize()
+        classname += pascalize(mod.DRIVER_BASENAME)
     except AttributeError:
         pass
     return getattr(mod, classname)
@@ -98,7 +114,7 @@ def iter_drivers(groups=None):
             except ImportError:
                 continue
 
+
 def load_drivers(groups=None):
     for mod in iter_drivers(groups):
         pass
-

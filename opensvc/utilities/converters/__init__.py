@@ -270,6 +270,7 @@ def convert_size(s, _to='', _round=1, default_unit=''):
         return s
     l = ['', 'K', 'M', 'G', 'T', 'P', 'Z', 'E']
     s = s.strip().replace(",", ".")
+    s = s.replace("B", "")
     if len(s) == 0:
         return 0
     if s == '0':

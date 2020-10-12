@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import time
@@ -14,8 +13,7 @@ from core.resource import Resource
 from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.lazy import lazy
-from utilities.proc import justcall, call_log
-from utilities.converters import convert_size
+from utilities.proc import justcall, call_log, which
 
 RE_MINOR = r"^\s*device\s*/dev/drbd([0-9]+).*;"
 RE_PORT = r"^\s*address.*:([0-9]+).*;"
@@ -73,12 +71,16 @@ KEYS.register_driver(
 
 def driver_capabilities(node=None):
     data = []
-    from utilities.proc import which
     if which("drbdadm"):
         data.append("disk.drbd")
         out, err, ret = justcall(["drbdadm"])
         if "Version: 9" in out:
-            data.append("disk.drbd.mesh")
+            out, err, ret = justcall(["modinfo", "drbd"])
+            if ret == 0:
+                for line in out.splitlines():
+                    details = line.split()
+                    if details[0] == 'version:' and details[1].startswith('9.'):
+                        data.append("disk.drbd.mesh")
     return data
 
 
@@ -199,12 +201,10 @@ class DiskDrbd(Resource):
         self.drbdadm = None
         self.rollback_even_if_standby = True
         self.can_rollback_role = False
+        self.can_rollback_connection = False
 
     def __str__(self):
-        return "%s resource=%s" % (
-            super.__str__(DiskDrbd, self),
-            self.res
-        )
+        return "%s resource=%s" % (super(DiskDrbd, self).__str__(), self.res)
 
     def files_to_sync(self):
         if os.path.exists(self.cf):

@@ -438,10 +438,10 @@ class Fs(BaseFs):
         except Exception as exc:
             raise ex.Error(str(exc))
 
-    def start(self):
+    def start_mount(self):
         if self.mounts is None:
             self.mounts = Mounts()
-        super(Fs, self).start()
+        self.prepare_mount()
 
         self.set_loopdevice()
 
