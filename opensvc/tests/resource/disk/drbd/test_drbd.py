@@ -11,7 +11,7 @@ except ImportError:
 import core.exceptions as ex
 from core.node import Node
 from core.objects.svc import Svc
-from drivers.resource.disk.drbd import DiskDrbd
+from drivers.resource.disk.drbd import DiskDrbd, driver_capabilities
 
 
 @pytest.fixture(scope='function')
@@ -83,6 +83,46 @@ def node_daemon_post(mocker):
 @pytest.fixture(scope='function')
 def svc_daemon_post(mocker):
     return mocker.patch.object(Svc, 'daemon_post', mocker.Mock(side_effect=[{"status": 0}] * 2))
+
+
+@pytest.fixture(scope='function')
+def which(mocker):
+    return mocker.patch('drivers.resource.disk.drbd.which')
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestDrbdCapabilities:
+    @staticmethod
+    def test_has_no_drbd_capabilities_when_drbdadm_is_not_present(which):
+        which.return_value = None
+        assert "disk.drbd" not in driver_capabilities()
+        assert "disk.drbd.mesh" not in driver_capabilities()
+
+    @staticmethod
+    def test_has_disk_drbd_if_drbdadm_exists(which, just_call):
+        just_call.side_effect = [("", "", 0)]
+        assert 'disk.drbd' in driver_capabilities()
+
+    @staticmethod
+    def test_doesnot_have_disk_drbd_mesh_if_modinfo_report_version_8(which, just_call):
+        just_call.side_effect = [
+            ("Version: 9.15.0", "", 0),  # drbdadm output
+            ("version: 8.0.25-1", "", 0),  # modinfo drbd output
+        ]
+        capabilities = driver_capabilities()
+        assert "disk.drbd" in capabilities
+        assert "disk.drbd.mesh" not in capabilities
+
+    @staticmethod
+    def test_has_disk_drbd_mesh_if_modinfo_report_version_9(which, just_call):
+        just_call.side_effect = [
+            ("Version: 9.15.0", "", 0),  # drbdadm output
+            ("version: 9.0.25-1", "", 0),  # modinfo drbd output
+        ]
+        capabilities = driver_capabilities()
+        assert "disk.drbd" in capabilities
+        assert "disk.drbd.mesh" in capabilities
 
 
 @pytest.mark.ci
@@ -369,14 +409,6 @@ class TestDrbdadmStartRole:
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')  # for cache
 class TestDrbdadmGetCstate:
-    @staticmethod
-    def test_raise_when_role_cmd_return_non_0(sleep, mocker, just_call, disk):
-        mocker.patch.object(DiskDrbd, 'prereq', mocker.Mock())
-        just_call.side_effect = [('', '', 1)]
-        disk.drbdadm = "drbdadm"
-        with pytest.raises(ex.Error):
-            disk.get_cstate()
-
     @staticmethod
     def test_raise_when_role_cmd_return_non_0(sleep, mocker, just_call, disk):
         mocker.patch.object(DiskDrbd, 'prereq', mocker.Mock())
