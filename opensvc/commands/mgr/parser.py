@@ -203,7 +203,7 @@ OPT = Storage({
         action="store",
         help="A list member to drop from the value pointed by :kw:`--param`."),
     "resource": Option(
-        "--resource", default=[],
+        "--resource",
         action="append",
         help="A resource definition in json dictionary format fed to create "
              "or update. The ``rtype`` key point the driver group name, and "
