@@ -138,7 +138,11 @@ class DataMixin(object):
         if buff is None:
             raise ex.Error("could not decode the secret key '%s'" % self.options.key)
         if isinstance(buff, bytes):
-            raise ex.Error("binary keys are not editable")
+            try:
+                self.log.debug("try decode binary key")
+                buff = buff.decode()
+            except:
+                raise ex.Error("binary keys are not editable")
         no_newline = os.sep not in try_decode(buff)
         editor = find_editor()
         fpath = self.tempfilename()
