@@ -6,9 +6,9 @@ import time
 import threading
 import operator
 
-from functools import reduce
+import core.exceptions as ex
 
-import foreign.json_delta as json_delta
+from functools import reduce
 
 class JournaledDataView(object):
     def __init__(self, data=None, path=None):
@@ -125,9 +125,10 @@ class JournaledData(object):
         except (KeyError, TypeError, IndexError):
             return False
 
-    def get_copy(self, path, data):
+    def get_copy(self, path=None):
+        path = path or []
         with self.lock:
-            data = self.get_ref(path, data)
+            data = self.get_ref(path, self.data)
             return copy.deepcopy(data)
 
     @staticmethod
@@ -137,7 +138,7 @@ class JournaledData(object):
     #@debug
     def merge(self, path=None, value=None):
         with self.lock:
-            current = self.get_copy(path, self.data)
+            current = self.get_copy(path)
             current.update(value)
             self._set_lk(path, value=current)
 
@@ -150,10 +151,7 @@ class JournaledData(object):
     #@debug
     def set(self, path=None, value=None):
         with self.lock:
-            try:
-                self._set_lk(path=path, value=value)
-            except:
-                raise
+            self._set_lk(path=path, value=value)
 
     def _set_lk(self, path=None, value=None):
         """
@@ -178,6 +176,26 @@ class JournaledData(object):
         if not absolute_diff:
             return
 
+        journal_diff = self._to_journal_diff(absolute_diff)
+
+        self._set(path, value)
+
+        self.emit(absolute_diff)
+        if journal_diff:
+            self.push_diff(journal_diff)
+
+    def _set(self, path, value):
+        """
+        Low-level set. No journaling, no messaging.
+        """
+        value = copy.deepcopy(value)
+        if path:
+            cursor = self.get_ref(path[:-1], self.data)
+            cursor[path[-1]] = value
+        else:
+            self.data = value
+
+    def _to_journal_diff(self, absolute_diff):
         if self.journal_condition() and self.journal_head is not None:
             if not self.journal_head:
                 journal_diff = absolute_diff
@@ -185,18 +203,7 @@ class JournaledData(object):
                 journal_diff = self._filter_diff(absolute_diff, head=self.journal_head, exclude=self.journal_exclude)
         else:
             journal_diff = None
-
-        # data change
-        value = copy.deepcopy(value)
-        if path:
-            data = self.get_ref(path[:-1], self.data)
-            data[path[-1]] = value
-        else:
-            self.data = value
-
-        self.emit(absolute_diff)
-        if journal_diff:
-            self.push_diff(journal_diff)
+        return journal_diff
 
     #@debug
     def patch(self, path=None, patchset=None):
@@ -209,67 +216,73 @@ class JournaledData(object):
     def _patch_lk(self, path=None, patchset=None):
         path = path or []
         patchset = patchset or []
-        data_head = self.get_ref(path, self.data)
-        json_delta.patch(data_head, patchset)
+        self._patch(path, patchset)
         for p in patchset:
             p[0] = path + p[0]
         self.emit(patchset)
 
+    def _patch(self, path, patchset):
+        def patch_fragment(patch):
+            try:
+                _path, _value = patch
+                self._set(path + _path, _value)
+            except ValueError:
+                _path, = patch
+                self._unset(path + _path)
+
+        for i, patch in enumerate(patchset):
+            try:
+                patch_fragment(patch)
+            except Exception as exc:
+                buff = "\npatching path %s error: %s\n" % (path, exc)
+                for _i, _patch in enumerate(patchset):
+                    if i == _i:
+                        buff += "=> %s\n" % _patch
+                    else:
+                        buff += "   %s\n" % _patch
+                buff += "current data:\n" + json.dumps(self.get_ref(path, self.data), indent=4)
+                import traceback
+                buff += "Traceback\n"
+                buff += "".join(traceback.format_stack())
+                buff += "Exception\n"
+                buff += "".join(traceback.format_exc())
+                raise ex.Error(buff)
+
     def unset_safe(self, path=None):
+        path = path or []
+        with self.lock:
+            self._unset_safe(path)
+
+    def _unset_safe(self, path):
         try:
-            self._unset_normal(path)
+            self._unset_lk(path)
         except (KeyError, IndexError, TypeError):
             pass
-
-    def _unset_safe(self, path, data):
-        try:
-            self._unset(path, data)
-        except (KeyError, IndexError, TypeError):
-            pass
-
-    def _unset(self, path, data):
-        data = self.get_ref(path[:-1], data)
-        del data[path[-1]]
 
     #@debug
     def unset(self, path=None):
-        self._unset_normal(path=path)
-
-    def _unset_normal(self, path=None):
         path = path or []
         with self.lock:
-            try:
-                self._unset_lk(path)
-            except:
-                raise
+            self._unset_lk(path)
+
+    def _unset(self, path):
+        """
+        Low-level unset. No journaling, no messaging.
+        """
+        data = self.get_ref(path[:-1], self.data)
+        del data[path[-1]]
 
     def _unset_lk(self, path):
         """
         Drop data at the specified path
         """
-        data = self.get_ref(path[:-1], self.data)
-        del data[path[-1]]
+        self._unset(path)
 
         diff = [[path]]
-
+        journal_diff = self._to_journal_diff(diff)
         self.emit(diff)
-
-        if self.journal_head is None:
-            return
-
-        if not self.journal_head:
-            self.push_diff(diff)
-            return
-
-        def parented(path):
-            try:
-                return path[:self.journal_head_length] == self.journal_head
-            except:
-                return False
-             
-        if parented(path):
-            diff = [[path[self.journal_head_length:]]]
-            self.push_diff(diff)
+        if journal_diff:
+            self.push_diff(journal_diff)
 
     def inc(self, path=None):
         with self.lock:
@@ -277,12 +290,13 @@ class JournaledData(object):
 
     def _inc(self, path=None, data=None):
         path = path or []
-        data = self.get_ref(path[:-1], data)
         try:
-            data[path[-1]] += 1
+            val = self.get_ref(path, data)
+            val += 1
         except (KeyError, IndexError, TypeError):
-            data[path[-1]] = 1
-        return data
+            val = 1
+        self._set_lk(path=path, value=val)
+        return val
 
     def push_diff(self, diff):
         """
@@ -303,13 +317,15 @@ class JournaledData(object):
         """
         Return a deep copied image of the dataset
         """
-        return copy.deepcopy(self.data)
+        with self.lock:
+            return copy.deepcopy(self.data)
 
     def dump_changes(self):
         """
         Return a deep copied image of the changes
         """
-        return [] + self.diff
+        with self.lock:
+            return [] + self.diff
 
 
     def emit(self, diff):
@@ -364,7 +380,7 @@ class JournaledData(object):
 
                 if path == head:
                     # exactly head
-                    yield [], value
+                    yield [[], value]
                 else:
                     n = len(path)
                     if path[:head_len] == head:
@@ -390,6 +406,10 @@ class JournaledData(object):
                 p = _[0]
                 if excluded(p):
                     continue
+                if not p and len(_) == 1:
+                    # protect journal head from deletion
+                    data.append([p, None])
+                    continue
                 data.append(_)
 
         return data
@@ -397,6 +417,7 @@ class JournaledData(object):
     def _diff(self, src, dst, prefix=None):
         data = []
         prefix = prefix or []
+        added = []
 
         def recurse(d1, d2, path=None, ref=None, changes=True):
             try:
@@ -411,14 +432,16 @@ class JournaledData(object):
                         for _ in recurse(v, d2, path=path+[k], changes=changes):
                             yield _
                 elif isinstance(d1, list):
-                    for i, v in enumerate(d1):
-                        for _ in recurse(v, d2, path=path+[i], changes=changes):
-                            yield _
+                    if prefix+path not in added:
+                        for i, v in enumerate(d1):
+                            for _ in recurse(v, d2, path=path+[i], changes=changes):
+                                yield _
                 elif changes and ref_v != d1:
                     yield [path, d1]
 
         for k, v in recurse(dst, src, [], changes=True):
             data.append([prefix+k, v])
+            added.append(prefix+k)
 
         for k, v in recurse(src, dst, [], changes=False):
             data.append([prefix+k])
@@ -430,7 +453,7 @@ if __name__ == '__main__':
     q = queue.Queue()
     tests = [
         ("set", dict(path=None, value={"a": {"b": 0, "c": [1, 2], "d": {"da": ""}}})),
-        ("set", dict(path=["a"], value={"b": 1, "c": [1, 2, 3]})),
+        ("set", dict(path=["a"], value={"b": 1, "c": [1, 2, 3], "e": {"ea": 1, "eb": 2}})),
         ("set", dict(path=["a", "b"], value=2)),
         ("set", dict(path=["a", "d"], value=["f"])),
         ("get", dict(path=["a"])),
@@ -451,6 +474,9 @@ if __name__ == '__main__':
                 print("   => event %s" % msg)
         print("journal: %s" % data.dump_changes())
         print("data:    %s" % data.dump_data())
+        rdata = JournaledData()
+        rdata.patch(patchset=data.dump_changes())
+        print("copy:    %s" % rdata.data)
         print()
 
     print("no journaling")
