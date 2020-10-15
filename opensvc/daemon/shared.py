@@ -1651,7 +1651,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.thread_data.set([], data)
 
     def daemon_status(self):
-        return self.daemon_status_data.get()
+        return self.daemon_status_data.get_copy()
 
     def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
         if selector is None:
