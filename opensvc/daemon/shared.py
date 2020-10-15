@@ -1436,10 +1436,13 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             svc.unset_conf_lazy()
             if self.get_node_monitor().status != "init":
+                smon = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "monitor"], None)
+                if not smon:
+                    continue
                 try:
                     # trigger status.json reload by the mon thread
                     data = svc.print_status_data_eval(refresh=False, write_data=True, clear_rstatus=True)
-                    data["monitor"] = self.daemon_status_data.get(["monitor", "nodes", Env.nodename, "services", "status", path, "monitor"])
+                    data["monitor"] = smon
                     self.daemon_status_data.set(["monitor", "nodes", Env.nodename, "services", "status", path], data)
                 except Exception as exc:
                     self.log.error("on nodes info change, object %s status refresh:", path)
