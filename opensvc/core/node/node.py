@@ -903,6 +903,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             cmd = ["diff", Env.paths.nodeconf, self.paths.tmp_cf]
         call(cmd)
 
+    def nodeconf_csum(self):
+        from utilities.files import fsum
+        return fsum(Env.paths.nodeconf)
+
     def edit_config(self):
         """
         Execute an editor on the node configuration file.
@@ -920,7 +924,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.files import fsum
         path = self.make_temp_config()
         os.system(' '.join((editor, path)))
-        if fsum(path) == fsum(Env.paths.nodeconf):
+        if fsum(path) == self.nodeconf_csum():
             os.unlink(path)
             return 0
         results = self._validate_config(path=path)
