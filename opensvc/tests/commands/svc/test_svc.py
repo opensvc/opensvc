@@ -106,3 +106,15 @@ class TestUpdate:
 
         assert Mgr()(argv=["-s", svcname, "update", "--resource", '{"comment": "Comment"}', "--local",
                            "--dry-run"]) == 1
+
+    @staticmethod
+    def test_resource_option_is_not_preserved_on_next_mgr_call():
+        assert Mgr()(argv=["-s", "svc1", "create"]) == 0
+        assert Mgr()(argv=["-s", "svc1", "update", "--resource", '{"comment": "foo"}', "--local"]) == 0
+        assert Mgr()(argv=["-s", "svc2", "create"]) == 0
+
+    @staticmethod
+    def test_update_allowed_without_resource():
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create"]) == 0
+        assert Mgr()(argv=["-s", svcname, "update", "--local"]) == 0

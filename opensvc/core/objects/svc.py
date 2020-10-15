@@ -1616,7 +1616,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return rid
 
     def update(self):
-        result = self._update(self.options.resource,
+        result = self._update(self.options.resource or [],
                               interactive=self.options.interactive,
                               provision=self.options.provision)
         buff = " "
