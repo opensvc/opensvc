@@ -360,7 +360,7 @@ class TestCfgSecEdit:
             assert output_file.read() == 'abcd text added'
 
     @staticmethod
-    @pytest.mark.parametrize('obj', ['demo/cfg/name'])
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
     def test_can_edit_editable_objects_created_from_file(mocker, capture_stdout, tmp_file, obj):
         """
         objects created from file are bytes
