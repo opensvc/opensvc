@@ -28,6 +28,20 @@ from .events import EVENTS
 from .data import JournaledData
 
 
+class OsvcJournaledData(JournaledData):
+    def __init__(self):
+        JournaledData.__init__(
+            self,
+        event_q=EVENT_Q,
+        journal_head=["monitor", "nodes", Env.nodename],
+        journal_exclude=[
+            ["gen"],
+            ["updated"],
+        ],
+        # disable journaling if we have no peer, as nothing purges the journal
+        journal_condition=lambda: bool(LOCAL_GEN),
+    )
+
 class DebugRLock(object):
     def __init__(self):
         self._lock = threading.RLock()
@@ -68,16 +82,7 @@ DAEMON = None
 EVENT_Q = queue.Queue()
 
 # daemon_status data
-DAEMON_STATUS = JournaledData(
-    event_q=EVENT_Q,
-    journal_head=["monitor", "nodes", Env.nodename],
-    journal_exclude=[
-        ["gen"],
-        ["updated"],
-    ],
-    # disable journaling if we have no peer, as nothing purges the journal
-    journal_condition=lambda: bool(LOCAL_GEN),
-)
+DAEMON_STATUS = OsvcJournaledData()
 
 # disable orchestration if a peer announces a different compat version than
 # ours
