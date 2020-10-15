@@ -1,3 +1,4 @@
+import json
 import os
 import pytest
 
@@ -82,3 +83,21 @@ class TestRun:
         assert lcall_task.call_count == 2
         assert set([lcall_task.call_args_list[0][0][0][0],
                     lcall_task.call_args_list[1][0][0][0]]) == set(['/task1', '/task2'])
+
+    @staticmethod
+    def test_define_correct_schedule(mocker, tmp_file, capture_stdout):
+        svcname = "pytest"
+        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
+        assert_run_cmd_success(svcname, ["create",
+                                         "--kw", "task#1.command=/usr/bin/date",
+                                         "--kw", "task#1.schedule=@3"])
+        assert_run_cmd_success(svcname, ["print", "schedule"])
+        with capture_stdout(tmp_file):
+            assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+        schedule_run = [schedule for schedule in json.load(open(tmp_file, "r")) if schedule["action"] == "run"][0]
+        assert schedule_run == {
+            "action": "run",
+            "config_parameter": "task#1.schedule",
+            "last_run": "-",
+            "schedule_definition": "@3"
+        }
