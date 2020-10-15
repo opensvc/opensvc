@@ -30,3 +30,8 @@ Agent Installation
 ==================
 
 https://docs.opensvc.com/latest/agent.install.html
+
+Agent Documentation
+===================
+
+https://docs.opensvc.com/latest
