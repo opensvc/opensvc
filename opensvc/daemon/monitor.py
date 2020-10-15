@@ -14,7 +14,6 @@ import time
 from itertools import chain
 
 import daemon.shared as shared
-import foreign.json_delta as json_delta
 from core.freezer import Freezer
 from env import Env
 from foreign.six.moves import queue
@@ -642,7 +641,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 "config": {},
             },
             "gen": {
-            }
+            },
+            "config": {
+                "csum": shared.NODE.nodeconf_csum(),
+            },
         }
         self.node_data.set([], initial_data)
         for nodename in self.cluster_nodes:
@@ -689,6 +691,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         shared.NODE.unset_lazy("labels")
         self.node_data.set(["labels"], shared.NODE.labels)
+        self.node_data.set(["config"], {"csum": shared.NODE.nodeconf_csum()})
         self.on_nodes_info_change()
         for path in [p for p in shared.SERVICES]:
             try:
@@ -4063,10 +4066,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         our_gen_on_peer = data.get("gen", {}).get(Env.nodename, 0)
         kind = data.get("kind", "full")
         change = False
+        #self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
+        #               kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
         if kind == "patch":
             if current_gen == 0:
                 # waiting for a full: ignore patches
-                self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
+                #self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
                 return False
             if not self.nodes_data.exists([nodename]):
                 # happens during init. ignore the patch, and ask for a full
@@ -4084,7 +4089,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return False
             nodes_info_change = False
             for gen in gens:
-                #self.log.debug("merge node %s gen %d (%d diffs)", nodename, gen, len(deltas[str(gen)])) # COMMENT
+                #self.log.debug("patch node %s dataset gen %d over %d (%d diffs)", nodename, gen, current_gen, len(deltas[str(gen)])) # COMMENT
                 if gen - 1 != current_gen:
                     if current_gen:
                         # don't be alarming on daemon start: it is normal we receive a out-of-sequence patch
