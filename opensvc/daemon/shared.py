@@ -1019,7 +1019,7 @@ class OsvcThread(threading.Thread, Crypt):
         """
         try:
             return Storage(
-                self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "config", path])
+                self.nodes_data.get([nodename, "services", "config", path])
             )
         except (TypeError, KeyError):
             return
