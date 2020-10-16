@@ -3314,16 +3314,19 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     #
     #########################################################################
     def reset_smon_retries(self, path, rid):
-        self.node_data.unset_safe(["service", "status", path, "monitor", "restart", rid])
+        self.node_data.unset_safe(["services", "status", path, "monitor", "restart", rid])
 
     def get_smon_retries(self, path, rid):
-        return self.node_data.get(["service", "status", path, "monitor", "restart", rid], default=0)
+        return self.node_data.get(["services", "status", path, "monitor", "restart", rid], default=0)
 
     def inc_smon_retries(self, path, rid):
         smon = self.get_service_monitor(path)
         if not smon:
             return
-        self.node_data.inc(["service", "status", path, "monitor", "restart", rid])
+        try:
+            self.node_data.inc(["services", "status", path, "monitor", "restart", rid])
+        except TypeError:
+            self.node_data.merge(["services", "status", path, "monitor"], {"restart": {rid: 1}})
 
     def all_nodes_frozen(self):
         for nodename in self.list_nodes():
