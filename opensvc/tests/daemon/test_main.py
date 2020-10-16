@@ -59,3 +59,30 @@ class TestDaemonRun:
             pid_file.write('1')
         main(['--debug', '-f'])
         assert loop_forever.call_count == 1
+
+    @staticmethod
+    def test_refuse_to_run_when_another_daemon_process_is_running_with_non_same_pid_as_us(
+            mocker,
+            daemon_process_running,
+            loop_forever):
+        daemon_process_running.return_value = True
+        mocker.patch(main.__module__ + '.os.getpid', return_value=799)
+        # write daemon signature with another pid
+        Daemon().write_pid()
+        # ensure testing pid is not another pid
+        mocker.patch(main.__module__ + '.os.getpid', return_value=790)
+
+        with pytest.raises(SystemExit) as error:
+            main(['--debug', '-f'])
+
+        assert loop_forever.call_count == 0
+        assert error.value.code == 1
+
+    @staticmethod
+    def test_run_loop_forever_when_we_are_detected_daemon(loop_forever):
+        # write same as us signature
+        Daemon().write_pid()
+
+        main(['--debug', '-f'])
+
+        assert loop_forever.call_count == 1
