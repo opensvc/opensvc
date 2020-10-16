@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 import json
 import os
 import sys
@@ -242,7 +243,6 @@ class TestCreateAddDecode:
     @staticmethod
     @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
     def test_create_empty_value(capture_stdout, tmp_file, obj):
-        open(tmp_file, 'w+').close()
         assert Mgr(selector=obj)(['create']) == 0
         assert Mgr(selector=obj)(['add', '--key', 'empty']) == 0
         with capture_stdout(tmp_file):
@@ -250,6 +250,7 @@ class TestCreateAddDecode:
 
         with open(tmp_file) as output_file:
             assert output_file.read() == ''
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
@@ -338,3 +339,125 @@ class TestCreateAddDecodeFrom:
         assert_keys(obj, expected_key_values.keys())
         for key_name, decoded_value in expected_key_values.items():
             assert_decode(obj, key_name, decoded_value)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_privs')
+class TestCfgSecEdit:
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_can_edit_editable_objects(mocker, capture_stdout, tmp_file, obj):
+        def file_editor_side_effect(_, fpath):
+            with open(fpath, 'a+') as f:
+                f.write(' text added')
+        mocker.patch('core.objects.data.edit_file', side_effect=file_editor_side_effect)
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'abcd']) == 0
+
+        assert Mgr(selector=obj)(['edit', '--key', 'key1']) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == 'abcd text added'
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_privs')
+class TestCfgSecEdit:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "abcd",
+            u"\xf9",
+            u"ù è é € £ ù a",
+            u'\xf9 \xe8 \xe9 \u20ac \xa3 \xf9 b',
+            u"ボールト", u"ボールト"
+        ])
+    @pytest.mark.parametrize(
+        'obj',
+        [
+            'demo/cfg/name',
+            'demo/sec/name'
+        ]
+    )
+    def test_can_edit_editable_objects_created_from_file(
+            mocker,
+            capsys,
+            tmp_file,
+            obj,
+            value):
+        with capsys.disabled():
+            if sys.version[0] == '2' and 'cfg/' in obj:
+                pytest.skip("unsupported cfg edit on python 2")
+            def file_editor_side_effect(_, fpath):
+                with open(fpath, 'ab') as f:
+                    f.write(' text added'.encode())
+            mocker.patch('core.objects.data.edit_file', side_effect=file_editor_side_effect)
+            if isinstance(value, str):
+                open(tmp_file, 'w').write(value)
+            else:
+                open(tmp_file, 'wb').write(value.encode('utf-8'))
+
+            assert Mgr(selector=obj)(['create']) == 0
+            Mgr(selector=obj)(['add', '--key', 'key1', '--from', tmp_file]) == 0
+            assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', tmp_file]) == 0
+        assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+        assert capsys.readouterr().out == value
+
+        with capsys.disabled():
+            assert Mgr(selector=obj)(['edit', '--key', 'key1']) == 0
+        assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+        assert capsys.readouterr().out == value + ' text added'
+
+    @staticmethod
+    def test_can_not_edit_non_string_secrets(capture_stdout, tmp_file):
+        obj = 'demo/sec/name'
+        open(tmp_file, 'wb').write(b'\xed')
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', tmp_file]) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+
+        assert open(tmp_file, 'rb').read() == b'\xed'
+
+        assert Mgr(selector=obj)(['edit', '--key', 'key1']) == 1
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_edit_does_not_add_extra_lf_from_editor_when_initial_value_is_empty(mocker, capture_stdout, tmp_file, obj):
+        def file_editor_side_effect(_, fpath):
+            with open(fpath, 'a+') as f:
+                f.write('\n')
+        mocker.patch('core.objects.data.edit_file', side_effect=file_editor_side_effect)
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1']) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == ''
+
+        assert Mgr(selector=obj)(['edit', '--key', 'key1']) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == ''
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_edit_detect_added_lines_when_initial_value_is_not_empty(mocker, capture_stdout, tmp_file, obj):
+        def file_editor_side_effect(_, fpath):
+            with open(fpath, 'a+') as f:
+                f.write('\n')
+        mocker.patch('core.objects.data.edit_file', side_effect=file_editor_side_effect)
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', '\n']) == 0
+
+        assert Mgr(selector=obj)(['edit', '--key', 'key1']) == 0
+        with capture_stdout(tmp_file):
+            assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
+
+        with open(tmp_file) as output_file:
+            assert output_file.read() == '\n\n'

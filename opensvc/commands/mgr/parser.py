@@ -87,8 +87,8 @@ OPT = Storage({
         "--format", default=None,
         action="store", dest="format",
         help="Specify a data formatter. Possible values are json, flat_json, "
-              "csv or table. csv and table formatters are available only for "
-              "commands returning tabular data."),
+             "csv or table. csv and table formatters are available only for "
+             "commands returning tabular data."),
     "help": Option(
         "-h", "--help", default=None,
         action="store_true", dest="parm_help",
@@ -203,7 +203,7 @@ OPT = Storage({
         action="store",
         help="A list member to drop from the value pointed by :kw:`--param`."),
     "resource": Option(
-        "--resource", default=[],
+        "--resource",
         action="append",
         help="A resource definition in json dictionary format fed to create "
              "or update. The ``rtype`` key point the driver group name, and "
@@ -224,7 +224,7 @@ OPT = Storage({
              "  all app resources\n"
              "* ``container#1,ip#1``\n"
              "  only container#1 and ip#1\n"
-        ),
+    ),
     "sections": Option(
         "--sections",
         action="store", dest="sections",
@@ -360,6 +360,17 @@ ACTION_OPTS = [
     OPT.tags,
 ]
 
+CONFIG_OPTS = [
+    OPT.force,
+    OPT.master,
+    OPT.nolock,
+    OPT.rid,
+    OPT.slave,
+    OPT.slaves,
+    OPT.subsets,
+    OPT.tags,
+]
+
 ASYNC_ACTION_OPTS = [
     OPT.time,
     OPT.wait,
@@ -373,7 +384,7 @@ ACTIONS = {
     "Common object actions": {
         "deploy": {
             "msg": "Create and provision a new service.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.config,
                 OPT.disable_rollback,
                 OPT.interactive,
@@ -470,7 +481,7 @@ ACTIONS = {
         },
         "create": {
             "msg": "Create a new service.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.config,
                 OPT.disable_rollback,
                 OPT.kw,
@@ -485,7 +496,7 @@ ACTIONS = {
         "update": {
             "msg": "Update definitions in an existing service configuration "
                    "file.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.disable_rollback,
                 OPT.provision,
                 OPT.resource,
@@ -493,14 +504,14 @@ ACTIONS = {
         },
         "delete": {
             "msg": "Delete a service, or only the resources specified by :opt:`--rid` on the local service instance.",
-            "options": ASYNC_ACTION_OPTS + ACTION_OPTS + [
+            "options": ASYNC_ACTION_OPTS + CONFIG_OPTS + [
                 OPT.purge_collector,
                 OPT.unprovision,
             ],
         },
         "eval": {
             "msg": "Evaluate the value of a service configuration keyword.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.format,
                 OPT.impersonate,
                 OPT.kw,
@@ -508,7 +519,7 @@ ACTIONS = {
         },
         "set": {
             "msg": "Set a service configuration parameter",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.kw,
                 OPT.add,
                 OPT.eval,
@@ -520,7 +531,7 @@ ACTIONS = {
         },
         "get": {
             "msg": "Get the raw value of a service configuration keyword.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.eval,
                 OPT.format,
                 OPT.impersonate,
@@ -530,11 +541,10 @@ ACTIONS = {
         },
         "unset": {
             "msg": "Unset a node configuration keyword.",
-            "options": ACTION_OPTS + [
+            "options": CONFIG_OPTS + [
                 OPT.kw,
                 OPT.param,
             ],
         },
     },
 }
-

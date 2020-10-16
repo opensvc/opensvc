@@ -180,18 +180,33 @@ class Daemon(object):
 
         try:
             with cmlock(lockfile=Env.paths.daemon_lock, timeout=1, delay=1):
-                if daemon_process_running():
-                    self.log.error("a daemon process is already running")
+                if self._already_running():
+                    self.log.error("abort start: a daemon process is already running")
                     sys.exit(1)
                 self.write_pid()
         except LockTimeout:
-            self.log.error("a daemon is already running, and holding the "
-                           "daemon lock")
+            self.log.error("abort start: a daemon is already running, and holding the daemon lock")
             sys.exit(1)
         self.loop_forever()
 
+    def _already_running(self):
+        if daemon_process_running():
+            try:
+                with open(Env.paths.daemon_pid, "r") as pid_file:
+                    last_pid_trace = pid_file.read()
+            except:
+                self.log.error("another daemon process detected, but file error on %s" % Env.paths.daemon_pid)
+                return True
+            if last_pid_trace == str(self.pid):
+                return False
+            else:
+                self.log.error("another daemon process is already running with pid %s" % last_pid_trace)
+                return True
+        else:
+            return False
+
     def write_pid(self):
-        pid = str(self.pid)+"\n"
+        pid = str(self.pid)
         with open(Env.paths.daemon_pid, "w") as ofile:
             ofile.write(pid)
         _, pid_args = process_args(self.pid)
