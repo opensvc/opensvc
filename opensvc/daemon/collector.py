@@ -205,7 +205,7 @@ class Collector(shared.OsvcThread):
         if "monitor" not in shared.THREADS:
             # the monitor thread is not started
             return
-        data = shared.THREADS["monitor"].status()
+        data = self.daemon_status_data.get_copy(["monitor"])
         _data = {
             "cluster_id": self.cluster_id,
             "cluster_name": self.cluster_name,
