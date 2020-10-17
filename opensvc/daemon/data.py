@@ -191,7 +191,14 @@ class JournaledData(object):
         value = copy.deepcopy(value)
         if path:
             cursor = self.get_ref(path[:-1], self.data)
-            cursor[path[-1]] = value
+            key = path[-1]
+            try:
+                cursor[key] = value
+            except IndexError:
+                if len(cursor) == key:
+                    cursor.append(value)
+                else:
+                    raise
         else:
             self.data = value
 
@@ -234,18 +241,23 @@ class JournaledData(object):
             try:
                 patch_fragment(patch)
             except Exception as exc:
-                buff = "\npatching path %s error: %s\n" % (path, exc)
+                buff = "\n"
+                buff += "------------------------------- Patch Error ----------------------------------\n"
+                buff += "Path:\n   %s\n" % path
+                buff += "Patchset:\n"
                 for _i, _patch in enumerate(patchset):
                     if i == _i:
                         buff += "=> %s\n" % _patch
                     else:
                         buff += "   %s\n" % _patch
-                buff += "current data:\n" + json.dumps(self.get_ref(path, self.data), indent=4)
+                buff += "\n"
+                buff += "Current data:\n%s\n\n" % json.dumps(self.get_ref(path, self.data), indent=4)
                 import traceback
-                buff += "Traceback\n"
-                buff += "".join(traceback.format_stack())
-                buff += "Exception\n"
+                buff += "Traceback:\n"
+                buff += "".join(traceback.format_stack()[:-2])
+                buff += "\nException "
                 buff += "".join(traceback.format_exc())
+                buff += "-" * 78 + "\n"
                 raise ex.Error(buff)
 
     def unset_safe(self, path=None):
