@@ -3206,34 +3206,34 @@ class Svc(PgMixin, BaseSvc):
         monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
         self.sched.update({
-            "compliance_auto": SchedOpts(
+            "compliance_auto": [SchedOpts(
                 "DEFAULT",
                 fname="last_comp_check",
                 schedule_option="comp_schedule",
                 req_collector=True,
-            ),
-            "push_resinfo": SchedOpts(
+            )],
+            "push_resinfo": [SchedOpts(
                 "DEFAULT",
                 fname="last_push_resinfo",
                 schedule_option="resinfo_schedule",
                 req_collector=True,
-            ),
+            )],
         })
         if not self.encap:
             self.sched.update({
-                "status": SchedOpts(
+                "status": [SchedOpts(
                     "DEFAULT",
                     fname="last_status",
                     schedule_option="status_schedule"
-                )
+                )]
             })
             if self.has_monitored_resources() or monitor_schedule is not None:
                 self.sched.update({
-                    "resource_monitor": SchedOpts(
+                    "resource_monitor": [SchedOpts(
                         "DEFAULT",
                         fname="last_resource_monitor",
                         schedule_option="monitor_schedule"
-                    )
+                    )]
                 })
 
         resource_schedules = {}
