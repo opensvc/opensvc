@@ -12,10 +12,10 @@ import threading
 prog = "om mon"
 
 import core.exceptions as ex
-import foreign.json_delta as json_delta
 import utilities.render.color
 from core.node import Node
 from foreign.six.moves import queue
+from utilities.journaled_data import JournaledData
 from utilities.render.cluster import format_cluster
 
 CLEAREOL = "\x1b[K"
@@ -177,10 +177,13 @@ def svcmon(node, options=None):
     if options.parm_svcs is None:
         kind = os.environ.get("OSVC_KIND", "svc")
         options.parm_svcs = "*/%s/*" % kind
-    status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
-    if status_data is None or status_data.get("status", 0) != 0:
-        status, error, info = node.parse_result(status_data)
+    dataset = JournaledData()
+    result = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
+    if result is None or result.get("status", 0) != 0:
+        status, error, info = node.parse_result(result)
         raise ex.Error(error)
+    dataset.set([], result)
+    status_data = dataset.get()
     nodes_info = nodes_info_from_cluster_data(status_data)
     expanded_svcs = [p for p in status_data.get("monitor", {}).get("services", {})]
     if options.format is None:
@@ -217,18 +220,21 @@ def svcmon(node, options=None):
             if patch:
                 if last_patch_id and patch["id"] != last_patch_id + 1:
                     try:
-                        status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
+                        dataset.set([], node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace))
+                        status_data = dataset.get()
                         last_patch_id = patch["id"]
                     except Exception:
                         # seen on solaris under high load: decode_msg() raising on invalid json
                         pass
                 else:
                     try:
-                        json_delta.patch(status_data, patch["data"])
+                        dataset.patch([], patch["data"])
+                        status_data = dataset.get()
                         last_patch_id = patch["id"]
                     except Exception as exc:
                         try:
-                            status_data = node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace)
+                            dataset.set([], node._daemon_status(server=options.server, selector=options.parm_svcs, namespace=namespace))
+                            status_data = dataset.get()
                             last_patch_id = patch["id"]
                         except Exception:
                             # seen on solaris under high load: decode_msg() raising on invalid json

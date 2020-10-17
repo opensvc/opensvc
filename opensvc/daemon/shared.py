@@ -18,6 +18,7 @@ from foreign.six.moves import queue
 import core.exceptions as ex
 from foreign.jsonpath_ng.ext import parse
 from env import Env
+from utilities.journaled_data import JournaledData
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
 from utilities.selector import selector_config_match, selector_value_match, selector_parse_fragment, selector_parse_op_fragment
@@ -25,7 +26,6 @@ from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS
-from .data import JournaledData
 
 
 class OsvcJournaledData(JournaledData):
