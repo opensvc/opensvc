@@ -33,7 +33,7 @@ class LockMixin(object):
                 thr.log.info("claim %s dropped", name)
                 lock_id = None
                 continue
-            if self.lock_accepted(name, lock_id):
+            if self.lock_accepted(name, lock_id, thr=thr):
                 thr.log.info("locked %s", name)
                 return lock_id
             time.sleep(0.5)
@@ -53,15 +53,15 @@ class LockMixin(object):
         if not silent:
             thr.log.info("released locally %s", name)
         while time.time() < deadline:
-            if self._lock_released(name, lock_id):
+            if self._lock_released(name, lock_id, thr=thr):
                 released = True
                 break
             time.sleep(0.5)
         if released is False:
             thr.log.warning('timeout waiting for lock %s %s release on peers', name, lock_id)
 
-    def lock_accepted(self, name, lock_id):
-        for nodename in self.list_nodes():
+    def lock_accepted(self, name, lock_id, thr=None):
+        for nodename in thr.list_nodes():
             try:
                 lock = self.nodes_data.get([nodename, "locks", name])
             except KeyError:
@@ -70,11 +70,11 @@ class LockMixin(object):
                 return False
         return True
 
-    def _lock_released(self, name, lock_id):
+    def _lock_released(self, name, lock_id, thr=None):
         """
         Verify if lock release has been written to cluster data.
         """
-        for nodename in self.list_nodes():
+        for nodename in thr.list_nodes():
             try:
                 lock = self.nodes_data.get([nodename, "locks", name])
             except KeyError:
