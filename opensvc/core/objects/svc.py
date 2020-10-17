@@ -1201,6 +1201,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def notify_action(self, action, force=False):
         if not force and os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
             return
+        if self.options.dry_run:
+            return
         progress = self.action_progress(action)
         if progress is None:
             return
@@ -1614,7 +1616,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return rid
 
     def update(self):
-        result = self._update(self.options.resource,
+        result = self._update(self.options.resource or [],
                               interactive=self.options.interactive,
                               provision=self.options.provision)
         buff = " "
