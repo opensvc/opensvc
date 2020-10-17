@@ -3852,15 +3852,19 @@ class Svc(PgMixin, BaseSvc):
         The resource monitor action. Refresh important resources at a different
         schedule.
         """
-        data1 = self.print_status_data()
+        from utilities.journaled_data import JournaledData
+        dataset = JournaledData(
+            initial_data=self.print_status_data(),
+            journal_head=[],
+        )
         for resource in self.get_resources():
             if resource.monitor or resource.nb_restart:
                 resource.status(refresh=True)
         if self.need_encap_resource_monitor():
             self.encap_cmd(["resource_monitor"])
-        data2 = self.print_status_data_eval(write_data=False)
-        import foreign.json_delta as json_delta
-        diff = json_delta.diff(data1, data2, verbose=False, array_align=False, compare_lengths=False)
+        data = self.print_status_data_eval(write_data=False)
+        dataset.set([], data)
+        diff = dataset.pop_diff()
         significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
         if significant_changes:
             self.log.debug("changes detected in monitored resources: %s", significant_changes)
