@@ -439,7 +439,7 @@ class Schedule(object):
             end_s = time_to_seconds(end)
             if begin_s == end_s:
                 end_s += min_tr_len
-                end = "%02d:%02d:%02d" % (end_s // 3600, (end_s % 3600) // 60, end_m % 60)
+                end = "%02d:%02d:%02d" % (end_s // 3600, (end_s % 3600) // 60, end_s % 60)
             return {"begin": begin, "end": end}
 
         probabilistic = self.probabilistic
