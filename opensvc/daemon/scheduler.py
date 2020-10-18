@@ -456,6 +456,8 @@ class Scheduler(shared.OsvcThread):
 
         for action, parms in shared.NODE.sched.actions.items():
             for p in parms:
+                if p.req_collector and not shared.NODE.collector_env.dbopensvc:
+                    continue
                 sig = (action, None, None)
                 if sig in self.delayed:
                     continue
