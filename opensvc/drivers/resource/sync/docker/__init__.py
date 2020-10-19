@@ -9,6 +9,7 @@ from utilities.lazy import lazy
 from env import Env
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.subsystems.docker import has_docker
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "docker"
@@ -34,8 +35,7 @@ KEYS.register_driver(
 
 def driver_capabilities(node=None):
     data = []
-    from utilities.proc import which
-    if which("docker") or which("docker.io"):
+    if has_docker(["docker", "docker.io"]):
         data.append("container.docker")
     return data
 

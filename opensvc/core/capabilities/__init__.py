@@ -7,6 +7,7 @@ import sys
 from env import Env
 from utilities.proc import which
 from utilities.lazy import lazy
+from utilities.subsystems.docker import has_docker
 
 DRIVER_CAP_FN = "driver_capabilities"
 DRIVER_CAP_PREFIX = "drivers.resource."
@@ -19,11 +20,11 @@ class BaseCapabilities(object):
         data = []
         if which("stat"):
             data.append("node.x.stat")
-        if which("docker"):
+        if has_docker(["docker"]):
             data.append("node.x.docker")
-        if which("docker.io"):
+        if has_docker(["docker.io"]):
             data.append("node.x.docker.io")
-        if which("dockerd"):
+        if has_docker(["dockerd"]):
             data.append("node.x.dockerd")
         if which("exportfs"):
             data.append("node.x.exportfs")

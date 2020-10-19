@@ -42,6 +42,12 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    data = []
+    if dockerlib.has_docker(["docker", "docker.io"]):
+        data.append("fs.docker")
+    return data
+
 
 class FsDocker(Resource):
     def __init__(self, driver=None, options=None, populate=None, **kwargs):
