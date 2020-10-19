@@ -3868,7 +3868,7 @@ class Svc(PgMixin, BaseSvc):
         significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
         if significant_changes:
             self.log.debug("changes detected in monitored resources: %s", significant_changes)
-            self.write_status_data(data2)
+            self.write_status_data(data)
 
     def reboot(self):
         """
