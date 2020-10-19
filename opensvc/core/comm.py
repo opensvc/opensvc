@@ -68,7 +68,6 @@ PING = ".".encode()
 
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
-BLACKLIST_LOCK = threading.RLock()
 
 # The maximum number of misencrypted data messages received before refusing
 # new messages
@@ -449,8 +448,10 @@ class Crypt(object):
         if sender_id is None:
             return False
         sender_id = str(sender_id)
-        with BLACKLIST_LOCK:
-            count = BLACKLIST.get(sender_id, 0)
+        try:
+            count = BLACKLIST[sender_id]
+        except Exception:
+            count = 0
         if count > BLACKLIST_THRESHOLD:
             self.log.warning("received a message from blacklisted sender %s",
                              sender_id)
@@ -464,20 +465,19 @@ class Crypt(object):
         if sender_id is None:
             return
         sender_id = str(sender_id)
-        with BLACKLIST_LOCK:
-            count = BLACKLIST.get(sender_id, 0)
-            if sender_id in BLACKLIST:
-                BLACKLIST[sender_id] += 1
-                if count == BLACKLIST_THRESHOLD:
-                    getattr(self, "event")(
-                        "blacklist_add",
-                        level="warning",
-                        data={
-                            "sender": sender_id,
-                        }
-                    )
-            else:
-                BLACKLIST[sender_id] = 1
+        try:
+            count = BLACKLIST[sender_id]
+        except Exception:
+            count = 0
+        BLACKLIST[sender_id] = count + 1
+        if count == BLACKLIST_THRESHOLD:
+            getattr(self, "event")(
+                "blacklist_add",
+                level="warning",
+                data={
+                    "sender": sender_id,
+                }
+            )
 
     def blacklist_clear(self, sender_id=None):
         """
@@ -486,22 +486,26 @@ class Crypt(object):
         global BLACKLIST
         if sender_id is None and BLACKLIST == {}:
             return
-        with BLACKLIST_LOCK:
-            if sender_id is None:
-                BLACKLIST = {}
-                self.log.info("blacklist cleared")
-            elif sender_id in BLACKLIST:
-                del BLACKLIST[sender_id]
-                self.log.info("sender %s removed from blacklist" % \
-                              sender_id)
+        if sender_id is None:
+            BLACKLIST = {}
+            self.log.info("blacklist cleared")
+        elif sender_id in BLACKLIST:
+            del BLACKLIST[sender_id]
+            self.log.info("sender %s removed from blacklist" % \
+                          sender_id)
 
     @staticmethod
     def get_blacklist():
         """
-        Return the senders blacklist.
+        Return a copy of the senders blacklist.
         """
-        with BLACKLIST_LOCK:
-            return dict(BLACKLIST)
+        data = {}
+        for key in list(BLACKLIST):
+            try:
+                data[key] = BLACKLIST[key]
+            except Exception:
+                pass
+        return data
 
     def get_listener_info(self, nodename):
         """
