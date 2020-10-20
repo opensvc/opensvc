@@ -409,7 +409,10 @@ class ContainerLib(object):
             return []
         cmd = self.docker_cmd + ["inspect"] + ids
         out = justcall(cmd)[0]
-        data = json.loads(out)
+        try:
+            data = json.loads(out)
+        except Exception:
+            data = []
         return data
 
     def docker_volume_inspect(self, vol_id):
