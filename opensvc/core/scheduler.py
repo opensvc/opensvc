@@ -206,7 +206,7 @@ def days_in_month(year, month):
 
 def time_to_seconds(dt_spec):
     """
-    Convert a datetime or a %H:%M formatted string to seconds.
+    Convert a datetime or a %H:%M[:%S] formatted string to seconds.
     """
     if isinstance(dt_spec, datetime.datetime):
         dtm = dt_spec
@@ -1100,7 +1100,7 @@ class Scheduler(object):
 
         try:
             last = self.get_last(fname)
-            last_s = last.strftime("%Y-%m-%d %H:%M")
+            last_s = last.strftime("%Y-%m-%d %H:%M:%S")
         except (AttributeError, IOError, OSError):
             last_s = "-"
             last = None
@@ -1123,7 +1123,7 @@ class Scheduler(object):
         else:
             result = schedule.get_next(now, last=last)[0]
         if result:
-            next_s = result.strftime("%Y-%m-%d %H:%M")
+            next_s = result.strftime("%Y-%m-%d %H:%M:%S")
         else:
             next_s = "-"
         data["next_run"] = next_s
