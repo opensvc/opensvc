@@ -290,8 +290,7 @@ ATTR_MAP = {
 
 def driver_capabilities(node=None):
     data = []
-    from utilities.proc import which
-    if which("docker") or which("docker.io"):
+    if dockerlib.has_docker(["docker", "docker.io"]):
         data += [
             "container.docker",
             "container.docker.registry_creds",

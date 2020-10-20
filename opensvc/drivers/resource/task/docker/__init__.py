@@ -7,6 +7,7 @@ from drivers.resource.container.docker import \
 import core.exceptions as ex
 
 from core.objects.svcdict import KEYS
+from utilities.subsystems.docker import has_docker
 
 DRIVER_GROUP = "task"
 DRIVER_BASENAME = "docker"
@@ -40,9 +41,8 @@ KEYS.register_driver(
 )
 
 def driver_capabilities(node=None):
-    from utilities.proc import which
     data = []
-    if which("docker") or which("docker.io"):
+    if has_docker(["docker", "docker.io"]):
         data += [
             "task.docker",
             "task.docker.registry_creds",

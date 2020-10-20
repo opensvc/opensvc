@@ -15,9 +15,18 @@ import core.status
 import core.exceptions as ex
 
 from env import Env
-from core.capabilities import capabilities
 from utilities.lazy import lazy, unset_lazy, set_lazy
 from utilities.proc import justcall
+
+def has_docker(program_list):
+    for exe in program_list:
+        try:
+            out = justcall([exe, "--version"])[0]
+        except:
+            continue
+        if out.startswith("Docker"):
+            return True
+    return False
 
 class ContainerLib(object):
     """
@@ -531,6 +540,7 @@ class DockerLib(ContainerLib):
         docker_exe as the first choice, and a docker.io or docker exe found
         in PATH as a fallback.
         """
+        from core.capabilities import capabilities
         if capabilities.has("node.x.docker.io"):
             return "docker.io"
         if capabilities.has("node.x.docker"):
@@ -539,6 +549,7 @@ class DockerLib(ContainerLib):
 
     @lazy
     def dockerd_exe(self):
+        from core.capabilities import capabilities
         if capabilities.has("node.x.dockerd"):
             return "dockerd"
         else:
