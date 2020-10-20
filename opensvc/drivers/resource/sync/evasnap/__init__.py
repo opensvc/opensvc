@@ -80,19 +80,7 @@ class SyncEvasnap(Sync):
         pass
 
     def can_sync(self, target=None):
-        ts = None
-
-        """ get oldest snap
-        """
-        for pair in self.pairs:
-            info = self.lun_info(pair['dst'])
-            if info is None:
-                self.log.debug("snap %s missing"%pair['dst'])
-                return True
-            _ts = info['creationdatetime']
-            if ts is None or _ts < ts:
-                ts = _ts
-        return not self.skip_sync(ts)
+        return True
 
     def recreate(self):
         def snapname(info):

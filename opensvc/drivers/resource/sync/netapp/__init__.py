@@ -131,11 +131,6 @@ class SyncNetapp(Sync):
         return now - delta
 
     def can_sync(self, target=None, s=None):
-        if s is None:
-            s = self.snapmirror_status(self.slave())
-        ts = self.lag_to_ts(s['lag'])
-        if self.skip_sync(ts):
-            return False
         return True
 
     def lagged(self, lag, max=None):

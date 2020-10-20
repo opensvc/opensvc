@@ -222,10 +222,6 @@ class SyncRsync(Sync):
             self.target
         )
 
-    def node_can_sync(self, node):
-        ts = get_timestamp(self, node)
-        return not self.skip_sync(ts)
-
     def node_need_sync(self, node):
         ts = get_timestamp(self, node)
         return self.alert_sync(ts)
@@ -265,10 +261,7 @@ class SyncRsync(Sync):
             return set()
 
         for node in targets.copy():
-            if state == "syncable" and not self.node_can_sync(node):
-                targets.remove(node)
-                continue
-            elif state == "late" and not self.node_need_sync(node):
+            if state == "late" and not self.node_need_sync(node):
                 targets.remove(node)
                 continue
 
@@ -418,12 +411,11 @@ class SyncRsync(Sync):
             elif action == "sync_drp":
                 rtargets[i] |= r.nodes_to_sync('drpnodes')
             for node in rtargets[i].copy():
-                if not r.node_can_sync(node):
-                    rtargets[i] -= set([node])
-                elif r.snap:
+                if r.snap:
                     need_snap = True
         for i in rtargets:
             targets |= rtargets[i]
+
 
         if len(targets) == 0:
             if not self.svc.options.cron:

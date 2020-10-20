@@ -95,8 +95,7 @@ class SyncNecismsnap(Sync):
         return ts
 
     def can_sync(self, target=None):
-        ts = self.get_oldest_ts()
-        return not self.skip_sync(ts)
+        return True
 
     def get_oldest_ts(self):
         ts = None

@@ -91,8 +91,6 @@ class SyncNexenta(Sync):
 
         if self.ts is None:
             self.get_props()
-        if self.skip_sync(self.ts):
-            return False
         return True
 
     def sync_swap(self):

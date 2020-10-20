@@ -78,13 +78,6 @@ class Sync(Resource):
             return True
         return True
 
-    def skip_sync(self, ts):
-        if not self.svc.options.cron:
-            return False
-        if self.svc.sched.skip_action_schedule(self.rid, "sync_schedule", last=ts):
-            return True
-        return False
-
     def alert_sync(self, ts):
         if ts is None:
             return True

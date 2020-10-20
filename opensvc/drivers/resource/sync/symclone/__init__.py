@@ -240,14 +240,9 @@ class SyncSymclone(Sync):
         except ex.Error as e:
             self.log.debug(e)
             return False
-
-        if self.skip_sync(self.last):
-            return False
         return True
 
     def recreate(self):
-        if self.skip_sync(self.last):
-            return
         if self.is_activable():
             self.log.info("symclone are already recreated")
             return

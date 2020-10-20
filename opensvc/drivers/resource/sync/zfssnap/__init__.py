@@ -220,15 +220,6 @@ class SyncZfssnap(Sync):
             if not self.svc.options.cron:
                 self.log.info("skip snapshot creation on instance not up")
             return False
-        rids = self.svc.options.rid
-        if rids is None:
-            rids = []
-        if self.svc.options.cron or self.rid not in rids:
-            snaps = self.get_snaps(dataset)
-            last = self.last_snap_date(snaps)
-            if self.svc.sched.skip_action_schedule(self.rid, "sync_schedule", last=last):
-                self.log.info("skip: not in allowed schedule")
-                return False
         return True
 
     def _sync_update(self, dataset):

@@ -132,13 +132,6 @@ class SyncHp3par(Sync):
         return out, err
 
     def can_sync(self, target=None, s=None):
-        data = self.showrcopy()
-        try:
-            last = data['vv'][0]['LastSyncTime']
-        except IndexError:
-            return False
-        if self.skip_sync(datetime.datetime.utcnow()-last):
-            return False
         return True
 
     def sync_resync(self):
