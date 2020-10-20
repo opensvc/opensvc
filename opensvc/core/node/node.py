@@ -1364,19 +1364,23 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("reboot is not scheduled")
             return
 
-        sch = self.sched.actions["auto_reboot"]
-        schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
+        sch = self.sched.actions["auto_reboot"][0]
+        try:
+            schedule = self.sched.get_schedule_raw(sch.section, sch.schedule_option)
+        except Exception:
+            schedule = ""
+
         print("reboot is scheduled")
         print("reboot schedule: %s" % schedule)
 
-        result = self.sched.get_next_schedule("auto_reboot")
-        if result["next_sched"]:
-            print("next reboot slot:",
-                  result["next_sched"].strftime("%a %Y-%m-%d %H:%M"))
-        elif result["minutes"] is None:
-            print("next reboot slot: none")
+        if not schedule:
+            return
+
+        result, _ = self.sched.get_schedule("reboot", "schedule").get_next()
+        if result:
+            print("next reboot slot:", result.strftime("%a %Y-%m-%d %H:%M"))
         else:
-            print("next reboot slot: none in the next %d days" % (result["minutes"]/144))
+            print("next reboot slot: none")
 
     def auto_reboot(self):
         """
