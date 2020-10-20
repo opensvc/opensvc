@@ -626,6 +626,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.update_hb_data()
 
     def init_data(self):
+        shared.GEN = 0
         initial_data = {
             "compat": shared.COMPAT_VERSION,
             "api": shared.API_VERSION,
