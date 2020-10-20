@@ -495,6 +495,8 @@ class Scheduler(shared.OsvcThread):
                     nonprov.append(action+"@"+path)
                     continue
                 for p in parms:
+                    if p.req_collector and not shared.NODE.collector_env.dbopensvc:
+                        continue
                     rid = p.section if p.section != "DEFAULT" else None
                     sig = (action, path, rid)
                     if sig in self.delayed:
