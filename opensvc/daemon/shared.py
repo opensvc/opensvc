@@ -401,33 +401,54 @@ class OsvcThread(threading.Thread, Crypt):
         Send a kill() to all procs in the queue and wait for their
         completion.
         """
-        if six.PY2:
-            # noinspection PyShadowingBuiltins
+        try:
+            ProcessLookupError
+        except NameError:
             ProcessLookupError = OSError
         for data in self.procs:
             # noinspection PyUnboundLocalVariable
+            if hasattr(data.proc, "poll"):
+                # subprocess.Popen()
+                ret = lambda: data.proc.returncode
+                poll = lambda: data.proc.poll()
+                comm = lambda: data.proc.communicate()
+                kill = lambda: data.proc.kill()
+            else:
+                # multiprocessing.Process()
+                ret = lambda: data.proc.exitcode
+                poll = lambda: None
+                comm = lambda: None
+                kill = lambda: data.proc.terminate()
             try:
-                data.proc.kill()
+                kill()
             except ProcessLookupError:  # pylint: disable=undefined-variable
                 continue
             for _ in range(self.stop_tmo):
-                data.proc.poll()
-                if data.proc.returncode is not None:
-                    data.proc.communicate()
+                if ret() is not None:
+                    comm()
+                    poll()
                     break
                 time.sleep(1)
 
     def janitor_procs(self):
         done = []
         for idx, data in enumerate(self.procs):
-            data.proc.poll()
-            if data.proc.returncode is not None:
-                data.proc.communicate()
+            try:
+                # subprocess.Popen()
+                data.proc.poll()
+                ret = data.proc.returncode
+                comm = lambda: data.proc.communicate()
+            except AttributeError:
+                # multiprocessing.Process()
+                ret = data.proc.exitcode
+                comm = lambda: None
+            if ret is not None:
+                comm()
                 done.append(idx)
-                if data.proc.returncode == 0 and data.on_success:
+                if ret == 0 and data.on_success:
                     getattr(self, data.on_success)(*data.on_success_args,
                                                    **data.on_success_kwargs)
-                elif data.proc.returncode != 0 and data.on_error:
+                elif ret != 0 and data.on_error:
                     getattr(self, data.on_error)(*data.on_error_args,
                                                  **data.on_error_kwargs)
         for idx in sorted(done, reverse=True):
