@@ -49,9 +49,9 @@ Config Selectors:
   <keyword>=<value>           All objects with the <keyword> value equals to <val> in the instance config data
 """
 
-def main():
+def main(argv=None):
     try:
-        arg1 = sys.argv[1]
+        arg1 = argv[1]
     except IndexError:
         print(HELP, file=sys.stderr)
         return 1
@@ -60,67 +60,68 @@ def main():
         return 1
     elif arg1 == "ctx":
         from core.contexts import main
-        ret = main(sys.argv[1:])
+        ret = main(argv[1:])
         return ret
     elif arg1 == "svc":
         from commands.svc import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "vol":
         from commands.vol import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "nscfg":
         from commands.nscfg import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "cfg":
         from commands.cfg import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "sec":
         from commands.sec import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "usr":
         from commands.usr import Mgr
         os.environ["OSVC_KIND"] = arg1
-        ret = Mgr()(argv=sys.argv[2:])
+        ret = Mgr()(argv=argv[2:])
         return ret
     elif arg1 == "node":
         from commands.node import main
-        ret = main(argv=sys.argv[2:])
+        ret = main(argv=argv[2:])
         return ret
     elif arg1 == "array":
         from commands.node import main
-        ret = main(argv=sys.argv[1:])
+        ret = main(argv=argv[1:])
         return ret
     elif arg1 in ("net", "network"):
         from commands.network import main
-        ret = main(argv=sys.argv[2:])
+        ret = main(argv=argv[2:])
         return ret
     elif arg1 == "pool":
         from commands.pool import main
-        ret = main(argv=sys.argv[2:])
+        ret = main(argv=argv[2:])
         return ret
     elif arg1 == "daemon":
         from commands.daemon import main
-        ret = main(argv=sys.argv[2:])
+        ret = main(argv=argv[2:])
         return ret
     elif arg1 == "mon":
         from commands.svcmon import main
-        ret = main(argv=sys.argv[1:])
+        ret = main(argv=argv[1:])
         return ret
     else:
         from commands.mgr import Mgr
-        ret = Mgr(selector=arg1)(argv=sys.argv[2:])
+        ret = Mgr(selector=arg1)(argv=argv[2:])
         return ret
 
-ret = main()
-sys.exit(ret)
+if __name__ == "__main__":
+    ret = main(sys.argv)
+    sys.exit(ret)
 
