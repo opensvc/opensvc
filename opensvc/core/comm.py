@@ -205,12 +205,12 @@ class Crypt(object):
         This is 4x faster than calling os.urandom(16) and prevents
         the "too many files open" issue with concurrent access to os.urandom()
         """
-        locker = locker or threading.RLock()
         if urandom is None:
             urandom = []
         try:
             return urandom.pop()
         except IndexError:
+            locker = locker or threading.RLock()
             try:
                 locker.acquire()
                 ur = os.urandom(1024)
