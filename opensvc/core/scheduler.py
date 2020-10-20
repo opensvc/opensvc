@@ -210,7 +210,7 @@ def time_to_seconds(dt_spec):
     """
     if isinstance(dt_spec, datetime.datetime):
         dtm = dt_spec
-        dt_spec = dtm.hour * 60 + dtm.minute
+        dt_spec = dtm.hour * 60 * 60 + dtm.minute * 60 + dtm.second
     else:
         try:
             if dt_spec.count(":") == 1:
@@ -221,6 +221,19 @@ def time_to_seconds(dt_spec):
         dt_spec = dtm.tm_hour * 3600 + dtm.tm_min * 60 + dtm.tm_sec
     return dt_spec
 
+def seconds_to_hms(s):
+    return (
+        s // 3600,
+        (s % 3600) // 60,
+        s % 60
+    )
+
+def time_to_hms(s):
+    return seconds_to_hms(time_to_seconds(s))
+
+def seconds_to_time(s):
+    return "%02d:%02d:%02d" % seconds_to_hms(s)
+
 def interval_from_timerange(timerange):
     """
     Return a default interval from a timerange data structure.
@@ -229,7 +242,7 @@ def interval_from_timerange(timerange):
     begin_s = time_to_seconds(timerange['begin'])
     end_s = time_to_seconds(timerange['end'])
     if begin_s > end_s:
-        return 24 * 3600 - begin_s + end_s + 1
+        return DAY_SECONDS - begin_s + end_s + 1
     return end_s - begin_s + 1
 
 def in_timerange_safe(timerange, now=None):
@@ -439,7 +452,7 @@ class Schedule(object):
             end_s = time_to_seconds(end)
             if begin_s == end_s:
                 end_s += min_tr_len
-                end = "%02d:%02d:%02d" % (end_s // 3600, (end_s % 3600) // 60, end_s % 60)
+                end = seconds_to_time(end_s)
             return {"begin": begin, "end": end}
 
         probabilistic = self.probabilistic
@@ -683,7 +696,9 @@ class Schedule(object):
         raise SchedNotAllowed(", ".join(errors))
 
 
-    def get_next(self, now, last=None):
+    def get_next(self, now=None, last=None):
+        if not now:
+            now = time.time()
         if isinstance(now, (int, float)):
             now = datetime.datetime.fromtimestamp(now)
         if isinstance(last, (int, float)):
@@ -798,12 +813,12 @@ class Schedule(object):
             return d, interval
 
         # the candidate date is outside timeranges, return the closest range's (begin, interval)
-        ref = "%02d:%02d" % (d.hour, d.minute)
+        ref = "%02d:%02d:%02d" % (d.hour, d.minute, d.second)
         ranges = [tr for tr in s["timeranges"] if ref < tr.get("begin", 0)]
         for tr in sorted(ranges, key=lambda x: (x.get("begin", 0), x.get("interval"))):
             interval = tr.get("interval")
-            hour, minute = tr["begin"].split(":")
-            d = d.replace(hour=int(hour), minute=int(minute), second=0)
+            hour, minute, second = time_to_hms(tr["begin"])
+            d = d.replace(hour=hour, minute=minute, second=second)
             if not valid_interval(d, last, interval):
                 di = last + datetime.timedelta(seconds=interval)
                 if in_timerange_safe(tr, di):
@@ -910,7 +925,7 @@ class Scheduler(object):
         except (OSError, IOError, ValueError):
             return
 
-    def sched_get_schedule_raw(self, section, option):
+    def get_schedule_raw(self, section, option):
         """
         Read the old/new style schedule options of a configuration file
         section. Convert if necessary and return the new-style formatted
@@ -943,45 +958,19 @@ class Scheduler(object):
 
         return schedule_s
 
-    def sched_get_schedule(self, section, option, schedules=None):
+    def get_schedule(self, section, option, schedules=None):
         """
         Return the list of schedule structures for the spec string passed
         as <schedules> or, if not passed, from the <section>.<option> value
         in the configuration file.
         """
         if schedules is None:
-            schedules = self.sched_get_schedule_raw(section, option)
+            schedules = self.get_schedule_raw(section, option)
         if section and section.startswith("sync"):
             probabilistic = False
         else:
             probabilistic = True
         return Schedule(schedules, probabilistic)
-
-    def allow_action_schedule(self, section, option, fname=None, now=None, last=None):
-        if option is None:
-            return
-        if now is None:
-            now = datetime.datetime.now()
-        try:
-            schedule = self.sched_get_schedule(section, option)
-            delay = schedule.validate(now=now, last=last)
-            return delay
-        except SchedNoDefault:
-            raise SchedNotAllowed("no schedule in section %s and no default "
-                                  "schedule"%section)
-        except SchedSyntaxError as exc:
-            raise SchedNotAllowed("malformed parameter value: %s.schedule "
-                                  "(%s)"%(section, str(exc)))
-
-    def skip_action_schedule(self, section, option, fname=None, now=None, last=None):
-        try:
-            self.allow_action_schedule(section, option, fname=fname, now=now, last=last)
-            return False
-        except SchedExcluded:
-            return True
-        except Exception:
-            return True
-        return True
 
     def get_timestamp_f(self, fname, success=False):
         """
@@ -1000,25 +989,6 @@ class Scheduler(object):
     @property
     def actions(self):
         return self.scheduler_actions
-
-    def validate_action(self, action, now=None, lasts=None):
-        """
-        Decide if the scheduler task can run, and return the concerned rids
-        for multi-resources actions.
-
-        The callers are responsible for catching AbortAction.
-        """
-        if isinstance(now, (int, float)):
-            now = datetime.datetime.fromtimestamp(now)
-        if not self._is_croned():
-            return
-        if action not in self.scheduler_actions:
-            return
-        data = self.skip_action(action, now=now, lasts=lasts)
-        sched_options = data["keep"]
-        if len(sched_options) == 0:
-            raise ex.AbortAction
-        return [option.section for option in sched_options], data["delay"]
 
     def action_timestamps(self, action, rids=None, success=False):
         sched_options = self.scheduler_actions[action]
@@ -1039,79 +1009,6 @@ class Scheduler(object):
 
         for tsfile in tsfiles:
             self._timestamp(tsfile, last=last)
-
-    def _is_croned(self):
-        """
-        Return True if the cron option is set.
-        """
-        return self.options.cron
-
-    def skip_action(self, action, section=None, fname=None,
-                    schedule_option=None, now=None, lasts=None):
-        if action not in self.scheduler_actions:
-            if not self._is_croned():
-                return False
-            return {"count": 0, "keep": [], "skip": []}
-
-        data = {"count": 0, "keep": [], "skip": []}
-        idx = 0
-        for idx, sopt in enumerate(self.scheduler_actions[action]):
-            skip = self._skip_action(
-                action, sopt,
-                section=section, fname=fname, schedule_option=schedule_option,
-                now=now,
-                lasts=lasts,
-            )
-            if skip is True:
-                data["skip"].append(sopt)
-            else:
-                data["keep"].append(sopt)
-                if "delay" not in data or skip < data["delay"]:
-                    data["delay"] = skip
-        data["count"] = idx + 1
-        return data
-
-    def _skip_action(self, action, sopt, section=None, fname=None,
-                     schedule_option=None, now=None, lasts=None):
-        if sopt.req_collector and not self.node.collector_env.dbopensvc:
-            return True
-        if section is None:
-            section = sopt.section
-        if fname is None:
-            fname = sopt.fname
-        if schedule_option is None:
-            schedule_option = sopt.schedule_option
-
-        last = self.get_last(fname)
-        if fname:
-            if lasts:
-                try:
-                    cluster_last = lasts[sopt.section][action]["last"]
-                except (KeyError, ValueError):
-                    cluster_last = 0
-            else:
-                cluster_last = 0
-            if cluster_last:
-                # Another node reports a more recent run (for a shared
-                # resource, like a task).
-                # Update our last run cache file, so avoid running the action
-                # too soon after a takeover.
-                cluster_last = datetime.datetime.fromtimestamp(cluster_last)
-                if not last or cluster_last > last:
-                    self._timestamp(sopt.fname, last=cluster_last)
-                    last = cluster_last
-
-        if not self._is_croned():
-            # don't update the timestamp file
-            return False
-
-        # check if we are in allowed scheduling period
-        try:
-            delay = self.allow_action_schedule(section, schedule_option, fname=fname, now=now, last=last)
-        except Exception as exc:
-            return True
-
-        return delay
 
     def print_schedule(self):
         """
@@ -1192,7 +1089,7 @@ class Scheduler(object):
         fname = sopt.fname
 
         try:
-            schedule = self.sched_get_schedule(section, schedule_option)
+            schedule = self.get_schedule(section, schedule_option)
             schedule_s = " ".join(schedule.schedule)
         except SchedNoDefault:
             schedule_s = "anytime"
