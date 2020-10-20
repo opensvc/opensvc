@@ -1,11 +1,12 @@
 """
 Scheduler Thread
 """
+import logging
 import os
 import sys
-import logging
 import time
-from subprocess import Popen
+
+from multiprocessing import Process
 
 import daemon.shared as shared
 import core.exceptions as ex
@@ -30,6 +31,17 @@ NMON_STATUS_OFF = [
     "shutting",
     "maintenance",
 ]
+
+def wrapper(selector, cmd, now):
+    import commands.mgr
+    import commands.node
+    os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
+    os.environ["OSVC_SCHED_TIME"] = str(now)
+    if selector is None:
+        commands.node.main(cmd)
+    else:
+        selector = ",".join(selector)
+        commands.mgr.Mgr(selector=selector)(cmd)
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
@@ -184,15 +196,10 @@ class Scheduler(shared.OsvcThread):
         self.running -= not_dropped_yet
         self.dropped_via_notify -= sigs
 
-    def exec_action(self, sigs, cmd, now):
-        env = os.environ.copy()
-        env["OSVC_ACTION_ORIGIN"] = "daemon"
-        env["OSVC_SCHED_TIME"] = str(now)
-        kwargs = dict(stdout=self.devnull, stderr=self.devnull,
-                      stdin=self.devnull, close_fds=os.name!="nt",
-                      env=env)
+    def exec_action(self, sigs, selector, cmd, now):
         try:
-            proc = Popen(cmd, **kwargs)
+            proc = Process(group=None, target=wrapper, args=(selector, cmd, now,))
+            proc.start()
         except KeyboardInterrupt:
             return
         self.running |= set(sigs)
@@ -207,13 +214,11 @@ class Scheduler(shared.OsvcThread):
 
     def format_cmd(self, action, path=None, rids=None):
         if path is None:
-            cmd = Env.om + ["node", action]
+            cmd = [action]
         elif isinstance(path, list):
-            cmd = Env.om + ["svc", "-s", ",".join(path), action, "--waitlock=1"]
-            if len(path) > 1:
-                cmd.append("--parallel")
+            cmd = [action, "--waitlock=1"]
         else:
-            cmd = Env.om + ["svc", "-s", path, action, "--waitlock=1"]
+            cmd = [action, "--waitlock=1"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
@@ -224,8 +229,6 @@ class Scheduler(shared.OsvcThread):
             cmd = ["om", "node", action]
         elif isinstance(path, list):
             cmd = ["om", "svc", "-s", ",".join(path), action, "--waitlock=1"]
-            if len(path) > 1:
-                cmd.append("--parallel")
         else:
             cmd = ["om", "svc", "-s", path, action, "--waitlock=1"]
         if rids:
@@ -378,7 +381,7 @@ class Scheduler(shared.OsvcThread):
             cmd = self.format_cmd(task["action"], task["path"], task["rids"])
             log_cmd = self.format_log_cmd(task["action"], task["path"], task["rids"])
             self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(now - task["queued"]))
-            self.exec_action(task["sigs"], cmd, now)
+            self.exec_action(task["sigs"], task["path"], cmd, now)
             dequeued += task["sigs"]
         self.delete_queued(dequeued)
 
@@ -465,7 +468,7 @@ class Scheduler(shared.OsvcThread):
                     continue
                 last = self.local_last(sig, p.fname, shared.NODE)
                 try:
-                    _next, _interval = shared.NODE.sched.sched_get_schedule(p.section, p.schedule_option).get_next(now, last)
+                    _next, _interval = shared.NODE.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
                 except Exception as exc:
                     self.log.warning("node %s %s: %s", p.section, action, exc)
                     self.blacklist[sig] = csum
@@ -512,7 +515,7 @@ class Scheduler(shared.OsvcThread):
                     except KeyError:
                         pass
                     try:
-                        _next, _interval = svc.sched.sched_get_schedule(p.section, p.schedule_option).get_next(now, last)
+                        _next, _interval = svc.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
                     except Exception as exc:
                         self.log.warning("%s %s %s: %s", path, p.section, action, exc)
                         self.log.exception(exc)
