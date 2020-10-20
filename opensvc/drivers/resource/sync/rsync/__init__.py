@@ -96,6 +96,16 @@ def driver_capabilities(node=None):
     data = []
     if which("rsync"):
         data.append("sync.rsync")
+
+    cmd = ['rsync', '--version']
+    out, _, ret = justcall(cmd)
+    if ret != 0:
+        return data
+
+    if 'no xattrs' not in out:
+        data.append("sync.rsync.xattrs")
+    if 'no ACLs' not in out:
+        data.append("sync.rsync.acls")
     return data
 
 
@@ -538,16 +548,6 @@ class SyncRsync(Sync):
         self.status_log("%s need update"%', '.join(sorted(nodes)))
         return core.status.DOWN
 
-    @cache("rsync.version")
-    def rsync_version(self):
-        if which("rsync") is None:
-            raise ex.Error("rsync not found")
-        cmd = ['rsync', '--version']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.Error("can not determine rsync capabilities")
-        return out
-
     @lazy
     def full_options(self):
         if self.reset_options:
@@ -555,9 +555,9 @@ class SyncRsync(Sync):
         else:
             options = ["-HAXpogDtrlvx", "--stats", "--delete", "--force"] + self.options
         out = self.rsync_version()
-        if 'no xattrs' in out:
+        if not self.has_capability("sync.rsync.xattrs"):
             options = drop_option("-X", options)
-        if 'no ACLs' in out:
+        if not self.has_capability("sync.rsync.acls"):
             options = drop_option("-A", options)
         options += ["--timeout=%s" % self.timeout]
         return options
