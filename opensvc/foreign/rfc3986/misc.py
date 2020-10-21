@@ -22,7 +22,6 @@ expressions for parsing and validating URIs and their components.
 import re
 
 from . import abnf_regexp
-from utilities.string import _lazy__lazy_re_compile
 
 # These are enumerated for the named tuple used as a superclass of
 # URIReference
@@ -48,9 +47,9 @@ RESERVED_CHARS = abnf_regexp.RESERVED_CHARS_SET
 UNRESERVED_CHARS = abnf_regexp.UNRESERVED_CHARS_SET
 NON_PCT_ENCODED = abnf_regexp.NON_PCT_ENCODED_SET
 
-URI_MATCHER = _lazy__lazy_re_compile(abnf_regexp.URL_PARSING_RE)
+URI_MATCHER = re.compile(abnf_regexp.URL_PARSING_RE)
 
-SUBAUTHORITY_MATCHER = _lazy_re_compile((
+SUBAUTHORITY_MATCHER = re.compile((
     '^(?:(?P<userinfo>{0})@)?'  # userinfo
     '(?P<host>{1})'  # host
     ':?(?P<port>{2})?$'  # port
@@ -59,38 +58,38 @@ SUBAUTHORITY_MATCHER = _lazy_re_compile((
              abnf_regexp.PORT_RE))
 
 
-HOST_MATCHER = _lazy_re_compile('^' + abnf_regexp.HOST_RE + '$')
-IPv4_MATCHER = _lazy_re_compile('^' + abnf_regexp.IPv4_RE + '$')
-IPv6_MATCHER = _lazy_re_compile(r'^\[' + abnf_regexp.IPv6_ADDRZ_RFC4007_RE + r'\]$')
+HOST_MATCHER = re.compile('^' + abnf_regexp.HOST_RE + '$')
+IPv4_MATCHER = re.compile('^' + abnf_regexp.IPv4_RE + '$')
+IPv6_MATCHER = re.compile(r'^\[' + abnf_regexp.IPv6_ADDRZ_RFC4007_RE + r'\]$')
 
 # Used by host validator
-IPv6_NO_RFC4007_MATCHER = _lazy_re_compile(r'^\[%s\]$' % (
+IPv6_NO_RFC4007_MATCHER = re.compile(r'^\[%s\]$' % (
     abnf_regexp.IPv6_ADDRZ_RE
 ))
 
 # Matcher used to validate path components
-PATH_MATCHER = _lazy_re_compile(abnf_regexp.PATH_RE)
+PATH_MATCHER = re.compile(abnf_regexp.PATH_RE)
 
 
 # ##################################
 # Query and Fragment Matcher Section
 # ##################################
 
-QUERY_MATCHER = _lazy_re_compile(abnf_regexp.QUERY_RE)
+QUERY_MATCHER = re.compile(abnf_regexp.QUERY_RE)
 
 FRAGMENT_MATCHER = QUERY_MATCHER
 
 # Scheme validation, see: http://tools.ietf.org/html/rfc3986#section-3.1
-SCHEME_MATCHER = _lazy_re_compile('^{0}$'.format(abnf_regexp.SCHEME_RE))
+SCHEME_MATCHER = re.compile('^{0}$'.format(abnf_regexp.SCHEME_RE))
 
-RELATIVE_REF_MATCHER = _lazy_re_compile(r'^%s(\?%s)?(#%s)?$' % (
+RELATIVE_REF_MATCHER = re.compile(r'^%s(\?%s)?(#%s)?$' % (
     abnf_regexp.RELATIVE_PART_RE,
     abnf_regexp.QUERY_RE,
     abnf_regexp.FRAGMENT_RE,
 ))
 
 # See http://tools.ietf.org/html/rfc3986#section-4.3
-ABSOLUTE_URI_MATCHER = _lazy_re_compile(r'^%s:%s(\?%s)?$' % (
+ABSOLUTE_URI_MATCHER = re.compile(r'^%s:%s(\?%s)?$' % (
     abnf_regexp.COMPONENT_PATTERN_DICT['scheme'],
     abnf_regexp.HIER_PART_RE,
     abnf_regexp.QUERY_RE[1:-1],
@@ -100,9 +99,9 @@ ABSOLUTE_URI_MATCHER = _lazy_re_compile(r'^%s:%s(\?%s)?$' % (
 # IRIs / RFC 3987
 # ###############
 
-IRI_MATCHER = _lazy_re_compile(abnf_regexp.URL_PARSING_RE, re.UNICODE)
+IRI_MATCHER = re.compile(abnf_regexp.URL_PARSING_RE, re.UNICODE)
 
-ISUBAUTHORITY_MATCHER = _lazy_re_compile((
+ISUBAUTHORITY_MATCHER = re.compile((
     u'^(?:(?P<userinfo>{0})@)?'  # iuserinfo
     u'(?P<host>{1})'  # ihost
     u':?(?P<port>{2})?$'  # port
