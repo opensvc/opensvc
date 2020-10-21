@@ -1,4 +1,5 @@
 import os
+import time
 
 import core.status
 import core.exceptions as ex
@@ -224,6 +225,12 @@ class BaseTask(Resource):
         else:
             raise ex.Error("run aborted")
 
+    def fast_scheduled(self):
+        now = time.time()
+        s = self.svc.sched.get_schedule(self.rid, "schedule")
+        n, i = s.get_next(now, now)
+        return i and i < 10
+
     def run(self):
         try:
             with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
@@ -234,7 +241,14 @@ class BaseTask(Resource):
             self.svc.notify_done("run", rids=[self.rid])
 
     def _run(self):
-        self.svc.print_status_data_eval()
+        """
+        Update status.json when starting to run a task.
+    
+        So the running resource list is updated asap in the daemon status
+        data, and requesters can see the task they submitted is running.
+        """
+        if not self.svc.options.cron or not self.fast_scheduled():
+            self.svc.print_status_data_eval()
         self.create_pg()
         if self.snooze:
             try:
