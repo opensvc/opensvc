@@ -686,6 +686,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
         self.shortloops = target
 
+    def add_service(self, path):
+        name, namespace, kind = split_path(path)
+        svc = factory(kind)(name, namespace, node=shared.NODE, log_handlers=["file", "syslog"])
+        svc.configure_scheduler()
+        shared.SERVICES[path] = svc
+        return svc
+
     def reconfigure(self):
         """
         The node config references may have changed, update the services objects.
@@ -696,12 +703,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.on_nodes_info_change()
         for path in [p for p in shared.SERVICES]:
             try:
-                name, namespace, kind = split_path(path)
-                svc = factory(kind)(name, namespace, node=shared.NODE)
+                self.add_service(path)
             except Exception as exc:
                 continue
-            with shared.SERVICES_LOCK:
-                shared.SERVICES[path] = svc
 
     def do(self):
         terminated = self.janitor_procs() + self.janitor_threads()
@@ -748,10 +752,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         confs = self.get_services_configs()
         for path, data in confs.items():
-            new_service = False
-            with shared.SERVICES_LOCK:
-                if path not in shared.SERVICES:
-                    new_service = True
+            try:
+                shared.SERVICES[path]
+                new_service = False
+            except KeyError:
+                new_service = True
             if self.has_instance_with(path, global_expect=["purged", "deleted"]):
                 continue
             if Env.nodename not in data:
@@ -793,12 +798,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if ref_nodename == Env.nodename:
                 # we already have the most recent version
                 continue
-            with shared.SERVICES_LOCK:
-                if path in shared.SERVICES and \
-                   Env.nodename in shared.SERVICES[path].nodes and \
-                   ref_nodename in shared.SERVICES[path].drpnodes:
+            try:
+                svc = shared.SERVICES[path]
+                if Env.nodename in svc.nodes and ref_nodename in svc.drpnodes:
                     # don't fetch drp config from prd nodes
                     continue
+            except KeyError:
+                pass
             self.log.info("node %s has the most recent %s config",
                           ref_nodename, path)
             self.fetch_service_config(path, ref_nodename)
@@ -808,9 +814,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.service_status_fallback(path)
 
     def init_new_service(self, path):
-        name, namespace, kind = split_path(path)
         try:
-            shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
+            self.add_service(path)
         except Exception as exc:
             self.log.error("unbuildable service %s fetched: %s", path, exc)
             return
@@ -886,10 +891,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                                "not valid", path, nodename)
                 return
             try:
-                with shared.SERVICES_LOCK:
-                    name, namespace, kind = split_path(path)
-                    shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
-                shared.SERVICES[path].postinstall()
+                svc = self.add_service(path)
+                svc.postinstall()
             except Exception as exc:
                 self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
@@ -3148,9 +3151,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.warning("service %s config checksum error: %s", path, exc)
                     continue
                 try:
-                    with shared.SERVICES_LOCK:
-                        name, namespace, kind = split_path(path)
-                        shared.SERVICES[path] = factory(kind)(name, namespace, node=shared.NODE)
+                    self.add_service(path)
                 except Exception as exc:
                     self.log.error("%s build error: %s", path, str(exc))
                     continue
