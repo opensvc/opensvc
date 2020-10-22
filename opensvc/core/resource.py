@@ -495,8 +495,6 @@ class Resource(object):
         Catch status methods errors and push them to the resource log buffer
         so they will be display in print status.
         """
-        if hasattr(self, "is_up_clear_cache"):
-            getattr(self, "is_up_clear_cache")()
         try:
             return self._status(verbose=verbose)
         except Exception as exc:
