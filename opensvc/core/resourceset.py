@@ -272,58 +272,50 @@ class ResourceSet(object):
         xtags = kwargs.get("xtags", set())
         xtypes = kwargs.get("xtypes")
         types = kwargs.get("types")
-
-        if self.parallel:
-            # verify we can actually do parallel processing, fallback to serialized
-            try:
-                from multiprocessing import Process
-                if Env.sysname == "Windows":
-                    from multiprocessing import set_executable
-                    set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
-            except:
-                self.parallel = False
-
         resources = self.action_resources(action, tags, xtags, xtypes, types)
+        resources = [r for r in resources if not r.skip and not r.is_disabled() and (action != "rollback" or r.can_rollback)]
         barrier = None
 
+        if self.parallel:
+            try:
+                import concurrent.futures
+            except ImportError:
+                parallel = False
+            else:
+                parallel = True
+        else:
+            parallel = False
+
         if not self.svc.options.dry_run and \
-           self.parallel and len(resources) > 1 and \
+           parallel and len(resources) > 1 and \
            action not in ["presync", "postsync"]:
             procs = {}
-            for resource in resources:
-                if not resource.can_rollback and action == "rollback":
-                    continue
-                if resource.skip or resource.is_disabled():
-                    continue
-                proc = Process(target=self.action_job, args=(resource, action,))
-                proc.start()
-                resource.log.info("action %s started in child process %d"%(action, proc.pid))
-                procs[resource.rid] = proc
-                if self.svc.options.upto and resource.rid == self.svc.options.upto:
-                    barrier = "reached 'up to %s' barrier" % resource.rid
-                    break
-                if self.svc.options.downto and resource.rid == self.svc.options.downto:
-                    barrier = "reached 'down to %s' barrier" % resource.rid
-                    break
-            for proc in procs.values():
-                proc.join()
             err = []
-            for resource in resources:
-                if resource.rid not in procs:
-                    continue
-                proc = procs[resource.rid]
-                if proc.exitcode == 1 and not resource.optional:
-                    err.append(resource.rid)
-                elif proc.exitcode == 2:
-                    # can_rollback resource property is lost with the thread
-                    # the action_job tells us what to do with it through its exitcode
-                    resource.can_rollback = True
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
+                for resource in resources:
+                    procs[executor.submit(self.action_job, resource, action)] = resource
+                    if self.svc.options.upto and resource.rid == self.svc.options.upto:
+                        barrier = "reached 'up to %s' barrier" % resource.rid
+                        break
+                    if self.svc.options.downto and resource.rid == self.svc.options.downto:
+                        barrier = "reached 'down to %s' barrier" % resource.rid
+                        break
+                for future in concurrent.futures.as_completed(procs):
+                    resource = procs[future]
+                    result = future.result()
+                    if result == 1 and not resource.optional:
+                        err.append(resource.rid)
+                    elif result == 2:
+                        # can_rollback resource property is lost with the thread
+                        # the action_job tells us what to do with it through its exitcode
+                        resource.can_rollback = True
             if len(err) > 0:
                 raise ex.Error("%s non-optional resources jobs returned "
-                                  "with error" % ",".join(err))
+                               "with error" % ",".join(err))
         else:
             if self.svc.options.dry_run and \
-               self.parallel and len(resources) > 1 and \
+               parallel and len(resources) > 1 and \
                action not in ["presync", "postsync"]:
                 self.log.info("entering parallel subset")
             for resource in resources:
@@ -366,13 +358,13 @@ class ResourceSet(object):
             getattr(resource, 'action')(action)
         except ex.Error as exc:
             self.log.error(str(exc))
-            sys.exit(1)
+            return 1
         except Exception as exc:
             self.log.exception(exc)
-            sys.exit(1)
+            return 1
         if resource.can_rollback:
-            sys.exit(2)
-        sys.exit(0)
+            return 2
+        return 0
 
     def all_skip(self, action):
         """
