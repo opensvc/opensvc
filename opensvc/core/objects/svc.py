@@ -4528,39 +4528,42 @@ class Svc(PgMixin, BaseSvc):
         self.abort_start_done = True
         resources = [res for res in self.get_resources()
                      if not res.skip and not res.is_disabled() and hasattr(res, "abort_start")]
-        if Env.sysname == "Windows" or len(resources) < 2:
+        if len(resources) < 2:
             parallel = False
         else:
             try:
-                from multiprocessing import Process
-                parallel = True
-
-                def wrapper(func):
-                    try:
-                        if func():
-                            sys.exit(1)
-                    except ex.Signal:
-                        sys.exit(1)
+                import concurrent.futures
             except ImportError:
                 parallel = False
+            else:
+                parallel = True
 
         procs = {}
-        for resource in resources:
-            if not parallel:
+        if not parallel:
+            for resource in resources:
                 if resource.abort_start():
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
-            else:
-                proc = Process(target=wrapper, args=[resource.abort_start])
-                proc.start()
-                procs[resource.rid] = proc
+        else:
+            def wrapper(func):
+                try:
+                    if func():
+                        return 1
+                except Exception:
+                    return 1
+                return 0
 
-        if parallel:
             err = []
-            for rid, proc in procs.items():
-                proc.join()
-                if proc.exitcode > 0:
-                    err.append(rid)
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for resource in resources:
+                    procs[executor.submit(wrapper, resource.abort_start)] = resource.rid
+                for future in concurrent.futures.as_completed(procs):
+                    rid = procs[future]
+                    result = future.result()
+                    if result:
+                        err.append(rid)
+
             if len(err) > 0:
                 raise ex.Error("start aborted due to resource %s "
                                "conflict" % ",".join(err))
