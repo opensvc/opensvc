@@ -2461,6 +2461,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return data
 
     def csum_status_data(self, data):
+        """
+        This checksum is used by the collector thread to detect changes
+        requiring a collector update.
+        """
         h = hashlib.md5()
 
         def fn(h, val):
