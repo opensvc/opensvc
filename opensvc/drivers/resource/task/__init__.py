@@ -206,21 +206,23 @@ class BaseTask(Resource):
         if self.svc.options.confirm:
             self.log.info("confirmed by command line option")
             return
-        import signal
-        signal.signal(signal.SIGALRM, self.alarm_handler)
-        signal.alarm(30)
 
-        print("This task run requires confirmation.\nPlease make sure you fully "
-              "understand its role and effects before confirming the run.")
-        try:
-            buff = input("Do you really want to run %s (yes/no) > " % self.rid)
-        except RuntimeError:
-            raise ex.Error("run aborted (no stdin)")
-        except ex.Signal:
-            raise ex.Error("timeout waiting for confirmation")
+        def _confirm(rid):
+            print("This task run requires confirmation.\nPlease make sure you fully "
+                  "understand its role and effects before confirming the run.")
+            return input("Do you really want to run %s (yes/no) > " % rid)
+ 
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(_confirm, self.rid)
+            try:
+                buff = future.result(timeout=30)
+            except concurrent.futures.TimeoutError:
+                raise ex.Error("timeout waiting for confirmation")
+            except (EOFError, RuntimeError):
+                raise ex.Error("run aborted (no stdin)")
 
         if buff == "yes":
-            signal.alarm(0)
             self.log.info("run confirmed")
         else:
             raise ex.Error("run aborted")
