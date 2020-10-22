@@ -554,7 +554,6 @@ class SyncRsync(Sync):
             options = self.options
         else:
             options = ["-HAXpogDtrlvx", "--stats", "--delete", "--force"] + self.options
-        out = self.rsync_version()
         if not self.has_capability("sync.rsync.xattrs"):
             options = drop_option("-X", options)
         if not self.has_capability("sync.rsync.acls"):
