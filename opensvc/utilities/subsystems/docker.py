@@ -15,7 +15,7 @@ import core.status
 import core.exceptions as ex
 
 from env import Env
-from utilities.lazy import lazy, unset_lazy, set_lazy
+from utilities.lazy import threadsafe_lazy as lazy, unset_lazy, set_lazy
 from utilities.proc import justcall
 
 def has_docker(program_list):
