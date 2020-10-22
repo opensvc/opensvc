@@ -1611,28 +1611,28 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if svc.topology == "span":
             return
         if svc.disabled:
-            #self.log.info("service %s orchestrator out (disabled)", svc.path)
+            #self.log.info("%s orchestrator out (disabled)", svc.path)
             return
         if not self.compat:
             return
         if svc.topology == "failover" and smon.local_expect == "started":
-            # decide if the service local_expect=started should be reset
+            # decide if local_expect=started should be reset
             if status == "up" and self.get_service_instance(svc.path, Env.nodename).avail != "up":
-                self.log.info("service '%s' is globally up but the local instance is "
+                self.log.info("%s is globally up but the local instance is "
                               "not and is in 'started' local expect. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
             elif self.service_started_instances_count(svc.path) > 1 and \
                  self.get_service_instance(svc.path, Env.nodename).avail != "up" and \
                  not self.placement_leader(svc):
-                self.log.info("service '%s' has multiple instance in 'started' "
+                self.log.info("%s has multiple instance in 'started' "
                               "local expect and we are not leader. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
             elif status != "up" and \
                  self.get_service_instance(svc.path, Env.nodename).avail in ("down", "stdby down", "undef", "n/a") and \
                  not self.resources_orchestrator_will_handle(svc):
-                self.log.info("service '%s' is not up and no resource monitor "
+                self.log.info("%s is not up and no resource monitor "
                               "action will be attempted, but "
                               "is in 'started' local expect. reset",
                               svc.path)
@@ -1640,7 +1640,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             else:
                 return
         if self.node_frozen or self.instance_frozen(svc.path):
-            #self.log.info("service %s orchestrator out (frozen)", svc.path)
+            #self.log.info("%s orchestrator out (frozen)", svc.path)
             return
         if not self.rejoin_grace_period_expired:
             return
@@ -1648,7 +1648,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.object_orchestrator_scaler(svc)
             return
         if status in (None, "undef", "n/a"):
-            #self.log.info("service %s orchestrator out (agg avail status %s)",
+            #self.log.info("%s orchestrator out (agg avail status %s)",
             #              svc.path, status)
             return
 
@@ -1810,7 +1810,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.service_start(svc.path)
             else:
                 tmo = int(smon.status_updated + self.ready_period - now) + 1
-                self.log.info("service %s will start in %d seconds",
+                self.log.info("%s will start in %d seconds",
                               svc.path, tmo)
                 self.set_next(tmo)
         elif smon.status == "idle":
@@ -1830,7 +1830,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if not self.parents_available(svc):
                     self.set_smon(svc.path, status="wait parents")
                     return
-                self.log.info("flex service %s started, starting or ready to "
+                self.log.info("flex %s started, starting or ready to "
                               "start instances: %d/%d. local status %s",
                               svc.path, n_up, svc.flex_target,
                               instance.avail)
@@ -1855,7 +1855,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 n_to_stop -= len(to_stop)
                 if n_to_stop > 0:
                     to_stop += self.placement_ranks(svc, candidates=set(up_nodes)-set(overloaded_up_nodes))[-n_to_stop:]
-                self.log.info("%d nodes to stop to honor service %s "
+                self.log.info("%d nodes to stop to honor %s "
                               "flex_target=%d. choose %s",
                               n_to_stop, svc.path, svc.flex_target,
                               ", ".join(to_stop))
@@ -2011,15 +2011,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             to_add[-1][1] = left
         to_add = to_add[:max_burst]
         delta = "add " + ",".join([elem[0] for elem in to_add])
-        self.log.info("scale service %s: %s", svc.path, delta)
+        self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
-            self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.path, exc)
+            self.log.warning("failed to start a scaling thread for %s: %s", svc.path, exc)
 
     def object_orchestrator_scaler_down_flex(self, svc, missing, current_slaves):
         to_remove = []
@@ -2039,15 +2038,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if len(to_remove) == 0:
             return
         delta = "delete " + ",".join(to_remove)
-        self.log.info("scale service %s: %s", svc.path, delta)
+        self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
-            self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.path, exc)
+            self.log.warning("failed to start a scaling thread for %s: %s", svc.path, exc)
 
     @staticmethod
     def sort_scaler_slaves(slaves, reverse=False):
@@ -2061,15 +2059,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         to_add = self.sort_scaler_slaves(new_slaves_list)
         to_add = [[path, None] for path in to_add]
         delta = "add " + ",".join([elem[0] for elem in to_add])
-        self.log.info("scale service %s: %s", svc.path, delta)
+        self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
-            self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.path, exc)
+            self.log.warning("failed to start a scaling thread for %s: %s", svc.path, exc)
 
     def object_orchestrator_scaler_down_failover(self, svc, missing, current_slaves):
         slaves_count = -missing
@@ -2079,15 +2076,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         to_remove = self.sort_scaler_slaves(slaves_list)
         to_remove = [path for path in to_remove]
         delta = "delete " + ",".join([elem[0] for elem in to_remove])
-        self.log.info("scale service %s: %s", svc.path, delta)
+        self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
             thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
-            self.log.warning("failed to start a scaling thread for service "
-                             "%s: %s", svc.path, exc)
+            self.log.warning("failed to start a scaling thread for %s: %s", svc.path, exc)
 
     def scaling_worker(self, svc, to_add, to_remove):
         threads = []
@@ -2103,8 +2099,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 thr.start()
                 threads.append(thr)
             except RuntimeError as exc:
-                self.log.warning("failed to start a scaling thread for "
-                                 "service %s: %s", svc.path, exc)
+                self.log.warning("failed to start a scaling thread for %s: %s", svc.path, exc)
         for path in to_remove:
             if path not in shared.SERVICES:
                 continue
@@ -2129,13 +2124,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if svc.soft_anti_affinity:
                 intersection = set(self.get_local_paths()) & set(svc.soft_anti_affinity)
                 if len(intersection) > 0:
-                    #self.log.info("service %s orchestrator out (soft anti-affinity with %s)",
+                    #self.log.info("%s orchestrator out (soft anti-affinity with %s)",
                     #              svc.path, ','.join(intersection))
                     return False
             if svc.soft_affinity:
                 intersection = set(self.get_local_paths()) & set(svc.soft_affinity)
                 if len(intersection) < len(set(svc.soft_affinity)):
-                    #self.log.info("service %s orchestrator out (soft affinity with %s)",
+                    #self.log.info("%s orchestrator out (soft affinity with %s)",
                     #              svc.path, ','.join(intersection))
                     return False
         return True
@@ -2224,10 +2219,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             missing.append(child)
         if len(missing) == 0:
-            self.duplog("info", "service %(path)s local children all avail down",
+            self.duplog("info", "%(path)s local children all avail down",
                         path=svc.path)
             return True
-        self.duplog("info", "service %(path)s local children still available:"
+        self.duplog("info", "%(path)s local children still available:"
                     " %(missing)s", path=svc.path,
                     missing=" ".join(missing))
         return False
@@ -2257,14 +2252,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             state = "avail down"
             if unprovisioned:
                 state += " and unprovisioned"
-            self.duplog("info", "service %(path)s children all %(state)s:"
+            self.duplog("info", "%(path)s children all %(state)s:"
                         " %(children)s", path=svc.path, state=state,
                         children=" ".join(svc.children_and_slaves))
             return True
         state = "available"
         if unprovisioned:
             state += " or provisioned"
-        self.duplog("info", "service %(path)s children still %(state)s:"
+        self.duplog("info", "%(path)s children still %(state)s:"
                     " %(missing)s", path=svc.path, state=state,
                     missing=" ".join(missing))
         return False
@@ -2294,10 +2289,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             missing.append(parent)
         if len(missing) == 0:
-            self.duplog("info", "service %(path)s parents all avail up",
+            self.duplog("info", "%(path)s parents all avail up",
                         path=svc.path)
             return True
-        self.duplog("info", "service %(path)s parents not available:"
+        self.duplog("info", "%(path)s parents not available:"
                     " %(missing)s", path=svc.path,
                     missing=" ".join(missing))
         return False
@@ -2322,7 +2317,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         return False
                 else:
                     return False
-        self.log.info("service '%s' instances on nodes '%s' are stopped",
+        self.log.info("%s instances on nodes '%s' are stopped",
                       path, ", ".join(nodes))
         return True
 
@@ -2332,7 +2327,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if instance is None:
                 continue
             if instance.get("avail") not in STOPPED_STATES:
-                self.log.info("service '%s' instance node '%s' is not stopped yet",
+                self.log.info("%s instance node '%s' is not stopped yet",
                               path, nodename)
                 return False
         return True
@@ -2363,7 +2358,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     extra = "(%s/%s)" % (avail, smon_status)
                 else:
                     extra = "(%s)" % avail
-                self.log.info("service '%s' leader instance on node '%s' "
+                self.log.info("%s leader instance on node %s "
                               "is not started yet %s",
                               svc.path, nodename, extra)
                 return False
@@ -2389,7 +2384,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     extra = "(%s/%s)" % (avail, smon_status)
                 else:
                     extra = "(%s)" % avail
-                self.log.info("service '%s' non leader instance on node '%s' "
+                self.log.info("%s non leader instance on node %s "
                               "is not stopped yet %s",
                               svc.path, nodename, extra)
                 return False
@@ -2423,14 +2418,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             top = ranks[0]
             if not silent:
                 self.log.info("elected %s as the last node to take action on "
-                              "service %s", top, svc.path)
+                              "%s", top, svc.path)
         except IndexError:
             if not silent:
-                self.log.info("unblock service %s leader last action (placement ranks empty)", svc.path)
+                self.log.info("unblock %s leader last action (placement ranks empty)", svc.path)
             return Env.nodename
         if top != Env.nodename:
             if not silent:
-                self.log.info("unblock service %s leader last action (not leader)",
+                self.log.info("unblock %s leader last action (not leader)",
                               svc.path)
             return top
         for node in svc.peers:
@@ -2441,16 +2436,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             elif deleted:
                 if not silent:
-                    self.log.info("delay leader-last action on service %s: "
+                    self.log.info("delay leader-last action on %s: "
                                   "node %s is still not deleted", svc.path, node)
                 return
             if instance.get("provisioned", False) is not provisioned:
                 if not silent:
-                    self.log.info("delay leader-last action on service %s: "
+                    self.log.info("delay leader-last action on %s: "
                                   "node %s is still %s", svc.path, node,
                                   "unprovisioned" if provisioned else "provisioned")
                 return
-        self.log.info("unblock service %s leader last action (leader)",
+        self.log.info("unblock %s leader last action (leader)",
                       svc.path)
         return Env.nodename
 
@@ -2472,7 +2467,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                       if data.get("avail") in ("up", "warn")]
         if len(candidates) == 0:
             if not silent:
-                self.log.info("service %s has no up instance, relax candidates "
+                self.log.info("%s has no up instance, relax candidates "
                               "constraints", svc.path)
             candidates = self.placement_candidates(
                 svc, discard_frozen=False,
@@ -2482,10 +2477,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             top = self.placement_ranks(svc, candidates=candidates)[0]
             if not silent:
                 self.log.info("elected %s as the first node to take action on "
-                              "service %s", top, svc.path)
+                              "%s", top, svc.path)
         except IndexError:
             if not silent:
-                self.log.error("service %s placement ranks list is empty", svc.path)
+                self.log.error("%s placement ranks list is empty", svc.path)
             return True
         if top == Env.nodename:
             return True
@@ -2495,7 +2490,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if instance.get("provisioned", True) is provisioned:
             return True
         if not silent:
-            self.log.info("delay leader-first action on service %s", svc.path)
+            self.log.info("delay leader-first action on %s", svc.path)
         return False
 
     def overloaded_up_service_instances(self, path):
@@ -2534,7 +2529,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_started_instances_count(self, path):
         """
-        Count the number of service instances in 'started' local expect state.
+        Count the number of instances in 'started' local expect state.
         """
         count = 0
         try:
@@ -3284,7 +3279,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                smon.global_expect is None and \
                smon.status == "idle" and \
                smon.local_expect not in ("started", "shutdown"):
-                self.log.info("set %s local expect to 'started'", path)
+                self.log.info("%s local expect set: started", path)
                 smon.local_expect = "started"
 
             data[path]["monitor"] = smon
