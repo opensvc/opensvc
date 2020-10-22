@@ -639,7 +639,7 @@ class OsvcThread(threading.Thread, Crypt):
             if status != smon.status \
                     and (not expected_status or expected_status == smon.status):
                 self.log.info(
-                    "service %s monitor status change: %s => %s",
+                    "%s monitor status change: %s => %s",
                     path,
                     smon.status if
                     smon.status else "none",
@@ -667,7 +667,7 @@ class OsvcThread(threading.Thread, Crypt):
                 local_expect = None
             if local_expect != smon.local_expect:
                 self.log.info(
-                    "service %s monitor local expect change: %s => %s",
+                    "%s monitor local expect change: %s => %s",
                     path,
                     smon.local_expect if
                     smon.local_expect else "none",
@@ -681,7 +681,7 @@ class OsvcThread(threading.Thread, Crypt):
                 global_expect = None
             if global_expect != smon.global_expect:
                 self.log.info(
-                    "service %s monitor global expect change: %s => %s",
+                    "%s monitor global expect change: %s => %s",
                     path,
                     smon.global_expect if
                     smon.global_expect else "none",
@@ -691,7 +691,7 @@ class OsvcThread(threading.Thread, Crypt):
                 smon.global_expect_updated = time.time()
                 changed = True
         if reset_retries and "restart" in smon:
-            self.log.info("service %s monitor resources restart count "
+            self.log.info("%s monitor resources restart count "
                           "reset", path)
             del smon["restart"]
             changed = True
@@ -701,7 +701,7 @@ class OsvcThread(threading.Thread, Crypt):
                 stonith = None
             if stonith != smon.stonith:
                 self.log.info(
-                    "service %s monitor stonith change: %s => %s",
+                    "%s monitor stonith change: %s => %s",
                     path,
                     smon.stonith if
                     smon.stonith else "none",
@@ -711,7 +711,7 @@ class OsvcThread(threading.Thread, Crypt):
                 changed = True
         if changed:
             smon_view.set([], smon)
-            wake_monitor(reason="service %s mon change" % path)
+            wake_monitor(reason="%s mon change" % path)
 
     def get_node_monitor(self, nodename=None):
         """
@@ -1036,7 +1036,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def get_service_config(self, path, nodename):
         """
-        Return the specified service status structure on the specified node.
+        Return the specified object status structure on the specified node.
         """
         try:
             return Storage(
@@ -1047,7 +1047,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def get_service_instance(self, path, nodename):
         """
-        Return the specified service status structure on the specified node.
+        Return the specified object status structure on the specified node.
         """
         data = self.daemon_status_data.get(["monitor", "nodes", nodename, "services", "status", path], None)
         if data is None:
@@ -1056,7 +1056,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def get_service_instances(self, path, discard_empty=False):
         """
-        Return the specified service status structures on all nodes.
+        Return the specified object status structures on all nodes.
         """
         instances = {}
         for nodename, instance in self.iter_service_instances(path):
@@ -1082,7 +1082,7 @@ class OsvcThread(threading.Thread, Crypt):
 
     def get_service_agg(self, path):
         """
-        Return the specified service aggregated status structure.
+        Return the specified object aggregated status structure.
         """
         return Storage(self.daemon_status_data.get(["monitor", "services", path], default={}))
 
@@ -1100,15 +1100,15 @@ class OsvcThread(threading.Thread, Crypt):
                              discard_start_failed=True,
                              discard_affinities=True):
         """
-        Return the list of service nodes meeting the following criteria:
-        * we have valid service instance data (not unknown, has avail)
+        Return the list of object nodes meeting the following criteria:
+        * we have valid instance data (not unknown, has avail)
         * the node is not in maintenance, shutting, init or upgrade (default)
         * the node is not frozen (default)
         * the node is not overloaded (default)
-        * the service is not frozen (default)
-        * the service instance is provisioned (default)
-        * the service instance smon status is not "start failed" (default)
-        * the service instance constraints are eval'ed True (default)
+        * the object is not frozen (default)
+        * the instance is provisioned (default)
+        * the instance smon status is not "start failed" (default)
+        * the instance constraints are eval'ed True (default)
         """
         def discard_hard_affinity(nodename):
             if not svc.hard_affinity:
@@ -1225,21 +1225,21 @@ class OsvcThread(threading.Thread, Crypt):
             if not silent:
                 self.duplog("info",
                             "placement constraints prevent us from starting "
-                            "service %(path)s on any node",
+                            "%(path)s on any node",
                             path=svc.path)
             return False
         if Env.nodename not in candidates:
             if not silent:
                 self.duplog("info",
                             "placement constraints prevent us from starting "
-                            "service %(path)s on this node",
+                            "%(path)s on this node",
                             path=svc.path)
             return False
         if len(candidates) == 1:
             if not silent:
                 self.duplog("info",
                             "we have the greatest placement priority for "
-                            "service %(path)s (alone)",
+                            "%(path)s (alone)",
                             path=svc.path)
             return True
 
@@ -1251,7 +1251,7 @@ class OsvcThread(threading.Thread, Crypt):
                 if not silent:
                     self.duplog("info",
                                 "we have the highest '%(placement)s' "
-                                "placement priority for failover service "
+                                "placement priority for failover "
                                 "%(path)s",
                                 placement=svc.placement, path=svc.path)
                 return True
@@ -1260,7 +1260,7 @@ class OsvcThread(threading.Thread, Crypt):
                     self.duplog("info",
                                 "node %(nodename)s is alive and has a higher "
                                 "'%(placement)s' placement priority for "
-                                "failover service %(path)s",
+                                "failover %(path)s",
                                 nodename=ranks[0], placement=svc.placement,
                                 path=svc.path)
                 return False
@@ -1269,7 +1269,7 @@ class OsvcThread(threading.Thread, Crypt):
             if not silent:
                 self.duplog("info",
                             "we have the %(idx)d/%(tgt)d '%(placement)s' "
-                            "placement priority for flex service %(path)s",
+                            "placement priority for flex %(path)s",
                             idx=index, tgt=svc.flex_target,
                             placement=svc.placement, path=svc.path)
             if index <= svc.flex_target:
