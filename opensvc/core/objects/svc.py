@@ -3244,6 +3244,11 @@ class Svc(PgMixin, BaseSvc):
         for resource in self.get_resources():
             if resource.is_disabled():
                 continue
+            try:
+                if resource.confirmation is True:
+                    continue
+            except AttributeError:
+                pass
             sopts = resource.schedule_options()
             if not sopts:
                 continue
