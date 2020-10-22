@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 
 import core.status
 import core.exceptions as ex
@@ -207,20 +208,16 @@ class BaseTask(Resource):
             self.log.info("confirmed by command line option")
             return
 
-        def _confirm(rid):
-            print("This task run requires confirmation.\nPlease make sure you fully "
-                  "understand its role and effects before confirming the run.")
-            return input("Do you really want to run %s (yes/no) > " % rid)
+        print("This task run requires confirmation.\nPlease make sure you fully "
+              "understand its role and effects before confirming the run.")
+        print("Do you really want to run %s (yes/no) > " % self.rid, end="", flush=True)
  
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(_confirm, self.rid)
-            try:
-                buff = future.result(timeout=30)
-            except concurrent.futures.TimeoutError:
-                raise ex.Error("timeout waiting for confirmation")
-            except (EOFError, RuntimeError):
-                raise ex.Error("run aborted (no stdin)")
+        import select
+        inputs, outputs, errors = select.select([sys.stdin], [], [], 30)
+        if inputs:
+            buff = sys.stdin.readline().strip()
+        else:
+            raise ex.Error("timeout waiting for confirmation")
 
         if buff == "yes":
             self.log.info("run confirmed")
