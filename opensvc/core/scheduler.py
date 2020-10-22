@@ -675,8 +675,7 @@ class Schedule(object):
                 return False
             if last is None:
                 return True
-            ds = delay * 60
-            limit = last + datetime.timedelta(seconds=ds)
+            limit = last + datetime.timedelta(seconds=delay)
             return now >= limit
 
 
