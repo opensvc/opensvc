@@ -36,9 +36,10 @@ class ResourceSet(object):
             for resource in resources:
                 self += resource
         try:
-            self.driver_group = self.rid.split(":")[0]
+            self.driver_group, self.subset_name = self.rid.split(":")
         except ValueError:
             self.driver_group = ""
+            self.subset_name = self.rid
 
     def __lt__(self, other):
         return self.rid < other.rid
@@ -389,7 +390,7 @@ class ResourceSet(object):
             "node": Env.nodename,
             "sid": Env.session_uuid,
             "cron": self.svc.options.cron,
-            "subset": self.rid,
+            "subset": self.subset_name,
         }
         return logging.LoggerAdapter(self.logger, extra)
 
