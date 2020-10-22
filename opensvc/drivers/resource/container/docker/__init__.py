@@ -4,7 +4,6 @@ Docker container resource driver module.
 import os
 import re
 import shlex
-import signal
 
 from itertools import chain
 
@@ -580,9 +579,6 @@ class ContainerDocker(BaseContainer):
         if action == "start":
             if self.lib.config_args_position_head:
                 cmd += self.client_config()
-            if not self.detach and self.start_timeout is not None:
-                signal.signal(signal.SIGALRM, alarm_handler)
-                signal.alarm(self.start_timeout)
             if self.rm:
                 self.container_rm()
             if self.container_id is None:
@@ -621,16 +617,24 @@ class ContainerDocker(BaseContainer):
         env.update(os.environ)
         env.update(sec_env)
         env.update(cfg_env)
-        try:
-            ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
-        except KeyboardInterrupt:
-            self.log.error("%s timeout exceeded", print_duration(self.start_timeout))
-            if action == "start":
-                cmd = self.lib.docker_cmd + ["kill", self.container_name]
-                self.vcall(cmd, warn_to_info=True, env=env)
-            ret = 1
-        if not self.detach:
-            signal.alarm(0)
+
+        if action == "start":
+            timeout = self.start_timeout or None
+        else:
+            timeout = None
+
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
+            try:
+                ret = future.result(timeout=timeout)[0]
+            except concurrent.futures.TimeoutError:
+                self.log.error("%s timeout exceeded", print_duration(timeout))
+                if action == "start":
+                    cmd = self.lib.docker_cmd + ["kill", self.container_name]
+                    self.vcall(cmd, warn_to_info=True, env=env)
+                ret = 1
+
         if ret != 0:
             raise ex.Error
 
