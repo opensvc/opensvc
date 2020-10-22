@@ -1872,13 +1872,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The method the per-service subprocesses execute
         """
         try:
-            ret = svc.action(action, options)
-        except Exception:
-            self.close()
-            sys.exit(1)
-        finally:
-            self.close()
-        sys.exit(ret)
+            return svc.action(action, options)
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            return 1
+        #finally:
+        #    self.close()
 
     @lazy
     def diskinfo(self):
@@ -2328,6 +2328,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Returns True if the action can be run in a subprocess per service
         """
+        try:
+            import concurrent.futures
+        except ImportError:
+            return False
         if Env.sysname == "Windows":
             return False
         if len(svcs) < 2:
@@ -2394,8 +2398,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
 
-        if self.can_parallel(action, svcs, options):
-            from multiprocessing import Process
+        parallel = self.can_parallel(action, svcs, options)
+        if parallel:
             data.procs = {}
             data.svcs = {}
 
@@ -2406,25 +2410,22 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = convert_duration(options.time)
             options.wait = False
 
-        def running():
-            count = 0
-            for proc in data.procs.values():
-                if proc.is_alive():
-                    count += 1
-            return count
-
-        for svc in svcs:
-            if self.can_parallel(action, svcs, options):
-                while running() >= self.max_parallel:
-                    time.sleep(1)
-                data.svcs[svc.path] = svc
-                data.procs[svc.path] = Process(
-                    target=self.service_action_worker,
-                    name='worker_'+svc.path,
-                    args=[svc, action, options],
-                )
-                data.procs[svc.path].start()
-            else:
+        if parallel:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for svc in svcs:
+                    data.svcs[svc.path] = svc
+                    data.procs[executor.submit(self.service_action_worker, svc, action, options)] = svc.path
+                for future in concurrent.futures.as_completed(data.procs):
+                    path = data.procs[future]
+                    ret = future.result()
+                    errs[path] = ret
+                    if ret > 0:
+                        # r is negative when data.procs[path] is killed by signal.
+                        # in this case, we don't want to decrement the err counter.
+                        err += ret
+        else:
+            for svc in svcs:
                 try:
                     ret = svc.action(action, options)
                     if need_aggregate:
@@ -2458,16 +2459,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 except ex.Signal:
                     break
 
-        if self.can_parallel(action, svcs, options):
-            for path in data.procs:
-                data.procs[path].join()
-                ret = data.procs[path].exitcode
-                errs[path] = ret
-                if ret > 0:
-                    # r is negative when data.procs[path] is killed by signal.
-                    # in this case, we don't want to decrement the err counter.
-                    err += ret
         if timeout:
+            # async actions wait
             for svc in svcs:
                 if errs.get(svc.path, -1) != 0:
                     continue
