@@ -52,6 +52,7 @@ from utilities.drivers import driver_import
 from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import print_duration
 from utilities.string import bencode, bdecode
+from utilities.uri import Uri
 
 if six.PY2:
     class _ConnectionResetError(Exception):
@@ -184,7 +185,8 @@ class Listener(shared.OsvcThread):
             return crl
         crl_path = os.path.join(Env.paths.certs, "certificate_revocation_list")
         try:
-            shared.NODE.urlretrieve(crl, crl_path)
+            with Uri(crl).fetch() as fpath:
+                shutil.copy(fpath, crl_path)
             # TODO: extract expire from crl
             self.crl_expire = time.time() + 60*60*24
             return crl_path
