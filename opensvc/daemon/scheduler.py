@@ -5,13 +5,16 @@ import logging
 import os
 import sys
 import time
+import uuid
 
 from multiprocessing import Process
 
 import daemon.shared as shared
 import core.exceptions as ex
 from env import Env
+from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
+from utilities.storage import Storage
 
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2
@@ -32,22 +35,32 @@ NMON_STATUS_OFF = [
     "maintenance",
 ]
 
-def wrapper(selector, cmd, now):
-    import commands.mgr
-    import commands.node
+def wrapper(path, action, options, now, session_id, cmd):
     os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
     os.environ["OSVC_SCHED_TIME"] = str(now)
-    if selector is None:
-        commands.node.main(cmd)
+    os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
+    sys.argv = cmd
+    Env.session_uuid = session_id
+    if path is None:
+        o = shared.NODE
     else:
-        selector = ",".join(selector)
-        commands.mgr.Mgr(selector=selector)(cmd)
+        o = shared.SERVICES.get(path)
+        if not o:
+            return
+    try:
+        # py3 fork only
+        o.logger.handlers.clear()
+        o.unset_lazy("logger")
+    except Exception:
+        pass
+    o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
     delayed = {}
     blacklist = {}
     lasts = {}
+    session_ids = {}
     running = set()
     dropped_via_notify = set()
     certificates = {}
@@ -195,14 +208,32 @@ class Scheduler(shared.OsvcThread):
         not_dropped_yet = sigs - self.dropped_via_notify
         self.running -= not_dropped_yet
         self.dropped_via_notify -= sigs
+        self.purge_cache()
 
-    def exec_action(self, sigs, selector, cmd, now):
+    def purge_cache(self):
+        purged = []
+        for session_id, sigset in self.session_ids.items():
+            if not sigset & self.running:
+                purge_cache_session(session_id)
+                purged.append(session_id)
+        for session_id in purged:
+            del self.session_ids[session_id]
+
+    def exec_action(self, sigs, path, action, rids, queued, now, session_id):
+        options = self.format_options(rids)
+        cmd = self.format_log_cmd(action, path, rids)
+        self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = Process(group=None, target=wrapper, args=(selector, cmd, now,))
+            proc = Process(group=None, target=wrapper, args=(path, action, options, now, session_id, cmd, ))
             proc.start()
         except KeyboardInterrupt:
             return
-        self.running |= set(sigs)
+        sigset = set(sigs)
+        self.running |= sigset
+        try:
+            self.session_ids[session_id] |= sigset
+        except KeyError:
+            self.session_ids[session_id] = sigset
         for sig in sigs:
             self.lasts[sig] = now
         self.push_proc(proc=proc,
@@ -212,23 +243,18 @@ class Scheduler(shared.OsvcThread):
                        on_error="drop_running",
                        on_error_args=[sigs])
 
-    def format_cmd(self, action, path=None, rids=None):
-        if path is None:
-            cmd = [action]
-        elif isinstance(path, list):
-            cmd = [action, "--waitlock=1"]
-        else:
-            cmd = [action, "--waitlock=1"]
+    def format_options(self, rids=None):
+        options = Storage({
+            "waitlock": 1,
+            "cron": True,
+        })
         if rids:
-            cmd += ["--rid", ",".join(sorted(list(rids)))]
-        cmd.append("--cron")
-        return cmd
+            options.rid = ",".join(sorted(list(rids)))
+        return options
 
     def format_log_cmd(self, action, path=None, rids=None):
         if path is None:
             cmd = ["om", "node", action]
-        elif isinstance(path, list):
-            cmd = ["om", "svc", "-s", ",".join(path), action, "--waitlock=1"]
         else:
             cmd = ["om", "svc", "-s", path, action, "--waitlock=1"]
         if rids:
@@ -279,7 +305,7 @@ class Scheduler(shared.OsvcThread):
         <n> tasks, where <n> is the number of open slots in the running
         queue.
         """
-        todo = {}
+        todo = []
         merge = {}
         open_slots = max(self.max_tasks() - len(self.procs), 0)
         if not open_slots:
@@ -302,25 +328,16 @@ class Scheduler(shared.OsvcThread):
             if None in data["rids"]:
                 data["rids"] = None
                 sigs = [(action, path, None)]
-                merge_key = (path is None, action, None)
             else:
                 sigs = [(action, path, rid) for rid in data["rids"]]
-                merge_key = (path is None, action, tuple(sorted(list(data["rids"]))))
-            if merge_key not in todo:
-                todo[merge_key] = {
-                    "action": action,
-                    "rids": data["rids"],
-                    "path": [path] if path else None,
-                    "sigs": sigs,
-                    "queued": data["task"]["queued"],
-                }
-            else:
-                todo[merge_key]["sigs"] += sigs
-                if path:
-                    todo[merge_key]["path"].append(path)
-                if data["task"]["queued"] < todo[merge_key]["queued"]:
-                    todo[merge_key]["queued"] = data["task"]["queued"]
-        return sorted(todo.values(), key=lambda task: task["queued"])[:open_slots]
+            todo.append({
+                "action": action,
+                "rids": data["rids"],
+                "path": path,
+                "sigs": sigs,
+                "queued": data["task"]["queued"],
+            })
+        return sorted(todo, key=lambda task: task["queued"])[:open_slots]
 
     def janitor_blacklist(self):
         csum = self.csum()
@@ -377,11 +394,9 @@ class Scheduler(shared.OsvcThread):
         delayed hash.
         """
         dequeued = []
+        session_id = str(uuid.uuid4())
         for task in self.get_todo(now):
-            cmd = self.format_cmd(task["action"], task["path"], task["rids"])
-            log_cmd = self.format_log_cmd(task["action"], task["path"], task["rids"])
-            self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(now - task["queued"]))
-            self.exec_action(task["sigs"], task["path"], cmd, now)
+            self.exec_action(task["sigs"], task["path"], task["action"], task["rids"], task["queued"], now, session_id)
             dequeued += task["sigs"]
         self.delete_queued(dequeued)
 

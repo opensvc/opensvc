@@ -2390,8 +2390,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         need_aggregate = self.action_need_aggregate(action, options)
         begin = time.time()
 
-        # generic cache janitoring
-        purge_cache_expired()
+        if not options.cron:
+            # File cache janitoring.
+            # Skip for tasks: the scheduler will purge the session cache itself, without dirlisting.
+            purge_cache_expired()
         self.log.debug("session uuid: %s", Env.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(svcs) > 1:

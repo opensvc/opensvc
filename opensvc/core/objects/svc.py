@@ -1338,7 +1338,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def log_action_header(self):
         argv = [] + sys.argv
         try:
-            if argv[0].endswith("__main__.py"):
+            if argv[0].endswith("__main__.py") or argv[0] == "om":
                 if len(argv) > 3 and argv[2] in ("-s", "--service"):
                     _begin = 4
                 elif len(argv) > 2 and argv[1] == self.path:
