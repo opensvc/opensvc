@@ -138,9 +138,8 @@ class JournaledData(object):
     #@debug
     def merge(self, path=None, value=None):
         with self.lock:
-            current = self.get_copy(path)
-            current.update(value)
-            self._set_lk(path, value=current)
+            for k, v in value.items():
+                self._set_lk(path + [k], value=v)
 
     def setnx(self, path=None, value=None):
         with self.lock:
