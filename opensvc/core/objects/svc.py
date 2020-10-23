@@ -858,8 +858,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Install signal handlers.
         """
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        try:
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+        except ValueError:
+            # signal only works in main thread
+            pass
 
     def systemd_join_agent_service(self):
         from utilities.systemd import systemd_system, systemd_join
