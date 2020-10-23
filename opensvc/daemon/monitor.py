@@ -3229,9 +3229,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         paths = self.node_data.keys(["services", "config"])
 
-        # purge data cached by the @cache decorator
-        purge_cache()
-
         # this data ends up in ["monitor", "nodes", Env.nodename, "services", "status"]
         data = {}
 
