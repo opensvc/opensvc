@@ -3530,15 +3530,18 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         Rescan services config and status.
         """
-        self.node_data.set(["stats"], shared.NODE.stats())
-        self.node_data.set(["frozen"], self.node_frozen)
-        self.node_data.set(["env"], shared.NODE.env)
-        self.node_data.set(["labels"], shared.NODE.labels)
-        self.node_data.set(["targets"], shared.NODE.targets)
-        self.node_data.set(["locks"], shared.LOCKS)
-        self.node_data.set(["speaker"], self.speaker() and "collector" in shared.THREADS)
-        self.node_data.set(["min_avail_mem"], shared.NODE.min_avail_mem)
-        self.node_data.set(["min_avail_swap"], shared.NODE.min_avail_swap)
+        data = {
+            "stats": shared.NODE.stats(),
+            "frozen": self.node_frozen,
+            "env": shared.NODE.env,
+            "labels": shared.NODE.labels,
+            "targets": shared.NODE.targets,
+            "locks": shared.LOCKS,
+            "speaker": self.speaker() and "collector" in shared.THREADS,
+            "min_avail_mem": shared.NODE.min_avail_mem,
+            "min_avail_swap": shared.NODE.min_avail_swap,
+        }
+        self.node_data.merge([], data)
         self.update_services_config()
         self.update_services_status()
 
