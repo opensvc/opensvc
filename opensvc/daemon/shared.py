@@ -1422,7 +1422,7 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
             new_data[node] = ndata
         if new_data == data:
-            return
+            return False
         try:
             tmpf = tempfile.NamedTemporaryFile(delete=False, dir=Env.paths.pathtmp)
             fpath = tmpf.name
@@ -1433,6 +1433,7 @@ class OsvcThread(threading.Thread, Crypt):
         except Exception as exc:
             self.alert("warning", "failed to refresh %s: %s", Env.paths.nodes_info, exc)
         self.log.info("%s updated", Env.paths.nodes_info)
+        return True
 
     def on_nodes_info_change(self):
         """
@@ -1448,7 +1449,9 @@ class OsvcThread(threading.Thread, Crypt):
         flex_target={#nodes}
         """
         NODE.unset_lazy("nodes_info")
-        self.dump_nodes_info()
+        changed = self.dump_nodes_info()
+        if not changed:
+            return
         for path in [p for p in SERVICES]:
             try:
                 svc = SERVICES[path]
