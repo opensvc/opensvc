@@ -45,8 +45,8 @@ def wrapper(path, action, options, now, session_id, cmd):
         o = shared.NODE
     else:
         o = shared.SERVICES.get(path)
-        if not o:
-            return
+    if not o:
+        return
     try:
         # py3 fork only
         o.logger.handlers.clear()
