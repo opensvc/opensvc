@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 from itertools import islice
 
@@ -230,20 +231,34 @@ class Node(BaseNode):
             return
         chain = "osvc-" + name
         comment = "name: %s" % name
-        self.network_ipt_add_chain(chain, nat=True)
-        for net in nets.values():
-            if net["config"]["network"] == "undef":
-                continue
-            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="RETURN", comment=comment, where="head")
-        self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment, where="tail")
         src = data.get("cni", {}).get("data", {}).get("ipam", {}).get("subnet")
         if not src:
             src = data.get("cni", {}).get("data", {}).get("network")
-        self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment)
-        self.network_ipt_add_rule(chain="FORWARD", nat=False, indev="obr_"+name, act="ACCEPT", comment=comment)
-        self.network_ipt_add_rule(chain="FORWARD", nat=False, outdev="obr_"+name, act="ACCEPT", comment=comment)
+        if src and ":" in src:
+            af = socket.AF_INET6
+        else:
+            af = socket.AF_INET
 
-    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail", indev=None, outdev=None):
+        self.network_ipt_add_chain(chain, nat=True, af=af)
+
+        for net in nets.values():
+            if net["config"]["network"] == "undef":
+                continue
+            dst = net["config"]["network"]
+            _af = socket.AF_INET6 if ":" in dst else socket.AF_INET
+            if af != _af:
+                continue
+            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="RETURN", comment=comment, where="head", af=af)
+
+        if af == socket.AF_INET6:
+            self.network_ipt_add_rule(chain=chain, nat=True, dst="::/0", act="MASQUERADE", comment=comment, where="tail", af=af)
+        else:
+            self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment, where="tail", af=af)
+        self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment, af=af)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, indev="obr_"+name, act="ACCEPT", comment=comment, af=af)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, outdev="obr_"+name, act="ACCEPT", comment=comment, af=af)
+
+    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail", indev=None, outdev=None, af=socket.AF_INET):
         if nat:
             nat = ["-t", "nat"]
         else:
@@ -252,7 +267,10 @@ class Node(BaseNode):
             where = "-I"
         else:
             where = "-A"
-        cmd1 = ["iptables"] + nat
+        if af == socket.AF_INET6:
+            cmd1 = ["ip6tables"] + nat
+        else:
+            cmd1 = ["iptables"] + nat
         cmd2 = [chain]
         if indev:
             cmd2 += ["-i", indev]
@@ -281,12 +299,14 @@ class Node(BaseNode):
         if ret != 0 and err:
             self.log.error(err)
 
-    def network_ipt_add_chain(self, chain, nat=False):
-        if nat:
-            nat = ["-t", "nat"]
+    def network_ipt_add_chain(self, chain, nat=False, af=socket.AF_INET):
+        if af == socket.AF_INET6:
+            cmd = ["ip6tables"]
         else:
-            nat = []
-        cmd = ["iptables"] + nat + ["-N", chain]
+            cmd = ["iptables"]
+        if nat:
+            cmd += ["-t", "nat"]
+        cmd += ["-N", chain]
         out, err, ret = justcall(cmd)
         if "already exist" in err:
             return
