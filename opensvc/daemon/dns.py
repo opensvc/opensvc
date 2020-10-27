@@ -94,7 +94,7 @@ class Dns(shared.OsvcThread):
 
     def wait_monitor(self):
         while True:
-            nmon_status = self.node_data.get(["monitor", "status"])
+            nmon_status = self.node_data.get(["monitor", "status"], default="init")
             if nmon_status != "init":
                 break
             time.sleep(0.2)
