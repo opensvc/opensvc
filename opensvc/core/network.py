@@ -222,6 +222,21 @@ class NetworksMixin(object):
         except:
             return
 
+    def find_node_ip(self, nodename, af=socket.AF_INET):
+        try:
+            data = socket.getaddrinfo(nodename, None)
+        except socket.gaierror:
+            raise ex.Error("node %s is not resolvable", nodename)
+        for d in data:
+            _af, _, _, _, addr = d
+            if _af != af:
+                continue
+            addr = addr[0]
+            if addr in ("127.0.0.1", "127.0.1.1", "::1") or addr.startswith("fe80:"):
+                continue
+            return addr
+        raise ex.Error("node %s has no %s address" % (nodename, af))
+
     def routes(self, name, config=None):
         routes = []
         if not config:
@@ -229,21 +244,22 @@ class NetworksMixin(object):
         ntype = config["type"]
         if ntype != "routed_bridge":
             return routes
+        network = config.get("network")
+        if not network:
+            return []
+        if ":" in network:
+            af = socket.AF_INET6
+        else:
+            af = socket.AF_INET
         try:
             local_ip = self.oget("network#"+name, "addr")
         except ValueError:
             local_ip = None
         if local_ip is None:
             try:
-                for result in socket.getaddrinfo(Env.nodename, None):
-                    addr = result[4][0]
-                    if ":" in addr or addr in ("127.0.0.1", "127.0.1.1"):
-                        # discard ipv6 and loopback address
-                        continue
-                    local_ip = addr
-                    break
-            except socket.gaierror:
-                self.log.warning("node %s is not resolvable", Env.nodename)
+                local_ip = self.find_node_ip(Env.nodename, af=af)
+            except ex.Error as exc:
+                self.log.warning("%s", exc)
                 return routes
         for nodename in self.cluster_nodes:
             for table in config["tables"]:
@@ -257,9 +273,9 @@ class NetworksMixin(object):
                     })
                     continue
                 try:
-                    gw = socket.getaddrinfo(nodename, None)[0][4][0]
-                except socket.gaierror:
-                    self.log.warning("node %s is not resolvable", nodename)
+                    gw = self.find_node_ip(nodename, af=af)
+                except ex.Error as exc:
+                    self.log.warning("%s", exc)
                     continue
                 routes.append({
                     "local_ip": local_ip,
