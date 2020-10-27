@@ -15,15 +15,14 @@ import time
 import foreign.six as six
 import daemon.shared as shared
 from env import Env
+from utilities.net.ipaddress import ip_address
 from utilities.storage import Storage
 from utilities.naming import split_path
 from utilities.string import bdecode
 from utilities.lazy import lazy
 
 PTR_SUFFIX = ".in-addr.arpa."
-PTR_SUFFIX_LEN = 14
 PTR6_SUFFIX = ".ip6.arpa."
-PTR6_SUFFIX_LEN = 10
 
 if six.PY2:
     MAKEFILE_KWARGS = {"bufsize": 0}
@@ -261,12 +260,16 @@ class Dns(shared.OsvcThread):
             return self.soa_record(parameters)
         if qtype == "A":
             return self.a_record(parameters)
+        if qtype == "AAAA":
+            return self.aaaa_record(parameters)
         if qtype == "SRV":
             return self.srv_record(parameters)
         if qtype == "TXT":
             return self.txt_record(parameters)
         if qtype == "PTR":
             return self.ptr_record(parameters)
+        if qtype == "PTR6":
+            return self.ptr6_record(parameters)
         if qtype == "CNAME":
             return self.cname_record(parameters)
         if qtype == "NS":
@@ -274,10 +277,13 @@ class Dns(shared.OsvcThread):
         if qtype == "ANY":
             if PTR_SUFFIX in qname:
                 return self.ptr_record(parameters)
+            if PTR6_SUFFIX in qname:
+                return self.ptr6_record(parameters)
             if parameters["qname"].startswith("*."):
                 return []
             return self.ns_record(parameters) + \
                    self.a_record(parameters) + \
+                   self.aaaa_record(parameters) + \
                    self.srv_record(parameters) + \
                    self.txt_record(parameters) + \
                    self.cname_record(parameters)
@@ -320,8 +326,9 @@ class Dns(shared.OsvcThread):
             if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
+                qtype = "AAAA" if ":" in content else "A"
                 data.append({
-                    "qtype": "A",
+                    "qtype": qtype,
                     "qname": qname,
                     "content": content,
                     "ttl": 60
@@ -340,6 +347,7 @@ class Dns(shared.OsvcThread):
             if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
+                qtype = "PTR6" if ":" in qname else "PTR"
                 data.append({
                     "qtype": "PTR",
                     "qname": qname,
@@ -434,7 +442,16 @@ class Dns(shared.OsvcThread):
             "qname": qname,
             "content": name,
             "ttl": 60
-        } for name in self.ptr_records().get(qname, [])]
+        } for name in self.ptr_records().get(qname, []) if "." in name]
+
+    def ptr6_record(self, parameters):
+        qname = parameters.get("qname").lower()
+        return [{
+            "qtype": "PTR6",
+            "qname": qname,
+            "content": name,
+            "ttl": 60
+        } for name in self.ptr_records().get(qname, []) if ":" in name]
 
     def a_record(self, parameters):
         qname = parameters.get("qname").lower()
@@ -445,7 +462,18 @@ class Dns(shared.OsvcThread):
             "qname": qname,
             "content": addr,
             "ttl": 60
-        } for addr in self.a_records().get(qname, [])]
+        } for addr in self.a_records().get(qname, []) if "." in addr]
+
+    def aaaa_record(self, parameters):
+        qname = parameters.get("qname").lower()
+        if not qname.endswith(self.suffix):
+            return []
+        return [{
+            "qtype": "AAAA",
+            "qname": qname,
+            "content": addr,
+            "ttl": 60
+        } for addr in self.a_records().get(qname, []) if ":" in addr]
 
     def ptr_records(self):
         data = self.get_cache("ptr")
@@ -463,10 +491,7 @@ class Dns(shared.OsvcThread):
                 addr = resource.get("info", {}).get("ipaddr")
                 if addr is None:
                     continue
-                qname = "%s%s" % (
-                    ".".join(reversed(addr.split("."))),
-                    PTR_SUFFIX,
-                )
+                qname = ip_address(addr).reverse_pointer
                 if qname not in names:
                     names[qname] = []
                 try:
