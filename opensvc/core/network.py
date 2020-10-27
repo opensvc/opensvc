@@ -391,6 +391,10 @@ class NetworksMixin(object):
         cf = os.path.join(self.cni_config, name+".conf")
         if os.path.exists(cf):
             return
+        if ":" in network:
+            default = "::/0"
+        else:
+            default = "0.0.0.0/0"
         self.log.info("create %s", cf)
         conf = {
             "cniVersion": "0.3.0",
@@ -403,7 +407,7 @@ class NetworksMixin(object):
                 "type": "host-local",
                 "subnet": subnet,
                 "routes": [
-                    { "dst": "0.0.0.0/0" },
+                    { "dst": default },
                     { "dst": network, "gw": brip },
                 ]
             }
