@@ -664,7 +664,7 @@ class Crypt(object):
             port = Env.listener_port
             host = server[6:]
         elif "://" in server:
-            scheme = server.split("://", 1)[0]
+            scheme, host = server.split("://", 1)
             raise ex.Error("unknown scheme '%s'. use 'raw' or 'https'" % scheme)
 
         try:
