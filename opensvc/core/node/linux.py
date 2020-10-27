@@ -133,7 +133,35 @@ class Node(BaseNode):
             for line in out.splitlines():
                 self.log.info(line)
 
-    def mac_from_ip(self, ip):
+    def mac_from_ip6(self, name):
+        """
+        When the device with the lowest mac is removed from the bridge or when
+        a new device with the lowest mac is added to the bridge, all containers
+        can experience tcp hangs while the arp table resynchronizes.
+
+        Setting a mac address to the bridge explicitely avoids these mac address
+        changes.
+
+        Forge the mac address using a 6a:58 prefix followed by the bridge original
+        random address last 4 bytes.
+        """
+        cmd = ["ip", "link", "show", "dev", name]
+        out, _, _ = justcall(cmd)
+        mac = out.strip().split("\n")[-1].split()[1]
+        return "6a:58" + mac[5:]
+
+    def mac_from_ip4(self, ip):
+        """
+        When the device with the lowest mac is removed from the bridge or when
+        a new device with the lowest mac is added to the bridge, all containers
+        can experience tcp hangs while the arp table resynchronizes.
+
+        Setting a mac address to the bridge explicitely avoids these mac address
+        changes.
+
+        Forge the mac address using a 0a:58 prefix followed by the bridge ipv4
+        address converted to hexa (same algorithm used in k8s).
+        """
         mac = "0a:58"
         for i in ip.split("/", 1)[0].split("."):
             mac += ":%.2x" % int(i)
@@ -152,9 +180,12 @@ class Node(BaseNode):
             self.vcall(cmd)
         cmd = ["ip", "link", "show", "dev", name]
         out, _, _ = justcall(cmd)
-        mac = self.mac_from_ip(ip)
+        if ":" in ip:
+            mac = self.mac_from_ip6(name)
+        else:
+            mac = self.mac_from_ip4(ip)
         if mac not in out:
-            cmd = ["ip", "link", "set", "dev", name, "address", self.mac_from_ip(ip)]
+            cmd = ["ip", "link", "set", "dev", name, "address", mac]
             self.vcall(cmd)
         if "DOWN" in out:
             cmd = ["ip", "link", "set", "dev", name, "up"]
