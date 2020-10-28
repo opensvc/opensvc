@@ -41,18 +41,14 @@ def wrapper(path, action, options, now, session_id, cmd):
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     sys.argv = cmd
     Env.session_uuid = session_id
+    from core.node import Node
+    from utilities.naming import split_path, factory
+    node = Node()
     if path is None:
-        o = shared.NODE
+        o = node
     else:
-        o = shared.SERVICES.get(path)
-    if not o:
-        return
-    try:
-        # py3 fork only
-        o.logger.handlers.clear()
-        o.unset_lazy("logger")
-    except Exception:
-        pass
+        name, namespace, kind = split_path(path)
+        o = factory(kind)(name, namespace, node=node)
     o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
