@@ -653,6 +653,7 @@ class Crypt(object):
         data.tls = True
         data.encrypted = False
         data.server = server
+        data.af = socket.AF_INET
 
         if server.startswith("https://"):
             host = server[8:]
@@ -667,14 +668,27 @@ class Crypt(object):
             scheme, host = server.split("://", 1)
             raise ex.Error("unknown scheme '%s'. use 'raw' or 'https'" % scheme)
 
-        try:
-            addr, port = host.split(":", 1)
-            port = int(port)
-        except:
-            addr = host
-        data.af = socket.AF_INET
-        data.to = (addr, port)
-        data.to_s = "%s:%d" % data.to
+        if not host:
+            addr = "localhost"
+            data.to_s = "%s:%d" % (addr, port)
+            data.to = (addr, port)
+        elif host[0] == "[":
+            try:
+                # ipv6 notation
+                addr, port = host[1:].split("]:", 1)
+                port = int(port)
+            except:
+                addr = host[1:-1]
+            data.to_s = "[%s]:%d" % (addr, port)
+            data.to = (addr, port)
+        else:
+            try:
+                addr, port = host.split(":", 1)
+                port = int(port)
+            except:
+                addr = host
+            data.to_s = "%s:%d" % (addr, port)
+            data.to = (addr, port)
         return data
 
     def socket_parms_inet_raw(self, server):
@@ -697,7 +711,9 @@ class Crypt(object):
         if server == Env.nodename and os.name != "nt":
             # Local comms
             return self.socket_parms_ux(server)
-        if server.startswith("/"):
+        if server == Env.paths.lsnruxsock:
+            return self.socket_parms_ux_raw(server)
+        if server == Env.paths.lsnruxh2sock:
             return self.socket_parms_ux_h2(server)
         if ":" in server:
             # Explicit server uri (ex: --server https://1.2.3.4:1215)
@@ -836,9 +852,12 @@ class Crypt(object):
                     sp = self.socket_parms(server)
                     secret = self.get_secret(sp, secret)
                     cluster_name = self.get_cluster_name(sp, cluster_name)
-                    sock = socket.socket(sp.af, socket.SOCK_STREAM)
-                    sock.settimeout(SOCK_TMO_REQUEST)
-                    sock.connect(sp.to)
+                    if sp.af == socket.AF_UNIX:
+                        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        sock.settimeout(SOCK_TMO_REQUEST)
+                        sock.connect(sp.to)
+                    else:
+                        sock = socket.create_connection(sp.to, SOCK_TMO_REQUEST)
                     break
                 except socket.timeout:
                     elapsed += SOCK_TMO_REQUEST + PAUSE
@@ -993,9 +1012,12 @@ class Crypt(object):
         data["method"] = "GET"
         sp = self.socket_parms(server)
         try:
-            sock = socket.socket(sp.af, socket.SOCK_STREAM)
-            sock.settimeout(SOCK_TMO_STREAM)
-            sock.connect(sp.to)
+            if sp.af == socket.AF_UNIX:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.settimeout(SOCK_TMO_STREAM)
+                sock.connect(sp.to)
+            else:
+                sock = socket.create_connection(sp.to, SOCK_TMO_STREAM)
             if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
