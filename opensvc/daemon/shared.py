@@ -547,12 +547,12 @@ class OsvcThread(threading.Thread, Crypt):
     def patch_has_nodes_info_change(patch):
         for _patch in patch:
             try:
-                if _patch[0][0] == "labels":
+                if _patch[0][3] == "labels":
                     return True
             except KeyError:
                 continue
             try:
-                if _patch[0][0] == "targets":
+                if _patch[0][3] == "targets":
                     return True
             except KeyError:
                 continue

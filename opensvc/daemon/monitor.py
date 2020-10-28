@@ -4104,17 +4104,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
                                    nodename, shared.REMOTE_GEN[nodename],
                                    shared.LOCAL_GEN[nodename])
-                    if self.patch_has_nodes_info_change(deltas[str(gen)]):
-                        nodes_info_change = True
+                    if not nodes_info_change:
+                        nodes_info_change |= self.patch_has_nodes_info_change(deltas[str(gen)])
                     change = True
                 except Exception as exc:
                     self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
                                      "ask for a full: %s", nodename, gen, deltas[str(gen)], exc)
                     self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
                     break
-                if nodes_info_change:
-                    self.on_nodes_info_change()
-                return change
+            if nodes_info_change:
+                self.on_nodes_info_change()
+            return change
         elif kind == "ping":
             self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
             self.nodes_data.set([nodename, "monitor"], data["monitor"])
