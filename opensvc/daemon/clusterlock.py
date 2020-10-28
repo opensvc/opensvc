@@ -63,7 +63,7 @@ class LockMixin(object):
     def lock_accepted(self, name, lock_id, thr=None):
         for nodename in thr.list_nodes():
             try:
-                lock = self.nodes_data.get([nodename, "locks", name])
+                lock = thr.nodes_data.get([nodename, "locks", name])
             except KeyError:
                 return False
             if lock.get("id") != lock_id:
@@ -76,7 +76,7 @@ class LockMixin(object):
         """
         for nodename in thr.list_nodes():
             try:
-                lock = self.nodes_data.get([nodename, "locks", name])
+                lock = thr.nodes_data.get([nodename, "locks", name])
             except KeyError:
                 continue
             if lock.get("id") == lock_id:
