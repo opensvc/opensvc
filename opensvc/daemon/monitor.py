@@ -3102,7 +3102,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             try:
                 csum = self.get_service_config(path, peer).csum
-            except (TypeError, KeyError):
+            except (TypeError, KeyError, AttributeError):
                 #self.log.debug("service %s peer %s has no config cksum yet", path, peer)
                 return False
             except Exception as exc:
