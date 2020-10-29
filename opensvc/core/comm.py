@@ -514,7 +514,7 @@ class Crypt(object):
         node = self.get_node()
         addr = node.oget("listener", "tls_addr", impersonate=nodename)
         port = node.oget("listener", "tls_port", impersonate=nodename)
-        if nodename != Env.nodename and addr == "0.0.0.0":
+        if nodename != Env.nodename and addr in ("0.0.0.0", "::"):
             addr = nodename
             port = 1214
         return addr, port
