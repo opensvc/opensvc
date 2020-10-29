@@ -91,6 +91,8 @@ class JournaledData(object):
         self.coalesce = []
         if journal_head is not None:
             self.journal_head_length = len(self.journal_head)
+        #import utilities.dbglock
+        #self.lock = utilities.dbglock.Lock()
         self.lock = threading.RLock()
 
     def view(self, path=None):
@@ -320,7 +322,7 @@ class JournaledData(object):
         Return a deep copied image of changes and reset the change log
         """
         with self.lock:
-            diff = self.dump_changes()
+            diff = [] + self.diff
             self.diff = []
         return diff
 
