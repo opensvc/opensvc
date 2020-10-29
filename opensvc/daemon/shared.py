@@ -42,37 +42,9 @@ class OsvcJournaledData(JournaledData):
         journal_condition=lambda: bool(LOCAL_GEN),
     )
 
-class DebugRLock(object):
-    def __init__(self):
-        self._lock = threading.RLock()
-        self.t = 0
-        self.name = ""
 
-    def acquire(self, *args, **kwargs):
-        from traceback import format_stack
-        print("=== %s acquire\n%s" % (self.name, "".join(format_stack()[2:-1])))
-        self._lock.acquire(*args, **kwargs)
-        print("=== %s acquired\n%s" % (self.name, "".join(format_stack()[2:-1])))
-
-    def release(self, *args, **kwargs):
-        from traceback import format_stack
-        print("=== %s release\n%s" % (self.name, "".join(format_stack()[2:-1])))
-        self._lock.release()
-
-    def __enter__(self):
-        self.t = time.time()
-        self._lock.acquire()
-
-    def __exit__(self, type, value, traceback):
-        self._lock.release()
-        d = time.time() - self.t
-        if d < 1:
-            return
-        from traceback import format_stack
-        print("=== %s held %.2fs\n%s" % (self.name, d, "".join(format_stack()[2:-1])))
-
-
-# RLock = DebugRLock
+# import utilities.dbglock
+# RLock = utilities.dbglock.RLock
 RLock = threading.RLock
 
 # a global to store the Daemon() instance
