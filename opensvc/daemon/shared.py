@@ -497,7 +497,7 @@ class OsvcThread(threading.Thread, Crypt):
         data = self.node_data.get(["services", "status"])
         for path, sdata in data.items():
             status = sdata.get("monitor", {}).get("status") 
-            if status not in (None, "idle") and "failed" not in data.status:
+            if status not in (None, "idle") and "failed" not in status:
                 return True
         return False
             
