@@ -45,10 +45,12 @@ class LockMixin(object):
         if timeout is None:
             timeout = 5
         deadline = time.time() + timeout
-        with shared.LOCKS_LOCK:
-            if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
-                return
+        if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
+            return
+        try:
             del shared.LOCKS[name]
+        except KeyError:
+            pass
         shared.wake_monitor(reason="unlock", immediate=True)
         if not silent:
             thr.log.info("released locally %s", name)
@@ -84,15 +86,14 @@ class LockMixin(object):
         return True
 
     def _lock_acquire(self, nodename, name):
-        with shared.LOCKS_LOCK:
-            if name in shared.LOCKS:
-                return
-            lock_id = str(uuid.uuid4())
-            shared.LOCKS[name] = {
-                "requested": time.time(),
-                "requester": nodename,
-                "id": lock_id,
-            }
+        if name in shared.LOCKS:
+            return
+        lock_id = str(uuid.uuid4())
+        shared.LOCKS[name] = {
+            "requested": time.time(),
+            "requester": nodename,
+            "id": lock_id,
+        }
         shared.wake_monitor(reason="lock", immediate=True)
         return lock_id
 

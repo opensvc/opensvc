@@ -3634,15 +3634,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.merge_hb_data_monitor()
 
     def merge_hb_data_locks(self):
-        with shared.LOCKS_LOCK:
-            self._merge_hb_data_locks()
-
-    def _merge_hb_data_locks(self):
         for nodename in self.list_nodes():
             if nodename == Env.nodename:
                 continue
             locks = self.thread_data.get(["nodes", nodename, "locks"], default={})
-            for name, lock in locks.items():
+            for name in list(locks):
+                try:
+                    lock = locks[name]
+                except KeyError:
+                    # deleted during iteration
+                    continue
                 if lock["requester"] == Env.nodename and name not in shared.LOCKS:
                     # don't re-merge a released lock emitted by this node
                     continue
@@ -3656,16 +3657,22 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.info("merge older lock %s from node %s", name, nodename)
                     shared.LOCKS[name] = lock
                     continue
-        delete = []
-        for name, lock in shared.LOCKS.items():
+        for name in list(shared.LOCKS):
+            try:
+                lock = shared.LOCKS[name]
+            except KeyError:
+                # deleted during iteration
+                continue
             if Env.nodename == lock["requester"]:
                 continue
             requester_lock = self.thread_data.get(["nodes", lock["requester"], "locks", name], default=None)
             if requester_lock is None:
                 self.log.info("drop lock %s from node %s", name, nodename)
-                delete.append(name)
-        for name in delete:
-            del shared.LOCKS[name]
+                try:
+                    del shared.LOCKS[name]
+                except KeyError:
+                    # deleted during iteration
+                    continue
 
     def merge_hb_data_compat(self):
         compat = set()
