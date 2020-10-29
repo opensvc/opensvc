@@ -48,7 +48,7 @@ def wrapper(path, action, options, now, session_id, cmd):
         o = node
     else:
         name, namespace, kind = split_path(path)
-        o = factory(kind)(name, namespace, node=node)
+        o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
     o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
