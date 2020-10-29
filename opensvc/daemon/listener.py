@@ -263,6 +263,7 @@ class Listener(shared.OsvcThread):
         while True:
             try:
                 self.do()
+                self.update_status()
             except socket.error as exc:
                 self.log.warning(exc)
                 self.setup_socks()

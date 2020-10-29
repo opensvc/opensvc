@@ -626,6 +626,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.update_hb_data()
 
     def init_data(self):
+        self._update_cluster_data()
         shared.GEN = 0
         initial_data = {
             "compat": shared.COMPAT_VERSION,
@@ -697,6 +698,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         The node config references may have changed, update the services objects.
         """
+        self._update_cluster_data()
         shared.NODE.unset_lazy("labels")
         self.node_data.set(["labels"], shared.NODE.labels)
         self.node_data.set(["config"], {"csum": shared.NODE.nodeconf_csum()})
@@ -3117,16 +3119,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return True
 
     def update_status(self):
-        data = shared.OsvcThread.status(self)
+        data = self.status()
         data.update({
             "compat": self.compat,
             "transitions": self.transition_count(),
             "frozen": self.get_clu_agg_frozen(),
         })
         self.thread_data.merge([], data)
-
-    def status(self):
-        return {}
 
     def update_services_config(self):
         config = {}
@@ -3518,7 +3517,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.purge_left_nodes()
         self.merge_hb_data()
         self.update_agg_services()
-        self.update_daemon_status()
+        self.update_status()
+
+    def _update_cluster_data(self):
+        self.daemon_status_data.set(["cluster"], {
+            "name": self.cluster_name,
+            "id": self.cluster_id,
+            "nodes": self.cluster_nodes,
+        })
 
     def purge_left_nodes(self):
         left = set(self.list_nodes()) - set(self.cluster_nodes)

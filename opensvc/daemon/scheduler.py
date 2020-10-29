@@ -133,6 +133,7 @@ class Scheduler(shared.OsvcThread):
                     self.run_scheduler(now)
             if now >= self.next_expire(now):
                 self.dequeue_actions(now)
+            self.update_status()
             self.sleep()
 
     def sleep(self):

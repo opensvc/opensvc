@@ -33,6 +33,7 @@ class Collector(shared.OsvcThread):
                 sys.exit(0)
             try:
                 self.do()
+                self.update_status()
             except Exception as exc:
                 self.log.exception(exc)
                 time.sleep(1)

@@ -1652,30 +1652,20 @@ class OsvcThread(threading.Thread, Crypt):
         """
         return NODE
 
-    def update_daemon_status(self):
-        """
-        Return a hash indexed by thead id, containing the status data
-        structure of each thread.
-        """
-        #self.daemon_status_data.set(["pid"], DAEMON.pid)
+    def update_cluster_data(self):
         self.daemon_status_data.set(["cluster"], {
             "name": self.cluster_name,
             "id": self.cluster_id,
             "nodes": self.cluster_nodes,
         })
-        for thr_id in list(THREADS):
-            try:
-                thr = THREADS[thr_id]
-                thr.update_status()
-            except KeyError:
-                continue
 
     def update_status(self):
         data = self.status()
         self.thread_data.set([], data)
 
     def daemon_status(self):
-        return self.daemon_status_data.get_copy()
+        data = self.daemon_status_data.get_copy()
+        return data
 
     def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
         if selector is None:

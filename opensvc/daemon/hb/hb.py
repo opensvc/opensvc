@@ -71,9 +71,6 @@ class Hb(shared.OsvcThread):
             }
         return data
 
-    def update_status(self):
-        pass
-
     def set_last(self, nodename="*", success=True):
         if nodename not in self.peers:
             self.peers[nodename] = Storage({
@@ -138,7 +135,7 @@ class Hb(shared.OsvcThread):
                     },
                 }, level="warning")
         self.peers[nodename].beating = beating
-        self.thread_data.set([], self.status())
+        self.update_status()
         if not beating and self.peers[nodename].last > 0:
             self.forget_peer_data(nodename, change, origin=self.id)
 

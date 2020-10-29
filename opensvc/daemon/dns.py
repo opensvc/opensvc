@@ -84,6 +84,7 @@ class Dns(shared.OsvcThread):
         while True:
             try:
                 self.do()
+                self.update_status()
             except Exception as exc:
                 self.log.exception(exc)
             if self.stopped():
