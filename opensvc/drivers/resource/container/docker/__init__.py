@@ -1054,6 +1054,7 @@ class ContainerDocker(BaseContainer):
         unset_lazy(self.lib, "container_by_label")
         unset_lazy(self.lib, "container_by_name")
         unset_lazy(self.lib, "containers_inspect")
+        unset_lazy(self.lib, "images")
 
     def is_up(self):
         if self.lib.docker_daemon_private and \
