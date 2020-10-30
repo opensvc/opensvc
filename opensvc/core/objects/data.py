@@ -91,8 +91,9 @@ class DataMixin(object):
 
     def add_uri(self, key, path, append=None):
         from utilities.uri import Uri
+        secure = self.node.oget("node", "secure_fetch")
         try:
-            with Uri(path).fetch() as fpath:
+            with Uri(path, secure=secure).fetch() as fpath:
                 return self.add_file(key, fpath, append=append)
         except IOError as exc:
             raise ex.Error("download %s failed: %s" % (fpath, exc))
