@@ -53,6 +53,7 @@ from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import print_duration
 from utilities.string import bencode, bdecode
 from utilities.uri import Uri
+from utilities.render.listener import fmt_listener
 
 if six.PY2:
     class _ConnectionResetError(Exception):
@@ -648,7 +649,7 @@ class Listener(shared.OsvcThread):
             self.tls_port = port
             self.tls_addr = addr
         else:
-            self.log.info("tls listener %s:%d config unchanged", self.tls_addr, self.tls_port)
+            self.log.info("tls listener %s config unchanged", fmt_listener(self.tls_addr, self.tls_port))
             return
 
         try:
@@ -661,7 +662,7 @@ class Listener(shared.OsvcThread):
             self.tls_sock.listen(128)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind tls listener %s:%d error: %s", self.tls_addr, self.tls_port, exc)
+            self.alert("error", "bind tls listener %s error: %s", fmt_listener(self.tls_addr, self.tls_port), exc)
             return
         except ex.InitError as exc:
             self.log.info("skip tls listener init: %s", exc)
@@ -669,7 +670,7 @@ class Listener(shared.OsvcThread):
         except Exception as exc:
             self.log.info("failed tls listener init: %s", exc)
             return
-        self.log.info("listening on %s:%s using http/2 tls with client auth", self.tls_addr, self.tls_port)
+        self.log.info("listening on %s using http/2 tls with client auth", fmt_listener(self.tls_addr, self.tls_port))
         self.sockmap[self.tls_sock.fileno()] = self.tls_sock
 
     def setup_sock(self):
@@ -690,7 +691,7 @@ class Listener(shared.OsvcThread):
             self.port = port
             self.addr = addr
         else:
-            self.log.info("aes listener %s:%d config unchanged", self.addr, self.port)
+            self.log.info("aes listener %s config unchanged", fmt_listener(self.addr, self.port))
             return
 
         try:
@@ -702,9 +703,9 @@ class Listener(shared.OsvcThread):
             self.sock.listen(128)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind aes listener %s:%d error: %s", self.addr, self.port, exc)
+            self.alert("error", "bind aes listener %s error: %s", fmt_listener(self.addr, self.port), exc)
             return
-        self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
+        self.log.info("listening on %s using aes encryption", fmt_listener(self.addr, self.port))
         self.sockmap[self.sock.fileno()] = self.sock
 
     def setup_sockux_h2(self):

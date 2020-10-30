@@ -11,6 +11,7 @@ import core.exceptions as ex
 import daemon.shared as shared
 from env import Env
 from .hb import Hb
+from utilities.render.listener import fmt_listener
 
 class HbUcast(Hb):
     """
@@ -195,9 +196,8 @@ class HbUcastRx(HbUcast):
         except ex.AbortAction:
             return
 
-        self.log.info("listening on %s:%s",
-                      self.peer_config[Env.nodename]["addr"],
-                      self.peer_config[Env.nodename]["port"])
+        cf = self.peer_config[Env.nodename]
+        self.log.info("listening on %s", fmt_listener(cf["addr"], cf["port"]))
 
         while True:
             self.do()

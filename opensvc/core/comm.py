@@ -610,7 +610,6 @@ class Crypt(object):
         data.scheme = "h2"
         data.af = socket.AF_UNIX
         data.to = Env.paths.lsnruxh2sock
-        data.to_s = Env.paths.lsnruxh2sock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -621,7 +620,6 @@ class Crypt(object):
         data.scheme = "raw"
         data.af = socket.AF_UNIX
         data.to = Env.paths.lsnruxsock
-        data.to_s = Env.paths.lsnruxsock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -638,7 +636,6 @@ class Crypt(object):
         data.scheme = "h2"
         data.af = socket.AF_INET
         data.to = (addr, port)
-        data.to_s = "%s:%d" % (addr, port)
         data.encrypted = False
         data.tls = True
         data.server = server
@@ -670,7 +667,6 @@ class Crypt(object):
 
         if not host:
             addr = "localhost"
-            data.to_s = "%s:%d" % (addr, port)
             data.to = (addr, port)
         elif host[0] == "[":
             try:
@@ -679,7 +675,6 @@ class Crypt(object):
                 port = int(port)
             except:
                 addr = host[1:-1]
-            data.to_s = "[%s]:%d" % (addr, port)
             data.to = (addr, port)
         else:
             try:
@@ -687,7 +682,6 @@ class Crypt(object):
                 port = int(port)
             except:
                 addr = host
-            data.to_s = "%s:%d" % (addr, port)
             data.to = (addr, port)
         return data
 
@@ -698,7 +692,6 @@ class Crypt(object):
         data.scheme = "raw"
         data.af = socket.AF_INET
         data.to = (addr, port)
-        data.to_s = "%s:%d" % (addr, port)
         data.encrypted = True
         data.tls = False
         return data
@@ -915,7 +908,7 @@ class Crypt(object):
         except socket.error as exc:
             if not silent:
                 self.log.error("%s comm error while %s: %s",
-                               sp.to_s, progress, str(exc))
+                               sp.to, progress, str(exc))
             return {
                 "status": 1,
                 "error": str(exc),
@@ -1039,7 +1032,7 @@ class Crypt(object):
                 except socket.timeout:
                     time.sleep(PAUSE)
         except socket.error as exc:
-            self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
+            self.log.error("daemon send to %s error: %s", sp.to, str(exc))
         finally:
             sock.close()
 
