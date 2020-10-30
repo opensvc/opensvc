@@ -184,8 +184,9 @@ class Listener(shared.OsvcThread):
         if os.path.exists(crl):
             return crl
         crl_path = os.path.join(Env.paths.certs, "certificate_revocation_list")
+        secure = shared.NODE.oget("node", "secure_fetch")
         try:
-            with Uri(crl).fetch() as fpath:
+            with Uri(crl, secure=secure).fetch() as fpath:
                 shutil.copy(fpath, crl_path)
             # TODO: extract expire from crl
             self.crl_expire = time.time() + 60*60*24

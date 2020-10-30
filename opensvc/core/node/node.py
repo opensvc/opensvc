@@ -1922,8 +1922,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         from utilities.uri import Uri
         print("get %s" % pkg_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            with Uri(pkg_name).fetch() as fpath:
+            with Uri(pkg_name, secure=secure).fetch() as fpath:
                 self._updatecomp(fpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
@@ -2012,8 +2013,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         from utilities.uri import Uri
         print("get %s" % pkg_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            with Uri(pkg_name).fetch() as fpath:
+            with Uri(pkg_name, secure=secure).fetch() as fpath:
                 print("updating opensvc")
                 mod.update(fpath)
         except IOError as exc:
@@ -2096,8 +2098,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         from utilities.uri import Uri
         print("get %s" % bundle_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            with Uri(bundle_name).fetch() as fpath:
+            with Uri(bundle_name, secure=secure).fetch() as fpath:
                 do(fpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
@@ -2795,8 +2798,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         from utilities.uri import Uri
         print("get %s" % fpath)
+        secure = self.oget("node", "secure_fetch")
         try:
-            with Uri(fpath).fetch() as tmpfpath:
+            with Uri(fpath, secure=secure).fetch() as tmpfpath:
                 return self.svc_conf_from_file(name, namespace, kind, tmpfpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)

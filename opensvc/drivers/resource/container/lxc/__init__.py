@@ -806,8 +806,9 @@ class ContainerLxc(BaseContainer):
             self.log.info("template %s already downloaded"%self.template_fname)
             return
         from utilities.uri import Uri
+        secure = self.node.oget("node", "secure_fetch")
         try:
-            with Uri(self.template).fetch() as fpath:
+            with Uri(self.template, secure=secure).fetch() as fpath:
                 shutil.copy(fpath, self.template_local)
         except IOError as e:
             self.log.error("download failed", ":", e)

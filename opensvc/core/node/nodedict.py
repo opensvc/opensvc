@@ -284,6 +284,13 @@ PRIVATE_KEYWORDS = [
 KEYWORDS = [
     {
         "section": "node",
+        "keyword": "secure_fetch",
+        "default": True,
+        "convert": "boolean",
+        "text": "If set to false, disable ssl authentication checks on all uri fetches."
+    },
+    {
+        "section": "node",
         "keyword": "min_avail_mem",
         "default": "2%",
         "convert": "size",
