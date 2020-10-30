@@ -146,7 +146,9 @@ def contextualize_days(year, month, days):
             continue
         if monthday > 0:
             continue
-        days[i]["monthday"] = monthdays + monthday
+        if abs(monthday) > monthdays:
+            continue
+        days[i]["monthday"] = monthdays + monthday + 1
     return days
 
 def modulo_filter(l, modulo):
@@ -1136,7 +1138,7 @@ if __name__ == '__main__':
 #    Schedule("18:00-19:00@10").validate(now.replace(hour=18, minute=51), last=now.replace(hour=18, minute=51))
 #    Schedule("18:00-19:00@10").validate(now.replace(hour=15, minute=01))
 #    s = Schedule(["14:00-21:00@10", "!12:00-18:55", "!19:10-20:00"])
-    s = Schedule("@11s")
+    s = Schedule("@11s mon:last")
 #    s = Schedule("")
     print(json.dumps(s.data, indent=4))
     for _ in range(10):
