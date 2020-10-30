@@ -189,6 +189,14 @@ KEYWORDS = [
         "example": "-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
     },
     {
+        "keyword": "pull_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the container action a failure.",
+        "default": "2m",
+        "example": "2m"
+    },
+    {
         "keyword": "start_timeout",
         "convert": "duration",
         "at": True,
@@ -305,7 +313,6 @@ class ContainerDocker(BaseContainer):
     """
     Docker container resource driver.
     """
-    default_start_timeout = 2
     default_net = "none"
     dns_option_option = "--dns-option"
 
@@ -335,6 +342,7 @@ class ContainerDocker(BaseContainer):
                  configs_environment=None,
                  registry_creds=None,
                  guestos="Linux",
+                 pull_timeout=120,
                  **kwargs):
         super(ContainerDocker, self).__init__(
             name="",
@@ -346,6 +354,7 @@ class ContainerDocker(BaseContainer):
         self.hostname = hostname
         self.image = image
         self.image_pull_policy = image_pull_policy
+        self.pull_timeout = pull_timeout
         self.run_command = run_command
         self.run_args = run_args
         self.detach = detach
@@ -588,8 +597,14 @@ class ContainerDocker(BaseContainer):
                     image_id = self.lib.get_image_id(self.image)
                 except ValueError as exc:
                     raise ex.Error(str(exc))
-                if image_id is None and not self.registry_creds:
-                    self.lib.docker_login(self.image)
+                if image_id is None:
+                    if not self.registry_creds:
+                        self.lib.docker_login(self.image)
+                    if self.start_timeout:
+                        self.log.info("push start timeout to %s (cached) + %s (pull)",
+                                      print_duration(self.start_timeout),
+                                      print_duration(self.pull_timeout))
+                        self.start_timeout += self.pull_timeout
                 sec_env = self.kind_environment_env("sec", self.secrets_environment)
                 cfg_env = self.kind_environment_env("cfg", self.configs_environment)
                 cmd += ["run"]
