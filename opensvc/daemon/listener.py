@@ -119,7 +119,7 @@ class Listener(shared.OsvcThread):
         if secpath is None:
             secpath = "system/sec/ca-" + self.cluster_name
         secname, namespace, kind = split_path(secpath)
-        return factory("sec")(secname, namespace=namespace, volatile=True)
+        return factory("sec")(secname, namespace=namespace, volatile=True, node=shared.NODE)
 
     @lazy
     def cert(self):
@@ -127,7 +127,7 @@ class Listener(shared.OsvcThread):
         if secpath is None:
             secpath = "system/sec/cert-" + self.cluster_name
         secname, namespace, kind = split_path(secpath)
-        return factory("sec")(secname, namespace=namespace, volatile=True)
+        return factory("sec")(secname, namespace=namespace, volatile=True, node=shared.NODE)
 
     def prepare_certs(self):
         makedirs(Env.paths.certs)
@@ -959,7 +959,7 @@ class ClientHandler(shared.OsvcThread):
         buff = authorization[6:].strip()
         buff = base64.b64decode(buff)
         name, password = bdecode(buff).split(":", 1)
-        usr = factory("usr")(name, namespace="system", volatile=True, log=self.log)
+        usr = factory("usr")(name, namespace="system", volatile=True, log=self.log, node=shared.NODE)
         if not usr.exists():
             raise ex.Error("user %s does not exist" % name)
         if not usr.has_key("password"):
@@ -988,7 +988,7 @@ class ClientHandler(shared.OsvcThread):
         name = decoded.get("preferred_username")
         if not name:
             name = decoded.get("name", "unknown").replace(" ", "_")
-        usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log)
+        usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log, node=shared.NODE)
         return usr
 
     def authenticate_client_secret(self, secret=None):
@@ -1014,9 +1014,9 @@ class ClientHandler(shared.OsvcThread):
         if "." in cn:
             # service account
             name, namespace, kind = split_fullname(cn, self.cluster_name)
-            usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
+            usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log, node=shared.NODE)
         else:
-            usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
+            usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log, node=shared.NODE)
         if not usr or not usr.exists():
             self.conn.close()
             raise ex.Error("x509 auth failed: %s (valid cert, unknown user)" % cn)

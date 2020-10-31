@@ -220,9 +220,9 @@ class Volume(Resource):
 
     @lazy
     def volsvc(self):
-        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+        volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, log_handlers=self.svc.log_handlers, node=self.svc.node)
         if not volume.exists():
-            volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, volatile=True)
+            volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, log_handlers=self.svc.log_handlers, volatile=True)
             try:
                 volume = self._configure_volume(volume)
             except ex.Error:
