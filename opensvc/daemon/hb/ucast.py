@@ -59,7 +59,7 @@ class HbUcast(Hb):
                 if addr is not None:
                     pass
                 elif nodename == Env.nodename:
-                    addr = "0.0.0.0"
+                    addr = "::"
                 else:
                     addr = nodename
                 peer_config[nodename] = {
@@ -127,12 +127,10 @@ class HbUcastTx(HbUcast):
             self._do(message, message_bytes, nodename, config)
 
     def _do(self, message, message_bytes, nodename, config):
+        sock = None
         try:
             #self.log.info("sending to %s:%s", config["addr"], config["port"])
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(self.sock_tmo)
-            sock.bind((self.peer_config[Env.nodename]["addr"], 0))
-            sock.connect((config["addr"], config["port"]))
+            sock = socket.create_connection((config["addr"], config["port"]), self.sock_tmo)
             sock.sendall((message+"\0").encode())
             self.set_last(nodename)
             self.push_stats(message_bytes)
@@ -150,7 +148,8 @@ class HbUcastTx(HbUcast):
             self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
-            sock.close()
+            if sock is not None:
+                sock.close()
 
 class HbUcastRx(HbUcast):
     """
@@ -182,7 +181,8 @@ class HbUcastRx(HbUcast):
         raise ex.AbortAction
 
     def configure_listener(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        af = socket.AF_INET6 if ":" in self.peer_config[Env.nodename]["addr"] else socket.AF_INET
+        self.sock = socket.socket(af, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.peer_config[Env.nodename]["addr"],
                         self.peer_config[Env.nodename]["port"]))

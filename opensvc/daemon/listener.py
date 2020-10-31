@@ -656,7 +656,11 @@ class Listener(shared.OsvcThread):
             addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
             self.tls_context = self.get_http2_ssl_context()
             self.tls_addr = addrinfo[4][0]
-            self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            if ":" in self.tls_addr:
+                af = socket.AF_INET6
+            else:
+                af = socket.AF_INET
+            self.tls_sock = socket.socket(af, socket.SOCK_STREAM)
             self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.tls_sock, self.tls_addr, self.tls_port)
             self.tls_sock.listen(128)
@@ -697,7 +701,11 @@ class Listener(shared.OsvcThread):
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if ":" in self.addr:
+                af = socket.AF_INET6
+            else:
+                af = socket.AF_INET
+            self.sock = socket.socket(af, socket.SOCK_STREAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.sock, self.addr, self.port)
             self.sock.listen(128)
