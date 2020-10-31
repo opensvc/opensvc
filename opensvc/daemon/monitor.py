@@ -77,6 +77,18 @@ LEADER_ABORT_STATES = (
 
 ETC_NS_SKIP = len(os.path.join(Env.paths.pathetcns, ""))
 
+#import cProfile
+#import pstats
+#pr = cProfile.Profile()
+
+#def start_profile():
+#    pr.enable()
+
+#def stop_profile():
+#    pr.disable()
+#    ps = pstats.Stats(pr).sort_stats(2)
+#    ps.print_stats()
+
 class Defer(Exception):
     """
     Raised from orchestration routines to signal the condition to
