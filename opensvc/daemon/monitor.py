@@ -701,7 +701,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def add_service(self, path):
         name, namespace, kind = split_path(path)
-        svc = factory(kind)(name, namespace, node=shared.NODE, log_handlers=["file", "syslog"])
+        svc = factory(kind)(name, namespace, node=shared.NODE, log_handlers=[])
         svc.configure_scheduler()
         shared.SERVICES[path] = svc
         return svc
