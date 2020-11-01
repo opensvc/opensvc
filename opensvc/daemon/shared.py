@@ -176,6 +176,8 @@ def wake_monitor(reason="unknown", immediate=False):
     Notify the monitor thread to do they periodic job immediatly
     """
     global MON_CHANGED
+    if immediate and reason:
+        reason += " (immediate)"
     with MON_TICKER:
         MON_CHANGED.append(reason)
         if immediate:
@@ -627,8 +629,7 @@ class OsvcThread(threading.Thread, Crypt):
                 smon.status_updated = time.time()
                 changed = True
             if reset_placement:
-                smon.placement = \
-                    self.get_service_placement(path)
+                smon.placement = self.get_service_placement(path)
                 smon.status_updated = time.time()
                 changed = True
 

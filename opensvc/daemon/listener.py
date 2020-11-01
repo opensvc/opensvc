@@ -89,6 +89,7 @@ class DontClose(Exception):
 
 class Listener(shared.OsvcThread):
     name = "listener"
+    stage = "init"
     events_grace_period = True
     sock_tmo = 1.0
     sockmap = {}
@@ -261,6 +262,7 @@ class Listener(shared.OsvcThread):
 
         self.register_handlers()
         self.setup_socks()
+        self.stage = "ready"
 
         while True:
             try:

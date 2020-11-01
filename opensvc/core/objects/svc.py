@@ -1990,14 +1990,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("notify scheduler action is done failed: %s", str(exc))
 
-    def wake_monitor(self):
-        if self.options.no_daemon:
-            return
+    def post_object_status(self, data):
         req = {
-            "action": "wake_monitor",
+            "action": "object_status",
             "options": {
                 "path": self.path,
-                "immediate": True,
+                "data": data,
             }
         }
         try:
@@ -2012,11 +2010,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if status and data.get("errno") != ECONNREFUSED:
                 # ECONNREFUSED (ie daemon down)
                 if error:
-                    self.log.warning("wake monitor failed: %s", error)
+                    self.log.warning("post object status failed: %s", error)
                 else:
-                    self.log.warning("wake monitor failed")
+                    self.log.warning("post object status failed")
         except Exception as exc:
-            self.log.warning("wake monitor failed: %s", str(exc))
+            self.log.warning("post object status failed: %s", str(exc))
 
     def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, path=None,
                             best_effort=False):
@@ -2497,7 +2495,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 json.dump(data, filep)
             os.utime(fpath, (-1, data["updated"]))
             shutil.move(fpath, self.status_data_dump)
-            self.wake_monitor()
+            self.post_object_status(data)
         except Exception as exc:
             self.log.warning("failed to update %s: %s",
                              self.status_data_dump, str(exc))
@@ -4470,7 +4468,6 @@ class Svc(PgMixin, BaseSvc):
 
     def boot(self):
         self.options.force = True
-        self.options.no_daemon = True
         self.master_boot()
 
     @_master_action

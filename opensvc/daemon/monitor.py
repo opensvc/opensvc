@@ -625,6 +625,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         except (TypeError, ValueError):
             pass
         self.log.info("boot id %s, last %s", boot_id, last_boot_id)
+        self.wait_listener()
         if last_boot_id in (None, boot_id):
             self.services_init_status()
         else:
@@ -636,6 +637,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         # send a first message without service status, so the peers know
         # we are in init state.
         self.update_hb_data()
+
+    def wait_listener(self):
+        while True:
+            lsnr = shared.THREADS.get("listener")
+            if lsnr and lsnr.stage == "ready":
+                break
+            time.sleep(0.2)
 
     def init_data(self):
         self._update_cluster_data()
@@ -2835,7 +2843,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         frozen = 0
         total = 0
         for instance in self.get_service_instances(path).values():
-            if "frozen" not in instance:
+            if "avail" not in instance:
                 # deleting instance
                 continue
             if instance.get("frozen"):
@@ -3238,80 +3246,27 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         Also update the monitor 'local_expect' field for each service.
         """
-        paths = self.node_data.keys(["services", "config"])
-
-        # this data ends up in ["monitor", "nodes", Env.nodename, "services", "status"]
         data = {}
-
-        for path in paths:
-            idata = None
-            last_mtime = self.get_last_svc_status_mtime(path)
-            fpath = svc_pathvar(path, "status.json")
-            try:
-                mtime = os.path.getmtime(fpath)
-                if mtime < self.startup:
-                    continue
-            except Exception as exc:
-                # preserve previous status data if any (an action may be running)
-                mtime = 0
-
-            try:
-               need_load = mtime > last_mtime + 0.0001
-            except TypeError:
-               need_load = True
-
-            if need_load:
-                # status.json changed
-                #  => load
-                idata = self.load_instance_status_cache(fpath)
-
-            if not idata and last_mtime > 0:
-                # the status.json did not change or failed to load
-                #  => preserve current data
-                idata = self.get_service_instance(path, Env.nodename)
-
-            if idata:
-                data[path] = idata
-            else:
-                if self.init_steps_done():
-                    self.service_status(path)
-                continue
-
-            # update the frozen instance attribute
-            data[path]["frozen"] = shared.SERVICES[path].frozen()
-
-            # embed the updated smon data
-            smon = self.get_service_monitor(path)
-
+        for path, idata in self.iter_local_services_instances():
+            smon = Storage(idata.get("monitor", {}))
             if idata.get("avail") == "up" and \
                smon.global_expect is None and \
                smon.status == "idle" and \
                smon.local_expect not in ("started", "shutdown"):
                 self.log.info("%s local expect set: started", path)
-                smon.local_expect = "started"
+                data["local_expect"] = "started"
 
-            data[path]["monitor"] = smon
+            placement = self.get_service_placement(path)
+            if placement != smon.placement:
+                data["placement"] = self.get_service_placement(path)
+
+            if data:
+                self.node_data.merge(["services", "status", path, "monitor"], data)
 
             # forget the stonith target node if we run the service
-            if data[path].get("avail", "n/a") == "up":
-                try:
-                    del data[path]["monitor"]["stonith"]
-                except KeyError:
-                    pass
+            if idata.get("avail", "n/a") == "up":
+                self.node_data.unset_safe(["services", "status", path, "monitor", "stonith"])
 
-        if data:
-            self.node_data.merge(["services", "status"], data)
-        else:
-            self.node_data.set(["services", "status"], {})
-
-        # deleting services (still in ...services.status{}, no longer has cf).
-        # emulate a status
-        for path in set(self.node_data.keys(["services", "status"])) - set(paths):
-            data[path] = {
-                "monitor": dict(self.get_service_monitor(path)),
-                "resources": {},
-            }
-        return data
 
     #########################################################################
     #
