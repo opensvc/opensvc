@@ -3249,6 +3249,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         data = {}
         for path, idata in self.iter_local_services_instances():
             smon = Storage(idata.get("monitor", {}))
+            if not smon:
+                continue
             if idata.get("avail") == "up" and \
                smon.global_expect is None and \
                smon.status == "idle" and \
