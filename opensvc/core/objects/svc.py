@@ -3721,6 +3721,7 @@ class Svc(PgMixin, BaseSvc):
             "env": self.svc_env,
             "placement": self.placement,
             "topology": self.topology,
+            "frozen": self.frozen(),
             "subsets": {},
             "resources": {},
         }
@@ -3733,9 +3734,6 @@ class Svc(PgMixin, BaseSvc):
                 "flex_min": self.flex_min,
                 "flex_max": self.flex_max,
             })
-        frozen = self.frozen()
-        if frozen:
-            data["frozen"] = frozen
         if not self.constraints:
             data["constraints"] = self.constraints
         if self.slaves:
