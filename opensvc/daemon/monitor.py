@@ -1422,9 +1422,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
                 return False
-            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
-            if nb_restart < self.default_stdby_nb_restart:
+            try:
+                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+                if nb_restart < self.default_stdby_nb_restart:
+                    nb_restart = self.default_stdby_nb_restart
+            except AttributeError:
                 nb_restart = self.default_stdby_nb_restart
+
             retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False
