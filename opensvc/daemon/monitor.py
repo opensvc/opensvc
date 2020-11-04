@@ -230,8 +230,8 @@ class MonitorObjectOrchestratorManualMixin(object):
             self.object_orchestrator_auto(svc, smon, status)
             raise Defer("start: action started")
 
-        step_wait_parents()
         step_thaw()
+        step_wait_parents()
         step_start()
 
     def _oom_unprovisioned(self, svc=None, smon=None, status=None, instance=None):
