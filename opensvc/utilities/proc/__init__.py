@@ -582,7 +582,7 @@ def get_extra_argv(argv=None):
         return argv, []
 
     if "array" in argv:
-        if "ls" in argv or "show" in argv:
+        if argv in (["array", "ls"], ["array", "show"]):
             return argv, []
         pos = argv.index('array')
     elif "cli" in argv:

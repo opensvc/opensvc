@@ -1295,6 +1295,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         self.collector.call('push_dorado', self.options.objects)
 
+    def pushhcs(self):
+        """
+        The pushhcs action entrypoint.
+        Inventories Hitachi Command Suite storage arrays.
+        """
+        self.collector.call('push_hcs', self.options.objects)
+
     def pushsym(self):
         """
         The pushsym action entrypoint.
