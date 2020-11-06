@@ -616,7 +616,7 @@ class Hcs(object):
             ldev_id = self.ldev_id_from_naa(naa)
             data = self.get_ldev(oid=ldev_id)
             if data and naa != data["naaId"]:
-                raise ex.Error("expected naa %s for ldev id %s, found %s. use --id" % (naa, ldev, data["naaId"]))
+                raise ex.Error("expected naa %s for ldev id %s, found %s. use --id" % (naa, ldev_id, data["naaId"]))
             return data
         elif name:
             data = self.get("/views/ldevs", params={"$query": "ldev.storageDeviceId eq '%s' and ldev.label eq '%s'" % (self.storage_id, name)}, base="")
