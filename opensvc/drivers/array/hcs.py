@@ -288,6 +288,28 @@ def apilock(func):
         return ret
     return _func
 
+def apiretry(func):
+    def _func(self, retry=None, **kwargs):
+        retry = retry or {}
+        count = retry.get("count", 1)
+        delay = retry.get("delay", 1)
+        msg = retry.get("message")
+        condition = retry.get("condition", lambda: False)
+        for _ in range(count):
+            data = func(**kwargs)
+            try:
+                c = condition(data)
+            except Exception:
+                c = False
+            if c:
+                if msg:
+                    self.node.log.info(msg)
+                time.sleep(delay)
+                continue
+            data = self.check_result(func.__name__.upper(), **kwargs)
+            return data
+    return _func
+
 class Hcss(object):
     arrays = []
 
@@ -416,8 +438,19 @@ class Hcs(object):
         data["Authorization"] = "Session %s" % self.session_data["token"]
         return data
 
+    @property
+    def proxies(self):
+        if not self.http_proxy and not self.https_proxy:
+            return
+        data = {}
+        if self.http_proxy:
+            data["http"] = self.http_proxy
+        if self.https_proxy:
+            data["https"] = self.https_proxy
+        return data
 
-    def delete(self, uri, data=None, base="device"):
+    @apiretry
+    def delete(self, uri=None, data=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -430,11 +463,11 @@ class Hcs(object):
         if not r.text:
             return
         result = r.json()
-        result = self.check_result("DELETE", uri, headers, data, result)
         return result
 
 
-    def put(self, uri, data=None, base="device"):
+    @apiretry
+    def put(self, uri=None, data=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -448,18 +481,8 @@ class Hcs(object):
         result = self.check_result("PUT", uri, headers, data, result)
         return result
 
-    @property
-    def proxies(self):
-        if not self.http_proxy and not self.https_proxy:
-            return
-        data = {}
-        if self.http_proxy:
-            data["http"] = self.http_proxy
-        if self.https_proxy:
-            data["https"] = self.https_proxy
-        return data
-
-    def post(self, uri, data=None, auth=True, base="device"):
+    @apiretry
+    def post(self, uri=None, data=None, auth=True, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -476,7 +499,8 @@ class Hcs(object):
         result = self.check_result("POST", uri, headers, data, result)
         return result
 
-    def get(self, uri, params=None, base="device"):
+    @apiretry
+    def get(self, uri=None, params=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -726,7 +750,7 @@ class Hcs(object):
             id = ldev["ldevId"]
         self.set_label(id, name)
 
-    def check_result(self, method, uri, headers=None, data=None, result=None):
+    def check_result(self, method, uri=None, headers=None, data=None, result=None):
         """
         {
             "jobId": 892,
@@ -855,7 +879,13 @@ class Hcs(object):
             str(host_group_id),
             str(lun_id),
         ])
-        data = self.delete('/luns/%s' % oid)
+        retry = {
+            "condition": lambda x: x.get("error", {}).get("detailCode") == "30000E-2-B958-0233",
+            "count": 5,
+            "delay": 5,
+            "message": "retry unmaping %s: LU is executing host I/O" % oid,
+        }
+        data = self.delete('/luns/%s' % oid, retry=retry)
         return data
 
 
