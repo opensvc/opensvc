@@ -1043,6 +1043,48 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             self.proxy.update_eva_xml(*args)
 
+    def push_hcs(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
+        import json
+        import drivers.array.hcs as m
+        try:
+            arrays = m.Hcss(objects)
+        except Exception as e:
+            print(e)
+            return 1
+        r = 0
+        try:
+            for array in arrays:
+                # can be too big for a single rpc
+                print(array.name)
+                for key in array.keys:
+                    print(" extract", key)
+                    vars = [key]
+                    try:
+                        data = getattr(array, 'get_'+key)()
+                        vals = [json.dumps(data)]
+                    except Exception as e:
+                        print(e)
+                        continue
+                    args = [array.name, vars, vals]
+                    args += [(self.node.collector_env.uuid, Env.nodename)]
+                    try:
+                        print(" send   ", key)
+                        self.proxy.update_hcs(*args)
+                    except Exception as e:
+                        print(array.name, key, ":", e)
+                        r = 1
+                        continue
+                # signal all files are received
+                args = [array.name, [], []]
+                args += [(self.node.collector_env.uuid, Env.nodename)]
+                self.proxy.update_hcs(*args)
+        finally:
+            for array in arrays:
+                array.close_session()
+        return r
+
     def push_dorado(self, objects=None, sync=True):
         if objects is None:
             objects = []
