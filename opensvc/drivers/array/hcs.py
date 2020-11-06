@@ -1001,9 +1001,9 @@ class Hcs(object):
 
     def show_hostgroup(self, id=None, hba_id=None, **kwargs):
         if id is not None:
-            return self.get_hostgroup_by_id(id)
+            return [self.get_hostgroup_by_id(id)]
         elif hba_id:
-            return self.get_hostgroup_by_hba(hba_id)
+            return self.get_hostgroups_by_hba(hba_id)
         else:
             raise ex.Error("'id' or 'hba_id' must be specified")
 
@@ -1012,14 +1012,14 @@ class Hcs(object):
         data = self.get(path)
         return data
 
-    def get_hostgroup_by_hba(self, hba_id):
+    def get_hostgroups_by_hba(self, hba_id):
         params = {
             "$query": "hostGroup.storageDeviceId eq %s and wwn.wwn eq '%s'" % (self.storage_id, hba_id)
         }
         path = "/views/host-groups-host-wwns-wwns"
         data = self.get(path, params=params, base="")
         try:
-            return data["data"][0]["hostGroup"]
+            return [d.get("hostGroup") for d in data["data"]]
         except IndexError:
             return
 
@@ -1028,15 +1028,19 @@ class Hcs(object):
         data = []
         port_ids = [self.port_id_by_wwn.get(w) for w in targetgroup]
         for hba_id in hbagroup:
-            hg = self.get_hostgroup_by_hba(hba_id)
-            if not hg:
+            _data = []
+            for hg in self.get_hostgroups_by_hba(hba_id):
+                if not hg:
+                    continue
+                if hg["hostGroupId"] in hg_ids:
+                    continue
+                if hg["portId"] not in port_ids:
+                    continue
+                hg_ids.add(hg["hostGroupId"])
+                _data.append(hg)
+            if not _data:
                 raise ex.Error("hostgroup containing hba id %s not found" % hba_id)
-            if hg["hostGroupId"] in hg_ids:
-                continue
-            if hg["portId"] not in port_ids:
-                continue
-            hg_ids.add(hg["hostGroupId"])
-            data.append(hg)
+            data += _data
         return data
 
 
