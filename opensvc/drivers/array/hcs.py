@@ -239,6 +239,14 @@ ACTIONS = {
                 OPT.resource_group,
             ],
         },
+        "discard_zero_page": {
+            "msg": "Reclaim freeable space of a DP volume.",
+            "options": [
+                OPT.id,
+                OPT.naa,
+                OPT.name,
+            ],
+        },
     },
     "List actions": {
         "list_mappings": {
@@ -1164,6 +1172,10 @@ class Hcs(object):
     def list_host_link(self, **kwargs):
         return self.get_host_link()
 
+
+    def discard_zero_page(self, id=None, name=None, naa=None, **kwargs):
+        data = self.get_ldev(oid=id, name=name, naa=naa)
+        return self.put("/ldevs/%s/actions/discard-zero-page/invoke" % data["ldevId"])
 
     @staticmethod
     def fmt_lun_path(port_id, hostgroup_id, lun_id):
