@@ -41,6 +41,27 @@ MODEL_ID = {
     "Virtual Storage Platform": "700000",
     "HUS VM": "730000",
 }
+RETRYABLE_ERROR_MSG_IDS = [
+    "KART00003-E",
+    "KART00006-E",
+    "KART30003-E",
+    "KART30090-E",
+    "KART30095-E",
+    "KART30096-E",
+    "KART30097-E",
+    "KART40042-E",
+    "KART40049-E",
+    "KART40051-E",
+    "KART40052-E",
+    "KART30000-E",
+    "KART30008-E",
+    "KART30072-E",
+]
+RETRYABLE_LOCK_ERROR_MSG_IDS = [
+    "KART40050-E",
+    "KART40052-E",
+    "KART40052-E",
+]
 
 try:
     import requests
@@ -291,19 +312,24 @@ def apilock(func):
 def apiretry(func):
     def _func(self, retry=None, **kwargs):
         retry = retry or {}
-        count = retry.get("count", 1)
-        delay = retry.get("delay", 1)
+        count = retry.get("count", 5)
+        delay = retry.get("delay", 5)
         msg = retry.get("message")
+        common_condition = lambda x: x.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
             data = func(**kwargs)
             try:
-                c = condition(data)
+                cc = common_condition(data)
             except Exception:
-                c = False
-            if c:
-                if msg:
+                cc = False
+            try:
+                sc = condition(data)
+                if sc and msg:
                     self.node.log.info(msg)
+            except Exception:
+                sc = False
+            if sc or cc:
                 time.sleep(delay)
                 continue
             data = self.check_result(func.__name__.upper(), **kwargs)
@@ -704,13 +730,19 @@ class Hcs(object):
                 "waitTime": 30,
             }
         }
-        self.put("/%s/services/resource-group-service/actions/lock/invoke" % self.storage_id, data=data, base="")
+        retry = {
+            "condition": lambda x: x.get("error", {}).get("messageId") in RETRYABLE_LOCK_ERROR_MSG_IDS
+        }
+        self.put("/%s/services/resource-group-service/actions/lock/invoke" % self.storage_id, data=data, base="", retry=retry)
         self.locked = True
 
     def unlock(self):
         if not self.locked:
             return
-        self.put("/%s/services/resource-group-service/actions/unlock/invoke" % self.storage_id, base="")
+        retry = {
+            "condition": lambda x: x.get("error", {}).get("messageId") in RETRYABLE_LOCK_ERROR_MSG_IDS
+        }
+        self.put("/%s/services/resource-group-service/actions/unlock/invoke" % self.storage_id, base="", retry=retry)
         self.locked = False
 
     def set_virtual_ldev_id(self, ldev_id, virtual_ldev_id):
@@ -881,8 +913,6 @@ class Hcs(object):
         ])
         retry = {
             "condition": lambda x: x.get("error", {}).get("detailCode") == "30000E-2-B958-0233",
-            "count": 5,
-            "delay": 5,
             "message": "retry unmaping %s: LU is executing host I/O" % oid,
         }
         data = self.delete('/luns/%s' % oid, retry=retry)
