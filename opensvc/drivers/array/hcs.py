@@ -278,6 +278,9 @@ ACTIONS = {
         "list_supported_host_modes": {
             "msg": "List the hostmodes support by the storage array",
         },
+        "list_virtual_storages": {
+            "msg": "List the configured virtual storage machines",
+        },
     },
     "Show actions": {
         "show_system": {
@@ -601,6 +604,14 @@ class Hcs(object):
 
     def get_hostgroups(self):
         data = self.get("/host-groups")
+        try:
+            return data["data"]
+        except KeyError:
+            return
+
+
+    def get_virtual_storages(self):
+        data = self.get("/virtual-storages")
         try:
             return data["data"]
         except KeyError:
@@ -1163,6 +1174,10 @@ class Hcs(object):
 
     def list_host(self, **kwargs):
         return self.get_host()
+
+
+    def list_virtual_storages(self, **kwargs):
+        return self.get_virtual_storages()
 
 
     def list_hostgroups(self, **kwargs):
