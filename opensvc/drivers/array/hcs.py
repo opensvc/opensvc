@@ -590,9 +590,31 @@ class Hcs(object):
         return self.get("/")
 
 
-    def get_ldevs(self):
-        return self.get("/ldevs", params={"ldevOption": "dpVolume", "count": MAX_COUNT})["data"]
+    def fmt_naa(self, ldev_id, vserial):
+        template = "" + self.naa_template()
+        vserial = hex(vserial)[2:]
+        ldev_id = hex(ldev_id)[2:]
+        return template[:10] + vserial + template[14:20] + vserial + template[24:28] + ldev_id
 
+
+    def get_ldevs(self):
+        data = self.get("/ldevs", params={"ldevOption": "dpVolume", "count": MAX_COUNT})["data"]
+        for i, d in enumerate(data):
+            ldev_id = d["ldevId"]
+            vserial = self.virtual_storage_by_resource_group_id[d["resourceGroupId"]]["virtualSerialNumber"]
+            data[i]["naaId"] = self.fmt_naa(ldev_id, vserial)
+        return data
+
+
+    def get_any_mapped_ldev(self):
+        return self.get("/ldevs", params={"ldevOption": "luMapped", "count": 1})["data"][0]
+
+
+    @lazy
+    def naa_template(self):
+        ldev_id = self.get_any_mapped_ldev()["ldevId"]
+        template = self.get_ldev(oid=ldev_id)["naaId"]
+        return template
 
     def get_host(self):
         data = self.get("/host")
@@ -1221,6 +1243,14 @@ class Hcs(object):
 
     def list_fc_port(self, **kwargs):
         return self.get_fc_ports()
+
+    @lazy
+    def virtual_storage_by_resource_group_id(self):
+        data = {}
+        for d in self.get_virtual_storages():
+            for resource_group_id in d.get("resourceGroupIds", []):
+                data[resource_group_id] = d
+        return data
 
     @lazy
     def port_id_by_wwn(self):
