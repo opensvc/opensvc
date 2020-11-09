@@ -321,15 +321,19 @@ def apilock(func):
     return _func
 
 def apiretry(func):
-    def _func(self, retry=None, **kwargs):
-        retry = retry or {}
+    def _func(self, *args, **kwargs):
+        try:
+            retry = kwargs["retry"]
+            del kwargs["retry"]
+        except KeyError:
+            retry = {}
         count = retry.get("count", 5)
         delay = retry.get("delay", 5)
         msg = retry.get("message")
         common_condition = lambda x: x.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
-            data = func(**kwargs)
+            data = func(self, *args, **kwargs)
             try:
                 cc = common_condition(data)
             except Exception:
@@ -487,7 +491,7 @@ class Hcs(object):
         return data
 
     @apiretry
-    def delete(self, uri=None, data=None, base="device", retry=None):
+    def delete(self, uri, data=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -504,7 +508,7 @@ class Hcs(object):
 
 
     @apiretry
-    def put(self, uri=None, data=None, base="device", retry=None):
+    def put(self, uri, data=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -519,7 +523,7 @@ class Hcs(object):
         return result
 
     @apiretry
-    def post(self, uri=None, data=None, auth=True, base="device", retry=None):
+    def post(self, uri, data=None, auth=True, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
@@ -537,7 +541,7 @@ class Hcs(object):
         return result
 
     @apiretry
-    def get(self, uri=None, params=None, base="device", retry=None):
+    def get(self, uri, params=None, base="device", retry=None):
         if base == "device":
             base_path = self.urlpath_device()
         else:
