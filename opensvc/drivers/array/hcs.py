@@ -595,7 +595,7 @@ class Hcs(object):
 
 
     def fmt_naa(self, ldev_id, vserial):
-        template = "" + self.naa_template()
+        template = "" + self.naa_template
         vserial = hex(vserial)[2:]
         ldev_id = hex(ldev_id)[2:]
         return template[:10] + vserial + template[14:20] + vserial + template[24:28] + ldev_id
