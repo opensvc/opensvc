@@ -36,6 +36,7 @@ def osvc_path_tests_fixture(tmpdir):
     env.Env.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
     env.Env.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
     env.Env.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
+    env.Env.paths.nodes_info = os.path.join(test_dir, 'var', "nodes_info.json")
     os.makedirs(os.path.join(env.Env.paths.pathvar, 'lsnr'))
     os.makedirs(os.path.join(env.Env.paths.pathvar, 'node'))
     os.makedirs(env.Env.paths.pathtmpv)
@@ -128,7 +129,8 @@ def has_cluster_config(osvc_path_tests):
         '',
         '[cluster]',
         'secret = ' + str(uuid.uuid4()),
-        'nodes = ' + env.Env.nodename
+        'nodes = ' + env.Env.nodename + " node2",
+        'id = ' + str(uuid.uuid4()),
     ]
     with open(env.Env.paths.clusterconf, mode='w+') as cfg_file:
         for line in config_lines:
