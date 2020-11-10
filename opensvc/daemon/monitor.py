@@ -2144,7 +2144,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if len(self.cluster_nodes) == 1:
             self.end_rejoin_grace_period("single node cluster")
             return False
-        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin") and "services" in node])
+        n_idle = len([1 for node in shared.CLUSTER_DATA.values()
+                      if node.get("monitor", {}).get("status") in ("idle", "rejoin")
+                      and "services" in node])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
             return False
@@ -2242,9 +2244,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return False
 
     def parents_available(self, svc):
-        missing = []
         if len(svc.parents) == 0:
             return True
+        missing = []
         for parent in svc.parents:
             try:
                 parent, nodename = parent.split("@")
@@ -2255,10 +2257,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             if nodename:
                 instance = self.get_service_instance(parent, nodename)
-            else:
-                instance = None
-            if instance:
-                avail = instance["avail"] 
+                if instance:
+                    avail = instance["avail"]
+                else:
+                    missing.append(parent)
+                    continue
             else:
                 try:
                     avail = shared.AGG[parent].avail
