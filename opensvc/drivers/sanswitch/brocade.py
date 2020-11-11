@@ -22,23 +22,25 @@ def brocadetelnetcmd(cmd, switch, username, password):
     out = tn.read_all()
     return out, "", 0
 
-def brocadecmd(cmd, switch, username, key):
-    _cmd = ['ssh', '-o', 'StrictHostKeyChecking=no',
+def brocadecmd(cmd, switch, username, key=None, password=None):
+    base = ['ssh', '-o', 'StrictHostKeyChecking=no',
                    '-o', 'ForwardX11=no',
-                   '-o', 'ConnectTimeout=5',
-                   '-o', 'PasswordAuthentication=no',
-                   '-l', username, '-i', key, switch, cmd]
-    out, err, ret = justcall(_cmd)
+                   '-o', 'ConnectTimeout=5']
+    if password:
+        _cmd = ["sshpass", "-d", "0"] + base + [
+            '-l', username, switch
+        ]
+    else:
+        _cmd = base + [
+            '-o', 'PasswordAuthentication=no',
+            '-l', username, '-i', key, switch
+        ]
+    out, err, ret = justcall(_cmd + [cmd], input=password)
     if "command not found" in err:
         # bogus firmware syntax
-        _cmd = ['ssh', '-o', 'StrictHostKeyChecking=no',
-                       '-o', 'ForwardX11=no',
-                       '-o', 'ConnectTimeout=5',
-                       '-o', 'PasswordAuthentication=no',
-                       '-l', username, '-i', key, switch, 'bash --login -c '+cmd]
-        out, err, ret = justcall(_cmd)
+        out, err, ret = justcall(_cmd + ['bash --login -c '+cmd])
     if ret != 0:
-        raise ex.Error("brocade command execution error")
+        raise ex.Error("brocade command execution error: %s" % err)
     return out, err, ret
 
 class Brocades(object):
@@ -72,10 +74,11 @@ class Brocades(object):
             if stype != "brocade":
                 continue
             key = self.node.oget(s, "key")
+            method = self.node.oget(s, "method")
             password = self.node.oget(s, "password")
             if password and "sec/" in password:
-                name, namespace, _ = split_path(password)
-                sec = factory("sec")(name=name, namespace=namespace, volatile=True)
+                _name, _namespace, _ = split_path(password)
+                sec = factory("sec")(name=_name, namespace=_namespace, volatile=True)
                 if not sec.exists():
                     print("%s referenced in section %s does not exists" % (password, s))
                     continue
@@ -91,7 +94,7 @@ class Brocades(object):
             if key is None and password is None:
                 print("no 'key' nor 'password' parameter in section %s" % s)
                 continue
-            self.switchs.append(Brocade(name, username, key, password, node=self.node))
+            self.switchs.append(Brocade(name, username, key, password, method=method, node=self.node))
             done.append(name)
 
     def __iter__(self):
@@ -99,17 +102,18 @@ class Brocades(object):
             yield(switch)
 
 class Brocade(object):
-    def __init__(self, name, username, key, password, node=None):
+    def __init__(self, name, username, key, password, method=None, node=None):
         self.name = name
         self.username = username
         self.password = password
+        self.method = method
         self.key = key
         self.keys = ['brocadeswitchshow', 'brocadensshow', 'brocadezoneshow']
         self.node = node
 
     def brocadecmd(self, cmd):
-        if self.key is not None:
-            return brocadecmd(cmd, self.name, self.username, self.key)
+        if self.key is not None or self.method == "ssh":
+            return brocadecmd(cmd, self.name, self.username, key=self.key, password=self.password)
         elif self.password is not None:
             return brocadetelnetcmd(cmd, self.name, self.username, self.password)
         else:
