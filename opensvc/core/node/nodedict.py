@@ -1270,6 +1270,15 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "switch",
         "rtype": "brocade",
+        "keyword": "method",
+        "default": "ssh",
+        "candidates": ["telnet", "ssh"],
+        "example": "ssh",
+        "text": "The method to use to connect to the switch. ssh without a key set needs sshpass the binary."
+    },
+    {
+        "section": "switch",
+        "rtype": "brocade",
         "keyword": "username",
         "required": True,
         "example": "admin",
