@@ -894,6 +894,10 @@ class ContainerDocker(BaseContainer):
         super(ContainerDocker, self).unprovision()
         self.container_rm()
 
+    def provisioner_shared_non_leader(self):
+        if not self.lib.docker_daemon_private:
+            self.image_pull()
+
     def start(self):
         if self.image_pull_policy == "always":
             self.image_pull()
