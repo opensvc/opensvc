@@ -1422,9 +1422,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
                 return False
-            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
-            if nb_restart < self.default_stdby_nb_restart:
+            try:
+                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+                if nb_restart < self.default_stdby_nb_restart:
+                    nb_restart = self.default_stdby_nb_restart
+            except AttributeError:
                 nb_restart = self.default_stdby_nb_restart
+
             retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False
@@ -2140,7 +2144,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if len(self.cluster_nodes) == 1:
             self.end_rejoin_grace_period("single node cluster")
             return False
-        n_idle = len([1 for node in shared.CLUSTER_DATA.values() if node.get("monitor", {}).get("status") in ("idle", "rejoin") and "services" in node])
+        n_idle = len([1 for node in shared.CLUSTER_DATA.values()
+                      if node.get("monitor", {}).get("status") in ("idle", "rejoin")
+                      and "services" in node])
         if n_idle >= len(self.cluster_nodes):
             self.end_rejoin_grace_period("now rejoined")
             return False
@@ -2238,9 +2244,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return False
 
     def parents_available(self, svc):
-        missing = []
         if len(svc.parents) == 0:
             return True
+        missing = []
         for parent in svc.parents:
             try:
                 parent, nodename = parent.split("@")
@@ -2251,10 +2257,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             if nodename:
                 instance = self.get_service_instance(parent, nodename)
-            else:
-                instance = None
-            if instance:
-                avail = instance["avail"] 
+                if instance:
+                    avail = instance["avail"]
+                else:
+                    missing.append(parent)
+                    continue
             else:
                 try:
                     avail = shared.AGG[parent].avail
