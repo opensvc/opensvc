@@ -4,6 +4,7 @@ import telnetlib
 import core.exceptions as ex
 from core.node import Node
 from env import Env
+from utilities.naming import split_path, factory
 from utilities.proc import justcall
 
 if Env.paths.pathbin not in os.environ['PATH']:
@@ -72,6 +73,16 @@ class Brocades(object):
                 continue
             key = self.node.oget(s, "key")
             password = self.node.oget(s, "password")
+            if password and "sec/" in password:
+                name, namespace, _ = split_path(password)
+                sec = factory("sec")(name=name, namespace=namespace, volatile=True)
+                if not sec.exists():
+                    print("%s referenced in section %s does not exists" % (password, s))
+                    continue
+                if not sec.has_key("password"):
+                    print("%s referenced in section %s has no 'password' key" % (password, s))
+                    continue
+                password = sec.decode_key("password")
             try:
                 username = self.node.oget(s, "username")
             except:
