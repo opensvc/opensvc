@@ -269,11 +269,8 @@ ACTIONS = {
         "list_hostgroups": {
             "msg": "List configured host groups",
         },
-        "list_host": {
-            "msg": "List configured host",
-        },
-        "list_host_link": {
-            "msg": "List configured host links",
+        "list_resource_groups": {
+            "msg": "List configured resource groups",
         },
         "list_supported_host_modes": {
             "msg": "List the hostmodes support by the storage array",
@@ -287,7 +284,7 @@ ACTIONS = {
             "msg": "Show system information.",
         },
         "show_ldev": {
-            "msg": "Show configured storage pools.",
+            "msg": "Show configured ldev.",
             "options": [
                 OPT.id,
                 OPT.naa,
@@ -295,7 +292,7 @@ ACTIONS = {
             ],
         },
         "show_hostgroup": {
-            "msg": "Show configured storage pools.",
+            "msg": "Show configured hostgroup.",
             "options": [
                 OPT.id,
                 OPT.hba_id,
@@ -305,6 +302,12 @@ ACTIONS = {
             "msg": "Show configured storage pools.",
             "options": [
                 OPT.name,
+            ],
+        },
+        "show_virtual_storage": {
+            "msg": "Show a virtual storage machine.",
+            "options": [
+                OPT.id,
             ],
         },
     },
@@ -321,19 +324,33 @@ def apilock(func):
     return _func
 
 def apiretry(func):
-    def _func(self, *args, **kwargs):
+    def _func(self, uri, retry=None, base="device", **kwargs):
+        if base == "device":
+            base_path = self.urlpath_device()
+        else:
+            base_path = self.urlpath_base()
+        uri = self.api + base_path + uri
         try:
-            retry = kwargs["retry"]
-            del kwargs["retry"]
-        except KeyError:
-            retry = {}
+            if self.log and func.__name__ != "get" and "/sessions" not in uri:
+                self.log.info("%s %s %s", func.__name__, uri, kwargs)
+        except (KeyError, IndexError, AttributeError, TypeError):
+            pass
+        retry = retry or {}
         count = retry.get("count", 5)
         delay = retry.get("delay", 5)
         msg = retry.get("message")
         common_condition = lambda x: x.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
-            data = func(self, *args, **kwargs)
+            try:
+                r = func(self, uri, **kwargs)
+            except ex.Error as exc:
+                raise ex.Error(str(exc))
+            except Exception as exc:
+                raise ex.Error("hcs api request error: %s" % str(exc))
+            if not r.text:
+                return
+            data = r.json()
             try:
                 cc = common_condition(data)
             except Exception:
@@ -347,7 +364,13 @@ def apiretry(func):
             if sc or cc:
                 time.sleep(delay)
                 continue
-            data = self.check_result(func.__name__.upper(), **kwargs)
+            if func.__name__ != "get":
+                data = self.check_result(func.__name__, uri, result=data, **kwargs)
+            try:
+                if self.log and func.__name__ != "get" and "/sessions" not in uri and "jobId" not in data:
+                    self.log.info("%s", data)
+            except (KeyError, IndexError, AttributeError, TypeError):
+                pass
             return data
     return _func
 
@@ -355,9 +378,10 @@ class Hcss(object):
     arrays = []
 
 
-    def __init__(self, objects=None, node=None):
+    def __init__(self, objects=None, node=None, log=None):
         if objects is None:
             objects = []
+        self.log = log
         self.objects = objects
         self.filtering = len(objects) > 0
         self.timeout = 10
@@ -409,7 +433,8 @@ class Hcss(object):
                 timeout=timeout,
                 http_proxy=http_proxy,
                 https_proxy=https_proxy,
-                node=self.node
+                node=self.node,
+                log=self.log,
             )
             self.arrays.append(o)
             done.append(name)
@@ -430,8 +455,10 @@ class Hcs(object):
 
     def __init__(self, name=None, model=None, api=None,
                  username=None, password=None, timeout=None,
-                 http_proxy=None, https_proxy=None, node=None):
+                 http_proxy=None, https_proxy=None, node=None,
+                 log=None):
         self.node = node
+        self.log = log
         self.name = name
         self.model = model
         self.api = api.rstrip("/")
@@ -450,6 +477,7 @@ class Hcs(object):
         self.session = requests.Session()
         if self.proxies:
             self.session.proxies = self.proxies
+        self.naa_templates = {}
 
 
     @property
@@ -492,64 +520,37 @@ class Hcs(object):
 
     @apiretry
     def delete(self, uri, data=None, base="device", retry=None):
-        if base == "device":
-            base_path = self.urlpath_device()
-        else:
-            base_path = self.urlpath_base()
-        api = self.api + base_path + uri
         headers = self.headers()
         if data:
             data = json.dumps(data)
-        r = self.session.delete(api, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
-        if not r.text:
-            return
-        result = r.json()
-        return result
+        r = self.session.delete(uri, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
+        return r
 
 
     @apiretry
     def put(self, uri, data=None, base="device", retry=None):
-        if base == "device":
-            base_path = self.urlpath_device()
-        else:
-            base_path = self.urlpath_base()
-        api = self.api + base_path + uri
         headers = self.headers()
         if data:
             data = json.dumps(data, indent=4)
-        r = self.session.put(api, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
-        result = r.json()
-        result = self.check_result("PUT", uri, headers, data, result)
-        return result
+        r = self.session.put(uri, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
+        return r
 
     @apiretry
     def post(self, uri, data=None, auth=True, base="device", retry=None):
-        if base == "device":
-            base_path = self.urlpath_device()
-        else:
-            base_path = self.urlpath_base()
-        api = self.api + base_path + uri
         headers = self.headers(auth=auth)
         if data:
             data = json.dumps(data, indent=4)
         if auth:
-            r = self.session.post(api, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
+            r = self.session.post(uri, data=data, timeout=self.timeout, verify=VERIFY, headers=headers)
         else:
-            r = requests.post(api, data=data, timeout=self.timeout, verify=VERIFY, headers=headers, auth=self.auth, proxies=self.proxies)
-        result = r.json()
-        result = self.check_result("POST", uri, headers, data, result)
-        return result
+            r = requests.post(uri, data=data, timeout=self.timeout, verify=VERIFY, headers=headers, auth=self.auth, proxies=self.proxies)
+        return r
 
     @apiretry
     def get(self, uri, params=None, base="device", retry=None):
-        if base == "device":
-            base_path = self.urlpath_device()
-        else:
-            base_path = self.urlpath_base()
-        api = self.api + base_path + uri
         headers = self.headers()
-        r = self.session.get(api, params=params, timeout=self.timeout, verify=VERIFY, headers=headers)
-        return r.json()
+        r = self.session.get(uri, params=params, timeout=self.timeout, verify=VERIFY, headers=headers)
+        return r
 
 
     def open_session(self, timeout=30):
@@ -594,41 +595,56 @@ class Hcs(object):
         return self.get("/")
 
 
-    def fmt_naa(self, ldev_id, vserial):
-        template = "" + self.naa_template
-        vserial = hex(vserial)[2:]
-        ldev_id = hex(ldev_id)[2:]
-        return template[:10] + vserial + template[14:20] + vserial + template[24:28] + ldev_id
+    def fmt_naa(self, ldev_id, rg_id):
+        template = self.get_naa_template(rg_id)
+        if template is None:
+            return
+        ldev_id = hex(int(ldev_id))[2:]
+        ldev_id = (4 - len(ldev_id)) * "0" + ldev_id
+        return template[:28] + ldev_id
 
 
     def get_ldevs(self):
         data = self.get("/ldevs", params={"ldevOption": "dpVolume", "count": MAX_COUNT})["data"]
         for i, d in enumerate(data):
-            ldev_id = d["ldevId"]
-            vserial = self.virtual_storage_by_resource_group_id[d["resourceGroupId"]]["virtualSerialNumber"]
-            data[i]["naaId"] = self.fmt_naa(ldev_id, vserial)
+            data[i]["naaId"] = self.fmt_naa(d["ldevId"], d["resourceGroupId"]) or ",".join([self.name, str(d["resourceGroupId"]), str(d["ldevId"])])
         return data
 
 
-    def get_any_mapped_ldev(self):
-        return self.get("/ldevs", params={"ldevOption": "luMapped", "count": 1})["data"][0]
+    def get_naa_template(self, rg_id):
+        try:
+            data = self.naa_templates[rg_id]
+        except KeyError:
+            try:
+                data = self.get_any_mapped_ldev(rg_id)
+            except IndexError:
+                data = {}
+            try:
+                data = self.get_ldev(oid=data["ldevId"])["naaId"]
+            except KeyError:
+                data = None
+            self.naa_templates[rg_id] = data
+        return data
 
 
-    @lazy
-    def naa_template(self):
-        ldev_id = self.get_any_mapped_ldev()["ldevId"]
-        template = self.get_ldev(oid=ldev_id)["naaId"]
-        return template
+    def get_any_mapped_ldev(self, rg_id):
+        params={
+            "ldevOption": "luMapped",
+            "resourceGroupId": rg_id,
+            "count": 1,
+        }
+        return self.get("/ldevs", params=params)["data"][0]
 
-    def get_host(self):
-        data = self.get("/host")
+
+    def get_resource_groups(self):
+        data = self.get("/resource-groups")
         try:
             return data["data"]
         except KeyError:
             return
 
 
-    def get_hostgroups(self):
+    def get_host_groups(self):
         data = self.get("/host-groups")
         try:
             return data["data"]
@@ -636,16 +652,13 @@ class Hcs(object):
             return
 
 
+    def get_virtual_storage(self, oid):
+        data = self.get("/virtual-storages/%s" % oid)
+        return data
+
+
     def get_virtual_storages(self):
         data = self.get("/virtual-storages")
-        try:
-            return data["data"]
-        except KeyError:
-            return
-
-
-    def get_host_link(self):
-        data = self.get("/host_link")
         try:
             return data["data"]
         except KeyError:
@@ -749,7 +762,7 @@ class Hcs(object):
         if end_ldev_id is not None:
             d["endLdevId"] = end_ldev_id
         path = "/ldevs"
-        data = self.post(path, d)
+        data = self.post(path, data=d)
         ldev_id = int(data["affectedResources"][0].split("/")[-1])
         data = self.get_ldev(oid=ldev_id)
         self.set_label(ldev_id, name)
@@ -827,7 +840,7 @@ class Hcs(object):
             id = ldev["ldevId"]
         self.set_label(id, name)
 
-    def check_result(self, method, uri=None, headers=None, data=None, result=None):
+    def check_result(self, method, uri=None, headers=None, data=None, result=None, **kwargs):
         """
         {
             "jobId": 892,
@@ -882,6 +895,8 @@ class Hcs(object):
         if "jobId" in result:
             while True:
                 r = self.get("/jobs/%d" % result["jobId"])
+                if r is None:
+                    return
                 if r["status"] == "Completed":
                     if r["state"] == "Failed":
                         dump(r)
@@ -893,7 +908,7 @@ class Hcs(object):
         d = {
             "label": label,
         }
-        data = self.put("/ldevs/%d" % oid, d)
+        data = self.put("/ldevs/%d" % oid, data=d)
         return data
 
     def list_supported_host_modes(self, **kwargs):
@@ -945,7 +960,7 @@ class Hcs(object):
                 "additionalBlockCapacity": incr,
             }
         }
-        data = self.put("/ldevs/%d/actions/expand/invoke" % ldev["ldevId"], d)
+        data = self.put("/ldevs/%d/actions/expand/invoke" % ldev["ldevId"], data=d)
         data = self.get_ldev(ldev["ldevId"])
         return data
 
@@ -971,7 +986,7 @@ class Hcs(object):
             "portId": port_id,
             "lun": lun_id,
         }
-        data = self.post('/luns', d)
+        data = self.post('/luns', data=d)
         return data
 
 
@@ -1198,20 +1213,16 @@ class Hcs(object):
         return self.get_pools()
 
 
-    def list_host(self, **kwargs):
-        return self.get_host()
-
-
     def list_virtual_storages(self, **kwargs):
         return self.get_virtual_storages()
 
 
-    def list_hostgroups(self, **kwargs):
-        return self.get_hostgroups()
+    def list_host_groups(self, **kwargs):
+        return self.get_host_groups()
 
 
-    def list_host_link(self, **kwargs):
-        return self.get_host_link()
+    def list_resource_groups(self, **kwargs):
+        return self.get_resource_groups()
 
 
     def discard_zero_page(self, id=None, name=None, naa=None, **kwargs):
@@ -1232,6 +1243,11 @@ class Hcs(object):
     def _clear_reservation(self, port_id, hostgroup_id, lun_id):
         return self.post("/luns/%s/actions/release-lu-host-reserve/invoke" % self.fmt_lun_path(port_id, hostgroup_id, lun_id))
 
+
+    def show_virtual_storage(self, id=None, **kwargs):
+        return self.get_virtual_storage(id)
+
+
     def show_ldev(self, id=None, name=None, naa=None, **kwargs):
         data = self.get_ldev(oid=id, name=name, naa=naa)
         for i, port in enumerate(data.get("ports", [])):
@@ -1247,14 +1263,6 @@ class Hcs(object):
 
     def list_fc_port(self, **kwargs):
         return self.get_fc_ports()
-
-    @lazy
-    def virtual_storage_by_resource_group_id(self):
-        data = {}
-        for d in self.get_virtual_storages():
-            for resource_group_id in d.get("resourceGroupIds", []):
-                data[resource_group_id] = d
-        return data
 
     @lazy
     def port_id_by_wwn(self):

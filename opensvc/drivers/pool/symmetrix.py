@@ -158,7 +158,7 @@ class Pool(BasePool):
         try:
             dg = [dg for dg in self.array.get_srps() if dg["name"] == self.srp][0]
         except Exception as exc:
-            print(exc, file=sys.stderr)
+            data["error"] = str(exc)
             return data
         data["free"] = convert_size(dg["free_capacity_gigabytes"], default_unit="G", _to="KB")
         data["used"] = convert_size(dg["used_capacity_gigabytes"], default_unit="G", _to="KB")

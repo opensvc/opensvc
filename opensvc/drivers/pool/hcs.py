@@ -133,7 +133,7 @@ class Pool(BasePool):
 
     @lazy
     def array(self):
-        o = Hcss()
+        o = Hcss(log=self.log)
         array = o.get_hcs(self.array_name)
         if array is None:
             raise ex.Error("array %s not found" % self.array_name)
@@ -153,7 +153,7 @@ class Pool(BasePool):
         try:
             status = self.array.get_pool_by_name(name=self.storagepool)
         except Exception as exc:
-            print(exc, file=sys.stderr)
+            data["error"] = str(exc)
             return data
         data["size"] = convert_size(int(status["totalPhysicalCapacity"])*1024*1024, _to="KB")
         data["free"] = convert_size(int(status["availablePhysicalVolumeCapacity"])*1024*1024, _to="KB")
