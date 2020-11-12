@@ -123,6 +123,7 @@ class Pool(BasePool):
             cmd = ["zpool", "get", "-H", "size,alloc,free", "-p", self.zpool]
             out, err, ret = justcall(cmd)
             if ret != 0:
+                data["error"] = err
                 return data
             lines = out.splitlines()
             data["size"] = convert_size(lines[0].split()[2], default_unit="", _to="kb")
