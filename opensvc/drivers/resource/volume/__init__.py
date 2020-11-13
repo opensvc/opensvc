@@ -58,6 +58,7 @@ KEYWORDS = [
         "keyword": "pool",
         "at": True,
         "provisioning": True,
+        "inheritance": "leaf",
         "text": "The name of the pool to allocate from."
     },
     {
