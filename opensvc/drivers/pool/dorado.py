@@ -216,7 +216,7 @@ class Pool(BasePool):
         try:
             status = self.array.get_storagepool(name=self.storagepool)
         except Exception as exc:
-            print(exc, file=sys.stderr)
+            data["error"] = str(exc)
             return data
         data["size"] = convert_size(int(status["USERTOTALCAPACITY"])*512, _to="KB")
         data["free"] = convert_size(int(status["USERFREECAPACITY"])*512, _to="KB")

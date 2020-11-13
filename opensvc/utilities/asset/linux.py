@@ -568,6 +568,16 @@ class Asset(BaseAsset):
         return [{"hba_id": e[0], "hba_type": e[1], "host": e[2]} for e in l]
 
     def _get_targets(self):
+        def port_not_present(target):
+            fpath = os.path.dirname(target)
+            fpath = os.path.join(fpath, "port_state")
+            try:
+                with open(fpath,"r") as f:
+                    buff = f.read().strip()
+            except Exception:
+                return False
+            return buff == "Not Present"
+
         import glob
         # fc / fcoe
         l = []
@@ -580,6 +590,8 @@ class Asset(BaseAsset):
             for target in targets:
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
+                if port_not_present(target):
+                    continue
                 if (hba["hba_id"], tgt_id) not in l:
                     l.append((hba["hba_id"], tgt_id))
 

@@ -243,8 +243,8 @@ class MonitorObjectOrchestratorManualMixin(object):
             self.object_orchestrator_auto(svc, smon, status)
             raise Defer("start: action started")
 
-        step_wait_parents()
         step_thaw()
+        step_wait_parents()
         step_start()
 
     def _oom_unprovisioned(self, svc=None, smon=None, status=None, instance=None):
@@ -1471,9 +1471,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
                 return False
-            nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
-            if nb_restart < self.default_stdby_nb_restart:
+            try:
+                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+                if nb_restart < self.default_stdby_nb_restart:
+                    nb_restart = self.default_stdby_nb_restart
+            except AttributeError:
                 nb_restart = self.default_stdby_nb_restart
+
             retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False
@@ -2287,9 +2291,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return False
 
     def parents_available(self, svc):
-        missing = []
         if len(svc.parents) == 0:
             return True
+        missing = []
         for parent in svc.parents:
             try:
                 parent, nodename = parent.split("@")
@@ -2300,10 +2304,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             if nodename:
                 instance = self.get_service_instance(parent, nodename)
-            else:
-                instance = None
-            if instance:
-                avail = instance["avail"] 
+                if instance:
+                    avail = instance["avail"]
+                else:
+                    missing.append(parent)
+                    continue
             else:
                 agg = self.get_service_agg(parent) or Storage()
                 avail = agg.avail or "unknown"

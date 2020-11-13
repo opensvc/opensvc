@@ -96,7 +96,7 @@ class Pool(BasePool):
         try:
             dg = [dg for dg in self.array.list_pools() if dg["name"] == self.diskgroup][0]
         except Exception as exc:
-            print(exc, file=sys.stderr)
+            data["error"] = str(exc)
             return data
         data["free"] = convert_size(dg["avail"], _to="KB")
         data["used"] = convert_size(dg["used"], _to="KB")

@@ -695,6 +695,13 @@ ACTIONS = {
                 OPT.opt_object,
             ],
         },
+        "pushhcs": {
+            "msg": "Push Hitachi Command Suite array configurations to the collector.",
+            "options": [
+                OPT.cron,
+                OPT.opt_object,
+            ],
+        },
         "pushfreenas": {
             "msg": "Push FreeNAS configurations to the collector.",
             "options": [
