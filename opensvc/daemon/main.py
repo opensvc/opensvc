@@ -251,7 +251,7 @@ class Daemon(object):
             ofile.write(pid_args)
 
     def init(self):
-        shared.NODE = Node()
+        shared.NODE = Node(log_handlers=self.handlers)
         self.log.info("daemon started")
         self.log.info("versions:")
         self.log.info(" opensvc agent: %s", shared.NODE.agent_version)

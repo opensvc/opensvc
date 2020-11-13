@@ -150,7 +150,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def __str__(self):
         return self.nodename
 
-    def __init__(self):
+    def __init__(self, log_handlers=None):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.listener = None
         self.clouds = None
@@ -187,7 +187,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = {}
         self.stats_updated = 0
         log_file = os.path.join(Env.paths.pathlog, "node.log")
-        self.logger = core.logger.initLogger(Env.nodename, log_file)
+        self.logger = core.logger.initLogger(Env.nodename, log_file, handlers=log_handlers)
         extra = {"node": Env.nodename, "sid": Env.session_uuid}
         self.log = logging.LoggerAdapter(self.logger, extra)
 
