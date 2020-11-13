@@ -16,6 +16,14 @@ from utilities.naming import svc_pathvar
 
 boot_id = str(time.time())
 
+try:
+    import utilities.journaled_data
+    ready = False
+except:
+    ready = True
+
+if not ready:
+    pytest.skip("not yet ready for tests", allow_module_level=True)
 
 SERVICES = {
     "parent-flex-min-2": """
