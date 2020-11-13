@@ -53,6 +53,7 @@ class Pool(BasePool):
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
         if ret != 0:
+            data["error"] = err
             return data
         l = out.splitlines()[-1].split()
         data["free"] = int(l[3])

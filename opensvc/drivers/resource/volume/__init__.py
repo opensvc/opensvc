@@ -58,6 +58,7 @@ KEYWORDS = [
         "keyword": "pool",
         "at": True,
         "provisioning": True,
+        "inheritance": "leaf",
         "text": "The name of the pool to allocate from."
     },
     {
@@ -594,7 +595,14 @@ class Volume(Resource):
             raise ex.Error("acquire create volume lock error: %s" % str(exc))
 
     def create_volume_locked(self):
+        # the volsvc has initialized the volume logger as volatile already.
+        # reset the logger handlers so we have the provisioning logs available
+        # for post-mortem analysis.
+        map(self.volsvc.logger.removeHandler, self.volsvc.logger.handlers[:])
+        self.volsvc.logger.handlers = []
+
         volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+
         if volume.exists():
             self.log.info("volume %s already exists", self.volname)
             data = volume.print_status_data(mon_data=True)
