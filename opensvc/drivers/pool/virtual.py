@@ -51,6 +51,9 @@ class Pool(BasePool):
         if env:
             config["env"].update(env)
         self.node.install_svc_conf_from_data(volume.name, volume.namespace, volume.kind, config)
+        if volume.volatile:
+            return volume
+        return factory("vol")(name=volume.name, namespace=volume.namespace, node=self.node)
 
     def pool_status(self):
         data = {
