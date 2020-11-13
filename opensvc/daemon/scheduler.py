@@ -16,6 +16,11 @@ from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
 from utilities.storage import Storage
 
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
+
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2
 JANITOR_PROCS_INTERVAL = 0.95
@@ -40,9 +45,12 @@ def wrapper(path, action, options, now, session_id, cmd):
     os.environ["OSVC_SCHED_TIME"] = str(now)
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     sys.argv = cmd
+    sys.stdout = StringIO()
+    sys.stderr = StringIO()
     Env.session_uuid = session_id
     from core.node import Node
     from utilities.naming import split_path, factory
+    print("xxx", session_id, cmd)
     node = Node()
     if path is None:
         o = node
