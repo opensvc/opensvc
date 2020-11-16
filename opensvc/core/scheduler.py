@@ -426,7 +426,7 @@ class Schedule(object):
                 raise SchedSyntaxError("only one '%%' allowed in month definition '%s'" % _month)
 
             if month_s in ("", "*"):
-                return ALL_MONTHS
+                _allowed_months = ALL_MONTHS
             else:
                 _allowed_months = parse_calendar_expression(month_s)
             if modulo_s is not None:
