@@ -72,9 +72,15 @@ KEYWORDS = [
         "text": "The whitespace separated list of ``<retcode>=<status name>``. All undefined retcodes are mapped to the 'warn' status.",
         "example": "0:up 1:down 3:n/a"
     },
+    {
+        "keyword": "umask",
+        "at": True,
+        "text": "The umask to set for the application process.",
+        "example": "022"
+    },
 ]
 
-def run_as_popen_kwargs(fpath, limits=None, user=None, group=None, cwd=None):
+def run_as_popen_kwargs(fpath, limits=None, user=None, group=None, cwd=None, umask=None):
     """
     Setup the Popen keyword args to execute <fpath> with the
     privileges demoted to those of the owner of <fpath>.
@@ -150,17 +156,24 @@ def run_as_popen_kwargs(fpath, limits=None, user=None, group=None, cwd=None):
     except KeyError:
         user_home_dir = Env.paths.pathtmp
 
+    try:
+        umask = int(umask, 8)
+    except (TypeError, ValueError):
+        umask = None
+
     env = os.environ.copy()
     env['HOME'] = user_home_dir
     env['LOGNAME'] = user_name
     env['PWD'] = cwd
     env['USER'] = user_name
-    return {'preexec_fn': preexec(user_uid, user_gid, limits), 'cwd': cwd, 'env': env}
+    return {'preexec_fn': preexec(user_uid, user_gid, limits, umask), 'cwd': cwd, 'env': env}
 
-def preexec(user_uid, user_gid, limits):
+def preexec(user_uid, user_gid, limits, umask):
     def result():
         if Env.sysname != "Windows":
             os.setsid()
+        if umask:
+            os.umask(umask)
         set_rlimits(limits)
         demote(user_uid, user_gid)
     return result
@@ -222,6 +235,7 @@ class App(Resource):
                  configs_environment=None,
                  secrets_environment=None,
                  retcodes=None,
+                 umask=None,
                  **kwargs):
 
         Resource.__init__(self, **kwargs)
@@ -234,6 +248,7 @@ class App(Resource):
         self.user = user
         self.group = group
         self.cwd = cwd
+        self.umask = umask
         self.status_log_flag = status_log
         self.start_timeout = start_timeout
         self.stop_timeout = stop_timeout
@@ -667,9 +682,9 @@ class App(Resource):
             'stdin': self.svc.node.devnull,
         }
         if isinstance(cmd, list):
-            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits, self.user, self.group, self.cwd))
+            kwargs.update(run_as_popen_kwargs(cmd[0], self.limits, self.user, self.group, self.cwd, self.umask))
         else:
-            kwargs.update(run_as_popen_kwargs(None, self.limits, self.user, self.group, self.cwd))
+            kwargs.update(run_as_popen_kwargs(None, self.limits, self.user, self.group, self.cwd, self.umask))
             kwargs["shell"] = True
         if "env" in kwargs:
             kwargs["env"]["OPENSVC_RID"] = self.rid
