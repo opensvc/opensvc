@@ -103,6 +103,22 @@ KEYWORDS = [
         "default": "",
         "text": "A whitespace-separated list of conditions to meet to accept running a '{prefix}' action. A condition is expressed as ``<rid>(<state>,...)``. If states are omitted, ``up,stdby up`` is used as the default expected states."
     },
+    {
+        "keyword": "group",
+        "at": True,
+        "text": "If the binary is owned by the root user, run it as the specified group instead of root."
+    },
+    {
+        "keyword": "cwd",
+        "at": True,
+        "text": "Change the working directory to the specified location instead of the default ``<pathtmp>``."
+    },
+    {
+        "keyword": "umask",
+        "at": True,
+        "text": "The umask to set for the application process.",
+        "example": "022"
+    },
 ]
 
 
@@ -112,6 +128,9 @@ class BaseTask(Resource):
                  type="task",
                  command=None,
                  user=None,
+                 group=None,
+                 cwd=None,
+                 umask=None,
                  on_error=None,
                  timeout=0,
                  snooze=0,
@@ -126,6 +145,9 @@ class BaseTask(Resource):
         self.command = command
         self.on_error = on_error
         self.user = user
+        self.group = group
+        self.umask = umask
+        self.cwd = cwd
         self.snooze = snooze
         self.timeout = timeout
         self.confirmation = confirmation

@@ -5,7 +5,7 @@ import core.exceptions as ex
 from .. import BaseTask, KEYWORDS as BASE_KEYWORDS
 from env import Env
 from core.objects.svcdict import KEYS
-from drivers.resource.app import preexec
+from drivers.resource.app import run_as_popen_kwargs
 from utilities.lazy import lazy
 
 DRIVER_GROUP = "task"
@@ -118,29 +118,6 @@ KEYS.register_driver(
 )
 
 
-def run_as_popen_kwargs(user, limits=None):
-    limits = limits or {}
-    if Env.sysname == "Windows":
-        return {}
-    if user is None:
-        return {}
-    cwd = Env.paths.pathtmp
-    import pwd
-    try:
-        pw_record = pwd.getpwnam(user)
-    except Exception as exc:
-        raise ex.Error("user lookup failure: %s" % str(exc))
-    user_name      = pw_record.pw_name
-    user_home_dir  = pw_record.pw_dir
-    user_uid  = pw_record.pw_uid
-    user_gid  = pw_record.pw_gid
-    env = os.environ.copy()
-    env['HOME']  = user_home_dir
-    env['LOGNAME']  = user_name
-    env['PWD']  = cwd
-    env['USER']  = user_name
-    return {'preexec_fn': preexec(user_uid, user_gid, limits), 'cwd': cwd, 'env': env}
-
 class TaskHost(BaseTask):
     def __init__(self, *args, **kwargs):
         kwargs["type"] = "task.host"
@@ -171,7 +148,7 @@ class TaskHost(BaseTask):
             'timeout': self.timeout,
             'blocking': True,
         }
-        kwargs.update(run_as_popen_kwargs(self.user, self.limits))
+        kwargs.update(run_as_popen_kwargs(None, cwd=self.cwd, user=self.user, group=self.group, limits=self.limits, umask=self.umask))
         if self.configs_environment or self.secrets_environment:
             if "env" not in kwargs:
                 kwargs["env"] = {}

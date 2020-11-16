@@ -372,6 +372,8 @@ class Fs(BaseFs):
             from utilities.subsystems.btrfs import btrfs_devs
             return set(btrfs_devs(self.mount_point))
         if self.fs_type == "zfs":
+            if not self.device:
+                return set()
             return set(zpool_devs(self.device.split("/")[0], self.svc.node))
 
         dev = self.realdev()

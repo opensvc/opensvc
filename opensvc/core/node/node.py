@@ -3882,7 +3882,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             {
                 "action": "daemon_stats",
                 "options": {
-                    "paths": paths,
+                    "selector": ",".join(paths) if paths else "**",
                 }
             },
             node=node,

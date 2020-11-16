@@ -11,7 +11,20 @@ class Handler(daemon.handler.BaseHandler):
         ("GET", "daemon_stats"),
         (None, "daemon_stats"),
     )
-    prototype = []
+    prototype = [
+        {
+            "name": "selector",
+            "desc": "An object selector expression to filter the dataset with.",
+            "required": False,
+            "format": "string",
+        },
+        {
+            "name": "namespace",
+            "desc": "A namespace name to filter the dataset with.",
+            "required": False,
+            "format": "string",
+        },
+    ]
     access = {
         "roles": ["guest"],
         "namespaces": "ANY",
@@ -28,13 +41,19 @@ class Handler(daemon.handler.BaseHandler):
             },
             "services": {},
         }
+        options = self.parse_options(kwargs)
+        namespaces = thr.get_namespaces()
+        paths = thr.object_selector(selector=options.selector or '**', namespace=options.namespace, namespaces=namespaces)
         with shared.THREADS_LOCK:
             for dthr_id, dthr in shared.THREADS.items():
                 data[dthr_id] = dthr.thread_stats()
-        with shared.SERVICES_LOCK:
-            for svc in shared.SERVICES.values():
-                _data = svc.pg_stats()
-                if _data:
-                    data["services"][svc.path] = _data
+        for path in paths:
+            try:
+                svc = shared.SERVICES[path]
+            except KeyError:
+                continue
+            _data = svc.pg_stats()
+            if _data:
+                data["services"][path] = _data
         return {"status": 0, "data": data}
 
