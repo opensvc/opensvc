@@ -2040,7 +2040,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
-            thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+            tname = "scaler:%s" % svc.path
+            thr = threading.Thread(target=self.scaling_worker, name=tname, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
@@ -2067,7 +2068,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
-            thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
+            tname = "scaler:%s" % svc.path
+            thr = threading.Thread(target=self.scaling_worker, name=tname, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
@@ -2088,7 +2090,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
-            thr = threading.Thread(target=self.scaling_worker, args=(svc, to_add, []))
+            tname = "scaler:%s" % svc.path
+            thr = threading.Thread(target=self.scaling_worker, name=tname, args=(svc, to_add, []))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
@@ -2105,7 +2108,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.log.info("scale %s: %s", svc.path, delta)
         self.set_smon(svc.path, status="scaling")
         try:
-            thr = threading.Thread(target=self.scaling_worker, args=(svc, [], to_remove))
+            tname = "scaler:%s" % svc.path
+            thr = threading.Thread(target=self.scaling_worker, name=tname, args=(svc, [], to_remove))
             thr.start()
             self.threads.append(thr)
         except RuntimeError as exc:
@@ -2120,6 +2124,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             try:
                 thr = threading.Thread(
                     target=self.service_create_scaler_slave,
+                    name="scaler:%s" % svc.path,
                     args=(path, svc, data, instances)
                 )
                 thr.start()

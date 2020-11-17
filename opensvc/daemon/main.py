@@ -41,6 +41,7 @@ try:
         "opensvc.foreign.h2",
         "opensvc.foreign.hyper",
         "opensvc.foreign.jsonpath_ng.ext",
+        "opensvc.utilities.forkserver",
         "opensvc.utilities.converters",
         "opensvc.utilities.naming",
         "opensvc.utilities.optparser",
@@ -51,15 +52,26 @@ try:
         "opensvc.utilities.proc",
         "opensvc.utilities.string",
     ])
-except AttributeError:
+
+except (ImportError, AttributeError):
     # on python2, the only method is spawn, which is slow but
     # safe.
     pass
 
+try:
+    from utilities.os.linux import set_tname
+except (ImportError, OSError):
+    pass
+else:
+    def _bootstrap_named_thread(self):
+        set_tname(self.name)
+        threading.Thread._bootstrap_original(self)
+    threading.Thread._bootstrap_original = threading.Thread._bootstrap
+    threading.Thread._bootstrap = _bootstrap_named_thread
+
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
 STATS_INTERVAL = 1
-CP = None
 
 HEARTBEATS = (
     ("multicast", HbMcastTx, HbMcastRx),
