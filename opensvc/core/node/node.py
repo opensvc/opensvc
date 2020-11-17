@@ -4925,22 +4925,33 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def pool_status_data(self):
         data = {}
+        procs = {}
         volumes = self.pools_volumes()
-        for name in self.pool_ls_data():
+
+        def job(self, name, volumes):
             try:
                 pool = self.get_pool(name)
-                data[name] = pool.pool_status()
+                d = pool.pool_status()
             except Exception as exc:
-                data[name] = {
+                d = {
                     "name": name,
                     "type": "unknown",
                     "capabilities": [],
                     "head": "err: " + str(exc),
                 }
             if name in volumes:
-                data[name]["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
+                d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
             else:
-                data[name]["volumes"] = []
+                d["volumes"] = []
+            return d
+
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for name in self.pool_ls_data():
+                procs[executor.submit(job, self, name, volumes)] = name
+            for future in concurrent.futures.as_completed(procs):
+                name = procs[future]
+                data[name] = future.result()
         return data
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False):
