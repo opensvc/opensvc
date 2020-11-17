@@ -282,3 +282,17 @@ def klass_has_capability(mocker):
         mocker.patch.object(klass, 'has_capability', has_capability)
 
     return func
+
+
+@pytest.fixture(autouse=True)
+def check_io_timeout(mocker):
+    """Improve test time"""
+    # import utilities.proc
+    # mocker.patch.object(utilities.proc, 'LCALL_CHECK_IO_TIMEOUT', new=0.001)
+    mocker.patch('utilities.proc.LCALL_CHECK_IO_TIMEOUT', new=0.001)
+
+
+@pytest.fixture(autouse=True)
+def gc_collect(mocker):
+    """Improve test time"""
+    mocker.patch('gc.collect')
