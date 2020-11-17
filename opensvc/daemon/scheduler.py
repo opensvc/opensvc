@@ -15,6 +15,7 @@ from env import Env
 from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
 from utilities.storage import Storage
+from utilities.lazy import lazy, unset_lazy
 
 try:
     from io import StringIO
@@ -129,6 +130,7 @@ class Scheduler(shared.OsvcThread):
         while True:
             if self.stopped():
                 break
+            changed = False
             now = time.time()
             done = self.janitor_procs()
             self.janitor_run_done()
@@ -139,9 +141,12 @@ class Scheduler(shared.OsvcThread):
                 nmon = self.get_node_monitor()
                 if nmon and nmon.status not in NMON_STATUS_OFF:
                     self.run_scheduler(now)
+                    changed = True
             if now >= self.next_expire(now):
                 self.dequeue_actions(now)
-            self.update_status()
+                changed = True
+            if changed:
+                self.update_status()
             self.sleep()
 
     def sleep(self):
@@ -361,7 +366,6 @@ class Scheduler(shared.OsvcThread):
 
     def janitor_delayed(self):
         drop = []
-        cluster_data = self.nodes_data.get()
         csum = self.csum()
         for sig, task in self.delayed.items():
             action, path, rid = sig
@@ -378,7 +382,7 @@ class Scheduler(shared.OsvcThread):
             if not rid:
                 continue
             try:
-                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=cluster_data)
+                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=self.run_cluster_data)
             except KeyError:
                 # deleted during previous iterations
                 drop.append(sig)
@@ -398,6 +402,7 @@ class Scheduler(shared.OsvcThread):
         Get merged tasks to run from get_todo(), execute them and purge the
         delayed hash.
         """
+        unset_lazy(self, "run_cluster_data")
         dequeued = []
         session_id = str(uuid.uuid4())
         for task in self.get_todo(now):
@@ -463,10 +468,13 @@ class Scheduler(shared.OsvcThread):
                 self.lasts[sig] = last
         return last
 
+    @lazy
+    def run_cluster_data(self):
+        return self.nodes_data.get()
+
     def run_scheduler(self, now):
         #self.log.info("run scheduler")
         nonprov = []
-        cluster_data = self.nodes_data.get()
 
         if not shared.NODE:
             return
@@ -485,6 +493,8 @@ class Scheduler(shared.OsvcThread):
                 if sig in self.delayed:
                     continue
                 if sig in self.blacklist:
+                    continue
+                if sig in self.running:
                     continue
                 last = self.local_last(sig, p.fname, shared.NODE)
                 try:
@@ -526,6 +536,8 @@ class Scheduler(shared.OsvcThread):
                         continue
                     if sig in self.blacklist:
                         continue
+                    if sig in self.running:
+                        continue
                     last = self.local_last(sig, p.fname, svc)
                     try:
                         cluster_last = lasts[p.section][action]["last"]
@@ -546,7 +558,7 @@ class Scheduler(shared.OsvcThread):
                         continue
                     if rid:
                         try:
-                            svc.get_resource(rid).check_requires(action, cluster_data=cluster_data)
+                            svc.get_resource(rid).check_requires(action, cluster_data=self.run_cluster_data)
                         except (KeyError, AttributeError):
                             continue
                         except (ex.Error, ex.ContinueAction) as exc:
