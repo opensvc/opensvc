@@ -16,11 +16,17 @@ def assert_run_cmd_success(svcname, svc_cmd_args):
     assert Mgr()(argv=cmd_args) == 0
 
 
+@pytest.fixture(scope='function')
+def preexec_factory(mocker):
+    return mocker.patch('drivers.resource.app.preexec', autospec=True)
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_euid_0')
 class TestRun:
     @staticmethod
+    @pytest.mark.usefixtures('preexec_factory')
     @pytest.mark.parametrize('service_kws, success_flags', [
         [['--kw', 'task#1.command=/usr/bin/touch {private_var}/simple_cmd'], ['simple_cmd']],
         [['--kw', 'task#1.command=/usr/bin/touch {private_var}/complex_cmd1'
@@ -33,13 +39,32 @@ class TestRun:
                   '; /usr/bin/touch {private_var}/complex_cmd2'],
          ['complex_cmd1', 'complex_cmd2']],
     ])
-    def test_cmd(mocker, osvc_path_tests, service_kws, success_flags):
+    def test_cmd(osvc_path_tests, service_kws, success_flags):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
         assert_run_cmd_success(svcname, ['create'] + service_kws)
         assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
         for name in success_flags:
             assert os.path.exists(os.path.join(str(osvc_path_tests), 'var', 'svc', svcname, name))
+
+    @staticmethod
+    @pytest.mark.parametrize('task_kws, expected_preexec_factory_args', [
+        (["group=1"], [(0, 1, {}, None)]),
+        (["umask=0644"], [(0, 0, {}, int('0644', 8))]),
+        (["user=1", "group=2"], [(1, 2, {}, None)]),
+        (["user=1", "group=2", "umask=0600"], [(1, 2, {}, int("0600", 8))]),
+    ])
+    def test_cmd_use_expected_prexec_function(
+            preexec_factory,
+            task_kws,
+            expected_preexec_factory_args):
+        svcname = "pytest"
+        service_kws = ['--kw', 'task#1.command=%s' % Env.syspaths.true]
+        for kw in task_kws:
+            service_kws.extend(['--kw', 'task#1.%s' % kw])
+        assert_run_cmd_success(svcname, ['create'] + service_kws)
+        assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
+        assert preexec_factory.call_args_list[0] == expected_preexec_factory_args
+        assert preexec_factory.call_count == 1
 
     @staticmethod
     @pytest.mark.parametrize('service_hooks, success_flags', [
@@ -51,9 +76,10 @@ class TestRun:
         [['--kw', 'task#1.blocking_post_run=/usr/bin/touch {private_var}/post_run && %s' % Env.syspaths.false],
          ['task_cmd', 'post_run']],  # because optional is True by default cmd will succeed
     ])
-    def test_hooks(mocker, osvc_path_tests, service_hooks, success_flags):
+    @pytest.mark.usefixtures('preexec_factory')
+    def test_hooks(osvc_path_tests, service_hooks, success_flags):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
+
         # noinspection PyTypeChecker
         args = ['create', '--kw', 'task#1.command=/usr/bin/touch {private_var}/task_cmd'] + service_hooks
         assert_run_cmd_success(svcname, args)
@@ -88,9 +114,8 @@ class TestRun:
                     lcall_task.call_args_list[1][0][0][0]]) == set(['/task1', '/task2'])
 
     @staticmethod
-    def test_define_correct_schedule_with_next_run_immediate_when_no_last_run(mocker, tmp_file, capture_stdout):
+    def test_define_correct_schedule_with_next_run_immediate_when_no_last_run(tmp_file, capture_stdout):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
         assert_run_cmd_success(svcname, ["create",
                                          "--kw", "task#1.command=/usr/bin/date",
                                          "--kw", "task#1.schedule=@3"])
@@ -112,7 +137,6 @@ class TestRun:
     @staticmethod
     def test_define_correct_schedule_when_has_last_run(mocker, capsys):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
         with capsys.disabled():
             assert_run_cmd_success(svcname, ["create",
                                              "--kw", "task#1.command=/usr/bin/date",
@@ -135,7 +159,6 @@ class TestRun:
     @pytest.mark.parametrize('schedule_def', ["@%ss" % s for s in range(2, 13)])
     def test_define_correct_schedule_when_has_last_run_and_schedule_at_seconds(mocker, capsys, schedule_def):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
         with capsys.disabled():
             assert_run_cmd_success(svcname, ["create",
                                              "--kw", "task#1.command=/usr/bin/date",
