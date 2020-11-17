@@ -41,23 +41,31 @@ NMON_STATUS_OFF = [
     "maintenance",
 ]
 
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    setproctitle = lambda x: None
+
 def wrapper(path, action, options, now, session_id, cmd):
     os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
     os.environ["OSVC_SCHED_TIME"] = str(now)
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     sys.argv = cmd
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
     Env.session_uuid = session_id
     from core.node import Node
     from utilities.naming import split_path, factory
-    print("xxx", session_id, cmd)
     node = Node()
     if path is None:
         o = node
     else:
         name, namespace, kind = split_path(path)
         o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
+    try:
+        setproctitle(" ".join(cmd))
+    except Exception as exc:
+        print(exc)
+    sys.stdout = StringIO()
+    sys.stderr = StringIO()
     o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
