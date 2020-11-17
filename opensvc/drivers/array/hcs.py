@@ -266,7 +266,7 @@ ACTIONS = {
         "list_ldevs": {
             "msg": "List configured extents",
         },
-        "list_hostgroups": {
+        "list_host_groups": {
             "msg": "List configured host groups",
         },
         "list_resource_groups": {
