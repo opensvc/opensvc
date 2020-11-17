@@ -779,6 +779,7 @@ class Listener(shared.OsvcThread):
 
 class ClientHandler(shared.OsvcThread):
     sock_tmo = 5.0
+    name = "listener client"
 
     def __init__(self, parent, conn, addr, encrypted, scheme, tls, tls_context):
         shared.OsvcThread.__init__(self)
