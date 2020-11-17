@@ -446,7 +446,11 @@ class JournaledData(object):
                             yield _
                 elif isinstance(d1, list):
                     if prefix+path not in added:
-                        for i, v in enumerate(d1):
+                        if changes:
+                            iterator = enumerate(d1)
+                        else:
+                            iterator = reversed(list(enumerate(d1)))
+                        for i, v in iterator:
                             for _ in recurse(v, d2, path=path+[i], changes=changes):
                                 yield _
                 elif changes and ref_v != d1:
@@ -468,6 +472,9 @@ if __name__ == '__main__':
         ("set", dict(path=None, value={"a": {"b": 0, "c": [1, 2], "d": {"da": ""}}})),
         ("set", dict(path=["a"], value={"b": 1, "c": [1, 2, 3], "e": {"ea": 1, "eb": 2}})),
         ("set", dict(path=["a", "b"], value=2)),
+        ("set", dict(path=["a", "c"], value=[1, 2, 3, 4, 5])),
+        ("set", dict(path=["a", "c"], value=[1, 3, 2, 5])),
+        ("set", dict(path=["a", "c"], value=[1])),
         ("set", dict(path=["a", "d"], value=["f"])),
         ("get", dict(path=["a"])),
         ("inc", dict(path=["a", "d"])),
