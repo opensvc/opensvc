@@ -3256,8 +3256,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         Also update the monitor 'local_expect' field for each service.
         """
-        data = {}
         for path, idata in self.iter_local_services_instances():
+            data = {}
             smon = Storage(idata.get("monitor", {}))
             if not smon:
                 continue
