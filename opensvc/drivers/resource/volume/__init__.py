@@ -603,6 +603,9 @@ class Volume(Resource):
 
         volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
 
+        # force logger lazy eval now, to be sure its is configured non-volatile
+        volume.logger
+
         if volume.exists():
             self.log.info("volume %s already exists", self.volname)
             data = volume.print_status_data(mon_data=True)
