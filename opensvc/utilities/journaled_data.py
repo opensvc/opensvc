@@ -165,6 +165,7 @@ class JournaledData(object):
 
         The recorded diff is reparented to self.journal_head.
         """
+        value = copy.deepcopy(value)
         path = path or []
 
         try:
@@ -189,7 +190,6 @@ class JournaledData(object):
         """
         Low-level set. No journaling, no messaging.
         """
-        value = copy.deepcopy(value)
         if path:
             cursor = self.get_ref(path[:-1], self.data)
             key = path[-1]
