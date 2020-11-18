@@ -30,17 +30,16 @@ from .events import EVENTS
 
 class OsvcJournaledData(JournaledData):
     def __init__(self):
-        JournaledData.__init__(
-            self,
-        event_q=EVENT_Q,
-        journal_head=["monitor", "nodes", Env.nodename],
-        journal_exclude=[
-            ["gen"],
-            ["updated"],
-        ],
-        # disable journaling if we have no peer, as nothing purges the journal
-        journal_condition=lambda: bool(LOCAL_GEN),
-    )
+        super(OsvcJournaledData, self).__init__(
+            event_q=EVENT_Q,
+            journal_head=["monitor", "nodes", Env.nodename],
+            journal_exclude=[
+                ["gen"],
+                ["updated"],
+            ],
+            # disable journaling if we have no peer, as nothing purges the journal
+            journal_condition=lambda: bool(LOCAL_GEN),
+        )
 
 
 # import utilities.dbglock
@@ -243,7 +242,7 @@ class OsvcThread(threading.Thread, Crypt):
         self.node_data = self.daemon_status_data.view(["monitor", "nodes", Env.nodename])
         self.nodes_data = self.daemon_status_data.view(["monitor", "nodes"])
         self.instances_status_data = self.node_data.view(["services", "status"])
-        self.thread_data = DAEMON_STATUS.view([self.name])
+        self.thread_data = self.daemon_status_data.view([self.name])
 
     def alert(self, lvl, fmt, *args):
         if lvl == "info":
