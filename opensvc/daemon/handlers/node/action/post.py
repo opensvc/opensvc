@@ -3,8 +3,8 @@ from copy import deepcopy
 from subprocess import Popen, PIPE
 
 import daemon.handler
-from daemon.handler_action_helper import get_action_args_from_parser
 from env import Env
+from utilities.render.command import format_command
 from utilities.string import bdecode
 
 
@@ -69,26 +69,26 @@ class Handler(daemon.handler.BaseHandler):
 
         if options.action.startswith("daemon_"):
             subsystem = "daemon"
+            parser = "daemon"
             action = options.action[7:]
-            from commands.daemon.parser import OPT
         elif options.action.startswith("net_"):
             subsystem = "net"
+            parser = "network"
             action = options.action[4:]
-            from commands.network.parser import OPT
         elif options.action.startswith("network_"):
             subsystem = "net"
+            parser = "network"
             action = options.action[8:]
-            from commands.network.parser import OPT
         elif options.action.startswith("pool_"):
             subsystem = "pool"
+            parser = "pool"
             action = options.action[5:]
-            from commands.pool.parser import OPT
         else:
             subsystem = "node"
+            parser = "node"
             action = options.action
-            from commands.node.parser import OPT
 
-        cmd = get_action_args_from_parser(OPT, action, options)
+        cmd = format_command(parser, action, options.options or {})
         fullcmd = Env.om + [subsystem] + cmd
 
         thr.log_request("run 'om %s %s'" % (subsystem, " ".join(cmd)), nodename, **kwargs)
