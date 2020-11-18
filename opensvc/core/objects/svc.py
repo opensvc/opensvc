@@ -970,7 +970,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if self.node.oget("node", "dblog"):
                 err = self.do_logged_action(action, options)
             else:
-                self.log_action_header()
+                self.log_action_header(action, options)
                 err = self.do_action(action, options)
         else:
             err = self.do_action(action, options)
@@ -1305,7 +1305,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.setLevel(logging.INFO)
         self.logger.addHandler(actionlogfilehandler)
 
-        self.log_action_header()
+        self.log_action_header(action, options)
         err = self.do_action(action, options)
 
         # Push result and logs to database
@@ -1315,39 +1315,29 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.dblogger(action, begin, end, actionlogfile)
         return err
 
-    def log_action_obfuscate_secret(self, argv):
+    def log_action_obfuscate_secret(self, options):
+        data = {}
+        data.update(options)
+        for k in ("svcs", "parm_svcs", "namespace"):
+            try:
+                del data[k]
+            except KeyError:
+                pass
         if self.kind not in ("usr", "sec"):
-            return argv
-        try:
-            idx = argv.index("--value")
-        except ValueError:
-            return argv
-        try:
-            argv[idx+1]
-        except IndexError:
-            return argv
-        if argv[idx+1].startswith("-"):
-            return argv
-        argv[idx+1] = "xxx"
-        return argv
+            return data
+        for k, v in data.items():
+            if k == "value":
+                data["value"] = "xxx"
+        return data
 
-    def log_action_header(self):
-        argv = [] + sys.argv
-        try:
-            if argv[0].endswith("__main__.py"):
-                if len(argv) > 3 and argv[2] in ("-s", "--service"):
-                    _begin = 4
-                elif len(argv) > 2 and argv[1] == self.path:
-                    _begin = 2
-                else:
-                    _begin = 1
-                argv = self.log_action_obfuscate_secret(argv)
-                cmd = " ".join(argv[_begin:]).replace("%", "%%")
-                origin = os.environ.get("OSVC_ACTION_ORIGIN", "user")
-                runlog = "do %s (%s origin)" % (cmd, origin)
-                self.log.info(runlog, {"f_stream": False})
-        except IndexError:
-            pass
+    def log_action_header(self, action, options):
+        from utilities.render.command import format_command
+        origin = os.environ.get("OSVC_ACTION_ORIGIN", "user")
+        data = self.log_action_obfuscate_secret(options)
+        cmd = format_command(self.kind, action, data)
+        buff = "do %s (%s origin)" % (" ".join(cmd), origin)
+        buff = buff.replace("%", "%%")
+        self.log.info(buff, {"f_stream": False})
 
     def prepare_options(self, action, options):
         """
