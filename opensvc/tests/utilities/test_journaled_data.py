@@ -86,6 +86,13 @@ TEST_SCENARIO = [
      [{"id": 10, "data": [[["a", "e", "ec"], "EC"]]},
       {"id": 11, "data": [[["a", "e", "ed"], "ED"]]},
       ]),
+
+    ("set", dict(path=["a", "c"], value=[1]), None,
+     [{"id": 12, "data": [[['a', 'c', 2]], [['a', 'c', 1]]]}]),
+
+    ("set", dict(path=["a", "c"], value=[1, 2, 3]), None,
+     [{"id": 13, "data": [[['a', 'c', 1], 2], [['a', 'c', 2], 3]]}]),
+
 ]
 
 EXPECTED_FINAL_DATA = {"a": {"c": [1, 2, 3], "e": {"ea": 1, "eb": 2, "ec": "EC", "ed": "ED"}, "d": 3, "new": 1}}
@@ -103,7 +110,11 @@ EXPECTED_CHANGES = [[['a'], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                     [['a', 'b']],
                     [['a', 'new'], 1],
                     [['a', 'e', 'ec'], 'EC'],
-                    [['a', 'e', 'ed'], 'ED']]
+                    [['a', 'e', 'ed'], 'ED'],
+                    [['a', 'c', 2]],
+                    [['a', 'c', 1]],
+                    [['a', 'c', 1], 2],
+                    [['a', 'c', 2], 3]]
 
 EXPECTED_CHANGES_FROM_A = [[[], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                            [['c', 2], 3],
@@ -115,10 +126,14 @@ EXPECTED_CHANGES_FROM_A = [[[], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                            [['d'], 3],
                            [['new'], 1],
                            [['e', 'ec'], 'EC'],
-                           [['e', 'ed'], 'ED']]
+                           [['e', 'ed'], 'ED'],
+                           [['c', 2]],
+                           [['c', 1]],
+                           [['c', 1], 2],
+                           [['c', 2], 3]]
 
 
-def run(data):
+def run(data, check_events):
     for fn, kwargs, expected_result, expected_events in TEST_SCENARIO:
         print("* %s(%s)" % (fn, ", ".join(["%s=%s" % (k, v) for k, v in kwargs.items()])))
         if fn in ['get_copy'] and isinstance(data, JournaledDataView):
@@ -142,7 +157,8 @@ def run(data):
                         del(msg["ts"])
                         del(msg["kind"])
                     events.append(msg)
-                assert events == expected_events
+                if check_events:
+                    assert events == expected_events
     if hasattr(data, 'dump_changes'):
         print("journal: %s" % data.dump_changes())
     if hasattr(data, 'dump_data'):
@@ -151,37 +167,63 @@ def run(data):
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
+@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
 class TestJournaledDataWithoutJournal(object):
     @staticmethod
-    def test(with_queue):
+    def test(with_queue, check_events):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(event_q=event_q, emit_interval=0)
-        run(data)
+        run(data, check_events)
         assert data.dump_data() == EXPECTED_FINAL_DATA
         assert data.dump_changes() == []
 
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
+@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
 class TestJournaledDataWithJournal(object):
     @staticmethod
-    def test_with_full_journaling(with_queue):
+    def test_with_full_journaling_has_expected_data(with_queue, check_events):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
-        run(data)
+        run(data, check_events)
         assert data.dump_data() == EXPECTED_FINAL_DATA
+
+    @staticmethod
+    def test_with_full_journaling_has_expected_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
+        run(data, check_events)
         assert data.dump_changes() == EXPECTED_CHANGES
+
+    @staticmethod
+    def test_with_full_journaling_can_apply_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
+        run(data, check_events)
         rdata = JournaledData()
         rdata.patch(patchset=data.dump_changes())
         assert rdata.dump_data() == EXPECTED_FINAL_DATA
 
     @staticmethod
-    def test_with_a_journaling_with_exclude_a_b(with_queue):
+    def test_with_a_journaling_with_exclude_a_b_has_expected_data(with_queue, check_events):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
-        run(data)
+        run(data, check_events)
         assert data.dump_data() == EXPECTED_FINAL_DATA
+
+    @staticmethod
+    def test_with_a_journaling_with_exclude_a_b_has_expected_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
+        run(data, check_events)
         assert data.dump_changes() == EXPECTED_CHANGES_FROM_A
+
+    @staticmethod
+    def test_with_a_journaling_with_exclude_a_b_can_apply_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
+        run(data, check_events)
         rdata = JournaledData()
         rdata.patch(patchset=data.dump_changes())
         expected_patched_copy = deepcopy(EXPECTED_FINAL_DATA["a"])
@@ -189,11 +231,17 @@ class TestJournaledDataWithJournal(object):
         assert rdata.dump_data() == expected_patched_copy
 
     @staticmethod
-    def test_with_a_b_journaling(with_queue):
+    def test_with_a_b_journaling_has_expected_data(with_queue, check_events):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a", "b"], event_q=event_q, emit_interval=0)
-        run(data)
+        run(data, check_events)
         assert data.dump_data() == EXPECTED_FINAL_DATA
+
+    @staticmethod
+    def test_with_a_b_journaling_expect_empty_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["a", "b"], event_q=event_q, emit_interval=0)
+        run(data, check_events)
         rdata = JournaledData()
         rdata.patch(patchset=data.dump_changes())
         assert rdata.dump_data() is None
@@ -207,7 +255,7 @@ class TestJournaledDataView(object):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
         data_view = JournaledDataView(data=data, path=[])
-        run(data_view)
+        run(data_view, False)
         assert data_view.get() == EXPECTED_FINAL_DATA
         assert data.dump_data() == EXPECTED_FINAL_DATA
 
@@ -216,6 +264,6 @@ class TestJournaledDataView(object):
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(event_q=event_q, emit_interval=0)
         data_view = JournaledDataView(data=data, path=[])
-        run(data_view)
+        run(data_view, False)
         assert data_view.get() == EXPECTED_FINAL_DATA
         assert data.dump_data() == EXPECTED_FINAL_DATA
