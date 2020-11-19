@@ -266,6 +266,14 @@ ACTIONS = {
                 OPT.name,
             ],
         },
+        "unassign_virtual_ldevid": {
+            "msg": "Unassign the virtual ldev id.",
+            "options": [
+                OPT.id,
+                OPT.naa,
+                OPT.name,
+            ],
+        },
     },
     "List actions": {
         "list_mappings": {
@@ -364,7 +372,7 @@ def apiretry(func):
         try:
             sc = condition(data)
             if sc and msg:
-                self.node.log.info(msg)
+                self.log.info(msg)
         except Exception:
             sc = False
         return sc or cc
@@ -381,8 +389,8 @@ def apiretry(func):
         except (KeyError, IndexError, AttributeError, TypeError):
             pass
         retry = retry or {}
-        count = retry.get("count", 5)
-        delay = retry.get("delay", 5)
+        count = retry.get("count", self.retry)
+        delay = retry.get("delay", self.delay)
         msg = retry.get("message")
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
@@ -436,7 +444,6 @@ class Hcss(object):
     def __init__(self, objects=None, node=None, log=None):
         if objects is None:
             objects = []
-        self.log = log
         self.objects = objects
         self.filtering = len(objects) > 0
         self.timeout = 10
@@ -444,6 +451,10 @@ class Hcss(object):
             self.node = node
         else:
             self.node = Node()
+        if log:
+            self.log = log
+        else:
+            self.log = self.node.log
         done = []
         for s in self.node.conf_sections(cat="array"):
             try:
@@ -470,6 +481,8 @@ class Hcss(object):
                 https_proxy = self.node.oget(s, "https_proxy")
                 api = self.node.oget(s, "api")
                 model = self.node.oget(s, "model")
+                retry = self.node.oget(s, "retry")
+                delay = self.node.oget(s, "delay")
             except:
                 print("error parsing section", s, file=sys.stderr)
                 continue
@@ -488,6 +501,8 @@ class Hcss(object):
                 timeout=timeout,
                 http_proxy=http_proxy,
                 https_proxy=https_proxy,
+                retry=retry,
+                delay=delay,
                 node=self.node,
                 log=self.log,
             )
@@ -510,8 +525,9 @@ class Hcs(object):
 
     def __init__(self, name=None, model=None, api=None,
                  username=None, password=None, timeout=None,
-                 http_proxy=None, https_proxy=None, node=None,
-                 log=None):
+                 http_proxy=None, https_proxy=None,
+                 retry=30, delay=10,
+                 node=None, log=None):
         self.node = node
         self.log = log
         self.name = name
@@ -523,6 +539,8 @@ class Hcs(object):
         self.https_proxy = https_proxy
         self.auth = (username, password)
         self.timeout = timeout
+        self.retry = retry
+        self.delay = delay
         self.session_data = None
         self.locked = False
         self.keys = ["system",
@@ -827,28 +845,28 @@ class Hcs(object):
         path = "/ldevs"
         data = self.post(path, data=d)
         ldev_id = int(data["affectedResources"][0].split("/")[-1])
-        data = self.get_ldev(oid=ldev_id)
+        ldev = self.get_ldev(oid=ldev_id)
         self.set_label(ldev_id, name)
 
-        virtual_ldev_id = data.get("virtualLdevId")
-        _resource_group = data.get("resourceGroupId")
+        virtual_ldev_id = ldev.get("virtualLdevId")
+        _resource_group = ldev.get("resourceGroupId")
         if resource_group != _resource_group:
-            self.unset_virtual_ldev_id(ldev_id)
+            self.unset_virtual_ldev_id(ldev)
             self.unlock()
             self.set_ldev_resource_group(ldev_id, resource_group)
             self.lock()
             self.set_virtual_ldev_id(ldev_id, ldev_id)
         elif virtual_ldev_id != ldev_id:
-            self.unset_virtual_ldev_id(ldev_id)
+            self.unset_virtual_ldev_id(ldev)
             self.set_virtual_ldev_id(ldev_id, ldev_id)
-        return data
+        return ldev
 
     def lock(self):
         if self.locked:
             return
         data = {
             "parameters": {
-                "waitTime": 30,
+                "waitTime": self.timeout,
             }
         }
         retry = {
@@ -871,7 +889,15 @@ class Hcs(object):
         data["parameters"]["virtualLdevId"] = virtual_ldev_id
         self.put("/ldevs/%d/actions/assign-virtual-ldevid/invoke" % ldev_id, data=data)
 
-    def unset_virtual_ldev_id(self, ldev_id):
+    def unassign_virtual_ldevid(self, id=None, name=None, naa=None, **kwargs):
+        ldev = self.get_ldev(oid=id, name=name, naa=naa)
+        self.unset_virtual_ldev_id(ldev)
+        return self.get_ldev(oid=id, name=name, naa=naa)
+
+    def unset_virtual_ldev_id(self, ldev):
+        ldev_id = ldev["ldevId"]
+        if ldev.get("virtualLdevId") == VIRTUAL_LDEV_ID_NONE:
+            return
         data = self.get("/ldevs/%d/actions/unassign-virtual-ldevid" % ldev_id)
         if "errorSource" in data:
             # already unassigned
@@ -1038,8 +1064,6 @@ class Hcs(object):
         retry = {
             "condition": lambda x: x.get("error", {}).get("detailCode") == "30000E-2-B958-0233",
             "message": "retry unmaping %s: LU is executing host I/O" % oid,
-            "count": 36,
-            "delay": 10,
         }
         data = self.delete('/luns/%s' % oid, retry=retry)
         return data
