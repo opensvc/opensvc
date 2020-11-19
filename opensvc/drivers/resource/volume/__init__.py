@@ -587,7 +587,7 @@ class Volume(Resource):
         Another service provision may try to create the same volume simultaneously.
         Protect this method with a global lock.
         """
-        lockfile = os.path.join(Env.paths.pathvar, "create_volume.lock")
+        lockfile = os.path.join(self.volsvc.var_d, "create_volume.lock")
         try:
             with utilities.lock.cmlock(lockfile=lockfile, timeout=20):
                 return self.create_volume_locked()
