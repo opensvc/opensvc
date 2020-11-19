@@ -929,7 +929,10 @@ class Hcs(object):
                 buff += "\n"
             if data:
                 buff += "body:\n"
-                buff += data
+                try:
+                    buff += json.dumps(data, indent=4)
+                except ValueError:
+                    buff += str(data)
                 buff += "\n"
             if _result:
                 buff += "result:\n"
