@@ -355,6 +355,20 @@ def apiretry(func):
     def is_retryable_error(data):
         return data.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
 
+    def check_condition(self, data, condition, msg):
+        common_condition = lambda x: is_retyable_error(x) and not is_job_response(x)
+        try:
+            cc = common_condition(data)
+        except Exception:
+            cc = False
+        try:
+            sc = condition(data)
+            if sc and msg:
+                self.node.log.info(msg)
+        except Exception:
+            sc = False
+        return sc or cc
+
     def _func(self, uri, retry=None, base="device", **kwargs):
         if base == "device":
             base_path = self.urlpath_device()
@@ -370,7 +384,6 @@ def apiretry(func):
         count = retry.get("count", 5)
         delay = retry.get("delay", 5)
         msg = retry.get("message")
-        common_condition = lambda x: is_retyable_error(x) and not is_job_response(x)
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
             try:
@@ -391,21 +404,16 @@ def apiretry(func):
             if not r.text:
                 return
             data = r.json()
-            try:
-                cc = common_condition(data)
-            except Exception:
-                cc = False
-            try:
-                sc = condition(data)
-                if sc and msg:
-                    self.node.log.info(msg)
-            except Exception:
-                sc = False
-            if sc or cc:
+            if check_condition(self, data, condition, msg):
                 time.sleep(delay)
                 continue
             if func.__name__ != "get":
                 data = self.check_result(func.__name__, uri, result=data, **kwargs)
+                if check_condition(self, data, condition, msg):
+                    time.sleep(delay)
+                    continue
+                if data.get("state") == "Failed":
+                    self.dump(func.__name__, uri, _result=data, **kwargs)
             try:
                 if self.log and func.__name__ != "get" and "/sessions" not in uri and "jobId" not in data:
                     self.log.info("%s", data)
@@ -929,38 +937,36 @@ class Hcs(object):
             "affectedResources" : [ "/ConfigurationManager/v1/objects/storages/882000452491/ldevs/3" ]
         }
         """
-        def dump(_result):
-            buff = "%s %s\n" % (method, uri)
-            if headers:
-                buff += "headers:\n"
-                buff += json.dumps(headers, indent=4)
-                buff += "\n"
-            if data:
-                buff += "body:\n"
-                try:
-                    buff += json.dumps(data, indent=4)
-                except ValueError:
-                    buff += str(data)
-                buff += "\n"
-            if _result:
-                buff += "result:\n"
-                buff += json.dumps(_result, indent=4)
-                buff += "\n"
-            raise ex.Error(buff)
-
         if "errorSource" in result:
-            dump(result)
+            self.dump(method, uri, headers=headers, data=data, _result=result)
         if "jobId" in result:
             while True:
                 r = self.get("/jobs/%d" % result["jobId"])
                 if r is None:
                     return
                 if r["status"] == "Completed":
-                    if r["state"] == "Failed":
-                        dump(r)
                     return r
                 time.sleep(2)
         return result
+
+    def dump(self, method, uri=None, headers=None, data=None, _result=None, **kwargs):
+        buff = "%s %s\n" % (method, uri)
+        if headers:
+            buff += "headers:\n"
+            buff += json.dumps(headers, indent=4)
+            buff += "\n"
+        if data:
+            buff += "body:\n"
+            try:
+                buff += json.dumps(data, indent=4)
+            except ValueError:
+                buff += str(data)
+            buff += "\n"
+        if _result:
+            buff += "result:\n"
+            buff += json.dumps(_result, indent=4)
+            buff += "\n"
+        raise ex.Error(buff)
 
     def set_label(self, oid, label):
         d = {
@@ -1032,6 +1038,8 @@ class Hcs(object):
         retry = {
             "condition": lambda x: x.get("error", {}).get("detailCode") == "30000E-2-B958-0233",
             "message": "retry unmaping %s: LU is executing host I/O" % oid,
+            "count": 36,
+            "delay": 10,
         }
         data = self.delete('/luns/%s' % oid, retry=retry)
         return data
