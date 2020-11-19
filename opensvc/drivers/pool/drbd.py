@@ -108,18 +108,17 @@ class Pool(BasePool):
             data += self.add_fs(name, shared, dev=dev)
         return data
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         if self.zpool:
             data = {
                 "type": self.type,
                 "name": self.name,
                 "capabilities": self.capabilities,
-                "free": -1,
-                "used": -1,
-                "size": -1,
                 "head": self.zpool,
             }
+            if not usage:
+                return data
             cmd = ["zpool", "get", "-H", "size,alloc,free", "-p", self.zpool]
             out, err, ret = justcall(cmd)
             if ret != 0:
@@ -135,7 +134,10 @@ class Pool(BasePool):
                 "type": self.type,
                 "name": self.name,
                 "capabilities": self.capabilities,
+                "head": self.vg,
             }
+            if not usage:
+                return data
             cmd = ["vgs", "-o", "Size,Free", "--units", "k", "--noheadings", self.vg]
             out, err, ret = justcall(cmd)
             if ret != 0:
@@ -144,7 +146,6 @@ class Pool(BasePool):
             data["free"] = int(l[1].split(".")[0])
             data["size"] = int(l[0].split(".")[0])
             data["used"] = data["size"] - data["free"]
-            data["head"] = self.vg
             return data
         else:
             if not os.path.exists(self.path):
@@ -153,7 +154,10 @@ class Pool(BasePool):
                 "type": self.type,
                 "name": self.name,
                 "capabilities": self.capabilities,
+                "head": self.path,
             }
+            if ret != 0:
+                return data
             cmd = ["df", "-P", self.path]
             out, err, ret = justcall(cmd)
             if ret != 0:
@@ -162,6 +166,5 @@ class Pool(BasePool):
             data["free"] = int(l[3])
             data["used"] = int(l[2])
             data["size"] = int(l[1])
-            data["head"] = self.path
             return data
 

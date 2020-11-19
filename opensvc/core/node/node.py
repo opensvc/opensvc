@@ -4952,13 +4952,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
-    def pool_status_data(self):
+    def pool_status_data(self, usage=True):
         data = {}
         volumes = self.pools_volumes()
         for name in self.pool_ls_data():
             try:
                 pool = self.get_pool(name)
-                data[name] = pool.pool_status()
+                data[name] = pool.pool_status(usage=usage)
             except Exception as exc:
                 data[name] = {
                     "name": name,
@@ -4972,10 +4972,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 data[name]["volumes"] = []
         return data
 
-    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False):
+    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
         candidates = []
         cause = []
-        for pool in self.pool_status_data().values():
+        for pool in self.pool_status_data(usage=usage).values():
             if shared is True and "shared" not in pool["capabilities"]:
                 cause.append((pool["name"], "not shared capable"))
                 continue

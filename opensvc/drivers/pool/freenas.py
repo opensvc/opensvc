@@ -85,7 +85,7 @@ class Pool(BasePool):
         array.node = self.node
         return array
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         data = {
             "type": self.type,
@@ -93,6 +93,8 @@ class Pool(BasePool):
             "head": "array://%s/%s" % (self.array_name, self.diskgroup),
             "capabilities": self.capabilities,
         }
+        if not usage:
+            return data
         try:
             dg = [dg for dg in self.array.list_pools() if dg["name"] == self.diskgroup][0]
         except Exception as exc:

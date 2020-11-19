@@ -142,7 +142,7 @@ class Pool(BasePool):
 
 
     @session
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         data = {
             "type": self.type,
@@ -150,6 +150,8 @@ class Pool(BasePool):
             "head": "array://%s/%s" % (self.array_name, self.storagepool),
             "capabilities": self.capabilities,
         }
+        if not usage:
+            return data
         try:
             status = self.array.get_pool_by_name(name=self.storagepool)
         except Exception as exc:
