@@ -343,6 +343,18 @@ def apilock(func):
     return _func
 
 def apiretry(func):
+    def is_job_response(data):
+        if not data:
+            return False
+        if "jobId" not in data:
+            return False
+        if "state" not in data:
+            return False
+        return True
+
+    def is_retryable_error(data):
+        return data.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
+
     def _func(self, uri, retry=None, base="device", **kwargs):
         if base == "device":
             base_path = self.urlpath_device()
@@ -358,7 +370,7 @@ def apiretry(func):
         count = retry.get("count", 5)
         delay = retry.get("delay", 5)
         msg = retry.get("message")
-        common_condition = lambda x: x.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
+        common_condition = lambda x: is_retyable_error(x) and not is_job_response(x)
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
             try:
