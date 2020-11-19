@@ -774,12 +774,20 @@ class Hcs(object):
         return data
 
 
-    def _del_ldev(self, id=None, **kwargs):
-        id = int(id)
+    def _del_ldev(self, ldev=None, **kwargs):
+        try:
+            ldev_id = (ldev["ldevId"])
+        except KeyError:
+            raise ex.Error("_del_ldev: invalid input ldev data")
+
+        # dataReductionMode = disabled
+        # dataReductionStatus = DISABLED
+        force = ldev.get("dataReductionMode") != "disabled"
+
         d = {
-            "isDataReductionDeleteForceExecute": True,
+            "isDataReductionDeleteForceExecute": force,
         }
-        path = '/ldevs/%d' % id
+        path = '/ldevs/%d' % ldev_id
         data = self.delete(path, data=d)
         return data
 
@@ -1046,7 +1054,7 @@ class Hcs(object):
         data = self.get_ldev(oid=id, name=name)
         if data is None:
             return
-        return self._del_ldev(data["ldevId"])
+        return self._del_ldev(data)
 
     def del_disk(self, id=None, name=None, naa=None, **kwargs):
         if id is None and name is None and naa is None:
@@ -1057,7 +1065,7 @@ class Hcs(object):
         results = {}
         response = self._unmap_lun(data)
         results["unmap"] = response
-        response = self._del_ldev(data["ldevId"])
+        response = self._del_ldev(data)
         results["del_ldev"] = data
         return results
 
