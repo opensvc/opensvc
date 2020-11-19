@@ -746,7 +746,7 @@ class Hcs(object):
         elif naa:
             ldev_id = self.ldev_id_from_naa(naa)
             data = self.get_ldev(oid=ldev_id)
-            if data and naa != data["naaId"]:
+            if data and "naaId" in data and naa != data["naaId"]:
                 raise ex.Error("expected naa %s for ldev id %s, found %s. use --id" % (naa, ldev_id, data["naaId"]))
             return data
         elif name:
