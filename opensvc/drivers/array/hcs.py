@@ -62,6 +62,25 @@ RETRYABLE_LOCK_ERROR_MSG_IDS = [
     "KART40052-E",
     "KART40052-E",
 ]
+RETRYABLE_STATUS = {
+    503: "service unavailable",
+    504: "gateway timeout",
+}
+NON_RETRYABLE_STATUS = {
+    400: "bad request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not found",
+    405: "method not allowed",
+    406: "not acceptable",
+    409: "conflict",
+    411: "length required",
+    412: "precondition failed",
+    415: "unsupported media type",
+    417: "expectation failed",
+    500: "server error",
+    502: "proxy error",
+}
 
 try:
     import requests
@@ -348,6 +367,15 @@ def apiretry(func):
                 raise ex.Error(str(exc))
             except Exception as exc:
                 raise ex.Error("hcs api request error: %s" % str(exc))
+            if r.status_code in RETRYABLE_STATUS:
+                desc = RETRYABLE_STATUS[r.status_code]
+                if msg:
+                    self.node.log.warning("response status %d: %s (%s)", r.status_code, desc, uri)
+                time.sleep(delay)
+                continue
+            if r.status_code in NON_RETRYABLE_STATUS:
+                desc = NON_RETRYABLE_STATUS[r.status_code]
+                raise ex.Error("response status %d: %s (%s)" % (r.status_code, desc, uri))
             if not r.text:
                 return
             data = r.json()
@@ -372,6 +400,13 @@ def apiretry(func):
             except (KeyError, IndexError, AttributeError, TypeError):
                 pass
             return data
+        if r.status_code in RETRYABLE_STATUS:
+            desc = RETRYABLE_STATUS[r.status_code]
+        elif r.status_code in NON_RETRYABLE_STATUS:
+            desc = NON_RETRYABLE_STATUS[r.status_code]
+        else:
+            desc = "unknown"
+        raise ex.Error("response status %d: %s, api request retries exhausted (%s)" % (r.status_code, desc, uri))
     return _func
 
 class Hcss(object):
