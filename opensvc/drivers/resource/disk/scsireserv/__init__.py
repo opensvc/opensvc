@@ -246,8 +246,9 @@ class BaseDiskScsireserv(Resource):
                     self.log.debug("disk %s is correctly reserved" % d)
                     r += core.status.UP
             except ex.ScsiPrNotsupported as exc:
-                self.log.warning(str(exc))
-                continue
+                self.status_log("%s: pr not supported" % d)
+            except ex.Error as exc:
+                self.status_log(str(exc))
         return r.status
 
 
