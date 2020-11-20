@@ -15,8 +15,10 @@ def session(fn):
     attr_name = '_fcache_' + fn.__name__
 
     def wrapper(self, *args, **kwargs):
-        data = fn(self, *args, **kwargs)
-        self.array.close_session()
+        try:
+            data = fn(self, *args, **kwargs)
+        finally:
+            self.array.close_session()
         return data
 
     return wrapper
