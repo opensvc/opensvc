@@ -310,6 +310,20 @@ class BaseDiskScsireserv(Resource):
         if self.scsireserv() != 0:
             raise ex.Error
 
+    def post_provision_start(self):
+        def start_and_check():
+            self.start()
+            time.sleep(5)
+            if self._status() in (core.status.UP, core.status.NA):
+                self.log.info("registration and reservation stability check passed")
+                return True
+            return False
+        retries = 5
+        self.wait_for_fn(
+            lambda: start_and_check(),
+            retries, 1,
+            errmsg="not registered after %d registrations attempts" % retries
+        )
 
     def stop(self):
         self.get_hostid()

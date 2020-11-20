@@ -136,25 +136,6 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return ret
 
     def mpath_register(self, disk):
-        """
-        HCS created volume can fail to register all paths on first try.
-        Retry a few times before raising an issue.
-        """
-        def reg_and_check():
-            self._mpath_register(disk)
-            n_paths, n_registered = self.read_registrations()
-            if n_registered == n_paths:
-                return True
-            return False
-        retries = 5
-        self.wait_for_fn(
-            lambda: reg_and_check(),
-            retries, 2,
-            errmsg="all paths not registered after %d registrations attempts" % retries
-        )
-        return 0
-
-    def _mpath_register(self, disk):
         self.set_read_only(0)
         cmd = ["mpathpersist", "--out", "--register-ignore", "--param-sark=" + self.hostid, disk]
         ret, out, err = self.vcall(cmd)
