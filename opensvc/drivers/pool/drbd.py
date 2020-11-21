@@ -156,7 +156,7 @@ class Pool(BasePool):
                 "capabilities": self.capabilities,
                 "head": self.path,
             }
-            if ret != 0:
+            if not usage:
                 return data
             cmd = ["df", "-P", self.path]
             out, err, ret = justcall(cmd)
