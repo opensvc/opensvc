@@ -27,7 +27,7 @@ class Pool(BasePool):
             data += self.add_fs(name, shared)
         return data
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -35,7 +35,10 @@ class Pool(BasePool):
             "name": self.name,
             "type": self.type,
             "capabilities": self.capabilities,
+            "head": self.path,
         }
+        if not usage:
+            return data
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
         if ret != 0:
@@ -45,6 +48,5 @@ class Pool(BasePool):
         data["free"] = convert_size(l[3], default_unit="K", _to="k")
         data["used"] = convert_size(l[2], default_unit="K", _to="k")
         data["size"] = convert_size(l[1], default_unit="K", _to="k")
-        data["head"] = self.path
         return data
 

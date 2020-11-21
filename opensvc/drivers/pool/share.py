@@ -40,7 +40,7 @@ class Pool(BasePool):
         }
         return [fs]
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -50,6 +50,8 @@ class Pool(BasePool):
             "capabilities": self.capabilities,
             "head": self.path,
         }
+        if not usage:
+            return data
         cmd = ["df", "-P", self.path]
         out, err, ret = justcall(cmd)
         if ret != 0:

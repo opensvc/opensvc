@@ -108,7 +108,7 @@ class Mgr(object):
             proc.wait()
             ret = proc.returncode
         except KeyboardInterrupt as exc:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            os.killpg(os.getpgid(proc.pid), signal.SIGINT)
             print("kill detached process")
             ret = 1
         except ex.Signal as exc:
