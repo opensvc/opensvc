@@ -4937,8 +4937,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         def job(self, name, volumes):
             try:
-                pool = self.get_pool(name, usage=usage)
-                d = pool.pool_status()
+                pool = self.get_pool(name)
+                d = pool.pool_status(usage=usage)
             except Exception as exc:
                 d = {
                     "name": name,
