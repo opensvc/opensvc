@@ -4954,7 +4954,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            for name in self.pool_ls_data():
+            for name in pools:
                 procs[executor.submit(job, self, name, volumes)] = name
             for future in concurrent.futures.as_completed(procs):
                 name = procs[future]
