@@ -180,7 +180,10 @@ class Scheduler(shared.OsvcThread):
                 continue
             if ca != self.cluster_ca:
                 continue
-            cf_mtime = self.get_service_config(obj.path, Env.nodename).updated
+            try:
+                cf_mtime = self.get_service_config(obj.path, Env.nodename).updated
+            except AttributeError:
+                continue
             if cf_mtime is None:
                 continue
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
