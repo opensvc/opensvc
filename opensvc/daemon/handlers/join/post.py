@@ -20,9 +20,11 @@ class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
         lock_id = self.lock_acquire(Env.nodename, "join", 30, thr=thr)
         if not lock_id:
             raise ex.HTTP(503, "Lock not acquired")
-        with shared.JOIN_LOCK:
-            data = self.join(nodename, thr=thr, **kwargs)
-        self.lock_release("join", lock_id, thr=thr)
+        try:
+            with shared.JOIN_LOCK:
+                data = self.join(nodename, thr=thr, **kwargs)
+        finally:
+            self.lock_release("join", lock_id, thr=thr)
         return data
 
     def join(self, nodename, thr=None, **kwargs):
@@ -31,6 +33,7 @@ class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
             thr.log.info("node %s rejoins", nodename)
         else:
             new_nodes = thr.cluster_nodes + [nodename]
+            thr.log.info("node %s joins", nodename)
             thr.add_cluster_node(nodename)
         result = {
             "status": 0,
