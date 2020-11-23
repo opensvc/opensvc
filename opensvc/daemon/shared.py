@@ -864,6 +864,7 @@ class OsvcThread(threading.Thread, Crypt):
         svc.set_multi(["cluster.nodes="+" ".join(nodes)], validation=False)
         self.log.info("unset cluster.nodes in node config")
         NODE.unset_multi(["cluster.nodes"])
+        self.delete_peer_data(nodename)
         del svc
 
     @lazy
@@ -967,6 +968,15 @@ class OsvcThread(threading.Thread, Crypt):
                 "peer": nodename,
             }
         )
+        self.delete_peer_data(nodename)
+        wake_monitor(reason="forget node %s data" % nodename)
+        if nmon_status == "shutting":
+            self.log.info("cluster is not split, the lost node %s last known "
+                          "monitor state is '%s'", nodename, nmon_status)
+        else:
+            self.split_handler()
+
+    def delete_peer_data(self, nodename):
         with RX_LOCK:
             self.nodes_data.unset_safe([nodename])
             try:
@@ -978,12 +988,6 @@ class OsvcThread(threading.Thread, Crypt):
                 del REMOTE_GEN[nodename]
             except KeyError:
                 pass
-        wake_monitor(reason="forget node %s data" % nodename)
-        if nmon_status == "shutting":
-            self.log.info("cluster is not split, the lost node %s last known "
-                          "monitor state is '%s'", nodename, nmon_status)
-        else:
-            self.split_handler()
 
     def peer_down(self, nodename, exclude=None):
         """
