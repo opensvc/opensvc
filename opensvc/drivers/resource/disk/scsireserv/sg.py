@@ -177,7 +177,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if "node.x.multipath" not in capabilities:
             return devpath
         cmd = [Env.syspaths.multipath, "-l", "-v1", devpath]
-        ret, out, err = self.call(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.Error(err)
         _devpath = "/dev/mapper/" + out.strip()

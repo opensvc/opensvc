@@ -1361,6 +1361,22 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "array",
         "rtype": ["hcs"],
+        "keyword": "retry",
+        "default": 30,
+        "convert": "integer",
+        "text": "The number of request attemps on retryable errors."
+    },
+    {
+        "section": "array",
+        "rtype": ["hcs"],
+        "keyword": "delay",
+        "default": 10,
+        "convert": "duration",
+        "text": "The delay between request attemps on retryable errors."
+    },
+    {
+        "section": "array",
+        "rtype": ["hcs"],
         "keyword": "model",
         "required": True,
         "example": "VSP G350",

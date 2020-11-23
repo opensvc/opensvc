@@ -4925,14 +4925,19 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
-    def pool_status_data(self):
+    def pool_status_data(self, usage=True, pools=None):
+        all_pools = self.pool_ls_data()
+        if pools:
+            pools = [p["name"] for p in pools if p["name"] in all_pools]
+        else:
+            pools = all_pools
         data = {}
         procs = {}
         volumes = self.pools_volumes()
 
         def job(self, name, volumes):
             try:
-                pool = self.get_pool(name)
+                pool = self.get_pool(name, usage=usage)
                 d = pool.pool_status()
             except Exception as exc:
                 d = {
@@ -4956,10 +4961,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 data[name] = future.result()
         return data
 
-    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False):
+    def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
+        candidates1 = []
         candidates = []
         cause = []
-        for pool in self.pool_status_data().values():
+        for pool in self.pool_status_data(usage=False).values():
             if shared is True and "shared" not in pool["capabilities"]:
                 cause.append((pool["name"], "not shared capable"))
                 continue
@@ -4979,10 +4985,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if poolname and pool["name"] != poolname:
                 cause.append((pool["name"], "not named %s" % poolname))
                 continue
-            if size and "free" in pool and pool["free"] < size//1024+1:
-                cause.append((pool["name"], "not enough free space: %s free, %s requested" % (print_size(pool["free"], unit="KB", compact=True), print_size(size, unit="B", compact=True))))
-                continue
-            candidates.append(pool)
+            candidates1.append(pool)
+
+        if usage:
+            for pool in self.pool_status_data(usage=True, pools=candidates1).values():
+                if size and "free" in pool and pool["free"] < size//1024+1:
+                    cause.append((pool["name"], "not enough free space: %s free, %s requested" % (print_size(pool["free"], unit="KB", compact=True), print_size(size, unit="B", compact=True))))
+                    continue
+                candidates.append(pool)
+        else:
+            candidates = candidates1
+
         if not candidates:
             cause = "\n".join(["    discard pool %s: %s" % (name, reason) for name, reason in cause])
             raise ex.Error(cause)

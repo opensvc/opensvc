@@ -7,9 +7,9 @@ import daemon.handler
 import daemon.rbac
 import daemon.shared as shared
 import core.exceptions as ex
-from daemon.handler_action_helper import get_action_args_from_parser
-from utilities.naming import split_path
 from env import Env
+from utilities.naming import split_path
+from utilities.render.command import format_command
 from utilities.string import bdecode
 
 GUEST_ACTIONS = (
@@ -187,8 +187,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
         if options.cmd:
             cmd = [options.cmd]
         else:
-            pmod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
-            cmd = get_action_args_from_parser(pmod.OPT, options.action, options)
+            cmd = format_command(kind, options.action, options.options or {})
 
         fullcmd = Env.om + ["svc", "-s", options.path] + cmd
         thr.log_request("run 'om %s %s'" % (options.path, " ".join(cmd)), nodename, **kwargs)

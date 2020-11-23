@@ -225,7 +225,7 @@ class Volume(Resource):
         if not volume.exists():
             volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node, log_handlers=self.svc.log_handlers, volatile=True)
             try:
-                volume = self._configure_volume(volume)
+                volume = self._configure_volume(volume, usage=False)
             except ex.Error:
                 raise
             except Exception:
@@ -587,7 +587,7 @@ class Volume(Resource):
         Another service provision may try to create the same volume simultaneously.
         Protect this method with a global lock.
         """
-        lockfile = os.path.join(Env.paths.pathvar, "create_volume.lock")
+        lockfile = os.path.join(self.volsvc.var_d, "create_volume.lock")
         try:
             with utilities.lock.cmlock(lockfile=lockfile, timeout=20):
                 return self.create_volume_locked()
@@ -602,6 +602,9 @@ class Volume(Resource):
         self.volsvc.logger.handlers = []
 
         volume = factory("vol")(name=self.volname, namespace=self.svc.namespace, node=self.svc.node)
+
+        # force logger lazy eval now, to be sure its is configured non-volatile
+        volume.logger
 
         if volume.exists():
             self.log.info("volume %s already exists", self.volname)
@@ -661,14 +664,15 @@ class Volume(Resource):
             env[dst] = val
         return env
 
-    def _configure_volume(self, volume):
+    def _configure_volume(self, volume, usage=True):
         try:
             pool = self.svc.node.find_pool(poolname=self.pool,
                                            pooltype=self.pooltype,
                                            access=self.access,
                                            size=self.size,
                                            fmt=self.format,
-                                           shared=self.shared)
+                                           shared=self.shared,
+                                           usage=usage)
         except ex.Error as exc:
             raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
         pool.log = self.log

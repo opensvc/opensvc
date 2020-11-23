@@ -397,9 +397,12 @@ class DiskDrbd(Resource):
             return
         self.start_role("Secondary")
 
-    def drbdadm_connect_discard(self):
-        cmd = ["drbdadm", "--", "--discard-my-data", "connect", self.res]
-        ret, out, err = self.vcall(cmd)
+    def drbdadm_connect(self, discard_my_data=False):
+        cmd1 = ["drbdadm", "--"]
+        cmd2 = ["connect", self.res]
+        if discard_my_data:
+            cmd2 = ["--discard-my-data"] + cmd2
+        ret, out, err = self.vcall(cmd1 + cmd2)
         if ret != 0:
             raise ex.Error
 
@@ -540,7 +543,7 @@ class DiskDrbd(Resource):
             cstate = self.get_cstate()
         else:
             self.drbdadm_disconnect()
-            self.drbdadm_connect_discard()
+            self.drbdadm_connect()
         self.svc.node.unset_lazy("devtree")
 
     def unprovisioner(self):

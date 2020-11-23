@@ -1,7 +1,7 @@
-def get_action_args_from_parser(parser, action, options):
+def format_command(kind, action, options):
     """
-    Return cmd for action handlers
-    :param parser:
+    Return a list-formatted CRM command from action and options.
+    :param subsystem:
     :param action:
     :param options:
     :return: cmd array
@@ -13,8 +13,11 @@ def get_action_args_from_parser(parser, action, options):
             if o.dest == "parm_" + searched_opt:
                 return o
 
+    import importlib
+    mod = importlib.import_module("commands.{kind}.parser".format(kind=kind))
+    parser = mod.OPT
     cmd = [action]
-    for opt, val in options.options.items():
+    for opt, val in options.items():
         po = find_opt(parser, opt)
         if po is None:
             continue
@@ -30,7 +33,7 @@ def get_action_args_from_parser(parser, action, options):
         elif po.action == "store_false" and not val:
             cmd.append(opt)
         elif po.type == "string":
-            opt += "=" + val
+            opt += "=" + str(val)
             cmd.append(opt)
         elif po.type == "integer":
             opt += "=" + str(val)

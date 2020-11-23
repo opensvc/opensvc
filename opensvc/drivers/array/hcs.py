@@ -56,12 +56,33 @@ RETRYABLE_ERROR_MSG_IDS = [
     "KART30000-E",
     "KART30008-E",
     "KART30072-E",
+    "KART30085-E", # fake: The user ID or password is incorrect.
 ]
 RETRYABLE_LOCK_ERROR_MSG_IDS = [
+    "KART30000-E",
     "KART40050-E",
     "KART40052-E",
     "KART40052-E",
 ]
+RETRYABLE_STATUS = {
+    401: "unauthorized",
+    403: "forbidden",
+    500: "server error",
+    503: "service unavailable",
+    504: "gateway timeout",
+}
+NON_RETRYABLE_STATUS = {
+    400: "bad request",
+    404: "not found",
+    405: "method not allowed",
+    406: "not acceptable",
+    409: "conflict",
+    411: "length required",
+    412: "precondition failed",
+    415: "unsupported media type",
+    417: "expectation failed",
+    502: "proxy error",
+}
 
 try:
     import requests
@@ -247,6 +268,14 @@ ACTIONS = {
                 OPT.name,
             ],
         },
+        "unassign_virtual_ldevid": {
+            "msg": "Unassign the virtual ldev id.",
+            "options": [
+                OPT.id,
+                OPT.naa,
+                OPT.name,
+            ],
+        },
     },
     "List actions": {
         "list_mappings": {
@@ -266,7 +295,7 @@ ACTIONS = {
         "list_ldevs": {
             "msg": "List configured extents",
         },
-        "list_hostgroups": {
+        "list_host_groups": {
             "msg": "List configured host groups",
         },
         "list_resource_groups": {
@@ -311,6 +340,23 @@ ACTIONS = {
             ],
         },
     },
+    "Sessions": {
+        "list_sessions": {
+            "msg": "List the currently active sessions on the storage array",
+        },
+        "add_session": {
+            "msg": "Open a new session on the storage array",
+        },
+        "del_session": {
+            "msg": "Delete a session on the storage array",
+            "options": [
+                OPT.id,
+            ],
+        },
+        "unlock": {
+            "msg": "Unlock a resource group",
+        },
+    },
 }
 
 def apilock(func):
@@ -319,11 +365,38 @@ def apilock(func):
         try:
             ret = func(self, *args, **kwargs)
         finally:
-            self.unlock()
+            self._unlock()
         return ret
     return _func
 
 def apiretry(func):
+    def is_job_response(data):
+        if not data:
+            return False
+        if "jobId" not in data:
+            return False
+        if "state" not in data:
+            return False
+        return True
+
+    def is_retryable_error(data):
+        #return data.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS or \
+        return data.get("messageId") in RETRYABLE_ERROR_MSG_IDS
+
+    def check_condition(self, data, condition, msg):
+        common_condition = lambda x: is_retryable_error(x) and not is_job_response(x)
+        try:
+            cc = common_condition(data)
+        except Exception:
+            cc = False
+        try:
+            sc = condition(data)
+            if sc and msg:
+                self.log.info(msg)
+        except Exception:
+            sc = False
+        return sc or cc
+
     def _func(self, uri, retry=None, base="device", **kwargs):
         if base == "device":
             base_path = self.urlpath_device()
@@ -336,10 +409,9 @@ def apiretry(func):
         except (KeyError, IndexError, AttributeError, TypeError):
             pass
         retry = retry or {}
-        count = retry.get("count", 5)
-        delay = retry.get("delay", 5)
+        count = retry.get("count", self.retry)
+        delay = retry.get("delay", self.delay)
         msg = retry.get("message")
-        common_condition = lambda x: x.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS
         condition = retry.get("condition", lambda: False)
         for _ in range(count):
             try:
@@ -348,30 +420,56 @@ def apiretry(func):
                 raise ex.Error(str(exc))
             except Exception as exc:
                 raise ex.Error("hcs api request error: %s" % str(exc))
+            if r.status_code == 401:
+                self.session_data = None
+                time.sleep(0.5)
+                continue
+            if r.status_code in RETRYABLE_STATUS:
+                desc = RETRYABLE_STATUS[r.status_code]
+                if msg:
+                    try:
+                        data = r.json()
+                    except Exception:
+                        data = {}
+                    self.dump(func.__name__, uri, status=r.status_code, _result=data, **kwargs)
+                self.log.info("  response status %d: %s (%s)" % (r.status_code, desc, uri), {"f_stream": False})
+                time.sleep(delay)
+                continue
+            if r.status_code in NON_RETRYABLE_STATUS:
+                desc = NON_RETRYABLE_STATUS[r.status_code]
+                try:
+                    data = r.json()
+                except Exception:
+                    data = {}
+                self.dump(func.__name__, uri, status=r.status_code, _result=data, **kwargs)
+                raise ex.Error("response status %d: %s (%s)" % (r.status_code, desc, uri))
             if not r.text:
                 return
             data = r.json()
-            try:
-                cc = common_condition(data)
-            except Exception:
-                cc = False
-            try:
-                sc = condition(data)
-                if sc and msg:
-                    self.node.log.info(msg)
-            except Exception:
-                sc = False
-            if sc or cc:
+            if check_condition(self, data, condition, msg):
                 time.sleep(delay)
                 continue
             if func.__name__ != "get":
                 data = self.check_result(func.__name__, uri, result=data, **kwargs)
+                if check_condition(self, data, condition, msg):
+                    time.sleep(delay)
+                    continue
+                if data.get("state") == "Failed":
+                    self.dump(func.__name__, uri, _result=data, **kwargs)
             try:
-                if self.log and func.__name__ != "get" and "/sessions" not in uri and "jobId" not in data:
+                if func.__name__ != "get" and "/sessions" not in uri and "jobId" not in data:
                     self.log.info("%s", data)
             except (KeyError, IndexError, AttributeError, TypeError):
                 pass
             return data
+        if r.status_code in RETRYABLE_STATUS:
+            desc = RETRYABLE_STATUS[r.status_code]
+        elif r.status_code in NON_RETRYABLE_STATUS:
+            desc = NON_RETRYABLE_STATUS[r.status_code]
+        else:
+            desc = "unknown"
+        raise ex.Error("response status %d: %s, api request retries exhausted (%s)" % (r.status_code, desc, uri))
+
     return _func
 
 class Hcss(object):
@@ -381,7 +479,6 @@ class Hcss(object):
     def __init__(self, objects=None, node=None, log=None):
         if objects is None:
             objects = []
-        self.log = log
         self.objects = objects
         self.filtering = len(objects) > 0
         self.timeout = 10
@@ -389,6 +486,10 @@ class Hcss(object):
             self.node = node
         else:
             self.node = Node()
+        if log:
+            self.log = log
+        else:
+            self.log = self.node.log
         done = []
         for s in self.node.conf_sections(cat="array"):
             try:
@@ -415,6 +516,8 @@ class Hcss(object):
                 https_proxy = self.node.oget(s, "https_proxy")
                 api = self.node.oget(s, "api")
                 model = self.node.oget(s, "model")
+                retry = self.node.oget(s, "retry")
+                delay = self.node.oget(s, "delay")
             except:
                 print("error parsing section", s, file=sys.stderr)
                 continue
@@ -433,6 +536,8 @@ class Hcss(object):
                 timeout=timeout,
                 http_proxy=http_proxy,
                 https_proxy=https_proxy,
+                retry=retry,
+                delay=delay,
                 node=self.node,
                 log=self.log,
             )
@@ -455,8 +560,9 @@ class Hcs(object):
 
     def __init__(self, name=None, model=None, api=None,
                  username=None, password=None, timeout=None,
-                 http_proxy=None, https_proxy=None, node=None,
-                 log=None):
+                 http_proxy=None, https_proxy=None,
+                 retry=30, delay=10,
+                 node=None, log=None):
         self.node = node
         self.log = log
         self.name = name
@@ -468,6 +574,8 @@ class Hcs(object):
         self.https_proxy = https_proxy
         self.auth = (username, password)
         self.timeout = timeout
+        self.retry = retry
+        self.delay = delay
         self.session_data = None
         self.locked = False
         self.keys = ["system",
@@ -553,24 +661,32 @@ class Hcs(object):
         return r
 
 
-    def open_session(self, timeout=30):
+    def add_session(self, **kwargs):
+        data = self._open_session()
+        return data
+
+    def open_session(self):
+        self.session_data = self._open_session()
+        self.log.info("session id %d" % self.session_data["sessionId"], {"f_stream": False})
+
+    def _open_session(self):
         retries = 0
         while True:
             data = self.post("/sessions", auth=False)
             code = data.get("error", {}).get("code")
-            if code == ERRCODE_SESSION_TOO_MANY and retries < timeout:
+            if code == ERRCODE_SESSION_TOO_MANY and retries < self.timeout:
                 retries += 1
                 time.sleep(1)
                 continue
             elif code:
                 raise ex.Error("open_session error: %s => %s" % ((self.auth[0], "xxx"), data.get("error")))
-            self.session_data = data
-            return
-
+            return data
 
     def close_session(self):
         if not self.session_data:
             return
+        if self.locked:
+            self._unlock()
         self.delete("/sessions/%d" % self.session_data["sessionId"])
         self.session_data = None
 
@@ -694,12 +810,15 @@ class Hcs(object):
 
     def get_ldev(self, oid=None, name=None, naa=None):
         if oid is not None:
-            oid = int(oid)
+            try:
+                oid = int(oid)
+            except ValueError:
+                oid = int(oid, 16)
             data = self.get("/ldevs/%d" % oid)
         elif naa:
             ldev_id = self.ldev_id_from_naa(naa)
             data = self.get_ldev(oid=ldev_id)
-            if data and naa != data["naaId"]:
+            if data and "naaId" in data and naa != data["naaId"]:
                 raise ex.Error("expected naa %s for ldev id %s, found %s. use --id" % (naa, ldev_id, data["naaId"]))
             return data
         elif name:
@@ -727,12 +846,24 @@ class Hcs(object):
         return data
 
 
-    def _del_ldev(self, id=None, **kwargs):
-        id = int(id)
+    def _del_ldev(self, ldev=None, **kwargs):
+        try:
+            ldev_id = (ldev["ldevId"])
+        except KeyError:
+            raise ex.Error("_del_ldev: invalid input ldev data")
+
+        if ldev.get("poolId") is None:
+            # already deleted
+            return
+
+        # dataReductionMode = disabled
+        # dataReductionStatus = DISABLED
+        force = ldev.get("dataReductionMode") != "disabled"
+
         d = {
-            "isDataReductionDeleteForceExecute": True,
+            "isDataReductionDeleteForceExecute": force,
         }
-        path = '/ldevs/%d' % id
+        path = '/ldevs/%d' % ldev_id
         data = self.delete(path, data=d)
         return data
 
@@ -764,21 +895,21 @@ class Hcs(object):
         path = "/ldevs"
         data = self.post(path, data=d)
         ldev_id = int(data["affectedResources"][0].split("/")[-1])
-        data = self.get_ldev(oid=ldev_id)
+        ldev = self.get_ldev(oid=ldev_id)
         self.set_label(ldev_id, name)
 
-        virtual_ldev_id = data.get("virtualLdevId")
-        _resource_group = data.get("resourceGroupId")
+        virtual_ldev_id = ldev.get("virtualLdevId")
+        _resource_group = ldev.get("resourceGroupId")
         if resource_group != _resource_group:
-            self.unset_virtual_ldev_id(ldev_id)
-            self.unlock()
+            self.unset_virtual_ldev_id(ldev)
+            #self._unlock()
             self.set_ldev_resource_group(ldev_id, resource_group)
-            self.lock()
+            #self.lock()
             self.set_virtual_ldev_id(ldev_id, ldev_id)
         elif virtual_ldev_id != ldev_id:
-            self.unset_virtual_ldev_id(ldev_id)
+            self.unset_virtual_ldev_id(ldev)
             self.set_virtual_ldev_id(ldev_id, ldev_id)
-        return data
+        return ldev
 
     def lock(self):
         if self.locked:
@@ -794,21 +925,34 @@ class Hcs(object):
         self.put("/%s/services/resource-group-service/actions/lock/invoke" % self.storage_id, data=data, base="", retry=retry)
         self.locked = True
 
-    def unlock(self):
-        if not self.locked:
+    def unlock(self, **kwargs):
+        return self._unlock(force=True)
+
+    def _unlock(self, force=False):
+        if not force and not self.locked:
             return
         retry = {
             "condition": lambda x: x.get("error", {}).get("messageId") in RETRYABLE_LOCK_ERROR_MSG_IDS
         }
-        self.put("/%s/services/resource-group-service/actions/unlock/invoke" % self.storage_id, base="", retry=retry)
+        data = self.put("/%s/services/resource-group-service/actions/unlock/invoke" % self.storage_id, base="", retry=retry)
         self.locked = False
+        return data
 
     def set_virtual_ldev_id(self, ldev_id, virtual_ldev_id):
         data = self.get("/ldevs/%d/actions/assign-virtual-ldevid" % ldev_id)
         data["parameters"]["virtualLdevId"] = virtual_ldev_id
         self.put("/ldevs/%d/actions/assign-virtual-ldevid/invoke" % ldev_id, data=data)
 
-    def unset_virtual_ldev_id(self, ldev_id):
+    def unassign_virtual_ldevid(self, id=None, name=None, naa=None, **kwargs):
+        ldev = self.get_ldev(oid=id, name=name, naa=naa)
+        self.unset_virtual_ldev_id(ldev)
+        return self.get_ldev(oid=id, name=name, naa=naa)
+
+    @apilock
+    def unset_virtual_ldev_id(self, ldev):
+        ldev_id = ldev["ldevId"]
+        if ldev.get("virtualLdevId") == VIRTUAL_LDEV_ID_NONE:
+            return
         data = self.get("/ldevs/%d/actions/unassign-virtual-ldevid" % ldev_id)
         if "errorSource" in data:
             # already unassigned
@@ -874,35 +1018,40 @@ class Hcs(object):
             "affectedResources" : [ "/ConfigurationManager/v1/objects/storages/882000452491/ldevs/3" ]
         }
         """
-        def dump(_result):
-            buff = "%s %s\n" % (method, uri)
-            if headers:
-                buff += "headers:\n"
-                buff += json.dumps(headers, indent=4)
-                buff += "\n"
-            if data:
-                buff += "body:\n"
-                buff += data
-                buff += "\n"
-            if _result:
-                buff += "result:\n"
-                buff += json.dumps(_result, indent=4)
-                buff += "\n"
-            raise ex.Error(buff)
-
-        if "errorSource" in result:
-            dump(result)
+        #if "errorSource" in result:
+        #    self.dump(method, uri, headers=headers, data=data, _result=result)
         if "jobId" in result:
             while True:
                 r = self.get("/jobs/%d" % result["jobId"])
                 if r is None:
                     return
                 if r["status"] == "Completed":
-                    if r["state"] == "Failed":
-                        dump(r)
                     return r
                 time.sleep(2)
         return result
+
+    def dump(self, method, uri=None, headers=None, data=None, status=None, _result=None, **kwargs):
+        import traceback
+        traceback.print_stack()
+        buff = "%s %s\n" % (method, uri)
+        if headers:
+            buff += "headers:\n"
+            buff += json.dumps(headers, indent=4)
+            buff += "\n"
+        if data:
+            buff += "body:\n"
+            try:
+                buff += json.dumps(data, indent=4)
+            except ValueError:
+                buff += str(data)
+            buff += "\n"
+        if status:
+            buff += "status: %s\n" % status
+        if _result:
+            buff += "result:\n"
+            buff += json.dumps(_result, indent=4)
+            buff += "\n"
+        raise ex.Error(buff)
 
     def set_label(self, oid, label):
         d = {
@@ -910,6 +1059,15 @@ class Hcs(object):
         }
         data = self.put("/ldevs/%d" % oid, data=d)
         return data
+
+    def del_session(self, id=None, **kwargs):
+        d = {
+            "force": True
+        }
+        return self.delete("/sessions/%d" % int(id), data=d)
+
+    def list_sessions(self, **kwargs):
+        return self.get("/sessions")
 
     def list_supported_host_modes(self, **kwargs):
         return self.get("/supported-host-modes/instance")
@@ -996,8 +1154,9 @@ class Hcs(object):
         data = self.get_ldev(oid=id, name=name)
         if data is None:
             return
-        return self._del_ldev(data["ldevId"])
+        return self._del_ldev(data)
 
+    #@apilock
     def del_disk(self, id=None, name=None, naa=None, **kwargs):
         if id is None and name is None and naa is None:
             raise ex.Error("'id', 'naa' or 'name' must be specified")
@@ -1007,7 +1166,7 @@ class Hcs(object):
         results = {}
         response = self._unmap_lun(data)
         results["unmap"] = response
-        response = self._del_ldev(data["ldevId"])
+        response = self._del_ldev(data)
         results["del_ldev"] = data
         return results
 
@@ -1134,6 +1293,7 @@ class Hcs(object):
         return data
 
 
+    @apilock
     def map_lun(self, id=None, naa=None, name=None, targets=None, mappings=None, lun=None, ldev_data=None, **kwargs):
         if not name and id is None and naa is None:
             raise ex.Error("'id' 'naa' or 'name' is mandatory")
@@ -1156,7 +1316,7 @@ class Hcs(object):
         return results
 
 
-    @apilock
+    #@apilock
     def add_disk(self, name=None, size=None, pool=None, targets=None,
                  mappings=None, compression=True, dedup=True, lun=None,
                  start_ldev_id=None, end_ldev_id=None, resource_group=0, **kwargs):
@@ -1326,8 +1486,10 @@ def do_action(action, array_name=None, node=None, **kwargs):
     array.node = node
     if not hasattr(array, action):
         raise ex.Error("not implemented")
-    result = getattr(array, action)(**kwargs)
-    array.close_session()
+    try:
+        result = getattr(array, action)(**kwargs)
+    finally:
+        array.close_session()
     if result is not None:
         try:
             print(json.dumps(result, indent=4))

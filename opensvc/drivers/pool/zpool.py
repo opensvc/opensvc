@@ -37,17 +37,16 @@ class Pool(BasePool):
             data.append(zvol)
         return data
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         from utilities.converters import convert_size
         data = {
             "type": self.type,
             "name": self.name,
             "capabilities": self.capabilities,
-            "free": -1,
-            "used": -1,
-            "size": -1,
             "head": self.zpool,
         }
+        if not usage:
+            return data
         cmd = ["zpool", "get", "-H", "size,alloc,free", "-p", self.zpool]
         out, err, ret = justcall(cmd)
         if ret != 0:

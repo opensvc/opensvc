@@ -235,7 +235,7 @@ class TestDrbdProvisioner:
                             'drbdadm_down',
                             'drbdadm_up',
                             'drbdadm_disconnect',
-                            'drbdadm_connect_discard']
+                            'drbdadm_connect']
         for method in expected_methods:
             mocker.patch.object(DiskDrbd, method, mocker.Mock(method))
         disk.provisioner()

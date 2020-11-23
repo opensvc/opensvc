@@ -55,7 +55,7 @@ class Pool(BasePool):
         self.node.install_svc_conf_from_data(volume.name, volume.namespace, volume.kind, config)
         return factory("vol")(name=volume.name, namespace=volume.namespace, node=self.node)
 
-    def pool_status(self):
+    def pool_status(self, usage=True):
         data = {
             "type": self.type,
             "name": self.name,
