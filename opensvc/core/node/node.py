@@ -4425,10 +4425,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             server=joined,
             cluster_name="join",
             secret=secret,
-            timeout=DEFAULT_DAEMON_TIMEOUT,
+            timeout=20 + DEFAULT_DAEMON_TIMEOUT,
         )
         if data is None:
             raise ex.Error("join node %s failed" % joined)
+        if "err" in data:
+            raise ex.Error("join node %s failed: %s" % (joined, data.get("err")))
 
         data = data.get("data")
         if data is None:
