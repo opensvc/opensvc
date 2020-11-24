@@ -480,11 +480,10 @@ class Listener(shared.OsvcThread):
                 if thr not in self.threads:
                     to_remove.append(idx)
                     continue
-                fevent = self.filter_event(event, thr)
+                # make a copy, filter_event may change data, avoid being replaced while queued
+                fevent = self.filter_event(json.loads(json.dumps(event)), thr)
                 if fevent is None:
                     continue
-                # make a copy to avoid being replaced while queued
-                fevent = json.loads(json.dumps(fevent))
                 if thr.h2conn:
                     if not thr.events_stream_ids:
                         to_remove.append(idx)
