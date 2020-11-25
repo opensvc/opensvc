@@ -352,7 +352,7 @@ class JournaledData(object):
         if not diff:
             return
         now = time.time()
-        self.coalesce += diff
+        self.coalesce += copy.deepcopy(diff)
         next_emit = self.emit_interval - (now - self.last_emit)
         if next_emit > 0:
             if not self.timer:
