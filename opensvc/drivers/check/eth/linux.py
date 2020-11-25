@@ -16,7 +16,8 @@ class Check(drivers.check.Check):
             intf += self.add_slaves(bond)
         ifconfig = utilities.ifconfig.Ifconfig()
         for i in ifconfig.intf:
-            if not i.name.startswith('eth'):
+            if not i.name.startswith("eth") and \
+               not i.name.startswith("en"):
                 continue
             if len(i.ipaddr) == 0 and len(i.ip6addr) == 0:
                 continue
