@@ -88,6 +88,14 @@ KEYWORDS = [
         "example": "cert/pem:server.pem cert/key:server.key"
     },
     {
+        "keyword": "directories",
+        "at": True,
+        "convert": "list",
+        "default": [],
+        "text": "The whitespace separated list of directories to create in the volume.",
+        "example": "a/b/c d /e"
+    },
+    {
         "keyword": "user",
         "at": True,
         "text": "The user name or id that will own the volume root and installed files and directories.",
@@ -152,7 +160,7 @@ class Volume(Resource):
     def __init__(self, name=None, pool=None, pooltype=None, size=None,
                  format=True, access="rwo", secrets=None, configs=None,
                  user=None, group=None, perm=None, dirperm=None,
-                 signal=None, **kwargs):
+                 signal=None, directories=None, **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
         self.pooltype = pooltype
         self.access = access
@@ -162,6 +170,7 @@ class Volume(Resource):
         self.format = format
         self.secrets = secrets
         self.configs = configs
+        self.directories = directories or []
         self.refresh_provisioned_on_provision = True
         self.refresh_provisioned_on_unprovision = True
         self.user = user
@@ -286,6 +295,7 @@ class Volume(Resource):
         self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
         self.chown()
         self.install_flag()
+        self.install_directories()
         self.install_secrets()
         self.install_configs()
         self.unset_lazy("device")
@@ -458,6 +468,15 @@ class Volume(Resource):
                                            dirmode=self.octal_dirmode)
         return changed
 
+    def install_directories(self):
+        for d in self.directories:
+            p = os.path.join(self.mount_point, d.strip("/"))
+            if not os.path.exists(p):
+                makedirs(p, uid=self.uid, gid=self.gid, mode=self.octal_dirmode)
+                continue
+            if not os.path.isdir(p):
+                raise ex.Error("directory path %s is already occupied by a non-directory")
+
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):
             if data["obj"] != name:
@@ -468,6 +487,7 @@ class Volume(Resource):
         return False
 
     def install_data(self):
+        self.install_directories()
         changed = self.install_secrets()
         changed |= self.install_configs()
         if changed:

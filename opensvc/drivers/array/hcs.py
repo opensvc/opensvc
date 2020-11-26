@@ -56,6 +56,7 @@ RETRYABLE_ERROR_MSG_IDS = [
     "KART30000-E",
     "KART30008-E",
     "KART30072-E",
+    "KART30074-E",
     "KART30085-E", # fake: The user ID or password is incorrect.
 ]
 RETRYABLE_LOCK_ERROR_MSG_IDS = [
@@ -376,6 +377,8 @@ def apiretry(func):
         if "jobId" not in data:
             return False
         if "state" not in data:
+            return False
+        if data.get("status") == "Completed":
             return False
         return True
 
@@ -1053,6 +1056,7 @@ class Hcs(object):
             buff += "\n"
         raise ex.Error(buff)
 
+    @apilock
     def set_label(self, oid, label):
         d = {
             "label": label,

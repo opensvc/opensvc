@@ -1,21 +1,40 @@
 #!/bin/sh
 
 set -e
+clean_systemd() {
+        systemctl --version >/dev/null 2>&1 || return
+        systemctl disable opensvc-agent || true
+        rm -f /lib/systemd/system/opensvc-services.service
+        rm -f /lib/systemd/system/opensvc-agent.service
+        rm -f /usr/lib/systemd/system/opensvc-services.service
+        rm -f /usr/lib/systemd/system/opensvc-agent.service
+        systemctl daemon-reload
+        systemctl kill opensvc-services || true
+        systemctl stop opensvc-services || true
+        systemctl reset-failed opensvc-services.service || true
+}
 
 case "$1" in
-  purge)
-    rm -rf /var/lib/opensvc /var/log/opensvc /etc/opensvc /usr/share/opensvc
-    ;;
+purge)
+        rm -rf /var/lib/opensvc /var/log/opensvc /etc/opensvc /usr/share/opensvc
+        rm -f /etc/default/opensvc 
+        ;;
 
-  upgrade|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
-    ;;
+remove)
+        clean_systemd
+        rm -f /etc/profile.d/opensvc.sh
+        ;;
 
-  *)
-    echo "postrm called with unknown argument \`$1'" >&2
-    exit 1
-    ;;
+upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+
+*)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
 esac
 
 #DEBHELPER#
 
 exit 0
+

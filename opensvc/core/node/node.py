@@ -1702,13 +1702,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The checks node action entrypoint.
         Runs health checks.
         """
+        drvs = self.checks_drivers()
+        data = drvs.do_checks()
+        if self.options.format is None:
+            drvs.print_checks(data)
+        else:
+            self.print_data(data)
+        self.collector.call('push_checks', data)
+
+    def checks_drivers(self, checkers=None):
         import drivers.check
         if self.svcs is None:
             self.build_services()
         objs = [svc for svc in self.svcs if svc.kind in ["vol", "svc"]]
-        checkers = drivers.check.Checks(objs, node=self)
-        data = checkers.do_checks()
-        self.print_data(data)
+        return drivers.check.Checks(objs, node=self, checkers=checkers)
 
     def wol(self):
         """
@@ -1916,66 +1923,60 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("node.repo or node.repocomp must be set in node.conf",
                   file=sys.stderr)
             return 1
-        import tempfile
-        tmpf = tempfile.NamedTemporaryFile()
-        fpath = tmpf.name
-        tmpf.close()
-        try:
-            ret = self._updatecomp(pkg_name, fpath)
-        finally:
-            if os.path.exists(fpath):
-                os.unlink(fpath)
-        return ret
 
-    def _updatecomp(self, pkg_name, fpath):
-        """
-        Downloads and installs the compliance module archive from the url
-        specified by the pkg_name argument. The download destination file
-        is specified by fpath. The caller is responsible for its deletion.
-        """
-        print("get %s (%s)" % (pkg_name, fpath))
+        from utilities.uri import Uri
+        print("get %s" % pkg_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            self.urlretrieve(pkg_name, fpath)
+            with Uri(pkg_name, secure=secure).fetch() as fpath:
+                self._updatecomp(fpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
             if self.options.cron:
                 return 0
             return 1
-        tmpp = os.path.join(Env.paths.pathtmp, 'compliance')
-        backp = os.path.join(Env.paths.pathtmp, 'compliance.bck')
-        compp = os.path.join(Env.paths.pathvar, 'compliance')
-        makedirs(compp)
-        import shutil
-        try:
-            shutil.rmtree(backp)
-        except (OSError, IOError):
-            pass
-        print("extract compliance in", Env.paths.pathtmp)
-        import tarfile
-        tar = tarfile.open(fpath)
-        os.chdir(Env.paths.pathtmp)
-        try:
-            tar.extractall()
-            tar.close()
-        except (OSError, IOError):
-            print("failed to unpack", file=sys.stderr)
-            return 1
-        upstream_mods_d = os.path.join(tmpp, "com.opensvc")
-        prev_upstream_mods_d = os.path.join(compp, "com.opensvc")
-        if not os.path.exists(upstream_mods_d) and \
-           os.path.exists(prev_upstream_mods_d):
-            print("merge upstream com.opensvc compliance objects")
-            shutil.copytree(prev_upstream_mods_d, upstream_mods_d,
-                            symlinks=True)
-        print("install new compliance")
-        for root, dirs, files in os.walk(tmpp):
-            for fpath in dirs:
-                os.chown(os.path.join(root, fpath), 0, 0)
-                for fpath in files:
-                    os.chown(os.path.join(root, fpath), 0, 0)
-        shutil.move(compp, backp)
-        shutil.move(tmpp, compp)
         return 0
+
+    def _updatecomp(self, fpath):
+        """
+        Installs the compliance module archive from the downloaded archive.
+        """
+        def do(fpath):
+            tmpp = os.path.join(Env.paths.pathtmp, 'compliance')
+            backp = os.path.join(Env.paths.pathtmp, 'compliance.bck')
+            compp = os.path.join(Env.paths.pathvar, 'compliance')
+            makedirs(compp)
+            import shutil
+            try:
+                shutil.rmtree(backp)
+            except (OSError, IOError):
+                pass
+            print("extract compliance in", Env.paths.pathtmp)
+            import tarfile
+            tar = tarfile.open(fpath)
+            os.chdir(Env.paths.pathtmp)
+            try:
+                tar.extractall()
+                tar.close()
+            except (OSError, IOError):
+                print("failed to unpack", file=sys.stderr)
+                return 1
+            upstream_mods_d = os.path.join(tmpp, "com.opensvc")
+            prev_upstream_mods_d = os.path.join(compp, "com.opensvc")
+            if not os.path.exists(upstream_mods_d) and \
+               os.path.exists(prev_upstream_mods_d):
+                print("merge upstream com.opensvc compliance objects")
+                shutil.copytree(prev_upstream_mods_d, upstream_mods_d,
+                                symlinks=True)
+            print("install new compliance")
+            for root, dirs, files in os.walk(tmpp):
+                for fpath in dirs:
+                    os.chown(os.path.join(root, fpath), 0, 0)
+                    for fpath in files:
+                        os.chown(os.path.join(root, fpath), 0, 0)
+            shutil.move(compp, backp)
+            shutil.move(tmpp, compp)
+
 
     def updatepkg(self):
         """
@@ -2013,27 +2014,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("node.repo or node.repopkg must be set in node.conf",
                   file=sys.stderr)
             return 1
-        import tempfile
-        tmpf = tempfile.NamedTemporaryFile()
-        fpath = tmpf.name
-        tmpf.close()
-        print("get %s (%s)" % (pkg_name, fpath))
+
+        from utilities.uri import Uri
+        print("get %s" % pkg_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            self.urlretrieve(pkg_name, fpath)
+            with Uri(pkg_name, secure=secure).fetch() as fpath:
+                print("updating opensvc")
+                mod.update(fpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
-            try:
-                os.unlink(fpath)
-            except OSError:
-                pass
             return 1
-        print("updating opensvc")
-        mod.update(fpath)
-        print("clean up")
-        try:
-            os.unlink(fpath)
-        except OSError:
-            pass
         os.system("%s node pushasset" % Env.paths.om)
         return 0
 
@@ -2074,47 +2065,52 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         specified by the bundle_name argument. The download destination file
         is specified by fpath. The caller is responsible for its deletion.
         """
-        print("get %s (%s)" % (bundle_name, fpath))
+        def do(fpath):
+            tmpp = os.path.join(Env.paths.pathtmp, 'html')
+            backp = Env.paths.pathhtml + '.bck'
+            htmlp = Env.paths.pathhtml
+            makedirs(htmlp)
+            makedirs(tmpp)
+
+            print("extract cluster manager in", tmpp)
+            import tarfile
+            tar = tarfile.open(fpath)
+            os.chdir(tmpp)
+            try:
+                tar.extractall()
+                tar.close()
+            except (OSError, IOError):
+                print("failed to unpack", file=sys.stderr)
+                return 1
+            os.chdir("/")
+
+            print("install new cluster manager in %s" % htmlp)
+            for root, dirs, files in os.walk(tmpp):
+                for fpath in dirs:
+                    os.chown(os.path.join(root, fpath), 0, 0)
+                    for fpath in files:
+                        os.chown(os.path.join(root, fpath), 0, 0)
+
+            import shutil
+            try:
+                shutil.rmtree(backp)
+            except (OSError, IOError):
+                pass
+
+            shutil.move(htmlp, backp)
+            shutil.move(tmpp, htmlp)
+
+        from utilities.uri import Uri
+        print("get %s" % bundle_name)
+        secure = self.oget("node", "secure_fetch")
         try:
-            self.urlretrieve(bundle_name, fpath)
+            with Uri(bundle_name, secure=secure).fetch() as fpath:
+                do(fpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
             if self.options.cron:
                 return 0
             return 1
-        tmpp = os.path.join(Env.paths.pathtmp, 'html')
-        backp = Env.paths.pathhtml + '.bck'
-        htmlp = Env.paths.pathhtml
-        makedirs(htmlp)
-        makedirs(tmpp)
-
-        print("extract cluster manager in", tmpp)
-        import tarfile
-        tar = tarfile.open(fpath)
-        os.chdir(tmpp)
-        try:
-            tar.extractall()
-            tar.close()
-        except (OSError, IOError):
-            print("failed to unpack", file=sys.stderr)
-            return 1
-        os.chdir("/")
-
-        print("install new cluster manager in %s" % htmlp)
-        for root, dirs, files in os.walk(tmpp):
-            for fpath in dirs:
-                os.chown(os.path.join(root, fpath), 0, 0)
-                for fpath in files:
-                    os.chown(os.path.join(root, fpath), 0, 0)
-
-        import shutil
-        try:
-            shutil.rmtree(backp)
-        except (OSError, IOError):
-            pass
-
-        shutil.move(htmlp, backp)
-        shutil.move(tmpp, htmlp)
         return 0
 
     def array(self):
@@ -2697,20 +2693,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pass
         return kwargs
 
-    def urlretrieve(self, url, fpath):
-        """
-        A chunked download method
-        """
-        request = Request(url)
-        kwargs = {}
-        kwargs = self.set_ssl_context(kwargs)
-        ufile = urlopen(request, **kwargs)
-        with open(fpath, 'wb') as ofile:
-            os.chmod(fpath, 0o0600)
-            for chunk in iter(lambda: ufile.read(4096), b""):
-                ofile.write(chunk)
-        ufile.close()
-
     def collector_rest_request(self, rpath, data=None, path=None, get_method="GET"):
         """
         Make a request to the collector's rest api
@@ -2823,23 +2805,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Download a provisioning template from an arbitrary uri,
         and installs it as the service configuration file.
         """
-        tmpfpath = self.svc_conf_tempfile()
-        print("get %s (%s)" % (fpath, tmpfpath))
+        from utilities.uri import Uri
+        print("get %s" % fpath)
+        secure = self.oget("node", "secure_fetch")
         try:
-            self.urlretrieve(fpath, tmpfpath)
+            with Uri(fpath, secure=secure).fetch() as tmpfpath:
+                return self.svc_conf_from_file(name, namespace, kind, tmpfpath)
         except IOError as exc:
             print("download failed", ":", exc, file=sys.stderr)
-            try:
-                os.unlink(tmpfpath)
-            except OSError:
-                pass
-        try:
-            return self.svc_conf_from_file(name, namespace, kind, tmpfpath)
-        finally:
-            try:
-                os.unlink(tmpfpath)
-            except OSError:
-                pass
 
     def svc_conf_from_file(self, name, namespace, kind, fpath):
         """

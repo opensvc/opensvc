@@ -52,6 +52,7 @@ from utilities.drivers import driver_import
 from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import print_duration
 from utilities.string import bencode, bdecode
+from utilities.uri import Uri
 
 if six.PY2:
     class _ConnectionResetError(Exception):
@@ -183,8 +184,10 @@ class Listener(shared.OsvcThread):
         if os.path.exists(crl):
             return crl
         crl_path = os.path.join(Env.paths.certs, "certificate_revocation_list")
+        secure = shared.NODE.oget("node", "secure_fetch")
         try:
-            shared.NODE.urlretrieve(crl, crl_path)
+            with Uri(crl, secure=secure).fetch() as fpath:
+                shutil.copy(fpath, crl_path)
             # TODO: extract expire from crl
             self.crl_expire = time.time() + 60*60*24
             return crl_path
@@ -480,11 +483,10 @@ class Listener(shared.OsvcThread):
                 if thr not in self.threads:
                     to_remove.append(idx)
                     continue
-                fevent = self.filter_event(event, thr)
+                # make a copy, filter_event may change data, avoid being replaced while queued
+                fevent = self.filter_event(json.loads(json.dumps(event)), thr)
                 if fevent is None:
                     continue
-                # make a copy to avoid being replaced while queued
-                fevent = json.loads(json.dumps(fevent))
                 if thr.h2conn:
                     if not thr.events_stream_ids:
                         to_remove.append(idx)

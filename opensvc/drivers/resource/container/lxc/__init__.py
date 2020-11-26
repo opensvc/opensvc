@@ -805,14 +805,13 @@ class ContainerLxc(BaseContainer):
         if os.path.exists(self.template_local):
             self.log.info("template %s already downloaded"%self.template_fname)
             return
+        from utilities.uri import Uri
+        secure = self.svc.node.oget("node", "secure_fetch")
         try:
-            self.svc.node.urlretrieve(self.template, self.template_local)
+            with Uri(self.template, secure=secure).fetch() as fpath:
+                shutil.copy(fpath, self.template_local)
         except IOError as e:
             self.log.error("download failed", ":", e)
-            try:
-                os.unlink(self.template_local)
-            except:
-                pass
             raise ex.Error
 
     def unpack_template(self):

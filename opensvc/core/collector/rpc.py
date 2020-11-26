@@ -1170,13 +1170,30 @@ class CollectorRpc(object):
             self.proxy.update_sym_xml(*args)
         return r
 
-    def push_checks(self, vars, vals, sync=True):
+    def push_checks(self, data, sync=True):
         if "push_checks" not in self.proxy_methods:
             print("'push_checks' method is not exported by the collector")
             return
-        args = [vars, vals]
-        args += [(self.node.collector_env.uuid, Env.nodename)]
-        self.proxy.push_checks(*args)
+        vars = [\
+            "chk_nodename",
+            "chk_svcname",
+            "chk_type",
+            "chk_instance",
+            "chk_value",
+            "chk_updated"]
+        vals = []
+        now = str(datetime.now())
+        for chk_type, d in data.items():
+            for instance in d:
+                vals.append([\
+                    Env.nodename,
+                    instance["path"],
+                    chk_type,
+                    instance['instance'],
+                    str(instance['value']).replace("%", ""),
+                    now]
+                )
+        self.proxy.push_checks(vars, vals, (self.node.collector_env.uuid, Env.nodename))
 
     def register_node(self, sync=True):
         return self.proxy.register_node(Env.nodename)

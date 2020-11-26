@@ -4,6 +4,7 @@ import fnmatch
 import shutil
 import glob
 import tempfile
+import re
 
 import core.exceptions as ex
 import core.status
@@ -66,6 +67,8 @@ class DataMixin(object):
             self.add_stdin(key, append=append)
         elif key and self.options.value is not None:
             self.add_key(key, self.options.value, append=append)
+        elif value_from and re.match("^(http://|https://|ftp://|ftps://)", value_from):
+            self.add_uri(key, value_from, append=append)
         elif value_from and os.path.isdir(value_from):
             self.add_directory(key, value_from, append=append)
         elif value_from and os.path.isfile(value_from):
@@ -85,6 +88,15 @@ class DataMixin(object):
         else:
             data += sys.stdin.buffer.read()
         self.add_key(key, data)
+
+    def add_uri(self, key, path, append=None):
+        from utilities.uri import Uri
+        secure = self.node.oget("node", "secure_fetch")
+        try:
+            with Uri(path, secure=secure).fetch() as fpath:
+                return self.add_file(key, fpath, append=append)
+        except IOError as exc:
+            raise ex.Error("download %s failed: %s" % (fpath, exc))
 
     def add_file(self, key, path, append=None):
         if key is None:
