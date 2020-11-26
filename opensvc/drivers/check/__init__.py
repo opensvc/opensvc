@@ -30,11 +30,12 @@ class Check(object):
 class Checks(Check):
     check_list = []
 
-    def __init__(self, svcs=None, node=None):
+    def __init__(self, svcs=None, node=None, checkers=None):
         if svcs is None:
             svcs = []
         self.svcs = svcs
         self.node = node
+        self.checkers = checkers or []
         self.register_internal_checkers()
         self.register_local_checkers()
 
@@ -60,7 +61,10 @@ class Checks(Check):
             if name.split(".")[-1] != Env.module_sysname:
                 continue
             mod = importlib.import_module(name)
-            self += mod.Check(svcs=self.svcs)
+            o = mod.Check(svcs=self.svcs)
+            if self.checkers and o.chk_type not in self.checkers:
+                continue
+            self += o
 
     def register_local_checkers(self):
         check_d = os.path.join(Env.paths.pathvar, 'check')
@@ -83,14 +87,6 @@ class Checks(Check):
 
         now = str(datetime.datetime.now())
         data = {}
-        vars = [\
-            "chk_nodename",
-            "chk_svcname",
-            "chk_type",
-            "chk_instance",
-            "chk_value",
-            "chk_updated"]
-        vals = []
 
         for chk in self.check_list:
             idx = chk.chk_type
@@ -120,16 +116,6 @@ class Checks(Check):
                     "path": instance.get("path", ""),
                     "driver": driver,
                 }
-
-                vals.append([\
-                    Env.nodename,
-                    _instance["path"],
-                    chk.chk_type,
-                    _instance['instance'],
-                    str(_instance['value']).replace("%",""),
-                    now]
-                )
-
                 instances.append(_instance)
 
             if len(instances) > 0:    
@@ -137,11 +123,6 @@ class Checks(Check):
                     data[idx] = instances
                 else:
                     data[idx] += instances
-
-        self.node.collector.call('push_checks', vars, vals)
-        if self.node.options.format is None:
-            self.print_checks(data)
-            return
         return data
 
     def print_checks(self, data):

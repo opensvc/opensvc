@@ -1702,13 +1702,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The checks node action entrypoint.
         Runs health checks.
         """
+        drvs = self.checks_drivers()
+        data = drvs.do_checks()
+        if self.options.format is None:
+            drvs.print_checks(data)
+        else:
+            self.print_data(data)
+        self.collector.call('push_checks', data)
+
+    def checks_drivers(self, checkers=None):
         import drivers.check
         if self.svcs is None:
             self.build_services()
         objs = [svc for svc in self.svcs if svc.kind in ["vol", "svc"]]
-        checkers = drivers.check.Checks(objs, node=self)
-        data = checkers.do_checks()
-        self.print_data(data)
+        return drivers.check.Checks(objs, node=self, checkers=checkers)
 
     def wol(self):
         """
