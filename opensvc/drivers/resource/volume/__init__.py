@@ -24,6 +24,7 @@ KEYWORDS = [
         "keyword": "name",
         "at": True,
         "required": False,
+        "default": "{name}-vol-{rindex}",
         "text": "The volume service name. A service can only reference volumes in the same namespace."
     },
     {
