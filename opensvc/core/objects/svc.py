@@ -3043,7 +3043,11 @@ class Svc(PgMixin, BaseSvc):
 
     @lazy
     def flex_min(self):
-        val = self.oget("DEFAULT", "flex_min")
+        try:
+            val = self.oget("DEFAULT", "flex_min")
+            int(val)
+        except (ValueError, TypeError, ex.OptNotFound):
+            val = 0
         if val < 0:
             val = 0
         nb_nodes = len(self.nodes | self.drpnodes)
@@ -3056,7 +3060,8 @@ class Svc(PgMixin, BaseSvc):
         nb_nodes = len(self.peers)
         try:
             val = self.conf_get("DEFAULT", "flex_max")
-        except ex.OptNotFound:
+            int(val)
+        except (ValueError, TypeError, ex.OptNotFound):
             return nb_nodes
         if val > nb_nodes:
             val = nb_nodes
@@ -3067,8 +3072,9 @@ class Svc(PgMixin, BaseSvc):
     @lazy
     def flex_target(self):
         try:
-            return self.conf_get("DEFAULT", "flex_target")
-        except ex.OptNotFound:
+            val = self.conf_get("DEFAULT", "flex_target")
+            return int(val)
+        except (ValueError, TypeError, ex.OptNotFound):
             return self.flex_min
 
     @lazy
