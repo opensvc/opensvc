@@ -113,6 +113,8 @@ class DataMixin(object):
         if key is None:
             key = ""
         fpaths = glob.glob(path)
+        if not fpaths:
+            raise ex.Error("not data could be found at %s" % path)
         for path in fpaths:
             if os.path.isfile(path):
                 _key = os.path.join(key, os.path.basename(path))
