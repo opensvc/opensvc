@@ -105,6 +105,8 @@ class DataMixin(object):
             data = bencode(self.decode_key(key))
         else:
             data = b""
+        if os.path.islink(path) and not os.path.exists(path):
+            raise ex.Error("broken symlink %s => %s" % (path, os.readlink(path)))
         with open(path, "rb") as ofile:
             data += ofile.read()
         self.add_key(key, data)
@@ -118,7 +120,10 @@ class DataMixin(object):
         for path in fpaths:
             if os.path.isfile(path):
                 _key = os.path.join(key, os.path.basename(path))
-                self.add_file(_key, path, append=append)
+                try:
+                    self.add_file(_key, path, append=append)
+                except ex.Error as exc:
+                    self.log.warning("skip: %s", exc)
             elif os.path.isdir(path):
                 dir_key = os.path.join(key, os.path.basename(path))
                 self.add_directory(dir_key, path, append=append)
@@ -134,7 +139,10 @@ class DataMixin(object):
             for fname in files:
                 fpath = os.path.join(root, fname)
                 file_key = os.path.join(key_prefix, fpath[sub_key_position:].lstrip(os.sep))
-                self.add_file(file_key, fpath, append=append)
+                try:
+                    self.add_file(file_key, fpath, append=append)
+                except ex.Error as exc:
+                    self.log.warning("skip: %s", exc)
 
     @staticmethod
     def tempfilename():
