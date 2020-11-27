@@ -245,7 +245,10 @@ class Volume(Resource):
 
     @lazy
     def mount_point(self):
-        return self.volsvc.mount_point()
+        try:
+            return self.volsvc.mount_point()
+        except ex.Error:
+            return
 
     def mnt(self):
         """
@@ -256,7 +259,10 @@ class Volume(Resource):
 
     @lazy
     def device(self):
-        return self.volsvc.device()
+        try:
+            return self.volsvc.device()
+        except ex.Error:
+            return
 
     def chown(self):
         if self.mount_point is None:
@@ -275,6 +281,11 @@ class Volume(Resource):
 
     def _stop(self, force=False):
         self.uninstall_flag()
+        try:
+            self.volsvc
+        except ex.Error:
+            self.log.info("volume %s does not exist (and no pool can create it)", self.volname)
+            return
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.volname)
             return
@@ -289,6 +300,10 @@ class Volume(Resource):
             raise ex.Error
 
     def start(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            raise ex.Error("volume %s does not exist (and no pool can create it)" % self.volname)
         if not self.volsvc.exists():
             raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
@@ -325,6 +340,11 @@ class Volume(Resource):
 
     def _status(self, verbose=False):
         self.data_status()
+        try:
+            self.volsvc
+        except ex.Error:
+            self.status_log("volume %s does not exist (and no pool can provision it)" % self.volname, "info")
+            return core.status.DOWN
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
             return core.status.DOWN
@@ -338,7 +358,10 @@ class Volume(Resource):
         return status
 
     def exposed_devs(self):
-        return set([self.volsvc.device()])
+        try:
+            return set([self.volsvc.device()])
+        except ex.Error:
+            return set()
 
     def data_data(self, kind):
         """
@@ -513,6 +536,10 @@ class Volume(Resource):
         return self.has_data("sec", name, key)
 
     def provisioned(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            return False
         if not self.volsvc.exists():
             return False
         if not self.owned():
@@ -572,6 +599,10 @@ class Volume(Resource):
         self.volsvc.set_multi(["DEFAULT.children-=%s" % self.svc.path], validation=False)
 
     def unprovisioner(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            return
         if not self.volsvc.exists():
             return
         self.unclaim()
