@@ -716,22 +716,32 @@ class Volume(Resource):
             env[dst] = val
         return env
 
+    def find_pool(self, usage=True, shared=None):
+        return self.svc.node.find_pool(
+            poolname=self.pool,
+            pooltype=self.pooltype,
+            access=self.access,
+            size=self.size,
+            fmt=self.format,
+            shared=shared,
+            usage=usage
+        )
+
     def _configure_volume(self, volume, usage=True):
-        try:
-            pool = self.svc.node.find_pool(poolname=self.pool,
-                                           pooltype=self.pooltype,
-                                           access=self.access,
-                                           size=self.size,
-                                           fmt=self.format,
-                                           shared=self.shared,
-                                           usage=usage)
-        except ex.Error as exc:
-            raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
-        pool.log = self.log
         try:
             nodes = self.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
+        try:
+            pool = self.find_pool(usage=usage, shared=self.shared)
+        except ex.Error as exc:
+            if self.shared and nodes and len(nodes) == 1:
+                try:
+                    pool = self.find_pool(usage=usage, shared=False)
+                    self.log.warning("could not find a shared-capable pool matching criteria. fallback to the non shared-capable pool %s. beware: if you add nodes later you will have to provision a new shared volume and move the data.", pool.name)
+                except ex.Error as exc:
+                    raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
+        pool.log = self.log
         env = self.volume_env_data(pool)
         volume = pool.configure_volume(volume,
                                        fmt=self.format,
