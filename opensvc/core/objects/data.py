@@ -96,7 +96,7 @@ class DataMixin(object):
             with Uri(path, secure=secure).fetch() as fpath:
                 return self.add_file(key, fpath, append=append)
         except IOError as exc:
-            raise ex.Error("download %s failed: %s" % (fpath, exc))
+            raise ex.Error("download %s failed: %s" % (path, exc))
 
     def add_file(self, key, path, append=None):
         if key is None:
