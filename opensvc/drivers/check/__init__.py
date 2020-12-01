@@ -8,18 +8,22 @@ import sys
 
 from env import Env
 
+
 class Check(object):
-    undef = [{
-              'path': '',
-              'instance': 'undef',
-              'value': '-1'
-             }]
     def __init__(self, svcs=None):
         if svcs is None:
             svcs = []
         self.svcs = svcs
         if self.svcs is None:
             self.svcs = []
+
+    @property
+    def undef(self):
+        return [{
+            'path': '',
+            'instance': 'undef',
+            'value': '-1'
+        }]
 
     def do_check(self): # pragma: no cover
         """
@@ -28,11 +32,10 @@ class Check(object):
         return []
 
 class Checks(Check):
-    check_list = []
-
     def __init__(self, svcs=None, node=None, checkers=None):
         if svcs is None:
             svcs = []
+        self.check_list = []
         self.svcs = svcs
         self.node = node
         self.checkers = checkers or []

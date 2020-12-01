@@ -96,7 +96,7 @@ class DataMixin(object):
             with Uri(path, secure=secure).fetch() as fpath:
                 return self.add_file(key, fpath, append=append)
         except IOError as exc:
-            raise ex.Error("download %s failed: %s" % (fpath, exc))
+            raise ex.Error("download %s failed: %s" % (path, exc))
 
     def add_file(self, key, path, append=None):
         if key is None:
@@ -105,6 +105,8 @@ class DataMixin(object):
             data = bencode(self.decode_key(key))
         else:
             data = b""
+        if os.path.islink(path) and not os.path.exists(path):
+            raise ex.Error("broken symlink %s => %s" % (path, os.readlink(path)))
         with open(path, "rb") as ofile:
             data += ofile.read()
         self.add_key(key, data)
@@ -113,10 +115,15 @@ class DataMixin(object):
         if key is None:
             key = ""
         fpaths = glob.glob(path)
+        if not fpaths:
+            raise ex.Error("not data could be found at %s" % path)
         for path in fpaths:
             if os.path.isfile(path):
                 _key = os.path.join(key, os.path.basename(path))
-                self.add_file(_key, path, append=append)
+                try:
+                    self.add_file(_key, path, append=append)
+                except ex.Error as exc:
+                    self.log.warning("skip: %s", exc)
             elif os.path.isdir(path):
                 dir_key = os.path.join(key, os.path.basename(path))
                 self.add_directory(dir_key, path, append=append)
@@ -132,7 +139,10 @@ class DataMixin(object):
             for fname in files:
                 fpath = os.path.join(root, fname)
                 file_key = os.path.join(key_prefix, fpath[sub_key_position:].lstrip(os.sep))
-                self.add_file(file_key, fpath, append=append)
+                try:
+                    self.add_file(file_key, fpath, append=append)
+                except ex.Error as exc:
+                    self.log.warning("skip: %s", exc)
 
     @staticmethod
     def tempfilename():

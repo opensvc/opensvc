@@ -24,6 +24,7 @@ KEYWORDS = [
         "keyword": "name",
         "at": True,
         "required": False,
+        "default": "{name}-vol-{rindex}",
         "text": "The volume service name. A service can only reference volumes in the same namespace."
     },
     {
@@ -244,7 +245,10 @@ class Volume(Resource):
 
     @lazy
     def mount_point(self):
-        return self.volsvc.mount_point()
+        try:
+            return self.volsvc.mount_point()
+        except ex.Error:
+            return
 
     def mnt(self):
         """
@@ -255,7 +259,10 @@ class Volume(Resource):
 
     @lazy
     def device(self):
-        return self.volsvc.device()
+        try:
+            return self.volsvc.device()
+        except ex.Error:
+            return
 
     def chown(self):
         if self.mount_point is None:
@@ -274,6 +281,11 @@ class Volume(Resource):
 
     def _stop(self, force=False):
         self.uninstall_flag()
+        try:
+            self.volsvc
+        except ex.Error:
+            self.log.info("volume %s does not exist (and no pool can create it)", self.volname)
+            return
         if not self.volsvc.exists():
             self.log.info("volume %s does not exist", self.volname)
             return
@@ -288,6 +300,10 @@ class Volume(Resource):
             raise ex.Error
 
     def start(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            raise ex.Error("volume %s does not exist (and no pool can create it)" % self.volname)
         if not self.volsvc.exists():
             raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
@@ -324,6 +340,11 @@ class Volume(Resource):
 
     def _status(self, verbose=False):
         self.data_status()
+        try:
+            self.volsvc
+        except ex.Error:
+            self.status_log("volume %s does not exist (and no pool can provision it)" % self.volname, "info")
+            return core.status.DOWN
         if not self.volsvc.exists():
             self.status_log("volume %s does not exist" % self.volname, "info")
             return core.status.DOWN
@@ -337,7 +358,10 @@ class Volume(Resource):
         return status
 
     def exposed_devs(self):
-        return set([self.volsvc.device()])
+        try:
+            return set([self.volsvc.device()])
+        except ex.Error:
+            return set()
 
     def data_data(self, kind):
         """
@@ -512,6 +536,10 @@ class Volume(Resource):
         return self.has_data("sec", name, key)
 
     def provisioned(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            return False
         if not self.volsvc.exists():
             return False
         if not self.owned():
@@ -571,6 +599,10 @@ class Volume(Resource):
         self.volsvc.set_multi(["DEFAULT.children-=%s" % self.svc.path], validation=False)
 
     def unprovisioner(self):
+        try:
+            self.volsvc
+        except ex.Error:
+            return
         if not self.volsvc.exists():
             return
         self.unclaim()
@@ -684,22 +716,32 @@ class Volume(Resource):
             env[dst] = val
         return env
 
+    def find_pool(self, usage=True, shared=None):
+        return self.svc.node.find_pool(
+            poolname=self.pool,
+            pooltype=self.pooltype,
+            access=self.access,
+            size=self.size,
+            fmt=self.format,
+            shared=shared,
+            usage=usage
+        )
+
     def _configure_volume(self, volume, usage=True):
-        try:
-            pool = self.svc.node.find_pool(poolname=self.pool,
-                                           pooltype=self.pooltype,
-                                           access=self.access,
-                                           size=self.size,
-                                           fmt=self.format,
-                                           shared=self.shared,
-                                           usage=usage)
-        except ex.Error as exc:
-            raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
-        pool.log = self.log
         try:
             nodes = self.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
+        try:
+            pool = self.find_pool(usage=usage, shared=self.shared)
+        except ex.Error as exc:
+            if self.shared and nodes and len(nodes) == 1:
+                try:
+                    pool = self.find_pool(usage=usage, shared=False)
+                    self.log.warning("could not find a shared-capable pool matching criteria. fallback to the non shared-capable pool %s. beware: if you add nodes later you will have to provision a new shared volume and move the data.", pool.name)
+                except ex.Error as exc:
+                    raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
+        pool.log = self.log
         env = self.volume_env_data(pool)
         volume = pool.configure_volume(volume,
                                        fmt=self.format,
