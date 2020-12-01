@@ -28,11 +28,10 @@ class Check(object):
         return []
 
 class Checks(Check):
-    check_list = []
-
     def __init__(self, svcs=None, node=None, checkers=None):
         if svcs is None:
             svcs = []
+        self.check_list = []
         self.svcs = svcs
         self.node = node
         self.checkers = checkers or []
