@@ -13,14 +13,17 @@ from env import Env
 from .hb import Hb
 from utilities.render.listener import fmt_listener
 
+
 class HbUcast(Hb):
     """
     A class factorizing common methods and properties for the unicast
     heartbeat tx and rx child classes.
     """
-    config_change = False
-    timeout = None
-    peer_config = None
+    def __init__(self, name, role=None):
+        super(HbUcast, self).__init__(name, role)
+        self.peer_config = {}
+        self.config_change = False
+        self.timeout = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -83,14 +86,15 @@ class HbUcast(Hb):
 
         self.max_handlers = len(self.hb_nodes) * 4
 
+
 class HbUcastTx(HbUcast):
     """
     The unicast heartbeat tx class.
     """
     sock_tmo = 1.0
 
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="tx")
+    def __init__(self, name, role="tx"):
+        super(HbUcastTx, self).__init__(name, role=role)
 
     def run(self):
         self.set_tid()
@@ -129,12 +133,12 @@ class HbUcastTx(HbUcast):
     def _do(self, message, message_bytes, nodename, config):
         sock = None
         try:
-            #self.log.info("sending to %s:%s", config["addr"], config["port"])
+            # self.log.info("sending to %s:%s", config["addr"], config["port"])
             sock = socket.create_connection((config["addr"], config["port"]), self.sock_tmo)
             sock.sendall((message+"\0").encode())
             self.set_last(nodename)
             self.push_stats(message_bytes)
-        except socket.timeout as exc:
+        except socket.timeout:
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) timeout", nodename,
@@ -151,16 +155,16 @@ class HbUcastTx(HbUcast):
             if sock is not None:
                 sock.close()
 
+
 class HbUcastRx(HbUcast):
     """
     The unicast heartbeat rx class.
     """
-    sock_accept_tmo = 2.0
-    sock_recv_tmo = 5.0
-
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="rx")
+    def __init__(self, name, role="rx"):
+        super(HbUcastRx, self).__init__(name, role=role)
         self.sock = None
+        self.sock_accept_tmo = 2.0
+        self.sock_recv_tmo = 5.0
 
     def _configure(self):
         HbUcast._configure(self)
@@ -169,15 +173,15 @@ class HbUcastRx(HbUcast):
         self.config_change = False
         if self.sock:
             self.sock.close()
-        lexc = None
+        local_exception = None
         for _ in range(3):
             try:
                 self.configure_listener()
                 return
             except socket.error as exc:
-                lexc = exc
+                local_exception = exc
                 time.sleep(1)
-        self.log.error("init error: %s", str(lexc))
+        self.log.error("init error: %s", str(local_exception))
         raise ex.AbortAction
 
     def configure_listener(self):

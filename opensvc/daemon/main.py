@@ -31,6 +31,9 @@ from .scheduler import Scheduler
 from core.node import Node
 from utilities.lazy import lazy, unset_lazy
 
+# node monitor status where start_threads is allowed
+START_THREADS_ALLOWED_NMON_STATUS = (None, "idle", "init", "rejoin", "draining")
+
 try:
     # with python3, select the forkserver method beacuse the
     # default fork method is unsafe from the daemon.
@@ -385,7 +388,7 @@ class Daemon(object):
             nmon_status = shared.DAEMON_STATUS.get(["monitor", "nodes", Env.nodename, "monitor", "status"])
         except (KeyError, TypeError):
             nmon_status = None
-        if nmon_status not in (None, "idle", "init"):
+        if nmon_status not in START_THREADS_ALLOWED_NMON_STATUS:
             return
 
         config_changed = self.read_config()
