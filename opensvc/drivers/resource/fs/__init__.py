@@ -64,7 +64,7 @@ KW_SIZE = {
     "required": False,
     "convert": "size",
     "at": True,
-    "text": "The size of the logical volume to provision for this filesystem. A size expression or <n>%{FREE|PVS|VG}.",
+    "text": "The size of the logical volume to provision for this filesystem. On linux, can also be expressed as <n>%{FREE|PVS|VG}.",
     "provisioning": True
 }
 KW_MKFS_OPT = {
@@ -167,7 +167,6 @@ KWS_POOLING = [
     KW_MNT,
     KW_DEV,
     KW_MNT_OPT,
-    KW_SIZE,
     KW_STAT_TIMEOUT,
     KW_SNAP_SIZE,
     KW_PRKEY,
