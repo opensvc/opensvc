@@ -1011,7 +1011,7 @@ class ClientHandler(shared.OsvcThread):
             raise ex.Error("x509 auth: no client certificate received")
         subject = dict(x[0] for x in cert['subject'])
         cn = subject["commonName"]
-        if "." in cn:
+        if cn.endswith(self.cluster_name) and cn.count(".") == 3:
             # service account
             name, namespace, kind = split_fullname(cn, self.cluster_name)
             usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
