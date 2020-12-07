@@ -56,16 +56,17 @@ class Usr(Sec, BaseSvc):
                 changes.append("validity=%s" % DEFAULT_SACC_CERT_VALIDITY)
             grant = "guest:" + self.namespace
             changes.append("grant=%s" % grant)
-        if not self.ca:
-            print("no signing-capable CA in %s. skip certificate generation." % ",".join(capaths))
-        changes.append("ca=%s" % self.ca.path)
+        if self.ca:
+            changes.append("ca=%s" % self.ca.path)
+        else:
+            print("no signing-capable CA in %s. skip certificate generation." % ",".join(self.capaths))
         if changes:
             self.set_multi(changes)
         if self.ca and "certificate" not in self.data_keys() and "private_key" in self.ca.data_keys():
             self.gen_cert()
 
-    @lazy
-    def ca(self):
+    @property
+    def capaths(self):
         capath = self.oget("DEFAULT", "ca")
         if capath:
             capaths = [capath]
@@ -73,7 +74,11 @@ class Usr(Sec, BaseSvc):
             capaths = self.node.oget("cluster", "ca")
             if not capaths:
                 capaths = ["system/sec/ca-" + self.node.cluster_name]
-        for capath in capaths:
+        return capaths
+        
+    @lazy
+    def ca(self):
+        for capath in self.capaths:
             name, namespace, kind = split_path(capath)
             casec = factory("sec")(name, namespace="system", volatile=True, log=self.log)
             if casec.exists() and "private_key" in casec.data_keys():
