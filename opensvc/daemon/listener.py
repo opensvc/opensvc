@@ -114,11 +114,21 @@ class Listener(shared.OsvcThread):
 
     @lazy
     def ca(self):
-        secpath = shared.NODE.oget("cluster", "ca")
-        if secpath is None:
-            secpath = "system/sec/ca-" + self.cluster_name
-        secname, namespace, kind = split_path(secpath)
-        return factory("sec")(secname, namespace=namespace, volatile=True)
+        secpaths = shared.NODE.oget("cluster", "ca")
+        if not secpaths:
+            secpaths = ["system/sec/ca-" + self.cluster_name]
+        secs = []
+        for secpath in secpaths:
+            secname, namespace, kind = split_path(secpath)
+            sec = factory("sec")(secname, namespace=namespace, volatile=True)
+            if not sec.exists():
+                self.log.warning("ca %s does not exist: ignore", secpath)
+                continue
+            if "certificate_chain" not in sec.data_keys():
+                self.log.warning("ca %s has no certificate key: ignore", secpath)
+                continue
+            secs.append(sec)
+        return secs
 
     @lazy
     def cert(self):
@@ -130,29 +140,40 @@ class Listener(shared.OsvcThread):
 
     def prepare_certs(self):
         makedirs(Env.paths.certs)
-        if Env.sysname == "Linux" and self.ca and self.cert and self.ca.exists() and self.cert.exists():
+        if Env.sysname == "Linux" and self.ca and self.cert and self.cert.exists():
             self.certfs.start()
             os.chmod(Env.paths.certs, 0o0755)
-        if not self.ca.exists():
-            raise ex.InitError("secret %s does not exist" % self.ca.path)
-        data = self.ca.decode_key("certificate_chain")
-        if data is None:
-            raise ex.InitError("secret key %s.%s is not set" % (self.ca.path, "certificate_chain"))
-        ca_cert_chain = os.path.join(Env.paths.certs, "ca_certificate_chain")
-        self.log.info("write %s", ca_cert_chain)
-        with open(ca_cert_chain, "w") as fo:
-            fo.write(bdecode(data))
-        crl_path = self.fetch_crl()
+
+        # concat ca certificates
+        ca_certs = os.path.join(Env.paths.certs, "ca_certificates")
+        try:
+            open(ca_certs, 'w').close()
+        except OSError:
+            pass
+        for ca in self.ca:
+            data = ca.decode_key("certificate_chain")
+            if data is None:
+                self.log.warning("secret key %s.%s is not set" % (ca.path, "certificate_chain"))
+                continue
+            self.log.info("add %s certificate chain to %s", ca.path, ca_certs)
+            with open(ca_certs, "a") as fo:
+                fo.write(bdecode(data))
+
+        # listener cert chain
         data = self.cert.decode_key("certificate_chain")
         if data is None:
             raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "certificate_chain"))
         cert_chain = os.path.join(Env.paths.certs, "certificate_chain")
         self.log.info("write %s", cert_chain)
+
+        # listener private key
         with open(cert_chain, "w") as fo:
             fo.write(bdecode(data))
         data = self.cert.decode_key("private_key")
         if data is None:
             raise ex.InitError("secret key %s.%s is not set" % (self.cert.path, "private_key"))
+
+        # listener private key
         private_key = os.path.join(Env.paths.certs, "private_key")
         self.log.info("write %s", private_key)
         with open(private_key, "w+") as fo:
@@ -160,26 +181,35 @@ class Listener(shared.OsvcThread):
         os.chmod(private_key, 0o0600)
         with open(private_key, "w") as fo:
             fo.write(bdecode(data))
-        return ca_cert_chain, cert_chain, private_key, crl_path
+
+        # revocations
+        crl_path = self.fetch_crl()
+
+        return ca_certs, cert_chain, private_key, crl_path
 
     def fetch_crl(self):
         crl = shared.NODE.oget("listener", "crl")
         if not crl:
             return
+
         if crl == Env.paths.crl:
             self.crl_mode = "internal"
             try:
-                buff = self.ca.decode_key("crl")
-            except Exception as exc:
-                buff = None
-            if buff is None:
-                self.log.info("cluster ca crl configured but empty")
-                return
-            else:
-                self.log.info("write %s", crl)
-                with open(crl, "w") as fo:
-                    fo.write(bdecode(buff))
-                return crl
+                os.unlink(crl)
+            except OSError:
+                pass
+            with open(crl, "w") as fo:
+                for ca in self.ca:
+                    ca.unset_lazy("cd")
+                    if "crl" not in ca.data_keys():
+                        continue
+                    try:
+                        ca.install_file_key("crl", crl + "." + ca.fullname)
+                        fo.write(bdecode(ca.decode_key("crl")))
+                    except Exception as exc:
+                        self.log.error("install %s crl error: %s", ca.path, exc)
+            return crl
+
         self.crl_mode = "external"
         if os.path.exists(crl):
             return crl
@@ -201,13 +231,13 @@ class Listener(shared.OsvcThread):
         HTTP/2. If you're working with Python TLS directly, you'll want to do the
         exact same setup as this function does.
         """
-        ca_cert_chain, cert_chain, private_key, crl = self.prepare_certs()
+        ca_certs, cert_chain, private_key, crl = self.prepare_certs()
         # Get the basic context from the standard library.
         ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
         #ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.verify_mode = ssl.CERT_OPTIONAL
         ctx.load_cert_chain(cert_chain, keyfile=private_key)
-        ctx.load_verify_locations(ca_cert_chain)
+        ctx.load_verify_locations(ca_certs)
         if crl:
             self.log.info("tls crl %s", crl)
             ctx.verify_flags = ssl.VERIFY_CRL_CHECK_CHAIN
@@ -418,31 +448,38 @@ class Listener(shared.OsvcThread):
             mtime = os.path.getmtime(Env.paths.crl)
         except Exception:
             mtime = 0
+        change = False
 
         if self.crl_mode == "internal":
-            if not "crl" in self.ca.data_keys():
-                if os.path.exists(Env.paths.crl):
-                    try:
-                        self.log.info("remove %s", Env.paths.crl)
-                        os.unlink(Env.paths.crl)
-                    except Exception as exc:
-                        self.log.warning("remove %s: %s", Env.paths.crl, exc)
-                        return
+            for ca in self.ca:
+                crlp = Env.paths.crl + "." + ca.fullname
+                if not "crl" in ca.data_keys():
+                    if os.path.exists(crlp):
+                        change = True
+                        try:
+                            self.log.info("remove %s", crlp)
+                            os.unlink(crlp)
+                        except Exception as exc:
+                            self.log.warning("remove %s: %s", crlp, exc)
+                            continue
+                    else:
+                        continue
                 else:
-                    return
-            else:
-                try:
-                    refmtime = os.path.getmtime(self.ca.paths.cf)
-                except Exception:
-                    return
-                if not mtime or mtime > refmtime:
-                    return
-                self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), self.ca.path)
+                    try:
+                        refmtime = os.path.getmtime(ca.paths.cf)
+                    except Exception:
+                        continue
+                    if not mtime or mtime >= refmtime:
+                        continue
+                    change = True
+                    self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), ca.path)
         elif self.crl_mode == "external":
-            if not mtime or mtime > self.crl_expire:
-                return
-            self.log.info("refresh crl: installed version is expired since %s", print_duration(self.crl_expire-mtime))
-        self.setup_socktls()
+            if mtime and mtime <= self.crl_expire:
+                self.log.info("refresh crl: installed version is expired since %s", print_duration(self.crl_expire-mtime))
+                change = True
+
+        if change:
+            self.setup_socktls(force=True)
 
     def janitor_relay(self):
         """
@@ -624,7 +661,7 @@ class Listener(shared.OsvcThread):
                     continue
                 raise
 
-    def setup_socktls(self):
+    def setup_socktls(self, force=False):
         self.vip
         if not has_ssl:
             self.log.info("skip tls listener init: ssl module import error")
@@ -634,7 +671,7 @@ class Listener(shared.OsvcThread):
         if self.tls_port < 0 or not self.tls_addr:
             self.tls_port = port
             self.tls_addr = addr
-        elif port != self.tls_port or addr != self.tls_addr:
+        elif force or port != self.tls_port or addr != self.tls_addr:
             try:
                 self.tls_sock.close()
             except socket.error:
