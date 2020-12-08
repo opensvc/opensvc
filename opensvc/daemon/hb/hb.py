@@ -101,7 +101,7 @@ class Hb(shared.OsvcThread):
         return self.peers.get(nodename, {"beating": False})["beating"]
 
     def set_peers_beating(self):
-        for nodename in self.peers:
+        for nodename in list(self.peers.keys()):
             self.set_beating(nodename)
 
     def set_beating(self, nodename="*"):
@@ -198,5 +198,3 @@ class Hb(shared.OsvcThread):
 
     def queue_rx_data(self, data, nodename):
         shared.RX.put((nodename, data, self.name))
-
-
