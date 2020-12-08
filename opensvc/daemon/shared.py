@@ -503,7 +503,7 @@ class OsvcThread(threading.Thread, Crypt):
         try:
             getattr(self, "reconfigure")()
         except Exception as exc:
-            self.log.error("reconfigure error: %s", str(exc))
+            self.log.error("reconfigure error: %s, stopping thread", str(exc))
             self.stop()
         self.configured = time.time()
 
