@@ -198,19 +198,23 @@ class Listener(shared.OsvcThread):
                 os.unlink(crl)
             except OSError:
                 pass
-            installed = False
-            with open(crl, "w") as fo:
-                for ca in self.ca:
-                    ca.unset_lazy("cd")
-                    if "crl" not in ca.data_keys():
-                        continue
-                    try:
-                        ca.install_file_key("crl", crl + "." + ca.fullname)
-                        fo.write(bdecode(ca.decode_key("crl")))
-                        installed = True
-                    except Exception as exc:
-                        self.log.error("install %s crl error: %s", ca.path, exc)
-            return crl if installed else None
+            buff = ""
+            for ca in self.ca:
+                ca.unset_lazy("cd")
+                if "crl" not in ca.data_keys():
+                    continue
+                try:
+                    buff += bdecode(ca.decode_key("crl"))
+                except Exception as exc:
+                    self.log.error("decode %s crl error: %s", ca.path, exc)
+            if buff:
+                try:
+                    with open(crl, "w") as fo:
+                        fo.write(buff)
+                    return crl
+                except Exception as exc:
+                    self.log.error("install %s error: %s", crl, exc)
+            return
 
         self.crl_mode = "external"
         if os.path.exists(crl):
@@ -451,30 +455,28 @@ class Listener(shared.OsvcThread):
         except Exception:
             mtime = 0
         change = False
+        has_crl = False
 
         if self.crl_mode == "internal":
             for ca in self.ca:
-                crlp = Env.paths.crl + "." + ca.fullname
-                if not "crl" in ca.data_keys():
-                    if os.path.exists(crlp):
-                        change = True
-                        try:
-                            self.log.info("remove %s", crlp)
-                            os.unlink(crlp)
-                        except Exception as exc:
-                            self.log.warning("remove %s: %s", crlp, exc)
-                            continue
-                    else:
-                        continue
-                else:
+                ca.unset_lazy("cd")
+                if "crl" in ca.data_keys():
+                    has_crl = True
                     try:
                         refmtime = os.path.getmtime(ca.paths.cf)
                     except Exception:
                         continue
-                    if not mtime or mtime >= refmtime:
+                    if mtime >= refmtime:
                         continue
                     change = True
                     self.log.info("refresh crl: installed version is %s older than %s", print_duration(refmtime-mtime), ca.path)
+            if not has_crl and os.path.exists(Env.paths.crl):
+                try:
+                    self.log.info("remove %s", Env.paths.crl)
+                    os.unlink(Env.paths.crl)
+                    change = True
+                except Exception as exc:
+                    self.log.warning("remove %s: %s", Env.paths.crl, exc)
         elif self.crl_mode == "external":
             if mtime and mtime <= self.crl_expire:
                 self.log.info("refresh crl: installed version is expired since %s", print_duration(self.crl_expire-mtime))
