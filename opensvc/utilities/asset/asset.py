@@ -22,7 +22,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'mem_bytes')
             s = str(s/1024/1024)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_mem_bytes()
                 source = self.s_probe
@@ -42,7 +42,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'mem_banks')
             s = str(s)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_mem_banks()
                 source = self.s_probe
@@ -61,7 +61,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'mem_slots')
             s = str(s)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_mem_slots()
                 source = self.s_probe
@@ -170,7 +170,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'cpu_threads')
             s = str(s)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_cpu_threads()
                 source = self.s_probe
@@ -189,7 +189,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'cpu_cores')
             s = str(s)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_cpu_cores()
                 source = self.s_probe
@@ -208,7 +208,7 @@ class BaseAsset(object):
             s = self.node.conf_get('node', 'cpu_dies')
             s = str(s)
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             try:
                 s = self._get_cpu_dies()
                 source = self.s_probe
@@ -450,7 +450,7 @@ class BaseAsset(object):
         try:
             s = str(self.node.conf_get('listener', 'port'))
             source = self.s_config
-        except (ex.OptNotFound, ex.RequiredOptNotFound):
+        except (ex.OptNotFound, ex.RequiredOptNotFound, ValueError, TypeError):
             pass
         return {
             "title": "listener port",
