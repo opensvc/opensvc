@@ -198,6 +198,7 @@ class Listener(shared.OsvcThread):
                 os.unlink(crl)
             except OSError:
                 pass
+            installed = False
             with open(crl, "w") as fo:
                 for ca in self.ca:
                     ca.unset_lazy("cd")
@@ -206,9 +207,10 @@ class Listener(shared.OsvcThread):
                     try:
                         ca.install_file_key("crl", crl + "." + ca.fullname)
                         fo.write(bdecode(ca.decode_key("crl")))
+                        installed = True
                     except Exception as exc:
                         self.log.error("install %s crl error: %s", ca.path, exc)
-            return crl
+            return crl if installed else None
 
         self.crl_mode = "external"
         if os.path.exists(crl):
