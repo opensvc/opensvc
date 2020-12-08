@@ -732,6 +732,7 @@ class Volume(Resource):
             nodes = self.svc._get("DEFAULT.nodes")
         except ex.OptNotFound:
             nodes = None
+        pool = None
         try:
             pool = self.find_pool(usage=usage, shared=self.shared)
         except ex.Error as exc:
@@ -741,6 +742,8 @@ class Volume(Resource):
                     self.log.warning("could not find a shared-capable pool matching criteria. fallback to the non shared-capable pool %s. beware: if you add nodes later you will have to provision a new shared volume and move the data.", pool.name)
                 except ex.Error as exc:
                     raise ex.Error("could not find a pool matching criteria:\n%s" % exc)
+        if not pool:
+            raise ex.Error("could not find a pool matching criteria")
         pool.log = self.log
         env = self.volume_env_data(pool)
         volume = pool.configure_volume(volume,

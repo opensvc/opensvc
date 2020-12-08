@@ -710,7 +710,7 @@ KEYWORDS = [
         "keyword": "schedule",
         "default_keyword": "sync_schedule",
         "at": True,
-        "text": "Set the this resource synchronization schedule. See ``usr/share/doc/node.conf`` for the schedule syntax reference.",
+        "text": "Set the this resource synchronization schedule. See ``/usr/share/doc/opensvc/schedule`` for the schedule syntax reference.",
         "example": '["00:00-01:00@61 mon", "02:00-03:00@61 tue-sun"]'
     },
     {
