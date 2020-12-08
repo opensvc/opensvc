@@ -124,13 +124,15 @@ class Usr(Sec, BaseSvc):
                "-out", p_crl,
                "-config", p_crlconf]
         self.vcall(cmd, err_to_info=True)
+        if not os.path.exists(p_crl):
+            raise ex.Error("%s does not exist. rollback transaction." % p_crl)
+        with open(p_crl) as f:
+            buff = f.read()
+        ca.add_key("crl", buff)
         with open(p_crlnumber) as f:
             buff = f.read()
         ca.add_key("crlnumber", buff)
         with open(p_crlindex) as f:
             buff = f.read()
         ca.add_key("crlindex", buff)
-        with open(p_crl) as f:
-            buff = f.read()
-        ca.add_key("crl", buff)
 
