@@ -116,6 +116,7 @@ MON_CHANGED = []
 # cluster wide locks, aquire/release via the listener (usually the unix socket),
 # consensus via the heartbeat links.
 LOCKS = {}
+LOCKS_LOCK = RLock()
 
 # The lock to serialize data updates from rx threads
 RX = queue.Queue()
@@ -158,6 +159,7 @@ try:
     SERVICES_LOCK.name = "SERVICES"
     HB_MSG_LOCK.name = "HB_MSG"
     RUN_DONE_LOCK.name = "RUN_DONE"
+    LOCKS_LOCK.name = "LOCKS"
 except AttributeError:
     pass
 

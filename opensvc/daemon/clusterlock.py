@@ -86,14 +86,15 @@ class LockMixin(object):
         return True
 
     def _lock_acquire(self, nodename, name):
-        if name in shared.LOCKS:
-            return
         lock_id = str(uuid.uuid4())
-        shared.LOCKS[name] = {
-            "requested": time.time(),
-            "requester": nodename,
-            "id": lock_id,
-        }
+        with shared.LOCKS_LOCK:
+            if name in shared.LOCKS:
+                return
+            shared.LOCKS[name] = {
+                "requested": time.time(),
+                "requester": nodename,
+                "id": lock_id,
+            }
         shared.wake_monitor(reason="lock", immediate=True)
         return lock_id
 
