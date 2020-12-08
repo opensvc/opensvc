@@ -1,10 +1,10 @@
 import pytest
 
 import daemon.shared as shared
+from core.exceptions import HTTP
 
 from core.node import Node
 from core.objects.ccfg import Ccfg
-from daemon.clusterlock import LockMixin
 from daemon.handlers.join.post import Handler as PostJoin
 from env import Env
 
@@ -12,7 +12,9 @@ from env import Env
 @pytest.fixture(scope='function')
 @pytest.mark.usefixtures('osvc_path_tests')
 def thr(mocker, osvc_path_tests):
-    mocker.patch.object(LockMixin, 'lock_acquire')
+    mocker.patch('daemon.handlers.join.post.LOCK_TIMEOUT', 0.001)
+    mocker.patch('daemon.clusterlock.DELAY_TIME', 0.001)
+    mocker.patch.dict(shared.LOCKS, {})
     shared_thr = shared.OsvcThread()
     shared_thr.log = mocker.MagicMock()
     shared.NODE = Node()
@@ -40,3 +42,26 @@ class TestPostJoin:
     def test_return_dict_with_cluster_config_data(thr):
         response = PostJoin().action('node3', thr=thr)
         assert response['data']['cluster']['data'] == Ccfg().print_config_data()
+
+    @staticmethod
+    def test_raise_503_when_lock_not_available(thr):
+        post_join = PostJoin()
+        post_join.lock_acquire(Env.nodename, "join", timeout=120, thr=thr)
+        with pytest.raises(HTTP, match='status 503: Lock not acquired'):
+            post_join.action('node3', thr=thr)
+
+    @staticmethod
+    def test_dont_update_cluster_config_when_lock_not_available(thr):
+        post_join = PostJoin()
+        post_join.lock_acquire(Env.nodename, "join", timeout=120, thr=thr)
+        try:
+            post_join.action('node3', thr=thr)
+        except:
+            pass
+        assert Ccfg().cluster_nodes == [Env.nodename]
+
+    @staticmethod
+    def test_succeed_when_lock_is_not_join_lock(thr):
+        post_join = PostJoin()
+        post_join.lock_acquire(Env.nodename, "something", timeout=120, thr=thr)
+        post_join.action('node3', thr=thr)
