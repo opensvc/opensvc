@@ -1301,6 +1301,9 @@ class Resource(object):
     def is_provisioned(self, refresh=False):
         if not hasattr(self, "provisioner") and not hasattr(self, "provisioner_shared_non_leader"):
             return True
+        if "noaction" in self.tags:
+            # can not determine state if we can't run an action to toggle it
+            return
         if not refresh:
             flag = self.is_provisioned_flag()
             if flag is not None:
