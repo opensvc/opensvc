@@ -10,19 +10,17 @@ from env import Env
 
 
 @pytest.fixture(scope='function')
-@pytest.mark.usefixtures('osvc_path_tests')
-def thr(mocker, osvc_path_tests):
+def thr(mocker):
     mocker.patch('daemon.handlers.join.post.LOCK_TIMEOUT', 0.001)
     mocker.patch('daemon.clusterlock.DELAY_TIME', 0.001)
-    mocker.patch.dict(shared.LOCKS, {})
     shared_thr = shared.OsvcThread()
     shared_thr.log = mocker.MagicMock()
-    shared.NODE = Node()
     return shared_thr
 
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('shared_data')
 class TestPostJoin:
     @staticmethod
     def test_update_cluster_nodes(thr):
