@@ -8,7 +8,6 @@ from subprocess import Popen
 import pytest
 
 import env
-from core.node import Node
 from daemon.handlers.object.status.post import Handler as HandlerObjectStatusPost
 from daemon.main import Daemon
 # noinspection PyUnresolvedReferences
@@ -92,16 +91,13 @@ def get_boot_id(mocker, osvc_path_tests):
 
 
 @pytest.fixture(scope='function')
-def mock_daemon(mocker, osvc_path_tests):
-    """
-    mock some of shared daemon structures
-    """
-    mocker.patch.object(shared, 'DAEMON_STATUS', OsvcJournaledData())
-    mocker.patch.object(shared, 'RX', queue.Queue())
+def wait_listener(mocker):
     mocker.patch.object(Monitor, 'wait_listener')
-    mocker.patch.dict(shared.SERVICES, {})
-    shared.NODE = Node()
-    shared.DAEMON = Daemon()
+
+
+@pytest.fixture(scope='function')
+def mock_daemon(mocker):
+    mocker.patch.object(shared, 'DAEMON', Daemon())
 
 
 def assert_nmon_status(monitor, status, message='reason'):
@@ -203,9 +199,11 @@ S_DEPEND_ON_PARENT_STATUS = {
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_node_config')
-@pytest.mark.usefixtures('has_cluster_config')
-@pytest.mark.usefixtures('get_boot_id')
+@pytest.mark.usefixtures('shared_data')
 @pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('has_cluster_config')
+@pytest.mark.usefixtures('wait_listener')
+@pytest.mark.usefixtures('get_boot_id')
 class TestMonitorOrchestratorStart(object):
     @staticmethod
     @pytest.mark.parametrize(

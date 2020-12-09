@@ -107,6 +107,7 @@ class HbUcastTx(HbUcast):
             while True:
                 self.do()
                 if self.stopped():
+                    self.log.info('sys.exit()')
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
                     shared.HB_TX_TICKER.wait(self.interval)
@@ -167,7 +168,7 @@ class HbUcastRx(HbUcast):
         self.sock_recv_tmo = 5.0
 
     def _configure(self):
-        HbUcast._configure(self)
+        super(HbUcastRx, self)._configure()
         if not self.config_change:
             return
         self.config_change = False
@@ -185,13 +186,15 @@ class HbUcastRx(HbUcast):
         raise ex.AbortAction
 
     def configure_listener(self):
-        af = socket.AF_INET6 if ":" in self.peer_config[Env.nodename]["addr"] else socket.AF_INET
+        addr = self.peer_config[Env.nodename]["addr"]
+        port = self.peer_config[Env.nodename]["port"]
+        af = socket.AF_INET6 if ":" in addr else socket.AF_INET
         self.sock = socket.socket(af, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((self.peer_config[Env.nodename]["addr"],
-                        self.peer_config[Env.nodename]["port"]))
+        self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(self.sock_accept_tmo)
+        self.log.info("listening on %s", fmt_listener(addr, port))
 
     def run(self):
         self.set_tid()
@@ -199,15 +202,21 @@ class HbUcastRx(HbUcast):
             self.configure()
         except ex.AbortAction:
             return
-
-        cf = self.peer_config[Env.nodename]
-        self.log.info("listening on %s", fmt_listener(cf["addr"], cf["port"]))
+        except Exception as exc:
+            self.log.error("%s", exc)
+            raise exc
 
         while True:
-            self.do()
+            try:
+                self.do()
+            except Exception as exc:
+                self.log.error("during do(): %s", exc)
+                self.log.exception(exc)
+                raise exc
             if self.stopped():
                 self.join_threads()
                 self.sock.close()
+                self.log.info('sys.exit()')
                 sys.exit(0)
 
     def do(self):

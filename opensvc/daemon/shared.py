@@ -9,6 +9,7 @@ import hashlib
 import json
 import tempfile
 import shutil
+from copy import deepcopy
 from subprocess import Popen, PIPE
 
 import foreign.six as six
@@ -116,6 +117,7 @@ MON_CHANGED = []
 # cluster wide locks, aquire/release via the listener (usually the unix socket),
 # consensus via the heartbeat links.
 LOCKS = {}
+LOCKS_LOCK = RLock()
 
 # The lock to serialize data updates from rx threads
 RX = queue.Queue()
@@ -158,6 +160,7 @@ try:
     SERVICES_LOCK.name = "SERVICES"
     HB_MSG_LOCK.name = "HB_MSG"
     RUN_DONE_LOCK.name = "RUN_DONE"
+    LOCKS_LOCK.name = "LOCKS"
 except AttributeError:
     pass
 
@@ -503,7 +506,7 @@ class OsvcThread(threading.Thread, Crypt):
         try:
             getattr(self, "reconfigure")()
         except Exception as exc:
-            self.log.error("reconfigure error: %s", str(exc))
+            self.log.error("reconfigure error: %s, stopping thread", str(exc))
             self.stop()
         self.configured = time.time()
 
@@ -1633,6 +1636,10 @@ class OsvcThread(threading.Thread, Crypt):
             "nodes": self.cluster_nodes,
         })
 
+    def update_cluster_locks_lk(self):
+        # this need protection with LOCKS_LOCK
+        self.node_data.merge([], {"locks": deepcopy(LOCKS)})
+
     def update_status(self):
         data = self.status()
         self.thread_data.set([], data)
@@ -1793,5 +1800,3 @@ class OsvcThread(threading.Thread, Crypt):
             except KeyError:
                 pass
         return data
-
-

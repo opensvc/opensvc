@@ -429,6 +429,7 @@ class Daemon(object):
                 self.threads[thr_id].stop()
                 self.threads[thr_id].join()
                 del self.threads[thr_id]
+                shared.DAEMON_STATUS.unset_safe([thr_id])
                 changed = True
 
             # clean up collector thread no longer needed
@@ -437,6 +438,7 @@ class Daemon(object):
                 self.threads["collector"].stop()
                 self.threads["collector"].join()
                 del self.threads["collector"]
+                shared.DAEMON_STATUS.unset_safe(["collector"])
                 changed = True
 
         if changed:
@@ -486,7 +488,7 @@ class Daemon(object):
         if mtime is None:
             return
         if self.last_config_mtime is not None and \
-           self.last_config_mtime >= mtime:
+                self.last_config_mtime >= mtime:
             return
         try:
             with shared.NODE_LOCK:

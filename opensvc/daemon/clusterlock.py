@@ -5,6 +5,9 @@ from copy import deepcopy
 import daemon.shared as shared
 from env import Env
 
+DELAY_TIME = 0.5
+
+
 class LockMixin(object):
     """
     Methods shared between lock/unlock handlers.
@@ -21,12 +24,12 @@ class LockMixin(object):
         situation = 0
         while time.time() < deadline:
             if not lock_id:
-                lock_id = self._lock_acquire(nodename, name)
+                lock_id = self._lock_acquire(nodename, name, thr=thr)
                 if not lock_id:
                     if situation != 1:
                         thr.log.info("claim %s lock refused (already claimed)", name)
                     situation = 1
-                    time.sleep(0.5)
+                    time.sleep(DELAY_TIME)
                     continue
                 thr.log.info("claimed %s lock: %s", name, lock_id)
             if shared.LOCKS.get(name, {}).get("id") != lock_id:
@@ -36,7 +39,7 @@ class LockMixin(object):
             if self.lock_accepted(name, lock_id, thr=thr):
                 thr.log.info("locked %s", name)
                 return lock_id
-            time.sleep(0.5)
+            time.sleep(DELAY_TIME)
         thr.log.warning("claim timeout on %s lock", name)
         self.lock_release(name, lock_id, silent=True, thr=thr)
 
@@ -45,12 +48,12 @@ class LockMixin(object):
         if timeout is None:
             timeout = 5
         deadline = time.time() + timeout
-        if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
-            return
-        try:
+        with shared.LOCKS_LOCK:
+            if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
+                return
             del shared.LOCKS[name]
-        except KeyError:
-            pass
+            if thr:
+                thr.update_cluster_locks_lk()
         shared.wake_monitor(reason="unlock", immediate=True)
         if not silent:
             thr.log.info("released locally %s", name)
@@ -58,7 +61,7 @@ class LockMixin(object):
             if self._lock_released(name, lock_id, thr=thr):
                 released = True
                 break
-            time.sleep(0.5)
+            time.sleep(DELAY_TIME)
         if released is False:
             thr.log.warning('timeout waiting for lock %s %s release on peers', name, lock_id)
 
@@ -85,15 +88,18 @@ class LockMixin(object):
                 return False
         return True
 
-    def _lock_acquire(self, nodename, name):
-        if name in shared.LOCKS:
-            return
+    def _lock_acquire(self, nodename, name, thr=None):
         lock_id = str(uuid.uuid4())
-        shared.LOCKS[name] = {
-            "requested": time.time(),
-            "requester": nodename,
-            "id": lock_id,
-        }
+        with shared.LOCKS_LOCK:
+            if name in shared.LOCKS:
+                return
+            shared.LOCKS[name] = {
+                "requested": time.time(),
+                "requester": nodename,
+                "id": lock_id,
+            }
+            if thr:
+                thr.update_cluster_locks_lk()
         shared.wake_monitor(reason="lock", immediate=True)
         return lock_id
 

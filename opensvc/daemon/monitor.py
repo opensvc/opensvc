@@ -3613,6 +3613,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.merge_hb_data_monitor()
 
     def merge_hb_data_locks(self):
+        changed = False
         for nodename in self.list_nodes():
             if nodename == Env.nodename:
                 continue
@@ -3626,32 +3627,39 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if lock["requester"] == Env.nodename and name not in shared.LOCKS:
                     # don't re-merge a released lock emitted by this node
                     continue
-                if name not in shared.LOCKS:
-                    self.log.info("merge lock %s from node %s", name, nodename)
-                    shared.LOCKS[name] = lock
-                    continue
-                if lock["requested"] < shared.LOCKS[name]["requested"] and \
-                   lock["requester"] != Env.nodename and \
-                   lock["requester"] == nodename:
-                    self.log.info("merge older lock %s from node %s", name, nodename)
-                    shared.LOCKS[name] = lock
-                    continue
+                with shared.LOCKS_LOCK:
+                    if name not in shared.LOCKS:
+                        self.log.info("merge lock %s from node %s", name, nodename)
+                        shared.LOCKS[name] = lock
+                        changed = True
+                        continue
+
+                    # Lock name is already present in shared.LOCKS
+                    if lock["requested"] < shared.LOCKS[name]["requested"] and \
+                            lock["requester"] != Env.nodename and \
+                            lock["requester"] == nodename:
+                        self.log.info("merge older lock %s from node %s", name, nodename)
+                        shared.LOCKS[name] = lock
+                        changed = True
+                        continue
         for name in list(shared.LOCKS):
-            try:
-                lock = shared.LOCKS[name]
-            except KeyError:
-                # deleted during iteration
-                continue
-            if Env.nodename == lock["requester"]:
-                continue
-            requester_lock = self.thread_data.get(["nodes", lock["requester"], "locks", name], default=None)
-            if requester_lock is None:
-                self.log.info("drop lock %s from node %s", name, nodename)
+            with shared.LOCKS_LOCK:
                 try:
-                    del shared.LOCKS[name]
+                    shared_lock = shared.LOCKS[name]
                 except KeyError:
                     # deleted during iteration
                     continue
+                shared_lock_requester = shared_lock["requester"]
+                if shared_lock_requester == Env.nodename:
+                    continue
+                requester_lock = self.thread_data.get(["nodes", shared_lock_requester, "locks", name], default=None)
+                if requester_lock is None:
+                    self.log.info("drop lock %s from node %s", name, shared_lock_requester)
+                    del shared.LOCKS[name]
+                    changed = True
+        if changed:
+            with shared.LOCKS_LOCK:
+                self.update_cluster_locks_lk()
 
     def merge_hb_data_compat(self):
         compat = set()
