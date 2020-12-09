@@ -9,6 +9,7 @@ import hashlib
 import json
 import tempfile
 import shutil
+from copy import deepcopy
 from subprocess import Popen, PIPE
 
 import foreign.six as six
@@ -1635,6 +1636,10 @@ class OsvcThread(threading.Thread, Crypt):
             "nodes": self.cluster_nodes,
         })
 
+    def update_cluster_locks_lk(self):
+        # this need protection with LOCKS_LOCK
+        self.node_data.merge([], {"locks": deepcopy(LOCKS)})
+
     def update_status(self):
         data = self.status()
         self.thread_data.set([], data)
@@ -1795,5 +1800,3 @@ class OsvcThread(threading.Thread, Crypt):
             except KeyError:
                 pass
         return data
-
-

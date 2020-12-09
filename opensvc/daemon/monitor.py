@@ -3613,6 +3613,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.merge_hb_data_monitor()
 
     def merge_hb_data_locks(self):
+        changed = False
         for nodename in self.list_nodes():
             if nodename == Env.nodename:
                 continue
@@ -3630,6 +3631,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     if name not in shared.LOCKS:
                         self.log.info("merge lock %s from node %s", name, nodename)
                         shared.LOCKS[name] = lock
+                        changed = True
                         continue
 
                     # Lock name is already present in shared.LOCKS
@@ -3638,6 +3640,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                             lock["requester"] == nodename:
                         self.log.info("merge older lock %s from node %s", name, nodename)
                         shared.LOCKS[name] = lock
+                        changed = True
                         continue
         for name in list(shared.LOCKS):
             with shared.LOCKS_LOCK:
@@ -3653,6 +3656,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if requester_lock is None:
                     self.log.info("drop lock %s from node %s", name, shared_lock_requester)
                     del shared.LOCKS[name]
+                    changed = True
+        if changed:
+            with shared.LOCKS_LOCK:
+                self.update_cluster_locks_lk()
 
     def merge_hb_data_compat(self):
         compat = set()

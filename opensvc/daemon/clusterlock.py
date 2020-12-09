@@ -24,7 +24,7 @@ class LockMixin(object):
         situation = 0
         while time.time() < deadline:
             if not lock_id:
-                lock_id = self._lock_acquire(nodename, name)
+                lock_id = self._lock_acquire(nodename, name, thr=thr)
                 if not lock_id:
                     if situation != 1:
                         thr.log.info("claim %s lock refused (already claimed)", name)
@@ -52,6 +52,8 @@ class LockMixin(object):
             if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
                 return
             del shared.LOCKS[name]
+            if thr:
+                thr.update_cluster_locks_lk()
         shared.wake_monitor(reason="unlock", immediate=True)
         if not silent:
             thr.log.info("released locally %s", name)
@@ -86,7 +88,7 @@ class LockMixin(object):
                 return False
         return True
 
-    def _lock_acquire(self, nodename, name):
+    def _lock_acquire(self, nodename, name, thr=None):
         lock_id = str(uuid.uuid4())
         with shared.LOCKS_LOCK:
             if name in shared.LOCKS:
@@ -96,6 +98,8 @@ class LockMixin(object):
                 "requester": nodename,
                 "id": lock_id,
             }
+            if thr:
+                thr.update_cluster_locks_lk()
         shared.wake_monitor(reason="lock", immediate=True)
         return lock_id
 
