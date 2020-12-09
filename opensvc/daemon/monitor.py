@@ -3637,16 +3637,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     shared.LOCKS[name] = lock
                     continue
         for name in list(shared.LOCKS):
-            try:
-                lock = shared.LOCKS[name]
-            except KeyError:
-                # deleted during iteration
-                continue
-            if Env.nodename == lock["requester"]:
-                continue
-            requester_lock = self.thread_data.get(["nodes", lock["requester"], "locks", name], default=None)
-            if requester_lock is None:
-                self.log.info("drop lock %s from node %s", name, nodename)
+                try:
+                    shared_lock = shared.LOCKS[name]
+                except KeyError:
+                    # deleted during iteration
+                    continue
+                shared_lock_requester = shared_lock["requester"]
+                if shared_lock_requester == Env.nodename:
+                    continue
+                requester_lock = self.thread_data.get(["nodes", shared_lock_requester, "locks", name], default=None)
+                if requester_lock is None:
+                    self.log.info("drop lock %s from node %s", name, shared_lock_requester)
                 try:
                     del shared.LOCKS[name]
                 except KeyError:
