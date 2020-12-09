@@ -48,12 +48,10 @@ class LockMixin(object):
         if timeout is None:
             timeout = 5
         deadline = time.time() + timeout
-        if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
-            return
-        try:
+        with shared.LOCKS_LOCK:
+            if not lock_id or shared.LOCKS.get(name, {}).get("id") != lock_id:
+                return
             del shared.LOCKS[name]
-        except KeyError:
-            pass
         shared.wake_monitor(reason="unlock", immediate=True)
         if not silent:
             thr.log.info("released locally %s", name)
