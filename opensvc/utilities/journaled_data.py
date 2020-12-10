@@ -184,7 +184,7 @@ class JournaledData(object):
 
         self.emit(absolute_diff)
         if journal_diff:
-            self.push_diff(journal_diff)
+            self.push_diff_lk(journal_diff)
 
     def _set(self, path, value):
         """
@@ -295,7 +295,7 @@ class JournaledData(object):
         journal_diff = self._to_journal_diff(diff)
         self.emit(diff)
         if journal_diff:
-            self.push_diff(journal_diff)
+            self.push_diff_lk(journal_diff)
 
     def inc(self, path=None):
         with self.lock:
@@ -311,11 +311,11 @@ class JournaledData(object):
         self._set_lk(path=path, value=val)
         return val
 
-    def push_diff(self, diff):
+    def push_diff_lk(self, diff):
         """
         Concat a diff list to the in-flight diff list.
         """
-        self.diff += diff
+        self.diff += copy.deepcopy(diff)
 
     def pop_diff(self):
         """
