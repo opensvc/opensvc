@@ -740,8 +740,9 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "cluster",
         "keyword": "ca",
+        "convert": "list",
         "default_text": "system/sec/ca-<clustername>",
-        "text": "The path of the secret hosting the ca certificate that the listener use to validate clients certificates."
+        "text": "A whitespace-separated list of paths of the secrets hosting the ca certificates that the listener use to validate clients certificates."
     },
     {
         "section": "cluster",

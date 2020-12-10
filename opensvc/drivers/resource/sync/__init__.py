@@ -168,7 +168,7 @@ class Sync(Resource):
         return core.status.UNDEF
 
     def _status(self, **kwargs):
-        if self.svc.running_action in ("stop", "shutdown"):
+        if self.svc.running_action in ("stop", "shutdown") and not self.svc.command_is_scoped():
             return core.status.NA
         if not self.svc.running_action and self.paused():
             # status eval
