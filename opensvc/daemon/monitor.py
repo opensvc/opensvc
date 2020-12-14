@@ -3635,13 +3635,18 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         continue
 
                     # Lock name is already present in shared.LOCKS
-                    if lock["requested"] < shared.LOCKS[name]["requested"] and \
-                            lock["requester"] != Env.nodename and \
-                            lock["requester"] == nodename:
-                        self.log.info("merge older lock %s from node %s", name, nodename)
-                        shared.LOCKS[name] = lock
-                        changed = True
-                        continue
+                    merge = False
+                    if lock["requester"] == nodename:
+                        if lock["requested"] < shared.LOCKS[name]["requested"]:
+                            merge = "older"
+                        elif lock["requested"] > shared.LOCKS[name]["requested"]:
+                            merge = "newer"
+                        if merge:
+                            self.log.info("merge %s lock %s from node %s (id %s replaced by id %s)",
+                                          merge, name, nodename, shared.LOCKS[name]["id"], lock["id"])
+                            shared.LOCKS[name] = lock
+                            changed = True
+                            continue
         for name in list(shared.LOCKS):
             with shared.LOCKS_LOCK:
                 try:
