@@ -702,7 +702,13 @@ class Volume(Resource):
 
     def volume_env_data(self, pool):
         env = {}
-        for mapping in pool.volume_env:
+        env.update(self._volume_env_data(pool.volume_env, optional=False))
+        env.update(self._volume_env_data(pool.optional_volume_env, optional=True))
+        return env
+
+    def _volume_env_data(self, mappings, optional=False):
+        env = {}
+        for mapping in mappings:
             try:
                 src, dst = mapping.split(":", 1)
             except Exception:
@@ -710,7 +716,10 @@ class Volume(Resource):
             args = src.split(".", 1)
             val = self.svc.oget(*args)
             if val is None:
-                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
+                if optional:
+                    continue
+                else:
+                    raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
             if is_string(val) and ".." in val:
                 raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
@@ -746,6 +755,8 @@ class Volume(Resource):
             raise ex.Error("could not find a pool matching criteria")
         pool.log = self.log
         env = self.volume_env_data(pool)
+        if env and not volume.volatile:
+            self.log.info("volume env from mapping: %s", ", ".join(["%s=%s" % (k, v) for k, v in env.items()]))
         volume = pool.configure_volume(volume,
                                        fmt=self.format,
                                        size=self.size,
