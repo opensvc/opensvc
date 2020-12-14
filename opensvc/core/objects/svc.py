@@ -757,6 +757,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return self.oget("DEFAULT", "lock_timeout")
 
     @lazy
+    def priority(self):
+        return self.oget("DEFAULT", "priority")
+
+    @lazy
     def cd(self):
         if self.raw_cd is not None:
             return self.raw_cd
@@ -3713,6 +3717,8 @@ class Svc(PgMixin, BaseSvc):
             "subsets": {},
             "resources": {},
         }
+        if self.kind == "svc" and self.priority != Env.default_priority:
+            data["priority"] = self.priority
         running = self.get_running()
         if running:
             data["running"] = running

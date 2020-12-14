@@ -167,6 +167,13 @@ KEYWORDS = [
     },
     {
         "section": "DEFAULT",
+        "keyword": "priority",
+        "default": Env.default_priority,
+        "convert": "integer",
+        "text": "A scheduling priority (0 for top priority) used by the monitor thread to trigger actions for the top priority services, so that the :kw:`node.max_parallel` constraint doesn't prevent high priority services to start first. The priority setting is dropped from a service configuration injected via the api by a user not granted the prioritizer role."
+    },
+    {
+        "section": "DEFAULT",
         "keyword": "lock_timeout",
         "default": "60s",
         "convert": "duration",

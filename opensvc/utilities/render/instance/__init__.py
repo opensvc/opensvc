@@ -118,7 +118,7 @@ def get_svc_notice(data):
     return ", ".join(svc_notice)
 
 def instance_notice(overall=None, frozen=None, node_frozen=None, constraints=None,
-                    provisioned=None, monitor=None):
+                    provisioned=None, monitor=None, priority=Env.default_priority):
     notice = []
     if overall == "warn":
         notice.append(colorize(overall, STATUS_COLOR[overall]))
@@ -130,6 +130,8 @@ def instance_notice(overall=None, frozen=None, node_frozen=None, constraints=Non
         notice.append("constraints violation")
     if provisioned is False:
         notice.append(colorize("not provisioned", color.RED))
+    if priority != Env.default_priority:
+        notice.append(colorize("p%d" % priority, color.LIGHTBLUE))
     if monitor == {}:
         # encap monitor
         pass
@@ -166,6 +168,7 @@ def add_res_node(resource, parent, idata, rid=None, discard_disabled=False):
             constraints=edata.get("constraints", True),
             provisioned=edata.provisioned,
             monitor={},
+            priority=edata.get("priority", Env.default_priority),
         )
         col.add_text(encap_notice, color.LIGHTBLUE)
     for line in resource.get("log", []):
@@ -211,12 +214,15 @@ def add_instance(node, nodename, path, mon_data):
         node_frozen = False
         data = Storage()
     node_child.add_column(avail, STATUS_COLOR[avail])
-    notice = instance_notice(overall=data.get("overall", "n/a"),
-                             frozen=data.get("frozen"),
-                             node_frozen=node_frozen,
-                             constraints=data.get("constraints", True),
-                             provisioned=data.get("provisioned"),
-                             monitor=data.get("monitor"))
+    notice = instance_notice(
+        overall=data.get("overall", "n/a"),
+        frozen=data.get("frozen"),
+        node_frozen=node_frozen,
+        constraints=data.get("constraints", True),
+        provisioned=data.get("provisioned"),
+        monitor=data.get("monitor"),
+        priority=data.get("priority", Env.default_priority),
+    )
     node_child.add_column(notice, color.LIGHTBLUE)
 
 def add_parents(node, idata, mon_data, namespace):
@@ -310,13 +316,15 @@ def add_node_node(node_instances, nodename, idata, mon_data, discard_disabled=Fa
         node_frozen = mon_data["nodes"][nodename].get("frozen")
     except (KeyError, AttributeError):
         node_frozen = False
-    notice = instance_notice(overall=idata.get("overall", "n/a"),
-                             frozen=idata.get("frozen"),
-                             node_frozen=node_frozen,
-                             constraints=idata.get("constraints", True),
-                             provisioned=idata.get("provisioned"),
-                             monitor=idata.get("monitor"),
-                            )
+    notice = instance_notice(
+        overall=idata.get("overall", "n/a"),
+        frozen=idata.get("frozen"),
+        node_frozen=node_frozen,
+        constraints=idata.get("constraints", True),
+        provisioned=idata.get("provisioned"),
+        monitor=idata.get("monitor"),
+        priority=idata.get("priority", Env.default_priority),
+    )
 
     node_nodename = node_instances.add_node()
     node_nodename.add_column(nodename, color.BOLD)
