@@ -32,6 +32,10 @@ class Pool(BasePool):
         path = os.path.join(self.path, name)
         data.append({
             "rtype": "fs",
+            "type": "flag",
+        })
+        data.append({
+            "rtype": "fs",
             "type": "directory",
             "path": path,
         })
