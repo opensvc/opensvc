@@ -188,6 +188,8 @@ class Volume(Resource):
 
     def on_add(self):
         self.set_label()
+        if self.access and self.svc.topology == "flex":
+            self.access = self.access[:2] + "x"
 
     @lazy
     def signal_data(self):
