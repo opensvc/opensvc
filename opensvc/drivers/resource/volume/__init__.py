@@ -610,6 +610,17 @@ class Volume(Resource):
     def provisioner_shared_non_leader(self):
         self.provisioner()
 
+    def post_provision_start(self):
+        """
+        The provisioner submits a "provision" action on the vol object, let it
+        set --disable-rollback if needed so we don't have to start again.
+        """
+        self.chown()
+        self.install_flag()
+        self.install_directories()
+        self.install_secrets()
+        self.install_configs()
+
     def provisioner(self):
         """
         Create a volume service with resources definitions deduced from the storage
