@@ -611,15 +611,8 @@ class Volume(Resource):
         self.provisioner()
 
     def post_provision_start(self):
-        """
-        The provisioner submits a "provision" action on the vol object, let it
-        set --disable-rollback if needed so we don't have to start again.
-        """
-        self.chown()
-        self.install_flag()
-        self.install_directories()
-        self.install_secrets()
-        self.install_configs()
+        if self.svc.options.leader:
+            self.start()
 
     def provisioner(self):
         """
