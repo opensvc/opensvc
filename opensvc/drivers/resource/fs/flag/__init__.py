@@ -71,6 +71,10 @@ class BaseFsFlag(Resource):
             self.log.exception(exc)
             return True
 
+    def post_provision_start(self):
+        if self.svc.options.leader:
+            self.start()
+
     def provisioner(self):
         pass
 
