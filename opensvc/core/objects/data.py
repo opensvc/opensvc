@@ -21,6 +21,11 @@ from utilities.string import bencode
 
 class DataMixin(object):
     def add(self):
+        if self.options.key and self.has_key(self.options.key):
+            raise ex.Error("key '%s' already exists. use the 'change' action to change the current value." % self.options.key)
+        self._add(self.options.key, self.options.value_from)
+
+    def change(self):
         self._add(self.options.key, self.options.value_from)
 
     def remove(self):

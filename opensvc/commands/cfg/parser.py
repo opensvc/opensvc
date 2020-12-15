@@ -34,7 +34,15 @@ ACTIONS.update(mp.ACTIONS)
 ACTIONS.update({
     "Configuration object actions": {
         "add": {
-            "msg": "Add a key/value to the configuration object.",
+            "msg": "Add a key/value to the configuration object. Raise an error if the key already exists.",
+            "options": mp.ACTION_OPTS + [
+                OPT.value_from,
+                OPT.key,
+                OPT.value,
+            ],
+        },
+        "change": {
+            "msg": "Add a key/value to the configuration object. The key is created if it doesn't already exists.",
             "options": mp.ACTION_OPTS + [
                 OPT.value_from,
                 OPT.key,
