@@ -4395,6 +4395,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         svc.unset_multi(["DEFAULT.id"])
 
         self.unset_lazy("cluster_nodes")
+        self.unset_lazy("sorted_cluster_nodes")
 
     def daemon_join(self):
         if self.options.secret is None:
