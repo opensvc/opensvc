@@ -25,14 +25,18 @@ class Hb(shared.OsvcThread):
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd."+self.id), {"node": Env.nodename, "component": self.id})
         self.peers = {}
         self.reset_stats()
-        self.hb_nodes = self.cluster_nodes
+        self.hb_nodes = []
+        self.get_hb_nodes()
 
     def get_hb_nodes(self):
         try:
-            self.hb_nodes = [node for node in shared.NODE.conf_get(self.name, "nodes")
-                             if node in self.cluster_nodes]
-        except ex.OptNotFound as exc:
-            self.hb_nodes = self.cluster_nodes
+            new_nodes = [node for node in shared.NODE.conf_get(self.name, "nodes")
+                         if node in self.cluster_nodes]
+        except ex.OptNotFound:
+            new_nodes = self.cluster_nodes
+        if new_nodes != self.hb_nodes:
+            self.log.info('hb nodes: %s', new_nodes)
+            self.hb_nodes = new_nodes
 
     def push_stats(self, _bytes=-1):
         if _bytes < 0:
