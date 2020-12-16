@@ -100,7 +100,8 @@ class HbUcastTx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
 
         try:
@@ -206,7 +207,8 @@ class HbUcastRx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
         except Exception as exc:
             self.log.error("%s", exc)
