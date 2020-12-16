@@ -3624,6 +3624,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 except KeyError:
                     # deleted during iteration
                     continue
+                if lock["requester"] != nodename:
+                    # only trust locks from requester views
+                    continue
                 if lock["requester"] == Env.nodename and name not in shared.LOCKS:
                     # don't re-merge a released lock emitted by this node
                     continue
