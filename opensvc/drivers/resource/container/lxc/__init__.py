@@ -76,6 +76,16 @@ KEYWORDS = [
         "provisioning": True
     },
     {
+        "keyword": "http_proxy",
+        "text": "Sets the ``http_proxy`` and ``HTTP_PROXY`` environment variables for :cmd:`lxc-create`.",
+        "provisioning": True
+    },
+    {
+        "keyword": "https_proxy",
+        "text": "Sets the ``https_proxy`` and ``HTTPS_PROXY`` environment variables for :cmd:`lxc-create`.",
+        "provisioning": True
+    },
+    {
         "keyword": "rcmd",
         "convert": "shlex",
         "at": True,
@@ -187,6 +197,8 @@ class ContainerLxc(BaseContainer):
                  template_options=None,
                  mirror=None,
                  security_mirror=None,
+                 http_proxy=None,
+                 https_proxy=None,
                  **kwargs):
         super(ContainerLxc, self).__init__(
             type="container.lxc",
@@ -203,6 +215,8 @@ class ContainerLxc(BaseContainer):
         self.template_options = template_options or []
         self.mirror = mirror
         self.security_mirror = security_mirror
+        self.http_proxy = http_proxy
+        self.https_proxy = https_proxy
         self.links = None
         self.cf = cf
 
@@ -935,6 +949,12 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             env["SECURITY_MIRROR"] = self.mirror
         if self.security_mirror:
             env["SECURITY_MIRROR"] = self.security_mirror
+        if self.http_proxy:
+            env["http_proxy"] = self.http_proxy
+            env["HTTP_PROXY"] = self.http_proxy
+        if self.https_proxy:
+            env["https_proxy"] = self.https_proxy
+            env["HTTPS_PROXY"] = self.https_proxy
         self.log.info(" ".join(cmd))
         ret = self.lcall(cmd, env=env)
         if ret != 0:
