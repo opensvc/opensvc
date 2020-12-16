@@ -151,6 +151,12 @@ class HbUcastTx(HbUcast):
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
                                  config["addr"], config["port"], str(exc))
             self.set_last(nodename, success=False)
+        except Exception as exc:
+            self.push_stats()
+            if self.get_last(nodename).success:
+                self.log.error("send to %s (%s:%d) unexpected error: %s", nodename,
+                                 config["addr"], config["port"], str(exc))
+            self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
             if sock is not None:
