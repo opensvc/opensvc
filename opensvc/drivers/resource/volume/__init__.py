@@ -285,9 +285,9 @@ class Volume(Resource):
 
     def _stop(self, force=False):
         self.uninstall_flag()
-        self.stop_vol_instance()
+        self.stop_vol_instance(force=force)
 
-    def stop_vol_instance(self):
+    def stop_vol_instance(self, force=False):
         try:
             self.volsvc
         except ex.Error:
