@@ -179,6 +179,8 @@ class Volume(Resource):
         self.perm = perm
         self.dirperm = dirperm
         self.signal = signal
+        self.can_rollback_vol_instance = False
+        self.can_rollback_flag = False
 
     def __str__(self):
         return "%s name=%s" % (super(Volume, self).__str__(), self.volname)
@@ -283,6 +285,9 @@ class Volume(Resource):
 
     def _stop(self, force=False):
         self.uninstall_flag()
+        self.stop_vol_instance()
+
+    def stop_vol_instance(self):
         try:
             self.volsvc
         except ex.Error:
@@ -301,6 +306,12 @@ class Volume(Resource):
         if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader, "force": force}) != 0:
             raise ex.Error
 
+    def rollback(self):
+        if self.can_rollback_flag:
+            self.uninstall_flag()
+        if self.can_rollback_vol_instance:
+            self.stop_vol_instance()
+
     def start(self):
         try:
             self.volsvc
@@ -310,9 +321,12 @@ class Volume(Resource):
             raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.Error
-        self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback_vol_instance = any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback |= self.can_rollback_vol_instance
         self.chown()
         self.install_flag()
+        self.can_rollback_flag = True
+        self.can_rollback |= self.can_rollback_flag
         self.install_directories()
         self.install_secrets()
         self.install_configs()
@@ -611,10 +625,6 @@ class Volume(Resource):
 
     def provisioner_shared_non_leader(self):
         self.provisioner()
-
-    def post_provision_start(self):
-        if self.svc.options.leader:
-            self.start()
 
     def provisioner(self):
         """

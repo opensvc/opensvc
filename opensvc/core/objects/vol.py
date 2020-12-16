@@ -9,6 +9,12 @@ class Vol(Svc):
     def users(self, exclude=None):
         exclude = exclude or []
         users = []
+
+        # purge lazies that may have changed due to claims
+        # that occured in the lifespan of this object
+        self.unset_lazy("cd")
+        self.unset_lazy("children")
+
         for child in self.children:
             if child in exclude:
                 continue
