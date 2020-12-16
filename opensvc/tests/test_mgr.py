@@ -251,10 +251,29 @@ class TestCreateAddDecode:
         with open(tmp_file) as output_file:
             assert output_file.read() == ''
 
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
+class TestAddKeyWhenKeyAlreadyExistsMustFail:
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_with_value_syntax(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'foo']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'foo']) != 0 
 
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_with_from_syntax(tmp_file, obj):
+        with open(tmp_file, 'w+') as f:
+            f.write('something')
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) != 0
+
+        
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
-class TestCreateAddDecodeFrom:
+class DecodeFrom:
     @staticmethod
     @pytest.mark.parametrize(
         'scenario, expected_key_values',
@@ -400,7 +419,6 @@ class TestCfgSecEdit:
                 open(tmp_file, 'wb').write(value.encode('utf-8'))
 
             assert Mgr(selector=obj)(['create']) == 0
-            Mgr(selector=obj)(['add', '--key', 'key1', '--from', tmp_file]) == 0
             assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', tmp_file]) == 0
         assert Mgr(selector=obj)(['decode', '--key', 'key1']) == 0
         assert capsys.readouterr().out == value
