@@ -66,14 +66,31 @@ KEYWORDS = [
         "provisioning": True
     },
     {
-        "keyword": "mirror",
-        "text": "Sets the ``MIRROR`` environment variable for :cmd:`lxc-create`, pointing the distribution server to use.",
-        "provisioning": True
+        "keyword": "create_secrets_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
-        "keyword": "security_mirror",
-        "text": "Sets the ``SECURITY_MIRROR`` environment variable for :cmd:`lxc-create`, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
-        "provisioning": True
+        "keyword": "create_configs_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "create_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
         "keyword": "rcmd",
@@ -185,8 +202,9 @@ class ContainerLxc(BaseContainer):
                  container_data_dir=None,
                  template=None,
                  template_options=None,
-                 mirror=None,
-                 security_mirror=None,
+                 create_environment=None,
+                 create_configs_environment=None,
+                 create_secrets_environment=None,
                  **kwargs):
         super(ContainerLxc, self).__init__(
             type="container.lxc",
@@ -201,10 +219,11 @@ class ContainerLxc(BaseContainer):
         self.rcmd = rcmd
         self.template = template
         self.template_options = template_options or []
-        self.mirror = mirror
-        self.security_mirror = security_mirror
         self.links = None
         self.cf = cf
+        self.create_environment = create_environment
+        self.create_configs_environment = create_configs_environment
+        self.create_secrets_environment = create_secrets_environment
 
     def on_add(self):
         if "lxc-attach" in ' '.join(self.runmethod):
@@ -929,15 +948,18 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             key = key.upper()
             if key in os.environ:
                 env[key] = os.environ[key]
-        if self.mirror:
-            env["MIRROR"] = self.mirror
-            env["SECURITY_MIRROR"] = self.mirror
-        if self.security_mirror:
-            env["SECURITY_MIRROR"] = self.security_mirror
+        env.update(self.get_create_env())
         self.log.info(" ".join(cmd))
         ret = self.lcall(cmd, env=env)
         if ret != 0:
             raise ex.Error
+
+    def get_create_env(self):
+        env = {}
+        env.update(self.direct_environment_env(self.create_environment))
+        env.update(self.kind_environment_env("cfg", self.create_configs_environment))
+        env.update(self.kind_environment_env("sec", self.create_secrets_environment))
+        return env
 
     def provisioner_archive(self):
         # container config file
