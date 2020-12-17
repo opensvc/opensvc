@@ -22,7 +22,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from env import Env
-from utilities.files import makedirs, protected_dir
+from utilities.files import makedirs, protected_dir, rmtree_busy
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
@@ -580,7 +580,6 @@ class ContainerLxc(BaseContainer):
                 raise ex.Error("failed to create directory %s: %s"%(cfg_d, str(exc)))
         self.log.info("install %s as %s", self.cf, cfg)
         try:
-            import shutil
             shutil.copy(self.cf, cfg)
         except Exception as exc:
             raise ex.Error(str(exc))
@@ -881,7 +880,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.log.warning("refuse to remove %s", path)
             return
         self.log.info("rm -rf %s", path)
-        shutil.rmtree(path)
+        rmtree_busy(path)
 
     def set_d_lxc(self):
         # lxc root conf dir
