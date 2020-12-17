@@ -909,7 +909,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def provisioner_lxc_create(self):
         cmd = ['lxc-create', '--name', self.name, "--dir", self.rootfs]
-        if self.cf:
+        if self.cf and os.path.exists(self.cf):
             cmd += ['-f', self.cf]
         if self.lxcpath:
             makedirs(self.lxcpath)
