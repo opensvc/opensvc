@@ -175,9 +175,9 @@ class Hb(shared.OsvcThread):
                 # no pertinent data to send yet (pre-init)
                 self.log.debug("no pertinent data to send yet (pre-init)")
                 return None, 0
-            if shared.HB_MSG is not None:
-                return shared.HB_MSG, shared.HB_MSG_LEN
             with shared.HB_MSG_LOCK:
+                if shared.HB_MSG is not None:
+                    return shared.HB_MSG, shared.HB_MSG_LEN
                 data = self.node_data.get()
                 shared.HB_MSG = self.encrypt(data, encode=False)
                 if shared.HB_MSG is None:
