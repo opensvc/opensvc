@@ -110,7 +110,7 @@ class FsZfsMixin():
                 return
             if val[0] == "x":
                 if not size:
-                    raise ex.Error("%s set to a multiplier of size, but size is not set" % x)
+                    return
                 try:
                     m = float(val[1:])
                 except Exception:
