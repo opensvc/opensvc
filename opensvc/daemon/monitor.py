@@ -4087,6 +4087,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if current_gen == 0:
                 # waiting for a full: ignore patches
                 # self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
+                if shared.REMOTE_GEN.get(nodename) is None:
+                    self.log.info("we don't know about last applied gen of %s, it says it has gen %s of us."
+                                  "Ask for a full", nodename, our_gen_on_peer)
+                    self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
                 return False
             deltas = data.get("deltas", [])
             gens = sorted([int(gen) for gen in deltas])
