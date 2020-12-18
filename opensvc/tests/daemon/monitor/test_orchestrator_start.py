@@ -145,19 +145,22 @@ class MonitorTest(object):
         self.monitor.do()
         self.log('COMMENT: proc ps count = %s', len(self.monitor.procs))
 
-    def assert_nmon_status(self, status, message='reason'):
-        self.log('COMMENT: ASSERT monitor status is "%s" (reason: %s), full value is %s',
-                 status, message, json.dumps(shared.NMON_DATA))
+    def assert_nmon_status(self, status, message=None):
+        if message:
+            self.log('COMMENT: ASSERT monitor status is "%s" (reason: %s), full value is %s',
+                     status, message, json.dumps(shared.NMON_DATA))
         assert shared.NMON_DATA['status'] == status
 
-    def assert_smon_status(self, svcname, status, message='reason'):
-        self.log('COMMENT: ASSERT smon status for svc %s is "%s" (reason: %s), full value is %s',
-                 svcname, status, message, json.dumps(shared.SMON_DATA[svcname]))
+    def assert_smon_status(self, svcname, status, message=None):
+        if message:
+            self.log('COMMENT: ASSERT smon status for svc %s is "%s" (reason: %s), full value is %s',
+                     svcname, status, message, json.dumps(shared.SMON_DATA[svcname]))
         assert shared.SMON_DATA[svcname]['status'] == status
 
-    def assert_smon_local_expect(self, svcname, local_expect, message='reason'):
-        self.log('COMMENT: ASSERT smon local_expect for svc %s is "%s" (reason: %s), full value is %s',
-                 svcname, local_expect, message, json.dumps(shared.SMON_DATA[svcname]))
+    def assert_smon_local_expect(self, svcname, local_expect, message=None):
+        if message:
+            self.log('COMMENT: ASSERT smon local_expect for svc %s is "%s" (reason: %s), full value is %s',
+                     svcname, local_expect, message, json.dumps(shared.SMON_DATA[svcname]))
         assert shared.SMON_DATA[svcname]['local_expect'] == local_expect
 
     def assert_command_has_been_launched(self, call_list):
@@ -169,6 +172,26 @@ class MonitorTest(object):
         for call in call_list:
             self.log('COMMENT: ASSERT call %s has not been called', call)
             assert call not in self.service_command.call_args_list
+
+    def create_cluster_status(self):
+        self.log('COMMENT: create ccfg/cluster status.json')
+        if not os.path.exists(svc_pathvar("ccfg/cluster")):
+            os.makedirs(svc_pathvar("ccfg/cluster"))
+        open(svc_pathvar("ccfg/cluster", "status.json"), 'w'). \
+            write(json.dumps({"updated": time.time() + 1, "kind": "ccfg"}))
+
+    def prepare_monitor_idle(self):
+        self.log('COMMENT: Prepare monitor in idle status')
+        self.log('COMMENT: hack rejoin_grace_period to 0.001')
+        self.monitor._lazy_rejoin_grace_period = 0.001
+
+        self.log('COMMENT: monitor.init()')
+        self.monitor.init()
+        time.sleep(0.01)  # simulate time elapsed
+        self.do()
+        self.create_cluster_status()
+        self.do()
+        self.assert_nmon_status('idle')
 
 
 @pytest.mark.ci
@@ -335,11 +358,7 @@ class TestMonitorOrchestratorStart(object):
         assert service_command.call_args_list[0][0][1] == ['status', '--parallel', '--refresh']
         assert service_command.call_args_list[0][1] == {"local": False}
 
-        log('COMMENT: create ccfg/cluster status.json')
-        if not os.path.exists(svc_pathvar("ccfg/cluster")):
-            os.makedirs(svc_pathvar("ccfg/cluster"))
-        open(svc_pathvar("ccfg/cluster", "status.json"), 'w'). \
-            write(json.dumps({"updated": time.time() + 1, "kind": "ccfg"}))
+        monitor_test.create_cluster_status()
 
         for i in range(3):
             monitor_test.do()
@@ -411,3 +430,16 @@ class TestMonitorOrchestratorStart(object):
             assert monitor.node_frozen > 0
         else:
             assert monitor.node_frozen == 0
+
+    @staticmethod
+    def test_monitor_does_not_call_extra_commands(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        service_command = monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        initial_service_commands = service_command.call_args_list
+        for _ in range(3):
+            monitor_test.do()
+        monitor_test.log('COMMENT: ensure no extra service commands')
+        assert service_command.call_args_list == initial_service_commands
