@@ -4082,7 +4082,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.log.info("%s was not yet in nodes data view, ask for a full", nodename)
                 if our_gen_on_peer == 0:
                     self.log.info("%s ignore us yet, will send a full", nodename)
-                self.log.info("%s was not yet in nodes data view, ask for a full", nodename)
                 self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
                 return False
             if current_gen == 0:
