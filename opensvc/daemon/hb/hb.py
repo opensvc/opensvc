@@ -27,6 +27,7 @@ class Hb(shared.OsvcThread):
         self.reset_stats()
         self.hb_nodes = []
         self.get_hb_nodes()
+        self.msg_type = None
 
     def get_hb_nodes(self):
         try:
@@ -161,6 +162,9 @@ class Hb(shared.OsvcThread):
             # we're alone for now. don't send a full status payload.
             # sent a presence announce payload instead.
             self.log.debug("ping node %s", nodename if nodename else "*")
+            if self.msg_type != 'ping':
+                self.msg_type = 'ping'
+                self.log.info('change message type to %s', self.msg_type)
             message = self.encrypt({
                 "kind": "ping",
                 "compat": shared.COMPAT_VERSION,
@@ -175,6 +179,9 @@ class Hb(shared.OsvcThread):
                 # no pertinent data to send yet (pre-init)
                 self.log.debug("no pertinent data to send yet (pre-init)")
                 return None, 0
+            if self.msg_type != 'full':
+                self.msg_type = 'full'
+                self.log.info('change message type to %s', self.msg_type)
             with shared.HB_MSG_LOCK:
                 if shared.HB_MSG is not None:
                     return shared.HB_MSG, shared.HB_MSG_LEN
@@ -187,6 +194,9 @@ class Hb(shared.OsvcThread):
                 return shared.HB_MSG, shared.HB_MSG_LEN
         else:
             self.log.debug("send gen %d-%d deltas to %s", begin, shared.GEN, nodename if nodename else "*") # COMMENT
+            if self.msg_type != 'patch':
+                self.msg_type = 'patch'
+                self.log.info('change message type to %s', self.msg_type)
             data = {}
             for gen, delta in shared.GEN_DIFF.items():
                 if gen <= begin:
