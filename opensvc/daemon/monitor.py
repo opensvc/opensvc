@@ -4077,14 +4077,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         #self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
         #               kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
         if kind == "patch":
+            if not self.nodes_data.exists([nodename]):
+                # happens during init, or after join. ignore the patch, and ask for a full
+                self.log.info("%s was not yet in nodes data view, ask for a full", nodename)
+                if our_gen_on_peer == 0:
+                    self.log.info("%s ignore us yet, will send a full", nodename)
+                self.log.info("%s was not yet in nodes data view, ask for a full", nodename)
+                self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
+                return False
             if current_gen == 0:
                 # waiting for a full: ignore patches
-                #self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
-                return False
-            if not self.nodes_data.exists([nodename]):
-                # happens during init. ignore the patch, and ask for a full
-                self.log.debug("%s not in nodes data view", nodename) # COMMENT
-                self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
+                # self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
                 return False
             deltas = data.get("deltas", [])
             gens = sorted([int(gen) for gen in deltas])
