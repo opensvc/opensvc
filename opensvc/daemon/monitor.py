@@ -1322,8 +1322,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.node_orchestrator()
 
         # services (iterate over deleting services too)
-        paths = [path for path in shared.SMON_DATA]
         self.get_agg_services()
+        paths = self.prioritized_paths()
         for path in paths:
             self.clear_start_failed(path)
             if self.transitions_maxed():
@@ -1339,6 +1339,15 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.resources_orchestrator(path, svc)
             self.object_orchestrator(path, svc)
         self.sync_services_conf()
+
+    def prioritized_paths(self):
+        def prio(path):
+            try:
+                return shared.CLUSTER_DATA[Env.nodename]["services"]["status"][path]["priority"]
+            except KeyError:
+                return Env.default_priority
+        data = [(path, prio(path)) for path in shared.SMON_DATA]
+        return [d[0] for d in sorted(data, key=lambda x: x[1])]
 
     def transitions_maxed(self):
         transitions = self.transition_count()

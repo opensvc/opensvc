@@ -292,7 +292,7 @@ class HbDiskRx(HbDisk):
         loop = 0
         while True:
             loop += 1
-            if loop > 10:
+            if loop > 5:
                 loop = 0
                 missing = self.missing_peers()
                 if missing:
@@ -306,7 +306,16 @@ class HbDiskRx(HbDisk):
                 shared.HB_TX_TICKER.wait(self.interval)
 
     def missing_peers(self):
-        return [nodename for nodename, data in self.peer_config.items() if hasattr(data, "slot") and data.slot < 0]
+        missing = []
+        for nodename in self.hb_nodes:
+            try:
+                slot = self.peer_config[nodename]["slot"]
+            except KeyError:
+                missing.append(nodename)
+                continue
+            if slot < 0:
+                missing.append(nodename)
+        return missing
 
     def do(self):
         self.janitor_procs()

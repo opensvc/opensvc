@@ -179,6 +179,8 @@ class Volume(Resource):
         self.perm = perm
         self.dirperm = dirperm
         self.signal = signal
+        self.can_rollback_vol_instance = False
+        self.can_rollback_flag = False
 
     def __str__(self):
         return "%s name=%s" % (super(Volume, self).__str__(), self.volname)
@@ -188,6 +190,8 @@ class Volume(Resource):
 
     def on_add(self):
         self.set_label()
+        if self.access and self.svc.topology == "flex":
+            self.access = self.access[:2] + "x"
 
     @lazy
     def signal_data(self):
@@ -281,6 +285,9 @@ class Volume(Resource):
 
     def _stop(self, force=False):
         self.uninstall_flag()
+        self.stop_vol_instance(force=force)
+
+    def stop_vol_instance(self, force=False):
         try:
             self.volsvc
         except ex.Error:
@@ -299,6 +306,12 @@ class Volume(Resource):
         if self.volsvc.action("stop", options={"local": True, "leader": self.svc.options.leader, "force": force}) != 0:
             raise ex.Error
 
+    def rollback(self):
+        if self.can_rollback_flag:
+            self.uninstall_flag()
+        if self.can_rollback_vol_instance:
+            self.stop_vol_instance()
+
     def start(self):
         try:
             self.volsvc
@@ -308,9 +321,12 @@ class Volume(Resource):
             raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.Error
-        self.can_rollback |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback_vol_instance = any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback |= self.can_rollback_vol_instance
         self.chown()
         self.install_flag()
+        self.can_rollback_flag = True
+        self.can_rollback |= self.can_rollback_flag
         self.install_directories()
         self.install_secrets()
         self.install_configs()
@@ -702,7 +718,13 @@ class Volume(Resource):
 
     def volume_env_data(self, pool):
         env = {}
-        for mapping in pool.volume_env:
+        env.update(self._volume_env_data(pool.volume_env, optional=False))
+        env.update(self._volume_env_data(pool.optional_volume_env, optional=True))
+        return env
+
+    def _volume_env_data(self, mappings, optional=False):
+        env = {}
+        for mapping in mappings:
             try:
                 src, dst = mapping.split(":", 1)
             except Exception:
@@ -710,7 +732,10 @@ class Volume(Resource):
             args = src.split(".", 1)
             val = self.svc.oget(*args)
             if val is None:
-                raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
+                if optional:
+                    continue
+                else:
+                    raise ex.Error("missing mapped key in %s: %s" % (self.svc.path, mapping))
             if is_string(val) and ".." in val:
                 raise ex.Error("the '..' substring is forbidden in volume env keys: %s=%s" % (mapping, val))
             env[dst] = val
@@ -746,6 +771,8 @@ class Volume(Resource):
             raise ex.Error("could not find a pool matching criteria")
         pool.log = self.log
         env = self.volume_env_data(pool)
+        if env and not volume.volatile:
+            self.log.info("volume env from mapping: %s", ", ".join(["%s=%s" % (k, v) for k, v in env.items()]))
         volume = pool.configure_volume(volume,
                                        fmt=self.format,
                                        size=self.size,

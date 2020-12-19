@@ -518,6 +518,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         out.append(line)
 
     def load_monitor(key, _data):
+        if "state" not in _data:
+            _data["state"] = "undef"
         if _data["state"] == "running":
             state = colorize(_data["state"], color.GREEN)
         else:

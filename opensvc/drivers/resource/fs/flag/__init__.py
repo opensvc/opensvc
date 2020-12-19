@@ -57,6 +57,9 @@ class BaseFsFlag(Resource):
             return
         if self.is_standby:
             return
+        if self.svc.kind == "vol":
+            # volumes are slaves of their consumer svc
+            return
         try:
             for node in self.svc.nodes:
                 if node == Env.nodename:

@@ -71,6 +71,18 @@ def makedirs(path, mode=None, uid=None, gid=None):
     os.chown(path, uid, gid)
 
 
+def rmtree_busy(path):
+    import shutil
+    import errno
+
+    def onerror(fn, path, exc):
+        if exc[1].errno in (errno.EBUSY, errno.ENOTEMPTY):
+            return
+        raise exc[1]
+
+    shutil.rmtree(path, onerror=onerror)
+
+
 def create_protected_file(filepath, buff):
     import foreign.six
     def onfile(f):
