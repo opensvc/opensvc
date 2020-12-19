@@ -933,7 +933,9 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             makedirs(self.lxcpath)
             cmd += self.lxcpath_args
             if not self.cf:
-                cmd += ["-f", os.path.join(self.lxcpath, self.name, "config")]
+                cf = os.path.join(self.lxcpath, self.name, "config")
+                if os.path.exists(cf):
+                    cmd += ["-f", cf]
         if self.template:
             cmd += ['--template', self.template]
             if self.template_options:
