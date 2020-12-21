@@ -3624,6 +3624,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 except KeyError:
                     # deleted during iteration
                     continue
+                if lock["requester"] != nodename:
+                    # only trust locks from requester views
+                    continue
                 if lock["requester"] == Env.nodename and name not in shared.LOCKS:
                     # don't re-merge a released lock emitted by this node
                     continue
@@ -3635,13 +3638,18 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         continue
 
                     # Lock name is already present in shared.LOCKS
-                    if lock["requested"] < shared.LOCKS[name]["requested"] and \
-                            lock["requester"] != Env.nodename and \
-                            lock["requester"] == nodename:
-                        self.log.info("merge older lock %s from node %s", name, nodename)
-                        shared.LOCKS[name] = lock
-                        changed = True
-                        continue
+                    merge = False
+                    if lock["requester"] == nodename:
+                        if lock["requested"] < shared.LOCKS[name]["requested"]:
+                            merge = "older"
+                        elif lock["requested"] > shared.LOCKS[name]["requested"]:
+                            merge = "newer"
+                        if merge:
+                            self.log.info("merge %s lock %s from node %s (id %s replaced by id %s)",
+                                          merge, name, nodename, shared.LOCKS[name]["id"], lock["id"])
+                            shared.LOCKS[name] = lock
+                            changed = True
+                            continue
         for name in list(shared.LOCKS):
             with shared.LOCKS_LOCK:
                 try:
@@ -4069,14 +4077,20 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         #self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
         #               kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
         if kind == "patch":
+            if not self.nodes_data.exists([nodename]):
+                # happens during init, or after join. ignore the patch, and ask for a full
+                self.log.info("%s was not yet in nodes data view, ask for a full", nodename)
+                if our_gen_on_peer == 0:
+                    self.log.info("%s ignore us yet, will send a full", nodename)
+                self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
+                return False
             if current_gen == 0:
                 # waiting for a full: ignore patches
-                #self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
-                return False
-            if not self.nodes_data.exists([nodename]):
-                # happens during init. ignore the patch, and ask for a full
-                self.log.debug("%s not in nodes data view", nodename) # COMMENT
-                self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
+                # self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
+                if shared.REMOTE_GEN.get(nodename) is None:
+                    self.log.info("we don't know about last applied gen of %s, it says it has gen %s of us."
+                                  "Ask for a full", nodename, our_gen_on_peer)
+                    self.update_node_gen(nodename, remote=0, local=our_gen_on_peer)
                 return False
             deltas = data.get("deltas", [])
             gens = sorted([int(gen) for gen in deltas])
@@ -4140,12 +4154,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
             self.nodes_data.set([nodename], data)
             new_gen = data.get("gen", {}).get(nodename, 0)
-            shared.LOCAL_GEN[nodename] = our_gen_on_peer
-            shared.REMOTE_GEN[nodename] = new_gen
             self.update_node_gen(nodename, remote=new_gen, local=our_gen_on_peer)
             self.log.debug("install node %s full dataset gen %d, peer has gen %d of our dataset",
-                          nodename, shared.REMOTE_GEN[nodename],
-                          shared.LOCAL_GEN[nodename])
+                           nodename, shared.REMOTE_GEN[nodename],
+                           shared.LOCAL_GEN[nodename])
             self.on_nodes_info_change()
             change = True
         return change

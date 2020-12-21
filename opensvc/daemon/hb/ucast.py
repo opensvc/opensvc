@@ -100,7 +100,8 @@ class HbUcastTx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
 
         try:
@@ -149,6 +150,12 @@ class HbUcastTx(HbUcast):
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
+                                 config["addr"], config["port"], str(exc))
+            self.set_last(nodename, success=False)
+        except Exception as exc:
+            self.push_stats()
+            if self.get_last(nodename).success:
+                self.log.error("send to %s (%s:%d) unexpected error: %s", nodename,
                                  config["addr"], config["port"], str(exc))
             self.set_last(nodename, success=False)
         finally:
@@ -200,7 +207,8 @@ class HbUcastRx(HbUcast):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
         except Exception as exc:
             self.log.error("%s", exc)

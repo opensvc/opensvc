@@ -25,14 +25,19 @@ class Hb(shared.OsvcThread):
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd."+self.id), {"node": Env.nodename, "component": self.id})
         self.peers = {}
         self.reset_stats()
-        self.hb_nodes = self.cluster_nodes
+        self.hb_nodes = []
+        self.get_hb_nodes()
+        self.msg_type = None
 
     def get_hb_nodes(self):
         try:
-            self.hb_nodes = [node for node in shared.NODE.conf_get(self.name, "nodes")
-                             if node in self.cluster_nodes]
-        except ex.OptNotFound as exc:
-            self.hb_nodes = self.cluster_nodes
+            new_nodes = [node for node in shared.NODE.conf_get(self.name, "nodes")
+                         if node in self.cluster_nodes]
+        except ex.OptNotFound:
+            new_nodes = self.cluster_nodes
+        if new_nodes != self.hb_nodes:
+            self.log.info('hb nodes: %s', new_nodes)
+            self.hb_nodes = new_nodes
 
     def push_stats(self, _bytes=-1):
         if _bytes < 0:
@@ -157,6 +162,9 @@ class Hb(shared.OsvcThread):
             # we're alone for now. don't send a full status payload.
             # sent a presence announce payload instead.
             self.log.debug("ping node %s", nodename if nodename else "*")
+            if self.msg_type != 'ping':
+                self.msg_type = 'ping'
+                self.log.info('change message type to %s', self.msg_type)
             message = self.encrypt({
                 "kind": "ping",
                 "compat": shared.COMPAT_VERSION,
@@ -171,9 +179,12 @@ class Hb(shared.OsvcThread):
                 # no pertinent data to send yet (pre-init)
                 self.log.debug("no pertinent data to send yet (pre-init)")
                 return None, 0
-            if shared.HB_MSG is not None:
-                return shared.HB_MSG, shared.HB_MSG_LEN
+            if self.msg_type != 'full':
+                self.msg_type = 'full'
+                self.log.info('change message type to %s', self.msg_type)
             with shared.HB_MSG_LOCK:
+                if shared.HB_MSG is not None:
+                    return shared.HB_MSG, shared.HB_MSG_LEN
                 data = self.node_data.get()
                 shared.HB_MSG = self.encrypt(data, encode=False)
                 if shared.HB_MSG is None:
@@ -183,6 +194,9 @@ class Hb(shared.OsvcThread):
                 return shared.HB_MSG, shared.HB_MSG_LEN
         else:
             self.log.debug("send gen %d-%d deltas to %s", begin, shared.GEN, nodename if nodename else "*") # COMMENT
+            if self.msg_type != 'patch':
+                self.msg_type = 'patch'
+                self.log.info('change message type to %s', self.msg_type)
             data = {}
             for gen, delta in shared.GEN_DIFF.items():
                 if gen <= begin:
