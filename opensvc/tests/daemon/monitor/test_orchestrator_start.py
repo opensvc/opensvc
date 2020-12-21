@@ -64,6 +64,10 @@ id = %s
 nodes = *
 parents = parent@{nodename}
 orchestrate = ha""" % str(uuid.uuid4()),
+
+    "ha1": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
+    "ha2": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
+    "ha3": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
 }
 
 
@@ -179,6 +183,30 @@ class MonitorTest(object):
             os.makedirs(svc_pathvar("ccfg/cluster"))
         open(svc_pathvar("ccfg/cluster", "status.json"), 'w'). \
             write(json.dumps({"updated": time.time() + 1, "kind": "ccfg"}))
+
+    def create_service_status(
+            self,
+            path,
+            status="up",
+            overall="up",
+            topology="failover",
+            frozen=0
+    ):
+        if not os.path.exists(svc_pathvar(path)):
+            os.makedirs(svc_pathvar(path))
+        status = {
+            "avail": status,
+            "overall": overall,
+            "topology": topology,
+            "frozen": frozen,
+            "monitor": {
+                "status": status,
+                "overall": overall
+            },
+            "updated": time.time(),
+        }
+        self.log("COMMENT: create %s status.json, with %s", path, status)
+        open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
 
     def prepare_monitor_idle(self):
         self.log('COMMENT: Prepare monitor in idle status')
@@ -438,8 +466,68 @@ class TestMonitorOrchestratorStart(object):
         monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
         service_command = monitor_test.service_command_factory()
         monitor_test.prepare_monitor_idle()
-        initial_service_commands = service_command.call_args_list
-        for _ in range(3):
-            monitor_test.do()
+        initial_service_commands_call_count = int(service_command.call_count)
         monitor_test.log('COMMENT: ensure no extra service commands')
-        assert service_command.call_args_list == initial_service_commands
+        for _ in range(10):
+            monitor_test.do()
+        assert service_command.call_count == initial_service_commands_call_count
+
+    @staticmethod
+    def test_monitor_ensure_call_service_status_on_services_without_status(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        for svc in ["ha1", "ha2", "ha3"]:
+            monitor_test.create_svc_config(svc)
+        monitor_test.log('COMMENT: ensure call refresh on all service with no status')
+        monitor_test.create_service_status("ha3", status="down", overall="down")
+        monitor_test.do()
+        monitor_test.assert_command_has_been_launched([
+            (('ha1', ['status', '--refresh', '--waitlock=0']), {"local": False}),
+            (('ha2', ['status', '--refresh', '--waitlock=0']), {"local": False}),
+        ])
+        monitor_test.assert_command_has_not_been_launched([
+            (('ha3', ['status', '--refresh', '--waitlock=0']), {"local": False}),
+        ])
+
+    @staticmethod
+    def test_monitor_ensure_start_is_called_on_non_up_services(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        for svc in ["ha1", "ha2", "ha3"]:
+            monitor_test.create_svc_config(svc)
+        for svc in ["ha1", "ha2"]:
+            monitor_test.create_service_status(svc, status="down", overall="down")
+        monitor_test.create_service_status("ha3", status="up", overall="up")
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.assert_command_has_been_launched([
+            (('ha1', ['start']), {}),
+            (('ha2', ['start']), {}),
+        ])
+        monitor_test.assert_command_has_not_been_launched([
+            (('ha3', ['start']), {}),
+        ])
+
+    @staticmethod
+    def test_monitor_ensure_no_start_call_when_services_are_up(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        service_command = monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        service_command_initial_call_count = int(service_command.call_count)
+        for svc in ["ha1", "ha2", "ha3"]:
+            monitor_test.create_svc_config(svc)
+            monitor_test.create_service_status(svc, status="up", overall="up")
+        for _ in range(5):
+            monitor_test.do()
+        assert service_command.call_count == service_command_initial_call_count
