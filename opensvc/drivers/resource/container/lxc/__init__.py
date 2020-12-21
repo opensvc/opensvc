@@ -393,6 +393,10 @@ class ContainerLxc(BaseContainer):
             rootfs = rootfs.split(":", 1)[-1]
         return rootfs
 
+    @property
+    def zonepath(self):
+        return self.rootfs
+
     @lazy
     def lxcpath(self):
         if self.container_data_dir:
@@ -735,16 +739,28 @@ class ContainerLxc(BaseContainer):
     def start(self):
         super(ContainerLxc, self).start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+        self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "start", tags=set([self.name]))
 
     def stop(self):
+        self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         super(ContainerLxc, self).stop()
 
     def provision(self):
         super(ContainerLxc, self).provision()
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
+        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
 
     def unprovision(self):
+        self.svc.sub_set_action("fs", "unprovision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "unprovision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.scsireserv", "unprovision", tags=set([self.name]))
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
         super(ContainerLxc, self).unprovision()
 
@@ -933,7 +949,9 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             makedirs(self.lxcpath)
             cmd += self.lxcpath_args
             if not self.cf:
-                cmd += ["-f", os.path.join(self.lxcpath, self.name, "config")]
+                cf = os.path.join(self.lxcpath, self.name, "config")
+                if os.path.exists(cf):
+                    cmd += ["-f", cf]
         if self.template:
             cmd += ['--template', self.template]
             if self.template_options:
@@ -976,4 +994,12 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
         self.start()
         self.log.info("provisioned")
+        return True
+
+    def provisioned(self):
+        cmd = ['lxc-info', '--name', self.name, '-p']
+        cmd += self.lxcpath_args
+        out, _, ret = justcall(cmd)
+        if ret != 0:
+            return False
         return True

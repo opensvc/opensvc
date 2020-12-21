@@ -272,6 +272,9 @@ class DiskZpool(BaseDisk):
         if ret != 0:
             raise ex.Error
 
+    def exposed_devs(self):
+        return set([self.name])
+
     def sub_devs(self):
         if self.is_up():
             self.log.debug("resource up ... update sub devs cache")
