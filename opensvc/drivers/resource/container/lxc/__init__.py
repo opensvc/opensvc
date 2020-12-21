@@ -995,3 +995,11 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
         self.start()
         self.log.info("provisioned")
         return True
+
+    def provisioned(self):
+        cmd = ['lxc-info', '--name', self.name, '-p']
+        cmd += self.lxcpath_args
+        out, _, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        return True
