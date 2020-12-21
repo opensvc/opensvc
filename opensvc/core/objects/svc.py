@@ -3812,7 +3812,7 @@ class Svc(PgMixin, BaseSvc):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if not disable:
+                if not disable and not resource.skip_unprovision and not resource.skip_provision:
                     prov_states.add(_data.get("provisioned", {}).get("state"))
                 if resource.subset:
                     _data["subset"] = resource.subset
