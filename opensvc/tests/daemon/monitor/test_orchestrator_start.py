@@ -17,6 +17,10 @@ from utilities.naming import svc_pathvar
 boot_id = str(time.time())
 
 
+def str_uuid():
+    return str(uuid.uuid4())
+
+
 SERVICES = {
     "parent-flex-min-2": """
 [DEFAULT]
@@ -25,7 +29,7 @@ nodes = *
 topology = flex
 orchestrate = ha
 flex_min = 2
-""" % str(uuid.uuid4()),
+""" % str_uuid(),
 
     "parent-flex-min-1": """
 [DEFAULT]
@@ -34,40 +38,49 @@ nodes = *
 topology = flex
 orchestrate = ha
 flex_min = 1
-""" % str(uuid.uuid4()),
+""" % str_uuid(),
 
     "parent": """
 [DEFAULT]
 id = %s
-nodes = *""" % str(uuid.uuid4()),
+nodes = *""" % str_uuid(),
 
     "s-depend-on-parent": """[DEFAULT]
 id = %s
 nodes = *
 parents = parent
-orchestrate = ha""" % str(uuid.uuid4()),
+orchestrate = ha""" % str_uuid(),
 
     "s-depend-on-parent-flex-min-2": """[DEFAULT]
 id = %s
 nodes = *
 parents = parent-flex-min-2
-orchestrate = ha""" % str(uuid.uuid4()),
+orchestrate = ha""" % str_uuid(),
 
     "s-depend-on-parent-flex-min-1": """[DEFAULT]
 id = %s
 nodes = *
 parents = parent-flex-min-1
-orchestrate = ha""" % str(uuid.uuid4()),
+orchestrate = ha""" % str_uuid(),
 
     "s-depend-on-local-parent": """[DEFAULT]
 id = %s
 nodes = *
 parents = parent@{nodename}
-orchestrate = ha""" % str(uuid.uuid4()),
+orchestrate = ha""" % str_uuid(),
 
-    "ha1": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
-    "ha2": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
-    "ha3": "\n".join(["[DEFAULT]", "id = %s" % str(uuid.uuid4()), "nodes = *", "orchestrate = ha"]),
+    "ha1": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha"]),
+    "ha2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha"]),
+    "ha3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha"]),
+    "s9-prio-1": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 1"]),
+    "s8-prio-2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 2"]),
+    "s7-prio-3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 3"]),
+    "s6-prio-4": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 4"]),
+    "s5-prio-5": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 5"]),
+    "s4-prio-6": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 6"]),
+    "s3-prio-7": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 7"]),
+    "s2-prio-8": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 8"]),
+    "s1-prio-9": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 9"]),
 }
 
 
@@ -205,6 +218,10 @@ class MonitorTest(object):
             },
             "updated": time.time(),
         }
+        if "prio-" in path:
+            priority = int(path[path.find("prio-") + 5:])
+            status['priority'] = priority
+
         self.log("COMMENT: create %s status.json, with %s", path, status)
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
 
@@ -531,3 +548,36 @@ class TestMonitorOrchestratorStart(object):
         for _ in range(5):
             monitor_test.do()
         assert service_command.call_count == service_command_initial_call_count
+
+    @staticmethod
+    def test_monitor_respect_priority_and_max_parallel(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        max_parallel = 3
+        shared.NODE._lazy_max_parallel = max_parallel
+        count = int(monitor_test.service_command.call_count)
+        # service list ordered by priority
+        services = [
+            "s9-prio-1", "s8-prio-2", "s7-prio-3", "s6-prio-4",
+            "s5-prio-5", "s4-prio-6", "s3-prio-7", "s2-prio-8",
+            "s1-prio-9", "ha1", "ha2", "ha3",
+        ]
+        for svc in services:
+            monitor_test.create_svc_config(svc)
+            monitor_test.create_service_status(svc, status="down", overall="down")
+
+        monitor_test.log('COMMENT: one do() call to become ready')
+        monitor_test.do()
+
+        for expected_service_start in [services[0:4], services[4:8], services[8:12]]:
+            monitor_test.log('COMMENT: ensure start of %s', expected_service_start)
+            monitor_test.do()
+            count += max_parallel + 1
+            for svc in expected_service_start:
+                monitor_test.assert_command_has_been_launched([((svc, ['start']), {})])
+                monitor_test.create_service_status(svc, status="up", overall="up")
+            assert monitor_test.service_command.call_count == count
