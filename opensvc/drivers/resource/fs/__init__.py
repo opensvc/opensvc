@@ -241,7 +241,7 @@ class BaseFs(Resource):
         if self.zone is None:
             return self.raw_mount_point
         zp = None
-        for r in [r for r in self.svc.resources_by_id.values() if r.type == "container.zone"]:
+        for r in [r for r in self.svc.resources_by_id.values() if r.type in ("container.lxc", "container.zone")]:
             if r.name == self.zone:
                 try:
                     zp = r.zonepath
@@ -250,7 +250,10 @@ class BaseFs(Resource):
                 break
         if zp is None:
             raise ex.Error("zone %s, referenced in %s, not found" % (self.zone, self.rid))
-        mount_point = zp + "/root" + self.raw_mount_point
+        if r.type == "container.zone":
+            mount_point = zp + "/root" + self.raw_mount_point
+        else:
+            mount_point = zp + self.raw_mount_point
         if "<%s>" % self.zone != zp:
             mount_point = os.path.realpath(mount_point)
         return mount_point
