@@ -74,10 +74,22 @@ def driver_capabilities(node=None):
     return data
 
 class FsZfsMixin():
+    @property
+    def poolname(self):
+        return self.device.split("/")[0]
+
     def unprovisioner(self):
         if "node.x.zfs" not in capabilities:
             self.log.error("zfs command not found")
             raise ex.Error
+        import core.status
+        need_stop = None
+        for r in self.svc.get_resources(["volume", "disk.zfs"]):
+            if r.device != self.poolname:
+                continue
+            if r.status() not in (core.status.UP, core.status.STDBY_UP):
+                r.start()
+                need_stop = r
         dataset = Dataset(self.device, log=self.log)
         if dataset.exists():
             dataset.destroy(["-r"])
@@ -87,6 +99,8 @@ class FsZfsMixin():
                 self.log.info("rmdir %s", self.mount_point)
             except OSError as exc:
                 self.log.warning("failed to rmdir %s: %s", self.mount_point, exc)
+        if need_stop:
+            need_stop.stop()
 
     def provisioner(self):
         if "node.x.zfs" not in capabilities:
