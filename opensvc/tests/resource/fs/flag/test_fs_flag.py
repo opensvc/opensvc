@@ -3,7 +3,7 @@ import pytest
 from tests.helpers import assert_resource_has_mandatory_methods
 
 
-OS_LIST = {'Linux', 'SunOS', 'Darwin'}
+OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD'}
 SCENARIOS = [
     ('fs.flag', {}, 'fs.flag'),
 ]
