@@ -115,6 +115,7 @@ class Scheduler(shared.OsvcThread):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.scheduler"), {"node": Env.nodename, "component": self.name})
         self.log.info("scheduler started")
+        self.update_status()
         self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
             devnull = os.devnull
