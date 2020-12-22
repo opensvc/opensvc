@@ -10,7 +10,7 @@ from core.node import Node
 
 Mgr = commands.mgr.Mgr
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'}
-OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS', 'Darwin'}
+OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS', 'Darwin', 'FreeBSD'}
 
 
 @pytest.fixture(scope='function')
@@ -131,16 +131,23 @@ class TestServiceActionFsFlag:
 
 
 @pytest.mark.ci
-@pytest.mark.usefixtures('has_privs')
+@pytest.mark.usefixtures('osvc_path_tests', 'has_privs')
 class TestServiceActionWithVolume:
     @staticmethod
-    def test_provision_service_with_config(has_service_with_vol_and_cfg):
+    @pytest.mark.parametrize('sysname', OS_LIST_WITH_FS_FLAG)
+    def test_provision_service_with_config(osvc_path_tests, has_service_with_vol_and_cfg, mocker,
+                                           tmp_path, mock_sysname, sysname):
         expected_voldir = os.path.join(
             str(has_service_with_vol_and_cfg),
             'var',
             'pool',
             'directory',
             'vol-test.root.vol.default')
+        mock_sysname(sysname)
+        base_flag_d = str(tmp_path)
+        # To allow non root user
+        mocker.patch('drivers.resource.fs.flag.' + sysname.lower() + '.FsFlag.base_flag_d',
+                     new_callable=mocker.PropertyMock(return_value=base_flag_d))
 
         assert Mgr(selector='svc')(['provision', '--local', '--leader', '--debug']) == 0
 
@@ -250,6 +257,7 @@ class TestCreateAddDecode:
 
         with open(tmp_file) as output_file:
             assert output_file.read() == ''
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_cluster_config', 'has_privs')
@@ -380,6 +388,7 @@ class TestCfgSecEdit:
         with open(tmp_file) as output_file:
             assert output_file.read() == 'abcd text added'
 
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_privs')
 class TestCfgSecEdit:
@@ -409,6 +418,7 @@ class TestCfgSecEdit:
         with capsys.disabled():
             if sys.version[0] == '2' and 'cfg/' in obj:
                 pytest.skip("unsupported cfg edit on python 2")
+
             def file_editor_side_effect(_, fpath):
                 with open(fpath, 'ab') as f:
                     f.write(' text added'.encode())

@@ -2,10 +2,13 @@ from __future__ import print_function
 
 import os
 
+import core.exceptions as ex
+
 from utilities.lazy import lazy
 from utilities.converters import convert_size
 from utilities.proc import justcall
 from core.pool import BasePool
+from env import Env
 
 class Pool(BasePool):
     type = "shm"
@@ -13,7 +16,20 @@ class Pool(BasePool):
 
     @lazy
     def path(self):
+        if Env.sysname == "FreeBSD":
+            path = os.path.join(Env.paths.pathvar, "pool", "shm")
+            self.freebsd_mount(path)
+            return path
         return "/dev/shm"
+
+    def freebsd_mount(self, path):
+        from utilities.mounts.freebsd import Mounts
+        m = Mounts()
+        if m.has_mount("tmpfs", path):
+            return
+        out, err, ret = justcall(["mount", "-t", "tmpfs", "none", path])
+        if ret:
+            raise ex.Error("can not mount the 'shm' pool tmpfs in %s: %s" % (path, err))
 
     def translate_blk(self, name=None, size=None, shared=False):
         data = [

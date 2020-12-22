@@ -29,7 +29,7 @@ class Mounts(BaseMounts):
 
     def parse_mounts(self):
         mounts = []
-        ret, out, err, ret = justcall(['mount'])
+        out, err, ret = justcall(['mount'])
         for l in out.split('\n'):
             words = l.split()
             if len(words) < 4:

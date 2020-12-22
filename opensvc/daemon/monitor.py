@@ -1020,13 +1020,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             # no need to run status, the running action will refresh the status earlier
             return
         cmd = ["status", "--refresh", "--waitlock=0"]
-        if self.has_proc(cmd):
+        if self.has_proc([path] +  cmd):
             # no need to run status twice
             return
         proc = self.service_command(path, cmd, local=False)
         self.push_proc(
             proc=proc,
-            cmd=cmd,
+            cmd=[path] + cmd,
         )
 
     def service_toc(self, path):
