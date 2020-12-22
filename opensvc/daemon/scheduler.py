@@ -382,12 +382,19 @@ class Scheduler(shared.OsvcThread):
             action, path, rid = sig
             if not path:
                 if csum and csum != task["csum"]:
-                    self.log.info("drop queued %s on %s %s: node or cluster config changed", action, path, rid or "")
+                    self.log.info("drop action '%s' on %s%s: node or cluster config changed",
+                                  action, path, " " + rid if rid else "")
                     drop.append(sig)
+                continue
+            if path not in shared.SERVICES:
+                self.log.info("drop action '%s' on %s%s: object deleted",
+                              action, path, " " +rid if rid else "")
+                drop.append(sig)
                 continue
             ocsum = self.node_data.get(["services", "config", path, "csum"], None)
             if ocsum and ocsum != task["csum"]:
-                self.log.info("drop queued %s on %s %s: object config changed", action, path, rid or "")
+                self.log.info("drop action '%s' on %s%s: object config changed",
+                              action, path, " " + rid if rid else "")
                 drop.append(sig)
                 continue
             if not rid:
@@ -399,11 +406,11 @@ class Scheduler(shared.OsvcThread):
                 drop.append(sig)
                 continue
             except (ex.Error, ex.ContinueAction) as exc:
-                self.log.info("drop queued %s on %s %s: %s", action, path, rid, exc)
+                self.log.info("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
             except Exception as exc:
-                self.log.error("drop queued %s on %s %s: %s", action, path, rid, exc)
+                self.log.error("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
         self.delete_queued(drop)
