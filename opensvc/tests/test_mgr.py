@@ -10,7 +10,7 @@ from core.node import Node
 
 Mgr = commands.mgr.Mgr
 OS_LIST = {'Linux', 'SunOS', 'Darwin', 'FreeBSD', 'HP-UX', 'OSF1'}
-OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS', 'Darwin'}
+OS_LIST_WITH_FS_FLAG = {'Linux', 'SunOS', 'Darwin', 'FreeBSD'}
 
 
 @pytest.fixture(scope='function')
