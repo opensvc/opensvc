@@ -1,11 +1,9 @@
 name: OpenSVC agent CI
-on: [push]
-
-branches:    
-  - master
-  - b2.0
-  - b2.1
-
+on:
+  push:
+    branches:    
+      - b2.0
+      - b2.1
 jobs:
   ci:
     runs-on: ubuntu-latest
