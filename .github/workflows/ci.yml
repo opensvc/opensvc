@@ -1,0 +1,66 @@
+name: OpenSVC agent CI
+on: [push]
+
+branches:    
+  - master
+  - b2.0
+  - b2.1
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python-version: 2.7
+            PYTEST_EXTRA_ARGS: ""
+          - python-version: 3.8
+            PYTEST_EXTRA_ARGS: "--cov"
+        
+    steps:
+      - name: Checkout opensvc
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install procps
+
+      - name: Install python dependencies
+        run: |
+          pip install -r test-requirements.txt
+
+      - name: Run pytest
+        run: sudo $(which pytest) ${{ PYTEST_EXTRA_ARGS }} -m "ci"
+
+      - name: Run pylint
+        env:
+          PYTHONPATH: opensvc
+          OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP: 25
+        run: pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
+
+      - name: Run codecov
+        if: ${{ success() }}
+        run: |
+          pip install codecov
+          codecov
+
+  slack-workflow-status:
+    if: always()
+    name: Post Workflow Status To Slack
+    needs:
+      - ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@master
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.SLACK_WEBHOOK_URL}}
+          icon_emoji: ':poop:'
+
