@@ -34,7 +34,7 @@ jobs:
           pip install -r test-requirements.txt
 
       - name: Run pytest
-        run: sudo $(which pytest) ${{ PYTEST_EXTRA_ARGS }} -m "ci"
+        run: sudo $(which pytest) ${{ matrix.PYTEST_EXTRA_ARGS }} -m "ci"
 
       - name: Run pylint
         env:
