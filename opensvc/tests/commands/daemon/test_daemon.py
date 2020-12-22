@@ -158,8 +158,9 @@ class TestNodemgrDaemonActions:
             daemon_main(args=[])
 
         def daemon_start_native(_):
-            from multiprocessing import Process
-            proc = Process(target=daemon_main_target)
+            from multiprocessing import get_context
+            ctx = get_context("fork")
+            proc = ctx.Process(target=daemon_main_target)
             proc.start()
             proc.join()
             time.sleep(0.5)
