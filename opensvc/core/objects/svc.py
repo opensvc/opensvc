@@ -757,6 +757,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return self.oget("DEFAULT", "lock_timeout")
 
     @lazy
+    def priority(self):
+        return self.oget("DEFAULT", "priority")
+
+    @lazy
     def cd(self):
         if self.raw_cd is not None:
             return self.raw_cd
@@ -3721,6 +3725,8 @@ class Svc(PgMixin, BaseSvc):
             "subsets": {},
             "resources": {},
         }
+        if self.kind == "svc" and self.priority != Env.default_priority:
+            data["priority"] = self.priority
         running = self.get_running()
         if running:
             data["running"] = running
@@ -3811,7 +3817,7 @@ class Svc(PgMixin, BaseSvc):
                     _data["info"] = info
                 if len(tags) > 0:
                     _data["tags"] = tags
-                if not disable:
+                if not disable and not resource.skip_unprovision and not resource.skip_provision:
                     prov_states.add(_data.get("provisioned", {}).get("state"))
                 if resource.subset:
                     _data["subset"] = resource.subset
@@ -5510,7 +5516,17 @@ class Svc(PgMixin, BaseSvc):
             self.delete_resources()
 
     def enter(self):
-        self._enter(self.options.rid if is_string(self.options.rid) else self.options.rid[0])
+        if not self.options.rid:
+            resources = self.get_resources("container")
+            if len(resources) == 1:
+                rid = resources[0].rid
+            else:
+                raise ex.Error("this svc has multiple containers. select one with --rid <id>")
+        elif is_string(self.options.rid):
+            rid = self.options.rid
+        else:
+            rid = self.options.rid[0]
+        self._enter(rid)
 
     def _enter(self, rid):
         res = self.get_resource(rid)

@@ -21,6 +21,10 @@ class Pool(BasePool):
     def volume_env(self):
         return self.oget("volume_env")
 
+    @lazy
+    def optional_volume_env(self):
+        return self.oget("optional_volume_env")
+
     def configure_volume(self, volume, size=None, fmt=True, access="rwo", shared=False, nodes=None, env=None):
         if self.template is None:
             raise ex.Error("pool#%s.template is not set" % self.name)

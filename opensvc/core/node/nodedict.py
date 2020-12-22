@@ -1146,7 +1146,15 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "rtype": ["virtual"],
         "convert": "list",
         "example": "container#1.name:container_name env.foo:foo",
-        "text": "The list of the volume consumer service config keywords which values are mapped as env keys in the allocated volume service.",
+        "text": "The list of the volume consumer service config keywords which values are mapped as env keys in the allocated volume service. If the keyword is not set at the source, an error is raised.",
+    },
+    {
+        "section": "pool",
+        "keyword": "optional_volume_env",
+        "rtype": ["virtual"],
+        "convert": "list",
+        "example": "container#1.name:container_name env.foo:foo",
+        "text": "The list of the volume consumer service config keywords which values are mapped as env keys in the allocated volume service. If the keyword is not set at the source, the default value in the template env section applies.",
     },
     {
         "section": "pool",

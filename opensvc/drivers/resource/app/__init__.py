@@ -699,16 +699,9 @@ class App(Resource):
             if "env" not in kwargs:
                 kwargs["env"] = {}
             kwargs["env"].update(self.kind_environment_env("cfg", self.configs_environment))
-            kwargs["env"].update(self.kind_environment_env("cfg", self.secrets_environment))
+            kwargs["env"].update(self.kind_environment_env("sec", self.secrets_environment))
         if self.environment:
-            for mapping in self.environment:
-                try:
-                    var, val = mapping.split("=", 1)
-                except Exception as exc:
-                    self.log.info("ignored environment mapping %s: %s", mapping, exc)
-                    continue
-                var = var.upper()
-                kwargs["env"][var] = val
+            kwargs["env"].update(self.direct_environment_env(self.environment))
 
         return kwargs
 

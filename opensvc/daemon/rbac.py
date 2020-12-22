@@ -19,6 +19,8 @@ class ObjectCreateMixin(object):
     def rbac_create_obj(self, path, cd, all_ns, thr=None, **kwargs):
         errors = []
         name, namespace, kind = split_path(path)
+        if namespace is None:
+            namespace = "root"
         grants = thr.user_grants(all_ns | set([namespace]))
         if kind == "nscfg":
             if "squatter" not in grants:
@@ -37,6 +39,11 @@ class ObjectCreateMixin(object):
             elif namespace not in grants["admin"]:
                 thr.usr.set_multi(["grant+=admin:%s" % namespace])
                 grants["admin"].add(namespace)
+        if not "root" in grants and not "prioritizer" in grants:
+            try:
+                del cd["DEFAULT"]["priority"]
+            except KeyError:
+                pass
         thr.rbac_requires(roles=["admin"], namespaces=[namespace], grants=grants, **kwargs)
         try:
             orig_obj = factory(kind)(name, namespace=namespace, volatile=True, node=shared.NODE)

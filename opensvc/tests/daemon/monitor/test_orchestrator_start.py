@@ -315,7 +315,8 @@ class TestMonitorOrchestratorStart(object):
             monitor._lazy_rejoin_grace_period = 0.001
 
         def do():
-            log_test('\nCOMMENT: monitor.do()')
+            log_comment('\nCOMMENT: monitor.do()')
+            time.sleep(0.01)  # Simulate time elapsed between 2 do() iteration
             monitor.do()
             log_test('COMMENT: proc ps count = %s', len(monitor.procs))
 
@@ -331,9 +332,10 @@ class TestMonitorOrchestratorStart(object):
 
         log_test('COMMENT: monitor.init()')
         monitor.init()
-        assert_nmon_status(monitor, 'init', 'after init()')
-        log_test('COMMENT: asserting all services are refreshed: (service_command.call_args_list is correct: %s)',
-                 service_command.call_args_list[0])
+        time.sleep(0.01)  # simulate time elapsed
+        assert_nmon_status(log_comment, 'init', 'after init()')
+        log_comment('COMMENT: asserting all services are refreshed: (service_command.call_args_list is correct: %s)',
+                    service_command.call_args_list[0])
         assert service_command.call_count == 1
         for s in svcnames + [svcname, 'cluster']:
             assert s in service_command.call_args_list[0][0][0].split(',')
@@ -374,14 +376,12 @@ class TestMonitorOrchestratorStart(object):
         svc = monitor.get_service(svcname)
         assert svc
 
-        time.sleep(0.001)
         do()
         assert_nmon_status(monitor, 'idle', 'after status.json created')
         assert_smon_status(monitor, svcname, transition_status1)
 
         log_test('COMMENT: hack ready_period to 0.001')
         monitor._lazy_ready_period = 0.001
-        time.sleep(0.001)
 
         if "/start failed/" in title:
             log_test('COMMENT: hack service command mock to %s', env.Env.syspaths.false)

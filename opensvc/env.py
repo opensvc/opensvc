@@ -114,11 +114,13 @@ class Env(object):
     session_uuid = os.environ.get("OSVC_PARENT_SESSION_UUID") or str(uuid4())
     initial_env = os.environ.copy()
     os.environ["OSVC_SESSION_UUID"] = session_uuid
+    default_priority = 100
 
     cluster_roles = [
         "root",
         "blacklistadmin",
         "squatter",
+        "prioritizer",
         "heartbeat",
     ]
     ns_roles = [

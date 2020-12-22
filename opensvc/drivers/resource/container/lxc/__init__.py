@@ -22,7 +22,7 @@ from .. import \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV
 from env import Env
-from utilities.files import makedirs, protected_dir
+from utilities.files import makedirs, protected_dir, rmtree_busy
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
@@ -66,14 +66,31 @@ KEYWORDS = [
         "provisioning": True
     },
     {
-        "keyword": "mirror",
-        "text": "Sets the ``MIRROR`` environment variable for :cmd:`lxc-create`, pointing the distribution server to use.",
-        "provisioning": True
+        "keyword": "create_secrets_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
-        "keyword": "security_mirror",
-        "text": "Sets the ``SECURITY_MIRROR`` environment variable for :cmd:`lxc-create`, pointing the security distribution server to use. If not set but mirror is set, use mirror as the security mirror.",
-        "provisioning": True
+        "keyword": "create_configs_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
+    },
+    {
+        "keyword": "create_environment",
+        "at": True,
+        "provisioning": True,
+        "convert": "shlex",
+        "default": [],
+        "text": "Set variables in the :cmd:`lxc-create` execution environment. The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
         "keyword": "rcmd",
@@ -185,8 +202,9 @@ class ContainerLxc(BaseContainer):
                  container_data_dir=None,
                  template=None,
                  template_options=None,
-                 mirror=None,
-                 security_mirror=None,
+                 create_environment=None,
+                 create_configs_environment=None,
+                 create_secrets_environment=None,
                  **kwargs):
         super(ContainerLxc, self).__init__(
             type="container.lxc",
@@ -201,10 +219,11 @@ class ContainerLxc(BaseContainer):
         self.rcmd = rcmd
         self.template = template
         self.template_options = template_options or []
-        self.mirror = mirror
-        self.security_mirror = security_mirror
         self.links = None
         self.cf = cf
+        self.create_environment = create_environment
+        self.create_configs_environment = create_configs_environment
+        self.create_secrets_environment = create_secrets_environment
 
     def on_add(self):
         if "lxc-attach" in ' '.join(self.runmethod):
@@ -373,6 +392,10 @@ class ContainerLxc(BaseContainer):
             # zfs:/tank/svc1, nbd:file1, dir:/foo ...
             rootfs = rootfs.split(":", 1)[-1]
         return rootfs
+
+    @property
+    def zonepath(self):
+        return self.rootfs
 
     @lazy
     def lxcpath(self):
@@ -580,7 +603,6 @@ class ContainerLxc(BaseContainer):
                 raise ex.Error("failed to create directory %s: %s"%(cfg_d, str(exc)))
         self.log.info("install %s as %s", self.cf, cfg)
         try:
-            import shutil
             shutil.copy(self.cf, cfg)
         except Exception as exc:
             raise ex.Error(str(exc))
@@ -717,16 +739,28 @@ class ContainerLxc(BaseContainer):
     def start(self):
         super(ContainerLxc, self).start()
         self.svc.sub_set_action("ip", "start", tags=set([self.rid]))
+        self.svc.sub_set_action("disk.scsireserv", "start", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "start", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "start", tags=set([self.name]))
 
     def stop(self):
+        self.svc.sub_set_action("fs", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "stop", tags=set([self.name]))
+        self.svc.sub_set_action("disk.scsireserv", "stop", tags=set([self.name]))
         self.svc.sub_set_action("ip", "stop", tags=set([self.rid]))
         super(ContainerLxc, self).stop()
 
     def provision(self):
         super(ContainerLxc, self).provision()
         self.svc.sub_set_action("ip", "provision", tags=set([self.rid]))
+        self.svc.sub_set_action("disk.scsireserv", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "provision", tags=set([self.name]))
+        self.svc.sub_set_action("fs", "provision", tags=set([self.name]))
 
     def unprovision(self):
+        self.svc.sub_set_action("fs", "unprovision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.zpool", "unprovision", tags=set([self.name]))
+        self.svc.sub_set_action("disk.scsireserv", "unprovision", tags=set([self.name]))
         self.svc.sub_set_action("ip", "unprovision", tags=set([self.rid]))
         super(ContainerLxc, self).unprovision()
 
@@ -881,7 +915,7 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             self.log.warning("refuse to remove %s", path)
             return
         self.log.info("rm -rf %s", path)
-        shutil.rmtree(path)
+        rmtree_busy(path)
 
     def set_d_lxc(self):
         # lxc root conf dir
@@ -909,13 +943,15 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
     def provisioner_lxc_create(self):
         cmd = ['lxc-create', '--name', self.name, "--dir", self.rootfs]
-        if self.cf:
+        if self.cf and os.path.exists(self.cf):
             cmd += ['-f', self.cf]
         if self.lxcpath:
             makedirs(self.lxcpath)
             cmd += self.lxcpath_args
             if not self.cf:
-                cmd += ["-f", os.path.join(self.lxcpath, self.name, "config")]
+                cf = os.path.join(self.lxcpath, self.name, "config")
+                if os.path.exists(cf):
+                    cmd += ["-f", cf]
         if self.template:
             cmd += ['--template', self.template]
             if self.template_options:
@@ -930,15 +966,18 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
             key = key.upper()
             if key in os.environ:
                 env[key] = os.environ[key]
-        if self.mirror:
-            env["MIRROR"] = self.mirror
-            env["SECURITY_MIRROR"] = self.mirror
-        if self.security_mirror:
-            env["SECURITY_MIRROR"] = self.security_mirror
+        env.update(self.get_create_env())
         self.log.info(" ".join(cmd))
         ret = self.lcall(cmd, env=env)
         if ret != 0:
             raise ex.Error
+
+    def get_create_env(self):
+        env = {}
+        env.update(self.direct_environment_env(self.create_environment))
+        env.update(self.kind_environment_env("cfg", self.create_configs_environment))
+        env.update(self.kind_environment_env("sec", self.create_secrets_environment))
+        return env
 
     def provisioner_archive(self):
         # container config file
@@ -955,4 +994,12 @@ c1:12345:respawn:/sbin/getty 38400 tty1 linux
 
         self.start()
         self.log.info("provisioned")
+        return True
+
+    def provisioned(self):
+        cmd = ['lxc-info', '--name', self.name, '-p']
+        cmd += self.lxcpath_args
+        out, _, ret = justcall(cmd)
+        if ret != 0:
+            return False
         return True

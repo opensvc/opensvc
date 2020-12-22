@@ -176,7 +176,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "grant",
         "example": "admin:test* guest:*",
-        "text": "Grant roles on namespaces to the user. A whitespace-separated list of root|squatter|blacklistadmin|<role selector>:<namespace selector>, where role selector is a comma-separated list of role in admin,operator,guest and the namespace selector is a glob pattern applied to existing namespaces. The root role is required to add resource triggers and non-containerized resources other than (container.docker, container.podman task.docker, task.podman and volume). The squatter role is required to create a new namespace. The admin role is required to create, deploy and delete objects. The guest role is required to list and read objects configurations and status."
+        "text": "Grant roles on namespaces to the user. A whitespace-separated list of root|squatter|prioritizer|blacklistadmin|<role selector>:<namespace selector>, where role selector is a comma-separated list of role in admin,operator,guest and the namespace selector is a glob pattern applied to existing namespaces. The root role is required to add resource triggers and non-containerized resources other than (container.docker, container.podman task.docker, task.podman and volume). The squatter role is required to create a new namespace. The admin role is required to create, deploy and delete objects. The guest role is required to list and read objects configurations and status."
     },
 ]
 

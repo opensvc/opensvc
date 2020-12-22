@@ -1399,6 +1399,20 @@ class Resource(object):
             self.svc.register_dependency("start", self.rid, volrid)
         return path, vol
 
+    def direct_environment_env(self, mappings):
+        env = {}
+        if not mappings:
+            return env
+        for mapping in mappings:
+            try:
+                var, val = mapping.split("=", 1)
+            except Exception as exc:
+                self.log.info("ignored environment mapping %s: %s", mapping, exc)
+                continue
+            var = var.upper()
+            env[var] = val
+        return env
+
     def kind_environment_env(self, kind, mappings):
         env = {}
         if mappings is None:

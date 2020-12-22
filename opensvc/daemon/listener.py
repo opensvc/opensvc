@@ -1548,6 +1548,8 @@ class ClientHandler(shared.OsvcThread):
                         data[role] = set()
                     for ns in ns_sel.split(","):
                         for _ns in all_ns:
+                            if _ns is None:
+                                _ns = "root"
                             if fnmatch.fnmatch(_ns, ns):
                                 data[role].add(_ns)
                                 for equiv in Env.roles_equiv.get(role, ()):

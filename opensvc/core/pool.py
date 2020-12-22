@@ -24,6 +24,10 @@ class BasePool(object):
         return []
 
     @lazy
+    def optional_volume_env(self):
+        return []
+
+    @lazy
     def array(self):
         """
         Implemented by child classes

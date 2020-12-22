@@ -1368,7 +1368,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.node_orchestrator()
 
         # services (iterate over deleting services too)
-        paths = self.instances_status_data.keys()
+        paths = self.prioritized_paths()
         for path in paths:
             self.clear_start_failed(path)
             if self.transitions_maxed():
@@ -1384,6 +1384,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.resources_orchestrator(path, svc)
             self.object_orchestrator(path, svc)
         self.sync_services_conf()
+
+    def prioritized_paths(self):
+        def prio(path):
+            try:
+                return self.instances_status_data.get([path, "priority"])
+            except KeyError:
+                return Env.default_priority
+        paths = self.instances_status_data.keys()
+        data = [(path, prio(path)) for path in paths]
+        return [d[0] for d in sorted(data, key=lambda x: x[1])]
 
     def transitions_maxed(self):
         transitions = self.transition_count()
