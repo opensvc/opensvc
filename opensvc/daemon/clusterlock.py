@@ -13,6 +13,7 @@ class LockMixin(object):
     Methods shared between lock/unlock handlers.
     """
     def lock_acquire(self, nodename, name, timeout=None, thr=None):
+        begin = time.time()
         if timeout is None:
             timeout = 10
         if not nodename:
@@ -37,13 +38,14 @@ class LockMixin(object):
                 lock_id = None
                 continue
             if self.lock_accepted(name, lock_id, thr=thr):
-                thr.log.info("locked %s", name)
+                thr.log.info("acquire %s %s duration (%s)", name, lock_id, int(time.time()-begin))
                 return lock_id
             time.sleep(DELAY_TIME)
-        thr.log.warning("claim timeout on %s lock", name)
+        thr.log.warning("claim timeout on %s lock (duration %s s)", name, int(time.time()-begin))
         self.lock_release(name, lock_id, silent=True, thr=thr)
 
     def lock_release(self, name, lock_id, timeout=None, silent=False, thr=None):
+        begin = time.time()
         released = False
         if timeout is None:
             timeout = 5
@@ -64,14 +66,18 @@ class LockMixin(object):
             time.sleep(DELAY_TIME)
         if released is False:
             thr.log.warning('timeout waiting for lock %s %s release on peers', name, lock_id)
+        else:
+            thr.log.info("lock_released on %s lock %s (duration %s s)", name, lock_id, int(time.time()-begin))
 
     def lock_accepted(self, name, lock_id, thr=None):
         for nodename in thr.list_nodes():
             try:
                 lock = thr.nodes_data.get([nodename, "locks", name])
             except KeyError:
+                thr.log.info('lock not yet held by %s (id %s)', nodename, lock_id)
                 return False
             if lock.get("id") != lock_id:
+                thr.log.info('lock is held by %s with id %s', nodename, lock.get("id"))
                 return False
         return True
 

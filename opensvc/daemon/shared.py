@@ -839,6 +839,7 @@ class OsvcThread(threading.Thread, Crypt):
         NODE.unset_lazy("cd")
         NODE.unset_lazy("private_cd")
         unset_lazy(self, "cluster_nodes")
+        unset_lazy(self, "sorted_cluster_nodes")
         if nodename in self.cluster_nodes:
             return
         nodes = self.cluster_nodes + [nodename]
@@ -857,6 +858,7 @@ class OsvcThread(threading.Thread, Crypt):
         NODE.unset_lazy("cd")
         NODE.unset_lazy("private_cd")
         unset_lazy(self, "cluster_nodes")
+        unset_lazy(self, "sorted_cluster_nodes")
         if nodename not in self.cluster_nodes:
             return
         nodes = [node for node in self.cluster_nodes if node != nodename]
@@ -980,6 +982,7 @@ class OsvcThread(threading.Thread, Crypt):
             self.split_handler()
 
     def delete_peer_data(self, nodename):
+        self.log.info('delete node %s from nodes data', nodename)
         with RX_LOCK:
             self.nodes_data.unset_safe([nodename])
             try:

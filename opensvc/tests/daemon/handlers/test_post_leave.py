@@ -24,6 +24,7 @@ class TestPostLeave:
     def test_remove_node_from_cluster_config(thr):
         thr.add_cluster_node('node3')
         unset_lazy(thr, "cluster_nodes")
+        unset_lazy(thr, "sorted_cluster_nodes")
         assert Ccfg().cluster_nodes == [Env.nodename, 'node3']
         response = PostLeave().action('node3', thr=thr)
         assert Ccfg().cluster_nodes == [Env.nodename]
