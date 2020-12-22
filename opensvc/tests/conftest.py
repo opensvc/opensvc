@@ -151,7 +151,10 @@ def has_node_config(osvc_path_tests):
 [listener]
 port = 1224
 tls_port = 1225
-"""
+
+[cni]
+config = %s
+""" % str(os.path.join(osvc_path_tests, 'cni.config'))
         node_config_file.write(config_txt)
 
 
