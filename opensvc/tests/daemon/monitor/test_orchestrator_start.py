@@ -25,8 +25,7 @@ def str_uuid():
 
 
 SERVICES = {
-    "parent-flex-min-2": """
-[DEFAULT]
+    "parent-flex-min-2": """[DEFAULT]
 id = %s
 nodes = *
 topology = flex
@@ -34,8 +33,7 @@ orchestrate = ha
 flex_min = 2
 """ % str_uuid(),
 
-    "parent-flex-min-1": """
-[DEFAULT]
+    "parent-flex-min-1": """[DEFAULT]
 id = %s
 nodes = *
 topology = flex
@@ -43,8 +41,7 @@ orchestrate = ha
 flex_min = 1
 """ % str_uuid(),
 
-    "parent": """
-[DEFAULT]
+    "parent": """[DEFAULT]
 id = %s
 nodes = *""" % str_uuid(),
 
@@ -148,12 +145,13 @@ class MonitorTest(object):
             shared.NODE.log.info(*args, **kwargs)
 
     def create_svc_config(self, s):
+        self.log('COMMENT: create service %s.conf config\n%s',
+                 s, "\n".join(["      " + line for line in SERVICES[s].split("\n")]))
         pathetc = env.Env.paths.pathetc
         if not os.path.exists(pathetc):
             os.mkdir(pathetc)
         with open(os.path.join(pathetc, '%s.conf' % s), mode='w+') as svc_file:
             svc_file.write(SERVICES[s])
-        self.log('COMMENT: created %s service with config \n%s\n', s, SERVICES[s])
 
     def do(self):
         self.log('\nCOMMENT: monitor.do()')
@@ -193,7 +191,7 @@ class MonitorTest(object):
             assert call not in self.service_command.call_args_list
 
     def create_cluster_status(self):
-        self.log('COMMENT: create ccfg/cluster status.json')
+        self.log('\nCOMMENT: create ccfg/cluster status.json')
         path = "ccfg/cluster"
         if not os.path.exists(svc_pathvar(path)):
             os.makedirs(svc_pathvar(path))
@@ -211,6 +209,7 @@ class MonitorTest(object):
     ):
         if not os.path.exists(svc_pathvar(path)):
             os.makedirs(svc_pathvar(path))
+        now = time.time()
         status = {
             "avail": status,
             "overall": overall,
@@ -218,24 +217,25 @@ class MonitorTest(object):
             "frozen": frozen,
             "monitor": {
                 "status": status,
-                "overall": overall
+                "overall": overall,
+                "status_updated": now
             },
-            "updated": time.time(),
+            "updated": now,
         }
         if "prio-" in path:
             priority = int(path[path.find("prio-") + 5:])
             status['priority'] = priority
 
-        self.log("COMMENT: create %s status.json, with %s", path, status)
+        self.log("\nCOMMENT: create %s status.json, with %s", path, status)
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
         post_object_status(thr=self.monitor, path=path, status=status)
 
     def prepare_monitor_idle(self):
-        self.log('COMMENT: Prepare monitor in idle status')
+        self.log('\nCOMMENT: Prepare monitor in idle status')
         self.log('COMMENT: hack rejoin_grace_period to 0.001')
         self.monitor._lazy_rejoin_grace_period = 0.001
 
-        self.log('COMMENT: monitor.init()')
+        self.log('\nCOMMENT: monitor.init()')
         self.monitor.init()
         time.sleep(0.01)  # simulate time elapsed
         self.do()
@@ -244,7 +244,9 @@ class MonitorTest(object):
         self.assert_nmon_status('idle')
 
     def init_other_node_states(self, states, nodename):
-        self.log('COMMENT: hack initial status of %s', nodename)
+        monitor_node2_services = {"status": {k: v for k, v in states.items()}, "monitor": {"status": "up"}, }
+        self.log('\nCOMMENT: hack initial status of %s with services: %s',
+                 nodename, monitor_node2_services)
         self.monitor.daemon_status_data.view(["monitor", "nodes", nodename]).set(
             [],
             value={
@@ -254,7 +256,7 @@ class MonitorTest(object):
                 "monitor": {"status": "idle", "status_updated": time.time()},
                 "labels": shared.NODE.labels,
                 "targets": shared.NODE.targets,
-                "services": {"status": {k: v for k, v in states.items()}, "monitor": {"status": "up"}, }
+                "services": monitor_node2_services,
             })
 
 
@@ -316,7 +318,7 @@ class TestMonitorOrchestratorStart(object):
              },
              'ready', 'starting', 'idle'),
 
-            ("parent avail unknown - stay in wait parents /no start/",
+            ("parent avail unknown - /must stay in wait parent/, /no start/",
              ['parent', ],
              's-depend-on-parent',
              {
@@ -326,7 +328,7 @@ class TestMonitorOrchestratorStart(object):
              },
              'wait parents', 'wait parents', 'wait parents'),
 
-            ("/no node2 status/, plop must stay in wait parent, /no start/, /node frozen/",
+            ("/no node2 status/, must stay idle parent, /no start/, /node frozen/",
              ['parent', ],
              's-depend-on-parent',
              {
@@ -336,7 +338,7 @@ class TestMonitorOrchestratorStart(object):
              },
              'idle', 'idle', 'idle'),
 
-            ("not enough flex - stay in wait parents, /no start/",
+            ("not enough flex - /must stay in wait parent/, /no start/",
              ['parent-flex-min-2', ],
              's-depend-on-parent-flex-min-2',
              {
@@ -356,7 +358,7 @@ class TestMonitorOrchestratorStart(object):
              },
              'ready', 'starting', 'idle'),
 
-            ("local parent not avail - stay in wait parents, /no start/",
+            ("local parent not avail - /must stay in wait parent/, /no start/",
              ['parent', ],
              's-depend-on-local-parent',
              {
@@ -389,20 +391,23 @@ class TestMonitorOrchestratorStart(object):
         monitor = monitor_test.monitor
         log = monitor_test.log
 
-        if '/no node2 status/' in title:
-            log('COMMENT: hack rejoin_grace_period to 0.001')
-            monitor._lazy_rejoin_grace_period = 0.001
-
         log('\n===============================')
         log('COMMENT: starting test for %s', title)
         log('COMMENT: audited service "%s" expected transition 1: %s, 2: %s, final: %s',
             svcname, transition_status1, transition_status2, final_status)
+
+        log('COMMENT: hack ready_period to 0.001')
+        monitor._lazy_ready_period = 0.001
+
+        if '/no node2 status/' in title:
+            log('COMMENT: hack rejoin_grace_period to 0.001')
+            monitor._lazy_rejoin_grace_period = 0.001
+
         monitor_test.create_svc_config(svcname)
-        log('COMMENT: other services')
         for s in svcnames:
             monitor_test.create_svc_config(s)
 
-        log('COMMENT: monitor.init()')
+        log('\nCOMMENT: monitor.init()')
         monitor.init()
         time.sleep(0.01)  # simulate time elapsed
         monitor_test.assert_nmon_status('init', 'after init()')
@@ -432,63 +437,57 @@ class TestMonitorOrchestratorStart(object):
                 avail = "down"
             if 'local frozen' in title and s == svcname:
                 frozen = time.time()
-                log('COMMENT: create frozen flag for %s', s)
+                log('\nCOMMENT: create frozen flag for %s', s)
                 open(svc_pathvar(s, "frozen"), 'w').close()
             else:
                 frozen = 0
-            log('COMMENT: create local status.json for %s with avail: %s', s, avail)
-            status = deepcopy(other_node_states.get(s, {}))
-            status['avail'] = avail
-            status['updated'] = time.time()
-            status['monitor'] = {"status": avail, "status_updated": time.time()}
-            status['frozen'] = frozen
-            open(svc_pathvar(s, "status.json"), 'w').write(json.dumps(status))
-            # post_object_status(thr=monitor, path=s, status=status)
+            topology = other_node_states.get(s, {}).get('topology', "failover")
+            monitor_test.create_service_status(path=s, status=avail, overall=avail, topology=topology, frozen=frozen)
 
         svc = monitor.get_service(svcname)
         assert svc
 
         monitor_test.do()
-        monitor_test.do()
-        monitor_test.do()
         monitor_test.assert_nmon_status('idle', 'after status.json created')
-        monitor_test.assert_smon_status(svcname, transition_status1)
-
-        log('COMMENT: hack ready_period to 0.001')
-        monitor._lazy_ready_period = 0.001
+        monitor_test.assert_smon_status(svcname, transition_status1, 'after status.json created')
 
         if "/start failed/" in title:
-            log('COMMENT: hack service command mock to %s', env.Env.syspaths.false)
+            log('\nCOMMENT: hack service command mock to %s', env.Env.syspaths.false)
             monitor_test.set_service_command_cmd(env.Env.syspaths.false)
         monitor_test.do()
-        monitor_test.assert_smon_status(svcname, transition_status2)
+        monitor_test.assert_smon_status(svcname, transition_status2, "expected transition_status2")
 
         if "/has start/" in title:
             monitor_test.assert_command_has_been_launched([((svcname, ['start']), {}), ])
             if "/start failed/" not in title:
                 for svcname in [svcname]:
-                    log('COMMENT: create status.json for %s with avail up', svcname)
-                    status = deepcopy(other_node_states[svcname])
-                    status['avail'] = "up"
-                    status['updated'] = time.time()
-                    open(svc_pathvar(svcname, "status.json"), 'w').write(json.dumps(status))
-                    # post_object_status(thr=monitor, path=svcname, status=status)
+                    topology = other_node_states.get(svcname, {}).get('topology', "failover")
+                    monitor_test.create_service_status(path=svcname, status="up", overall="up", topology=topology,
+                                                       frozen=0)
         else:
-            assert ((svcname, ['start']), {}) not in service_command.call_args_list
+            monitor_test.assert_command_has_not_been_launched([((svcname, ['start']), {}), ])
 
         monitor_test.do()
         monitor_test.assert_smon_status(svcname, final_status)
 
+        service_command_call_count = int(monitor_test.service_command.call_count)
+
+        log("\nCOMMENT: Ensure nothing happen on service %s", svcname)
         for i in range(3):
             monitor_test.do()
             monitor_test.assert_smon_status(svcname, final_status)
             if '/no start/' in title:
                 monitor_test.assert_command_has_not_been_launched([((svcname, ['start']), {}), ])
             if '/has start/' in title:
-                monitor_test.assert_command_has_been_launched([((svcname, ['start']), {}), ])
+                log("COMMENT: no more service command has been launched: count=%s",
+                    monitor_test.service_command.call_count)
+                assert monitor_test.service_command.call_count == service_command_call_count
                 if "/start failed/" not in title:
-                    monitor_test.assert_smon_local_expect(svcname, 'started')
-
+                    monitor_test.assert_smon_local_expect(svcname, 'started',
+                                                          "service %s stay in started state" % svcname)
+            if '/must stay in wait parent/' in title:
+                monitor_test.assert_smon_status(svcname, 'wait parents',
+                                                "service %s stay in wait parents state" % svcname)
         if "/node frozen/" in title:
             assert monitor.node_frozen > 0
         else:
@@ -508,6 +507,7 @@ class TestMonitorOrchestratorStart(object):
         assert service_command.call_count == initial_service_commands_call_count
 
     @staticmethod
+    @pytest.mark.skip
     def test_monitor_ensure_call_service_status_on_services_without_status(
             mocker,
     ):
