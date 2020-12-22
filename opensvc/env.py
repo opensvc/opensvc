@@ -251,6 +251,9 @@ class Env(object):
     elif sysname == "Darwin":
         syspaths.true = "/usr/bin/true"
         syspaths.false = "/usr/bin/false"
+    elif sysname == "FreeBSD":
+        syspaths.true = "/usr/bin/true"
+        syspaths.false = "/usr/bin/false"
 
     if "LD_PRELOAD" in os.environ:
         ld_preload = os.environ["LD_PRELOAD"]
