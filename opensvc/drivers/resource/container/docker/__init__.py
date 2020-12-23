@@ -895,8 +895,18 @@ class ContainerDocker(BaseContainer):
         self.container_rm()
 
     def provisioner_shared_non_leader(self):
-        if not self.lib.docker_daemon_private:
+        if self.lib.docker_daemon_private:
+            return
+        try:
+            image_id = self.lib.get_image_id(self.image)
+            return
+        except ValueError as exc:
+            pass
+        try:
             self.image_pull()
+            return
+        except ex.Error as exc1:
+            self.log.warning("could not pull image '%s': %s", self.image, str(exc1).strip())
 
     def start(self):
         if self.image_pull_policy == "always":
