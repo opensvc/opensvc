@@ -4,6 +4,10 @@ on:
     branches:    
       - b2.0
       - b2.1
+  pull_request:
+    branches:    
+      - b2.0
+      - b2.1
 jobs:
   ci:
     runs-on: ubuntu-latest
