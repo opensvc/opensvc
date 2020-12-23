@@ -254,6 +254,10 @@ class ContainerLib(object):
                 return data
             if data["name"] == "docker.io/"+image_name:
                 return data
+            if data["name"].replace("docker.io/library/", "docker.io/") == image_name:
+                return data
+            if data["name"].replace("docker.io/", "docker.io/library/") == image_name:
+                return data
 
     def login_as_service_args(self):
         uuid = self.svc.node.conf_get("node", "uuid")
