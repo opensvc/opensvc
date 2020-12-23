@@ -59,6 +59,7 @@ jobs:
     needs:
       - ci
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Slack Workflow Notification
         uses: Gamesight/slack-workflow-status@master
