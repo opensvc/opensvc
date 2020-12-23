@@ -1,3 +1,4 @@
+import sys
 from copy import deepcopy
 
 import pytest
@@ -145,7 +146,14 @@ def run(data, check_events):
         else:
             result = getattr(data, fn)(**kwargs)
             if getattr(data, 'event_q', None):
-                assert result == expected_result
+                if fn == 'keys' and int(sys.version[0]) < 3:
+                    result_sorted = deepcopy(result)
+                    result_sorted.sort()
+                    expected_result_sorted = deepcopy(expected_result)
+                    expected_result_sorted.sort()
+                    assert result_sorted == expected_result_sorted, 'unexpeted sorted result'
+                else:
+                    assert result == expected_result, 'unexpected result'
             if result is not None:
                 print("   => %s" % result)
             if getattr(data, 'event_q', None):
@@ -158,16 +166,24 @@ def run(data, check_events):
                         del(msg["kind"])
                     events.append(msg)
                 if check_events:
-                    assert events == expected_events
+                    assert events == expected_events, 'unexpected event detected'
     if hasattr(data, 'dump_changes'):
         print("journal: %s" % data.dump_changes())
     if hasattr(data, 'dump_data'):
         print("data:    %s" % data.dump_data())
 
 
+if int(sys.version[0]) < 3:
+    check_events = [False]
+    check_events_ids = ["without check events"]
+else:
+    check_events = [True, False]
+    check_events_ids = ["with check events", "without check events"]
+
+
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
+@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
 class TestJournaledDataWithoutJournal(object):
     @staticmethod
     def test(with_queue, check_events):
@@ -180,7 +196,7 @@ class TestJournaledDataWithoutJournal(object):
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
+@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
 class TestJournaledDataWithJournal(object):
     @staticmethod
     def test_with_full_journaling_has_expected_data(with_queue, check_events):
@@ -191,6 +207,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_full_journaling_has_expected_journal(with_queue, check_events):
+        if int(sys.version[0]) < 3:
+            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
         run(data, check_events)
@@ -214,6 +232,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_a_journaling_with_exclude_a_b_has_expected_journal(with_queue, check_events):
+        if int(sys.version[0]) < 3:
+            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
         run(data, check_events)
