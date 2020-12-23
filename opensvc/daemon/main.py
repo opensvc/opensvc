@@ -64,13 +64,13 @@ except (ImportError, AttributeError):
 try:
     from utilities.os.linux import set_tname
 except (ImportError, OSError):
-    pass
-else:
-    def _bootstrap_named_thread(self):
-        set_tname(self.name)
-        threading.Thread._bootstrap_original(self)
-    threading.Thread._bootstrap_original = threading.Thread._bootstrap
-    threading.Thread._bootstrap = _bootstrap_named_thread
+    if hasattr(threading.Thread, '_bootstrap'):
+        def _bootstrap_named_thread(self):
+            set_tname(self.name)
+            threading.Thread._bootstrap_original(self)
+
+        threading.Thread._bootstrap_original = threading.Thread._bootstrap
+        threading.Thread._bootstrap = _bootstrap_named_thread
 
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
