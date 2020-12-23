@@ -2474,10 +2474,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 except AttributeError:
                     continue
                 try:
-                    svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, begin=begin)
+                    _timeout = timeout - (time.time() - begin)
+                    svc.wait_daemon_mon_action(global_expect, wait=True, timeout=_timeout, begin=begin)
                 except Exception as exc:
                     err += 1
-                timeout = timeout - (time.time() - begin)
 
         if need_aggregate:
             if self.options.single_service:
