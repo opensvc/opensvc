@@ -272,7 +272,7 @@ class SyncS3(Sync):
 
     def in_full_schedule(self):
         from core.scheduler import Schedule, SchedNotAllowed, SchedSyntaxError
-        now = datetime.datatime.now()
+        now = datetime.datetime.now()
         try:
             sched = Schedule(self.full_schedule)
             return sched.validate(now)
@@ -280,7 +280,6 @@ class SyncS3(Sync):
             return False
         except SchedSyntaxError as e:
             raise ex.Error(str(e))
-        return True
 
     def tar(self):
         n_incr = self.get_n_incr()
