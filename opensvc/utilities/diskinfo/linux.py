@@ -87,9 +87,9 @@ class DiskInfo(BaseDiskInfo):
 
     def mpath_id(self, dev):
         self.load_mpath()
-        if 'dev' not in self.mpath_h:
+        if dev not in self.mpath_h:
             return None
-        return self.mpath_h(dev)
+        return self.mpath_h[dev]
 
     def load_mpath_native(self):
         cmd = [Env.syspaths.multipath, '-l']
