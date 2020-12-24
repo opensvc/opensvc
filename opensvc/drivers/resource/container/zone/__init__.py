@@ -371,6 +371,9 @@ class ContainerZone(BaseContainer):
         if self.state == "configured":
             self.log.info("zone container %s already detached/configured" % self.name)
             return 0
+        elif self.state is None:
+            self.log.info("zone container %s has no state, skip detach" % self.name)
+            return 0
         self.wait_for_fn(self.is_zone_unlocked, self.stop_timeout, 2)
         return self.zoneadm("detach")
         self.zone_refresh()
