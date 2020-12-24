@@ -9,7 +9,7 @@ on:
       - b2.0
       - b2.1
 jobs:
-  ci:
+  ci-pytest:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -40,13 +40,9 @@ jobs:
           pip install -r test-requirements.txt
 
       - name: Run pytest
-        run: sudo $(which pytest) ${{ matrix.PYTEST_EXTRA_ARGS }} -m "ci"
-
-      - name: Run pylint
         env:
-          PYTHONPATH: opensvc
           OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP: 25
-        run: pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
+        run: sudo $(which pytest) ${{ matrix.PYTEST_EXTRA_ARGS }} -m "ci"
 
       - name: Run codecov
         if: ${{ success() }}
@@ -54,11 +50,47 @@ jobs:
           pip install codecov
           codecov
 
+  ci-pylint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 2.7
+            PYTEST_EXTRA_ARGS: ""
+          - python-version: 3.7
+            PYTEST_EXTRA_ARGS: "--cov"
+
+    steps:
+      - name: Checkout opensvc
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install procps
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r test-requirements.txt
+
+      - name: Run pylint
+        env:
+          PYTHONPATH: opensvc
+        run: pylint -E opensvc/*py opensvc/commands opensvc/core opensvc/daemon opensvc/drivers opensvc/utilities
+
   slack-workflow-status:
     if: always()
     name: Post Workflow Status To Slack
     needs:
-      - ci
+      - ci-pytest
+      - ci-pylint
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
