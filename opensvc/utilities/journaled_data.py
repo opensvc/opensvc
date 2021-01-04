@@ -403,9 +403,9 @@ class JournaledData(object):
                         for k, v in value.items():
                             for _ in recurse([path + [k], v]):
                                 yield _
-                    elif hasattr(value, "enumerate"):
+                    elif isinstance(value, list):
                         for i, v in enumerate(value):
-                            for _ in recurse([path + [k], v]):
+                            for _ in recurse([path + [i], v]):
                                 yield _
 
         def excluded(p):
@@ -465,6 +465,7 @@ class JournaledData(object):
 
         return data
 
+
 if __name__ == '__main__':
     from foreign.six.moves import queue
     q = queue.Queue()
@@ -521,12 +522,12 @@ if __name__ == '__main__':
     run(data)
 
     print("'a.b' journaling")
-    print("--------------")
+    print("----------------")
     data = JournaledData(journal_head=["a", "b"], event_q=q, emit_interval=0)
     run(data)
 
-    print("'array, 0' journaling")
-    print("--------------")
+    print("'[array, 0]' journaling")
+    print("-----------------------")
     data = JournaledData(journal_head=["array", 0], event_q=q, emit_interval=0)
     run(data)
 
