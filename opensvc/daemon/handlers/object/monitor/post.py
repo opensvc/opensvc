@@ -5,6 +5,9 @@ import daemon.shared as shared
 import core.exceptions as ex
 from utilities.storage import Storage
 from utilities.naming import split_path, fmt_path, is_service
+from core.objects.svc import ACTION_ASYNC
+
+ALLOWED_KINDS = { str(d.get("target")).split("@", 1)[0] : d.get("kinds") for d in ACTION_ASYNC.values() }
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -165,6 +168,10 @@ class Handler(daemon.handler.BaseHandler):
     def validate_global_expect(self, path, global_expect, thr=None):
         if global_expect is None:
             return
+        _, _, kind = split_path(path)
+        allowed_kinds = ALLOWED_KINDS.get(global_expect)
+        if allowed_kinds is not None and kind not in allowed_kinds:
+            raise ex.Error("reject set global_expect=%s request on %s: not supported on %s objects" % (global_expect, path, kind))
         if global_expect in ("frozen", "aborted", "provisioned"):
             # allow provision target state on just-created service
             return
