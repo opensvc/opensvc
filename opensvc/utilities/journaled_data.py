@@ -374,7 +374,7 @@ class JournaledData(object):
             self.coalesce = []
             self.timer = None
 
-    def _filter_diff(self, diff, head=None, exclude=[]):
+    def _filter_diff(self, diff, head=None, exclude=None):
         data = []
         head = head or []
         exclude = exclude or []
