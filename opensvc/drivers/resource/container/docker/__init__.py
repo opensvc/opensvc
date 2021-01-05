@@ -11,6 +11,7 @@ import core.status
 import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 import utilities.ping
+from utilities.concurrent_futures import get_concurrent_futures
 
 from .. import \
     KW_NO_PREEMPT_ABORT, \
@@ -638,12 +639,12 @@ class ContainerDocker(BaseContainer):
         else:
             timeout = None
 
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor() as executor:
             future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
             try:
                 ret = future.result(timeout=timeout)[0]
-            except concurrent.futures.TimeoutError:
+            except concurrent_futures.TimeoutError:
                 self.log.error("%s timeout exceeded", print_duration(timeout))
                 if action == "start":
                     cmd = self.lib.docker_cmd + ["kill", self.container_name]
