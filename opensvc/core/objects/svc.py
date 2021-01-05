@@ -4566,7 +4566,7 @@ class Svc(PgMixin, BaseSvc):
 
             err = []
 
-            with concurrent_futures.ThreadPoolExecutor() as executor:
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 for resource in resources:
                     procs[executor.submit(wrapper, resource.abort_start)] = resource.rid
                 for future in concurrent_futures.as_completed(procs):

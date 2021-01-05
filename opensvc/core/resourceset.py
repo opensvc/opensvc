@@ -292,7 +292,7 @@ class ResourceSet(object):
            action not in ["presync", "postsync"]:
             procs = {}
             err = []
-            with concurrent_futures.ThreadPoolExecutor() as executor:
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
                 for resource in resources:
                     procs[executor.submit(self.action_job, resource, action)] = resource

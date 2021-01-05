@@ -2418,7 +2418,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         if parallel:
             concurrent_futures = get_concurrent_futures()
-            with concurrent_futures.ThreadPoolExecutor() as executor:
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 for svc in svcs:
                     data.svcs[svc.path] = svc
                     data.procs[executor.submit(self.service_action_worker, svc, action, options)] = svc.path
@@ -4962,7 +4962,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return d
 
         concurrent_futures = get_concurrent_futures()
-        with concurrent_futures.ThreadPoolExecutor() as executor:
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
             for name in pools:
                 procs[executor.submit(job, self, name, volumes)] = name
             for future in concurrent_futures.as_completed(procs):

@@ -640,7 +640,7 @@ class ContainerDocker(BaseContainer):
             timeout = None
 
         concurrent_futures = get_concurrent_futures()
-        with concurrent_futures.ThreadPoolExecutor() as executor:
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
             future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
             try:
                 ret = future.result(timeout=timeout)[0]
