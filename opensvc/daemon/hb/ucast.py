@@ -137,7 +137,7 @@ class HbUcastTx(HbUcast):
         try:
             # self.log.info("sending to %s:%s", config["addr"], config["port"])
             sock = socket.create_connection((config["addr"], config["port"]), self.sock_tmo)
-            sock.sendall((message+"\0").encode())
+            sock.sendall((message+"\0").encode())  # pylint: disable=no-member
             self.set_last(nodename)
             self.push_stats(message_bytes)
         except socket.timeout:
