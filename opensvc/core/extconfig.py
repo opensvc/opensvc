@@ -707,8 +707,12 @@ class ExtConfigMixin(object):
                                              return_length=return_length)
 
             if val is None:
-                # deferred
-                return
+                if self.is_deferred(_section, _v):
+                    raise ex.NotAvailable
+                else:
+                    # not deferrable and unknown reference
+                    # return it unchanged
+                    raise ex.NotSupported
 
         if return_length or index is not None:
             if is_string(val):
@@ -730,6 +734,12 @@ class ExtConfigMixin(object):
             except Exception as exc:
                 pass
         return val
+
+    def is_deferred(self, section, option):
+        if not hasattr(self, "path"):
+            return False
+        drv_group = section.split("#", 1)[0]
+        return (drv_group, option) in DEFER or (None, option) in DEFER
 
     def _handle_reference(self, ref, _section, _v, scope=False,
                           impersonate=None, cd=None, return_length=False):
@@ -760,21 +770,18 @@ class ExtConfigMixin(object):
         if _section != "DEFAULT" and _section not in cd:
             raise ex.Error("%s: section %s does not exist" % (ref, _section))
 
-        # deferrable refs
-        if hasattr(self, "path"):
-            drv_group = _section.split("#", 1)[0]
-            if (drv_group, _v) in DEFER or (None, _v) in DEFER:
-                try:
-                    self.init_resources()
-                    res = self.resources_by_id[_section]
-                    fn = getattr(res, _v)
-                    result = fn()
-                    if isinstance(result, set):
-                        return list(result)
-                    else:
-                        return result
-                except Exception as exc:
-                    return
+        if self.is_deferred(_section, _v):
+            try:
+                self.init_resources()
+                res = self.resources_by_id[_section]
+                fn = getattr(res, _v)
+                result = fn()
+                if isinstance(result, set):
+                    return list(result)
+                else:
+                    return result
+            except Exception as exc:
+                return
 
         try:
             t = None if return_length else "string"
@@ -792,20 +799,28 @@ class ExtConfigMixin(object):
         if not is_string(s):
             return s
         done = ""
+        OPEN = "@@O1@@"
+        CLOSE = "@@C1@@"
         while True:
             m = re.search(r'{\w*[\w#][\w\.\[\]:\/]*}', s)
             if m is None:
-                return done + s
+                ret = done + s
+                ret = ret.replace(OPEN, "{")
+                ret = ret.replace(CLOSE, "}")
+                return ret
             ref = m.group(0).strip("{}").lower()
             if first_step and ref.startswith("safe://"):
                 # do safe references after expressions only
                 done += s[:m.end()]
                 s = s[m.end():]
                 continue
-            val = self.handle_reference(ref, scope=scope,
-                                        impersonate=impersonate,
-                                        cd=cd, section=section)
-            if val is None:
+            try:
+                val = self.handle_reference(ref, scope=scope,
+                                            impersonate=impersonate,
+                                            cd=cd, section=section)
+            except ex.NotSupported:
+                val = OPEN + ref + CLOSE
+            except ex.NotAvailable:
                 # deferred
                 return
             if ref.startswith("safe://"):
