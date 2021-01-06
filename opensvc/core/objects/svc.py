@@ -84,29 +84,35 @@ ACTION_ASYNC = {
         "target": "deleted",
         "progress": "deleting",
         "local": True,
+        "kinds": ["svc", "vol", "usr", "sec", "cfg"],
     },
     "freeze": {
         "target": "frozen",
         "progress": "freezing",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "giveback": {
         "target": "placed",
         "progress": "placing",
+        "kinds": ["svc"],
     },
     "move": {
         "target": "placed@",
         "progress": "placing@",
+        "kinds": ["svc"],
     },
     "provision": {
         "target": "provisioned",
         "progress": "provisioning",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "purge": {
         "target": "purged",
         "progress": "purging",
         "local": True,
+        "kinds": ["svc", "vol", "usr", "sec", "cfg"],
     },
     "restart": {
         "target": "restarted",
@@ -117,38 +123,46 @@ ACTION_ASYNC = {
         "target": "shutdown",
         "progress": "shutting",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "start": {
         "target": "started",
         "progress": "starting",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "stop": {
         "target": "stopped",
         "progress": "stopping",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "switch": {
         "target": "placed@",
         "progress": "placing@",
+        "kinds": ["svc", "vol"],
     },
     "takeover": {
         "target": "placed@",
         "progress": "placing@",
+        "kinds": ["svc", "vol"],
     },
     "toc": {
         "progress": "tocing",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "thaw": {
         "target": "thawed",
         "progress": "thawing",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
     "unprovision": {
         "target": "unprovisioned",
         "progress": "unprovisioning",
         "local": True,
+        "kinds": ["svc", "vol"],
     },
 }
 
@@ -1439,6 +1453,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
            self.options.master:
             return
         if action not in ACTION_ASYNC:
+            return
+        allowed_kinds = ACTION_ASYNC[action].get("kinds")
+        if allowed_kinds is not None and self.kind not in allowed_kinds:
+            self.log.info("ignore %s request: not supported on %s objects", action, self.kind)
             return
         if "target" not in ACTION_ASYNC[action]:
             return

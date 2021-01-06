@@ -7,7 +7,7 @@ from .. import BaseDisk, BASE_KEYWORDS
 from utilities.converters import convert_size
 from env import Env
 from utilities.lazy import lazy
-from utilities.subsystems.zfs import dataset_exists, zpool_devs
+from utilities.subsystems.zfs import dataset_exists, zpool_devs, zfs_getprop, zfs_setprop
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall, which
 from utilities.string import bdecode
@@ -48,6 +48,8 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+STARTED_PROP = "opensvc:started"
+
 def driver_capabilities(node=None):
     from utilities.proc import which
     if which("zfs"):
@@ -84,10 +86,25 @@ class DiskZvol(BaseDisk):
         """
         Returns True if the zvol exists and the pool imported
         """
-        return self.has_it()
+        if not self.has_it():
+            return False
+        return self.is_up_prop()
+
+    def is_up_prop(self):
+        return self.get_started_prop() == "true"
+
+    def get_started_prop(self):
+        return zfs_getprop(self.name, STARTED_PROP)
+
+    def set_started_prop(self, val):
+        self.log.info("zfs set %s=%s %s", STARTED_PROP, val, self.name)
+        return zfs_setprop(self.name, STARTED_PROP, val)
 
     def do_start(self):
-        pass
+        if self.is_up():
+            self.log.info("zvol %s is already up", self.name)
+            return
+        self.set_started_prop("true")
 
     def remove_dev_holders(self, devpath, tree):
         dev = tree.get_dev_by_devpath(devpath)
@@ -113,6 +130,7 @@ class DiskZvol(BaseDisk):
             self.log.info("%s is already down" % self.label)
             return
         self.remove_holders()
+        self.set_started_prop("false")
 
     @lazy
     def device(self):
