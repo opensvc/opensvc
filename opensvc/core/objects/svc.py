@@ -107,6 +107,11 @@ ACTION_ASYNC = {
         "progress": "purging",
         "local": True,
     },
+    "restart": {
+        "target": "restarted",
+        "progress": "restarting",
+        "local": True,
+    },
     "shutdown": {
         "target": "shutdown",
         "progress": "shutting",

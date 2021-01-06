@@ -560,6 +560,7 @@ class OsvcThread(threading.Thread, Crypt):
                 )
                 changed = True
                 nmon.local_expect = local_expect
+                nmon.local_expect_updated = time.time()
 
         if global_expect:
             if global_expect == "unset":
@@ -647,11 +648,14 @@ class OsvcThread(threading.Thread, Crypt):
                     local_expect
                 )
                 smon.local_expect = local_expect
+                smon.local_expect_updated = time.time()
                 changed = True
 
         if global_expect:
             if global_expect == "unset":
                 global_expect = None
+            elif global_expect == "restarted":
+                global_expect = "restarted@%s" % time.time()
             if global_expect != smon.global_expect:
                 self.log.info(
                     "%s monitor global expect change: %s => %s",

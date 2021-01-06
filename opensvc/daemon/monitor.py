@@ -48,6 +48,7 @@ ORCHESTRATE_STATES = (
     "idle",
     "wait children",
     "wait parents",
+    "wait priors",
     "wait sync",
     "wait leader",
     "wait non-leader",
@@ -117,7 +118,7 @@ class MonitorObjectOrchestratorManualMixin(object):
         except AttributeError:
             self.log.warning("unsupported global expect on %s: %s",
                              svc.path, smon.global_expect)
-            self.set_smon(global_expect="unset")
+            self.set_smon(svc.path, global_expect="unset")
             return
         try:
             fn(**kwargs)
@@ -578,6 +579,32 @@ class MonitorObjectOrchestratorManualMixin(object):
         step_stop()
         step_wait_parents()
         step_start()
+
+    def _oom_restarted_at(self, svc=None, smon=None, status=None, instance=None, target=None):
+        def step_mark():
+            if not smon.global_expect.startswith("restarted@"):
+                return
+            if smon.status != "idle":
+                return
+            if smon.local_expect != "started":
+                if time.time() > ts + 2:
+                    self.set_smon(svc.path, global_expect="unset")
+                return
+            if smon.local_expect_updated and ts < smon.local_expect_updated:
+                return
+            self.set_smon(svc.path, status="wait priors")
+
+        def step_restart():
+            if smon.status != "wait priors":
+                return
+            if not self.prior_instances_restarted(svc):
+                return
+            self.service_restart(svc.path)
+
+        ts = float(target)
+        step_mark()
+        step_restart()
+
 
 class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     """
@@ -1040,6 +1067,19 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             on_error="generic_callback",
             on_error_args=[path],
             on_error_kwargs={"status": "toc failed"},
+        )
+
+    def service_restart(self, path, err_status="restart failed"):
+        self.set_smon(path, "restarting", local_expect="unset")
+        proc = self.service_command(path, ["restart"])
+        self.push_proc(
+            proc=proc,
+            on_success="generic_callback",
+            on_success_args=[path],
+            on_success_kwargs={"status": "idle", "local_expect": "started", "global_expect": "unset"},
+            on_error="generic_callback",
+            on_error_args=[path],
+            on_error_kwargs={"status": err_status},
         )
 
     def service_start(self, path, err_status="start failed"):
@@ -2380,6 +2420,27 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return True
         return False
 
+    def prior_instances_restarted(self, svc):
+        if svc is None:
+            return False
+        candidates = self.placement_candidates(
+            svc, discard_frozen=False,
+            discard_unprovisioned=True,
+            discard_start_failed=True,
+            discard_overloaded=False,
+        )
+        ranks = self.placement_ranks(svc, candidates=candidates)
+        for nodename in ranks:
+            if nodename == Env.nodename:
+                return True
+            instance = self.get_service_instance(svc.path, nodename)
+            if not instance:
+                return False
+            status = instance.get("monitor", {}).get("status")
+            if status in ("restarting", "wait priors", "restart failed"):
+                return False
+        return False
+
     def leaders_started(self, path, exclude_status=None):
         svc = self.get_service(path)
         exclude_status = exclude_status or []
@@ -3277,6 +3338,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                smon.local_expect not in ("started", "shutdown"):
                 self.log.info("%s local expect set: started", path)
                 data["local_expect"] = "started"
+                data["local_expect_updated"] = time.time()
 
             placement = self.get_service_placement(path)
             if placement != smon.placement:
@@ -3860,6 +3922,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             else:
                 if instance["avail"] not in STOPPED_STATES:
                     return True
+        elif global_expect.startswith("restarted@"):
+            try:
+                ts = float(global_expect.split("@")[-1])
+            except Exception:
+                return False
+            if smon.local_expect == "started" and smon.local_expect_updated and smon.local_expect_updated < ts:
+                return True
         return False
 
     def instance_provisioned(self, instance):

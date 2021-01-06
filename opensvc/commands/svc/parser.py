@@ -282,7 +282,7 @@ ACTIONS["Service and volume object actions"] = {
     },
     "restart": {
         "msg": "Chain a local service instance stop and start",
-        "options": mp.ACTION_OPTS + START_ACTION_OPTS,
+        "options": mp.ACTION_OPTS + START_ACTION_OPTS + mp.ASYNC_ACTION_OPTS,
     },
     "resync": {
         "msg": "Chain a local service instance  stop, sync_resync and start",
