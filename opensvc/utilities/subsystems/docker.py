@@ -231,8 +231,8 @@ class ContainerLib(object):
                 continue
             if running:
                 cid = ps.get("Id", ps.get("ID"))
-            if cid:
-                data.append(cid)
+                if cid:
+                    data.append(cid)
         return data
 
     def get_image_id(self, name):
