@@ -1,3 +1,4 @@
+import sys
 from copy import deepcopy
 
 import pytest
@@ -93,9 +94,21 @@ TEST_SCENARIO = [
     ("set", dict(path=["a", "c"], value=[1, 2, 3]), None,
      [{"id": 13, "data": [[['a', 'c', 1], 2], [['a', 'c', 2], 3]]}]),
 
+    ("set", dict(path=["array"], value=[["00"], [], 2]), None,
+     [{"id": 14, "data": [[['array'], [["00"], [], 2]]]}]),
+
+    ("set", dict(path=["array", 1], value=["ONE"]), None,
+     [{"id": 15, "data": [[['array', 1, 0], "ONE"]]}]),
+
+    ("set", dict(path=["array", 1], value=["AAA"]), None,
+     [{"id": 16, "data": [[['array', 1, 0], "AAA"]]}]),
+
+    ("set", dict(path=["array", 1, 1], value="BBB"), None,
+     [{"id": 17, "data": [[['array', 1, 1], "BBB"]]}]),
 ]
 
-EXPECTED_FINAL_DATA = {"a": {"c": [1, 2, 3], "e": {"ea": 1, "eb": 2, "ec": "EC", "ed": "ED"}, "d": 3, "new": 1}}
+EXPECTED_FINAL_DATA = {"a": {"c": [1, 2, 3], "e": {"ea": 1, "eb": 2, "ec": "EC", "ed": "ED"}, "d": 3, "new": 1},
+                       "array": [["00"], ["AAA", "BBB"], 2]}
 
 EXPECTED_CHANGES = [[['a'], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                     [['a', 'b'], 1],
@@ -114,7 +127,12 @@ EXPECTED_CHANGES = [[['a'], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                     [['a', 'c', 2]],
                     [['a', 'c', 1]],
                     [['a', 'c', 1], 2],
-                    [['a', 'c', 2], 3]]
+                    [['a', 'c', 2], 3],
+                    [['array'], [["00"], [], 2]],
+                    [['array', 1, 0], "ONE"],
+                    [['array', 1, 0], "AAA"],
+                    [['array', 1, 1], "BBB"],
+]
 
 EXPECTED_CHANGES_FROM_A = [[[], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                            [['c', 2], 3],
@@ -145,7 +163,14 @@ def run(data, check_events):
         else:
             result = getattr(data, fn)(**kwargs)
             if getattr(data, 'event_q', None):
-                assert result == expected_result
+                if fn == 'keys' and int(sys.version[0]) < 3:
+                    result_sorted = deepcopy(result)
+                    result_sorted.sort()
+                    expected_result_sorted = deepcopy(expected_result)
+                    expected_result_sorted.sort()
+                    assert result_sorted == expected_result_sorted, 'unexpeted sorted result'
+                else:
+                    assert result == expected_result, 'unexpected result'
             if result is not None:
                 print("   => %s" % result)
             if getattr(data, 'event_q', None):
@@ -158,16 +183,24 @@ def run(data, check_events):
                         del(msg["kind"])
                     events.append(msg)
                 if check_events:
-                    assert events == expected_events
+                    assert events == expected_events, 'unexpected event detected'
     if hasattr(data, 'dump_changes'):
         print("journal: %s" % data.dump_changes())
     if hasattr(data, 'dump_data'):
         print("data:    %s" % data.dump_data())
 
 
+if int(sys.version[0]) < 3:
+    check_events = [False]
+    check_events_ids = ["without check events"]
+else:
+    check_events = [True, False]
+    check_events_ids = ["with check events", "without check events"]
+
+
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
+@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
 class TestJournaledDataWithoutJournal(object):
     @staticmethod
     def test(with_queue, check_events):
@@ -180,7 +213,7 @@ class TestJournaledDataWithoutJournal(object):
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', [True, False], ids=["with check events", "without check events"])
+@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
 class TestJournaledDataWithJournal(object):
     @staticmethod
     def test_with_full_journaling_has_expected_data(with_queue, check_events):
@@ -191,6 +224,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_full_journaling_has_expected_journal(with_queue, check_events):
+        if int(sys.version[0]) < 3:
+            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
         run(data, check_events)
@@ -214,6 +249,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_a_journaling_with_exclude_a_b_has_expected_journal(with_queue, check_events):
+        if int(sys.version[0]) < 3:
+            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
         run(data, check_events)
@@ -245,6 +282,85 @@ class TestJournaledDataWithJournal(object):
         rdata = JournaledData()
         rdata.patch(patchset=data.dump_changes())
         assert rdata.dump_data() is None
+
+    @staticmethod
+    def test_with_array_journaling_expected_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["array", 1], event_q=event_q, emit_interval=0)
+        run(data, check_events)
+        assert data.dump_changes() == [
+            [[], []],
+            [[0], "ONE"],
+            [[0], "AAA"],
+            [[1], "BBB"],
+        ]
+
+    @staticmethod
+    def test_with_array_journaling_has_expected_data(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["array", 1], event_q=event_q, emit_interval=0)
+        run(data, check_events)
+        assert data.get_copy(path=["array", 1]) == EXPECTED_FINAL_DATA["array"][1]
+
+    @staticmethod
+    def test_with_array_journaling_can_apply_journal(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["array", 1], event_q=event_q, emit_interval=0)
+        run(data, check_events)
+        rdata = JournaledData()
+        rdata.patch(patchset=data.dump_changes())
+        assert rdata.dump_data() == data.get_copy(path=["array", 1])
+
+    @staticmethod
+    def test_with_array_journaling_expected_journal_with_exclude(with_queue, check_events):
+        event_q = queue.Queue() if with_queue else None
+        data = JournaledData(journal_head=["array", 1], journal_exclude=[[1]], event_q=event_q, emit_interval=0)
+        run(data, check_events)
+        assert data.dump_changes() == [
+            [[], []],
+            [[0], "ONE"],
+            [[0], "AAA"],
+        ]
+
+
+@pytest.fixture(scope='function')
+def data_with_journal_on_array_element():
+    data = JournaledData(journal_head=["array", 0, 1])
+    data.set(path=["array"], value=[
+        ["0-0", "0-1", "0-2"],
+        ["1-0", "1-1", "1-2"],
+        ["2-0", "2-1", "2-2"],
+    ])
+    data.set(path=["array", 0, 1], value="update-0-1")
+    data.set(path=["array", 0, 1], value="update-0-1-new")
+    return data
+
+
+@pytest.mark.ci
+class TestJournaledDataWithJournalOnArrayElement(object):
+    @staticmethod
+    def test_has_expected_journal(data_with_journal_on_array_element):
+        expected_changes = [
+            [[], "0-1"],
+            [[], "update-0-1"],
+            [[], "update-0-1-new"],
+        ]
+        assert data_with_journal_on_array_element.dump_changes() == expected_changes
+
+    @staticmethod
+    def test_has_expected_data(data_with_journal_on_array_element):
+        expected_data = {"array": [
+            ["0-0", "update-0-1-new", "0-2"],
+            ["1-0", "1-1", "1-2"],
+            ["2-0", "2-1", "2-2"],
+        ]}
+        assert data_with_journal_on_array_element.dump_data() == expected_data
+
+    @staticmethod
+    def test_can_reproduce_data(data_with_journal_on_array_element):
+        rdata = JournaledData()
+        rdata.patch(patchset=data_with_journal_on_array_element.dump_changes())
+        assert rdata.dump_data() == "update-0-1-new"
 
 
 @pytest.mark.ci

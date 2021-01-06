@@ -86,7 +86,7 @@ class ContainerLib(object):
         instance label.
         """
         data = {}
-        for container in self.container_ps:
+        for container in self.container_ps:  # pylint: disable=not-an-iterable
             labels = container.get("Labels", "")
             if isinstance(labels, dict):
                 # podman
@@ -112,7 +112,7 @@ class ContainerLib(object):
         instance id.
         """
         data = {}
-        for container in self.container_ps:
+        for container in self.container_ps:  # pylint: disable=not-an-iterable
             for name in container.get("Names", "").split(","):
                 try:
                     data[name].append(container)
@@ -130,7 +130,7 @@ class ContainerLib(object):
             unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_name")
         try:
-            return self.container_by_name[resource.name][0]["ID"]
+            return self.container_by_name[resource.name][0]["ID"]  # pylint: disable=unsubscriptable-object
         except Exception:
             return
 
@@ -143,6 +143,7 @@ class ContainerLib(object):
             unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_label")
         try:
+            # pylint: disable=unsubscriptable-object
             return self.container_by_label[resource.container_label_id][0]["ID"]
         except Exception as exc:
             return
@@ -219,7 +220,8 @@ class ContainerLib(object):
         """
         if self.docker_cmd is None:
             return []
-        return [ps["ID"] for ps in self.container_ps if ps["Status"].startswith("Up ")]
+        return [ps["ID"] for ps in self.container_ps  # pylint: disable=not-an-iterable
+                if ps["Status"].startswith("Up ")]
 
     def get_image_id(self, name):
         """
@@ -245,7 +247,7 @@ class ContainerLib(object):
             image_name = name
             image_tag = "latest"
 
-        for data in self.images:
+        for data in self.images:  # pylint: disable=not-an-iterable
             if data["tag"] != image_tag:
                 continue
             if data["name"] == image_name:
@@ -253,6 +255,10 @@ class ContainerLib(object):
             if data["name"] == "docker.io/library/"+image_name:
                 return data
             if data["name"] == "docker.io/"+image_name:
+                return data
+            if data["name"].replace("docker.io/library/", "docker.io/") == image_name:
+                return data
+            if data["name"].replace("docker.io/", "docker.io/library/") == image_name:
                 return data
 
     def login_as_service_args(self):
@@ -346,9 +352,11 @@ class ContainerLib(object):
         Return the docker drivers keys conttributed to resinfo.
         """
         data = []
-        if "Driver" in self.docker_info:
+        if "Driver" in self.docker_info:  # pylint: disable=unsupported-membership-test
+            # pylint: disable=unsubscriptable-object
             data.append(["", "storage_driver", self.docker_info["Driver"]])
-        if "ExecutionDriver" in self.docker_info:
+        if "ExecutionDriver" in self.docker_info:  # pylint: disable=unsupported-membership-test
+            # pylint: disable=unsubscriptable-object
             data.append(["", "exec_driver", self.docker_info["ExecutionDriver"]])
         return data
 
@@ -370,7 +378,7 @@ class ContainerLib(object):
             data.append([resource.rid, "instance_id", resource.container_id])
 
         # unreferenced images
-        for image in self.images:
+        for image in self.images:  # pylint: disable=not-an-iterable
             if image["id"] in images_done:
                 continue
             data.append(["", "image_id", image["id"]])
@@ -398,7 +406,7 @@ class ContainerLib(object):
         """
         if container_id is None:
             raise IndexError("container id is None")
-        for data in self.containers_inspect:
+        for data in self.containers_inspect:  # pylint: disable=not-an-iterable
             if data and data.get("Id", data.get("ID")) == container_id:
                 return data
         return {}
@@ -460,7 +468,7 @@ class ContainerLib(object):
             mntpts.append(resource.mount_point)
             mntpt_res[resource.mount_point] = resource
         for mntpt in sorted(mntpts, reverse=True):
-            if self.container_data_dir.startswith(mntpt):
+            if self.container_data_dir.startswith(mntpt):  # pylint: disable=no-member
                 return mntpt_res[mntpt]
 
 
@@ -518,6 +526,7 @@ class DockerLib(ContainerLib):
         else:
             self.docker_pid_file = None
             try:
+                # pylint: disable=unsubscriptable-object
                 set_lazy(self, "container_data_dir", self.docker_info["DockerRootDir"])
             except (KeyError, TypeError):
                 set_lazy(self, "container_data_dir", None)

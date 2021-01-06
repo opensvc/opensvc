@@ -9,6 +9,7 @@ import logging
 
 import core.exceptions as ex
 import core.status
+from utilities.concurrent_futures import get_concurrent_futures
 from utilities.lazy import lazy
 from env import Env
 from core.resource import Resource
@@ -278,7 +279,7 @@ class ResourceSet(object):
 
         if self.parallel:
             try:
-                import concurrent.futures
+                concurrent_futures = get_concurrent_futures()
             except ImportError:
                 parallel = False
             else:
@@ -291,7 +292,7 @@ class ResourceSet(object):
            action not in ["presync", "postsync"]:
             procs = {}
             err = []
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
                 for resource in resources:
                     procs[executor.submit(self.action_job, resource, action)] = resource
@@ -301,7 +302,7 @@ class ResourceSet(object):
                     if self.svc.options.downto and resource.rid == self.svc.options.downto:
                         barrier = "reached 'down to %s' barrier" % resource.rid
                         break
-                for future in concurrent.futures.as_completed(procs):
+                for future in concurrent_futures.as_completed(procs):
                     resource = procs[future]
                     result = future.result()
                     if result == 1 and not resource.optional:

@@ -1,7 +1,12 @@
 import datetime
 import json
 import os
-from unittest.mock import ANY
+try:
+    # noinspection PyCompatibility
+    from unittest.mock import ANY
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    from mock import ANY
 
 import pytest
 

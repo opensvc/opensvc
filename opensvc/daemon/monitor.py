@@ -2278,10 +2278,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         smon = self.get_service_monitor(path)
         if not smon:
             return
-        if smon.global_expect is not None:
-            return
         if smon.status not in ("start failed", "place failed"):
             return
+        for nodename, instance in self.get_service_instances(path).items():
+            if instance["monitor"].get("global_expect") is not None:
+                return True
         self.log.info("clear %s %s: the service is up", path, smon.status)
         self.set_smon(path, status="idle")
 

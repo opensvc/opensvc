@@ -208,7 +208,7 @@ class JournaledData(object):
             if not self.journal_head:
                 journal_diff = absolute_diff
             else:
-                journal_diff = self._filter_diff(absolute_diff, head=self.journal_head, exclude=self.journal_exclude)
+                journal_diff = self._filter_diff(absolute_diff)
         else:
             journal_diff = None
         return journal_diff
@@ -374,10 +374,11 @@ class JournaledData(object):
             self.coalesce = []
             self.timer = None
 
-    def _filter_diff(self, diff, head=None, exclude=[]):
+    def _filter_diff(self, diff):
+        assert self.journal_head, "unexpected call"
         data = []
-        head = head or []
-        exclude = exclude or []
+        head = self.journal_head
+        exclude = self.journal_exclude
         head_len = len(head)
 
         def recurse(_diff):
@@ -395,7 +396,6 @@ class JournaledData(object):
                     # exactly head
                     yield [[], value]
                 else:
-                    n = len(path)
                     if path[:head_len] == head:
                         # under head
                         yield [path[head_len:], value]
@@ -403,9 +403,9 @@ class JournaledData(object):
                         for k, v in value.items():
                             for _ in recurse([path + [k], v]):
                                 yield _
-                    elif hasattr(value, "enumerate"):
+                    elif isinstance(value, list):
                         for i, v in enumerate(value):
-                            for _ in recurse([path + [k], v]):
+                            for _ in recurse([path + [i], v]):
                                 yield _
 
         def excluded(p):
@@ -465,6 +465,7 @@ class JournaledData(object):
 
         return data
 
+
 if __name__ == '__main__':
     from foreign.six.moves import queue
     q = queue.Queue()
@@ -482,6 +483,12 @@ if __name__ == '__main__':
         ("exists", dict(path=["a", "b"])),
         ("unset", dict(path=["a", "b"])),
         ("exists", dict(path=["a", "b"])),
+        ("set", dict(path=["array"], value=[["sub-1", "sub-2"], "two", "three"])),
+        ("set", dict(path=["array", 1], value="TWO")),
+        ("set", dict(path=["array", 0], value=["sub-1", "sub-2"])),
+        ("set", dict(path=["array", 0, 1], value="SUB-2")),
+        ("unset", dict(path=["array", 0, 1])),
+        ("set", dict(path=["array", 0, 1], value=["changed-SUB-2a", "changed-SUB-2b"])),
     ]
     def run(data):
         for fn, kwargs in tests:
@@ -515,8 +522,14 @@ if __name__ == '__main__':
     run(data)
 
     print("'a.b' journaling")
-    print("--------------")
+    print("----------------")
     data = JournaledData(journal_head=["a", "b"], event_q=q, emit_interval=0)
     run(data)
+
+    print("'[array, 0]' journaling")
+    print("-----------------------")
+    data = JournaledData(journal_head=["array", 0], event_q=q, emit_interval=0)
+    run(data)
+
 
 

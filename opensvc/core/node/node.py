@@ -29,6 +29,7 @@ from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
+from utilities.concurrent_futures import get_concurrent_futures
 from utilities.loop_delay import delay
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, new_id, paths_data,
@@ -2332,7 +2333,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Returns True if the action can be run in a subprocess per service
         """
         try:
-            import concurrent.futures
+            get_concurrent_futures()
         except ImportError:
             return False
         if Env.sysname == "Windows":
@@ -2416,12 +2417,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             options.wait = False
 
         if parallel:
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            concurrent_futures = get_concurrent_futures()
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 for svc in svcs:
                     data.svcs[svc.path] = svc
                     data.procs[executor.submit(self.service_action_worker, svc, action, options)] = svc.path
-                for future in concurrent.futures.as_completed(data.procs):
+                for future in concurrent_futures.as_completed(data.procs):
                     path = data.procs[future]
                     ret = future.result()
                     errs[path] = ret
@@ -2474,10 +2475,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 except AttributeError:
                     continue
                 try:
-                    svc.wait_daemon_mon_action(global_expect, wait=True, timeout=timeout, begin=begin)
+                    _timeout = timeout - (time.time() - begin)
+                    svc.wait_daemon_mon_action(global_expect, wait=True, timeout=_timeout, begin=begin)
                 except Exception as exc:
                     err += 1
-                timeout = timeout - (time.time() - begin)
 
         if need_aggregate:
             if self.options.single_service:
@@ -4960,11 +4961,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 d["volumes"] = []
             return d
 
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
             for name in pools:
                 procs[executor.submit(job, self, name, volumes)] = name
-            for future in concurrent.futures.as_completed(procs):
+            for future in concurrent_futures.as_completed(procs):
                 name = procs[future]
                 data[name] = future.result()
         return data

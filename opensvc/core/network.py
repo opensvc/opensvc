@@ -226,7 +226,7 @@ class NetworksMixin(object):
         try:
             data = socket.getaddrinfo(nodename, None)
         except socket.gaierror:
-            raise ex.Error("node %s is not resolvable", nodename)
+            raise ex.Error("node %s is not resolvable" % nodename)
         for d in data:
             _af, _, _, _, addr = d
             if _af != af:

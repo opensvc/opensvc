@@ -11,6 +11,7 @@ import core.status
 import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 import utilities.ping
+from utilities.concurrent_futures import get_concurrent_futures
 
 from .. import \
     KW_NO_PREEMPT_ABORT, \
@@ -638,12 +639,12 @@ class ContainerDocker(BaseContainer):
         else:
             timeout = None
 
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
             future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
             try:
                 ret = future.result(timeout=timeout)[0]
-            except concurrent.futures.TimeoutError:
+            except concurrent_futures.TimeoutError:
                 self.log.error("%s timeout exceeded", print_duration(timeout))
                 if action == "start":
                     cmd = self.lib.docker_cmd + ["kill", self.container_name]
@@ -914,8 +915,18 @@ class ContainerDocker(BaseContainer):
         self.container_rm()
 
     def provisioner_shared_non_leader(self):
-        if not self.lib.docker_daemon_private:
+        if self.lib.docker_daemon_private:
+            return
+        try:
+            image_id = self.lib.get_image_id(self.image)
+            return
+        except ValueError as exc:
+            pass
+        try:
             self.image_pull()
+            return
+        except ex.Error as exc1:
+            self.log.warning("could not pull image '%s': %s", self.image, str(exc1).strip())
 
     def start(self):
         if self.image_pull_policy == "always":

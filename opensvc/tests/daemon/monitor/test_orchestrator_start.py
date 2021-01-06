@@ -205,7 +205,8 @@ class MonitorTest(object):
             status="up",
             overall="up",
             topology="failover",
-            frozen=0
+            frozen=0,
+            flex_min=None,
     ):
         if not os.path.exists(svc_pathvar(path)):
             os.makedirs(svc_pathvar(path))
@@ -222,6 +223,8 @@ class MonitorTest(object):
             },
             "updated": now,
         }
+        if flex_min is not None:
+            status["flex_min"] = flex_min
         if "prio-" in path:
             priority = int(path[path.find("prio-") + 5:])
             status['priority'] = priority
@@ -275,7 +278,6 @@ S_DEPEND_ON_PARENT_STATUS = {
     "avail": "down", "overall": "down", "updated": time.time(), "topology": "failover",
     "monitor": {"status": "down", "overall": "down"}
 }
-
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
@@ -338,7 +340,7 @@ class TestMonitorOrchestratorStart(object):
              },
              'idle', 'idle', 'idle'),
 
-            ("not enough flex - /must stay in wait parent/, /no start/",
+            ("not enough flex - /local parent frozen/, /must stay in wait parent/, /no start/",
              ['parent-flex-min-2', ],
              's-depend-on-parent-flex-min-2',
              {
@@ -385,6 +387,8 @@ class TestMonitorOrchestratorStart(object):
             transition_status1,
             transition_status2,
             final_status):
+
+        parent_svcs = [name for name in svcnames if 'parent' in name]
 
         monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename, "node2"])
         service_command = monitor_test.service_command_factory()
@@ -435,21 +439,32 @@ class TestMonitorOrchestratorStart(object):
                 avail = "up"
             else:
                 avail = "down"
-            if 'local frozen' in title and s == svcname:
+            if ('local frozen' in title and s == svcname) or ('/local parent frozen/' in title and s in parent_svcs):
                 frozen = time.time()
                 log('\nCOMMENT: create frozen flag for %s', s)
                 open(svc_pathvar(s, "frozen"), 'w').close()
             else:
                 frozen = 0
             topology = other_node_states.get(s, {}).get('topology', "failover")
-            monitor_test.create_service_status(path=s, status=avail, overall=avail, topology=topology, frozen=frozen)
+            kwargs = {"path": s, "status": avail, "overall": avail, "topology": topology, "frozen": frozen}
+            if s == 'parent-flex-min-2':
+                kwargs['flex_min'] = 2
+            monitor_test.create_service_status(**kwargs)
 
         svc = monitor.get_service(svcname)
         assert svc
 
         monitor_test.do()
         monitor_test.assert_nmon_status('idle', 'after status.json created')
-        monitor_test.assert_smon_status(svcname, transition_status1, 'after status.json created')
+        for i in range(1, 4):
+            try:
+                monitor_test.assert_smon_status(svcname, transition_status1,
+                                                'after status.json created and %s x do()' % i)
+                break
+            except:
+                monitor_test.do()
+                if i == 4:
+                    monitor_test.assert_smon_status(svcname, transition_status1, 'after last chance x do()')
 
         if "/start failed/" in title:
             log('\nCOMMENT: hack service command mock to %s', env.Env.syspaths.false)

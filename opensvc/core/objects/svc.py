@@ -28,6 +28,7 @@ from core.resource import Resource
 from core.resourceset import ResourceSet
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env, Paths
+from utilities.concurrent_futures import get_concurrent_futures
 from utilities.converters import *
 from utilities.drivers import driver_import
 from utilities.fcache import fcache
@@ -4547,7 +4548,7 @@ class Svc(PgMixin, BaseSvc):
             parallel = False
         else:
             try:
-                import concurrent.futures
+                concurrent_futures = get_concurrent_futures()
             except ImportError:
                 parallel = False
             else:
@@ -4570,10 +4571,10 @@ class Svc(PgMixin, BaseSvc):
 
             err = []
 
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
                 for resource in resources:
                     procs[executor.submit(wrapper, resource.abort_start)] = resource.rid
-                for future in concurrent.futures.as_completed(procs):
+                for future in concurrent_futures.as_completed(procs):
                     rid = procs[future]
                     result = future.result()
                     if result:
