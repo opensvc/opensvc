@@ -465,6 +465,12 @@ class KeywordStore(dict):
     def __str__(self):
         return "<KeywordStore name:%s sections:%d keywords:%d>" % (self.name, len(self.sections), self.keywords_count())
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+
     def keywords_count(self):
         n = 0
         for section in self.sections.values():
