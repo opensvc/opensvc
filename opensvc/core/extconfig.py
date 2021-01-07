@@ -650,6 +650,8 @@ class ExtConfigMixin(object):
             val = Env.paths.pathvar
         elif _ref == "private_var":
             val = self.var_d
+        elif _ref == "initd":
+            val = self.paths.initd
         elif _ref == "collector_api":
             if has_node:
                 url = self.node.collector_env.dbopensvc
