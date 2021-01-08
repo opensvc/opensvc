@@ -4554,6 +4554,26 @@ class Svc(PgMixin, BaseSvc):
     def set_unprovisioned(self):
         self.sub_set_action(START_GROUPS, "set_unprovisioned")
 
+    @staticmethod
+    def resource_check_abort_job(path, rid):
+        try:
+            from setproctitle import setproctitle
+            setproctitle("om %s --rid %s check abort start" % (path, rid))
+        except ImportError:
+            pass
+
+        from utilities.naming import factory, split_path
+        from core.node.node import Node
+        name, namespace, kind = split_path(path)
+        svc = factory(kind)(name, namespace=namespace, node=Node())
+        res = svc.get_resource(rid)
+        try:
+            if res.abort_start():
+                return 1
+        except Exception:
+            return 1
+        return 0
+
     def abort_start(self):
         """
         Give a chance to all resources concerned by the action to voice up
@@ -4579,19 +4599,18 @@ class Svc(PgMixin, BaseSvc):
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
         else:
-            def wrapper(func):
-                try:
-                    if func():
-                        return 1
-                except Exception:
-                    return 1
-                return 0
-
             err = []
-
-            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            max_workers = len(resources)
+            if max_workers > self.node.max_parallel:
+                max_workers = self.node.max_parallel
+            if max_workers > 61:
+                max_workers = 61
+            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 for resource in resources:
-                    procs[executor.submit(wrapper, resource.abort_start)] = resource.rid
+                    job = executor.submit(self.resource_check_abort_job,
+                                          resource.svc.path,
+                                          resource.rid)
+                    procs[job] = resource.rid
                 for future in concurrent_futures.as_completed(procs):
                     rid = procs[future]
                     result = future.result()

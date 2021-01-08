@@ -4945,6 +4945,29 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
+    @staticmethod
+    def pool_status_job(name, volumes, usage):
+        try:
+            from setproctitle import setproctitle
+            setproctitle("om pool --name %s --status" % (name))
+        except ImportError:
+            pass
+        try:
+            pool = Node().get_pool(name)
+            d = pool.pool_status(usage=usage)
+        except Exception as exc:
+            d = {
+                "name": name,
+                "type": "unknown",
+                "capabilities": [],
+                "head": "err: " + str(exc),
+            }
+        if name in volumes:
+            d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
+        else:
+            d["volumes"] = []
+        return d
+
     def pool_status_data(self, usage=True, pools=None):
         all_pools = self.pool_ls_data()
         if pools:
@@ -4955,27 +4978,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         procs = {}
         volumes = self.pools_volumes()
 
-        def job(self, name, volumes):
-            try:
-                pool = self.get_pool(name)
-                d = pool.pool_status(usage=usage)
-            except Exception as exc:
-                d = {
-                    "name": name,
-                    "type": "unknown",
-                    "capabilities": [],
-                    "head": "err: " + str(exc),
-                }
-            if name in volumes:
-                d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
-            else:
-                d["volumes"] = []
-            return d
-
         concurrent_futures = get_concurrent_futures()
-        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+        max_workers = len(pools)
+        if max_workers > self.max_parallel:
+            max_workers = self.max_parallel
+        if max_workers > 61:
+            max_workers = 61
+        with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             for name in pools:
-                procs[executor.submit(job, self, name, volumes)] = name
+                procs[executor.submit(self.pool_status_job, name, volumes, usage)] = name
             for future in concurrent_futures.as_completed(procs):
                 name = procs[future]
                 data[name] = future.result()
