@@ -7,8 +7,6 @@ import sys
 import time
 import uuid
 
-from multiprocessing import Process
-
 import daemon.shared as shared
 import core.exceptions as ex
 from env import Env
@@ -54,6 +52,13 @@ def wrapper(path, action, options, now, session_id, cmd):
     Env.session_uuid = session_id
     from core.node import Node
     from utilities.naming import split_path, factory
+
+    # The Process() inherits the 'forkserver' start_method.
+    # Force it to the default method.
+    import multiprocessing
+    default_start_method = multiprocessing.get_all_start_methods()[0]
+    multiprocessing.set_start_method(default_start_method, force=True)
+
     node = Node()
     if path is None:
         o = node
@@ -246,7 +251,7 @@ class Scheduler(shared.OsvcThread):
         cmd = self.format_log_cmd(action, path, rids)
         self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = Process(group=None, target=wrapper, args=(path, action, options, now, session_id, cmd, ))
+            proc = shared.MP.Process(group=None, target=wrapper, args=(path, action, options, now, session_id, cmd, ))
             proc.start()
         except KeyboardInterrupt:
             return

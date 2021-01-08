@@ -292,8 +292,14 @@ class ResourceSet(object):
            action not in ["presync", "postsync"]:
             procs = {}
             err = []
-            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            max_workers = len(resources)
+            if max_workers > self.svc.node.max_parallel:
+                max_workers = self.svc.node.max_parallel
+            if max_workers > 61:
+                max_workers = 61
+            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
+                from core.node.node import Node
                 for resource in resources:
                     procs[executor.submit(self.action_job, resource, action)] = resource
                     if self.svc.options.upto and resource.rid == self.svc.options.upto:
@@ -350,13 +356,25 @@ class ResourceSet(object):
         if barrier:
             raise ex.EndAction(barrier)
 
-    def action_job(self, resource, action):
+    @staticmethod
+    def action_job(resource, action):
         """
         The worker job used for parallel execution of a resource action in
         a resource set.
         """
+        # reset logging
+        resource.svc.unset_lazy("logger")
+        resource.svc.unset_lazy("log")
+        resource.unset_lazy("log")
+        resource.svc.logger
+
         try:
-            getattr(resource, 'action')(action)
+            from setproctitle import setproctitle
+            setproctitle("om %s --subset %s --rid %s %s" % (resource.svc.path, resource.rset.subset_name, resource.rid, action))
+        except Exception:
+            pass
+        try:
+            resource.action(action)
         except ex.Error as exc:
             self.log.error(str(exc))
             return 1

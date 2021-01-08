@@ -7,6 +7,7 @@ import time
 import fnmatch
 import hashlib
 import json
+import multiprocessing
 import tempfile
 import shutil
 from copy import deepcopy
@@ -28,6 +29,31 @@ from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS
 
+try:
+    # with python3, select the forkserver method beacuse the
+    # default fork method is unsafe from the daemon.
+    MP = multiprocessing.get_context("forkserver")
+    MP.set_forkserver_preload([
+        "opensvc.core.comm",
+        "opensvc.core.contexts",
+        "opensvc.foreign.h2",
+        "opensvc.foreign.hyper",
+        "opensvc.foreign.jsonpath_ng.ext",
+        "opensvc.utilities.forkserver",
+        "opensvc.utilities.converters",
+        "opensvc.utilities.naming",
+        "opensvc.utilities.optparser",
+        "opensvc.utilities.render",
+        "opensvc.utilities.cache",
+        "opensvc.utilities.lock",
+        "opensvc.utilities.files",
+        "opensvc.utilities.proc",
+        "opensvc.utilities.string",
+    ])
+except (ImportError, AttributeError):
+    # on python2, the only method is spawn, which is slow but
+    # safe.
+    MP = multiprocessing
 
 class OsvcJournaledData(JournaledData):
     def __init__(self):

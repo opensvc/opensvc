@@ -1882,18 +1882,24 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.checks()
         return 0
 
-    def service_action_worker(self, svc, action, options):
+    @staticmethod
+    def service_action_worker(path, action, options):
         """
         The method the per-service subprocesses execute
         """
+        try:
+            from setproctitle import setproctitle
+            setproctitle("om %s %s" % (path, " ".join(sys.argv[2:])))
+        except Exception:
+            pass
+        name, namespace, kind = split_path(path)
+        svc = factory(kind)(name, namespace=namespace, node=Node())
         try:
             return svc.action(action, options)
         except Exception as exc:
             import traceback
             traceback.print_exc()
             return 1
-        #finally:
-        #    self.close()
 
     @lazy
     def diskinfo(self):
@@ -2418,10 +2424,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         if parallel:
             concurrent_futures = get_concurrent_futures()
-            with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            max_workers = len(svcs)
+            if max_workers > self.max_parallel:
+                max_workers = self.max_parallel
+            if max_workers > 61:
+                max_workers = 61
+            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 for svc in svcs:
                     data.svcs[svc.path] = svc
-                    data.procs[executor.submit(self.service_action_worker, svc, action, options)] = svc.path
+                    data.procs[executor.submit(self.service_action_worker, svc.path, action, options)] = svc.path
                 for future in concurrent_futures.as_completed(data.procs):
                     path = data.procs[future]
                     ret = future.result()

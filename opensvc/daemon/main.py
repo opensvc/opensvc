@@ -8,7 +8,6 @@ import os
 import sys
 import threading
 import time
-import multiprocessing
 from optparse import OptionParser
 
 import daemon.shared as shared
@@ -35,35 +34,10 @@ from utilities.lazy import lazy, unset_lazy
 START_THREADS_ALLOWED_NMON_STATUS = (None, "idle", "init", "rejoin", "draining")
 
 try:
-    # with python3, select the forkserver method beacuse the
-    # default fork method is unsafe from the daemon.
-    multiprocessing.set_start_method("forkserver")
-    multiprocessing.set_forkserver_preload([
-        "opensvc.core.comm",
-        "opensvc.core.contexts",
-        "opensvc.foreign.h2",
-        "opensvc.foreign.hyper",
-        "opensvc.foreign.jsonpath_ng.ext",
-        "opensvc.utilities.forkserver",
-        "opensvc.utilities.converters",
-        "opensvc.utilities.naming",
-        "opensvc.utilities.optparser",
-        "opensvc.utilities.render",
-        "opensvc.utilities.cache",
-        "opensvc.utilities.lock",
-        "opensvc.utilities.files",
-        "opensvc.utilities.proc",
-        "opensvc.utilities.string",
-    ])
-
-except (ImportError, AttributeError):
-    # on python2, the only method is spawn, which is slow but
-    # safe.
-    pass
-
-try:
     from utilities.os.linux import set_tname
 except (ImportError, OSError):
+    pass
+else:
     if hasattr(threading.Thread, '_bootstrap'):
         def _bootstrap_named_thread(self):
             set_tname(self.name)
