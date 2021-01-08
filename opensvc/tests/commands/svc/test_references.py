@@ -49,6 +49,9 @@ REFS = [  # (name, value, expected_evaluated_value),
     ("ref_var", "{var}", "OSVC_PATH_TESTS/var"),
     ("ref_private_var", "{private_var}", "OSVC_PATH_TESTS/var/svc/%s" % SVCNAME),
     ("ref_initd", "{initd}", "OSVC_PATH_TESTS/etc/%s.d" % SVCNAME),
+    ("no_change_mixed1", "{aBcDe}", "{aBcDe}"),
+    ("no_change_mixed2", "{FOO1..2}", "{FOO1..2}"),
+    ("no_change_mixed3", "{{{FOO1..2}}}", "{{{FOO1..2}}}"),
 
     # modifiers
     ("mod_upper", "{upper:clustername}", "DEFAULT"),
