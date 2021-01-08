@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 
@@ -20,10 +21,10 @@ REFS = [  # (name, value, expected_evaluated_value),
     ("ref02", "ref-order-safe", "ref-order-safe"),
     ("ref1", "{nodes}", NODENAME),
     ("ref2", "{ref1}", NODENAME),
-    ("ref_add", "$(1+2)", "3"),
+    ("ref_add", "$(1+2)", 3),
     ("ref4", "1", "1"),
-    ("add_ref", "$({env.ref4}+2)", "3"),
-    ("add_ref_len", "$({#env.ref0}+2)", "5"),
+    ("add_ref", "$({env.ref4}+2)", 3),
+    ("add_ref_len", "$({#env.ref0}+2)", 5),
     ("nb", "3", "3"),
     ("ref8", "host{1...{#nodes}}/disk{1...{nb}}", "host{1...1}/disk{1...3}"),
     ("ref9", "{1...8}", "{1...8}"),
@@ -97,7 +98,28 @@ class TestReferencesGet(object):
     @pytest.mark.parametrize("name, expected_eval", [[name, expected_eval] for name, _, expected_eval in REFS])
     def test_can_get_evaluated_value(capsys, osvc_path_tests, name, expected_eval):
         assert Mgr()(argv=["-s", SVCNAME, "get", "--eval", "--kw", "env.%s" % name]) == 0
-        if "OSVC_PATH_TESTS" in expected_eval:
+        if isinstance(expected_eval, str) and "OSVC_PATH_TESTS" in expected_eval:
             expected_eval = expected_eval.replace("OSVC_PATH_TESTS",
                                                   str(osvc_path_tests))
-        assert capsys.readouterr().out.strip() == expected_eval
+        assert capsys.readouterr().out.strip() == str(expected_eval)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("has_svc_with_ref")
+@pytest.mark.usefixtures("has_euid_0")
+class TestReferencesPrintConfig(object):
+    @staticmethod
+    @pytest.mark.parametrize("name, value", [[name, value] for name, value, _ in REFS])
+    def test_has_native_value(capsys, name, value):
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config", "--format", "json"]) == 0
+        assert json.loads(capsys.readouterr().out)["env"][name] == value
+
+    @staticmethod
+    @pytest.mark.parametrize("name, expected_eval", [[name, expected_eval] for name, _, expected_eval in REFS])
+    def test_has_expected_value_when_eval_is_asked(capsys, osvc_path_tests, name, expected_eval):
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config", "--eval", "--format", "json"]) == 0
+        if isinstance(expected_eval, str) and "OSVC_PATH_TESTS" in expected_eval:
+            expected_eval = expected_eval.replace("OSVC_PATH_TESTS",
+                                                  str(osvc_path_tests))
+        json_output = json.loads(capsys.readouterr().out)
+        assert json.dumps(json_output["env"][name]) == json.dumps(expected_eval)
