@@ -725,10 +725,12 @@ class ExtConfigMixin(object):
                 try:
                     return val[index]
                 except IndexError:
-                    drv_group = section.split("#", 1)[0] if section else None
-                    if _v is not None and ((None, _v) in DEFER or (drv_group, _v) in DEFER):
-                        return
-                    return ""
+                    if self.is_deferred(section, _v):
+                        raise ex.NotAvailable
+                    else:
+                        # not deferrable and unknown reference
+                        # return it unchanged
+                        raise ex.NotSupported
 
         if modifier:
             try:

@@ -63,7 +63,7 @@ REFS = [  # (name, value, expected_evaluated_value),
 
     # defers
     ("exposed_must_be_null", "{disk#slv1.exposed_devs[0]}", None),  # not "None"
-    ("exposed_must_be_empty", "must be empty: {disk#slv1.exposed_devs[0]}", "must be empty:"),
+    ("exposed_must_be_empty", "must be null: {disk#slv1.exposed_devs[0]}", None),
 ]
 
 
