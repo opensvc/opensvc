@@ -301,7 +301,7 @@ class ResourceSet(object):
                 self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
                 from core.node.node import Node
                 for resource in resources:
-                    procs[executor.submit(self.action_job, resource, action)] = resource
+                    procs[executor.submit(self.action_job, resource.svc.path, self.subset_name, resource.rid, action)] = resource
                     if self.svc.options.upto and resource.rid == self.svc.options.upto:
                         barrier = "reached 'up to %s' barrier" % resource.rid
                         break
@@ -357,31 +357,32 @@ class ResourceSet(object):
             raise ex.EndAction(barrier)
 
     @staticmethod
-    def action_job(resource, action):
+    def action_job(path, subset_name, rid, action):
         """
         The worker job used for parallel execution of a resource action in
         a resource set.
         """
-        # reset logging
-        resource.svc.unset_lazy("logger")
-        resource.svc.unset_lazy("log")
-        resource.unset_lazy("log")
-        resource.svc.logger
-
         try:
             from setproctitle import setproctitle
-            setproctitle("om %s --subset %s --rid %s %s" % (resource.svc.path, resource.rset.subset_name, resource.rid, action))
+            setproctitle("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
         except Exception:
             pass
+
+        from utilities.naming import factory, split_path
+        from core.node.node import Node
+        name, namespace, kind = split_path(path)
+        svc = factory(kind)(name, namespace=namespace, node=Node())
+        res = svc.get_resource(rid)
+
         try:
-            resource.action(action)
+            res.action(action)
         except ex.Error as exc:
-            self.log.error(str(exc))
+            res.log.error(str(exc))
             return 1
         except Exception as exc:
-            self.log.exception(exc)
+            res.log.exception(exc)
             return 1
-        if resource.can_rollback:
+        if res.can_rollback:
             return 2
         return 0
 
