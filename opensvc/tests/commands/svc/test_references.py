@@ -60,6 +60,10 @@ REFS = [  # (name, value, expected_evaluated_value),
     ("mod_swapcase", "{swapcase:clustername}", "DEFAULT"),
     ("mod_upper", "{upper:clustername}", "DEFAULT"),
     ("mod_title", "{title:clustername}", "Default"),
+
+    # defers
+    ("exposed_must_be_null", "{disk#slv1.exposed_devs[0]}", None),  # not "None"
+    ("exposed_must_be_empty", "must be empty: {disk#slv1.exposed_devs[0]}", "must be empty:"),
 ]
 
 
@@ -70,6 +74,11 @@ def has_svc_with_ref(has_cluster_config):
             '[DEFAULT]',
             'id = %s' % ID,
             "nodes = %s" % NODENAME,
+            "[disk#slv1]",
+            "type = drbd",
+            "res = {fqdn}1",
+            "disk = /tmp/{fqdn}1",
+            "standby = true",
             '[env]'
         ] + ["%s = %s" % (name, value) for name, value, _ in REFS]
         svc_conf.write("\n".join(config_lines))
