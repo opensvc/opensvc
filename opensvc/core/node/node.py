@@ -1890,7 +1890,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             from setproctitle import setproctitle
             setproctitle("om %s %s" % (path, " ".join(sys.argv[2:])))
-        except Exception:
+        except ImportError:
             pass
         name, namespace, kind = split_path(path)
         svc = factory(kind)(name, namespace=namespace, node=Node())

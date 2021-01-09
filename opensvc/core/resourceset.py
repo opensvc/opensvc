@@ -3,7 +3,6 @@ Defines the resource set class, which is a collection of resources.
 """
 from __future__ import print_function
 
-import os
 import sys
 import logging
 
@@ -365,7 +364,7 @@ class ResourceSet(object):
         try:
             from setproctitle import setproctitle
             setproctitle("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
-        except Exception:
+        except ImportError:
             pass
 
         from utilities.naming import factory, split_path

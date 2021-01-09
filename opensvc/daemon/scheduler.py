@@ -56,8 +56,11 @@ def wrapper(path, action, options, now, session_id, cmd):
     # The Process() inherits the 'forkserver' start_method.
     # Force it to the default method.
     import multiprocessing
-    default_start_method = multiprocessing.get_all_start_methods()[0]
-    multiprocessing.set_start_method(default_start_method, force=True)
+    try:
+        default_start_method = multiprocessing.get_all_start_methods()[0]
+        multiprocessing.set_start_method(default_start_method, force=True)
+    except AttributeError:
+        pass
 
     node = Node()
     if path is None:
