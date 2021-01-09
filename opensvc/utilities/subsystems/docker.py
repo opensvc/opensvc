@@ -130,7 +130,8 @@ class ContainerLib(object):
             unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_name")
         try:
-            return self.container_by_name[resource.name][0]["ID"]  # pylint: disable=unsubscriptable-object
+            data = self.container_by_name[resource.name][0]
+            return data.get("ID", data.get("Id"))
         except Exception:
             return
 
@@ -143,8 +144,8 @@ class ContainerLib(object):
             unset_lazy(self, "container_ps")
             unset_lazy(self, "container_by_label")
         try:
-            # pylint: disable=unsubscriptable-object
-            return self.container_by_label[resource.container_label_id][0]["ID"]
+            data = self.container_by_label[resource.container_label_id][0]
+            return data.get("ID", data.get("Id"))
         except Exception as exc:
             return
 
@@ -220,8 +221,19 @@ class ContainerLib(object):
         """
         if self.docker_cmd is None:
             return []
-        return [ps["ID"] for ps in self.container_ps  # pylint: disable=not-an-iterable
-                if ps["Status"].startswith("Up ")]
+        data = []
+        for ps in self.container_ps:
+            if "Status" in ps:
+                running = ps["Status"].startswith("Up ")
+            elif "State" in ps:
+                running = ps["State"] == "running"
+            else:
+                continue
+            if running:
+                cid = ps.get("Id", ps.get("ID"))
+                if cid:
+                    data.append(cid)
+        return data
 
     def get_image_id(self, name):
         """

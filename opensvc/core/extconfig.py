@@ -653,6 +653,8 @@ class ExtConfigMixin(object):
             val = Env.paths.pathvar
         elif _ref == "private_var":
             val = self.var_d
+        elif _ref == "initd":
+            val = self.paths.initd
         elif _ref == "collector_api":
             if has_node:
                 url = self.node.collector_env.dbopensvc
@@ -726,10 +728,12 @@ class ExtConfigMixin(object):
                 try:
                     val = val[index]
                 except IndexError:
-                    drv_group = section.split("#", 1)[0] if section else None
-                    if _v is not None and ((None, _v) in DEFER or (drv_group, _v) in DEFER):
-                        return
-                    val = ""
+                    if self.is_deferred(section, _v):
+                        raise ex.NotAvailable
+                    else:
+                        # not deferrable and unknown reference
+                        # return it unchanged
+                        raise ex.NotSupported
 
         if modifier and val:
             try:
@@ -811,7 +815,7 @@ class ExtConfigMixin(object):
                 ret = ret.replace(OPEN, "{")
                 ret = ret.replace(CLOSE, "}")
                 return ret
-            ref = m.group(0).strip("{}").lower()
+            ref = m.group(0)[1:-1]
             if first_step and ref.startswith("safe://"):
                 # do safe references after expressions only
                 done += s[:m.end()]
