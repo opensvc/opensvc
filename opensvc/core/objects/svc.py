@@ -4554,26 +4554,6 @@ class Svc(PgMixin, BaseSvc):
     def set_unprovisioned(self):
         self.sub_set_action(START_GROUPS, "set_unprovisioned")
 
-    @staticmethod
-    def resource_check_abort_job(path, rid):
-        try:
-            from setproctitle import setproctitle
-            setproctitle("om %s --rid %s check abort start" % (path, rid))
-        except ImportError:
-            pass
-
-        from utilities.naming import factory, split_path
-        from core.node.node import Node
-        name, namespace, kind = split_path(path)
-        svc = factory(kind)(name, namespace=namespace, node=Node())
-        res = svc.get_resource(rid)
-        try:
-            if res.abort_start():
-                return 1
-        except Exception:
-            return 1
-        return 0
-
     def abort_start(self):
         """
         Give a chance to all resources concerned by the action to voice up
@@ -4607,7 +4587,7 @@ class Svc(PgMixin, BaseSvc):
                 max_workers = 61
             with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 for resource in resources:
-                    job = executor.submit(self.resource_check_abort_job,
+                    job = executor.submit(resource_check_abort_job,
                                           resource.svc.path,
                                           resource.rid)
                     procs[job] = resource.rid
@@ -5861,3 +5841,22 @@ class Svc(PgMixin, BaseSvc):
             "volume",
         ]
         self.sub_set_action(rtypes, "install_data")
+
+
+def resource_check_abort_job(path, rid):
+    try:
+        from setproctitle import setproctitle
+        setproctitle("om %s --rid %s check abort start" % (path, rid))
+    except ImportError:
+        pass
+
+    from utilities.naming import factory, split_path
+    name, namespace, kind = split_path(path)
+    svc = factory(kind)(name, namespace=namespace, node=Node())
+    res = svc.get_resource(rid)
+    try:
+        if res.abort_start():
+            return 1
+    except Exception:
+        return 1
+    return 0
