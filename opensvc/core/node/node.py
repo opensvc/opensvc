@@ -1882,25 +1882,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.checks()
         return 0
 
-    @staticmethod
-    def service_action_worker(path, action, options):
-        """
-        The method the per-service subprocesses execute
-        """
-        try:
-            from setproctitle import setproctitle
-            setproctitle("om %s %s" % (path, " ".join(sys.argv[2:])))
-        except ImportError:
-            pass
-        name, namespace, kind = split_path(path)
-        svc = factory(kind)(name, namespace=namespace, node=Node())
-        try:
-            return svc.action(action, options)
-        except Exception as exc:
-            import traceback
-            traceback.print_exc()
-            return 1
-
     @lazy
     def diskinfo(self):
         from utilities.diskinfo import DiskInfo
@@ -2432,7 +2413,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 for svc in svcs:
                     data.svcs[svc.path] = svc
-                    data.procs[executor.submit(self.service_action_worker, svc.path, action, options)] = svc.path
+                    data.procs[executor.submit(service_action_worker, svc.path, action, options)] = svc.path
                 for future in concurrent_futures.as_completed(data.procs):
                     path = data.procs[future]
                     ret = future.result()
@@ -4945,29 +4926,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
-    @staticmethod
-    def pool_status_job(name, volumes, usage):
-        try:
-            from setproctitle import setproctitle
-            setproctitle("om pool --name %s --status" % (name))
-        except ImportError:
-            pass
-        try:
-            pool = Node().get_pool(name)
-            d = pool.pool_status(usage=usage)
-        except Exception as exc:
-            d = {
-                "name": name,
-                "type": "unknown",
-                "capabilities": [],
-                "head": "err: " + str(exc),
-            }
-        if name in volumes:
-            d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
-        else:
-            d["volumes"] = []
-        return d
-
     def pool_status_data(self, usage=True, pools=None):
         all_pools = self.pool_ls_data()
         if pools:
@@ -4986,7 +4944,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             max_workers = 61
         with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             for name in pools:
-                procs[executor.submit(self.pool_status_job, name, volumes, usage)] = name
+                procs[executor.submit(pool_status_job, name, volumes, usage)] = name
             for future in concurrent_futures.as_completed(procs):
                 name = procs[future]
                 data[name] = future.result()
@@ -5217,6 +5175,48 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def post_commit(self):
         self.unset_all_lazy()
+
+
+def service_action_worker(path, action, options):
+    """
+    The method the per-service subprocesses execute
+    """
+    try:
+        from setproctitle import setproctitle
+        setproctitle("om %s %s" % (path, " ".join(sys.argv[2:])))
+    except ImportError:
+        pass
+    name, namespace, kind = split_path(path)
+    svc = factory(kind)(name, namespace=namespace, node=Node())
+    try:
+        return svc.action(action, options)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
+def pool_status_job(name, volumes, usage):
+    try:
+        from setproctitle import setproctitle
+        setproctitle("om pool --name %s --status" % (name))
+    except ImportError:
+        pass
+    try:
+        pool = Node().get_pool(name)
+        d = pool.pool_status(usage=usage)
+    except Exception as exc:
+        d = {
+            "name": name,
+            "type": "unknown",
+            "capabilities": [],
+            "head": "err: " + str(exc),
+        }
+    if name in volumes:
+        d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
+    else:
+        d["volumes"] = []
+    return d
 
 
 # helper for tests mock
