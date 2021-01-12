@@ -27,6 +27,10 @@ OPT.update({
         "--value", default=None,
         action="store", dest="value",
         help="The configuration key value."),
+    "match": Option(
+        "--match", default="**",
+        action="store", dest="match",
+        help="A glob pattern to filter the keys with. Defaults to '**'."),
 })
 
 ACTIONS = Storage()
@@ -65,6 +69,9 @@ ACTIONS.update({
         },
         "keys": {
             "msg": "Show all keys available in this configuration.",
+            "options": [
+                OPT.match,
+            ],
         },
         "decode": {
             "msg": "Decode a key from the configuration object.",

@@ -31,6 +31,10 @@ OPT.update({
         "--value", default=None,
         action="store", dest="value",
         help="The secret value."),
+    "match": Option(
+        "--match", default="**",
+        action="store", dest="match",
+        help="A glob pattern to filter the keys with. Defaults to '**'."),
 })
 
 ACTIONS = Storage()
@@ -69,6 +73,9 @@ ACTIONS.update({
         },
         "keys": {
             "msg": "Show all keys available in this secret.",
+            "options": [
+                OPT.match,
+            ],
         },
         "gen_cert": {
             "msg": "Create a x509 certificate using information in the secret configuration.",
