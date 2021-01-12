@@ -30,3 +30,4 @@ class Handler(daemon.handler.BaseHandler):
             options.data["monitor"] = thr.get_service_monitor(options.path)
             thr.daemon_status_data._set_lk(["monitor", "nodes", Env.nodename, "services", "status", options.path], options.data)
         shared.wake_monitor("%s status change" % options.path, immediate=True)
+        return {"status": 0, "info": "instance status updated"}

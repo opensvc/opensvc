@@ -300,7 +300,7 @@ class ResourceSet(object):
                 self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
                 from core.node.node import Node
                 for resource in resources:
-                    procs[executor.submit(self.action_job, resource.svc.path, self.subset_name, resource.rid, action)] = resource
+                    procs[executor.submit(action_job, resource.svc.path, self.subset_name, resource.rid, action)] = resource
                     if self.svc.options.upto and resource.rid == self.svc.options.upto:
                         barrier = "reached 'up to %s' barrier" % resource.rid
                         break
@@ -355,36 +355,6 @@ class ResourceSet(object):
         if barrier:
             raise ex.EndAction(barrier)
 
-    @staticmethod
-    def action_job(path, subset_name, rid, action):
-        """
-        The worker job used for parallel execution of a resource action in
-        a resource set.
-        """
-        try:
-            from setproctitle import setproctitle
-            setproctitle("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
-        except ImportError:
-            pass
-
-        from utilities.naming import factory, split_path
-        from core.node.node import Node
-        name, namespace, kind = split_path(path)
-        svc = factory(kind)(name, namespace=namespace, node=Node())
-        res = svc.get_resource(rid)
-
-        try:
-            res.action(action)
-        except ex.Error as exc:
-            res.log.error(str(exc))
-            return 1
-        except Exception as exc:
-            res.log.exception(exc)
-            return 1
-        if res.can_rollback:
-            return 2
-        return 0
-
     def all_skip(self, action):
         """
         Return False if any resource will not skip the action.
@@ -419,6 +389,37 @@ class ResourceSet(object):
             l.insert(1, self.svc.namespace.lower())
         name = ".".join(l)
         return logging.getLogger(name)
+
+
+def action_job(path, subset_name, rid, action):
+    """
+    The worker job used for parallel execution of a resource action in
+    a resource set.
+    """
+    try:
+        from setproctitle import setproctitle
+        setproctitle("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
+    except ImportError:
+        pass
+
+    from utilities.naming import factory, split_path
+    from core.node.node import Node
+    name, namespace, kind = split_path(path)
+    svc = factory(kind)(name, namespace=namespace, node=Node())
+    res = svc.get_resource(rid)
+
+    try:
+        res.action(action)
+    except ex.Error as exc:
+        res.log.error(str(exc))
+        return 1
+    except Exception as exc:
+        res.log.exception(exc)
+        return 1
+    if res.can_rollback:
+        return 2
+    return 0
+
 
 if __name__ == "__main__":
     pass

@@ -1,4 +1,8 @@
 from copy import deepcopy
+try:
+    import copy_reg
+except ImportError:
+    import copyreg as copy_reg
 
 
 class Storage(dict):
@@ -7,8 +11,14 @@ class Storage(dict):
     __getitem__ = dict.get
     __getattr__ = dict.get
     __repr__ = lambda self: '<Storage %s>' % dict.__repr__(self)
-    __getstate__ = lambda self: None
-    __copy__ = lambda self: Storage(self) # pylint: disable=undefined-variable
+    __copy__ = lambda self: Storage(self)  # pylint: disable=undefined-variable
 
     def __deepcopy__(self, memo=None):
         return Storage(deepcopy(dict(self), memo=memo))
+
+
+def pickle_storage(s):
+    return Storage, (dict(s),)
+
+
+copy_reg.pickle(Storage, pickle_storage)
