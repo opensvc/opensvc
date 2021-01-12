@@ -197,7 +197,7 @@ class DataMixin(object):
             sys.stdout.write(buff)
 
     def keys(self):
-        data = sorted(self.data_keys())
+        data = sorted(self.data_keys(pattern=self.options.match))
         if self.options.format in ("json", "flat_json"):
             return data
         for key in data:
@@ -206,12 +206,12 @@ class DataMixin(object):
     def has_key(self, key):
         return key in self.data_keys()
 
-    def data_keys(self):
+    def data_keys(self, pattern="**"):
         """
         Return the list of keys in the data section.
         """
         config = self.print_config_data()
-        return [key for key in config.get("data", {}).keys()]
+        return [key for key in config.get("data", {}).keys() if fnmatch.fnmatch(key, pattern)]
 
     def data_dirs(self):
         dirs = set()
