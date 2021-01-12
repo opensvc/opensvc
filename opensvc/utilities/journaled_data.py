@@ -149,8 +149,14 @@ class JournaledData(object):
     #@debug
     def merge(self, path=None, value=None):
         with self.lock:
-            for k, v in value.items():
-                self._set_lk(path + [k], value=v)
+            if isinstance(value, dict):
+                keys = list(value.keys())
+                keys.sort()
+                for k in keys:
+                    self._set_lk(path + [k], value=value[k])
+            else:
+                for k, v in value.items():
+                    self._set_lk(path + [k], value=v)
 
     def setnx(self, path=None, value=None):
         with self.lock:
@@ -450,8 +456,10 @@ class JournaledData(object):
                 if ref_v is None and d1 is not None:
                     yield [path, d1]
                 elif isinstance(d1, dict):
-                    for k, v in d1.items():
-                        for _ in recurse(v, d2, path=path+[k], changes=changes):
+                    keys = list(d1.keys())
+                    keys.sort()
+                    for k in keys:
+                        for _ in recurse(d1.get(k), d2, path=path+[k], changes=changes):
                             yield _
                 elif isinstance(d1, list):
                     if prefix+path not in added:

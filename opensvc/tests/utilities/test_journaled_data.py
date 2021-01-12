@@ -1,4 +1,3 @@
-import sys
 from copy import deepcopy
 
 import pytest
@@ -119,28 +118,29 @@ TEST_SCENARIO = [
 EXPECTED_FINAL_DATA = {"a": {"c": [1, 2, 3], "e": {"ea": 1, "eb": 2, "ec": "EC", "ed": "ED"}, "d": 3, "new": 1},
                        "array": [["00"], ["AAA", "BBB"], 2]}
 
-EXPECTED_CHANGES = [[['a'], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
-                    [['a', 'b'], 1],
-                    [['a', 'c', 2], 3],
-                    [['a', 'e'], {'ea': 1, 'eb': 2}],
-                    [['a', 'd']],
-                    [['a', 'b'], 2],
-                    [['a', 'd'], ['f']],
-                    [['a', 'd'], 1],
-                    [['a', 'd'], 2],
-                    [['a', 'd'], 3],
-                    [['a', 'b']],
-                    [['a', 'new'], 1],
-                    [['a', 'e', 'ec'], 'EC'],
-                    [['a', 'e', 'ed'], 'ED'],
-                    [['a', 'c', 2]],
-                    [['a', 'c', 1]],
-                    [['a', 'c', 1], 2],
-                    [['a', 'c', 2], 3],
-                    [['array'], [["00"], [], 2]],
-                    [['array', 1, 0], "ONE"],
-                    [['array', 1, 0], "AAA"],
-                    [['array', 1, 1], "BBB"],
+EXPECTED_CHANGES = [
+    [['a'], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
+    [['a', 'b'], 1],
+    [['a', 'c', 2], 3],
+    [['a', 'e'], {'ea': 1, 'eb': 2}],
+    [['a', 'd']],
+    [['a', 'b'], 2],
+    [['a', 'd'], ['f']],
+    [['a', 'd'], 1],
+    [['a', 'd'], 2],
+    [['a', 'd'], 3],
+    [['a', 'b']],
+    [['a', 'new'], 1],
+    [['a', 'e', 'ec'], 'EC'],
+    [['a', 'e', 'ed'], 'ED'],
+    [['a', 'c', 2]],
+    [['a', 'c', 1]],
+    [['a', 'c', 1], 2],
+    [['a', 'c', 2], 3],
+    [['array'], [["00"], [], 2]],
+    [['array', 1, 0], "ONE"],
+    [['array', 1, 0], "AAA"],
+    [['array', 1, 1], "BBB"],
 ]
 
 EXPECTED_CHANGES_FROM_A = [[[], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
@@ -177,7 +177,7 @@ def run(data, check_events):
                     result_sorted.sort()
                     expected_result_sorted = deepcopy(expected_result)
                     expected_result_sorted.sort()
-                    assert result_sorted == expected_result_sorted, 'unexpeted sorted result'
+                    assert result_sorted == expected_result_sorted, 'unexpected sorted result'
                 else:
                     assert result == expected_result, 'unexpected result'
             if result is not None:
@@ -199,17 +199,13 @@ def run(data, check_events):
         print("data:    %s" % data.dump_data())
 
 
-if int(sys.version[0]) < 3:
-    check_events = [False]
-    check_events_ids = ["without check events"]
-else:
-    check_events = [True, False]
-    check_events_ids = ["with check events", "without check events"]
+check_events_values = [True, False]
+check_events_ids = ["with check events", "without check events"]
 
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
+@pytest.mark.parametrize('check_events', check_events_values, ids=check_events_ids)
 class TestJournaledDataWithoutJournal(object):
     @staticmethod
     def test(with_queue, check_events):
@@ -222,7 +218,7 @@ class TestJournaledDataWithoutJournal(object):
 
 @pytest.mark.ci
 @pytest.mark.parametrize('with_queue', [True, False], ids=["with queue", "without queue"])
-@pytest.mark.parametrize('check_events', check_events, ids=check_events_ids)
+@pytest.mark.parametrize('check_events', check_events_values, ids=check_events_ids)
 class TestJournaledDataWithJournal(object):
     @staticmethod
     def test_with_full_journaling_has_expected_data(with_queue, check_events):
@@ -233,8 +229,6 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_full_journaling_has_expected_journal(with_queue, check_events):
-        if int(sys.version[0]) < 3:
-            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
         run(data, check_events)
@@ -258,8 +252,6 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_a_journaling_with_exclude_a_b_has_expected_journal(with_queue, check_events):
-        if int(sys.version[0]) < 3:
-            pytest.skip("skipped skip on python 2")
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
         run(data, check_events)
