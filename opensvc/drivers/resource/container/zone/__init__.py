@@ -510,7 +510,10 @@ class ContainerZone(BaseContainer):
 
     @lazy
     def brand(self):
-        return self.zone_data.get("brand")
+        if self.zone_data:
+            return self.zone_data.get("brand")
+        else:
+            return None
 
     @lazy
     def zone_data(self):

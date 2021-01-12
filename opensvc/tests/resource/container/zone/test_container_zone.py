@@ -669,3 +669,19 @@ class TestDetach:
             call.zoneadm("detach", option=["-F"]),
             call.zone_refresh(),
         ]
+
+
+@pytest.mark.ci
+class TestZoneRefresh:
+    @staticmethod
+    @pytest.mark.parametrize('property',
+                             ['zone_data', 'state', 'brand', 'zonepath'])
+    def test_zone_refresh_unset_lazy_property(
+            zone,
+            property,
+    ):
+        zone.kw_zonepath = None
+        set_lazy(zone, property, property)
+        assert getattr(zone, property) == property
+        zone.zone_refresh()
+        assert getattr(zone, property) is None
