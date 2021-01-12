@@ -65,10 +65,19 @@ TEST_SCENARIO = [
     ("keys", dict(path=["a"]), ["c", "e", "d", "new"],
      []),
 
+    ("sorted_keys", dict(path=["a"]), ["c", "d", "e", "new"],
+     []),
+
     ("keys", dict(path=["a", "e"]), ["ea", "eb"],
      []),
 
+    ("sorted_keys", dict(path=["a", "e"]), ["ea", "eb"],
+     []),
+
     ("keys", dict(path=["does-not-exists"]), KeyError("does-not-exists"),
+     []),
+
+    ("sorted_keys", dict(path=["does-not-exists"]), KeyError("does-not-exists"),
      []),
 
     ("get", dict(path=["does-not-exists"]), KeyError("does-not-exists"),
@@ -163,7 +172,7 @@ def run(data, check_events):
         else:
             result = getattr(data, fn)(**kwargs)
             if getattr(data, 'event_q', None):
-                if fn == 'keys' and int(sys.version[0]) < 3:
+                if fn == 'keys':
                     result_sorted = deepcopy(result)
                     result_sorted.sort()
                     expected_result_sorted = deepcopy(expected_result)

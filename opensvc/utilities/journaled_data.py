@@ -23,6 +23,9 @@ class JournaledDataView(object):
         path = self.path + (path or [])
         return self.data.keys(path=path)
 
+    def sorted_keys(self, path=None):
+        return self.data.sorted_keys(path=path)
+
     def keys_safe(self, path=None):
         path = self.path + (path or [])
         return self.data.keys_safe(path=path)
@@ -108,6 +111,12 @@ class JournaledData(object):
         path = path or []
         data = self.get_ref(path, self.data)
         return list(data)
+
+    def sorted_keys(self, path=None):
+        path = path or []
+        keys = list(self.get_ref(path, self.data))
+        keys.sort()
+        return keys
 
     #@debug
     def get(self, path=None, default=Exception):
