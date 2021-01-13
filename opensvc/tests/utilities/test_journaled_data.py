@@ -1,3 +1,4 @@
+import sys
 from copy import deepcopy
 
 import pytest
@@ -8,7 +9,7 @@ from utilities.journaled_data import JournaledData, JournaledDataView
 
 
 TEST_SCENARIO = [
-    # (function_name, kwargs, expected_result or exception, expected_patch_details),
+    # (function_name, kwargs, expected_result or exception, expected_patch_details or [expected_patch_details,])
     ("set", dict(path=None, value={"a": {"b": 0, "c": [1, 2], "d": {"da": ""}}}), None,
      [{"id": 1, "data": [[["a"], {"b": 0, "c": [1, 2], "d": {"da": ""}}]]}]),
 
@@ -16,8 +17,17 @@ TEST_SCENARIO = [
      []),
 
     ("set", dict(path=["a"], value={"b": 1, "c": [1, 2, 3], "e": {"ea": 1, "eb": 2}}), None,
-     [{"id": 2, "data": [[["a", "b"], 1], [["a", "c", 2], 3], [["a", "e"], {"ea": 1, "eb": 2}], [["a", "d"], ]]}],
-     ),
+     [
+         # need alternate values for non insertion guaranteed order
+         [{"id": 2, "data": [[["a", "b"], 1], [["a", "c", 2], 3], [["a", "e"], {"ea": 1, "eb": 2}], [["a", "d"], ]]}],
+         [{"id": 2, "data": [[["a", "b"], 1], [["a", "e"], {"ea": 1, "eb": 2}], [["a", "c", 2], 3], [["a", "d"], ]]}],
+
+         [{"id": 2, "data": [[["a", "c", 2], 3], [["a", "b"], 1], [["a", "e"], {"ea": 1, "eb": 2}], [["a", "d"], ]]}],
+         [{"id": 2, "data": [[["a", "c", 2], 3], [["a", "e"], {"ea": 1, "eb": 2}], [["a", "b"], 1], [["a", "d"], ]]}],
+
+         [{"id": 2, "data": [[["a", "e"], {"ea": 1, "eb": 2}], [["a", "b"], 1], [["a", "c", 2], 3], [["a", "d"], ]]}],
+         [{"id": 2, "data": [[["a", "e"], {"ea": 1, "eb": 2}], [["a", "c", 2], 3], [["a", "b"], 1], [["a", "d"], ]]}],
+     ]),
 
     ("set", dict(path=["a", "b"], value=2), None,
      [{"id": 3, "data": [[["a", "b"], 2]]}]),
@@ -92,8 +102,12 @@ TEST_SCENARIO = [
      []),
 
     ("merge", dict(path=["a", "e"], value={"ec": "EC", "ed": "ED"}), None,
-     [{"id": 10, "data": [[["a", "e", "ec"], "EC"]]},
-      {"id": 11, "data": [[["a", "e", "ed"], "ED"]]},
+     [
+         # need alternate values for non insertion guaranteed order
+         [{"id": 10, "data": [[["a", "e", "ec"], "EC"]]},
+          {"id": 11, "data": [[["a", "e", "ed"], "ED"]]}],
+         [{"id": 10, "data": [[["a", "e", "ed"], "ED"]]},
+          {"id": 11, "data": [[["a", "e", "ec"], "EC"]]}],
       ]),
 
     ("set", dict(path=["a", "c"], value=[1]), None,
@@ -160,6 +174,13 @@ EXPECTED_CHANGES_FROM_A = [[[], {'b': 0, 'c': [1, 2], 'd': {'da': ''}}],
                            [['c', 2], 3]]
 
 
+if sys.version_info.major < 3 \
+        or (sys.version_info.major == 3 and sys.version_info.minor < 7):
+    skip_journal_check = 'skipped when guaranteed dict insertion order'
+else:
+    skip_journal_check = None
+
+
 def run(data, check_events):
     for fn, kwargs, expected_result, expected_events in TEST_SCENARIO:
         print("* %s(%s)" % (fn, ", ".join(["%s=%s" % (k, v) for k, v in kwargs.items()])))
@@ -192,7 +213,21 @@ def run(data, check_events):
                         del(msg["kind"])
                     events.append(msg)
                 if check_events:
-                    assert events == expected_events, 'unexpected event detected'
+                    if len(expected_events) > 0 and isinstance(expected_events[0], list):
+                        # when multiple values are possible
+                        if not skip_journal_check:
+                            # can trust 1st value
+                            assert events == expected_events[0], 'unexpected event detected'
+                        else:
+                            j = 0
+                            for i, expected_events_element in enumerate(expected_events):
+                                print('compared to %s' % expected_events_element)
+                                if events == expected_events_element:
+                                    j = i
+                                    break
+                            assert events == expected_events[j], 'unexpected event detected'
+                    else:
+                        assert events == expected_events, 'unexpected event detected'
     if hasattr(data, 'dump_changes'):
         print("journal: %s" % data.dump_changes())
     if hasattr(data, 'dump_data'):
@@ -229,6 +264,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_full_journaling_has_expected_journal(with_queue, check_events):
+        if skip_journal_check:
+            pytest.skip(skip_journal_check)
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=[], event_q=event_q, emit_interval=0)
         run(data, check_events)
@@ -252,6 +289,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_a_journaling_with_exclude_a_b_has_expected_journal(with_queue, check_events):
+        if skip_journal_check:
+            pytest.skip(skip_journal_check)
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["a"], event_q=event_q, emit_interval=0, journal_exclude=[["b"]])
         run(data, check_events)
@@ -286,6 +325,8 @@ class TestJournaledDataWithJournal(object):
 
     @staticmethod
     def test_with_array_journaling_expected_journal(with_queue, check_events):
+        if skip_journal_check:
+            pytest.skip(skip_journal_check)
         event_q = queue.Queue() if with_queue else None
         data = JournaledData(journal_head=["array", 1], event_q=event_q, emit_interval=0)
         run(data, check_events)
