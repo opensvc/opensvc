@@ -211,7 +211,7 @@ def set_mem_cgroup(o):
         if mem_limit > vmem_limit:
             log.error("pg_vmem_limit must be greater than pg_mem_limit")
             raise ex.Error
-        if mem_limit > cur_vmem_limit:
+        if cur_vmem_limit and mem_limit > cur_vmem_limit:
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
             set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
         else:
