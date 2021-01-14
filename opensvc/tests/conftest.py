@@ -299,3 +299,9 @@ def check_io_timeout(mocker):
 def gc_collect(mocker):
     """Improve test time"""
     mocker.patch('gc.collect')
+
+
+@pytest.fixture(autouse=True)
+def disable_create_pg(mocker):
+    """ensure tests won't create pg"""
+    mocker.patch('drivers.pg.linux.create_pg', return_value=False)
