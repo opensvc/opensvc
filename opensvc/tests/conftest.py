@@ -302,11 +302,23 @@ def gc_collect(mocker):
 
 
 @pytest.fixture(autouse=True)
-def disable_create_pg(mocker):
-    """ensure tests won't create pg"""
-    mocker.patch('drivers.pg.linux.create_pg', return_value=False)
+def disable_create_pg(mocker, request):
+    """ensure tests won't create pg
+    use @pytest.mark.enable_create_pg to disable this fixture
+    """
+    if 'enable_create_pg' not in request.keywords:
+        return mocker.patch('drivers.pg.linux.create_pg', return_value=False)
 
 
 @pytest.fixture(autouse=True)
-def disable_pg_kill(mocker):
-    mocker.patch('drivers.pg.linux.kill')
+def disable_pg_kill(mocker, request):
+    """use @pytest.mark.enable_pg_kill to disable this fixture"""
+    if 'enable_pg_kill' not in request.keywords:
+        return mocker.patch('drivers.pg.linux.kill')
+
+
+@pytest.fixture(autouse=True)
+def linux_is_not_a_container(request, mocker):
+    """use @pytest.mark.linux_is_not_a_container to disable this fixture"""
+    if 'disable_linux_is_not_a_container' not in request.keywords:
+        return mocker.patch('utilities.asset.linux.is_container', return_value=False)
