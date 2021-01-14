@@ -137,7 +137,8 @@ class TestRun:
             "schedule_definition": "@3"
         }
         delta = now - datetime.datetime.strptime(schedule_run['next_run'], "%Y-%m-%d %H:%M:%S")
-        assert delta < datetime.timedelta(seconds=1)
+        # rarely delta is between 1 and 2 (1 time on 400 runs), most of time < 1
+        assert delta < datetime.timedelta(seconds=2)
 
     @staticmethod
     def test_define_correct_schedule_when_has_last_run(mocker, capsys):
