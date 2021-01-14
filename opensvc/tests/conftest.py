@@ -305,3 +305,8 @@ def gc_collect(mocker):
 def disable_create_pg(mocker):
     """ensure tests won't create pg"""
     mocker.patch('drivers.pg.linux.create_pg', return_value=False)
+
+
+@pytest.fixture(autouse=True)
+def disable_pg_kill(mocker):
+    mocker.patch('drivers.pg.linux.kill')
