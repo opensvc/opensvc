@@ -12,16 +12,9 @@ def assert_run_cmd_success(svcname, svc_cmd_args):
     assert Mgr()(argv=cmd_args) == 0
 
 
-@pytest.fixture(scope='function')
-def check_io_timeout(mocker):
-    """Improve test time"""
-    mocker.patch.object(utilities.proc, 'LCALL_CHECK_IO_TIMEOUT', new=0.001)
-
-
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_euid_0')
-@pytest.mark.usefixtures('check_io_timeout')
 class TestSvcHooks:
     @staticmethod
     @pytest.mark.parametrize(
