@@ -10,6 +10,7 @@ from env import Env
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('shared_data')
 class TestGetLock:
     @staticmethod
     def test_return_empty_cluster_locks_if_no_locks(thr):
