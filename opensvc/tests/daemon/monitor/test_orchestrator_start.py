@@ -207,6 +207,10 @@ class MonitorTest(object):
     ):
         if not os.path.exists(svc_pathvar(path)):
             os.makedirs(svc_pathvar(path))
+        # ensure status time is newer than config
+        # without this delay, another automatic need for status may be called
+        # if config time == status time
+        time.sleep(0.00001)
         status = {
             "avail": status,
             "overall": overall,
@@ -559,7 +563,6 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.monitor._lazy_ready_period = 0.001
         max_parallel = 3
         shared.NODE._lazy_max_parallel = max_parallel
-        count = int(monitor_test.service_command.call_count)
         # service list ordered by priority
         services = [
             "s9-prio-1", "s8-prio-2", "s7-prio-3", "s6-prio-4",
@@ -572,6 +575,12 @@ class TestMonitorOrchestratorStart(object):
 
         monitor_test.log('COMMENT: one do() call to become ready')
         monitor_test.do()
+
+        monitor_test.log('COMMENT: ensure no start actions called yet')
+        for svc in services:
+            monitor_test.assert_command_has_not_been_launched([((svc, ['start']), {}), ])
+        # next calls should be starts, define current call count value
+        count = int(monitor_test.service_command.call_count)
 
         for expected_service_start in [services[0:4], services[4:8], services[8:12]]:
             monitor_test.log('COMMENT: ensure start of %s', expected_service_start)
