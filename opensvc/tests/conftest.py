@@ -151,7 +151,10 @@ def has_node_config(osvc_path_tests):
 [listener]
 port = 1224
 tls_port = 1225
-"""
+
+[cni]
+config = %s
+""" % str(os.path.join(str(osvc_path_tests), 'cni.config'))
         node_config_file.write(config_txt)
 
 
@@ -282,3 +285,40 @@ def klass_has_capability(mocker):
         mocker.patch.object(klass, 'has_capability', has_capability)
 
     return func
+
+
+@pytest.fixture(autouse=True)
+def check_io_timeout(mocker):
+    """Improve test time"""
+    # import utilities.proc
+    # mocker.patch.object(utilities.proc, 'LCALL_CHECK_IO_TIMEOUT', new=0.001)
+    mocker.patch('utilities.proc.LCALL_CHECK_IO_TIMEOUT', new=0.001)
+
+
+@pytest.fixture(autouse=True)
+def gc_collect(mocker):
+    """Improve test time"""
+    mocker.patch('gc.collect')
+
+
+@pytest.fixture(autouse=True)
+def disable_create_pg(mocker, request):
+    """ensure tests won't create pg
+    use @pytest.mark.enable_create_pg to disable this fixture
+    """
+    if 'enable_create_pg' not in request.keywords:
+        return mocker.patch('drivers.pg.linux.create_pg', return_value=False)
+
+
+@pytest.fixture(autouse=True)
+def disable_pg_kill(mocker, request):
+    """use @pytest.mark.enable_pg_kill to disable this fixture"""
+    if 'enable_pg_kill' not in request.keywords:
+        return mocker.patch('drivers.pg.linux.kill')
+
+
+@pytest.fixture(autouse=True)
+def linux_is_not_a_container(request, mocker):
+    """use @pytest.mark.linux_is_not_a_container to disable this fixture"""
+    if 'disable_linux_is_not_a_container' not in request.keywords:
+        return mocker.patch('utilities.asset.linux.is_container', return_value=False)

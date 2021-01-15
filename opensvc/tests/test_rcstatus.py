@@ -8,10 +8,11 @@ color = "no"
 @pytest.mark.ci
 class TestStatus:
     @staticmethod
-    def test_colorize_status():
+    def test_colorize_status(mocker):
         """
         Status, colorization
         """
+        mocker.patch("utilities.render.color.use_color", "no")
         sta1 = Status()
         ret = colorize_status(sta1, lpad=0)
         assert ret == "undef"
