@@ -1440,23 +1440,31 @@ class Resource(object):
             try:
                 var, val = mapping.split("=", 1)
             except Exception as exc:
-                self.log.info("ignored %s environment mapping %s: %s", kind, mapping, exc)
-                continue
+                var = None
+                val = mapping
             try:
                 name, key = val.split("/", 1)
             except Exception as exc:
                 self.log.info("ignored %s environment mapping %s: %s", kind, mapping, exc)
                 continue
-            var = var.upper()
             obj = factory(kind)(name, namespace=self.svc.namespace, volatile=True, node=self.svc.node)
             if not obj.exists():
                 self.log.info("ignored %s environment mapping %s: config %s does not exist", kind, mapping, name)
                 continue
-            if key not in obj.data_keys():
+            keys = obj.data_keys(key)
+            if not keys:
                 self.log.info("ignored %s environment mapping %s: key %s does not exist", kind, mapping, key)
                 continue
-            val = obj.decode_key(key)
-            env[var] = val
+            elif var and len(keys) > 1:
+                self.log.info("ignored %s environment mapping %s: %s match multiple keys, can not map to a single variable", kind, mapping, key)
+                continue
+            for key in keys:
+                if var is None:
+                    _var = key
+                else:
+                    _var = var
+                val = obj.decode_key(key)
+                env[_var] = val
         return env
 
     def schedule_info(self, sopt):
