@@ -13,6 +13,7 @@ from daemon.main import Daemon
 from daemon.monitor import Monitor, shared
 from utilities.asset import Asset
 from utilities.naming import svc_pathvar
+from utilities.storage import Storage
 
 boot_id = str(time.time())
 
@@ -113,10 +114,16 @@ def mock_daemon(mocker, osvc_path_tests):
     mocker.patch.dict(shared.CLUSTER_DATA, {})
     mocker.patch.dict(shared.AGG, {})
     mocker.patch.dict(shared.SMON_DATA, {})
-    mocker.patch.dict(shared.NMON_DATA, {})
     mocker.patch.dict(shared.SERVICES, {})
     shared.NODE = Node()
     shared.DAEMON = Daemon()
+    yield
+    # teardown reset shared.NMON_DATA
+    shared.NMON_DATA = Storage({
+        "status": "init",
+        "status_updated": time.time(),
+    })
+
 
 
 class MonitorTest(object):
