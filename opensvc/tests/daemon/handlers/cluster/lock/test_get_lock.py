@@ -1,5 +1,4 @@
 import time
-from copy import deepcopy
 
 import pytest
 
@@ -16,13 +15,20 @@ class TestGetLock:
         assert GetLock().action(None, thr=thr) == {'data': {}, 'status': 0}
 
     @staticmethod
-    def test_return_copy_of_current_cluster_locks(thr):
-        shared.LOCKS['name1'] = {"requested": time.time(),
-                                 "requester": Env.nodename,
-                                 "id": "id1"}
-        shared.LOCKS['name2'] = {"requested": time.time(),
-                                 "requester": Env.nodename,
-                                 "id": "id1"}
+    def test_return_copy_of_current_cluster_locks(mocker, thr):
+        mocked_locks = {
+            "name1": {
+                "requested": time.time(),
+                "requester": Env.nodename,
+                "id": "id1"
+            },
+            "name2": {
+                "requested": time.time(),
+                "requester": Env.nodename,
+                "id": "id1"
+            }
+        }
+        mocker.patch.object(shared, 'LOCKS', mocked_locks)
         result = GetLock().action(None, thr=thr)
-        assert result == {'data': deepcopy(shared.LOCKS), 'status': 0}
+        assert result == {'data': mocked_locks, 'status': 0}
         assert result['data'] is not shared.LOCKS
