@@ -3560,12 +3560,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Set the node frozen flag.
         """
+        self.log.info('freeze node')
         self.freezer.node_freeze()
 
     def thaw(self):
         """
         Unset the node frozen flag.
         """
+        self.log.info('thaw node')
         self.freezer.node_thaw()
 
     def stonith(self):
