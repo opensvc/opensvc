@@ -84,6 +84,11 @@ def tmp_file(tmp_path):
 
 
 @pytest.fixture(scope='function')
+def log(mocker):
+    return mocker.patch('core.node.node.logging.LoggerAdapter').return_value
+
+
+@pytest.fixture(scope='function')
 def capture_stdout():
     @contextmanager
     def func(filename):

@@ -44,6 +44,17 @@ class TestNodemgrFreezeThawActions:
             assert commands.node.main(argv=["frozen", "--local", "--debug"]) == 0
             assert commands.node.main(argv=["frozen", "--local", "--debug"]) == 0
 
+    @staticmethod
+    def test_freeze_local_must_log_info_it_is_called(log):
+        commands.node.main(argv=["freeze", "--local", "--debug"])
+        log.info.assert_called_with('freeze node')
+
+    @staticmethod
+    @pytest.mark.parametrize("action", ["unfreeze", "thaw"])
+    def test_thaw_or_unfreeze_local_must_log_it_is_called(log, action):
+        commands.node.main(argv=[action, "--local", "--debug"])
+        log.info.assert_called_with('thaw node')
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
