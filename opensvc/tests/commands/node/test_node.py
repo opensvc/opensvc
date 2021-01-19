@@ -23,6 +23,30 @@ def node(mocker):
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
+class TestNodemgrFreezeThawActions:
+    @staticmethod
+    def test_node_is_not_frozen_by_default():
+        assert commands.node.main(argv=["frozen", "--local", "--debug"]) == 0
+
+    @staticmethod
+    def test_frozen_result_is_greater_than_0_after_freeze_local():
+        for _ in range(4):  # ensure can be called multiple times
+            assert commands.node.main(argv=["freeze", "--local", "--debug"]) == 0
+            assert commands.node.main(argv=["frozen", "--local", "--debug"]) > 0
+            assert commands.node.main(argv=["frozen", "--local", "--debug"]) > 0
+
+    @staticmethod
+    @pytest.mark.parametrize("action", ["unfreeze", "thaw"])
+    def test_frozen_node_can_be_thawed_by_local_unfreeze_or_thaw_action(action):
+        commands.node.main(argv=["freeze", "--local", "--debug"])
+        for _ in range(4):  # ensure can be called multiple times
+            assert commands.node.main(argv=[action, "--local", "--debug"]) == 0
+            assert commands.node.main(argv=["frozen", "--local", "--debug"]) == 0
+            assert commands.node.main(argv=["frozen", "--local", "--debug"]) == 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
 class TestNodemgr:
     @staticmethod
     @pytest.mark.parametrize('action_return_value', [0, 13])
