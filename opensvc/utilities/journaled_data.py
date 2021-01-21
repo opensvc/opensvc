@@ -347,7 +347,7 @@ class JournaledData(object):
         Return a deep copied image of the changes
         """
         with self.lock:
-            return [] + self.diff
+            return copy.deepcopy(self.diff)
 
 
     def emit(self, diff):

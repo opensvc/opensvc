@@ -425,3 +425,16 @@ class TestJournaledDataView(object):
         run(data_view, False)
         assert data_view.get() == EXPECTED_FINAL_DATA
         assert data.dump_data() == EXPECTED_FINAL_DATA
+
+
+@pytest.mark.ci
+class TestJournaledDataDumpChanges(object):
+    @staticmethod
+    @pytest.mark.parametrize('value', [[1, 2], {"one": 1}, 1])
+    def test_update_of_dump_changes_result_must_not_change_journal(value):
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value=deepcopy(value))
+
+        data.dump_changes()[0][1] = {}
+
+        assert data.dump_changes()[0][1] == deepcopy(value)
