@@ -35,6 +35,10 @@ class JournaledDataView(object):
         path = self.path + (path or [])
         return self.data.get(path=path, default=default)
 
+    def get_full(self, path=None):
+        path = self.path + (path or [])
+        return self.data.get_full(path=path)
+
     def merge(self, path=None, value=None):
         path = self.path + (path or [])
         return self.data.merge(path=path, value=value)
@@ -130,6 +134,12 @@ class JournaledData(object):
             if default == Exception:
                 raise
             return default
+
+    def get_full(self, path=None):
+        path = path or []
+        with self.lock:
+            self.diff = []
+            return copy.deepcopy(self.get_ref(path, self.data))
 
     def exists(self, path=None):
         if not path:

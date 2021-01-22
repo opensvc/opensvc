@@ -185,7 +185,7 @@ class Hb(shared.OsvcThread):
             with shared.HB_MSG_LOCK:
                 if shared.HB_MSG is not None:
                     return shared.HB_MSG, shared.HB_MSG_LEN
-                data = self.node_data.get()
+                data = self.node_data.get_full()
                 shared.HB_MSG = self.encrypt(data, encode=False)
                 if shared.HB_MSG is None:
                     shared.HB_MSG_LEN = 0
