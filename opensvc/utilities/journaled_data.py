@@ -10,6 +10,7 @@ import core.exceptions as ex
 
 from functools import reduce
 
+
 class JournaledDataView(object):
     def __init__(self, data=None, path=None):
         self.data = data
@@ -66,6 +67,7 @@ class JournaledDataView(object):
         path = self.path + (path or [])
         return self.data.patch(path=path, patchset=patchset)
 
+
 def debug(m):
     def fn(*args, **kwargs):
         try:
@@ -76,6 +78,7 @@ def debug(m):
             traceback.print_stack()
             raise
     return fn
+
 
 class JournaledData(object):
     def __init__(self, initial_data=None, journal_head=None,
@@ -94,8 +97,8 @@ class JournaledData(object):
         self.coalesce = []
         if journal_head is not None:
             self.journal_head_length = len(self.journal_head)
-        #import utilities.dbglock
-        #self.lock = utilities.dbglock.Lock()
+        # import utilities.dbglock
+        # self.lock = utilities.dbglock.Lock()
         self.lock = threading.RLock()
 
     def view(self, path=None):
@@ -118,7 +121,7 @@ class JournaledData(object):
         keys.sort()
         return keys
 
-    #@debug
+    # @debug
     def get(self, path=None, default=Exception):
         try:
             return self.get_ref(path or [], self.data)
@@ -146,7 +149,7 @@ class JournaledData(object):
     def get_ref(path, data):
         return reduce(operator.getitem, path, data)
 
-    #@debug
+    # @debug
     def merge(self, path=None, value=None):
         with self.lock:
             for k, v in value.items():
@@ -158,7 +161,7 @@ class JournaledData(object):
                 return
             self._set_lk(path=path, value=value)
 
-    #@debug
+    # @debug
     def set(self, path=None, value=None):
         with self.lock:
             self._set_lk(path=path, value=value)
@@ -222,7 +225,7 @@ class JournaledData(object):
             journal_diff = None
         return journal_diff
 
-    #@debug
+    # @debug
     def patch(self, path=None, patchset=None):
         """
         No journaling.
@@ -281,7 +284,7 @@ class JournaledData(object):
         except (KeyError, IndexError, TypeError):
             pass
 
-    #@debug
+    # @debug
     def unset(self, path=None):
         path = path or []
         with self.lock:
@@ -349,7 +352,6 @@ class JournaledData(object):
         with self.lock:
             return copy.deepcopy(self.diff)
 
-
     def emit(self, diff):
         """
         Emit an event for the data change.
@@ -370,18 +372,18 @@ class JournaledData(object):
             self._emit()
 
     def _emit(self):
-            self.patch_id += 1
-            now = time.time()
-            data = {
-                "kind": "patch",
-                "id": self.patch_id,
-                "ts": now,
-                "data": [] + self.coalesce,
-            }
-            self.event_q.put(data)
-            self.last_emit = now
-            self.coalesce = []
-            self.timer = None
+        self.patch_id += 1
+        now = time.time()
+        data = {
+            "kind": "patch",
+            "id": self.patch_id,
+            "ts": now,
+            "data": [] + self.coalesce,
+        }
+        self.event_q.put(data)
+        self.last_emit = now
+        self.coalesce = []
+        self.timer = None
 
     def _filter_diff(self, diff):
         assert self.journal_head, "unexpected call"
@@ -476,6 +478,7 @@ class JournaledData(object):
 
 
 if __name__ == '__main__':
+    # noinspection PyUnresolvedReferences
     from foreign.six.moves import queue
     q = queue.Queue()
     tests = [
@@ -499,9 +502,10 @@ if __name__ == '__main__':
         ("unset", dict(path=["array", 0, 1])),
         ("set", dict(path=["array", 0, 1], value=["changed-SUB-2a", "changed-SUB-2b"])),
     ]
+
     def run(data):
         for fn, kwargs in tests:
-            print("* %s(%s)" % (fn, ", ".join(["%s=%s" % (k,v) for k, v in kwargs.items()])))
+            print("* %s(%s)" % (fn, ", ".join(["%s=%s" % (k, v) for k, v in kwargs.items()])))
             ret = getattr(data, fn)(**kwargs)
             if ret is not None:
                 print("   => %s" % ret)
@@ -539,6 +543,3 @@ if __name__ == '__main__':
     print("-----------------------")
     data = JournaledData(journal_head=["array", 0], event_q=q, emit_interval=0)
     run(data)
-
-
-
