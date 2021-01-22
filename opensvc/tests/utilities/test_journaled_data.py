@@ -425,3 +425,84 @@ class TestJournaledDataView(object):
         run(data_view, False)
         assert data_view.get() == EXPECTED_FINAL_DATA
         assert data.dump_data() == EXPECTED_FINAL_DATA
+
+
+@pytest.mark.ci
+class TestJournaledDataDumpChanges(object):
+    @staticmethod
+    @pytest.mark.parametrize('value', [[1, 2], {"one": 1}, 1])
+    def test_update_of_dump_changes_result_must_not_change_journal(value):
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value=deepcopy(value))
+
+        data.dump_changes()[0][1] = {}
+
+        assert data.dump_changes()[0][1] == deepcopy(value)
+
+
+@pytest.mark.ci
+class TestJournaledDataGetFull(object):
+    @staticmethod
+    def test_can_apply_patch_after_full_installed():
+        remote_data = JournaledData(journal_head=[])
+        local_data = JournaledData(journal_head=[])
+        remote_data.set(path=["a"], value={"one": 1, "two": 2})
+
+        # remote diff sent => pop journal
+        remote_data.pop_diff()
+
+        remote_data.unset(path=["a", "one"])
+
+        # full sent
+        remote_data_full = remote_data.get_full()
+        # full apply
+        local_data.set(value=remote_data_full)
+
+        # new updates
+        remote_data.set(path=["a", "three"], value=3)
+
+        # simulate diff sent
+        remote_patch = remote_data.pop_diff()
+        print('patch to apply: %s' % remote_patch)
+        local_data.patch(patchset=remote_patch)
+
+        assert remote_data.get_copy() == local_data.get_copy()
+
+    @staticmethod
+    def test_journal_is_empty_just_after_get_full_to_allow_apply_next_incr():
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value="up")
+        assert data.dump_changes() == [[["a"], "up"]]
+        data.get_full()
+        assert data.dump_changes() == [], "journal is not prepared for next incremental"
+
+    @staticmethod
+    def test_get_full_return_data_from_path():
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value={"one": 1})
+        assert data.get_full(path=["a"]) == {"one": 1}
+        assert data.get_full(path=["a"]) == {"one": 1}
+
+    @staticmethod
+    def test_get_full_return_data_from_head_when_path_is_ommited():
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value={"one": 1})
+        assert data.get_full() == {"a": {"one": 1}}
+
+
+@pytest.mark.ci
+class TestJournaledDataViewGetFull(object):
+    @staticmethod
+    def test_get_full_return_relative_view_when_path_is_ommited():
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value={"one": 1})
+        view = JournaledDataView(data=data, path=["a"])
+        assert view.get_full() == {"one": 1}
+
+
+    @staticmethod
+    def test_get_full_return_relative_view_from_arg_path():
+        data = JournaledData(journal_head=[])
+        data.set(path=["a"], value={"one": 1})
+        view = JournaledDataView(data=data, path=["a"])
+        assert view.get_full(path=["one"]) == 1

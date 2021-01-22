@@ -4235,7 +4235,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.nodes_data.set([nodename], data)
             new_gen = data.get("gen", {}).get(nodename, 0)
             self.update_node_gen(nodename, remote=new_gen, local=our_gen_on_peer)
-            self.log.debug("install node %s full dataset gen %d, peer has gen %d of our dataset",
+            self.log.info("install node %s full dataset gen %d, peer has gen %d of our dataset",
                            nodename, shared.REMOTE_GEN[nodename],
                            shared.LOCAL_GEN[nodename])
             self.on_nodes_info_change()
