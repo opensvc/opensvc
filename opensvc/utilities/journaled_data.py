@@ -95,6 +95,7 @@ class JournaledData(object):
         self.patch_id = 0
         self.last_emit = 0
         self.coalesce = []
+        self.timer = None
         if journal_head is not None:
             self.journal_head_length = len(self.journal_head)
         # import utilities.dbglock
@@ -253,7 +254,7 @@ class JournaledData(object):
         for i, patch in enumerate(patchset):
             try:
                 patch_fragment(patch)
-            except Exception as exc:
+            except Exception:
                 buff = "\n"
                 buff += "------------------------------- Patch Error ----------------------------------\n"
                 buff += "Path:\n   %s\n" % path
@@ -443,7 +444,7 @@ class JournaledData(object):
         prefix = prefix or []
         added = []
 
-        def recurse(d1, d2, path=None, ref=None, changes=True):
+        def recurse(d1, d2, path=None, changes=True):
             try:
                 ref_v = self.get_ref(path, d2)
             except (KeyError, IndexError, TypeError):
