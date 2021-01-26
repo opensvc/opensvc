@@ -13,11 +13,17 @@ def assert_run_cmd_success(svcname, svc_cmd_args):
     assert Mgr()(argv=cmd_args) == 0
 
 
+@pytest.fixture(scope='function')
+def preexec_factory(mocker):
+    return mocker.patch('drivers.resource.app.preexec', autospec=True)
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_euid_0')
 class TestRun:
     @staticmethod
+    @pytest.mark.usefixtures('preexec_factory')
     @pytest.mark.parametrize('service_kws, success_flags', [
         [['--kw', 'task#1.command=/usr/bin/touch {private_var}/simple_cmd'], ['simple_cmd']],
         [['--kw', 'task#1.command=/usr/bin/touch {private_var}/complex_cmd1'
@@ -30,9 +36,8 @@ class TestRun:
                   '; /usr/bin/touch {private_var}/complex_cmd2'],
          ['complex_cmd1', 'complex_cmd2']],
     ])
-    def test_cmd(mocker, osvc_path_tests, service_kws, success_flags):
+    def test_cmd(osvc_path_tests, service_kws, success_flags):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
         assert_run_cmd_success(svcname, ['create'] + service_kws)
         assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
         for name in success_flags:
@@ -48,9 +53,10 @@ class TestRun:
         [['--kw', 'task#1.blocking_post_run=/usr/bin/touch {private_var}/post_run && %s' % Env.syspaths.false],
          ['task_cmd', 'post_run']],  # because optional is True by default cmd will succeed
     ])
-    def test_hooks(mocker, osvc_path_tests, service_hooks, success_flags):
+    @pytest.mark.usefixtures('preexec_factory')
+    def test_hooks(osvc_path_tests, service_hooks, success_flags):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {'OSVC_DETACHED': '1'})
+
         # noinspection PyTypeChecker
         args = ['create', '--kw', 'task#1.command=/usr/bin/touch {private_var}/task_cmd'] + service_hooks
         assert_run_cmd_success(svcname, args)

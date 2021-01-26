@@ -9,7 +9,7 @@ LIB_PATH = 'drivers.resource.fs.linux'
 
 
 @pytest.fixture(scope='function')
-def log(mocker):
+def fs_log(mocker):
     return mocker.patch.object(Fs, 'log', autospec=True)
 
 
@@ -43,7 +43,7 @@ def stat(mocker):
     return mocker.patch(LIB_PATH + '.os.stat', autospec=True)
 
 
-@pytest.mark.usefixtures('label', 'log', 'remove_deeper_mounts', 'rc_mounts_mounts')
+@pytest.mark.usefixtures('label', 'fs_log', 'remove_deeper_mounts', 'rc_mounts_mounts')
 @pytest.mark.ci
 class TestStop:
     @staticmethod
