@@ -637,11 +637,16 @@ class Volume(Resource):
 
         # will be rolled back by the volume resource. for now, the remaining
         # resources might need the volume for their provision
+        #
+        # if multiple svc declare using the same vol, the 1st provisioning svc
+        # triggers the volume provisioning ... following svc provisioning must
+        # wait (via the action lock) for the vol provisioning to finish.
         ret = volume.action("provision", options={
             "disable_rollback": True,
             "local": True,
             "leader": self.svc.options.leader,
             "notify": True,
+            "waitlock": "5m",
         }) 
         if ret != 0:
             raise ex.Error("volume provision returned %d" % ret)
