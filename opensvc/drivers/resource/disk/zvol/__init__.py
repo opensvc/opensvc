@@ -157,11 +157,22 @@ class DiskZvol(BaseDisk):
         if not self.has_it():
             self.log.info("zvol %s already destroyed", self.name)
             return
-        cmd = [Env.syspaths.zfs, "destroy", "-f", self.name]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.Error
+        self.destroy()
         self.svc.node.unset_lazy("devtree")
+
+    def destroy(self):
+        def fn():
+            ret, out, err = self._destroy()
+            if ret == 0:
+                return True
+            if "busy" in err:
+                return False
+            raise ex.Error(err)
+        self.wait_for_fn(fn, 10, 3, errmsg="waited too long for zvol destruction (busy)")
+
+    def _destroy(self):
+        cmd = [Env.syspaths.zfs, "destroy", "-f", self.name]
+        return self.vcall(cmd)
 
     def provisioner(self):
         if self.has_it():
