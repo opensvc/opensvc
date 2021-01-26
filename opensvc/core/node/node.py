@@ -4477,7 +4477,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         peer_env = ndata.get("node", {}).get("env")
         if peer_env and peer_env != self.env:
             toadd.append("node.env="+peer_env)
-        else:
+        elif peer_env is None:
             toremove.append("node.env")
         cluster_key = ndata.get("cluster", {}).get("secret")
         if cluster_key:
