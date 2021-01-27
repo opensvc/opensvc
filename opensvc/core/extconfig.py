@@ -929,8 +929,8 @@ class ExtConfigMixin(object):
         Handle keyword and section deprecation.
         """
         stack = stack or []
-        if (s, o) in stack:
-            raise ex.Error("recursion: %s" % " => ".join(["%s.%s" % e for e in stack + [(s, o)]]))
+        if (s, o) in stack[:-1]:
+            raise ex.Error("recursion: %s" % " => ".join(["%s.%s" % e for e in stack]))
         else:
             stack.append((s, o))
         if cd is None:
