@@ -540,14 +540,14 @@ class ExtConfigMixin(object):
     #
     #########################################################################
     def handle_reference(self, ref, scope=False, impersonate=None, cd=None,
-                         section=None):
+                         section=None, stack=None):
         if "[" in ref and ref.endswith("]"):
             i = ref.index("[")
             index = ref[i+1:-1]
             ref = ref[:i]
             index = int(self.handle_references(index, scope=scope,
                                                impersonate=impersonate,
-                                               section=section))
+                                               section=section, stack=stack))
         else:
             index = None
 
@@ -699,14 +699,16 @@ class ExtConfigMixin(object):
             try:
                 val = self._handle_reference(_ref, _section, _v, scope=scope,
                                              impersonate=impersonate,
-                                             cd=cd, return_length=return_length)
+                                             cd=cd, return_length=return_length,
+                                             stack=stack)
             except Exception:
                 val = None
 
             if val is None and _section != "DEFAULT" and n_dots == 0 and self.has_default_section:
                 val = self._handle_reference(ref, "DEFAULT", _v, scope=scope,
                                              impersonate=impersonate, cd=cd,
-                                             return_length=return_length)
+                                             return_length=return_length,
+                                             stack=stack)
 
             if val is None:
                 if self.is_deferred(_section, _v):
@@ -746,7 +748,7 @@ class ExtConfigMixin(object):
         return (drv_group, option) in DEFER or (None, option) in DEFER
 
     def _handle_reference(self, ref, _section, _v, scope=False,
-                          impersonate=None, cd=None, return_length=False):
+                          impersonate=None, cd=None, return_length=False, stack=None):
         if cd is None:
             try:
                 cd = self.private_cd
@@ -790,7 +792,7 @@ class ExtConfigMixin(object):
         try:
             t = None if return_length else "string"
             return self.conf_get(_section, _v, t, scope=scope,
-                                 impersonate=impersonate, cd=cd)
+                                 impersonate=impersonate, cd=cd, stack=stack)
         except ex.OptNotFound as exc:
             return copy.copy(exc.default)
         except ex.RequiredOptNotFound as exc:
@@ -799,7 +801,7 @@ class ExtConfigMixin(object):
         raise ex.Error("%s: unknown reference" % ref)
 
     def _handle_references(self, s, scope=False, impersonate=None, cd=None,
-                           section=None, first_step=None):
+                           section=None, first_step=None, stack=None):
         if not is_string(s):
             return s
         done = ""
@@ -821,7 +823,8 @@ class ExtConfigMixin(object):
             try:
                 val = self.handle_reference(ref, scope=scope,
                                             impersonate=impersonate,
-                                            cd=cd, section=section)
+                                            cd=cd, section=section,
+                                            stack=stack)
             except ex.NotSupported:
                 val = OPEN + ref + CLOSE
             except ex.NotAvailable:
@@ -855,7 +858,7 @@ class ExtConfigMixin(object):
             return s
 
     def handle_references(self, s, scope=False, impersonate=None, cd=None,
-                          section=None):
+                          section=None, stack=None):
         cacheable = self.cacheable(s)
         if cacheable:
             key = (str(s), scope, impersonate)
@@ -865,11 +868,11 @@ class ExtConfigMixin(object):
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
                                           cd=cd, section=section,
-                                          first_step=True)
+                                          first_step=True, stack=stack)
             val = self._handle_expressions(val)
             val = self._handle_references(val, scope=scope,
                                           impersonate=impersonate,
-                                          cd=cd, section=section)
+                                          cd=cd, section=section, stack=stack)
         except Exception as e:
             raise
             raise ex.Error("%s: reference evaluation failed: %s" % (s, str(e)))
@@ -921,10 +924,15 @@ class ExtConfigMixin(object):
             pass
 
     def conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                 use_default=True, cd=None, verbose=True, rtype=None):
+                 use_default=True, cd=None, verbose=True, rtype=None, stack=None):
         """
         Handle keyword and section deprecation.
         """
+        stack = stack or []
+        if (s, o) in stack:
+            raise ex.Error("recursion: %s" % " => ".join(["%s.%s" % e for e in stack + [(s, o)]]))
+        else:
+            stack.append((s, o))
         if cd is None:
             cd = self.cd
         section = s.split("#")[0]
@@ -949,7 +957,7 @@ class ExtConfigMixin(object):
             return self._conf_get(s, o, t=t, scope=scope,
                                   impersonate=impersonate,
                                   use_default=use_default, cd=cd,
-                                  section=section, rtype=rtype)
+                                  section=section, rtype=rtype, stack=stack)
         except ex.RequiredOptNotFound:
             if deprecated_keywords is None:
                 if verbose:
@@ -966,7 +974,7 @@ class ExtConfigMixin(object):
                 return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
                                       impersonate=impersonate,
                                       use_default=use_default, cd=cd,
-                                      section=section, rtype=rtype)
+                                      section=section, rtype=rtype, stack=stack)
             except ex.RequiredOptNotFound:
                 exc = True
         if exc:
@@ -974,7 +982,7 @@ class ExtConfigMixin(object):
             raise ex.RequiredOptNotFound
 
     def _conf_get(self, s, o, t=None, scope=None, impersonate=None,
-                  use_default=True, cd=None, section=None, rtype=None):
+                  use_default=True, cd=None, section=None, rtype=None, stack=None):
         """
         Get keyword properties and handle inheritance.
         """
@@ -986,6 +994,7 @@ class ExtConfigMixin(object):
             "impersonate": impersonate,
             "use_default": use_default,
             "cd": cd,
+            "stack": stack,
         }
         if s not in ("labels", "env", "data"):
             key = self.kwstore[section].getkey(o, rtype)
@@ -1051,7 +1060,7 @@ class ExtConfigMixin(object):
 
     def __conf_get(self, s, o, t=None, scope=None, impersonate=None,
                    use_default=None, cd=None, default=None, required=None,
-                   deprecated=None, default_keyword=None):
+                   deprecated=None, default_keyword=None, stack=None):
         try:
             if not scope:
                 val = self.conf_get_val_unscoped(s, o, use_default=use_default,
@@ -1075,7 +1084,7 @@ class ExtConfigMixin(object):
         try:
             val = self.handle_references(val, scope=scope,
                                          impersonate=impersonate,
-                                         cd=cd, section=s)
+                                         cd=cd, section=s, stack=stack)
         except ex.Error as exc:
             if o.startswith("pre_") or o.startswith("post_") or \
                o.startswith("blocking_"):
