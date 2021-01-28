@@ -10,6 +10,8 @@ import json
 import multiprocessing
 import tempfile
 import shutil
+import uuid
+import sys
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
@@ -23,11 +25,22 @@ from env import Env
 from utilities.journaled_data import JournaledData
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
+from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_value_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.storage import Storage
 from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS
+
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
+
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    setproctitle = lambda x: None
 
 try:
     # with python3, select the forkserver method beacuse the
@@ -226,6 +239,41 @@ def wake_scheduler():
     """
     with SCHED_TICKER:
         SCHED_TICKER.notify_all()
+
+
+def forkserver_action(path, action, options, now, session_id, cmd):
+    os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
+    os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
+    if now is not None:
+        os.environ["OSVC_SCHED_TIME"] = str(now)
+    sys.argv = cmd
+    Env.session_uuid = session_id
+    from core.node import Node
+    from utilities.naming import split_path, factory
+
+    # The Process() inherits the 'forkserver' start_method.
+    # Force it to the default method.
+    import multiprocessing
+    try:
+        default_start_method = multiprocessing.get_all_start_methods()[0]
+        multiprocessing.set_start_method(default_start_method, force=True)
+    except AttributeError:
+        pass
+
+    node = Node()
+    if path is None:
+        o = node
+    else:
+        name, namespace, kind = split_path(path)
+        o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
+    try:
+        title = " ".join(cmd) if isinstance(cmd, (list, tuple)) else cmd
+        setproctitle(title)
+    except Exception as exc:
+        print(exc)
+    sys.stdout = StringIO()
+    sys.stderr = StringIO()
+    o.action(action, options)
 
 
 #############################################################################
@@ -836,6 +884,28 @@ class OsvcThread(threading.Thread, Crypt):
         self.log.info("execute: om %s", " ".join(cmd))
         proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
                      close_fds=True, env=env)
+        return proc
+
+    def service_action(self, action, options=None, path=None, cmd=None, session_id=None):
+        options = options or {}
+        session_id = session_id or str(uuid.uuid4())
+        now = None
+        kind = split_path(path)[2] if path else "node"
+        cmd = " ".join(format_command(kind, action, options))
+        if path:
+            cmd = "om %s -s %s %s" % (kind, path, cmd)
+        else:
+            cmd = "om %s %s" % (kind, cmd)
+        self.log.info("run '%s'", cmd)
+        try:
+            proc = MP.Process(
+                group=None, 
+                target=forkserver_action, 
+                args=(path, action, options, now, session_id, cmd, )
+            )
+            proc.start()
+        except KeyboardInterrupt:
+            return
         return proc
 
     def service_command(self, path, cmd, stdout=None, stderr=None, stdin=None, local=True):

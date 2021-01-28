@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 from itertools import chain
 
 import daemon.shared as shared
@@ -981,10 +982,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_startstandby_resources(self, path, rids, slave=None):
         self.set_smon(path, "restarting")
-        cmd = ["startstandby", "--rid", ",".join(rids)]
-        if slave:
-            cmd += ["--slave", slave]
-        proc = self.service_command(path, cmd)
+        options = {
+            "rid": ",".join(rids),
+            "local": True,
+            "slave": slave,
+        }
+        proc = self.service_action("startstandby", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="service_start_resources_on_success",
@@ -997,10 +1000,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_start_resources(self, path, rids, slave=None):
         self.set_smon(path, "restarting")
-        cmd = ["start", "--rid", ",".join(rids)]
-        if slave:
-            cmd += ["--slave", slave]
-        proc = self.service_command(path, cmd)
+        options = {
+            "rid": ",".join(rids),
+            "local": True,
+            "slave": slave,
+        }
+        proc = self.service_action("start", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="service_start_resources_on_success",
@@ -1047,10 +1052,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             # no need to run status, the running action will refresh the status earlier
             return
         cmd = ["status", "--refresh", "--waitlock=0"]
+        options = {
+            "refresh": True,
+            "waitlock": 0,
+        }
         if self.has_proc([path] +  cmd):
             # no need to run status twice
             return
-        proc = self.service_command(path, cmd, local=False)
+        proc = self.service_action("status", options=options, path=path)
         self.push_proc(
             proc=proc,
             cmd=[path] + cmd,
@@ -1058,7 +1067,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_toc(self, path):
         self.set_smon(path, "tocing")
-        proc = self.service_command(path, ["toc"])
+        options = {
+            "local": True,
+        }
+        proc = self.service_action("toc", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1071,7 +1083,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_restart(self, path, err_status="restart failed"):
         self.set_smon(path, "restarting", local_expect="unset")
-        proc = self.service_command(path, ["restart"])
+        options = {
+            "local": True,
+        }
+        proc = self.service_action("restart", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1084,7 +1099,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_start(self, path, err_status="start failed"):
         self.set_smon(path, "starting")
-        proc = self.service_command(path, ["start"])
+        options = {
+            "local": True,
+        }
+        proc = self.service_action("start", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1097,10 +1115,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_stop(self, path, force=False):
         self.set_smon(path, "stopping")
-        cmd = ["stop"]
+        options = {
+            "local": True,
+        }
         if force:
-            cmd.append("--force")
-        proc = self.service_command(path, cmd)
+            options["force"] = True
+        proc = self.service_action("stop", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1113,7 +1133,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_shutdown(self, path):
         self.set_smon(path, "shutdown")
-        proc = self.service_command(path, ["shutdown"])
+        options = {
+            "local": True,
+        }
+        proc = self.service_action("shutdown", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1126,7 +1149,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_delete(self, path):
         self.set_smon(path, "deleting", local_expect="unset")
-        proc = self.service_command(path, ["delete", "--purge-collector"])
+        options = {
+            "local": True,
+            "purge_collector": True,
+        }
+        proc = self.service_action("delete", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1139,14 +1166,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_purge(self, svc, leader=None):
         self.set_smon(svc.path, "unprovisioning")
+        options = {
+            "local": True,
+        }
         if leader is None:
-            leader = self.is_natural_leader(svc)
+            options["leader"] = self.is_natural_leader(svc)
         else:
-            leader = Env.nodename == leader
-        cmd = ["unprovision"]
-        if leader:
-            cmd += ["--leader"]
-        proc = self.service_command(svc.path, cmd)
+            options["leader"] = Env.nodename == leader
+        proc = self.service_action("unprovision", options=options, path=svc.path)
         self.push_proc(
             proc=proc,
             on_success="service_purge_on_success",
@@ -1158,7 +1185,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_purge_on_success(self, path):
         self.set_smon(path, "deleting", local_expect="unset")
-        proc = self.service_command(path, ["delete", "--purge-collector"])
+        options = {
+            "local": True,
+            "purge_collector": True,
+        }
+        proc = self.service_action("delete", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1172,10 +1203,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def service_provision(self, svc):
         self.set_smon(svc.path, "provisioning")
         leader = self.is_natural_leader(svc)
-        cmd = ["provision"]
         if leader:
             cmd += ["--leader", "--disable-rollback"]
-        proc = self.service_command(svc.path, cmd)
+        options = {
+            "local": True,
+            "leader": leader,
+        }
+        proc = self.service_action("provision", options=options, path=svc.path)
         self.push_proc(
             proc=proc,
             on_success="service_thaw",
@@ -1206,9 +1240,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         else:
             leader = Env.nodename == leader
         cmd = ["unprovision"]
-        if leader:
-            cmd += ["--leader"]
-        proc = self.service_command(svc.path, cmd)
+        options = {
+            "local": True,
+            "leader": leader,
+        }
+        proc = self.service_action("unprovision", options=options, path=svc.path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1231,15 +1267,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return False
 
     def service_set_flex_instances(self, path, instances):
-        cmd = [
-            "set",
-            "--kw", "flex_min=%d" % instances,
-            "--kw", "flex_max=%d" % instances,
-            "--kw", "flex_target=%d" % instances,
-        ]
-        proc = self.service_command(path, cmd)
-        out, err = proc.communicate()
-        return proc.returncode
+        svc = self.get_service(path)
+        try:
+            svc.set_multi([
+                "flex_min=%d" % instances,
+                "flex_max=%d" % instances,
+                "flex_target=%d" % instances,
+            ])
+            return 0
+        except Exception:
+            return 1
 
     def service_create_scaler_slave(self, path, svc, data, instances=None):
         data["DEFAULT"]["scaler_slave"] = "true"
@@ -1278,7 +1315,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_freeze(self, path):
         self.set_smon(path, "freezing")
-        proc = self.service_command(path, ["freeze"])
+        options = {
+            "local": True,
+        }
+        proc = self.service_action("freeze", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1291,10 +1331,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_thaw(self, path, slaves=False):
         self.set_smon(path, "thawing")
-        cmd = ["thaw"]
+        options = {
+            "local": True,
+        }
         if slaves:
-            cmd += ["--master", "--slaves"]
-        proc = self.service_command(path, cmd)
+            options["master"] = True
+            options["slaves"] = True
+        proc = self.service_action("thaw", options=options, path=path)
         self.push_proc(
             proc=proc,
             on_success="generic_callback",
@@ -1353,40 +1396,56 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.init_steps.add(step)
 
     def services_init_status(self):
-        svcs = list_services()
-        if not svcs:
+        paths = list_services()
+        if not paths:
             self.log.info("no objects to get an initial status from")
             return
-        self.services_purge_status(paths=svcs)
-        proc = self.service_command(",".join(svcs), ["status", "--parallel", "--refresh"], local=False)
+        self.services_purge_status(paths=paths)
         self.add_init_step("boot")
-        self.push_proc(
-            proc=proc,
-            cmd="init status",
-            on_success="add_init_step",
-            on_success_args=["status"],
-            on_error="add_init_step",
-            on_error_args=["status"],
-        )
+        options = {
+            "local": False,
+            "refresh": True,
+        }
+        session_id = str(uuid.uuid4())
+        for path in paths:
+            proc = self.service_action("status", path=path, options=options, session_id=session_id)
+            self.push_proc(
+                proc=proc,
+                cmd="om %s status --refresh",
+                on_success="add_init_step",
+                on_success_args=["status"],
+                on_error="add_init_step",
+                on_error_args=["status"],
+            )
 
     def services_init_boot(self):
         self.services_purge_status()
-        proc1 = self.service_command(",".join(list_services(kinds=["vol", "svc"])), ["boot", "--parallel"])
-        self.push_proc(
-            proc=proc1,
-            on_success="add_init_step",
-            on_success_args=["boot"],
-            on_error="add_init_step",
-            on_error_args=["boot"],
-        )
-        proc2 = self.service_command(",".join(list_services(kinds=["usr", "cfg", "sec", "ccfg"])), ["status", "--parallel", "--refresh"], local=False)
-        self.push_proc(
-            proc=proc2,
-            on_success="add_init_step",
-            on_success_args=["status"],
-            on_error="add_init_step",
-            on_error_args=["status"],
-        )
+        options = {
+            "local": True,
+        }
+        session_id = str(uuid.uuid4())
+        for path in list_services(kinds=["vol", "svc"]):
+            proc = self.service_action("boot", options=options, session_id=session_id) 
+            self.push_proc(
+                proc=proc,
+                on_success="add_init_step",
+                on_success_args=["boot"],
+                on_error="add_init_step",
+                on_error_args=["boot"],
+            )
+        options = {
+            "local": False,
+            "refresh": True,
+        }
+        for path in list_services(kinds=["usr", "cfg", "sec", "ccfg"]):
+            proc = self.service_action("status", options=options, path=path)
+            self.push_proc(
+                proc=proc,
+                on_success="add_init_step",
+                on_success_args=["status"],
+                on_error="add_init_step",
+                on_error_args=["status"],
+            )
 
 
     #########################################################################
