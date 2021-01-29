@@ -7,6 +7,35 @@ from commands.svc import Mgr
 @pytest.mark.ci
 @pytest.mark.usefixtures("osvc_path_tests")
 @pytest.mark.usefixtures("has_euid_0")
+class TestCreateWithKw:
+    @staticmethod
+    def test_create_id_refused_when_config_is_not_valid_env(capsys):
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create", "--kw", "env.foo={bar}", "--kw", "env.bar={foo}"]) > 0
+        err = capsys.readouterr().err
+        assert "unable to resolv env.foo" in err
+        assert "unable to resolv env.bar" in err
+        assert Mgr()(argv=["-s", svcname, "ls"]) > 0
+
+    @staticmethod
+    def test_create_is_accepted_when_config_has_valid_env():
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create", "--kw", "env.foo={bar}", "--kw", "env.baz={foo}"]) == 0
+        assert Mgr()(argv=["-s", svcname, "ls"]) == 0
+
+    @staticmethod
+    def test_create_correctly_set_env_keywords(capsys):
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create", "--kw", "env.foo=00BAB10C", "--kw", "env.bar=BADDCAFE"]) == 0
+        for kw, value in {"env.foo": "00BAB10C", "env.bar": "BADDCAFE"}.items():
+            capsys.readouterr()
+            assert Mgr()(argv=["-s", svcname, "get", "--kw", kw]) == 0
+            assert capsys.readouterr().out.strip() == value
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+@pytest.mark.usefixtures("has_euid_0")
 class TestSet:
     @staticmethod
     def test_refuse_dry_run():
@@ -22,6 +51,18 @@ class TestSet:
         with capture_stdout(tmp_file):
             assert Mgr()(argv=["-s", svcname, "print", "config", "--format", "json"]) == 0
         assert json.load(open(tmp_file, "r"))["env"]["foo"] == "BAR"
+
+    @staticmethod
+    def test_set_invalid_env_values_is_refused():
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create"]) == 0
+        assert Mgr()(argv=["-s", svcname, "set", "--kw", "env.foo={bar}", "--kw", "env.bar={foo}"]) > 0
+
+    @staticmethod
+    def test_set_valid_env_values_is_accepted():
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create"]) == 0
+        assert Mgr()(argv=["-s", svcname, "set", "--kw", "env.foo={bar}", "--kw", "env.bar=something"]) == 0
 
 
 @pytest.mark.ci
