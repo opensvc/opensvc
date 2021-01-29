@@ -20,6 +20,7 @@ from utilities.lazy import lazy
 from utilities.string import is_string, try_decode
 
 SECRETS = []
+MAX_RECURSION = 20
 
 DEFER = [
     (None, "exposed_devs"),
@@ -932,10 +933,9 @@ class ExtConfigMixin(object):
         Handle keyword and section deprecation.
         """
         stack = stack or []
-        if (s, o) in stack[:-1]:
-            raise ex.Error("recursion: %s" % " => ".join(["%s.%s" % e for e in stack]))
-        else:
-            stack.append((s, o))
+        if len(stack) > MAX_RECURSION:
+            raise ex.Error("recursion exceeds %d: %s" % (MAX_RECURSION, " => ".join(["%s.%s" % e for e in stack])))
+        stack.append((s, o))
         if cd is None:
             cd = self.cd
         section = s.split("#")[0]
