@@ -353,7 +353,7 @@ class Ip(Resource):
         ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
-        if intf is None and "dedicated" not in self.tags and mode != "dedicated":
+        if intf is None and self.base_ipdev is None and "dedicated" not in self.tags and mode != "dedicated":
             self.status_log("interface %s not found" % self.ipdev)
             return core.status.DOWN
         try:
