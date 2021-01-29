@@ -32,7 +32,7 @@ KW_IPDEV = {
     "keyword": "ipdev",
     "at": True,
     "required": True,
-    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified. If the value is expressed as '<intf>:<alias>, the stacked interface index is forced to <alias> instead of the lowest free integer."
+    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified. If the value is expressed as '<intf>:<alias>, the stacked interface index is forced to <alias> instead of the lowest free integer. If the value is expressed as <name>@<intf>, a macvtap interface named <name> is created and attached to <intf>."
 }
 KW_NETMASK = {
     "keyword": "netmask",
@@ -163,13 +163,20 @@ class Ip(Resource):
                  provisioner=None,
                  **kwargs):
         super(Ip, self).__init__(type=type, **kwargs)
-        self.ipdev = ipdev.split(":", 1)[0]
+        self.forced_stacked_dev = None
+        self.base_ipdev = None
+        if ":" in ipdev:
+            self.ipdev = ipdev.split(":", 1)[0]
+            self.forced_stacked_dev = ipdev
+        elif "@" in ipdev:
+            self.ipdev, self.base_ipdev = ipdev.split("@", 1)
+        else:
+            self.ipdev = ipdev
         self.ipname = ipname
         self.netmask = netmask
         self.gateway = gateway
         self.lockfd = None
         self.stacked_dev = None
-        self.forced_stacked_dev = ipdev if ":" in ipdev else None
         self.addr = None
         self.expose = expose
         self.check_carrier = check_carrier
@@ -384,6 +391,12 @@ class Ip(Resource):
             return True
         return False
 
+    def add_link(self):
+        pass
+
+    def del_link(self):
+        pass
+
     def start_link(self):
         """
         Start the ipdev link.
@@ -470,6 +483,7 @@ class Ip(Resource):
         if self.is_up() is True:
             self.log.info("%s is already up on %s", self.addr, self.ipdev)
             raise ex.IpAlreadyUp(self.addr)
+        self.add_link()
         ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         if self.has_carrier(intf) is False and not self.svc.options.force:
@@ -725,6 +739,8 @@ class Ip(Resource):
         if idx == tmo-1:
             self.log.error("%s refuse to go down", self.addr)
             raise ex.Error
+
+        self.del_link()
 
     def allocate(self):
         """
