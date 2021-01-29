@@ -166,12 +166,14 @@ class Ip(Resource):
         self.forced_stacked_dev = None
         self.base_ipdev = None
         self.ipdev = ipdev
+        self.alias = alias
         if ipdev:
             if ":" in ipdev:
                 self.ipdev = ipdev.split(":", 1)[0]
                 self.forced_stacked_dev = ipdev
             elif "@" in ipdev:
                 self.ipdev, self.base_ipdev = ipdev.split("@", 1)
+                self.alias = False
         self.ipname = ipname
         self.netmask = netmask
         self.gateway = gateway
@@ -180,7 +182,6 @@ class Ip(Resource):
         self.addr = None
         self.expose = expose
         self.check_carrier = check_carrier
-        self.alias = alias
         self.wait_dns = wait_dns
         self.kw_provisioner = provisioner
 
