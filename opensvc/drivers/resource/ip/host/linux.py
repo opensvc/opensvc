@@ -17,7 +17,7 @@ class IpHost(Ip):
     def has_macvtap_link(self):
         cmd = [Env.syspaths.ip, "link", "ls", "dev", self.ipdev]
         out, err, ret = justcall(cmd)
-        mark = "%s@%s" % (self.ipdev, self.base_ipdev)
+        mark = " %s@%s: " % (self.ipdev, self.base_ipdev)
         return ret == 0 and mark in out
 
     def del_macvtap_link(self):
