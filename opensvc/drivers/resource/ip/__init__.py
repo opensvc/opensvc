@@ -165,13 +165,13 @@ class Ip(Resource):
         super(Ip, self).__init__(type=type, **kwargs)
         self.forced_stacked_dev = None
         self.base_ipdev = None
-        if ":" in ipdev:
-            self.ipdev = ipdev.split(":", 1)[0]
-            self.forced_stacked_dev = ipdev
-        elif "@" in ipdev:
-            self.ipdev, self.base_ipdev = ipdev.split("@", 1)
-        else:
-            self.ipdev = ipdev
+        self.ipdev = ipdev
+        if ipdev:
+            if ":" in ipdev:
+                self.ipdev = ipdev.split(":", 1)[0]
+                self.forced_stacked_dev = ipdev
+            elif "@" in ipdev:
+                self.ipdev, self.base_ipdev = ipdev.split("@", 1)
         self.ipname = ipname
         self.netmask = netmask
         self.gateway = gateway
