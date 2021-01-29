@@ -32,7 +32,7 @@ KW_IPDEV = {
     "keyword": "ipdev",
     "at": True,
     "required": True,
-    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified."
+    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified. If the value is expressed as '<intf>:<alias>, the stacked interface index is forced to <alias> instead of the lowest free integer. If the value is expressed as <name>@<intf>, a macvtap interface named <name> is created and attached to <intf>."
 }
 KW_NETMASK = {
     "keyword": "netmask",
@@ -163,7 +163,17 @@ class Ip(Resource):
                  provisioner=None,
                  **kwargs):
         super(Ip, self).__init__(type=type, **kwargs)
+        self.forced_stacked_dev = None
+        self.base_ipdev = None
         self.ipdev = ipdev
+        self.alias = alias
+        if ipdev:
+            if ":" in ipdev:
+                self.ipdev = ipdev.split(":", 1)[0]
+                self.forced_stacked_dev = ipdev
+            elif "@" in ipdev:
+                self.ipdev, self.base_ipdev = ipdev.split("@", 1)
+                self.alias = False
         self.ipname = ipname
         self.netmask = netmask
         self.gateway = gateway
@@ -172,7 +182,6 @@ class Ip(Resource):
         self.addr = None
         self.expose = expose
         self.check_carrier = check_carrier
-        self.alias = alias
         self.wait_dns = wait_dns
         self.kw_provisioner = provisioner
 
@@ -344,7 +353,7 @@ class Ip(Resource):
         ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         mode = getattr(self, "mode") if hasattr(self, "mode") else None
-        if intf is None and "dedicated" not in self.tags and mode != "dedicated":
+        if intf is None and self.base_ipdev is None and "dedicated" not in self.tags and mode != "dedicated":
             self.status_log("interface %s not found" % self.ipdev)
             return core.status.DOWN
         try:
@@ -382,6 +391,12 @@ class Ip(Resource):
         if not self.is_up() and self.check_ping():
             return True
         return False
+
+    def add_link(self):
+        pass
+
+    def del_link(self):
+        pass
 
     def start_link(self):
         """
@@ -469,6 +484,7 @@ class Ip(Resource):
         if self.is_up() is True:
             self.log.info("%s is already up on %s", self.addr, self.ipdev)
             raise ex.IpAlreadyUp(self.addr)
+        self.add_link()
         ifconfig = self.get_ifconfig()
         intf = ifconfig.interface(self.ipdev)
         if self.has_carrier(intf) is False and not self.svc.options.force:
@@ -623,6 +639,8 @@ class Ip(Resource):
         self.get_mask(ifconfig)
         if 'noalias' in self.tags:
             self.stacked_dev = self.ipdev
+        elif self.forced_stacked_dev:
+            self.stacked_dev = "" + self.forced_stacked_dev
         else:
             self.stacked_dev = ifconfig.get_stacked_dev(self.ipdev,
                                                         self.addr,
@@ -722,6 +740,8 @@ class Ip(Resource):
         if idx == tmo-1:
             self.log.error("%s refuse to go down", self.addr)
             raise ex.Error
+
+        self.del_link()
 
     def allocate(self):
         """
