@@ -1375,7 +1375,7 @@ class ExtConfigMixin(object):
             section = "env"
             for option in cd.get(section, {}):
                 try:
-                    self.conf_get(section, option, stack=[])
+                    self.conf_get(section, option, cd=cd, stack=[])
                 except ex.Error as error:
                     value = cd.get(section, {}).get(option)
                     self.log.error('unable to resolv %s.%s = %s, error: %s', section, option, value, str(error)[:20])
