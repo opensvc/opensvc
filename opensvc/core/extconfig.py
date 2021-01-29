@@ -1365,6 +1365,20 @@ class ExtConfigMixin(object):
                     ret["errors"] += check_known_option(key, "DEFAULT", option)
             return ret
 
+        def validate_env_references(ret):
+            """
+            Validate env section options.
+            """
+            section = "env"
+            for option in cd.get(section, {}):
+                try:
+                    self.conf_get(section, option, stack=[])
+                except ex.Error as error:
+                    value = cd.get(section, {}).get(option)
+                    self.log.error('unable to resolv %s.%s = %s, error: %s', section, option, value, str(error)[:20])
+                    ret["errors"] += 1
+            return ret
+
         def validate_resources_options(ret):
             """
             Validate resource sections options.
@@ -1434,6 +1448,7 @@ class ExtConfigMixin(object):
 
         ret = validate_build(ret)
         ret = validate_default_options(ret)
+        ret = validate_env_references(ret)
         ret = validate_resources_options(ret)
 
         return ret
