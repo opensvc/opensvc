@@ -9,12 +9,9 @@ from commands.svc import Mgr
 @pytest.mark.usefixtures("has_euid_0")
 class TestCreateWithKw:
     @staticmethod
-    def test_create_id_refused_when_config_is_not_valid_env(capsys):
+    def test_create_id_refused_when_config_is_not_valid_env():
         svcname = "pytest"
         assert Mgr()(argv=["-s", svcname, "create", "--kw", "env.foo={bar}", "--kw", "env.bar={foo}"]) > 0
-        err = capsys.readouterr().err
-        assert "unable to resolv env.foo" in err
-        assert "unable to resolv env.bar" in err
         assert Mgr()(argv=["-s", svcname, "ls"]) > 0
 
     @staticmethod
