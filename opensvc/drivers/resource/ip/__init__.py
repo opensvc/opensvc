@@ -32,7 +32,7 @@ KW_IPDEV = {
     "keyword": "ipdev",
     "at": True,
     "required": True,
-    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified."
+    "text": "The interface name over which OpenSVC will try to stack the service ip. Can be different from one node to the other, in which case the ``@nodename`` can be specified. If the value is expressed as '<intf>:<alias>, the stacked interface index is forced to <alias> instead of the lowest free integer."
 }
 KW_NETMASK = {
     "keyword": "netmask",
@@ -163,12 +163,13 @@ class Ip(Resource):
                  provisioner=None,
                  **kwargs):
         super(Ip, self).__init__(type=type, **kwargs)
-        self.ipdev = ipdev
+        self.ipdev = ipdev.split(":", 1)[0]
         self.ipname = ipname
         self.netmask = netmask
         self.gateway = gateway
         self.lockfd = None
         self.stacked_dev = None
+        self.forced_stacked_dev = ipdev if ":" in ipdev else None
         self.addr = None
         self.expose = expose
         self.check_carrier = check_carrier
@@ -623,6 +624,8 @@ class Ip(Resource):
         self.get_mask(ifconfig)
         if 'noalias' in self.tags:
             self.stacked_dev = self.ipdev
+        elif self.forced_stacked_dev:
+            self.stacked_dev = "" + self.forced_stacked_dev
         else:
             self.stacked_dev = ifconfig.get_stacked_dev(self.ipdev,
                                                         self.addr,
