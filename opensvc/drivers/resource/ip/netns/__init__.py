@@ -72,6 +72,13 @@ KEYWORDS = [
         "example": "true",
         "text": "Some docker ip configuration requires dropping the network route autoconfigured when installing the ip address. In this case set this parameter to true, and also set the network parameter."
     },
+    {
+        "keyword": "routes",
+        "at": True,
+        "example": "route#1 route#2",
+        "convert": "list",
+        "text": "The whitespace-separated list of route resource identifiers describing the ip routes to install in the network namespace."
+    },
 ] + COMMON_KEYWORDS
 DEPRECATED_KEYWORDS = {
     "ip.docker.container_rid": "netns",
@@ -107,6 +114,7 @@ class IpNetns(IpHost):
                  mode=None,
                  network=None,
                  del_net_route=False,
+                 routes=None,
                  netns=None,
                  nsdev=None,
                  macaddr=None,
@@ -119,6 +127,7 @@ class IpNetns(IpHost):
         self.nsdev = nsdev
         self.macaddr = macaddr
         self.del_net_route = del_net_route
+        self.routes = routes or []
         self.container_rid = str(netns)
         self.vlan_tag = vlan_tag
         self.vlan_mode = vlan_mode
@@ -154,6 +163,32 @@ class IpNetns(IpHost):
         except ex.Error:
              pass
         self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.netmask), self.ipdev, self.container_rid)
+
+    def start_route(self, route):
+        try:
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace"] + route
+            ret, out, err = self.vcall(cmd)
+        except ex.Error:
+             pass
+        if ret != 0:
+            raise ex.Error
+
+    def stop_route(self, route):
+        try:
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del"] + route
+            ret, out, err = self.vcall(cmd)
+        except ex.Error:
+             pass
+        if ret != 0:
+            raise ex.Error
+
+    def start_routes(self):
+        for rid in self.routes:
+            resource = self.svc.get_resource(rid)
+            if resource is None:
+                continue
+            route = resource.options.spec
+            self.start_route(route)
 
     @lazy
     def guest_dev(self):
@@ -326,10 +361,9 @@ class IpNetns(IpHost):
 
         # add default route
         if self.gateway:
-            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.final_guest_dev]
-            ret, out, err = self.vcall(cmd)
-            if ret != 0:
-                return ret, out, err
+            self.start_route(["default", "via", self.gateway, "dev", self.final_guest_dev])
+
+        self.start_routes()
 
         # announce
         cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "utilities", "arp.py"), self.final_guest_dev, self.addr]
@@ -568,6 +602,8 @@ class IpNetns(IpHost):
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
+
+        self.start_routes()
 
         # announce
         cmd = [Env.syspaths.nsenter, "--net="+self.netns] + Env.python_cmd + [os.path.join(Env.paths.pathlib, "utilities", "arp.py"), self.final_guest_dev, self.addr]
