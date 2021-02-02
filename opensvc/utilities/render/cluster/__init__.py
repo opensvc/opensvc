@@ -299,8 +299,6 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             topology = services[path].topology
         except KeyError:
             topology = ""
-        if services[path].get("drp", False):
-            topology = "drp " + topology
 
         # status
         status = colorize_status(data["avail"], lpad=0)
@@ -315,6 +313,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             "orchestrate": data.get("orchestrate", "-"),
             "status": "%d/1" % data["n_up"] if data["n_up"] is not None else 0,
         }
+
         if data.get("scale") is not None:
             info["status"] = "%d/%d" % (data["n_up"], data.get("scale"))
         elif data.get("wrapper"):
@@ -394,75 +393,87 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             line.append(", ".join(states))
 
         for nodename in nodenames:
-            if nodename not in data["nodes"]:
+            try:
+                nd = data["nodes"][nodename]
+            except KeyError:
                 line.append("")
-            elif data["nodes"][nodename] is None:
+                continue
+            if nd is None:
                 line.append(colorize("?", color.RED))
-            elif data["nodes"][nodename] is not None:
-                val = []
-                # frozen unicon
-                if data["nodes"][nodename]["frozen"]:
-                    frozen_icon = colorize(unicons["frozen"], color.BLUE)
+                continue
+            val = []
+
+            # drp
+            if nd.get("drp"):
+                drp_icon = colorize("#", color.LIGHTBLUE)
+            else:
+                drp_icon = ""
+
+            # frozen unicon
+            if nd["frozen"]:
+                frozen_icon = colorize(unicons["frozen"], color.BLUE)
+            else:
+                frozen_icon = ""
+            # avail status unicon
+            if data["wrapper"]:
+                avail_icon = ""
+            else:
+                avail = nd["avail"]
+                if avail == "unknown":
+                    avail_icon = colorize("?", color.RED)
                 else:
-                    frozen_icon = ""
-                # avail status unicon
-                if data["wrapper"]:
-                    avail_icon = ""
+                    avail_icon = colorize_status(avail, lpad=0, agg_status=data["avail"]).replace(avail, unicons[avail])
+                if nd.get("preserved"):
+                    avail_icon += colorize("?", color.LIGHTBLUE)
+            # overall status unicon
+            if data["wrapper"]:
+                overall_icon = ""
+            else:
+                overall = nd["overall"]
+                if overall == "warn":
+                    overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
                 else:
-                    avail = data["nodes"][nodename]["avail"]
-                    if avail == "unknown":
-                        avail_icon = colorize("?", color.RED)
-                    else:
-                        avail_icon = colorize_status(avail, lpad=0, agg_status=data["avail"]).replace(avail, unicons[avail])
-                    if data["nodes"][nodename].get("preserved"):
-                        avail_icon += colorize("?", color.LIGHTBLUE)
-                # overall status unicon
-                if data["wrapper"]:
                     overall_icon = ""
-                else:
-                    overall = data["nodes"][nodename]["overall"]
-                    if overall == "warn":
-                        overall_icon = colorize_status(overall, lpad=0).replace(overall, unicons[overall])
-                    else:
-                        overall_icon = ""
-                # mon status
-                smon = data["nodes"][nodename]["mon"]
-                if smon == "idle":
-                    # don't display 'idle', as its to normal status and thus repeated as nauseam
-                    smon = ""
-                else:
-                    smon = " " + smon
-                # global expect
-                if smon == "":
-                    global_expect = data["nodes"][nodename]["global_expect"]
-                    if global_expect:
-                        global_expect = colorize(" >" + str(global_expect), color.LIGHTBLUE)
-                    else:
-                        global_expect = ""
+            # mon status
+            smon = nd["mon"]
+            if smon == "idle":
+                # don't display 'idle', as its to normal status and thus repeated as nauseam
+                smon = ""
+            else:
+                smon = " " + smon
+            # global expect
+            if smon == "":
+                global_expect = nd["global_expect"]
+                if global_expect:
+                    global_expect = colorize(" >" + str(global_expect), color.LIGHTBLUE)
                 else:
                     global_expect = ""
-                # leader
-                if data["wrapper"]:
+            else:
+                global_expect = ""
+            # leader
+            if data["wrapper"]:
+                leader = ""
+            else:
+                if nd["placement"] == "leader":
+                    leader = colorize("^", color.LIGHTBLUE)
+                else:
                     leader = ""
-                else:
-                    if data["nodes"][nodename]["placement"] == "leader":
-                        leader = colorize("^", color.LIGHTBLUE)
-                    else:
-                        leader = ""
-                # provisioned
-                if data["nodes"][nodename].get("provisioned") is False:
-                    provisioned = colorize("P", color.RED)
-                else:
-                    provisioned = ""
+            # provisioned
+            if nd.get("provisioned") is False:
+                provisioned = colorize("P", color.RED)
+            else:
+                provisioned = ""
 
-                val.append(avail_icon)
-                val.append(overall_icon)
-                val.append(leader)
-                val.append(frozen_icon)
-                val.append(provisioned)
-                val.append(smon)
-                val.append(global_expect)
-                line.append("".join(val))
+            val.append(avail_icon)
+            val.append(overall_icon)
+            val.append(drp_icon)
+            val.append(leader)
+            val.append(frozen_icon)
+            val.append(provisioned)
+            val.append(smon)
+            val.append(global_expect)
+            val = "".join(val)
+            line.append(val)
         out.append(line)
 
         for child in sorted(list(data.get("slaves", []))):
@@ -936,7 +947,6 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     continue
                 if path not in services:
                     services[path] = Storage({
-                        "drp": _data.get("drp", False),
                         "topology": _data.get("topology", ""),
                         "orchestrate": _data.get("orchestrate", ""),
                         "flex_target": _data.get("flex_target"),
@@ -986,6 +996,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     "global_expect": global_expect,
                     "placement": _data["monitor"].get("placement", ""),
                     "provisioned": _data.get("provisioned"),
+                    "drp": _data.get("drp"),
                 }
                 services[path].slaves |= set(slaves)
                 services[path]["wrapper"] = (
