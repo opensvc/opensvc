@@ -32,7 +32,7 @@ class TestIpAddLink(object):
         ip.add_link()
         assert ip.vcall.call_args_list == [
             call(["/bin_ip_cmd_test", "link", "add", "link", "br-prd",
-                  "name", "svc1", "type", "macvtap", 'mode', 'bridge']),
+                  "name", "svc1", "type", "macvtap", "mode", "bridge"]),
         ]
 
     @staticmethod
@@ -174,6 +174,83 @@ class TestIpStartIpCmd(object):
         ], "use correct command ifconfig command to add addr"
 
 
+IP_BR0_ALIAS_FALSE = """5: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 08:00:27:6a:d0:a3 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.0.181/24 brd 192.168.0.255 scope global br0
+       valid_lft forever preferred_lft forever
+    inet 192.168.0.149/24 scope global secondary br0
+       valid_lft forever preferred_lft forever"""
+
+IP_BR0_ALIAS_TRUE = """5: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 08:00:27:6a:d0:a3 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.0.181/24 brd 192.168.0.255 scope global br0
+       valid_lft forever preferred_lft forever
+    inet 192.168.0.149/24 brd 192.168.0.255 scope global secondary br0:1
+       valid_lft forever preferred_lft forever"""
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+class TestIpStopIpCmd(object):
+    @staticmethod
+    def test_stopip_cmd_use_ip_command_to_delete_addr_on_macvtap_dev(mocker, ip_class):
+        mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
+        mocker.patch("utilities.ping.check_ping", return_value=True)
+        ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask="24")
+        ip.addr = "192.168.0.149"
+        ip.stopip_cmd()
+        assert ip.vcall.call_args_list == [
+            call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/24", "dev", "svc1"]),
+        ], "use correct command ip command to delete addr"
+
+    @staticmethod
+    def test_stopip_cmd_use_ip_command_to_delete_addr_when_alias_is_false(mocker, ip_class):
+        mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
+        mocker.patch("utilities.ping.check_ping", return_value=True)
+        mocker.patch.object(
+            ip_class,
+            "get_ifconfig",
+            mocker.Mock("get_ifconfig",
+                        side_effect=[Ifconfig(ip_out=IP_BR0_ALIAS_FALSE)]*3))
+        ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask="24", alias=False)
+        ip.addr = "192.168.0.149"
+        ip.get_stack_dev()
+        ip.stopip_cmd()
+        assert ip.vcall.call_args_list == [call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/24", "dev", "br0"])]
+
+    @staticmethod
+    def test_stopip_cmd_use_ifconfig_command_to_delete_addr_when_alias_is_true(mocker, ip_class):
+        mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
+        mocker.patch("utilities.ping.check_ping", return_value=True)
+        mocker.patch.object(
+            ip_class,
+            "get_ifconfig",
+            mocker.Mock("get_ifconfig",
+                        side_effect=[Ifconfig(ip_out=IP_BR0_ALIAS_TRUE)]*3))
+        ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask="24", alias=True)
+        ip.addr = "192.168.0.149"
+        ip.get_stack_dev()
+        ip.stopip_cmd()
+        assert ip.vcall.call_args_list == [call(["ifconfig", "br0:1", "down"])]
+
+    @staticmethod
+    def test_stopip_cmd_use_ip_command_to_delete_addr_when_alias_is_true_but_ip_has_been_created_with_alias_false(
+            mocker,
+            ip_class):
+        mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
+        mocker.patch("utilities.ping.check_ping", return_value=True)
+        mocker.patch.object(
+            ip_class,
+            "get_ifconfig",
+            mocker.Mock("get_ifconfig",
+                        side_effect=[Ifconfig(ip_out=IP_BR0_ALIAS_FALSE)]*3))
+        ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask="24", alias=True)
+        ip.addr = "192.168.0.149"
+        ip.get_stack_dev()
+        ip.stopip_cmd()
+        assert ip.vcall.call_args_list == [call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/24", "dev", "br0"])]
+
+
 IP_NO_MACVTAP = """41: br-prd: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     link/ether 08:00:27:28:dc:5f brd ff:ff:ff:ff:ff:ff
     inet 192.168.0.10/24 brd 10.24.0.255 scope global br-prd
@@ -188,16 +265,36 @@ IP_MACVTAP_DOWN = """42: svc1@br-prd: <BROADCAST,MULTICAST> mtu 1500 qdisc noop 
 
 IP_MACVTAP_UP = """42: svc1@br-prd: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP ..."""
 
+IP_ETH0 = """2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0"""
+
+IP_ETH0_1 = """2: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel state DOWN group default qlen 1000
+    link/ether 08:00:27:d2:23:ca brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0"""
+
+IP_ETH0_1_UP = """2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:d2:23:ca brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0"""
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures("osvc_path_tests")
 class TestIpStart(object):
     @staticmethod
-    def test_start_calls_correct_command_when_macvtap_dev(mocker, ip_class):
+    @pytest.mark.parametrize(
+        "netmask, expected_netmask",
+        [
+            ("24", "24"),
+            ("16", "16"),
+            ("255.255.255.0", "24"),
+            ("255.255.0.0", "16"),
+            ("255.0.0.0", "8"),
+        ])
+    def test_start_calls_correct_command_when_macvtap_dev(mocker, ip_class, netmask, expected_netmask):
         mocker.patch.object(
             ip_class,
-            'get_ifconfig',
-            mocker.Mock('get_ifconfig',
+            "get_ifconfig",
+            mocker.Mock("get_ifconfig",
                         side_effect=[
                             Ifconfig(ip_out=IP_NO_MACVTAP),
                             Ifconfig(ip_out=IP_MACVTAP_DOWN),
@@ -206,19 +303,50 @@ class TestIpStart(object):
 
         mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
         mocker.patch("utilities.ping.check_ping", return_value=True)
-        ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask="24")
+        ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask=netmask)
         ip.addr = "192.168.0.149"
         ip.svc = mocker.Mock("svc", abort_start_done=True)
         ip.allow_start()
         assert ip.vcall.call_args_list == [
             call(["/bin_ip_cmd_test", "link", "add", "link", "br-prd",
-                  "name", "svc1", "type", "macvtap", 'mode', 'bridge']),
-            call(['/bin_ip_cmd_test', 'link', 'set', 'dev', 'svc1', 'up']),
+                  "name", "svc1", "type", "macvtap", "mode", "bridge"]),
+            call(["/bin_ip_cmd_test", "link", "set", "dev", "svc1", "up"]),
         ]
         ip.start_locked()
         assert ip.vcall.call_args_list == [
             call(["/bin_ip_cmd_test", "link", "add", "link", "br-prd",
-                  "name", "svc1", "type", "macvtap", 'mode', 'bridge']),
-            call(['/bin_ip_cmd_test', 'link', 'set', 'dev', 'svc1', 'up']),
-            call(['/bin_ip_cmd_test', 'addr', 'add', '192.168.0.149/24', 'dev', 'svc1'])
+                  "name", "svc1", "type", "macvtap", "mode", "bridge"]),
+            call(["/bin_ip_cmd_test", "link", "set", "dev", "svc1", "up"]),
+            call(["/bin_ip_cmd_test", "addr", "add", "192.168.0.149/%s" % expected_netmask, "dev", "svc1"])
+        ]
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "netmask, expected_netmask",
+        [
+            ("24", "255.255.255.0"),
+            ("16", "255.255.0.0"),
+            ("255.255.255.0", "255.255.255.0"),
+            ("255.255.0.0", "255.255.0.0"),
+            ("255.0.0.0", "255.0.0.0"),
+        ])
+    def test_start_calls_correct_command_on_non_macvtap_dev(
+            mocker,
+            ip_class,
+            netmask,
+            expected_netmask
+    ):
+        mocker.patch.object(
+            ip_class,
+            "get_ifconfig",
+            mocker.Mock("get_ifconfig", side_effect=[Ifconfig(ip_out=IP_ETH0)] * 8))
+        mocker.patch("drivers.resource.ip.host.linux.which", return_value=True)
+        mocker.patch("utilities.ping.check_ping", return_value=True)
+        ip = ip_class(ipname="192.168.0.149", ipdev="eth0", netmask=netmask)
+        ip.addr = "192.168.0.149"
+        ip.svc = mocker.Mock("svc", abort_start_done=True)
+        ip.allow_start()
+        ip.start_locked()
+        assert ip.vcall.call_args_list == [
+            call(["ifconfig", "eth0:1", "192.168.0.149", "netmask", expected_netmask, "up"]),
         ]
