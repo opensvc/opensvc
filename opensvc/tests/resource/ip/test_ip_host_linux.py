@@ -347,3 +347,70 @@ class TestIpStart(object):
                 call(["/bin_ip_cmd_test", "addr", "add", "192.168.0.149/%s" % expected_netmask_cidr, "dev", "eth0"])
             ]
         assert ip.vcall.call_args_list == expected_calls
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+@pytest.mark.parametrize("alias", [True, False], ids=["alias is true", "alias is false"])
+class TestIpStop(object):
+    @staticmethod
+    @pytest.mark.parametrize(
+        "netmask, expected_netmask",
+        [
+            ("24", "24"),
+            ("16", "16"),
+            ("255.255.255.0", "24"),
+            ("255.255.0.0", "16"),
+            ("255.0.0.0", "8"),
+        ])
+    def test_stop_calls_correct_command_when_macvtap_dev(mocker, ip_class, alias, netmask, expected_netmask):
+        side_effect = [Ifconfig(ip_out=IP_MACVTAP_UP)] * 3
+        mocker.patch.object(ip_class, "get_ifconfig", mocker.Mock("get_ifconfig", side_effect=side_effect))
+        mocker.patch("utilities.ping.check_ping", return_value=False)
+
+        out = ("42: svc1@br-prd: <BROADCAST,MULTICAST,UP,LOWER_UP> "
+               "mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 500"
+               "    link/ether 62:f0:73:58:6b:f7 brd ff:ff:ff:ff:ff:ff""")
+        mocker.patch("drivers.resource.ip.host.linux.justcall", return_value=(out, "", 0))
+
+        ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask=netmask, alias=alias)
+        ip.stop()
+
+        assert ip.vcall.call_args_list ==  [
+            call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/%s" % expected_netmask, "dev", "svc1"]),
+            call(["/bin_ip_cmd_test", "link", "del", "link", "br-prd", "name", "svc1", "type", "macvtap"]),
+        ]
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "created_with_alias",
+        [True, False],
+        ids=["was created with alias==true", "was created with alias==false"])
+    @pytest.mark.parametrize(
+        "netmask, expected_netmask",
+        [
+            ("24", "24"),
+            ("16", "16"),
+            ("255.255.255.0", "24"),
+            ("255.255.0.0", "16"),
+            ("255.0.0.0", "8"),
+        ])
+    def test_stop_calls_correct_command_on_non_macvtap_dev(
+            mocker, ip_class, created_with_alias, alias, netmask, expected_netmask
+    ):
+        if created_with_alias:
+            side_effect = [Ifconfig(ip_out=IP_BR0_ALIAS_TRUE)] * 3
+        else:
+            side_effect = [Ifconfig(ip_out=IP_BR0_ALIAS_FALSE)] * 3
+        mocker.patch.object(ip_class, "get_ifconfig", mocker.Mock("get_ifconfig", side_effect=side_effect))
+        mocker.patch("utilities.ping.check_ping", return_value=False)
+
+        ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask=netmask, alias=alias)
+        ip.stop()
+
+        if alias and created_with_alias:
+            assert ip.vcall.call_args_list == [call(["ifconfig", "br0:1", "down"])]
+        else:
+            assert ip.vcall.call_args_list == [
+                call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/%s" % expected_netmask, "dev", "br0"])
+            ]
