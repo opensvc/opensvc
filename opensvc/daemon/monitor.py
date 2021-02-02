@@ -969,7 +969,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.update_hb_data()
 
     def service_status(self, path):
-        if Env.nodename not in shared.SERVICES[path].nodes:
+        if Env.nodename not in shared.SERVICES[path].peers:
             self.log.info("skip status refresh on %s (foreign)", path)
             return
         smon = self.get_service_monitor(path)
@@ -1228,7 +1228,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if need_log:
                     self.duplog("info", "init waiting for %(path)s daemon object allocation", path=path)
                 return False
-            if Env.nodename not in svc.nodes | svc.drpnodes:
+            if Env.nodename not in svc.peers:
                 # a configuration file is present, but foreign: don't wait for a status.json
                 continue
             fpath = os.path.join(svc.var_d, "status.json")
@@ -3174,7 +3174,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 except OSError:
                     pass
             with shared.SERVICES_LOCK:
-                scope = sorted(list(shared.SERVICES[path].nodes))
+                scope = sorted(list(shared.SERVICES[path].peers))
             config[path] = {
                 "updated": config_mtime,
                 "csum": csum,
