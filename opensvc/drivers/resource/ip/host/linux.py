@@ -30,12 +30,12 @@ class IpHost(Ip):
         if ret:
             raise ex.Error
 
-    def add_macvtap_link(self):
+    def add_macvtap_link(self, mode="bridge"):
         if not self.base_ipdev:
             return
         if self.has_macvtap_link():
             return
-        cmd = [Env.syspaths.ip, "link", "add", "link", self.base_ipdev, "name", self.ipdev, "type", "macvtap"]
+        cmd = [Env.syspaths.ip, "link", "add", "link", self.base_ipdev, "name", self.ipdev, "type", "macvtap", "mode", mode]
         ret, out, err = self.vcall(cmd)
         if ret:
             raise ex.Error
