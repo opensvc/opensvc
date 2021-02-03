@@ -213,14 +213,17 @@ class ResourceSet(object):
         Return resources to execute the action on.
         """
         if len(xtags) > 0:
+            action_rid_before_depends = set(self.svc.action_rid_before_depends)
             resources = []
             for res in self.resources:
                 if not self.tag_match(res.tags, xtags):
                     resources.append(res)
                     continue
                 if self.svc.command_is_scoped() and \
-                   res.rid in self.svc.action_rid_before_depends and \
-                   len(self.svc.action_rid_dependencies(action, res.rid)) == 0:
+                   res.rid in self.svc.action_rid_before_depends:
+                    deps = self.svc.action_rid_dependencies(action, res.rid)
+                    if deps and deps < action_rid_before_depends:
+                        continue
                     resources.append(res)
                     continue
         else:
