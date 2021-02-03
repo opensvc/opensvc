@@ -1203,12 +1203,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def service_provision(self, svc):
         self.set_smon(svc.path, "provisioning")
         leader = self.is_natural_leader(svc)
+        options = { "local": True }
         if leader:
-            cmd += ["--leader", "--disable-rollback"]
-        options = {
-            "local": True,
-            "leader": leader,
-        }
+            options["leader"] = leader
+            options["disable_rollback"] = True
         proc = self.service_action("provision", options=options, path=svc.path)
         self.push_proc(
             proc=proc,
@@ -1239,7 +1237,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             leader = self.is_natural_leader(svc)
         else:
             leader = Env.nodename == leader
-        cmd = ["unprovision"]
         options = {
             "local": True,
             "leader": leader,
