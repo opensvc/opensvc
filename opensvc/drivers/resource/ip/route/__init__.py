@@ -81,6 +81,8 @@ class IpRoute(Resource):
             self.netns
         except ex.Error:
             return False
+        if self.netns is None:
+            return False
         cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "list"] + self.spec
         out, err, ret = justcall(cmd)
         return ret == 0 and out.strip() != ""
