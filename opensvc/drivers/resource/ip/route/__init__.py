@@ -59,6 +59,8 @@ class IpRoute(Resource):
         self.svc.register_dependency("stop", self.container_rid, self.rid)
 
     def start_route(self):
+        if self.netns is None:
+            raise ex.Error("unable to find the network namespace")
         try:
             cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace"] + self.spec
             ret, out, err = self.vcall(cmd)
@@ -68,6 +70,9 @@ class IpRoute(Resource):
             raise ex.Error
 
     def stop_route(self):
+        if self.netns is None:
+            self.log.info("skip: unable to find the network namespace")
+            return
         try:
             cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "del"] + self.spec
             ret, out, err = self.vcall(cmd)
