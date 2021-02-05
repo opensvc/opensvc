@@ -375,7 +375,10 @@ class Volume(Resource):
 
     def exposed_devs(self):
         try:
-            return set([self.volsvc.device()])
+            dev = self.volsvc.device()
+            if dev is None:
+                return set()
+            return set([dev])
         except ex.Error:
             return set()
 
