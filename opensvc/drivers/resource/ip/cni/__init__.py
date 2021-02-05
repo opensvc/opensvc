@@ -380,6 +380,8 @@ class IpCni(IpHost):
         data = self.expose_data()
         _data = []
         for expose in data:
+            if expose.get("type") not in (None, "cni"):
+                continue
             if "port" not in expose or not expose["port"]:
                 continue
             if "protocol" not in expose or not expose["port"]:

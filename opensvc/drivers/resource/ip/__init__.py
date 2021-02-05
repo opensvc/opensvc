@@ -883,6 +883,7 @@ class Ip(Resource):
         if "#" in expose:
            # expose data via reference
            resource = self.svc.get_resource(expose)
+           data["type"] = resource.driver_basename
            data["port"] = resource.options.port
            data["protocol"] = resource.options.protocol
            try:
