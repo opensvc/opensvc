@@ -25,12 +25,12 @@ def lofiadm_data():
 def file_to_loop(f):
     """
     Given a file path, returns the loop device associated. For example,
-    /path/to/file => /dev/lofi/2
+    /path/to/file => ['/dev/lofi/2']
     """
     data = lofiadm_data()
     for key in data.keys():
         if f == data[key]:
-            return key
+            return [key]
     return []
 
 def loop_to_file(l):
