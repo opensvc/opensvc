@@ -54,10 +54,11 @@ class DiskLoop(BaseDiskLoop):
         if not self.is_up():
             self.log.info("%s is already down" % self.label)
             return 0
-        cmd = ['lofiadm', '-d', self.loop]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.Error
+        for loop in self.loop:
+            cmd = ['lofiadm', '-d', loop]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.Error
 
     def resource_handling_file(self):
         path = os.path.dirname(self.loopfile)
