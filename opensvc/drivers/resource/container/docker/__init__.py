@@ -536,6 +536,8 @@ class ContainerDocker(BaseContainer):
         """
         if not self.lib.docker_running():
             return
+        if self.lib.docker_cmd is None:
+            raise ex.Error("docker executable not found")
         cmd = self.lib.docker_cmd + ['rm', self.container_name]
         out, err, ret = justcall(cmd)
         if ret != 0:
