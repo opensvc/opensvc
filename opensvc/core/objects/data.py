@@ -211,7 +211,8 @@ class DataMixin(object):
         Return the list of keys in the data section.
         """
         config = self.print_config_data()
-        return [key for key in config.get("data", {}).keys() if fnmatch.fnmatch(key, pattern)]
+        return [key for key in config.get("data", {}).keys()
+                if pattern is None or fnmatch.fnmatch(key, pattern)]
 
     def data_dirs(self):
         dirs = set()
