@@ -137,13 +137,53 @@ scenarios = {
             "--kw", "ip#0.ipdev=lo",
             "--kw", "ip#0.network=192.168.0.0",
         ]],
+
+        ['zfs-on-volume-leader', 'test-start', [], [
+            "--kw", "env.size=65m",
+
+            "--kw", "volume#1.name={svcname}-1",
+            "--kw", "volume#1.size={env.size}",
+            "--kw", "volume#1.format=false",
+            
+            "--kw", "volume#2.name={svcname}-2",
+            "--kw", "volume#2.size={env.size}",
+            "--kw", "volume#2.format=false",
+            
+            "--kw", "disk#1.name={namespace}-{svcname}",
+            "--kw", "disk#1.type=zpool",
+            "--kw","disk#1.vdev={volume#1.exposed_devs[0]} {volume#2.exposed_devs[0]}",
+
+            "--kw", "fs#data.dev={disk#1.name}/data/{svcname}",
+            "--kw", "fs#data.mnt=/srv/{svcname}/data",
+            "--kw", "fs#data.type=zfs"
+        ]],
     ],
     'sunos': [
         ['loop-converters', 'test-start', ['--rid', 'disk#0'], [
             "--kw", "disk#0.type=loop",
             "--kw", "disk#0.file=/var/tmp/{svcname}.dd",
             "--kw", "disk#0.size=10m",
-        ]]
+        ]],
+
+        ['zfs-on-volume-leader', 'test-start', [], [
+            "--kw", "env.size=65m",
+
+            "--kw", "volume#1.name={svcname}-1",
+            "--kw", "volume#1.size={env.size}",
+            "--kw", "volume#1.format=false",
+
+            "--kw", "volume#2.name={svcname}-2",
+            "--kw", "volume#2.size={env.size}",
+            "--kw", "volume#2.format=false",
+
+            "--kw", "disk#1.name={namespace}-{svcname}",
+            "--kw", "disk#1.type=zpool",
+            "--kw","disk#1.vdev={volume#1.exposed_devs[0]} {volume#2.exposed_devs[0]}",
+
+            "--kw", "fs#data.dev={disk#1.name}/data/{svcname}",
+            "--kw", "fs#data.mnt=/srv/{svcname}/data",
+            "--kw", "fs#data.type=zfs",
+        ]],
     ]
 }
 
@@ -201,7 +241,10 @@ class TestProvision:
         assert_run_cmd_success(['print', 'config'])
         assert_service_avail('down')
         show_svc_info()
-        assert_run_cmd_success(['provision', '--local', '--debug'])
+        provision_args = ['provision', '--local', '--debug']
+        if 'leader' in svcname:
+            provision_args += ['--leader']
+        assert_run_cmd_success(provision_args)
         show_svc_info()
         if extra_test == 'test-start':
             assert_run_cmd_success(['start', '--local', '--debug'])
