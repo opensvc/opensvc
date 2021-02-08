@@ -124,9 +124,9 @@ scenarios = {
             "--kw", "fs#0.mnt_opt=rw,noatime",
         ]],
 
-        ['container-docker-shared', 'test-start', ['--rid', 'container#0'], [
+        ['container-oci-shared', 'test-start', ['--rid', 'container#0'], [
             "--kw", "docker_daemon_private=false",
-            "--kw", "container#0.type=docker",
+            "--kw", "container#0.type=oci",
             "--kw", "container#0.image=alpine:latest",
             "--kw", "container#0.run_args=-it --net=none",
             "--kw", "container#0.run_command=/bin/sh",
