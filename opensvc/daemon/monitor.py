@@ -12,17 +12,16 @@ import tempfile
 import threading
 import time
 import uuid
-from itertools import chain
 
 import daemon.shared as shared
 from core.freezer import Freezer
 from env import Env
+# noinspection PyUnresolvedReferences
 from foreign.six.moves import queue
 from utilities.naming import (factory, fmt_path, list_services,
                               resolve_path, split_path, svc_pathcf,
                               svc_pathvar)
 from utilities.files import makedirs, fsum
-from utilities.cache import purge_cache
 from utilities.storage import Storage
 
 STARTED_STATES = [
