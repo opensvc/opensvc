@@ -1408,7 +1408,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             proc = self.service_action("status", path=path, options=options, session_id=session_id)
             self.push_proc(
                 proc=proc,
-                cmd="om %s status --refresh",
+                cmd="om %s status --refresh" % path,
                 on_success="add_init_step",
                 on_success_args=["status"],
                 on_error="add_init_step",
