@@ -102,7 +102,12 @@ orchestrate = ha
 
 @pytest.fixture(scope='function')
 def get_boot_id(mocker, osvc_path_tests):
-    mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
+    return mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
+
+
+@pytest.fixture(scope='function')
+def last_boot_id(mocker, osvc_path_tests):
+    return mocker.patch.object(shared.NODE, 'last_boot_id', return_value=str_uuid())
 
 
 @pytest.fixture(scope='function')
@@ -237,7 +242,7 @@ class MonitorTest(object):
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
         post_object_status(thr=self.monitor, path=path, status=status)
 
-    def prepare_monitor_idle(self):
+    def prepare_monitor(self):
         self.log('\nCOMMENT: Prepare monitor in idle status')
         self.log('COMMENT: hack rejoin_grace_period to 0.001')
         self.monitor._lazy_rejoin_grace_period = 0.001
@@ -248,6 +253,9 @@ class MonitorTest(object):
         self.do()
         self.create_cluster_status()
         self.do()
+
+    def prepare_monitor_idle(self):
+        self.prepare_monitor()
         self.assert_nmon_status('idle')
 
     def init_other_node_states(self, states, nodename):
@@ -532,6 +540,62 @@ class TestMonitorOrchestratorStart(object):
         for _ in range(10):
             monitor_test.do()
         assert service_command.call_count == initial_service_commands_call_count
+
+    @staticmethod
+    def test_during_boot_monitor_stay_init_waiting_for_status(
+            mocker,
+            last_boot_id,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.create_svc_config("parent")
+        monitor_test.prepare_monitor()
+        for _ in range(3):
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+            monitor_test.do()
+
+    @staticmethod
+    @pytest.mark.parametrize('services', [
+        [],
+        ["parent"],
+        ["parent", "s-depend-on-parent"],
+    ])
+    def test_during_boot_monitor_call_commands_that_create_status(
+            mocker,
+            last_boot_id,
+            services,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        expected_calls = []
+        for service in services:
+            monitor_test.create_svc_config(service)
+            expected_calls += [call("boot", options={"local": True}, path=service, session_id=ANY)]
+        monitor_test.prepare_monitor()
+        expected_calls += [call("status", options={"local": False, "refresh": True}, path="cluster")]
+        monitor_test.assert_command_has_been_launched(expected_calls)
+        assert monitor_test.service_command.call_count == len(expected_calls)
+
+    @staticmethod
+    def test_during_boot_monitor_become_idle_after_all_status_created(
+            mocker,
+            last_boot_id,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.create_svc_config("parent")
+        monitor_test.create_svc_config("s-depend-on-parent")
+        monitor_test.prepare_monitor()
+        for _ in range(3):
+            monitor_test.do()
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+        monitor_test.create_service_status("parent")
+        for _ in range(3):
+            monitor_test.do()
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+        monitor_test.create_service_status("s-depend-on-parent")
+        monitor_test.do()
+        monitor_test.assert_nmon_status("idle", "status now idle because it has all service status")
 
     @staticmethod
     @pytest.mark.skip

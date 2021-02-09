@@ -1425,7 +1425,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         }
         session_id = str(uuid.uuid4())
         for path in list_services(kinds=["vol", "svc"]):
-            proc = self.service_action("boot", options=options, session_id=session_id) 
+            proc = self.service_action("boot", options=options, path=path, session_id=session_id)
             self.push_proc(
                 proc=proc,
                 on_success="add_init_step",
