@@ -111,6 +111,12 @@ def last_boot_id(mocker, osvc_path_tests):
 
 
 @pytest.fixture(scope='function')
+def popen_communicate(mocker):
+    return mocker.patch.object(Popen, 'communicate', return_value=("", ""))
+    return mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
+
+
+@pytest.fixture(scope='function')
 def wait_listener(mocker):
     mocker.patch.object(Monitor, 'wait_listener')
 
@@ -301,6 +307,7 @@ S_DEPEND_ON_PARENT_STATUS = {
 @pytest.mark.usefixtures('wait_listener')
 @pytest.mark.usefixtures('get_boot_id')
 @pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('popen_communicate')
 class TestMonitorOrchestratorStart(object):
     @staticmethod
     @pytest.mark.parametrize(
