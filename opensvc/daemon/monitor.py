@@ -79,17 +79,18 @@ LEADER_ABORT_STATES = (
 
 ETC_NS_SKIP = len(os.path.join(Env.paths.pathetcns, ""))
 
-#import cProfile
-#import pstats
-#pr = cProfile.Profile()
+# import cProfile
+# import pstats
+# pr = cProfile.Profile()
 
-#def start_profile():
+# def start_profile():
 #    pr.enable()
 
-#def stop_profile():
+# def stop_profile():
 #    pr.disable()
 #    ps = pstats.Stats(pr).sort_stats(2)
 #    ps.print_stats()
+
 
 class Defer(Exception):
     """
@@ -97,6 +98,7 @@ class Defer(Exception):
     start the next step are not satisfied yet.
     """
     pass
+
 
 class MonitorObjectOrchestratorManualMixin(object):
     def object_orchestrator_manual(self, svc, smon, status):
@@ -319,7 +321,7 @@ class MonitorObjectOrchestratorManualMixin(object):
         step_stop()
         step_wait_stopped()
         step_wait_children()
-        leader = step_wait_non_leader() # pylint: disable=assignment-from-none
+        leader = step_wait_non_leader()  # pylint: disable=assignment-from-none
         step_set_wait_non_leader()
         step_unprovision()
 
@@ -518,6 +520,7 @@ class MonitorObjectOrchestratorManualMixin(object):
             discard_start_failed=False,
             discard_affinities=False,
         )
+
         def step_thaw():
             if not self.instance_frozen(svc.path):
                 return
@@ -572,7 +575,7 @@ class MonitorObjectOrchestratorManualMixin(object):
                 "reason": "target",
                 "path": svc.path,
             })
-            err_status="place failed" if smon.global_expect == "placed" else "start failed"
+            err_status = "place failed" if smon.global_expect == "placed" else "start failed"
             self.service_start(svc.path, err_status=err_status)
             raise Defer("start: action started")
 
@@ -628,7 +631,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def init(self):
         self.set_tid()
-        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.monitor"), {"node": Env.nodename, "component": self.name})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.monitor"),
+                                         {"node": Env.nodename, "component": self.name})
         self.event("monitor_started")
         self.startup = time.time()
         self.rejoin_grace_period_expired = False
@@ -775,8 +779,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.node_frozen = self.freezer.node_frozen()
         if changed:
             with shared.MON_TICKER:
-                #self.log.debug("woken for:")
-                #for idx, reason in enumerate(shared.MON_CHANGED):
+                # self.log.debug("woken for:")
+                # for idx, reason in enumerate(shared.MON_CHANGED):
                 #    self.log.debug("%d. %s", idx, reason)
                 self.unset_mon_changed()
         self.shortloops = 0
@@ -838,11 +842,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.log.info("node %s has the most recent %s config, "
                               "which no longer defines %s as a node.",
                               ref_nodename, path, Env.nodename)
-                #self.event("instance_stop", {
-                #    "reason": "relayout",
-                #    "path": svc.path,
-                #})
-                #self.service_stop(path, force=True)
+                # self.event("instance_stop", {
+                #     "reason": "relayout",
+                #     "path": svc.path,
+                # })
+                # self.service_stop(path, force=True)
                 self.service_delete(path)
                 continue
             if ref_nodename == Env.nodename:
@@ -967,8 +971,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         # make sure we won't redo the stonith for another service
         for path, smon in self.iter_local_services_monitors():
-             if smon.stonith == node:
-                 self.set_smon(path, stonith="unset")
+            if smon.stonith == node:
+                self.set_smon(path, stonith="unset")
 
         # wait for 10sec before giving up
         for step in range(10):
@@ -1027,17 +1031,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 changed = True
                 continue
             if slave is None:
-               res = instance.get("resources", {}).get(rid, {})
-               if res.get("status") not in ("up", "stdby up"):
-                   self.log.error("%s start returned success but resource is "
-                                  "still not up", rid)
-                   continue
+                res = instance.get("resources", {}).get(rid, {})
+                if res.get("status") not in ("up", "stdby up"):
+                    self.log.error("%s start returned success but resource is "
+                                   "still not up", rid)
+                    continue
             else:
-               res = instance.get("encap", {}).get(slave, {}).get("resources", {}).get(rid, {})
-               if res.get("status") not in ("up", "stdby up"):
-                   self.log.error("%s start in container %s returned success "
-                                  "but resource is still not up", rid, slave)
-                   continue
+                res = instance.get("encap", {}).get(slave, {}).get("resources", {}).get(rid, {})
+                if res.get("status") not in ("up", "stdby up"):
+                    self.log.error("%s start in container %s returned success "
+                                   "but resource is still not up", rid, slave)
+                    continue
             changed = True
             self.reset_smon_retries(path, rid)
         if changed:
@@ -1056,7 +1060,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             "refresh": True,
             "waitlock": 0,
         }
-        if self.has_proc([path] +  cmd):
+        if self.has_proc([path] + cmd):
             # no need to run status twice
             return
         proc = self.service_action("status", options=options, path=path)
@@ -1203,7 +1207,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def service_provision(self, svc):
         self.set_smon(svc.path, "provisioning")
         leader = self.is_natural_leader(svc)
-        options = { "local": True }
+        options = {"local": True}
         if leader:
             options["leader"] = leader
             options["disable_rollback"] = True
@@ -1444,7 +1448,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 on_error_args=["status"],
             )
 
-
     #########################################################################
     #
     # Orchestration
@@ -1470,8 +1473,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if self.transitions_maxed():
                 break
             if self.status_older_than_cf(path):
-                #self.log.info("%s status dump is older than its config file",
-                #              path)
+                # self.log.info("%s status dump is older than its config file",
+                #               path)
                 instance = self.get_service_instance(path, Env.nodename)
                 if instance:
                     self.service_status(path)
@@ -1507,10 +1510,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if svc is None:
             return
         if self.node_frozen or self.instance_frozen(path):
-            #self.log.info("resource %s orchestrator out (frozen)", svc.path)
+            # self.log.info("resource %s orchestrator out (frozen)", svc.path)
             return
         if svc.disabled:
-            #self.log.info("resource %s orchestrator out (disabled)", svc.path)
+            # self.log.info("resource %s orchestrator out (disabled)", svc.path)
             return
 
         def monitored_resource(svc, rid, resource, smon):
@@ -1668,7 +1671,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.node_orchestrator_clear_draining()
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
-        if self.unfreeze_when_all_nodes_joined and self.node_frozen and len(self.cluster_nodes) == len(self.thread_data.keys(["nodes"])):
+        if self.unfreeze_when_all_nodes_joined \
+                and self.node_frozen \
+                and len(self.cluster_nodes) == len(self.thread_data.keys(["nodes"])):
             self.event("node_thaw", data={"reason": "upgrade"})
             self.freezer.node_thaw()
             self.unfreeze_when_all_nodes_joined = False
@@ -1706,7 +1711,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.set_smon(path, global_expect="unset")
                     return
             elif smon.status not in ORCHESTRATE_STATES:
-                #self.log.info("service %s orchestrator out (mon status %s)", svc.path, smon.status)
+                # self.log.info("service %s orchestrator out (mon status %s)", svc.path, smon.status)
                 return
         agg = self.get_service_agg(path)
         self.set_smon_g_expect_from_status(svc.path, smon, agg.avail)
@@ -1743,7 +1748,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if svc.topology == "span":
             return
         if svc.disabled:
-            #self.log.info("%s orchestrator out (disabled)", svc.path)
+            # self.log.info("%s orchestrator out (disabled)", svc.path)
             return
         if not self.compat:
             return
@@ -1754,16 +1759,19 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                               "not and is in 'started' local expect. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
-            elif self.service_started_instances_count(svc.path) > 1 and \
-                 self.get_service_instance(svc.path, Env.nodename).avail != "up" and \
-                 not self.placement_leader(svc):
+            elif self.service_started_instances_count(svc.path) > 1 \
+                    and self.get_service_instance(svc.path, Env.nodename).avail != "up" \
+                    and not self.placement_leader(svc):
                 self.log.info("%s has multiple instance in 'started' "
                               "local expect and we are not leader. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
-            elif status != "up" and \
-                 self.get_service_instance(svc.path, Env.nodename).avail in ("down", "stdby down", "undef", "n/a") and \
-                 not self.resources_orchestrator_will_handle(svc):
+            elif status != "up" \
+                    and self.get_service_instance(svc.path, Env.nodename).avail in ("down",
+                                                                                    "stdby down",
+                                                                                    "undef",
+                                                                                    "n/a") \
+                    and not self.resources_orchestrator_will_handle(svc):
                 self.log.info("%s is not up and no resource monitor "
                               "action will be attempted, but "
                               "is in 'started' local expect. reset",
@@ -1772,7 +1780,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             else:
                 return
         if self.node_frozen or self.instance_frozen(svc.path):
-            #self.log.info("%s orchestrator out (frozen)", svc.path)
+            # self.log.info("%s orchestrator out (frozen)", svc.path)
             return
         if not self.rejoin_grace_period_expired:
             return
@@ -1780,8 +1788,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.object_orchestrator_scaler(svc)
             return
         if status in (None, "undef", "n/a"):
-            #self.log.info("%s orchestrator out (agg avail status %s)",
-            #              svc.path, status)
+            # self.log.info("%s orchestrator out (agg avail status %s)",
+            #               svc.path, status)
             return
 
         candidates = self.placement_candidates(svc)
@@ -1857,7 +1865,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if smon.stonith and smon.stonith not in self.thread_data.keys(["nodes"]):
                     # stale peer which previously ran the service
                     self.node_stonith(smon.stonith)
-                self.service_start(svc.path, err_status="place failed" if smon.global_expect == "placed" else "start failed")
+                self.service_start(svc.path,
+                                   err_status="place failed" if smon.global_expect == "placed" else "start failed")
                 return
             tmo = int(smon.status_updated + self.ready_period - now) + 1
             self.log.info("service %s will start in %d seconds",
@@ -1920,7 +1929,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                               svc.path)
                 self.set_smon(svc.path, "idle")
                 return
-            better_peers = self.better_peers_ready(svc);
+            better_peers = self.better_peers_ready(svc)
             if n_missing > 0 and len(better_peers) >= n_missing:
                 self.log.info("abort 'ready' because nodes %s have a better "
                               "placement score for service %s and are also "
@@ -2261,14 +2270,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if svc.soft_anti_affinity:
                 intersection = set(self.get_local_paths()) & set(svc.soft_anti_affinity)
                 if len(intersection) > 0:
-                    #self.log.info("%s orchestrator out (soft anti-affinity with %s)",
-                    #              svc.path, ','.join(intersection))
+                    # self.log.info("%s orchestrator out (soft anti-affinity with %s)",
+                    #               svc.path, ','.join(intersection))
                     return False
             if svc.soft_affinity:
                 intersection = set(self.get_local_paths()) & set(svc.soft_affinity)
                 if len(intersection) < len(set(svc.soft_affinity)):
-                    #self.log.info("%s orchestrator out (soft affinity with %s)",
-                    #              svc.path, ','.join(intersection))
+                    # self.log.info("%s orchestrator out (soft affinity with %s)",
+                    #               svc.path, ','.join(intersection))
                     return False
         return True
 
@@ -2623,7 +2632,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
           honor the constraints and overload discards.
         """
         instances = self.get_service_instances(svc.path, discard_empty=True)
-        candidates = [nodename for (nodename, data) in instances.items() \
+        candidates = [nodename for (nodename, data) in instances.items()
                       if data.get("avail") in ("up", "warn")]
         if len(candidates) == 0:
             if not silent:
@@ -2676,7 +2685,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if res.disabled:
                 continue
             try:
-                status = self.thread_data.get(["nodes", Env.nodename, "services", "status", svc.path, "resources", res.rid, "status"])
+                status = self.thread_data.get(["nodes", Env.nodename, "services", "status", svc.path, "resources",
+                                               res.rid, "status"])
             except KeyError:
                 continue
             if status in ("up", "stdby up", "n/a", "undef"):
@@ -2709,7 +2719,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         for nodename, instance in self.get_service_instances(path).items():
             if instance["avail"] == "up":
                 nodenames.append(nodename)
-            elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning", "placing"):
+            elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning",
+                                                       "placing"):
                 nodenames.append(nodename)
         return nodenames
 
@@ -2767,7 +2778,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             smon_status = instance["monitor"].get("status", "")
             if smon_status in status:
-               continue
+                continue
             avail = instance["avail"]
             if (avail == "warn" and not smon_status.endswith("ing")) or \
                avail in STOPPED_STATES + STARTED_STATES:
@@ -2939,13 +2950,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             ostatus = "warn"
         elif len(ostatus_s) == 1:
             ostatus = ostatus_s.pop()
-        elif set(["up", "down"]) == ostatus_s or \
-             set(["up", "stdby up"]) == ostatus_s or \
-             set(["up", "down", "stdby up"]) == ostatus_s or \
-             set(["up", "down", "stdby up", "n/a"]) == ostatus_s:
+        elif set(["up", "down"]) == ostatus_s \
+                or set(["up", "stdby up"]) == ostatus_s \
+                or set(["up", "down", "stdby up"]) == ostatus_s \
+                or set(["up", "down", "stdby up", "n/a"]) == ostatus_s:
             ostatus = "up"
-        elif set(["down", "stdby up"]) == ostatus_s or \
-             set(["down", "stdby up", "n/a"]) == ostatus_s:
+        elif set(["down", "stdby up"]) == ostatus_s \
+                or set(["down", "stdby up", "n/a"]) == ostatus_s:
             ostatus = "down"
         if "stdby" in ostatus:
             ostatus = "down"
@@ -3075,7 +3086,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return "n/a"
         except KeyError:
             pass
-        instances = [instance for instance in self.get_service_instances(path).values() \
+        instances = [instance for instance in self.get_service_instances(path).values()
                      if not instance.get("frozen")]
         if len(instances) < 2:
             return "optimal"
@@ -3181,17 +3192,15 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         Return the nodenames with a frozen instance of the specified service.
         """
-        return [nodename for (nodename, instance) in \
-                self.get_service_instances(path).items() if \
-                instance.get("frozen")]
+        return [nodename for (nodename, instance) in self.get_service_instances(path).items()
+                if instance.get("frozen")]
 
     def service_instances_thawed(self, path):
         """
         Return the nodenames with a frozen instance of the specified service.
         """
-        return [nodename for (nodename, instance) in \
-                self.get_service_instances(path).items() if \
-                not instance.get("frozen")]
+        return [nodename for (nodename, instance) in self.get_service_instances(path).items()
+                if not instance.get("frozen")]
 
     def has_instance_with(self, path, global_expect=None):
         """
@@ -3263,7 +3272,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             try:
                 csum = self.get_service_config(path, peer).csum
             except (TypeError, KeyError, AttributeError):
-                #self.log.debug("service %s peer %s has no config cksum yet", path, peer)
+                # self.log.debug("service %s peer %s has no config cksum yet", path, peer)
                 return False
             except Exception as exc:
                 self.log.exception(exc)
@@ -3271,7 +3280,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if ref_csum is None:
                 ref_csum = csum
             if ref_csum is not None and ref_csum != csum:
-                #self.log.debug("service %s peer %s has a different config cksum", path, peer)
+                # self.log.debug("service %s peer %s has a different config cksum", path, peer)
                 return False
         self.log.info("service %s config consensus reached", path)
         return True
@@ -3296,7 +3305,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 config_mtime = 0
             last_config = self.get_service_config(path, Env.nodename)
             if last_config is None or config_mtime > last_config["updated"]:
-                #self.log.debug("compute service %s config checksum", path)
+                # self.log.debug("compute service %s config checksum", path)
                 try:
                     csum = fsum(cfg)
                 except (OSError, IOError) as exc:
@@ -3408,7 +3417,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if idata.get("avail", "n/a") == "up":
                 self.node_data.unset_safe(["services", "status", path, "monitor", "stonith"])
 
-
     #########################################################################
     #
     # Service-specific monitor data helpers
@@ -3519,8 +3527,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             stopped = status in STOPPED_STATES
             if agg.provisioned not in (False, "n/a") or not stopped:
                 return
-            self.log.debug("service %s global expect is %s, already is",
-                       path, smon.global_expect)
+            self.log.debug("service %s global expect is %s, already is", path, smon.global_expect)
             self.set_smon(path, global_expect="unset")
 
         def handle_provisioned():
@@ -3537,7 +3544,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         def handle_purged():
             deleted = self.get_agg_deleted(path)
             purged = self.get_agg_purged(agg.provisioned, deleted)
-            if not purged is True:
+            if purged is not True:
                 return
             self.log.debug("service %s global expect is %s, already is",
                            path, smon.global_expect)
@@ -3545,7 +3552,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         def handle_deleted():
             deleted = self.get_agg_deleted(path)
-            if not deleted is True:
+            if deleted is not True:
                 return
             self.log.debug("service %s global expect is %s, already is",
                            path, smon.global_expect)
@@ -3676,8 +3683,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             global_expect_updated = smon.global_expect_updated or 0
             if global_expect is not None and time.time() < global_expect_updated + 3:
                 # keep the smon around for a while
-                #self.log.info("relay foreign service %s global expect %s",
-                #              path, global_expect)
+                # self.log.info("relay foreign service %s global expect %s",
+                #               path, global_expect)
                 continue
             try:
                 self.node_data.unset(["services", "status", path])
@@ -3705,10 +3712,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         shared.GEN_DIFF[shared.GEN] = diff
         self.purge_log()
         with shared.HB_MSG_LOCK:
-             # reset the full status cache. get_message() will refill if
-             # needed.
-             shared.HB_MSG = None
-             shared.HB_MSG_LEN = 0
+            # reset the full status cache. get_message() will refill if
+            # needed.
+            shared.HB_MSG = None
+            shared.HB_MSG_LEN = 0
         shared.wake_heartbeat_tx()
 
     def _update_hb_data_locked(self):
@@ -3840,8 +3847,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                (global_expect == "thawed" and local_frozen):
                 self.log.info("node %s wants local node %s", nodename, global_expect)
                 self.set_nmon(global_expect=global_expect)
-            #else:
-            #    self.log.info("node %s wants local node %s, already is", nodename, global_expect)
+            # else:
+            #     self.log.info("node %s wants local node %s, already is", nodename, global_expect)
 
         # merge every service monitors
         for path, instance in self.iter_local_services_instances():
@@ -3874,8 +3881,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.debug("node %s wants service %s %s, already targeting that",
                                    nodename, path, global_expect)
                     continue
-                #else:
-                #    self.log.info("node %s wants service %s %s, already is", nodename, path, global_expect)
+                # else:
+                #     self.log.info("node %s wants service %s %s, already is", nodename, path, global_expect)
                 if self.accept_g_expect(path, instance, global_expect):
                     self.log.info("node %s wants service %s %s", nodename, path, global_expect)
                     self.set_smon(path, global_expect=global_expect)
@@ -3916,7 +3923,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return False
         elif global_expect == "thawed":
             if agg.frozen and agg.frozen != "thawed":
-                 return True
+                return True
             else:
                 return False
         elif global_expect == "provisioned":
@@ -4178,7 +4185,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return True
         return False
 
-
     def update_node_gen(self, nodename, local=0, remote=0):
         shared.LOCAL_GEN[nodename] = local
         shared.REMOTE_GEN[nodename] = remote
@@ -4210,8 +4216,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         our_gen_on_peer = data.get("gen", {}).get(Env.nodename, 0)
         kind = data.get("kind", "full")
         change = False
-        #self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
-        #               kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
+        # self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
+        #                kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
         if kind == "patch":
             if not self.nodes_data.exists([nodename]):
                 # happens during init, or after join. ignore the patch, and ask for a full
@@ -4222,7 +4228,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return False
             if current_gen == 0:
                 # waiting for a full: ignore patches
-                # self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])), nodename) # COMMENT
+                # self.log.debug("waiting for a full: ignore patch %s received from %s", list(data.get("deltas", [])),
+                #                nodename)
                 if shared.REMOTE_GEN.get(nodename) is None:
                     self.log.info("undefined gen for %s dataset, drop patch and "
                                   "ask for a full (peer has gen %s of our dataset)", nodename, our_gen_on_peer)
@@ -4232,14 +4239,15 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             gens = sorted([int(gen) for gen in deltas])
             gens = [gen for gen in gens if gen > current_gen]
             if len(gens) == 0:
-                #self.log.info("no more recent gen in received deltas")
+                # self.log.info("no more recent gen in received deltas")
                 if our_gen_on_peer > shared.LOCAL_GEN[nodename]:
                     shared.LOCAL_GEN[nodename] = our_gen_on_peer
                     self.nodes_data.set([nodename, "gen", Env.nodename], our_gen_on_peer)
                 return False
             nodes_info_change = False
             for gen in gens:
-                #self.log.debug("patch node %s dataset gen %d over %d (%d diffs)", nodename, gen, current_gen, len(deltas[str(gen)])) # COMMENT
+                # self.log.debug("patch node %s dataset gen %d over %d (%d diffs)", nodename, gen, current_gen,
+                #                len(deltas[str(gen)]))
                 if gen - 1 != current_gen:
                     if current_gen:
                         # don't be alarming on daemon start: it is normal we receive a out-of-sequence patch
@@ -4292,8 +4300,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             new_gen = data.get("gen", {}).get(nodename, 0)
             self.update_node_gen(nodename, remote=new_gen, local=our_gen_on_peer)
             self.log.info("install node %s full dataset gen %d, peer has gen %d of our dataset",
-                           nodename, shared.REMOTE_GEN[nodename],
-                           shared.LOCAL_GEN[nodename])
+                          nodename, shared.REMOTE_GEN[nodename],
+                          shared.LOCAL_GEN[nodename])
             self.on_nodes_info_change()
             change = True
         return change
