@@ -273,7 +273,8 @@ def forkserver_action(path, action, options, now, session_id, cmd):
         print(exc)
     sys.stdout = StringIO()
     sys.stderr = StringIO()
-    o.action(action, options)
+    exit_code = o.action(action, options)
+    sys.exit(exit_code)
 
 
 #############################################################################
