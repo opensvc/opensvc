@@ -482,12 +482,15 @@ class OsvcThread(threading.Thread, Crypt):
     def janitor_procs(self):
         done = []
         for idx, data in enumerate(self.procs):
-            try:
+            if data.proc is None:
+                ret = 1
+                comm = lambda: None
+            elif hasattr(data.proc, "poll"):
                 # subprocess.Popen()
                 data.proc.poll()
                 ret = data.proc.returncode
                 comm = lambda: data.proc.communicate()
-            except AttributeError:
+            elif hasattr(data.proc, "exitcode"):
                 # multiprocessing.Process()
                 ret = data.proc.exitcode
                 comm = lambda: None
@@ -905,7 +908,8 @@ class OsvcThread(threading.Thread, Crypt):
                 args=(path, action, options, now, session_id, cmd, )
             )
             proc.start()
-        except KeyboardInterrupt:
+        except (FileNotFoundError, KeyboardInterrupt) as err:
+            self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
             return
         return proc
 
