@@ -218,7 +218,8 @@ class Scheduler(shared.OsvcThread):
                 args=(path, action, options, now, session_id, cmd, )
             )
             proc.start()
-        except KeyboardInterrupt:
+        except (FileNotFoundError, KeyboardInterrupt) as err:
+            self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
             return
         sigset = set(sigs)
         self.running |= sigset

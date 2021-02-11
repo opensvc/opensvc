@@ -273,7 +273,8 @@ def forkserver_action(path, action, options, now, session_id, cmd):
         print(exc)
     sys.stdout = StringIO()
     sys.stderr = StringIO()
-    o.action(action, options)
+    exit_code = o.action(action, options)
+    sys.exit(exit_code)
 
 
 #############################################################################
@@ -481,12 +482,15 @@ class OsvcThread(threading.Thread, Crypt):
     def janitor_procs(self):
         done = []
         for idx, data in enumerate(self.procs):
-            try:
+            if data.proc is None:
+                ret = 1
+                comm = lambda: None
+            elif hasattr(data.proc, "poll"):
                 # subprocess.Popen()
                 data.proc.poll()
                 ret = data.proc.returncode
                 comm = lambda: data.proc.communicate()
-            except AttributeError:
+            elif hasattr(data.proc, "exitcode"):
                 # multiprocessing.Process()
                 ret = data.proc.exitcode
                 comm = lambda: None
@@ -673,7 +677,7 @@ class OsvcThread(threading.Thread, Crypt):
                              "deleted",
                              "purged")):
             # skip slavers, wrappers, scalers
-            return
+            return False
         # will set changed to True if an update occur, this will avoid wake_monitor calls
         changed = False
         if not smon:
@@ -904,7 +908,8 @@ class OsvcThread(threading.Thread, Crypt):
                 args=(path, action, options, now, session_id, cmd, )
             )
             proc.start()
-        except KeyboardInterrupt:
+        except (FileNotFoundError, KeyboardInterrupt) as err:
+            self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
             return
         return proc
 

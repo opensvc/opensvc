@@ -12,7 +12,7 @@ from daemon.handlers.object.status.post import Handler as HandlerObjectStatusPos
 from daemon.main import Daemon
 # noinspection PyUnresolvedReferences
 from daemon.monitor import Monitor, shared, queue
-from daemon.shared import OsvcJournaledData
+from tests.helpers import ANY, call
 from utilities.asset import Asset
 from utilities.naming import svc_pathvar
 
@@ -102,7 +102,18 @@ orchestrate = ha
 
 @pytest.fixture(scope='function')
 def get_boot_id(mocker, osvc_path_tests):
-    mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
+    return mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
+
+
+@pytest.fixture(scope='function')
+def last_boot_id(mocker, osvc_path_tests):
+    return mocker.patch.object(shared.NODE, 'last_boot_id', return_value=str_uuid())
+
+
+@pytest.fixture(scope='function')
+def popen_communicate(mocker):
+    return mocker.patch.object(Popen, 'communicate', return_value=("", ""))
+    return mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
 
 
 @pytest.fixture(scope='function')
@@ -134,7 +145,7 @@ class MonitorTest(object):
             return Popen(self.execs["service_command_exe"])
 
         self.service_command = self.mocker.patch.object(Monitor,
-                                                        'service_command',
+                                                        'service_action',
                                                         side_effect=service_command_mock)
         return self.service_command
 
@@ -181,14 +192,14 @@ class MonitorTest(object):
         assert smon.local_expect == local_expect
 
     def assert_command_has_been_launched(self, call_list):
-        for call in call_list:
-            self.log('COMMENT: ASSERT call %s has been called', call)
-            assert call in self.service_command.call_args_list
+        for call_element in call_list:
+            self.log('COMMENT: ASSERT %s has been called', call_element)
+            assert call_element in self.service_command.call_args_list
 
     def assert_command_has_not_been_launched(self, call_list):
-        for call in call_list:
-            self.log('COMMENT: ASSERT call %s has not been called', call)
-            assert call not in self.service_command.call_args_list
+        for call_element in call_list:
+            self.log('COMMENT: ASSERT %s has not been called', call_element)
+            assert call_element not in self.service_command.call_args_list
 
     def create_cluster_status(self):
         self.log('\nCOMMENT: create ccfg/cluster status.json')
@@ -237,7 +248,7 @@ class MonitorTest(object):
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
         post_object_status(thr=self.monitor, path=path, status=status)
 
-    def prepare_monitor_idle(self):
+    def prepare_monitor(self):
         self.log('\nCOMMENT: Prepare monitor in idle status')
         self.log('COMMENT: hack rejoin_grace_period to 0.001')
         self.monitor._lazy_rejoin_grace_period = 0.001
@@ -248,6 +259,9 @@ class MonitorTest(object):
         self.do()
         self.create_cluster_status()
         self.do()
+
+    def prepare_monitor_idle(self):
+        self.prepare_monitor()
         self.assert_nmon_status('idle')
 
     def init_other_node_states(self, states, nodename):
@@ -283,6 +297,7 @@ S_DEPEND_ON_PARENT_STATUS = {
     "monitor": {"status": "down", "overall": "down"}
 }
 
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_node_config')
@@ -292,6 +307,7 @@ S_DEPEND_ON_PARENT_STATUS = {
 @pytest.mark.usefixtures('wait_listener')
 @pytest.mark.usefixtures('get_boot_id')
 @pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('popen_communicate')
 class TestMonitorOrchestratorStart(object):
     @staticmethod
     @pytest.mark.parametrize(
@@ -419,13 +435,14 @@ class TestMonitorOrchestratorStart(object):
         monitor.init()
         time.sleep(0.01)  # simulate time elapsed
         monitor_test.assert_nmon_status('init', 'after init()')
-        log('COMMENT: asserting all services are refreshed: (service_command.call_args_list is correct: %s)',
-            service_command.call_args_list[0])
-        assert service_command.call_count == 1
-        for s in svcnames + [svcname, 'cluster']:
-            assert s in service_command.call_args_list[0][0][0].split(',')
-        assert service_command.call_args_list[0][0][1] == ['status', '--parallel', '--refresh']
-        assert service_command.call_args_list[0][1] == {"local": False}
+        log('COMMENT: asserting all services are refreshed, current service commands:\n%s)',
+            "\n".join(["        %s" % str(c) for c in service_command.call_args_list]))
+        path_to_check = set(svcnames + [svcname, "cluster"])
+        assert service_command.call_count == len(path_to_check)
+        for s in path_to_check:
+            monitor_test.assert_command_has_been_launched([
+                call("status", options={"local": False, "refresh": True}, path=s, session_id=ANY),
+            ])
 
         monitor_test.create_cluster_status()
 
@@ -477,14 +494,18 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.assert_smon_status(svcname, transition_status2, "expected transition_status2")
 
         if "/has start/" in title:
-            monitor_test.assert_command_has_been_launched([((svcname, ['start']), {}), ])
+            monitor_test.assert_command_has_been_launched([
+                call('start', options={'local': True}, path=svcname),
+            ])
             if "/start failed/" not in title:
                 for svcname in [svcname]:
                     topology = other_node_states.get(svcname, {}).get('topology', "failover")
                     monitor_test.create_service_status(path=svcname, status="up", overall="up", topology=topology,
                                                        frozen=0)
         else:
-            monitor_test.assert_command_has_not_been_launched([((svcname, ['start']), {}), ])
+            monitor_test.assert_command_has_not_been_launched([
+                call("start", options=ANY, path=svcname),
+            ])
 
         monitor_test.do()
         monitor_test.assert_smon_status(svcname, final_status)
@@ -496,7 +517,9 @@ class TestMonitorOrchestratorStart(object):
             monitor_test.do()
             monitor_test.assert_smon_status(svcname, final_status)
             if '/no start/' in title:
-                monitor_test.assert_command_has_not_been_launched([((svcname, ['start']), {}), ])
+                monitor_test.assert_command_has_not_been_launched([
+                    call("start", options=ANY, path=svcname),
+                ])
             if '/has start/' in title:
                 log("COMMENT: no more service command has been launched: count=%s",
                     monitor_test.service_command.call_count)
@@ -526,6 +549,62 @@ class TestMonitorOrchestratorStart(object):
         assert service_command.call_count == initial_service_commands_call_count
 
     @staticmethod
+    def test_during_boot_monitor_stay_init_waiting_for_status(
+            mocker,
+            last_boot_id,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.create_svc_config("parent")
+        monitor_test.prepare_monitor()
+        for _ in range(3):
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+            monitor_test.do()
+
+    @staticmethod
+    @pytest.mark.parametrize('services', [
+        [],
+        ["parent"],
+        ["parent", "s-depend-on-parent"],
+    ])
+    def test_during_boot_monitor_call_commands_that_create_status(
+            mocker,
+            last_boot_id,
+            services,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        expected_calls = []
+        for service in services:
+            monitor_test.create_svc_config(service)
+            expected_calls += [call("boot", options={"local": True}, path=service, session_id=ANY)]
+        monitor_test.prepare_monitor()
+        expected_calls += [call("status", options={"local": False, "refresh": True}, path="cluster")]
+        monitor_test.assert_command_has_been_launched(expected_calls)
+        assert monitor_test.service_command.call_count == len(expected_calls)
+
+    @staticmethod
+    def test_during_boot_monitor_become_idle_after_all_status_created(
+            mocker,
+            last_boot_id,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.create_svc_config("parent")
+        monitor_test.create_svc_config("s-depend-on-parent")
+        monitor_test.prepare_monitor()
+        for _ in range(3):
+            monitor_test.do()
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+        monitor_test.create_service_status("parent")
+        for _ in range(3):
+            monitor_test.do()
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+        monitor_test.create_service_status("s-depend-on-parent")
+        monitor_test.do()
+        monitor_test.assert_nmon_status("idle", "status now idle because it has all service status")
+
+    @staticmethod
     @pytest.mark.skip
     def test_monitor_ensure_call_service_status_on_services_without_status(
             mocker,
@@ -539,16 +618,17 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.log('COMMENT: ensure call refresh on all service with no status')
         monitor_test.create_service_status("ha3", status="down", overall="down")
         monitor_test.do()
+        monitor_test.do()
         monitor_test.assert_command_has_been_launched([
-            (('ha1', ['status', '--refresh', '--waitlock=0']), {"local": False}),
-            (('ha2', ['status', '--refresh', '--waitlock=0']), {"local": False}),
+            call("status", options={"local": False, "refresh": True}, path="cluster", session_id=ANY),
+            call("status", options={"local": False, "refresh": True}, path="ha1", session_id=ANY),
+            call("status", options={"local": False, "refresh": True}, path="ha2", session_id=ANY),
         ])
         monitor_test.assert_command_has_not_been_launched([
-            (('ha3', ['status', '--refresh', '--waitlock=0']), {"local": False}),
+            call("status", options=ANY, path="ha3", session_id=ANY),
         ])
         monitor_test.do()
         monitor_test.do()
-
 
     @staticmethod
     def test_monitor_ensure_start_is_called_on_non_up_services(
@@ -566,11 +646,11 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.do()
         monitor_test.do()
         monitor_test.assert_command_has_been_launched([
-            (('ha1', ['start']), {}),
-            (('ha2', ['start']), {}),
+            call("start", options={"local": True}, path="ha1"),
+            call("start", options={"local": True}, path="ha2"),
         ])
         monitor_test.assert_command_has_not_been_launched([
-            (('ha3', ['start']), {}),
+            call("start", options=ANY, path="ha3"),
         ])
 
     @staticmethod
@@ -599,7 +679,6 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.monitor._lazy_ready_period = 0.001
         max_parallel = 3
         shared.NODE._lazy_max_parallel = max_parallel
-        count = int(monitor_test.service_command.call_count)
         # service list ordered by priority
         services = [
             "s9-prio-1", "s8-prio-2", "s7-prio-3", "s6-prio-4",
@@ -615,7 +694,9 @@ class TestMonitorOrchestratorStart(object):
 
         monitor_test.log('COMMENT: ensure no start actions called yet')
         for svc in services:
-            monitor_test.assert_command_has_not_been_launched([((svc, ['start']), {}), ])
+            monitor_test.assert_command_has_not_been_launched([
+                call("start", options=ANY, path=svc)],
+            )
         # next calls should be starts, define current call count value
         count = int(monitor_test.service_command.call_count)
 
@@ -624,6 +705,8 @@ class TestMonitorOrchestratorStart(object):
             monitor_test.do()
             count += max_parallel + 1
             for svc in expected_service_start:
-                monitor_test.assert_command_has_been_launched([((svc, ['start']), {})])
+                monitor_test.assert_command_has_been_launched([
+                    call("start", options={'local': True}, path=svc),
+                ])
                 monitor_test.create_service_status(svc, status="up", overall="up")
             assert monitor_test.service_command.call_count == count

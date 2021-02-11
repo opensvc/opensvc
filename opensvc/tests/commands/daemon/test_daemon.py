@@ -10,11 +10,17 @@ import core.exceptions as ex
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.node import Node
 from daemon.main import main as daemon_main
+from env import Env
 
 
 @pytest.fixture(scope='function')
 def daemon_join(mocker):
     return mocker.patch('commands.daemon.Node._daemon_join')
+
+
+@pytest.fixture(scope='function')
+def daemon_post(mocker):
+    return mocker.patch.object(Node, 'daemon_post')
 
 
 @pytest.fixture(scope='function')
@@ -125,6 +131,52 @@ class TestNodemgrDaemonJoin:
     def test_run_join(daemon_join):
         assert commands.daemon.main(argv=["join", "--secret", "xxx", "--node", "node1"]) == 0
         assert daemon_join.call_count == 1
+
+    @staticmethod
+    @pytest.mark.parametrize('remote_env, initial_env, env_after_join', [
+        ("PRD", "PRD", "PRD"),
+        ("TST", "PRD", "TST"),
+        ("TST", "TST", "TST"),
+        ("PRD", "TST", "PRD"),
+        ("PRD", None, "PRD"),
+        (None, "PRD", None),
+        (None, "TST", None),
+
+        # this rule may change in future, leave local env unset because it is same as default TST
+        ("TST", None, None),
+    ])
+    def test_run_join_update_local_node_config_section_node_env(
+            daemon_post,
+            remote_env,
+            initial_env,
+            env_after_join,
+    ):
+        daemon_post_return_value = {
+            "status": 0,
+            "data": {
+                "node": {"data": {"node": {}}},
+                "cluster": {
+                    "data": {
+                        "DEFAULT": {"id": "e8d6509d-6493-4e5a-a423-a1fe780a8cdf"},
+                        "cluster": {
+                            "nodes": "node1 %s" % Env.nodename,
+                            "id": "810aea42-5faf-11eb-a714-080027001711",
+                            "secret": "xxx"
+                        },
+                        "metadata": {"name": "cluster", "kind": "ccfg", "namespace": None }
+                    },
+                    "mtime": 1611653218.393235
+                }
+            }
+        }
+        if remote_env:
+            daemon_post_return_value["data"]["node"]["data"]["node"]["env"] = remote_env
+        daemon_post.return_value = daemon_post_return_value
+        node = Node()
+        if initial_env:
+            node.set_multi(['node.env=%s' % initial_env])
+        assert commands.daemon.main(argv=["join", "--secret", "xxx", "--node", "node1"]) == 0
+        assert node.print_config_data().get('node', {}).get('env') == env_after_join
 
 
 @pytest.mark.ci

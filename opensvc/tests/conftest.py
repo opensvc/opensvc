@@ -37,6 +37,7 @@ def osvc_path_tests_fixture(tmpdir):
     env.Env.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
     env.Env.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
     env.Env.paths.nodes_info = os.path.join(test_dir, 'var', "nodes_info.json")
+    env.Env.syspaths.ip = '/bin_ip_cmd_test'
     os.makedirs(os.path.join(env.Env.paths.pathvar, 'lsnr'))
     os.makedirs(os.path.join(env.Env.paths.pathvar, 'node'))
     os.makedirs(env.Env.paths.pathtmpv)

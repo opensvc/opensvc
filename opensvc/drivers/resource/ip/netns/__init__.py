@@ -150,10 +150,16 @@ class IpNetns(IpHost):
         Set the resource label property.
         """
         try:
-             self.get_mask()
+            self.get_mask()
         except ex.Error:
-             pass
-        self.label = "netns %s %s/%s %s@%s" % (self.mode, self.ipname, to_cidr(self.netmask), self.ipdev, self.container_rid)
+            pass
+        self.label = "netns %s %s/%s %s@%s" % (
+            self.mode,
+            self.ipname,
+            to_cidr(self.netmask),
+            self.ipdev,
+            self.container_rid,
+        )
 
     @lazy
     def guest_dev(self):
@@ -326,7 +332,7 @@ class IpNetns(IpHost):
 
         # add default route
         if self.gateway:
-            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "add", "default", "via", self.gateway, "dev", self.final_guest_dev]
+            cmd = [Env.syspaths.nsenter, "--net="+self.netns, "ip", "route", "replace", "default", "via", self.gateway, "dev", self.final_guest_dev]
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 return ret, out, err
