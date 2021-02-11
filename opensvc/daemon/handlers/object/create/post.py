@@ -101,6 +101,8 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             cmd.append("--namespace="+options.namespace)
         if options.restore:
             cmd.append("--restore")
+        if options.provision:
+            cmd.append("--provision")
         thr.log_request("create/update %s" % ",".join(paths), nodename, **kwargs)
         proc = thr.service_command(None, cmd, stdout=PIPE, stderr=PIPE, stdin=json.dumps(options.data))
         if options.sync:
@@ -119,7 +121,4 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
                 "status": 0,
                 "info": "started %s action %s" % (options.path, " ".join(cmd)),
             }
-        if options.provision:
-            for path in paths:
-                thr.set_smon(path, global_expect="provisioned")
         return result
