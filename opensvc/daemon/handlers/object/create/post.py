@@ -7,6 +7,7 @@ import core.exceptions as ex
 from utilities.naming import validate_paths
 from utilities.string import bdecode
 
+
 class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
     """
     Create new objects.
@@ -37,7 +38,10 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
         },
         {
             "name": "data",
-            "desc": "The dictionnary of object configurations, indexed by object path. If template is set, the data option can be used to pass env section overrides. Examples: {'k': 'v'} or {'env': {'k': 'v'}} or {'ns1/svc/svc1': {'k': 'v'}} or {'ns1/svc/svc1': {'env': {'k': 'v'}}}",
+            "desc": "The dictionary of object configurations, indexed by object path."
+                    " If template is set, the data option can be used to pass env section overrides."
+                    " Examples: {'k': 'v'} or {'env': {'k': 'v'}} or {'ns1/svc/svc1': {'k': 'v'}}"
+                    " or {'ns1/svc/svc1': {'env': {'k': 'v'}}}",
             "required": False,
             "format": "dict",
             "default": {},
@@ -51,7 +55,8 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
         },
         {
             "name": "restore",
-            "desc": "If true, the object id provided in the configuration data is preserve. The default is to generate a new object id upon create.",
+            "desc": "If true, the object id provided in the configuration data is preserve."
+                    " The default is to generate a new object id upon create.",
             "required": False,
             "format": "boolean",
             "default": False,
@@ -118,4 +123,3 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
             for path in paths:
                 thr.set_smon(path, global_expect="provisioned")
         return result
-
