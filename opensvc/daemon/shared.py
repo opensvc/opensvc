@@ -677,7 +677,7 @@ class OsvcThread(threading.Thread, Crypt):
                              "deleted",
                              "purged")):
             # skip slavers, wrappers, scalers
-            return
+            return False
         # will set changed to True if an update occur, this will avoid wake_monitor calls
         changed = False
         if not smon:
