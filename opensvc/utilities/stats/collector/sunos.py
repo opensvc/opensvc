@@ -51,7 +51,7 @@ def collect(node):
     pr = 0
 
     while out:
-        line = out
+        line = str(out)
         line = line.rstrip("\n")
 
         if "ZONEID" in line:
@@ -92,7 +92,7 @@ def collect(node):
     out = p.stdout.readline()
 
     while out:
-        line = out
+        line = str(out)
         line = line.rstrip("\n")
 
         if "id zone" in line and fi == 1:
