@@ -22,6 +22,7 @@ from foreign.six.moves import queue
 import core.exceptions as ex
 from foreign.jsonpath_ng.ext import parse
 from env import Env
+from utilities.concurrent_futures import get_concurrent_futures
 from utilities.journaled_data import JournaledData
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
@@ -32,41 +33,12 @@ from core.freezer import Freezer
 from core.comm import Crypt
 from .events import EVENTS
 
-try:
-    from io import StringIO
-except ImportError:
-    from cStringIO import StringIO
 
 try:
     from setproctitle import setproctitle
 except ImportError:
     setproctitle = lambda x: None
 
-try:
-    # with python3, select the forkserver method beacuse the
-    # default fork method is unsafe from the daemon.
-    MP = multiprocessing.get_context("forkserver")
-    MP.set_forkserver_preload([
-        "opensvc.core.comm",
-        "opensvc.core.contexts",
-        "opensvc.foreign.h2",
-        "opensvc.foreign.hyper",
-        "opensvc.foreign.jsonpath_ng.ext",
-        "opensvc.utilities.forkserver",
-        "opensvc.utilities.converters",
-        "opensvc.utilities.naming",
-        "opensvc.utilities.optparser",
-        "opensvc.utilities.render",
-        "opensvc.utilities.cache",
-        "opensvc.utilities.lock",
-        "opensvc.utilities.files",
-        "opensvc.utilities.proc",
-        "opensvc.utilities.string",
-    ])
-except (ImportError, AttributeError):
-    # on python2, the only method is spawn, which is slow but
-    # safe.
-    MP = multiprocessing
 
 class OsvcJournaledData(JournaledData):
     def __init__(self):
@@ -129,6 +101,11 @@ THREADS_LOCK = RLock()
 # A node object instance. Used to access node properties and methods.
 NODE = None
 NODE_LOCK = RLock()
+
+# A ProcessPoolExcecutor
+EXECUTOR = None
+concurrent_futures = get_concurrent_futures()
+
 
 # CRM services objects. Used to access services properties.
 # The monitor thread reloads a new Svc object when the corresponding
@@ -204,6 +181,13 @@ except AttributeError:
     pass
 
 
+def create_executor(max_workers):
+    concurrent_futures = get_concurrent_futures()
+    if max_workers > 61:
+        max_workers = 61
+    return concurrent_futures.ProcessPoolExecutor(max_workers=max_workers)
+
+
 def wake_heartbeat_tx():
     """
     Notify the heartbeat tx thread to do they periodic job immediatly
@@ -241,7 +225,14 @@ def wake_scheduler():
         SCHED_TICKER.notify_all()
 
 
-def forkserver_action(path, action, options, now, session_id, cmd):
+def executor_action(path, action, options, now, session_id, cmd):
+    try:
+        pid = os.fork()
+        if pid > 0:
+            _, status = os.waitpid(pid, 0)
+            return os.WEXITSTATUS(status)
+    except Exception:
+        return
     os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     if now is not None:
@@ -271,10 +262,14 @@ def forkserver_action(path, action, options, now, session_id, cmd):
         setproctitle(title)
     except Exception as exc:
         print(exc)
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
-    exit_code = o.action(action, options)
-    sys.exit(exit_code)
+    try:
+        result = o.action(action, options)
+        if isinstance(result, int):
+            os._exit(result)
+        else:
+            os._exit(1)
+    except Exception:
+        os._exit(66)
 
 
 #############################################################################
@@ -456,7 +451,13 @@ class OsvcThread(threading.Thread, Crypt):
             ProcessLookupError = OSError
         for data in self.procs:
             # noinspection PyUnboundLocalVariable
-            if hasattr(data.proc, "poll"):
+            if hasattr(data.proc, "done"):
+                # executor
+                ret = lambda: data.proc.done()
+                poll = None
+                comm = None
+                kill = lambda: data.proc.cancel()
+            elif hasattr(data.proc, "poll"):
                 # subprocess.Popen()
                 ret = lambda: data.proc.returncode
                 poll = lambda: data.proc.poll()
@@ -473,7 +474,10 @@ class OsvcThread(threading.Thread, Crypt):
             except ProcessLookupError:  # pylint: disable=undefined-variable
                 continue
             for _ in range(self.stop_tmo):
-                if ret() is not None:
+                ret = ret()
+                if ret is True:
+                    break
+                elif ret is not None and ret is not False:
                     comm()
                     poll()
                     break
@@ -482,20 +486,29 @@ class OsvcThread(threading.Thread, Crypt):
     def janitor_procs(self):
         done = []
         for idx, data in enumerate(self.procs):
-            if data.proc is None:
-                ret = 1
-                comm = lambda: None
-            elif hasattr(data.proc, "poll"):
-                # subprocess.Popen()
-                data.proc.poll()
-                ret = data.proc.returncode
-                comm = lambda: data.proc.communicate()
-            elif hasattr(data.proc, "exitcode"):
-                # multiprocessing.Process()
-                ret = data.proc.exitcode
-                comm = lambda: None
+            if hasattr(data.proc, 'done'):
+                if data.proc.done():
+                    try:
+                        ret = data.proc.result()
+                    except (concurrent_futures.CancelledError,
+                            concurrent_futures.process.BrokenProcessPool):
+                        ret = 1
+                else:
+                    ret = None
+            else:
+                try:
+                    # subprocess.Popen()
+                    data.proc.poll()
+                    ret = data.proc.returncode
+                    comm = lambda: data.proc.communicate()
+                except AttributeError:
+                    # multiprocessing.Process()
+                    ret = data.proc.exitcode
+                    comm = lambda: None
+                if ret is not None:
+                    comm()
             if ret is not None:
-                comm()
+                self.log.info('cmd %s end with exit_code %s', data.cmd, ret)
                 done.append(idx)
                 if ret == 0 and data.on_success:
                     getattr(self, data.on_success)(*data.on_success_args,
@@ -902,12 +915,8 @@ class OsvcThread(threading.Thread, Crypt):
             cmd = "om %s %s" % (kind, cmd)
         self.log.info("run '%s'", cmd)
         try:
-            proc = MP.Process(
-                group=None, 
-                target=forkserver_action, 
-                args=(path, action, options, now, session_id, cmd, )
-            )
-            proc.start()
+            proc = EXECUTOR.submit(executor_action,
+                                   path, action, options, now, session_id, cmd)
         except (FileNotFoundError, KeyboardInterrupt) as err:
             self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
             return

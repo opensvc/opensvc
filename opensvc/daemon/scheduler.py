@@ -212,12 +212,8 @@ class Scheduler(shared.OsvcThread):
         cmd = self.format_log_cmd(action, path, rids)
         self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = shared.MP.Process(
-                group=None,
-                target=shared.forkserver_action,
-                args=(path, action, options, now, session_id, cmd, )
-            )
-            proc.start()
+            proc = shared.EXECUTOR.submit(shared.executor_action,
+                                          path, action, options, now, session_id, cmd,)
         except (FileNotFoundError, KeyboardInterrupt) as err:
             self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
             return

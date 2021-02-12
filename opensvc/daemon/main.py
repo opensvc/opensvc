@@ -173,6 +173,9 @@ class Daemon(object):
         The global stop method. Signal all threads to shutdown.
         """
         self.log.info("daemon stop")
+        if shared.EXECUTOR:
+            self.log.info("daemon stop excecutor")
+            shared.EXECUTOR.shutdown(wait=False)
         self.stop_threads()
 
     def run(self, daemon=True):
@@ -251,6 +254,7 @@ class Daemon(object):
         self.log.info("%d capabilities:", len(caps))
         for cap in caps:
             self.log.info(" %s", cap)
+        shared.EXECUTOR = shared.create_executor(shared.NODE.max_parallel)
 
     def loop_forever(self):
         """
