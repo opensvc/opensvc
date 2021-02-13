@@ -348,6 +348,8 @@ class BaseAsset(object):
                 source = self.s_probe
             except AttributeError:
                 pass
+        if s is None:
+            return
         return {
             "title": "listener address",
             "value": s,

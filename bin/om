@@ -101,10 +101,16 @@ main() {
 			;;
 		esac
 	fi
-	test -z "$SUDO" && SUDO=env || SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE OSVC_KIND=$OSVC_KIND"
+	if test -x "$SUDO" 
+	then
+		SUDO="$SUDO OSVC_NAMESPACE=$OSVC_NAMESPACE OSVC_KIND=$OSVC_KIND"
+		exec $SUDO $0 "$@"
+		exit
+	fi
+	cd $OSVC_ROOT_PATH
 	if test -n "$KIND"
 	then
-		$SUDO PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"
+		PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc $KIND "$@"
 		return $?
 	fi
 	case $1 in
@@ -113,7 +119,7 @@ main() {
 		exit 1
 		;;
 	*)
-		$SUDO PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc "$@"
+		PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc "$@"
 		;;
 	esac
 }

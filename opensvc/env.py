@@ -143,6 +143,7 @@ class Env(object):
         "nscfg",
     ]
     allowed_svc_envs = [
+        'CERT',
         'DEV',
         'DRP',
         'FOR',
@@ -151,6 +152,7 @@ class Env(object):
         'PRD',
         'PRJ',
         'PPRD',
+        'QUAL',
         'REC',
         'STG',
         'TMP',

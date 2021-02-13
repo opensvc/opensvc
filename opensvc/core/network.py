@@ -169,6 +169,7 @@ class NetworksMixin(object):
                 config[key] = self.oget(section, key, rtype=config["type"])
                 if config["type"] == "routed_bridge":
                     config["subnets"] = self.oget_scopes(section, "subnet", rtype=config["type"])
+                    config["gateway"] = self.oget_scopes(section, "gateway", rtype=config["type"])
             if not config:
                 continue
             routes = self.routes(name, config)
@@ -184,6 +185,7 @@ class NetworksMixin(object):
                 svc.set_multi(kws, validation=False)
                 self.unset_lazy("cd")
                 config["subnets"] = self.oget_scopes(section, "subnet", rtype="routed_bridge")
+                config["gateway"] = self.oget_scopes(section, "gateway", rtype="routed_bridge")
             if name not in nets:
                 nets[name] = {}
             nets[name]["config"] = config
@@ -245,6 +247,14 @@ class NetworksMixin(object):
             except socket.gaierror:
                 self.log.warning("node %s is not resolvable", Env.nodename)
                 return routes
+
+        def get_gw(nodename):
+            gw = config.get("gateway", {}).get(nodename)
+            if gw:
+                return gw
+            gw = socket.getaddrinfo(nodename, None)[0][4][0]
+            return gw
+
         for nodename in self.cluster_nodes:
             for table in config["tables"]:
                 if nodename == Env.nodename:
@@ -257,7 +267,7 @@ class NetworksMixin(object):
                     })
                     continue
                 try:
-                    gw = socket.getaddrinfo(nodename, None)[0][4][0]
+                    gw = get_gw(nodename)
                 except socket.gaierror:
                     self.log.warning("node %s is not resolvable", nodename)
                     continue
