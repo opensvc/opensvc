@@ -321,7 +321,7 @@ class Volume(Resource):
             raise ex.Error("volume %s does not exist" % self.volname)
         if self.volsvc.action("start", options={"local": True, "leader": self.svc.options.leader}) != 0:
             raise ex.Error
-        self.can_rollback_vol_instance = any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
+        self.can_rollback_vol_instance |= any([r.can_rollback for r in self.volsvc.resources_by_id.values()])
         self.can_rollback |= self.can_rollback_vol_instance
         self.chown()
         self.install_flag()
@@ -654,6 +654,7 @@ class Volume(Resource):
         if ret != 0:
             raise ex.Error("volume provision returned %d" % ret)
         self.can_rollback = True
+        self.can_rollback_vol_instance = True
         self.unset_lazy("device")
         self.unset_lazy("mount_point")
         self.unset_lazy("volsvc")

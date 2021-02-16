@@ -1224,6 +1224,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "network",
         "rtype": "routed_bridge",
+        "keyword": "gateway",
+        "at": True,
+        "text": "The gateway to use to reach the network segment of the node specified as scope."
+    },
+    {
+        "section": "network",
+        "rtype": "routed_bridge",
         "keyword": "ips_per_node",
         "convert": "integer",
         "default": "1024",
@@ -1252,7 +1259,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "rtype": "routed_bridge",
         "keyword": "tunnel",
         "default": "auto",
-        "candidates": ["auto", "always"],
+        "candidates": ["auto", "always", "never"],
         "text": "Create and route trafic through tunnels to peer nodes policy. ``auto`` tunnel if the peer is not in the same subnet, ``always`` tunnel even if the peer seems to be in the same subnet (some hosting providers require this as traffic goes through router even between adjacent nodes."
     },
     {
