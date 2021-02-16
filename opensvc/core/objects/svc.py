@@ -1407,7 +1407,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         For encap commands
         """
-        if "__main__" in sys.argv[0]:
+        if "__main__" in sys.argv[0] or sys.argv[0] == "om":
             # skip selector or subsystem name too
             cmd = sys.argv[2:]
         else:
