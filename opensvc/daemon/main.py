@@ -135,12 +135,16 @@ class Daemon(object):
         self.handlers = None
         self.threads = {}
         self.last_config_mtime = None
-        log_file = os.path.join(Env.paths.pathlog, "node.log")
-        core.logger.initLogger(Env.nodename, log_file, handlers=self.handlers, sid=False)
-        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd"), {"node": Env.nodename, "component": "main"})
         self.pid = os.getpid()
         self.stats_data = None
         self.last_stats_refresh = 0
+
+    @lazy
+    def log(self):
+        log_file = os.path.join(Env.paths.pathlog, "node.log")
+        core.logger.initLogger(Env.nodename, log_file, handlers=self.handlers, sid=False)
+        return logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd"),
+                                     {"node": Env.nodename, "component": "main"})
 
     def stop(self):
         """
