@@ -246,7 +246,7 @@ def forkserver_action(path, action, options, now, session_id, cmd):
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     if now is not None:
         os.environ["OSVC_SCHED_TIME"] = str(now)
-    sys.argv = cmd
+    sys.argv = cmd  # sys.argv may be required on async action on slaves
     Env.session_uuid = session_id
     from core.node import Node
     from utilities.naming import split_path, factory
@@ -895,17 +895,17 @@ class OsvcThread(threading.Thread, Crypt):
         session_id = session_id or str(uuid.uuid4())
         now = None
         kind = split_path(path)[2] if path else "node"
-        cmd = " ".join(format_command(kind, action, options))
+        cmd_args = format_command(kind, action, options)
         if path:
-            cmd = "om %s -s %s %s" % (kind, path, cmd)
+            cmd = ["om", kind, "-s", path] + cmd_args
         else:
-            cmd = "om %s %s" % (kind, cmd)
-        self.log.info("run '%s'", cmd)
+            cmd = ["om", kind] + cmd_args
+        self.log.info("run '%s'", " ".join(cmd))
         try:
             proc = MP.Process(
                 group=None, 
-                target=forkserver_action, 
-                args=(path, action, options, now, session_id, cmd, )
+                target=forkserver_action,
+                args=(path, action, options, now, session_id, cmd)
             )
             proc.start()
         except (FileNotFoundError, KeyboardInterrupt) as err:

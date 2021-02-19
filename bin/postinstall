@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import errno
 import shutil
 import glob
 import sys
@@ -19,6 +18,12 @@ p0755 = int("0755", 8)
 p0700 = int("0700", 8)
 p0644 = int("0644", 8)
 utf8patterns = ['UTF-8', 'UTF8', 'utf-8', 'utf8']
+
+# Cleanup possible env var tempfile candidate tempdir list
+# some installer may define values, and cleanup those directories once installation is done
+for tmp_var in ['TMPDIR', 'TEMP', 'TMP']:
+    if tmp_var in os.environ:
+        del os.environ[tmp_var]
 
 postinstall_d = sys.path[0]
 if '/catalog/' in postinstall_d:
