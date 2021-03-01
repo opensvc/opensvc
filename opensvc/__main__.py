@@ -50,6 +50,12 @@ Config Selectors:
 """
 
 def main():
+    cwd = os.environ.get("OSVC_CWD")
+    if cwd:
+        try:
+            os.chdir(cwd)
+        except Exception:
+            pass
     try:
         arg1 = sys.argv[1]
     except IndexError:
