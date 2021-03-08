@@ -107,7 +107,8 @@ main() {
 		exec $SUDO $0 "$@"
 		exit
 	fi
-	export OSVC_CWD=$PWD
+	OSVC_CWD=$PWD
+	export OSVC_CWD
 	cd $OSVC_ROOT_PATH
 	if test -n "$KIND"
 	then
