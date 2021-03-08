@@ -1,13 +1,12 @@
 """
 A module to share variables used by osvcd threads.
 """
+import multiprocessing
 import os
 import threading
 import time
-import fnmatch
 import hashlib
 import json
-import multiprocessing
 import tempfile
 import shutil
 import uuid
@@ -35,6 +34,7 @@ from .events import EVENTS
 try:
     from io import StringIO
 except ImportError:
+    # noinspection PyCompatibility
     from cStringIO import StringIO
 
 try:
@@ -42,31 +42,6 @@ try:
 except ImportError:
     setproctitle = lambda x: None
 
-try:
-    # with python3, select the forkserver method beacuse the
-    # default fork method is unsafe from the daemon.
-    MP = multiprocessing.get_context("forkserver")
-    MP.set_forkserver_preload([
-        "opensvc.core.comm",
-        "opensvc.core.contexts",
-        "opensvc.foreign.h2",
-        "opensvc.foreign.hyper",
-        "opensvc.foreign.jsonpath_ng.ext",
-        "opensvc.utilities.forkserver",
-        "opensvc.utilities.converters",
-        "opensvc.utilities.naming",
-        "opensvc.utilities.optparser",
-        "opensvc.utilities.render",
-        "opensvc.utilities.cache",
-        "opensvc.utilities.lock",
-        "opensvc.utilities.files",
-        "opensvc.utilities.proc",
-        "opensvc.utilities.string",
-    ])
-except (ImportError, AttributeError):
-    # on python2, the only method is spawn, which is slow but
-    # safe.
-    MP = multiprocessing
 
 class OsvcJournaledData(JournaledData):
     def __init__(self):
@@ -241,7 +216,7 @@ def wake_scheduler():
         SCHED_TICKER.notify_all()
 
 
-def forkserver_action(path, action, options, now, session_id, cmd):
+def fork_action(path, action, options, now, session_id, cmd):
     os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
     os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
     if now is not None:
@@ -250,15 +225,6 @@ def forkserver_action(path, action, options, now, session_id, cmd):
     Env.session_uuid = session_id
     from core.node import Node
     from utilities.naming import split_path, factory
-
-    # The Process() inherits the 'forkserver' start_method.
-    # Force it to the default method.
-    import multiprocessing
-    try:
-        default_start_method = multiprocessing.get_all_start_methods()[0]
-        multiprocessing.set_start_method(default_start_method, force=True)
-    except AttributeError:
-        pass
 
     node = Node()
     if path is None:
@@ -902,9 +868,9 @@ class OsvcThread(threading.Thread, Crypt):
             cmd = ["om", kind] + cmd_args
         self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = MP.Process(
+            proc = multiprocessing.Process(
                 group=None, 
-                target=forkserver_action,
+                target=fork_action,
                 args=(path, action, options, now, session_id, cmd)
             )
             proc.start()

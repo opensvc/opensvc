@@ -2,6 +2,7 @@
 Scheduler Thread
 """
 import logging
+import multiprocessing
 import os
 import sys
 import time
@@ -212,9 +213,9 @@ class Scheduler(shared.OsvcThread):
         cmd = self.format_log_cmd(action, path, rids)
         self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = shared.MP.Process(
+            proc = multiprocessing.Process(
                 group=None,
-                target=shared.forkserver_action,
+                target=shared.fork_action,
                 args=(path, action, options, now, session_id, cmd, )
             )
             proc.start()
