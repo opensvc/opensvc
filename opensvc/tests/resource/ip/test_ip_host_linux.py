@@ -26,6 +26,15 @@ def ip_class(mocker, mock_sysname):
 @pytest.mark.ci
 @pytest.mark.usefixtures("osvc_path_tests")
 @pytest.mark.parametrize("alias", [True, False], ids=["alias is true", "alias is false"])
+class TestIpAliasValue(object):
+    @staticmethod
+    def test_ip_alias_is_always_false_on_macvtap_regardless_ip_alias_kw_setting(ip_class, alias):
+        ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask="24", alias=alias)
+        assert ip.alias is False
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+@pytest.mark.parametrize("alias", [True, False], ids=["alias is true", "alias is false"])
 class TestIpAddLink(object):
     @staticmethod
     def test_add_link_create_macvtap_link_when_required(ip_class, alias):
