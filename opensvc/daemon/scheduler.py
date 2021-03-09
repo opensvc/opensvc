@@ -6,19 +6,15 @@ import os
 import sys
 import time
 import uuid
+from subprocess import Popen
 
 import daemon.shared as shared
 import core.exceptions as ex
 from env import Env
 from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
-from utilities.storage import Storage
 from utilities.lazy import lazy, unset_lazy
 
-try:
-    from io import StringIO
-except ImportError:
-    from cStringIO import StringIO
 
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2
@@ -39,42 +35,6 @@ NMON_STATUS_OFF = [
     "maintenance",
 ]
 
-try:
-    from setproctitle import setproctitle
-except ImportError:
-    setproctitle = lambda x: None
-
-def wrapper(path, action, options, now, session_id, cmd):
-    os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
-    os.environ["OSVC_SCHED_TIME"] = str(now)
-    os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
-    sys.argv = cmd
-    Env.session_uuid = session_id
-    from core.node import Node
-    from utilities.naming import split_path, factory
-
-    # The Process() inherits the 'forkserver' start_method.
-    # Force it to the default method.
-    import multiprocessing
-    try:
-        default_start_method = multiprocessing.get_all_start_methods()[0]
-        multiprocessing.set_start_method(default_start_method, force=True)
-    except AttributeError:
-        pass
-
-    node = Node()
-    if path is None:
-        o = node
-    else:
-        name, namespace, kind = split_path(path)
-        o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
-    try:
-        setproctitle(" ".join(cmd))
-    except Exception as exc:
-        print(exc)
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
-    o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
@@ -250,13 +210,23 @@ class Scheduler(shared.OsvcThread):
             del self.session_ids[session_id]
 
     def exec_action(self, sigs, path, action, rids, queued, now, session_id):
-        options = self.format_options(rids)
-        cmd = self.format_log_cmd(action, path, rids)
-        self.log.info("run '%s'", " ".join(cmd))
+        cmd_args = self.get_cmd_args(action, path, rids)
+        cmd_log = ["om",] + cmd_args
+        cmd = Env.om + cmd_args
+        self.log.info("run '%s'", " ".join(cmd_log))
+
+        env = os.environ.copy()
+        env["OSVC_ACTION_ORIGIN"] = "daemon"
+        env["OSVC_SCHED_TIME"] = str(now)
+        env["OSVC_PARENT_SESSION_UUID"] = session_id
+
+        kwargs = dict(stdout=self.devnull, stderr=self.devnull,
+                      stdin=self.devnull, close_fds=os.name!="nt",
+                      env=env)
         try:
-            proc = shared.MP.Process(group=None, target=wrapper, args=(path, action, options, now, session_id, cmd, ))
-            proc.start()
-        except KeyboardInterrupt:
+            proc = Popen(cmd, **kwargs)
+        except KeyboardInterrupt as err:
+            self.log.warning("unable to start cmd: '%s' failed with %s", cmd, str(err))
             return
         sigset = set(sigs)
         self.running |= sigset
@@ -273,20 +243,17 @@ class Scheduler(shared.OsvcThread):
                        on_error="drop_running",
                        on_error_args=[sigs])
 
-    def format_options(self, rids=None):
-        options = Storage({
-            "waitlock": 1,
-            "cron": True,
-        })
-        if rids:
-            options.rid = ",".join(sorted(list(rids)))
-        return options
+    @staticmethod
 
-    def format_log_cmd(self, action, path=None, rids=None):
+    def get_cmd_args(action, path=None, rids=None):
         if path is None:
-            cmd = ["om", "node", action]
+            cmd = ["node", action]
+        elif isinstance(path, list):
+            cmd = ["svc", "-s", ",".join(path), action, "--waitlock=1"]
+            if len(path) > 1:
+                cmd.append("--parallel")
         else:
-            cmd = ["om", "svc", "-s", path, action, "--waitlock=1"]
+            cmd = ["svc", "-s", path, action, "--waitlock=1"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
@@ -601,4 +568,3 @@ class Scheduler(shared.OsvcThread):
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
         if len(msg) > 0:
             self.log.debug(" ".join(msg))
-
