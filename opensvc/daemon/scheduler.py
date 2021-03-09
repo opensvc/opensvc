@@ -2,7 +2,6 @@
 Scheduler Thread
 """
 import logging
-import multiprocessing
 import os
 import sys
 import time
@@ -15,6 +14,11 @@ from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
 from utilities.storage import Storage
 from utilities.lazy import lazy, unset_lazy
+
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
 
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2
@@ -34,6 +38,43 @@ NMON_STATUS_OFF = [
     "shutting",
     "maintenance",
 ]
+
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    setproctitle = lambda x: None
+
+def wrapper(path, action, options, now, session_id, cmd):
+    os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
+    os.environ["OSVC_SCHED_TIME"] = str(now)
+    os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
+    sys.argv = cmd
+    Env.session_uuid = session_id
+    from core.node import Node
+    from utilities.naming import split_path, factory
+
+    # The Process() inherits the 'forkserver' start_method.
+    # Force it to the default method.
+    import multiprocessing
+    try:
+        default_start_method = multiprocessing.get_all_start_methods()[0]
+        multiprocessing.set_start_method(default_start_method, force=True)
+    except AttributeError:
+        pass
+
+    node = Node()
+    if path is None:
+        o = node
+    else:
+        name, namespace, kind = split_path(path)
+        o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
+    try:
+        setproctitle(" ".join(cmd))
+    except Exception as exc:
+        print(exc)
+    sys.stdout = StringIO()
+    sys.stderr = StringIO()
+    o.action(action, options)
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
@@ -213,14 +254,9 @@ class Scheduler(shared.OsvcThread):
         cmd = self.format_log_cmd(action, path, rids)
         self.log.info("run '%s'", " ".join(cmd))
         try:
-            proc = multiprocessing.Process(
-                group=None,
-                target=shared.fork_action,
-                args=(path, action, options, now, session_id, cmd, )
-            )
+            proc = shared.MP.Process(group=None, target=wrapper, args=(path, action, options, now, session_id, cmd, ))
             proc.start()
-        except (OSError, KeyboardInterrupt) as err:
-            self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
+        except KeyboardInterrupt:
             return
         sigset = set(sigs)
         self.running |= sigset

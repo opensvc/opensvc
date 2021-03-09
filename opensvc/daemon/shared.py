@@ -1,16 +1,14 @@
 """
 A module to share variables used by osvcd threads.
 """
-import multiprocessing
 import os
 import threading
 import time
 import hashlib
 import json
+import multiprocessing
 import tempfile
 import shutil
-import uuid
-import sys
 from copy import deepcopy
 from subprocess import Popen, PIPE
 
@@ -24,7 +22,6 @@ from env import Env
 from utilities.journaled_data import JournaledData
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import split_path, paths_data, factory, object_path_glob
-from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_value_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.storage import Storage
 from core.freezer import Freezer
@@ -32,16 +29,30 @@ from core.comm import Crypt
 from .events import EVENTS
 
 try:
-    from io import StringIO
-except ImportError:
-    # noinspection PyCompatibility
-    from cStringIO import StringIO
-
-try:
-    from setproctitle import setproctitle
-except ImportError:
-    setproctitle = lambda x: None
-
+    # with python3, select the forkserver method beacuse the
+    # default fork method is unsafe from the daemon.
+    MP = multiprocessing.get_context("forkserver")
+    MP.set_forkserver_preload([
+        "opensvc.core.comm",
+        "opensvc.core.contexts",
+        "opensvc.foreign.h2",
+        "opensvc.foreign.hyper",
+        "opensvc.foreign.jsonpath_ng.ext",
+        "opensvc.utilities.forkserver",
+        "opensvc.utilities.converters",
+        "opensvc.utilities.naming",
+        "opensvc.utilities.optparser",
+        "opensvc.utilities.render",
+        "opensvc.utilities.cache",
+        "opensvc.utilities.lock",
+        "opensvc.utilities.files",
+        "opensvc.utilities.proc",
+        "opensvc.utilities.string",
+    ])
+except (ImportError, AttributeError):
+    # on python2, the only method is spawn, which is slow but
+    # safe.
+    MP = multiprocessing
 
 class OsvcJournaledData(JournaledData):
     def __init__(self):
@@ -214,33 +225,6 @@ def wake_scheduler():
     """
     with SCHED_TICKER:
         SCHED_TICKER.notify_all()
-
-
-def fork_action(path, action, options, now, session_id, cmd):
-    os.environ["OSVC_ACTION_ORIGIN"] = "daemon"
-    os.environ["OSVC_PARENT_SESSION_UUID"] = session_id
-    if now is not None:
-        os.environ["OSVC_SCHED_TIME"] = str(now)
-    sys.argv = cmd  # sys.argv may be required on async action on slaves
-    Env.session_uuid = session_id
-    from core.node import Node
-    from utilities.naming import split_path, factory
-
-    node = Node()
-    if path is None:
-        o = node
-    else:
-        name, namespace, kind = split_path(path)
-        o = factory(kind)(name, namespace, node=node, log_handlers=["file", "syslog"])
-    try:
-        title = " ".join(cmd) if isinstance(cmd, (list, tuple)) else cmd
-        setproctitle(title)
-    except Exception as exc:
-        print(exc)
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
-    exit_code = o.action(action, options)
-    sys.exit(exit_code)
 
 
 #############################################################################
@@ -854,29 +838,6 @@ class OsvcThread(threading.Thread, Crypt):
         self.log.info("execute: om %s", " ".join(cmd))
         proc = Popen(_cmd+cmd, stdout=None, stderr=None, stdin=None,
                      close_fds=True, env=env)
-        return proc
-
-    def service_action(self, action, options=None, path=None, cmd=None, session_id=None):
-        options = options or {}
-        session_id = session_id or str(uuid.uuid4())
-        now = None
-        kind = split_path(path)[2] if path else "node"
-        cmd_args = format_command(kind, action, options)
-        if path:
-            cmd = ["om", kind, "-s", path] + cmd_args
-        else:
-            cmd = ["om", kind] + cmd_args
-        self.log.info("run '%s'", " ".join(cmd))
-        try:
-            proc = multiprocessing.Process(
-                group=None, 
-                target=fork_action,
-                args=(path, action, options, now, session_id, cmd)
-            )
-            proc.start()
-        except (OSError, KeyboardInterrupt) as err:
-            self.log.warning("proc start cmd: %s failed with %s", cmd, str(err))
-            return
         return proc
 
     def service_command(self, path, cmd, stdout=None, stderr=None, stdin=None, local=True):
