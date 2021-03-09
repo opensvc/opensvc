@@ -578,12 +578,16 @@ class TestMonitorOrchestratorStart(object):
         for service in services:
             monitor_test.create_svc_config(service)
         expected_calls = [
+            call(ANY, ["boot", "--parallel"]),
             call("cluster", ["status", "--parallel", "--refresh"], local=False),
-            call(",".join(services), ["boot", "--parallel"])
         ]
         monitor_test.prepare_monitor()
         monitor_test.assert_command_has_been_launched(expected_calls)
-        assert monitor_test.service_command.call_count == len(expected_calls)
+        assert monitor_test.service_command.call_args_list == expected_calls
+        expected_services_boot = set(services or [''])
+        services_with_boot = set(monitor_test.service_command.call_args_list[0][0][0].split(","))
+
+        assert expected_services_boot == services_with_boot
 
     @staticmethod
     def test_during_boot_monitor_become_idle_after_all_status_created(
