@@ -36,6 +36,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name,
                               object_path_glob)
+from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
@@ -5184,12 +5185,18 @@ def service_action_worker(path, action, options):
     """
     The method the per-service subprocesses execute
     """
+    name, namespace, kind = split_path(path)
     try:
         from setproctitle import setproctitle
-        setproctitle("om %s %s" % (path, " ".join(sys.argv[2:])))
+        if options.parm_svcs:
+            del options.parm_svcs
+        for attr in ["svcs", "parallel", "namespace"]:
+            if hasattr(options, attr):
+                delattr(options, attr)
+        cmd_log  = format_command(kind, action, options)
+        setproctitle("om %s %s" % (path, " ".join(cmd_log)))
     except ImportError:
         pass
-    name, namespace, kind = split_path(path)
     svc = factory(kind)(name, namespace=namespace, node=Node())
     try:
         return svc.action(action, options)
