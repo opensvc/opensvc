@@ -112,6 +112,9 @@ scenarios = {
             "--kw", "fs#ext4.dev={disk#ext4.exposed_devs[0]}",
             "--kw", "fs#ext4.mnt=/var/tmp/{svcname}-{rid}",
             "--kw", "fs#ext4.mnt_opt=rw,noatime",
+            "--kw", "fs#ext4.user=0",
+            "--kw", "fs#ext4.group=0",
+            "--kw", "fs#ext4.perm=0644",
         ]],
 
         ['xfs-unprovision-all', 'test-start', [], [
@@ -122,6 +125,9 @@ scenarios = {
             "--kw", "fs#0.dev={disk#0.exposed_devs[0]}",
             "--kw", "fs#0.mnt=/var/tmp/{svcname}-{rid}",
             "--kw", "fs#0.mnt_opt=rw,noatime",
+            "--kw", "fs#0.user=0",
+            "--kw", "fs#0.group=0",
+            "--kw", "fs#0.perm=0644",
         ]],
 
         ['container-oci-shared', 'test-start', ['--rid', 'container#0'], [
@@ -155,7 +161,10 @@ scenarios = {
 
             "--kw", "fs#data.dev={disk#1.name}/data/{svcname}",
             "--kw", "fs#data.mnt=/srv/{svcname}/data",
-            "--kw", "fs#data.type=zfs"
+            "--kw", "fs#data.type=zfs",
+            "--kw", "fs#data.user=0",
+            "--kw", "fs#data.group=0",
+            "--kw", "fs#data.perm=0644",
         ]],
     ],
     'sunos': [
@@ -183,6 +192,9 @@ scenarios = {
             "--kw", "fs#data.dev={disk#1.name}/data/{svcname}",
             "--kw", "fs#data.mnt=/srv/{svcname}/data",
             "--kw", "fs#data.type=zfs",
+            "--kw", "fs#data.user=0",
+            "--kw", "fs#data.group=0",
+            "--kw", "fs#data.perm=0644",
         ]],
     ]
 }
@@ -236,6 +248,7 @@ class TestProvision:
                 assert_run_cmd_success(args)
 
         assert_run_cmd_success(['create', '--debug'] + properties)
+        assert_run_cmd_success(['validate', 'config'])
         assert_run_cmd_success(['unprovision', '--local'])  # clean previous test
         assert_run_cmd_success(['print', 'config', '--format', 'json'])
         assert_run_cmd_success(['print', 'config'])
