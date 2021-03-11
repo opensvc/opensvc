@@ -174,6 +174,9 @@ KWS_POOLING = [
     KW_NO_PREEMPT_ABORT,
     KW_MKFS_OPT,
     KW_ZONE,
+    KW_USER,
+    KW_GROUP,
+    KW_PERM,
 ]
 
 DRIVER_GROUP = "fs"
@@ -482,8 +485,10 @@ class BaseFs(Resource):
         return set([self.device])
 
     def __str__(self):
-        return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (super(BaseFs, self).__str__(),\
-                self.mount_point, self.device, self.fs_type, self.mount_options)
+        return "%s mnt=%s dev=%s fs_type=%s mount_options=%s" % (
+            super(BaseFs, self).__str__(),
+            self.mount_point, self.device, self.fs_type, self.mount_options
+        )
 
     def __lt__(self, other):
         """
@@ -519,7 +524,6 @@ class BaseFs(Resource):
 
     def lv_name(self):
         raise ex.Error
-        return "dummy"
 
     def lv_resource(self):
         try:
