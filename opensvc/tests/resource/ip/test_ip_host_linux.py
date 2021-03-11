@@ -2,6 +2,7 @@ import pytest
 
 from core.exceptions import Error
 from utilities.ifconfig.linux import Ifconfig
+from utilities.proc import which
 
 try:
     # noinspection PyCompatibility
@@ -417,7 +418,7 @@ class TestIpStop(object):
         ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask=netmask, alias=alias)
         ip.stop()
 
-        if alias and created_with_alias:
+        if alias and created_with_alias and which("ifconfig"):
             assert ip.vcall.call_args_list == [call(["ifconfig", "br0:1", "down"])]
         else:
             assert ip.vcall.call_args_list == [
