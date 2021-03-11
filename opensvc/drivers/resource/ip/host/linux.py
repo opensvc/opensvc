@@ -25,7 +25,7 @@ class IpHost(Ip):
             return
         if not self.has_macvtap_link():
             return
-        cmd = [Env.syspaths.ip, "link", "del", "link", self.base_ipdev, "name", self.ipdev, "type", "macvtap"]
+        cmd = [Env.syspaths.ip, "link", "del", "link", "dev", self.ipdev, "type", "macvtap"]
         ret, out, err = self.vcall(cmd)
         if ret:
             raise ex.Error
