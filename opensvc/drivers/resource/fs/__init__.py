@@ -527,7 +527,7 @@ class BaseFs(Resource):
 
     def lv_resource(self):
         try:
-            name = self.lv_name()
+            name = self.lv_name()  # pylint: disable=assignment-from-no-return
         except ex.Error:
             return
         vg = self.oget("vg")
