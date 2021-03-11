@@ -266,7 +266,7 @@ class App(Resource):
         self.lockfd = None
         try:
             # compat
-            self.sort_key = "app#%d" % int(self.start_seq)
+            self.sort_key = ("app#%d" % int(self.start_seq), self.rid)
         except (TypeError, ValueError):
             pass
 
