@@ -6,7 +6,7 @@ from tests.helpers import assert_resource_has_mandatory_methods
 OS_LIST = {'Linux', 'SunOS', 'FreeBSD'}
 
 SCENARIOS = [
-    ('fs.zfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop',
+    ('fs.zfs', {'rid': '#1', 'mount_point': '/tmp/plop', 'fs_type': 'plop', 'user': 'root', 'group': 0, 'perm': '0644',
                 'mount_options': None, 'device': '/dev/zvol/...'},
      'fs'),
 ]

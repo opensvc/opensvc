@@ -2,6 +2,7 @@ import pytest
 
 from core.exceptions import Error
 from utilities.ifconfig.linux import Ifconfig
+from utilities.proc import which
 
 try:
     # noinspection PyCompatibility
@@ -76,7 +77,7 @@ class TestIpDelLinkWithAlias(object):
         ip = ip_class(ipname="192.168.0.149", ipdev="svc1@br-prd", netmask="24", alias=alias)
         ip.del_link()
         assert ip.vcall.call_args_list == [
-            call(["/bin_ip_cmd_test", "link", "del", "link", "br-prd", "name", "svc1", "type", "macvtap"]),
+            call(["/bin_ip_cmd_test", "link", "del", "link", "dev", "svc1", "type", "macvtap"]),
         ]
 
     @staticmethod
@@ -387,7 +388,7 @@ class TestIpStop(object):
 
         assert ip.vcall.call_args_list ==  [
             call(["/bin_ip_cmd_test", "addr", "del", "192.168.0.149/%s" % expected_netmask, "dev", "svc1"]),
-            call(["/bin_ip_cmd_test", "link", "del", "link", "br-prd", "name", "svc1", "type", "macvtap"]),
+            call(["/bin_ip_cmd_test", "link", "del", "link", "dev", "svc1", "type", "macvtap"]),
         ]
 
     @staticmethod
@@ -417,7 +418,7 @@ class TestIpStop(object):
         ip = ip_class(ipname="192.168.0.149", ipdev="br0", netmask=netmask, alias=alias)
         ip.stop()
 
-        if alias and created_with_alias:
+        if alias and created_with_alias and which("ifconfig"):
             assert ip.vcall.call_args_list == [call(["ifconfig", "br0:1", "down"])]
         else:
             assert ip.vcall.call_args_list == [
