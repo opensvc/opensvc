@@ -5,10 +5,10 @@ from __future__ import print_function
 
 import sys
 import logging
+from multiprocessing import Process
 
 import core.exceptions as ex
 import core.status
-from utilities.concurrent_futures import get_concurrent_futures
 from utilities.lazy import lazy
 from env import Env
 from core.resource import Resource
@@ -280,45 +280,56 @@ class ResourceSet(object):
         barrier = None
 
         if self.parallel:
-            try:
-                concurrent_futures = get_concurrent_futures()
-            except ImportError:
+            if Env.sysname == "Windows":
                 parallel = False
             else:
                 parallel = True
         else:
             parallel = False
 
-        if not self.svc.options.dry_run and \
-           parallel and len(resources) > 1 and \
-           action not in ["presync", "postsync"]:
+        if not self.svc.options.dry_run \
+                and parallel \
+                and len(resources) > 1 and \
+                action not in ["presync", "postsync"]:
             procs = {}
+            self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
+            from utilities.process_title import set_process_title  # warm up for side effect
+            for resource in resources:
+                if not resource.can_rollback and action == "rollback":
+                    continue
+                if resource.skip or resource.is_disabled():
+                    continue
+                title = "om %s --subset %s --rid %s %s" % (resource.svc.path,
+                                                           self.subset_name,
+                                                           resource.rid,
+                                                           action)
+                proc = Process(target=self._action_job, args=(title, resource, action,))
+                proc.start()
+                resource.log.info("action %s started in child process %d" % (action, proc.pid))
+                procs[resource.rid] = proc
+                if self.svc.options.upto and resource.rid == self.svc.options.upto:
+                    barrier = "reached 'up to %s' barrier" % resource.rid
+                    break
+                if self.svc.options.downto and resource.rid == self.svc.options.downto:
+                    barrier = "reached 'down to %s' barrier" % resource.rid
+                    break
+
+            for proc in procs.values():
+                proc.join()
+
             err = []
-            max_workers = len(resources)
-            if max_workers > self.svc.node.max_parallel:
-                max_workers = self.svc.node.max_parallel
-            if max_workers > 61:
-                max_workers = 61
-            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
-                from core.node.node import Node
-                for resource in resources:
-                    procs[executor.submit(action_job, resource.svc.path, self.subset_name, resource.rid, action)] = resource
-                    if self.svc.options.upto and resource.rid == self.svc.options.upto:
-                        barrier = "reached 'up to %s' barrier" % resource.rid
-                        break
-                    if self.svc.options.downto and resource.rid == self.svc.options.downto:
-                        barrier = "reached 'down to %s' barrier" % resource.rid
-                        break
-                for future in concurrent_futures.as_completed(procs):
-                    resource = procs[future]
-                    result = future.result()
-                    if result == 1 and not resource.optional:
-                        err.append(resource.rid)
-                    elif result == 2:
-                        # can_rollback resource property is lost with the thread
-                        # the action_job tells us what to do with it through its exitcode
-                        resource.can_rollback = True
+            for resource in resources:
+                if resource.rid not in procs:
+                    continue
+                proc = procs[resource.rid]
+                exitcode = proc.exitcode
+                if exitcode == 1 and not resource.optional:
+                    err.append(resource.rid)
+                elif exitcode == 2:
+                    # can_rollback resource property is lost with the thread
+                    # the action_job tells us what to do with it through its exitcode
+                    resource.can_rollback = True
+
             if len(err) > 0:
                 raise ex.Error("%s non-optional resources jobs returned "
                                "with error" % ",".join(err))
@@ -358,6 +369,25 @@ class ResourceSet(object):
         if barrier:
             raise ex.EndAction(barrier)
 
+    def _action_job(self, title, resource, action):
+        """
+        The worker job used for parallel execution of a resource action in
+        a resource set.
+        """
+        from utilities.process_title import set_process_title
+        set_process_title(title)
+        try:
+            getattr(resource, 'action')(action)
+        except ex.Error as exc:
+            self.log.error(str(exc))
+            sys.exit(1)
+        except Exception as exc:
+            self.log.exception(exc)
+            sys.exit(1)
+        if resource.can_rollback:
+            sys.exit(2)
+        sys.exit(0)
+
     def all_skip(self, action):
         """
         Return False if any resource will not skip the action.
@@ -392,33 +422,6 @@ class ResourceSet(object):
             l.insert(1, self.svc.namespace.lower())
         name = ".".join(l)
         return logging.getLogger(name)
-
-
-def action_job(path, subset_name, rid, action):
-    """
-    The worker job used for parallel execution of a resource action in
-    a resource set.
-    """
-    from utilities.process_title import set_process_title
-    set_process_title("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
-
-    from utilities.naming import factory, split_path
-    from core.node.node import Node
-    name, namespace, kind = split_path(path)
-    svc = factory(kind)(name, namespace=namespace, node=Node())
-    res = svc.get_resource(rid)
-
-    try:
-        res.action(action)
-    except ex.Error as exc:
-        res.log.error(str(exc))
-        return 1
-    except Exception as exc:
-        res.log.exception(exc)
-        return 1
-    if res.can_rollback:
-        return 2
-    return 0
 
 
 if __name__ == "__main__":
