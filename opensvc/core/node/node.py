@@ -15,6 +15,7 @@ import os
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
+from multiprocessing import Process
 
 import foreign.six as six
 
@@ -1785,6 +1786,34 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 continue
             return rid
 
+    def _service_action_worker(self, path, action, options):
+        """
+        The method the per-service subprocesses execute
+        """
+        from utilities.process_title import set_process_title
+        name, namespace, kind = split_path(path)
+        try:
+            if options.parm_svcs:
+                del options.parm_svcs
+            for attr in ["svcs", "parallel", "namespace"]:
+                if hasattr(options, attr):
+                    delattr(options, attr)
+            cmd_log  = format_command(kind, action, options)
+            set_process_title("om %s %s" % (path, " ".join(cmd_log)))
+        except ImportError:
+            pass
+        svc = factory(kind)(name, namespace=namespace, node=Node())
+        try:
+            ret = svc.action(action, options)
+        except Exception as exc:
+            import traceback
+            self.save_ex()
+            self.close()
+            sys.exit(1)
+        finally:
+            self.close()
+        sys.exit(ret)
+
     def register_as_node(self):
         """
         Returns a node registration unique id, authenticating to the
@@ -2316,14 +2345,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.clouds[section] = cloud
         return cloud
 
-    def can_parallel(self, action, svcs, options):
+    @staticmethod
+    def can_parallel_action(action, svcs, options):
         """
         Returns True if the action can be run in a subprocess per service
         """
-        try:
-            get_concurrent_futures()
-        except ImportError:
-            return False
         if Env.sysname == "Windows":
             return False
         if len(svcs) < 2:
@@ -2375,11 +2401,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print("\n".join(data))
             return
 
-        err = 0
-        errs = {}
-        data = Storage()
-        data.outs = {}
-        need_aggregate = self.action_need_aggregate(action, options)
         begin = time.time()
 
         if not options.cron:
@@ -2392,11 +2413,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
 
-        parallel = self.can_parallel(action, svcs, options)
-        if parallel:
-            data.procs = {}
-            data.svcs = {}
-
         timeout = 0
         if not options.local and options.wait:
             # submit all async actions and wait only after to avoid
@@ -2404,59 +2420,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = convert_duration(options.time)
             options.wait = False
 
+        need_aggregate = self.action_need_aggregate(action, options)
+        parallel = self.can_parallel_action(action, svcs, options)
         if parallel:
-            concurrent_futures = get_concurrent_futures()
-            max_workers = len(svcs)
-            if max_workers > self.max_parallel:
-                max_workers = self.max_parallel
-            if max_workers > 61:
-                max_workers = 61
-            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                for svc in svcs:
-                    data.svcs[svc.path] = svc
-                    data.procs[executor.submit(service_action_worker, svc.path, action, options)] = svc.path
-                for future in concurrent_futures.as_completed(data.procs):
-                    path = data.procs[future]
-                    ret = future.result()
-                    errs[path] = ret
-                    if ret > 0:
-                        # r is negative when data.procs[path] is killed by signal.
-                        # in this case, we don't want to decrement the err counter.
-                        err += ret
+            data, err, errs = self.do_svcs_action_parallel(action, options, svcs)
         else:
-            for svc in svcs:
-                try:
-                    ret = svc.action(action, options)
-                    if need_aggregate:
-                        if ret is not None:
-                            data.outs[svc.path] = ret
-                    elif action.startswith("print_") or action == "pg_stats":
-                        self.print_data(ret)
-                        if isinstance(ret, dict):
-                            if "error" in ret:
-                                err += 1
-                    else:
-                        if ret is None:
-                            ret = 0
-                        elif isinstance(ret, list):
-                            ret = 0
-                        elif isinstance(ret, dict):
-                            if "error" in ret:
-                                print(ret["error"], file=sys.stderr)
-                            else:
-                                print("unsupported format for this action", file=sys.stderr)
-                            ret = 1
-                        if ret > 0:
-                            err += ret
-                        errs[svc.path] = ret
-                except ex.Error as exc:
-                    ret = 1
-                    err += ret
-                    if not need_aggregate:
-                        print("%s: %s" % (svc.path, exc), file=sys.stderr)
-                    continue
-                except ex.Signal:
-                    break
+            data, err, errs = self.do_svcs_action_sequential(action, options, svcs, need_aggregate)
 
         if timeout:
             # async actions wait
@@ -2487,6 +2456,86 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             options.sections = ["services"]
             svcmon(self, options)
         return err
+
+    def do_svcs_action_sequential(self, action, options, svcs, need_aggregate):
+        err = 0
+        errs = {}
+        data = Storage()
+        data.outs = {}
+        for svc in svcs:
+            try:
+                ret = svc.action(action, options)
+                if need_aggregate:
+                    if ret is not None:
+                        data.outs[svc.path] = ret
+                elif action.startswith("print_") or action == "pg_stats":
+                    self.print_data(ret)
+                    if isinstance(ret, dict):
+                        if "error" in ret:
+                            err += 1
+                else:
+                    if ret is None:
+                        ret = 0
+                    elif isinstance(ret, list):
+                        ret = 0
+                    elif isinstance(ret, dict):
+                        if "error" in ret:
+                            print(ret["error"], file=sys.stderr)
+                        else:
+                            print("unsupported format for this action", file=sys.stderr)
+                        ret = 1
+                    if ret > 0:
+                        err += ret
+                    errs[svc.path] = ret
+            except ex.Error as exc:
+                ret = 1
+                err += ret
+                if not need_aggregate:
+                    print("%s: %s" % (svc.path, exc), file=sys.stderr)
+                continue
+            except ex.Signal:
+                break
+        return data, err, errs
+
+    def do_svcs_action_parallel(self, action, options, svcs):
+        err = 0
+        errs = {}
+        data = Storage()
+        data.outs = {}
+        max_parallel = self.max_parallel
+        data.procs = {}
+        data.svcs = {}
+        # noinspection PyUnresolvedReferences
+        from utilities.process_title import set_process_title  # warm up for side effect
+
+        def can_run_new_proc():
+            count = 0
+            for proc in data.procs.values():
+                if proc.is_alive():
+                    count += 1
+            return count <= max_parallel
+
+        for svc in svcs:
+            while not can_run_new_proc():
+                time.sleep(1)
+            data.svcs[svc.path] = svc
+            data.procs[svc.path] = Process(
+                target=self._service_action_worker,
+                name="worker_" + svc.path,
+                args=(svc.path, action, options),
+            )
+            data.procs[svc.path].start()
+        for path in data.procs:
+            data.procs[path].join()
+            ret = data.procs[path].exitcode
+            errs[path] = ret
+            if ret > 0:
+                # r is negative when data.procs[path] is killed by signal.
+                # in this case, we don't want to decrement the err counter.
+                err += ret
+            elif ret < 0:
+                err += 1
+        return data, err, errs
 
     def collector_cli(self):
         """
@@ -5181,37 +5230,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.unset_all_lazy()
 
 
-def service_action_worker(path, action, options):
-    """
-    The method the per-service subprocesses execute
-    """
-    name, namespace, kind = split_path(path)
-    try:
-        from setproctitle import setproctitle
-        if options.parm_svcs:
-            del options.parm_svcs
-        for attr in ["svcs", "parallel", "namespace"]:
-            if hasattr(options, attr):
-                delattr(options, attr)
-        cmd_log  = format_command(kind, action, options)
-        setproctitle("om %s %s" % (path, " ".join(cmd_log)))
-    except ImportError:
-        pass
-    svc = factory(kind)(name, namespace=namespace, node=Node())
-    try:
-        return svc.action(action, options)
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        return 1
-
-
 def pool_status_job(name, volumes, usage):
-    try:
-        from setproctitle import setproctitle
-        setproctitle("om pool --name %s --status" % (name))
-    except ImportError:
-        pass
+    from utilities.process_title import set_process_title
+    set_process_title("om pool --name %s --status" % (name))
     try:
         pool = Node().get_pool(name)
         d = pool.pool_status(usage=usage)
