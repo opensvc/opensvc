@@ -28,7 +28,6 @@ from core.resource import Resource
 from core.resourceset import ResourceSet
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env, Paths
-from utilities.concurrent_futures import get_concurrent_futures
 from utilities.converters import *
 from utilities.drivers import driver_import
 from utilities.fcache import fcache
@@ -4566,36 +4565,41 @@ class Svc(PgMixin, BaseSvc):
             parallel = False
         else:
             try:
-                concurrent_futures = get_concurrent_futures()
+                # noinspection PyUnresolvedReferences
+                from multiprocessing import Process
+                parallel = True
             except ImportError:
                 parallel = False
-            else:
-                parallel = True
 
-        procs = {}
         if not parallel:
             for resource in resources:
                 if resource.abort_start():
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
         else:
+            from utilities.process_title import set_process_title
+
+            def wrapper(proc_title, func):
+                set_process_title(proc_title)
+                try:
+                    if func():
+                        sys.exit(1)
+                except ex.Signal:
+                    sys.exit(1)
+
+            procs = {}
+            for resource in resources:
+                title = "om %s --rid %s check abort start" % (resource.svc.path, resource.rid)
+                # noinspection PyUnboundLocalVariable
+                proc = Process(target=wrapper, args=(title, resource.abort_action))
+                proc.start()
+                procs[resource.rid] = proc
+
             err = []
-            max_workers = len(resources)
-            if max_workers > self.node.max_parallel:
-                max_workers = self.node.max_parallel
-            if max_workers > 61:
-                max_workers = 61
-            with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                for resource in resources:
-                    job = executor.submit(resource_check_abort_job,
-                                          resource.svc.path,
-                                          resource.rid)
-                    procs[job] = resource.rid
-                for future in concurrent_futures.as_completed(procs):
-                    rid = procs[future]
-                    result = future.result()
-                    if result:
-                        err.append(rid)
+            for rid, proc in procs.items():
+                proc.join()
+                if proc.exitcode > 0:
+                    err.append(rid)
 
             if len(err) > 0:
                 raise ex.Error("start aborted due to resource %s "
@@ -5841,22 +5845,3 @@ class Svc(PgMixin, BaseSvc):
             "volume",
         ]
         self.sub_set_action(rtypes, "install_data")
-
-
-def resource_check_abort_job(path, rid):
-    try:
-        from setproctitle import setproctitle
-        setproctitle("om %s --rid %s check abort start" % (path, rid))
-    except ImportError:
-        pass
-
-    from utilities.naming import factory, split_path
-    name, namespace, kind = split_path(path)
-    svc = factory(kind)(name, namespace=namespace, node=Node())
-    res = svc.get_resource(rid)
-    try:
-        if res.abort_start():
-            return 1
-    except Exception:
-        return 1
-    return 0
