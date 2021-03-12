@@ -1785,28 +1785,22 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 continue
             return rid
 
-    def _service_action_worker(self, path, action, options):
+    def _service_action_worker(self, svc, action, options):
         """
         The method the per-service subprocesses execute
         """
         from utilities.process_title import set_process_title
-        name, namespace, kind = split_path(path)
-        try:
-            if options.parm_svcs:
-                del options.parm_svcs
-            for attr in ["svcs", "parallel", "namespace"]:
-                if hasattr(options, attr):
-                    delattr(options, attr)
-            cmd_log  = format_command(kind, action, options)
-            set_process_title("om %s %s" % (path, " ".join(cmd_log)))
-        except ImportError:
-            pass
-        svc = factory(kind)(name, namespace=namespace, node=Node())
+        name, namespace, kind = split_path(svc.path)
+        if options.parm_svcs:
+            del options.parm_svcs
+        for attr in ["svcs", "parallel", "namespace"]:
+            if hasattr(options, attr):
+                delattr(options, attr)
+        cmd_log  = format_command(kind, action, options)
+        set_process_title("om %s %s" % (svc.path, " ".join(cmd_log)))
         try:
             ret = svc.action(action, options)
-        except Exception as exc:
-            import traceback
-            self.save_ex()
+        except Exception:
             self.close()
             sys.exit(1)
         finally:
@@ -2521,7 +2515,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data.procs[svc.path] = Process(
                 target=self._service_action_worker,
                 name="worker_" + svc.path,
-                args=(svc.path, action, options),
+                args=(svc, action, options),
             )
             data.procs[svc.path].start()
         for path in data.procs:
