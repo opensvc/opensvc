@@ -15,7 +15,7 @@ import os
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 import foreign.six as six
 
@@ -30,7 +30,6 @@ from core.freezer import Freezer
 from core.network import NetworksMixin
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env
-from utilities.concurrent_futures import get_concurrent_futures
 from utilities.loop_delay import delay
 from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_config,
                               is_service, new_id, paths_data,
@@ -4985,23 +4984,44 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pools = [p["name"] for p in pools if p["name"] in all_pools]
         else:
             pools = all_pools
-        data = {}
-        procs = {}
         volumes = self.pools_volumes()
 
-        concurrent_futures = get_concurrent_futures()
-        max_workers = len(pools)
-        if max_workers > self.max_parallel:
-            max_workers = self.max_parallel
-        if max_workers > 61:
-            max_workers = 61
-        with concurrent_futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-            for name in pools:
-                procs[executor.submit(pool_status_job, name, volumes, usage)] = name
-            for future in concurrent_futures.as_completed(procs):
-                name = procs[future]
-                data[name] = future.result()
+        queue = Queue()
+        procs = {}
+        for name in pools:
+            title = "om pool --name %s --status" % (name)
+            pool = self.get_pool(name)
+            proc = Process(target=self._pool_status_job,
+                           args=(queue, title, name, pool, volumes, usage))
+            proc.start()
+            procs[name] = proc
+
+        data = {}
+        for name, proc in procs.items():
+            proc.join()
+        while not queue.empty():
+            name, pool_status = queue.get()
+            data[name] = pool_status
         return data
+
+    @staticmethod
+    def _pool_status_job(queue, title, name, pool, volumes, usage):
+        from utilities.process_title import set_process_title
+        set_process_title(title)
+        try:
+            pool_status = pool.pool_status(usage=usage)
+        except Exception as exc:
+            pool_status = {
+                "name": name,
+                "type": "unknown",
+                "capabilities": [],
+                "head": "err: " + str(exc),
+            }
+        if name in volumes:
+            pool_status["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
+        else:
+            pool_status["volumes"] = []
+        queue.put((name, pool_status))
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
         candidates1 = []
@@ -5228,26 +5248,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def post_commit(self):
         self.unset_all_lazy()
-
-
-def pool_status_job(name, volumes, usage):
-    from utilities.process_title import set_process_title
-    set_process_title("om pool --name %s --status" % (name))
-    try:
-        pool = Node().get_pool(name)
-        d = pool.pool_status(usage=usage)
-    except Exception as exc:
-        d = {
-            "name": name,
-            "type": "unknown",
-            "capabilities": [],
-            "head": "err: " + str(exc),
-        }
-    if name in volumes:
-        d["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
-    else:
-        d["volumes"] = []
-    return d
 
 
 # helper for tests mock
