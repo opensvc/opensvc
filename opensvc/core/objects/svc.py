@@ -4591,7 +4591,7 @@ class Svc(PgMixin, BaseSvc):
             for resource in resources:
                 title = "om %s --rid %s check abort start" % (resource.svc.path, resource.rid)
                 # noinspection PyUnboundLocalVariable
-                proc = Process(target=wrapper, args=(title, resource.abort_action))
+                proc = Process(target=wrapper, args=(title, resource.abort_start))
                 proc.start()
                 procs[resource.rid] = proc
 
