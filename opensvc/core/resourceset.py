@@ -399,11 +399,8 @@ def action_job(path, subset_name, rid, action):
     The worker job used for parallel execution of a resource action in
     a resource set.
     """
-    try:
-        from setproctitle import setproctitle
-        setproctitle("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
-    except ImportError:
-        pass
+    from utilities.process_title import set_process_title
+    set_process_title("om %s --subset %s --rid %s %s" % (path, subset_name, rid, action))
 
     from utilities.naming import factory, split_path
     from core.node.node import Node
