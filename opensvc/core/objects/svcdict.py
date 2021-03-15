@@ -55,6 +55,7 @@ PG_KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "create_pg",
         "default": True,
+        "at": True,
         "convert": "boolean",
         "candidates": (True, False),
         "text": "Use process containers when possible. Containers allow capping memory, swap and cpu usage per service. Lxc containers are naturally containerized, so skip containerization of their startapp."
