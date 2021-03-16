@@ -397,9 +397,13 @@ class OsvcThread(threading.Thread, Crypt):
             except ProcessLookupError:  # pylint: disable=undefined-variable
                 continue
             for _ in range(self.stop_tmo):
-                if ret() is not None:
+                exit_code = ret()
+                if exit_code is not None:
                     comm()
                     poll()
+                    break
+                elif exit_code < 0:
+                    # avoid wait on defunct process
                     break
                 time.sleep(1)
 
