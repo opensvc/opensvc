@@ -1,3 +1,4 @@
+import os
 import time
 
 import core.exceptions as ex
@@ -95,6 +96,8 @@ class PgMixin(object):
         A lazy property to import the system-specific process group module
         on-demand and expose it as self.pg
         """
+        if os.path.exists('/.dockerenv') or os.path.exists('/run/.containerenv'):
+            return
         try:
             mod = driver_import("pg", fallback=False)
         except ImportError:
