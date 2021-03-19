@@ -1639,10 +1639,10 @@ class OsvcThread(threading.Thread, Crypt):
     def daemon_status(self):
         return json.loads(json.dumps(LAST_DAEMON_STATUS))
 
-    def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None):
+    def filter_daemon_status(self, data, namespace=None, namespaces=None, selector=None, relatives=False):
         if selector is None:
             selector = "**"
-        keep = self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces)
+        keep = self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces, relatives=relatives)
         for node in [n for n in data.get("monitor", {}).get("nodes", {})]:
             for path in [p for p in data["monitor"]["nodes"][node].get("services", {}).get("status", {})]:
                 if path not in keep:
@@ -1660,7 +1660,7 @@ class OsvcThread(threading.Thread, Crypt):
             selector = "**"
         return path in self.object_selector(selector=selector, namespace=namespace, namespaces=namespaces, paths=[path])
 
-    def object_selector(self, selector=None, namespace=None, namespaces=None, kind=None, paths=None):
+    def object_selector(self, selector=None, namespace=None, namespaces=None, kind=None, paths=None, relatives=False):
         if not selector:
             return []
         if namespace:
@@ -1769,7 +1769,20 @@ class OsvcThread(threading.Thread, Crypt):
                     return False
                 return selector_config_match(svc, param, op, value)
 
+        def add_relatives(selected):
+            l = set()
+            for p in selected:
+                l.add(p)
+                try:
+                    l |= set(SERVICES[p].children_and_slaves)
+                    l |= set(SERVICES[p].parents)
+                except Exception:
+                    pass
+            return list(l)
+
         expanded = or_fragment_selector(selector)
+        if relatives:
+            expanded = add_relatives(expanded)
         return expanded
 
     def object_data(self, path):

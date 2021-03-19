@@ -22,6 +22,12 @@ class Handler(daemon.handler.BaseHandler):
             "required": False,
             "format": "string",
         },
+        {
+            "name": "relatives",
+            "desc": "Include the data of parents and children of the selected objects.",
+            "required": False,
+            "format": "boolean",
+        },
     ]
     access = {
         "roles": ["guest"],
@@ -41,5 +47,6 @@ class Handler(daemon.handler.BaseHandler):
             namespace=options.namespace,
             namespaces=namespaces,
             selector=options.selector,
+            relatives=options.relatives,
         )
 
