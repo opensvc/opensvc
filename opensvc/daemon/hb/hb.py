@@ -90,7 +90,7 @@ class Hb(shared.OsvcThread):
                     "nodename": nodename,
                     "hb": {"name": self.name, "id": self.id},
                 })
-            self.peers[nodename].beating = True
+                self.peers[nodename].beating = True
         self.peers[nodename].success = success
 
     def get_last(self, nodename="*"):
@@ -139,7 +139,7 @@ class Hb(shared.OsvcThread):
                         "last": self.peers[nodename].last,
                     },
                 }, level="warning")
-        self.peers[nodename].beating = beating
+            self.peers[nodename].beating = beating
         self.update_status()
         if not beating and self.peers[nodename].last > 0:
             self.forget_peer_data(nodename, change, origin=self.id)
