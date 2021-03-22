@@ -1677,6 +1677,17 @@ class OsvcThread(threading.Thread, Crypt):
                 del data["monitor"]["services"][path]
         return data
 
+    @staticmethod
+    def data_without_non_updated_gens(data):
+        """Return data without non updated gen"""
+        local_node = Env.nodename
+        for other_node in [n for n in data.get("monitor", {"nodes": {}})["nodes"].keys() if n != local_node]:
+            if "gen" in data["monitor"]["nodes"][other_node]:
+                data["monitor"]["nodes"][other_node]["gen"] = {
+                    local_node: data["monitor"]["nodes"][other_node]["gen"][local_node]
+                }
+        return data
+
     def match_object_selector(self, selector=None, namespace=None, namespaces=None, path=None):
         if selector is None:
             selector = "**"
