@@ -318,6 +318,22 @@ class ContainerLxc(BaseContainer):
             raise ex.Error("'%s' execution error:\n%s"%(' '.join(cmd), err))
         return out, err, ret
 
+    def set_encap_file_ownership(self, path):
+        """
+        Unprivileged containers may have a non zero root uid/gid
+        """
+        try:
+            st = os.stat(self.rootfs)
+        except OSError as exc:
+            self.log.warning(exc)
+            return
+        path = os.path.join(self.rootfs, path.lstrip("/"))
+        #self.log.info("set encap file ownership %s uid %d gid %d", path, st.st_uid, st.st_gid)
+        try:
+            os.chown(path, st.st_uid, st.st_gid)
+        except OSError as exc:
+            self.log.warning(exc)
+
     def lxc(self, action):
         self.find_cf()
         outf = None
