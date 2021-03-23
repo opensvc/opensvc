@@ -4996,30 +4996,19 @@ class Svc(PgMixin, BaseSvc):
             """
             Use a tempory conf staging to not have to care about ns dir create
             """
-            def set_encap_cf_ownership():
-                """
-                Unprivileged containers may have a non zero root uid/gid
-                """
-                try:
-                    st = os.stat(container.rootfs)
-                except AttributeError:
-                    return
-                path = os.path.join(container.rootfs, encap_cf)
-                try:
-                    os.chown(path, st.st_uid, st.st_gid)
-                except OSError as exc:
-                    self.log.warning(exc)
-
             paths = Paths(osvc_root_path=container.osvc_root_path)
             encap_cf = os.path.join(paths.pathtmp, self.id+".conf")
             if hasattr(container, 'rcp'):
                 cmd_results = container.rcp(self.paths.cf, encap_cf)
+                try:
+                    container.set_encap_file_ownership(encap_cf)
+                except Exception:
+                    pass
             else:
                 cmd = Env.rcp.split() + [self.paths.cf, container.name+':'+encap_cf]
                 cmd_results = justcall(cmd)
             if cmd_results[2] != 0:
                 raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
-            set_encap_cf_ownership()
             self.log.info("send %s to %s", self.paths.cf, container.name)
 
             cmd = ["create", "--restore", "--config", encap_cf]
