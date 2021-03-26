@@ -294,8 +294,13 @@ class BaseFs(Resource):
             label = self.svc._get(self.rid+".dev", evaluate=False)
         else:
             label = self.device
-        if self.mount_point is not None:
-            label += "@" + self.mount_point
+        try:
+            mount_point = self.mount_point
+        except:
+            # accept undef mount point (for example when zone is down)
+            mount_point = "undef"
+        if mount_point is not None:
+            label += "@" + mount_point
         if self.fs_type not in ("tmpfs", "shm", "shmfs", "none", None):
             label = self.fs_type + " " + label
         return label
