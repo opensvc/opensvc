@@ -518,7 +518,7 @@ class Volume(Resource):
                 makedirs(p, uid=self.uid, gid=self.gid, mode=self.octal_dirmode)
                 continue
             if not os.path.isdir(p):
-                raise ex.Error("directory path %s is already occupied by a non-directory")
+                raise ex.Error("directory path %s is already occupied by a non-directory"%p)
 
     def has_data(self, kind, name, key=None):
         for data in self.data_data(kind):

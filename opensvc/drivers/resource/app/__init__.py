@@ -268,7 +268,7 @@ class App(Resource):
             # compat
             self.sort_key = ("app#%d" % int(self.start_seq), self.rid)
         except (TypeError, ValueError):
-            pass
+            self.sort_key = (self.rid, self.rid)
 
     @lazy
     def retcodes_map(self):
