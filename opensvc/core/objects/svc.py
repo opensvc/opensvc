@@ -62,6 +62,8 @@ ACTION_NO_ASYNC = [
     "print_status",
 ]
 
+KIND_ACTION_NO_ASYNC = ["ccfg"]
+
 ACTION_ANY_NODE = (
     "decode",
     "delete",
@@ -1428,7 +1430,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return False
 
     def async_action(self, action, wait=None, timeout=None):
-        if action in ACTION_NO_ASYNC:
+        if action in ACTION_NO_ASYNC or self.kind in KIND_ACTION_NO_ASYNC:
             return
         if self.is_remote_action(action):
             options = self.prepare_async_options()
