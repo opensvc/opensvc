@@ -48,12 +48,15 @@ class Prov(provisioning.Prov):
         ret, out, err = self.r.vcall(cmd, err_to_info=True)
 
     def setup_snap(self):
-        if self.snap is None:
-            self.r.log.error("the 'snap' parameter must be set")
+        if self.snap is None and self.snapof is None:
+            return
+        elif self.snap and self.snapof is None:
+            self.r.log.error("the 'snapof' parameter is required when 'snap' parameter present")
             raise ex.excError
-        if self.snapof is None:
-            self.r.log.error("the 'snapof' parameter must be set")
+        elif self.snapof and self.snap is None:
+            self.r.log.error("the 'snap' parameter is required when 'snapof' parameter present")
             raise ex.excError
+
         if not which('btrfs'):
             self.r.log.error("'btrfs' command not found")
             raise ex.excError
