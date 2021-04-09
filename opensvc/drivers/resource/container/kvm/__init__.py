@@ -447,7 +447,7 @@ class ContainerKvm(BaseContainer):
         except ex.Error:
             pass
         for resource in self.svc.get_resources("ip"):
-            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.mask))
+            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.netmask))
             cf.append(s)
         cf.append('')
         return '\n'.join(cf)
