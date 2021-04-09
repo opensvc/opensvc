@@ -71,7 +71,6 @@ class ContainerKvm(BaseContainer):
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
-        self.virtinst_cfdisk = []
 
     @lazy
     def cf(self):
@@ -355,7 +354,7 @@ class ContainerKvm(BaseContainer):
         if self.virtinst is None:
             self.log.error("the 'virtinst' parameter must be set")
             raise ex.Error
-        cmd = [] + self.virtinst + self.virtinst_cfdisk
+        cmd = [] + self.virtinst
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -391,85 +390,8 @@ class ContainerKvm(BaseContainer):
         if ret != 0:
             raise ex.Error
 
-    def get_pubkey(self):
-        pub = ""
-        key_types = ['dsa', 'rsa']
-        for key_type in key_types:
-            p = os.path.join(os.sep, 'root', '.ssh', 'id_%s.pub' % key_type)
-            try:
-                self.log.info("try use root public key: %s", p)
-                with open(p) as f:
-                    pub = f.read(8000)
-                break
-            except:
-                pass
-        if not pub:
-            self.log.error('failed to read root public key')
-            raise ex.Error
-        return pub
-
-    def get_gw(self):
-        cmd = ['route', '-n']
-        ret, out, err = self.call(cmd)
-        if ret != 0:
-            self.log.error('failed to read routing table')
-            raise ex.Error
-        for line in out.split('\n'):
-            if line.startswith('0.0.0.0'):
-                l = line.split()
-                if len(l) > 1:
-                    return l[1]
-        self.log.error('failed to find default gateway')
-        raise ex.Error
-
-    def get_ns(self):
-        p = os.path.join(os.sep, 'etc', 'resolv.conf')
-        with open(p) as f:
-            for line in f.readlines():
-                if 'nameserver' in line:
-                    l = line.split()
-                    if len(l) > 1:
-                        return l[1]
-        self.log.error('failed to find a nameserver')
-        raise ex.Error
-
-    def get_config(self):
-        cf = ['todo']
-        s = ';'.join(('vm', self.name))
-        cf.append(s)
-        s = 'ns;192.168.122.1'
-        cf.append(s)
-        s = ';'.join(('gw', self.get_gw()))
-        cf.append(s)
-        try:
-            s = ';'.join(('hv_root_pubkey', self.get_pubkey()))
-            cf.append(s)
-        except ex.Error:
-            pass
-        for resource in self.svc.get_resources("ip"):
-            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.netmask))
-            cf.append(s)
-        cf.append('')
-        return '\n'.join(cf)
-
-    def setup_cfdisk(self):
-        config = self.get_config()
-        block = len(config)//512 + 1
-        cfdisk = os.path.join(Env.paths.pathtmp, self.svc.name+'.cfdisk')
-        try:
-            with open(cfdisk, 'w') as f:
-                f.write(config)
-                f.seek(block*512)
-                f.write('\0')
-        except:
-            self.log.error("failed to create config disk")
-            raise ex.Error
-        self.virtinst_cfdisk = ["--disk", "path=%s,device=floppy"%cfdisk]
-        self.log.info("created config disk with content;\n%s", config)
-
     def provisioner(self):
         self.setup_snap()
-        self.setup_cfdisk()
         self.setup_kvm()
         self.setup_ips()
         self.log.info("provisioned")
