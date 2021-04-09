@@ -67,11 +67,18 @@ class Prov(provisioning.Prov):
             raise ex.excError
 
     def get_pubkey(self):
-        p = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
-        try:
-            with open(p) as f:
-                pub = f.read(8000)
-        except:
+        pub = ""
+        key_types = ['dsa', 'rsa']
+        for key_type in key_types:
+            p = os.path.join(os.sep, 'root', '.ssh', 'id_%s.pub' % key_type)
+            try:
+                self.r.log.info("try use root public key: %s", p)
+                with open(p) as f:
+                    pub = f.read(8000)
+                break
+            except:
+                pass
+        if not pub:
             self.r.log.error('failed to read root public key')
             raise ex.excError
         return pub
