@@ -373,12 +373,15 @@ class ContainerKvm(BaseContainer):
         ret, out, err = self.vcall(cmd, err_to_info=True)
 
     def setup_snap(self):
-        if self.snap is None:
-            self.log.error("the 'snap' parameter must be set")
+        if self.snap is None and self.snapof is None:
+            return
+        elif self.snap and self.snapof is None:
+            self.log.error("the 'snapof' parameter is required when 'snap' parameter present")
             raise ex.Error
-        if self.snapof is None:
-            self.log.error("the 'snapof' parameter must be set")
+        elif self.snapof and self.snap is None:
+            self.log.error("the 'snap' parameter is required when 'snapof' parameter present")
             raise ex.Error
+
         if not which('btrfs'):
             self.log.error("'btrfs' command not found")
             raise ex.Error
@@ -389,11 +392,18 @@ class ContainerKvm(BaseContainer):
             raise ex.Error
 
     def get_pubkey(self):
-        p = os.path.join(os.sep, 'root', '.ssh', 'id_dsa.pub')
-        try:
-            with open(p) as f:
-                pub = f.read(8000)
-        except:
+        pub = ""
+        key_types = ['dsa', 'rsa']
+        for key_type in key_types:
+            p = os.path.join(os.sep, 'root', '.ssh', 'id_%s.pub' % key_type)
+            try:
+                self.log.info("try use root public key: %s", p)
+                with open(p) as f:
+                    pub = f.read(8000)
+                break
+            except:
+                pass
+        if not pub:
             self.log.error('failed to read root public key')
             raise ex.Error
         return pub
@@ -437,7 +447,7 @@ class ContainerKvm(BaseContainer):
         except ex.Error:
             pass
         for resource in self.svc.get_resources("ip"):
-            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.mask))
+            s = ';'.join((resource.rid, resource.ipdev, resource.addr, resource.netmask))
             cf.append(s)
         cf.append('')
         return '\n'.join(cf)
