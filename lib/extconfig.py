@@ -633,7 +633,7 @@ class ExtConfigMixin(object):
             m = re.search(r'{\w*[\w#][\w\.\[\]:\/]*}', s)
             if m is None:
                 return done + s
-            ref = m.group(0).strip("{}").lower()
+            ref = m.group(0)[1:-1]
             if first_step and ref.startswith("safe://"):
                 # do safe references after expressions only
                 done += s[:m.end()]
