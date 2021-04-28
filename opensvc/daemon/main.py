@@ -30,6 +30,22 @@ from .scheduler import Scheduler
 from core.node import Node
 from utilities.lazy import lazy, unset_lazy
 
+# node monitor status where start_threads is allowed
+START_THREADS_ALLOWED_NMON_STATUS = (None, "idle", "init", "rejoin", "draining")
+
+try:
+    from utilities.os.linux import set_tname
+except (ImportError, OSError):
+    pass
+else:
+    if hasattr(threading.Thread, '_bootstrap'):
+        def _bootstrap_named_thread(self):
+            set_tname(self.name)
+            threading.Thread._bootstrap_original(self)
+
+        threading.Thread._bootstrap_original = threading.Thread._bootstrap
+        threading.Thread._bootstrap = _bootstrap_named_thread
+
 DAEMON_TICKER = threading.Condition()
 DAEMON_INTERVAL = 2
 STATS_INTERVAL = 1
@@ -138,6 +154,16 @@ class Daemon(object):
         self.pid = os.getpid()
         self.stats_data = None
         self.last_stats_refresh = 0
+        self.init_data()
+
+    def init_data(self):
+        initial_data = {
+            "monitor": {
+                "nodes": {},
+                "services": {},
+            }
+        }
+        shared.DAEMON_STATUS.set([], initial_data)
 
     @lazy
     def log(self):
@@ -218,7 +244,7 @@ class Daemon(object):
             ofile.write(pid_args)
 
     def init(self):
-        shared.NODE = Node()
+        shared.NODE = Node(log_handlers=self.handlers)
         self.log.info("daemon started")
         self.log.info("versions:")
         self.log.info(" opensvc agent: %s", shared.NODE.agent_version)
@@ -308,9 +334,10 @@ class Daemon(object):
         Return True if a thread need restarting, ie not signalled to stop
         and not alive.
         """
-        if thr_id not in self.threads:
+        try:
+            thr = self.threads[thr_id]
+        except KeyError:
             return True
-        thr = self.threads[thr_id]
         if thr.stopped():
             return False
         if thr.is_alive():
@@ -335,7 +362,11 @@ class Daemon(object):
         Start threads or restart threads dead of an unexpected cause.
         Stop and delete heartbeat threads whose configuration was deleted.
         """
-        if shared.NMON_DATA.status not in (None, "idle", "init"):
+        try:
+            nmon_status = shared.DAEMON_STATUS.get(["monitor", "nodes", Env.nodename, "monitor", "status"])
+        except (KeyError, TypeError):
+            nmon_status = None
+        if nmon_status not in START_THREADS_ALLOWED_NMON_STATUS:
             return
 
         config_changed = self.read_config()
@@ -376,6 +407,7 @@ class Daemon(object):
                 self.threads[thr_id].stop()
                 self.threads[thr_id].join()
                 del self.threads[thr_id]
+                shared.DAEMON_STATUS.unset_safe([thr_id])
                 changed = True
 
             # clean up collector thread no longer needed
@@ -384,6 +416,7 @@ class Daemon(object):
                 self.threads["collector"].stop()
                 self.threads["collector"].join()
                 del self.threads["collector"]
+                shared.DAEMON_STATUS.unset_safe(["collector"])
                 changed = True
 
         if changed:
@@ -433,7 +466,7 @@ class Daemon(object):
         if mtime is None:
             return
         if self.last_config_mtime is not None and \
-           self.last_config_mtime >= mtime:
+                self.last_config_mtime >= mtime:
             return
         try:
             with shared.NODE_LOCK:

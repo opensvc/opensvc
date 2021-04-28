@@ -421,12 +421,7 @@ class SyncDds(Sync):
         pass
 
     def can_sync(self, target=None):
-        try:
-            ls = self.get_local_state()
-            last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-        except IOError:
-            return True
-        return not self.skip_sync(last)
+        return True
 
     def sync_status(self, verbose=False):
         try:

@@ -1,5 +1,13 @@
+import datetime
 import json
 import os
+try:
+    # noinspection PyCompatibility
+    from unittest.mock import ANY
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    from mock import ANY
+
 import pytest
 
 from commands.svc import Mgr
@@ -42,6 +50,26 @@ class TestRun:
         assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
         for name in success_flags:
             assert os.path.exists(os.path.join(str(osvc_path_tests), 'var', 'svc', svcname, name))
+
+    @staticmethod
+    @pytest.mark.parametrize('task_kws, expected_preexec_factory_args', [
+        (["group=1"], [(0, 1, {}, None)]),
+        (["umask=0644"], [(0, 0, {}, int('0644', 8))]),
+        (["user=1", "group=2"], [(1, 2, {}, None)]),
+        (["user=1", "group=2", "umask=0600"], [(1, 2, {}, int("0600", 8))]),
+    ])
+    def test_cmd_use_expected_prexec_function(
+            preexec_factory,
+            task_kws,
+            expected_preexec_factory_args):
+        svcname = "pytest"
+        service_kws = ['--kw', 'task#1.command=%s' % Env.syspaths.true]
+        for kw in task_kws:
+            service_kws.extend(['--kw', 'task#1.%s' % kw])
+        assert_run_cmd_success(svcname, ['create'] + service_kws)
+        assert_run_cmd_success(svcname, ['run', '--rid', 'task#1', '--local'])
+        assert preexec_factory.call_args_list[0] == expected_preexec_factory_args
+        assert preexec_factory.call_count == 1
 
     @staticmethod
     @pytest.mark.parametrize('service_hooks, success_flags', [
@@ -91,19 +119,61 @@ class TestRun:
                     lcall_task.call_args_list[1][0][0][0]]) == set(['/task1', '/task2'])
 
     @staticmethod
-    def test_define_correct_schedule(mocker, tmp_file, capture_stdout):
+    def test_define_correct_schedule_with_next_run_immediate_when_no_last_run(tmp_file, capture_stdout):
         svcname = "pytest"
-        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
         assert_run_cmd_success(svcname, ["create",
                                          "--kw", "task#1.command=/usr/bin/date",
                                          "--kw", "task#1.schedule=@3"])
         assert_run_cmd_success(svcname, ["print", "schedule"])
         with capture_stdout(tmp_file):
             assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+        now = datetime.datetime.now()
         schedule_run = [schedule for schedule in json.load(open(tmp_file, "r")) if schedule["action"] == "run"][0]
         assert schedule_run == {
             "action": "run",
             "config_parameter": "task#1.schedule",
             "last_run": "-",
+            "next_run": ANY,
             "schedule_definition": "@3"
         }
+        delta = now - datetime.datetime.strptime(schedule_run['next_run'], "%Y-%m-%d %H:%M:%S")
+        # rarely delta is between 1 and 2 (1 time on 400 runs), most of time < 1
+        assert delta < datetime.timedelta(seconds=2)
+
+    @staticmethod
+    def test_define_correct_schedule_when_has_last_run(mocker, capsys):
+        svcname = "pytest"
+        with capsys.disabled():
+            assert_run_cmd_success(svcname, ["create",
+                                             "--kw", "task#1.command=/usr/bin/date",
+                                             "--kw", "task#1.schedule=@3"])
+        now = datetime.datetime.now()
+        mocker.patch('core.scheduler.Scheduler.get_last', return_value=now)
+        assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+        schedule_run = [schedule for schedule in json.loads(capsys.readouterr().out) if schedule["action"] == "run"][0]
+        assert schedule_run == {
+            "action": "run",
+            "config_parameter": "task#1.schedule",
+            "last_run": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "next_run": ANY,
+            "schedule_definition": "@3"
+        }
+        delta = datetime.datetime.strptime(schedule_run['next_run'], "%Y-%m-%d %H:%M:%S") - now
+        assert datetime.timedelta(seconds=2 * 60) < delta < datetime.timedelta(seconds=3 * 60, microseconds=1)
+
+    @staticmethod
+    @pytest.mark.parametrize('schedule_def', ["@%ss" % s for s in range(2, 13)])
+    def test_define_correct_schedule_when_has_last_run_and_schedule_at_seconds(mocker, capsys, schedule_def):
+        svcname = "pytest"
+        with capsys.disabled():
+            assert_run_cmd_success(svcname, ["create",
+                                             "--kw", "task#1.command=/usr/bin/date",
+                                             "--kw", "task#1.schedule=%s" % schedule_def])
+        now = datetime.datetime.now()
+        seconds = int(schedule_def[1:-1])
+        mocker.patch('core.scheduler.Scheduler.get_last', return_value=now)
+        assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+        schedule_run = [schedule for schedule in json.loads(capsys.readouterr().out) if schedule["action"] == "run"][0]
+        delta = datetime.datetime.strptime(schedule_run['next_run'], "%Y-%m-%d %H:%M:%S") - now
+        assert datetime.timedelta(seconds=seconds-1) <= delta
+        assert delta < datetime.timedelta(seconds=seconds, microseconds=1)

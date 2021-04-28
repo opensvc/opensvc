@@ -34,6 +34,7 @@ LOCKER_TYPES = [
     "disk.radoslock",
 ]
 
+MAX_STATUS_HISTORY = 100
 
 class Resource(object):
     """
@@ -495,8 +496,6 @@ class Resource(object):
         Catch status methods errors and push them to the resource log buffer
         so they will be display in print status.
         """
-        if hasattr(self, "is_up_clear_cache"):
-            getattr(self, "is_up_clear_cache")()
         try:
             return self._status(verbose=verbose)
         except Exception as exc:
@@ -674,32 +673,50 @@ class Resource(object):
             json.dump(data, ofile)
             ofile.flush()
 
+    def load_status_history(self):
+        try:
+            with open(self.fpath_status_history, "r") as fp:
+                return json.load(fp)
+        except Exception:
+            return []
+
     def write_status_history(self):
         """
         Log a change to the resource status history file.
         """
-        fpath = self.fpath_status_history
+        tmpfpath = self.fpath_status_history + ".tmp"
+        data = self.load_status_history()
         try:
-            with open(fpath, 'r') as ofile:
-                lines = ofile.readlines()
-                last = lines[-1].split(" | ")[-1].strip("\n")
-        except:
+            last = data[-1]["status"]
+        except IndexError:
             last = None
+        except KeyError:
+            # corrupted => reset
+            self.log.warning("reset corrupted status history. last entry: %s", data[-1])
+            data = []
+            last = None
+
         current = core.status.Status(self.rstatus)
         if current == last:
+            # no change
             return
-        log = logging.getLogger("status_history")
-        logformatter = logging.Formatter("%(asctime)s | %(message)s")
-        logfilehandler = logging.handlers.RotatingFileHandler(
-            fpath,
-            maxBytes=512000,
-            backupCount=1,
-        )
-        logfilehandler.setFormatter(logformatter)
-        log.addHandler(logfilehandler)
-        log.error(current)
-        logfilehandler.close()
-        log.removeHandler(logfilehandler)
+
+        # purge history
+        trim = len(data) - MAX_STATUS_HISTORY - 1
+        if trim > 0:
+            data = data[trim:]
+
+        data.append({
+            "ts": time.time(),
+            "status": str(current),
+        })
+        try:
+            with open(tmpfpath, "w") as fp:
+                json.dump(data, fp)
+            import shutil
+            shutil.move(tmpfpath, self.fpath_status_history)
+        except Exception as exc:
+            self.log.error("write_status_history: %s", exc)
 
     def status_log(self, text, level="warn"):
         """

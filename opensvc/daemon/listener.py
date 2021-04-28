@@ -53,6 +53,7 @@ from utilities.lazy import set_lazy, lazy, unset_lazy
 from utilities.converters import print_duration
 from utilities.string import bencode, bdecode
 from utilities.uri import Uri
+from utilities.render.listener import fmt_listener
 
 if six.PY2:
     class _ConnectionResetError(Exception):
@@ -88,6 +89,7 @@ class DontClose(Exception):
 
 class Listener(shared.OsvcThread):
     name = "listener"
+    stage = "init"
     events_grace_period = True
     sock_tmo = 1.0
     sockmap = {}
@@ -120,7 +122,7 @@ class Listener(shared.OsvcThread):
         secs = []
         for secpath in secpaths:
             secname, namespace, kind = split_path(secpath)
-            sec = factory("sec")(secname, namespace=namespace, volatile=True)
+            sec = factory("sec")(secname, namespace=namespace, volatile=True, node=shared.NODE)
             if not sec.exists():
                 self.log.warning("ca %s does not exist: ignore", secpath)
                 continue
@@ -136,7 +138,7 @@ class Listener(shared.OsvcThread):
         if secpath is None:
             secpath = "system/sec/cert-" + self.cluster_name
         secname, namespace, kind = split_path(secpath)
-        return factory("sec")(secname, namespace=namespace, volatile=True)
+        return factory("sec")(secname, namespace=namespace, volatile=True, node=shared.NODE)
 
     def prepare_certs(self):
         makedirs(Env.paths.certs)
@@ -296,10 +298,12 @@ class Listener(shared.OsvcThread):
 
         self.register_handlers()
         self.setup_socks()
+        self.stage = "ready"
 
         while True:
             try:
                 self.do()
+                self.update_status()
             except socket.error as exc:
                 self.log.warning(exc)
                 self.setup_socks()
@@ -687,20 +691,24 @@ class Listener(shared.OsvcThread):
             self.tls_port = port
             self.tls_addr = addr
         else:
-            self.log.info("tls listener %s:%d config unchanged", self.tls_addr, self.tls_port)
+            self.log.info("tls listener %s config unchanged", fmt_listener(self.tls_addr, self.tls_port))
             return
 
         try:
             addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
             self.tls_context = self.get_http2_ssl_context()
             self.tls_addr = addrinfo[4][0]
-            self.tls_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+            if ":" in self.tls_addr:
+                af = socket.AF_INET6
+            else:
+                af = socket.AF_INET
+            self.tls_sock = socket.socket(af, socket.SOCK_STREAM)
             self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.tls_sock, self.tls_addr, self.tls_port)
             self.tls_sock.listen(128)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind tls listener %s:%d error: %s", self.tls_addr, self.tls_port, exc)
+            self.alert("error", "bind tls listener %s error: %s", fmt_listener(self.tls_addr, self.tls_port), exc)
             return
         except ex.InitError as exc:
             self.log.info("skip tls listener init: %s", exc)
@@ -708,7 +716,7 @@ class Listener(shared.OsvcThread):
         except Exception as exc:
             self.log.info("failed tls listener init: %s", exc)
             return
-        self.log.info("listening on %s:%s using http/2 tls with client auth", self.tls_addr, self.tls_port)
+        self.log.info("listening on %s using http/2 tls with client auth", fmt_listener(self.tls_addr, self.tls_port))
         self.sockmap[self.tls_sock.fileno()] = self.tls_sock
 
     def setup_sock(self):
@@ -729,21 +737,25 @@ class Listener(shared.OsvcThread):
             self.port = port
             self.addr = addr
         else:
-            self.log.info("aes listener %s:%d config unchanged", self.addr, self.port)
+            self.log.info("aes listener %s config unchanged", fmt_listener(self.addr, self.port))
             return
 
         try:
             addrinfo = socket.getaddrinfo(self.addr, None)[0]
             self.addr = addrinfo[4][0]
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if ":" in self.addr:
+                af = socket.AF_INET6
+            else:
+                af = socket.AF_INET
+            self.sock = socket.socket(af, socket.SOCK_STREAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.sock, self.addr, self.port)
             self.sock.listen(128)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
-            self.alert("error", "bind aes listener %s:%d error: %s", self.addr, self.port, exc)
+            self.alert("error", "bind aes listener %s error: %s", fmt_listener(self.addr, self.port), exc)
             return
-        self.log.info("listening on %s:%s using aes encryption", self.addr, self.port)
+        self.log.info("listening on %s using aes encryption", fmt_listener(self.addr, self.port))
         self.sockmap[self.sock.fileno()] = self.sock
 
     def setup_sockux_h2(self):
@@ -807,6 +819,7 @@ class Listener(shared.OsvcThread):
 
 class ClientHandler(shared.OsvcThread):
     sock_tmo = 5.0
+    name = "listener client"
 
     def __init__(self, parent, conn, addr, encrypted, scheme, tls, tls_context):
         shared.OsvcThread.__init__(self)
@@ -916,10 +929,7 @@ class ClientHandler(shared.OsvcThread):
             raise RuntimeError("couldn't negotiate h2: %s" % negotiated_protocol)
 
     def current_usr_cf_sum(self):
-        try:
-            return shared.CLUSTER_DATA[Env.nodename]["services"]["config"][self.usr.path]["csum"]
-        except:
-            return "unknown"
+        return self.node_data.get(["services", "config", self.usr.path, "csum"], default="unknown")
 
     def authenticate_client(self, headers):
         if self.usr is False:
@@ -1000,7 +1010,7 @@ class ClientHandler(shared.OsvcThread):
         buff = authorization[6:].strip()
         buff = base64.b64decode(buff)
         name, password = bdecode(buff).split(":", 1)
-        usr = factory("usr")(name, namespace="system", volatile=True, log=self.log)
+        usr = factory("usr")(name, namespace="system", volatile=True, log=self.log, node=shared.NODE)
         if not usr.exists():
             raise ex.Error("user %s does not exist" % name)
         if not usr.has_key("password"):
@@ -1029,7 +1039,7 @@ class ClientHandler(shared.OsvcThread):
         name = decoded.get("preferred_username")
         if not name:
             name = decoded.get("name", "unknown").replace(" ", "_")
-        usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log)
+        usr = factory("usr")(name, namespace="system", volatile=True, cd={"DEFAULT": {"grant": grant}}, log=self.log, node=shared.NODE)
         return usr
 
     def authenticate_client_secret(self, secret=None):
@@ -1055,9 +1065,9 @@ class ClientHandler(shared.OsvcThread):
         if cn.endswith(self.cluster_name) and cn.count(".") == 3:
             # service account
             name, namespace, kind = split_fullname(cn, self.cluster_name)
-            usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log)
+            usr = factory("usr")(name, namespace=namespace, volatile=True, log=self.log, node=shared.NODE)
         else:
-            usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log)
+            usr = factory("usr")(cn, namespace="system", volatile=True, log=self.log, node=shared.NODE)
         if not usr or not usr.exists():
             self.conn.close()
             raise ex.Error("x509 auth failed: %s (valid cert, unknown user)" % cn)
@@ -1503,14 +1513,11 @@ class ClientHandler(shared.OsvcThread):
     #########################################################################
     def get_all_ns(self):
         data = set()
-        try:
-            for path in shared.CLUSTER_DATA[Env.nodename].get("services", {}).get("config", {}):
-                _, ns, _ = split_path(path)
-                if ns is None:
-                    ns = "root"
-                data.add(ns)
-        except KeyError:
-            return set()
+        for path in self.list_cluster_paths():
+            _, ns, _ = split_path(path)
+            if ns is None:
+                ns = "root"
+            data.add(ns)
         return data
 
     def get_namespaces(self, role="guest"):
@@ -1638,7 +1645,7 @@ class ClientHandler(shared.OsvcThread):
         result = {"nodes": {}, "status": 0}
         path = self.options_path(options, required=False)
         if node == "ANY" and path:
-            svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+            svcnodes = self.get_service_nodes(path)
             try:
                 if Env.nodename in svcnodes:
                     # prefer to not relay, if possible
@@ -1650,11 +1657,11 @@ class ClientHandler(shared.OsvcThread):
         elif node == "ANY":
             nodenames = [Env.nodename]
         else:
-            nodenames = shared.NODE.nodes_selector(node, data=shared.CLUSTER_DATA)
+            nodenames = shared.NODE.nodes_selector(node, data=self.nodes_data.get())
             if not nodenames:
                 return {"info": "empty node selection", "status": 0}
             if path:
-                svcnodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+                svcnodes = self.get_service_nodes(path)
                 nodenames = [n for n in nodenames if n in svcnodes]
 
         def do_node(nodename):
@@ -1728,9 +1735,9 @@ class ClientHandler(shared.OsvcThread):
             nodes = svcdata.get("DEFAULT", {}).get("nodes")
             placement = svcdata.get("DEFAULT", {}).get("placement", "nodes order")
             if nodes:
-                nodes = shared.NODE.nodes_selector(nodes, data=shared.CLUSTER_DATA)
+                nodes = shared.NODE.nodes_selector(nodes, data=self.nodes_data.get())
             else:
-                nodes = [n for n in shared.CLUSTER_DATA if shared.CLUSTER_DATA[n].get("services", {}).get("config", {}).get(path)]
+                nodes = self.get_service_nodes(path)
             if nodes:
                 if Env.nodename in nodes:
                     node = Env.nodename

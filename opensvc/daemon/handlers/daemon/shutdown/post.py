@@ -28,7 +28,8 @@ class Handler(daemon.handler.BaseHandler):
         with shared.THREADS_LOCK:
             shared.THREADS["scheduler"].stop()
             mon = shared.THREADS["monitor"]
-        if thr.stopped() or shared.NMON_DATA.status == "shutting":
+        nmon = thr.get_node_monitor()
+        if thr.stopped() or nmon.status == "shutting":
             thr.log.info("already shutting")
             # wait for service shutdown to finish before releasing the dup client
             while True:
@@ -39,12 +40,12 @@ class Handler(daemon.handler.BaseHandler):
         try:
             thr.set_nmon("shutting")
             mon.kill_procs()
-            for path in shared.SMON_DATA:
+            for path in thr.node_data.get(["services", "status"]):
                 _, _, kind = split_path(path)
                 if kind not in ("svc", "vol"):
                     continue
                 thr.set_smon(path, local_expect="shutdown")
-            self.wait_shutdown()
+            self.wait_shutdown(thr=thr)
 
             # send a last status to peers so they can takeover asap
             mon.update_hb_data()
@@ -63,12 +64,12 @@ class Handler(daemon.handler.BaseHandler):
         shared.DAEMON_STOP.set()
         return {"status": 0}
 
-    def wait_shutdown(self):
-        def still_shutting():
-            for smon in shared.SMON_DATA.values():
+    def wait_shutdown(self, thr=None):
+        def still_shutting(thr=None):
+            for path, smon in thr.iter_local_services_monitors():
                 if smon.local_expect == "shutdown":
                     return True
             return False
-        while still_shutting():
+        while still_shutting(thr=thr):
             time.sleep(1)
 

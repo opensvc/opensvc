@@ -6,6 +6,9 @@ import daemon.shared as shared
 import core.exceptions as ex
 from env import Env
 
+LOCK_TIMEOUT = 120
+
+
 class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     """
     Join the cluster.
@@ -17,12 +20,19 @@ class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
     prototype = []
 
     def action(self, nodename, thr=None, **kwargs):
-        lock_id = self.lock_acquire(Env.nodename, "join", 30, thr=thr)
+        thr.log.info('-> join request from %s', nodename)
+        lock_id = self.lock_acquire(Env.nodename, "join", timeout=LOCK_TIMEOUT, thr=thr)
         if not lock_id:
+            thr.log.warning('<- join request from %s refused (Lock not acquired)', nodename)
             raise ex.HTTP(503, "Lock not acquired")
-        with shared.JOIN_LOCK:
-            data = self.join(nodename, thr=thr, **kwargs)
-        self.lock_release("join", lock_id, thr=thr)
+        try:
+            with shared.JOIN_LOCK:
+                thr.log.info('-> join request from %s with lock %s', nodename, lock_id)
+                data = self.join(nodename, thr=thr, **kwargs)
+                thr.log.info('<- join request from %s with lock %s', nodename, lock_id)
+        finally:
+            self.lock_release("join", lock_id, timeout=LOCK_TIMEOUT, thr=thr)
+        thr.log.info('<- join request from %s', nodename)
         return data
 
     def join(self, nodename, thr=None, **kwargs):
@@ -31,6 +41,7 @@ class Handler(daemon.handler.BaseHandler, daemon.clusterlock.LockMixin):
             thr.log.info("node %s rejoins", nodename)
         else:
             new_nodes = thr.cluster_nodes + [nodename]
+            thr.log.info("node %s joins", nodename)
             thr.add_cluster_node(nodename)
         result = {
             "status": 0,

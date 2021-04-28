@@ -54,9 +54,6 @@ class SyncRadosclone(SyncRadossnap):
         image, clone = pair.split(":")
         snapnames = self._get_all(image)
         last_date, last_name = self._get_last(image)
-        if self.skip_sync(last_date):
-            self.log.info("skip resync for image %s: last resync on %s"%(image, str(last_date)))
-            return
         snapname = self.snap_basename() + datetime.datetime.now().strftime(self.date_fmt)
         cmd = self.rbd_cmd()+['snap', 'create', image, '--snap', snapname]
         ret, out, err = self.vcall(cmd)

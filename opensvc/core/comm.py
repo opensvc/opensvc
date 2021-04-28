@@ -68,7 +68,6 @@ PING = ".".encode()
 
 # Number of received misencrypted data messages by senders
 BLACKLIST = {}
-BLACKLIST_LOCK = threading.RLock()
 
 # The maximum number of misencrypted data messages received before refusing
 # new messages
@@ -206,12 +205,12 @@ class Crypt(object):
         This is 4x faster than calling os.urandom(16) and prevents
         the "too many files open" issue with concurrent access to os.urandom()
         """
-        locker = locker or threading.RLock()
         if urandom is None:
             urandom = []
         try:
             return urandom.pop()
         except IndexError:
+            locker = locker or threading.RLock()
             try:
                 locker.acquire()
                 ur = os.urandom(1024)
@@ -449,8 +448,10 @@ class Crypt(object):
         if sender_id is None:
             return False
         sender_id = str(sender_id)
-        with BLACKLIST_LOCK:
-            count = BLACKLIST.get(sender_id, 0)
+        try:
+            count = BLACKLIST[sender_id]
+        except Exception:
+            count = 0
         if count > BLACKLIST_THRESHOLD:
             self.log.warning("received a message from blacklisted sender %s",
                              sender_id)
@@ -464,20 +465,19 @@ class Crypt(object):
         if sender_id is None:
             return
         sender_id = str(sender_id)
-        with BLACKLIST_LOCK:
-            count = BLACKLIST.get(sender_id, 0)
-            if sender_id in BLACKLIST:
-                BLACKLIST[sender_id] += 1
-                if count == BLACKLIST_THRESHOLD:
-                    getattr(self, "event")(
-                        "blacklist_add",
-                        level="warning",
-                        data={
-                            "sender": sender_id,
-                        }
-                    )
-            else:
-                BLACKLIST[sender_id] = 1
+        try:
+            count = BLACKLIST[sender_id]
+        except Exception:
+            count = 0
+        BLACKLIST[sender_id] = count + 1
+        if count == BLACKLIST_THRESHOLD:
+            getattr(self, "event")(
+                "blacklist_add",
+                level="warning",
+                data={
+                    "sender": sender_id,
+                }
+            )
 
     def blacklist_clear(self, sender_id=None):
         """
@@ -486,22 +486,26 @@ class Crypt(object):
         global BLACKLIST
         if sender_id is None and BLACKLIST == {}:
             return
-        with BLACKLIST_LOCK:
-            if sender_id is None:
-                BLACKLIST = {}
-                self.log.info("blacklist cleared")
-            elif sender_id in BLACKLIST:
-                del BLACKLIST[sender_id]
-                self.log.info("sender %s removed from blacklist" % \
-                              sender_id)
+        if sender_id is None:
+            BLACKLIST = {}
+            self.log.info("blacklist cleared")
+        elif sender_id in BLACKLIST:
+            del BLACKLIST[sender_id]
+            self.log.info("sender %s removed from blacklist" % \
+                          sender_id)
 
     @staticmethod
     def get_blacklist():
         """
-        Return the senders blacklist.
+        Return a copy of the senders blacklist.
         """
-        with BLACKLIST_LOCK:
-            return dict(BLACKLIST)
+        data = {}
+        for key in list(BLACKLIST):
+            try:
+                data[key] = BLACKLIST[key]
+            except Exception:
+                pass
+        return data
 
     def get_listener_info(self, nodename):
         """
@@ -510,7 +514,7 @@ class Crypt(object):
         node = self.get_node()
         addr = node.oget("listener", "tls_addr", impersonate=nodename)
         port = node.oget("listener", "tls_port", impersonate=nodename)
-        if nodename != Env.nodename and addr == "0.0.0.0":
+        if nodename != Env.nodename and addr in ("0.0.0.0", "::"):
             addr = nodename
             port = 1214
         return addr, port
@@ -606,7 +610,6 @@ class Crypt(object):
         data.scheme = "h2"
         data.af = socket.AF_UNIX
         data.to = Env.paths.lsnruxh2sock
-        data.to_s = Env.paths.lsnruxh2sock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -617,7 +620,6 @@ class Crypt(object):
         data.scheme = "raw"
         data.af = socket.AF_UNIX
         data.to = Env.paths.lsnruxsock
-        data.to_s = Env.paths.lsnruxsock
         data.encrypted = False
         data.server = server
         data.context = None
@@ -634,7 +636,6 @@ class Crypt(object):
         data.scheme = "h2"
         data.af = socket.AF_INET
         data.to = (addr, port)
-        data.to_s = "%s:%d" % (addr, port)
         data.encrypted = False
         data.tls = True
         data.server = server
@@ -649,6 +650,7 @@ class Crypt(object):
         data.tls = True
         data.encrypted = False
         data.server = server
+        data.af = socket.AF_INET
 
         if server.startswith("https://"):
             host = server[8:]
@@ -660,17 +662,27 @@ class Crypt(object):
             port = Env.listener_port
             host = server[6:]
         elif "://" in server:
-            scheme = server.split("://", 1)[0]
+            scheme, host = server.split("://", 1)
             raise ex.Error("unknown scheme '%s'. use 'raw' or 'https'" % scheme)
 
-        try:
-            addr, port = host.split(":", 1)
-            port = int(port)
-        except:
-            addr = host
-        data.af = socket.AF_INET
-        data.to = (addr, port)
-        data.to_s = "%s:%d" % data.to
+        if not host:
+            addr = "localhost"
+            data.to = (addr, port)
+        elif host[0] == "[":
+            try:
+                # ipv6 notation
+                addr, port = host[1:].split("]:", 1)
+                port = int(port)
+            except:
+                addr = host[1:-1]
+            data.to = (addr, port)
+        else:
+            try:
+                addr, port = host.split(":", 1)
+                port = int(port)
+            except:
+                addr = host
+            data.to = (addr, port)
         return data
 
     def socket_parms_inet_raw(self, server):
@@ -680,7 +692,6 @@ class Crypt(object):
         data.scheme = "raw"
         data.af = socket.AF_INET
         data.to = (addr, port)
-        data.to_s = "%s:%d" % (addr, port)
         data.encrypted = True
         data.tls = False
         return data
@@ -693,7 +704,9 @@ class Crypt(object):
         if server == Env.nodename and os.name != "nt":
             # Local comms
             return self.socket_parms_ux(server)
-        if server.startswith("/"):
+        if server == Env.paths.lsnruxsock:
+            return self.socket_parms_ux_raw(server)
+        if server == Env.paths.lsnruxh2sock:
             return self.socket_parms_ux_h2(server)
         if ":" in server:
             # Explicit server uri (ex: --server https://1.2.3.4:1215)
@@ -832,9 +845,12 @@ class Crypt(object):
                     sp = self.socket_parms(server)
                     secret = self.get_secret(sp, secret)
                     cluster_name = self.get_cluster_name(sp, cluster_name)
-                    sock = socket.socket(sp.af, socket.SOCK_STREAM)
-                    sock.settimeout(SOCK_TMO_REQUEST)
-                    sock.connect(sp.to)
+                    if sp.af == socket.AF_UNIX:
+                        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                        sock.settimeout(SOCK_TMO_REQUEST)
+                        sock.connect(sp.to)
+                    else:
+                        sock = socket.create_connection(sp.to, SOCK_TMO_REQUEST)
                     break
                 except socket.timeout:
                     elapsed += SOCK_TMO_REQUEST + PAUSE
@@ -892,7 +908,7 @@ class Crypt(object):
         except socket.error as exc:
             if not silent:
                 self.log.error("%s comm error while %s: %s",
-                               sp.to_s, progress, str(exc))
+                               sp.to, progress, str(exc))
             return {
                 "status": 1,
                 "error": str(exc),
@@ -989,9 +1005,12 @@ class Crypt(object):
         data["method"] = "GET"
         sp = self.socket_parms(server)
         try:
-            sock = socket.socket(sp.af, socket.SOCK_STREAM)
-            sock.settimeout(SOCK_TMO_STREAM)
-            sock.connect(sp.to)
+            if sp.af == socket.AF_UNIX:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.settimeout(SOCK_TMO_STREAM)
+                sock.connect(sp.to)
+            else:
+                sock = socket.create_connection(sp.to, SOCK_TMO_STREAM)
             if sp.encrypted:
                 message = self.encrypt(data, cluster_name=cluster_name,
                                        secret=secret)
@@ -1013,7 +1032,7 @@ class Crypt(object):
                 except socket.timeout:
                     time.sleep(PAUSE)
         except socket.error as exc:
-            self.log.error("daemon send to %s error: %s", sp.to_s, str(exc))
+            self.log.error("daemon send to %s error: %s", sp.to, str(exc))
         finally:
             sock.close()
 

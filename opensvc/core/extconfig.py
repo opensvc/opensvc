@@ -578,6 +578,9 @@ class ExtConfigMixin(object):
         elif _ref.startswith("swapcase:"):
             _ref = _ref[9:]
             modifier = lambda x: x.swapcase()
+        elif _ref.startswith("uri_ip:"):
+            _ref = _ref[7:]
+            modifier = lambda x: "[%s]" % x if ":" in str(x) else x
 
         # hardcoded references
         if _ref == "nodename":
@@ -723,10 +726,10 @@ class ExtConfigMixin(object):
             if is_string(val):
                 val = val.split()
             if return_length:
-                return str(len(val))
-            if index is not None:
+                val = str(len(val))
+            elif index is not None:
                 try:
-                    return val[index]
+                    val = val[index]
                 except IndexError:
                     if self.is_deferred(section, _v):
                         raise ex.NotAvailable
@@ -735,7 +738,7 @@ class ExtConfigMixin(object):
                         # return it unchanged
                         raise ex.NotSupported
 
-        if modifier:
+        if modifier and val:
             try:
                 return modifier(val)
             except Exception as exc:

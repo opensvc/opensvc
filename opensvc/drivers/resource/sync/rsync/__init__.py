@@ -96,6 +96,16 @@ def driver_capabilities(node=None):
     data = []
     if which("rsync"):
         data.append("sync.rsync")
+
+    cmd = ['rsync', '--version']
+    out, _, ret = justcall(cmd)
+    if ret != 0:
+        return data
+
+    if 'no xattrs' not in out:
+        data.append("sync.rsync.xattrs")
+    if 'no ACLs' not in out:
+        data.append("sync.rsync.acls")
     return data
 
 
@@ -222,10 +232,6 @@ class SyncRsync(Sync):
             self.target
         )
 
-    def node_can_sync(self, node):
-        ts = get_timestamp(self, node)
-        return not self.skip_sync(ts)
-
     def node_need_sync(self, node):
         ts = get_timestamp(self, node)
         return self.alert_sync(ts)
@@ -265,10 +271,7 @@ class SyncRsync(Sync):
             return set()
 
         for node in targets.copy():
-            if state == "syncable" and not self.node_can_sync(node):
-                targets.remove(node)
-                continue
-            elif state == "late" and not self.node_need_sync(node):
+            if state == "late" and not self.node_need_sync(node):
                 targets.remove(node)
                 continue
 
@@ -418,12 +421,11 @@ class SyncRsync(Sync):
             elif action == "sync_drp":
                 rtargets[i] |= r.nodes_to_sync('drpnodes')
             for node in rtargets[i].copy():
-                if not r.node_can_sync(node):
-                    rtargets[i] -= set([node])
-                elif r.snap:
+                if r.snap:
                     need_snap = True
         for i in rtargets:
             targets |= rtargets[i]
+
 
         if len(targets) == 0:
             if not self.svc.options.cron:
@@ -546,26 +548,15 @@ class SyncRsync(Sync):
         self.status_log("%s need update"%', '.join(sorted(nodes)))
         return core.status.DOWN
 
-    @cache("rsync.version")
-    def rsync_version(self):
-        if which("rsync") is None:
-            raise ex.Error("rsync not found")
-        cmd = ['rsync', '--version']
-        out, err, ret = justcall(cmd)
-        if ret != 0:
-            raise ex.Error("can not determine rsync capabilities")
-        return out
-
     @lazy
     def full_options(self):
         if self.reset_options:
             options = self.options
         else:
             options = ["-HAXpogDtrlvx", "--stats", "--delete", "--force"] + self.options
-        out = self.rsync_version()
-        if 'no xattrs' in out:
+        if not self.has_capability("sync.rsync.xattrs"):
             options = drop_option("-X", options)
-        if 'no ACLs' in out:
+        if not self.has_capability("sync.rsync.acls"):
             options = drop_option("-A", options)
         options += ["--timeout=%s" % self.timeout]
         return options

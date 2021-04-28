@@ -375,7 +375,10 @@ class ContainerZone(BaseContainer):
             self.log.info("zone container %s has no state, skip detach" % self.name)
             return 0
         self.wait_for_fn(self.is_zone_unlocked, self.stop_timeout, 2)
-        return self.zoneadm("detach")
+        try:
+            self.zoneadm("detach")
+        except ex.Error:
+            self.zoneadm("detach", option=["-F"])
         self.zone_refresh()
 
     def ready(self):
@@ -507,7 +510,10 @@ class ContainerZone(BaseContainer):
 
     @lazy
     def brand(self):
-        return self.zone_data.get("brand")
+        if self.zone_data:
+            return self.zone_data.get("brand")
+        else:
+            return None
 
     @lazy
     def zone_data(self):

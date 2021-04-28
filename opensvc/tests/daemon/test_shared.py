@@ -55,6 +55,7 @@ class TestSharedRemoveClusterNode:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('shared_data')
 class TestSplitHandlerWhenQuorumKwIsTrue:
     @staticmethod
     @pytest.mark.parametrize('split_action, expected', [

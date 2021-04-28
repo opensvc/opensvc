@@ -173,7 +173,7 @@ class HbRelayRx(HbRelay):
                     #self.log.info("node %s has not updated its slot", nodename)
                     continue
                 self.last_updated[nodename] = updated
-                self.store_rx_data(_data, nodename)
+                self.queue_rx_data(_data, nodename)
                 self.push_stats(len(_data))
                 self.set_last(nodename)
             except Exception as exc:

@@ -271,16 +271,15 @@ class SyncS3(Sync):
             self.vcall(cmd + ["s3://"+self.bucket+os.path.dirname(self.prefix)+"/"+key])
 
     def in_full_schedule(self):
-        from core.scheduler import Scheduler, SchedNotAllowed, SchedSyntaxError
-        sched = Scheduler()
-        schedule = sched.sched_get_schedule("dummy", "dummy", schedules=self.full_schedule)
+        from core.scheduler import Schedule, SchedNotAllowed, SchedSyntaxError
+        now = datetime.datetime.now()
         try:
-            sched.in_schedule(schedule, now=datetime.datetime.now())
+            sched = Schedule(self.full_schedule)
+            return sched.validate(now)
         except SchedNotAllowed:
             return False
         except SchedSyntaxError as e:
             raise ex.Error(str(e))
-        return True
 
     def tar(self):
         n_incr = self.get_n_incr()

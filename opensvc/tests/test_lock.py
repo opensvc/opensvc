@@ -29,18 +29,21 @@ class TestLockUnlock:
     @staticmethod
     def test_lock_raise_lock_timeout_if_held_by_another_pid_real_multiprocess(tmp_file, timeout):
         def worker():
-            import sys
+            import os
             try:
-                sys.exit(utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test"))
+                utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test")
             except utilities.lock.LockTimeout:
-                sys.exit(255)
+                os._exit(66)
 
         assert utilities.lock.lock(lockfile=tmp_file, timeout=timeout, intent="test") > 0
-        from multiprocessing import Process
-        proc = Process(target=worker)
-        proc.start()
-        proc.join()
-        assert proc.exitcode == 255
+        pid = os.fork()
+        if pid > 0:
+            _pid, status = os.waitpid(pid, 0)
+        else:
+            worker()
+            return
+
+        assert status >> 8 == 66
 
 
 @pytest.mark.ci

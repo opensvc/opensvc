@@ -4,7 +4,6 @@ Docker container resource driver module.
 import os
 import re
 import shlex
-import signal
 
 from itertools import chain
 
@@ -12,6 +11,7 @@ import core.status
 import utilities.subsystems.docker as dockerlib
 import core.exceptions as ex
 import utilities.ping
+from utilities.concurrent_futures import get_concurrent_futures
 
 from .. import \
     KW_NO_PREEMPT_ABORT, \
@@ -190,6 +190,14 @@ KEYWORDS = [
         "example": "-v /opt/docker.opensvc.com/vol1:/vol1:rw -p 37.59.71.25:8080:8080"
     },
     {
+        "keyword": "pull_timeout",
+        "convert": "duration",
+        "at": True,
+        "text": "Wait for <duration> before declaring the container action a failure.",
+        "default": "2m",
+        "example": "2m"
+    },
+    {
         "keyword": "start_timeout",
         "convert": "duration",
         "at": True,
@@ -306,7 +314,6 @@ class ContainerDocker(BaseContainer):
     """
     Docker container resource driver.
     """
-    default_start_timeout = 2
     default_net = "none"
     dns_option_option = "--dns-option"
 
@@ -336,6 +343,7 @@ class ContainerDocker(BaseContainer):
                  configs_environment=None,
                  registry_creds=None,
                  guestos="Linux",
+                 pull_timeout=120,
                  **kwargs):
         super(ContainerDocker, self).__init__(
             name="",
@@ -347,6 +355,7 @@ class ContainerDocker(BaseContainer):
         self.hostname = hostname
         self.image = image
         self.image_pull_policy = image_pull_policy
+        self.pull_timeout = pull_timeout
         self.run_command = run_command
         self.run_args = run_args
         self.detach = detach
@@ -582,9 +591,6 @@ class ContainerDocker(BaseContainer):
         if action == "start":
             if self.lib.config_args_position_head:
                 cmd += self.client_config()
-            if not self.detach and self.start_timeout is not None:
-                signal.signal(signal.SIGALRM, alarm_handler)
-                signal.alarm(self.start_timeout)
             if self.rm:
                 self.container_rm()
             if self.container_id is None:
@@ -594,8 +600,14 @@ class ContainerDocker(BaseContainer):
                     image_id = self.lib.get_image_id(self.image)
                 except ValueError as exc:
                     raise ex.Error(str(exc))
-                if image_id is None and not self.registry_creds:
-                    self.lib.docker_login(self.image)
+                if image_id is None:
+                    if not self.registry_creds:
+                        self.lib.docker_login(self.image)
+                    if self.start_timeout:
+                        self.log.info("push start timeout to %s (cached) + %s (pull)",
+                                      print_duration(self.start_timeout),
+                                      print_duration(self.pull_timeout))
+                        self.start_timeout += self.pull_timeout
                 sec_env = self.kind_environment_env("sec", self.secrets_environment)
                 cfg_env = self.kind_environment_env("cfg", self.configs_environment)
                 cmd += ["run"]
@@ -623,16 +635,24 @@ class ContainerDocker(BaseContainer):
         env.update(os.environ)
         env.update(sec_env)
         env.update(cfg_env)
-        try:
-            ret = self.vcall(cmd, warn_to_info=True, env=env)[0]
-        except KeyboardInterrupt:
-            self.log.error("%s timeout exceeded", print_duration(self.start_timeout))
-            if action == "start":
-                cmd = self.lib.docker_cmd + ["kill", self.container_name]
-                self.vcall(cmd, warn_to_info=True, env=env)
-            ret = 1
-        if not self.detach:
-            signal.alarm(0)
+
+        if action == "start":
+            timeout = self.start_timeout or None
+        else:
+            timeout = None
+
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
+            try:
+                ret = future.result(timeout=timeout)[0]
+            except concurrent_futures.TimeoutError:
+                self.log.error("%s timeout exceeded", print_duration(timeout))
+                if action == "start":
+                    cmd = self.lib.docker_cmd + ["kill", self.container_name]
+                    self.vcall(cmd, warn_to_info=True, env=env)
+                ret = 1
+
         if ret != 0:
             raise ex.Error
 
@@ -1066,6 +1086,7 @@ class ContainerDocker(BaseContainer):
         unset_lazy(self.lib, "container_by_label")
         unset_lazy(self.lib, "container_by_name")
         unset_lazy(self.lib, "containers_inspect")
+        unset_lazy(self.lib, "images")
 
     def is_up(self):
         if self.lib.docker_daemon_private and \

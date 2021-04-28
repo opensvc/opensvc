@@ -15,6 +15,7 @@ import os
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
+from multiprocessing import Process, Queue
 
 import foreign.six as six
 
@@ -35,6 +36,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
                               resolve_path, split_path, strip_path, svc_pathetc,
                               validate_kind, validate_name, validate_ns_name,
                               object_path_glob)
+from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.cache import purge_cache_expired
 from utilities.converters import *
@@ -150,7 +152,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def __str__(self):
         return self.nodename
 
-    def __init__(self):
+    def __init__(self, log_handlers=None):
         ExtConfigMixin.__init__(self, default_status_groups=DEFAULT_STATUS_GROUPS)
         self.listener = None
         self.clouds = None
@@ -187,7 +189,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = {}
         self.stats_updated = 0
         log_file = os.path.join(Env.paths.pathlog, "node.log")
-        self.logger = core.logger.initLogger(Env.nodename, log_file)
+        self.logger = core.logger.initLogger(Env.nodename, log_file, handlers=log_handlers)
         extra = {"node": Env.nodename, "sid": Env.session_uuid}
         self.log = logging.LoggerAdapter(self.logger, extra)
 
@@ -249,139 +251,139 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             options=self.options,
             node=self,
             scheduler_actions={
-                "checks": SchedOpts(
+                "checks": [SchedOpts(
                     "checks",
                     req_collector=True,
-                ),
-                "dequeue_actions": SchedOpts(
+                )],
+                "dequeue_actions": [SchedOpts(
                     "dequeue_actions",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushstats": SchedOpts(
+                )],
+                "pushstats": [SchedOpts(
                     "stats",
                     req_collector=True,
-                ),
-                "collect_stats": SchedOpts(
+                )],
+                "collect_stats": [SchedOpts(
                     "stats_collection",
                     schedule_option="collect_stats_schedule"
-                ),
-                "pushpkg": SchedOpts(
+                )],
+                "pushpkg": [SchedOpts(
                     "packages",
                     req_collector=True,
-                ),
-                "pushpatch": SchedOpts(
+                )],
+                "pushpatch": [SchedOpts(
                     "patches",
                     req_collector=True,
-                ),
-                "pushasset": SchedOpts(
+                )],
+                "pushasset": [SchedOpts(
                     "asset",
                     req_collector=True,
-                ),
-                "pushnsr": SchedOpts(
+                )],
+                "pushnsr": [SchedOpts(
                     "nsr",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushhp3par": SchedOpts(
+                )],
+                "pushhp3par": [SchedOpts(
                     "hp3par",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushemcvnx": SchedOpts(
+                )],
+                "pushemcvnx": [SchedOpts(
                     "emcvnx",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushcentera": SchedOpts(
+                )],
+                "pushcentera": [SchedOpts(
                     "centera",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushnetapp": SchedOpts(
+                )],
+                "pushnetapp": [SchedOpts(
                     "netapp",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushibmds": SchedOpts(
+                )],
+                "pushibmds": [SchedOpts(
                     "ibmds",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushfreenas": SchedOpts(
+                )],
+                "pushfreenas": [SchedOpts(
                     "freenas",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushxtremio": SchedOpts(
+                )],
+                "pushxtremio": [SchedOpts(
                     "xtremio",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushgcedisks": SchedOpts(
+                )],
+                "pushgcedisks": [SchedOpts(
                     "gcedisks",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushhds": SchedOpts(
+                )],
+                "pushhds": [SchedOpts(
                     "hds",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushnecism": SchedOpts(
+                )],
+                "pushnecism": [SchedOpts(
                     "necism",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pusheva": SchedOpts(
+                )],
+                "pusheva": [SchedOpts(
                     "eva",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushibmsvc": SchedOpts(
+                )],
+                "pushibmsvc": [SchedOpts(
                     "ibmsvc",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushvioserver": SchedOpts(
+                )],
+                "pushvioserver": [SchedOpts(
                     "vioserver",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushsym": SchedOpts(
+                )],
+                "pushsym": [SchedOpts(
                     "sym",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushbrocade": SchedOpts(
+                )],
+                "pushbrocade": [SchedOpts(
                     "brocade", schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "pushdisks": SchedOpts(
+                )],
+                "pushdisks": [SchedOpts(
                     "disks",
                     req_collector=True,
-                ),
-                "sysreport": SchedOpts(
+                )],
+                "sysreport": [SchedOpts(
                     "sysreport",
                     req_collector=True,
-                ),
-                "compliance_auto": SchedOpts(
+                )],
+                "compliance_auto": [SchedOpts(
                     "compliance",
                     fname="last_comp_check",
                     schedule_option="comp_schedule",
                     req_collector=True,
-                ),
-                "rotate_root_pw": SchedOpts(
+                )],
+                "rotate_root_pw": [SchedOpts(
                     "rotate_root_pw",
                     fname="last_rotate_root_pw",
                     schedule_option="no_schedule",
                     req_collector=True,
-                ),
-                "auto_reboot": SchedOpts(
+                )],
+                "auto_reboot": [SchedOpts(
                     "reboot",
                     fname="last_auto_reboot",
                     schedule_option="no_schedule"
-                )
+                )]
             },
         )
 
@@ -664,7 +666,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             paths = self.filter_ns([path], namespace)
             return paths
 
-        if not local:
+        if not local and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
+            # the daemon always submits actions with simple, local selector.
+            # avoid round trips.
             try:
                 data = self._daemon_object_selector(selector, namespace, kind=os.environ.get("OSVC_KIND"))
                 if isinstance(data, list):
@@ -901,6 +905,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             cmd = ["diff", Env.paths.nodeconf, self.paths.tmp_cf]
         call(cmd)
 
+    def nodeconf_csum(self):
+        from utilities.files import fsum
+        return fsum(Env.paths.nodeconf)
+
     def edit_config(self):
         """
         Execute an editor on the node configuration file.
@@ -918,7 +926,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.files import fsum
         path = self.make_temp_config()
         os.system(' '.join((editor, path)))
-        if fsum(path) == fsum(Env.paths.nodeconf):
+        if fsum(path) == self.nodeconf_csum():
             os.unlink(path)
             return 0
         results = self._validate_config(path=path)
@@ -1365,19 +1373,23 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print("reboot is not scheduled")
             return
 
-        sch = self.sched.actions["auto_reboot"]
-        schedule = self.sched.sched_get_schedule_raw(sch.section, sch.schedule_option)
+        sch = self.sched.actions["auto_reboot"][0]
+        try:
+            schedule = self.sched.get_schedule_raw(sch.section, sch.schedule_option)
+        except Exception:
+            schedule = ""
+
         print("reboot is scheduled")
         print("reboot schedule: %s" % schedule)
 
-        result = self.sched.get_next_schedule("auto_reboot")
-        if result["next_sched"]:
-            print("next reboot slot:",
-                  result["next_sched"].strftime("%a %Y-%m-%d %H:%M"))
-        elif result["minutes"] is None:
-            print("next reboot slot: none")
+        if not schedule:
+            return
+
+        result, _ = self.sched.get_schedule("reboot", "schedule").get_next()
+        if result:
+            print("next reboot slot:", result.strftime("%a %Y-%m-%d %H:%M"))
         else:
-            print("next reboot slot: none in the next %d days" % (result["minutes"]/144))
+            print("next reboot slot: none")
 
     def auto_reboot(self):
         """
@@ -1773,6 +1785,28 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 continue
             return rid
 
+    def _service_action_worker(self, svc, action, options):
+        """
+        The method the per-service subprocesses execute
+        """
+        from utilities.process_title import set_process_title
+        name, namespace, kind = split_path(svc.path)
+        if options.parm_svcs:
+            del options.parm_svcs
+        for attr in ["svcs", "parallel", "namespace"]:
+            if hasattr(options, attr):
+                delattr(options, attr)
+        cmd_log  = format_command(kind, action, options)
+        set_process_title("om %s %s" % (svc.path, " ".join(cmd_log)))
+        try:
+            ret = svc.action(action, options)
+        except Exception:
+            self.close()
+            sys.exit(1)
+        finally:
+            self.close()
+        sys.exit(ret)
+
     def register_as_node(self):
         """
         Returns a node registration unique id, authenticating to the
@@ -1870,19 +1904,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.sysreport()
         self.checks()
         return 0
-
-    def service_action_worker(self, svc, action, options):
-        """
-        The method the per-service subprocesses execute
-        """
-        try:
-            ret = svc.action(action, options)
-        except Exception:
-            self.close()
-            sys.exit(1)
-        finally:
-            self.close()
-        sys.exit(ret)
 
     @lazy
     def diskinfo(self):
@@ -2317,7 +2338,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.clouds[section] = cloud
         return cloud
 
-    def can_parallel(self, action, svcs, options):
+    @staticmethod
+    def can_parallel_action(action, svcs, options):
         """
         Returns True if the action can be run in a subprocess per service
         """
@@ -2372,25 +2394,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 print("\n".join(data))
             return
 
-        err = 0
-        errs = {}
-        data = Storage()
-        data.outs = {}
-        need_aggregate = self.action_need_aggregate(action, options)
         begin = time.time()
 
-        # generic cache janitoring
-        purge_cache_expired()
+        if not options.cron:
+            # File cache janitoring.
+            # Skip for tasks: the scheduler will purge the session cache itself, without dirlisting.
+            purge_cache_expired()
         self.log.debug("session uuid: %s", Env.session_uuid)
 
         if action in ACTIONS_NO_MULTIPLE_SERVICES and len(svcs) > 1:
             print("action '%s' is not allowed on multiple services" % action, file=sys.stderr)
             return 1
-
-        if self.can_parallel(action, svcs, options):
-            from multiprocessing import Process
-            data.procs = {}
-            data.svcs = {}
 
         timeout = 0
         if not options.local and options.wait:
@@ -2399,68 +2413,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             timeout = convert_duration(options.time)
             options.wait = False
 
-        def running():
-            count = 0
-            for proc in data.procs.values():
-                if proc.is_alive():
-                    count += 1
-            return count
+        need_aggregate = self.action_need_aggregate(action, options)
+        parallel = self.can_parallel_action(action, svcs, options)
+        if parallel:
+            data, err, errs = self.do_svcs_action_parallel(action, options, svcs)
+        else:
+            data, err, errs = self.do_svcs_action_sequential(action, options, svcs, need_aggregate)
 
-        for svc in svcs:
-            if self.can_parallel(action, svcs, options):
-                while running() >= self.max_parallel:
-                    time.sleep(1)
-                data.svcs[svc.path] = svc
-                data.procs[svc.path] = Process(
-                    target=self.service_action_worker,
-                    name='worker_'+svc.path,
-                    args=[svc, action, options],
-                )
-                data.procs[svc.path].start()
-            else:
-                try:
-                    ret = svc.action(action, options)
-                    if need_aggregate:
-                        if ret is not None:
-                            data.outs[svc.path] = ret
-                    elif action.startswith("print_") or action == "pg_stats":
-                        self.print_data(ret)
-                        if isinstance(ret, dict):
-                            if "error" in ret:
-                                err += 1
-                    else:
-                        if ret is None:
-                            ret = 0
-                        elif isinstance(ret, list):
-                            ret = 0
-                        elif isinstance(ret, dict):
-                            if "error" in ret:
-                                print(ret["error"], file=sys.stderr)
-                            else:
-                                print("unsupported format for this action", file=sys.stderr)
-                            ret = 1
-                        if ret > 0:
-                            err += ret
-                        errs[svc.path] = ret
-                except ex.Error as exc:
-                    ret = 1
-                    err += ret
-                    if not need_aggregate:
-                        print("%s: %s" % (svc.path, exc), file=sys.stderr)
-                    continue
-                except ex.Signal:
-                    break
-
-        if self.can_parallel(action, svcs, options):
-            for path in data.procs:
-                data.procs[path].join()
-                ret = data.procs[path].exitcode
-                errs[path] = ret
-                if ret > 0:
-                    # r is negative when data.procs[path] is killed by signal.
-                    # in this case, we don't want to decrement the err counter.
-                    err += ret
         if timeout:
+            # async actions wait
             for svc in svcs:
                 if errs.get(svc.path, -1) != 0:
                     continue
@@ -2488,6 +2449,86 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             options.sections = ["services"]
             svcmon(self, options)
         return err
+
+    def do_svcs_action_sequential(self, action, options, svcs, need_aggregate):
+        err = 0
+        errs = {}
+        data = Storage()
+        data.outs = {}
+        for svc in svcs:
+            try:
+                ret = svc.action(action, options)
+                if need_aggregate:
+                    if ret is not None:
+                        data.outs[svc.path] = ret
+                elif action.startswith("print_") or action == "pg_stats":
+                    self.print_data(ret)
+                    if isinstance(ret, dict):
+                        if "error" in ret:
+                            err += 1
+                else:
+                    if ret is None:
+                        ret = 0
+                    elif isinstance(ret, list):
+                        ret = 0
+                    elif isinstance(ret, dict):
+                        if "error" in ret:
+                            print(ret["error"], file=sys.stderr)
+                        else:
+                            print("unsupported format for this action", file=sys.stderr)
+                        ret = 1
+                    if ret > 0:
+                        err += ret
+                    errs[svc.path] = ret
+            except ex.Error as exc:
+                ret = 1
+                err += ret
+                if not need_aggregate:
+                    print("%s: %s" % (svc.path, exc), file=sys.stderr)
+                continue
+            except ex.Signal:
+                break
+        return data, err, errs
+
+    def do_svcs_action_parallel(self, action, options, svcs):
+        err = 0
+        errs = {}
+        data = Storage()
+        data.outs = {}
+        max_parallel = self.max_parallel
+        data.procs = {}
+        data.svcs = {}
+        # noinspection PyUnresolvedReferences
+        from utilities.process_title import set_process_title  # warm up for side effect
+
+        def can_run_new_proc():
+            count = 0
+            for proc in data.procs.values():
+                if proc.is_alive():
+                    count += 1
+            return count <= max_parallel
+
+        for svc in svcs:
+            while not can_run_new_proc():
+                time.sleep(1)
+            data.svcs[svc.path] = svc
+            data.procs[svc.path] = Process(
+                target=self._service_action_worker,
+                name="worker_" + svc.path,
+                args=(svc, action, options),
+            )
+            data.procs[svc.path].start()
+        for path in data.procs:
+            data.procs[path].join()
+            ret = data.procs[path].exitcode
+            errs[path] = ret
+            if ret > 0:
+                # r is negative when data.procs[path] is killed by signal.
+                # in this case, we don't want to decrement the err counter.
+                err += ret
+            elif ret < 0:
+                err += 1
+        return data, err, errs
 
     def collector_cli(self):
         """
@@ -2981,7 +3022,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def install_service(self, path, fpath=None, template=None,
                         restore=False, resources=None, kw=None, namespace=None,
-                        env=None, interactive=False, provision=False):
+                        env=None, interactive=False, provision=False, node=None):
         """
         Pick a collector's template, arbitrary uri, or local file service
         configuration file fetching method. Run it, and create the
@@ -3022,7 +3063,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": env_to_merge,
                 }
             }
-            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, node=node)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3107,7 +3148,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     else:
                         data[tmppath]["env"].update(_env_to_merge)
 
-        if want_context():
+        if want_context() or node:
             req = {
                 "action": "create",
                 "options": {
@@ -3117,7 +3158,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "data": data,
                 }
             }
-            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT)
+            result = self.daemon_post(req, timeout=DEFAULT_DAEMON_TIMEOUT, node=node)
             status, error, info = self.parse_result(result)
             if status:
                 raise ex.Error(error)
@@ -3293,6 +3334,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         for svc in self.svcs:
             if options.provision:
+                svc.action("status", options)
                 svc.action("provision", options)
             if hasattr(svc, "on_create"):
                 getattr(svc, "on_create")()
@@ -4392,6 +4434,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         svc.unset_multi(["DEFAULT.id"])
 
         self.unset_lazy("cluster_nodes")
+        self.unset_lazy("sorted_cluster_nodes")
 
     def daemon_join(self):
         if self.options.secret is None:
@@ -4429,10 +4472,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             server=joined,
             cluster_name="join",
             secret=secret,
-            timeout=DEFAULT_DAEMON_TIMEOUT,
+            timeout=120,
         )
         if data is None:
             raise ex.Error("join node %s failed" % joined)
+        if "err" in data:
+            raise ex.Error("join node %s failed: %s" % (joined, data.get("err")))
 
         data = data.get("data")
         if data is None:
@@ -4933,24 +4978,44 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pools = [p["name"] for p in pools if p["name"] in all_pools]
         else:
             pools = all_pools
-        data = {}
         volumes = self.pools_volumes()
+
+        queue = Queue()
+        procs = {}
         for name in pools:
-            try:
-                pool = self.get_pool(name)
-                data[name] = pool.pool_status(usage=usage)
-            except Exception as exc:
-                data[name] = {
-                    "name": name,
-                    "type": "unknown",
-                    "capabilities": [],
-                    "head": "err: " + str(exc),
-                }
-            if name in volumes:
-                data[name]["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
-            else:
-                data[name]["volumes"] = []
+            title = "om pool --name %s --status" % (name)
+            pool = self.get_pool(name)
+            proc = Process(target=self._pool_status_job,
+                           args=(queue, title, name, pool, volumes, usage))
+            proc.start()
+            procs[name] = proc
+
+        data = {}
+        for name, proc in procs.items():
+            proc.join()
+        while not queue.empty():
+            name, pool_status = queue.get()
+            data[name] = pool_status
         return data
+
+    @staticmethod
+    def _pool_status_job(queue, title, name, pool, volumes, usage):
+        from utilities.process_title import set_process_title
+        set_process_title(title)
+        try:
+            pool_status = pool.pool_status(usage=usage)
+        except Exception as exc:
+            pool_status = {
+                "name": name,
+                "type": "unknown",
+                "capabilities": [],
+                "head": "err: " + str(exc),
+            }
+        if name in volumes:
+            pool_status["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
+        else:
+            pool_status["volumes"] = []
+        queue.put((name, pool_status))
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
         candidates1 = []

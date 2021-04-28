@@ -148,9 +148,6 @@ class SyncIbmdssnap(Sync):
             raise ex.Error(err)
 
     def can_sync(self, target=None):
-        self.get_last()
-        if self.skip_sync(self.last):
-            return False
         return True
 
     def get_last(self, data=None):

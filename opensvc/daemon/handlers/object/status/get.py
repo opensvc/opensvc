@@ -28,16 +28,6 @@ class Handler(daemon.handler.BaseHandler):
 
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
-        data = {}
-        data["object"] = shared.AGG.get(options.path, {})
-        data["nodes"] = {}
-        for node, ndata in shared.DAEMON_STATUS["monitor"]["nodes"].items():
-            try:
-                data["nodes"][node] = {
-                    "config": ndata["services"]["config"][options.path],
-                    "status": ndata["services"]["status"][options.path]
-                }
-            except KeyError:
-                pass
+        data = thr.object_data(options.path)
         return data
 

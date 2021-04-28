@@ -1,23 +1,26 @@
 """
 Scheduler Thread
 """
+import logging
 import os
 import sys
-import logging
 import time
+import uuid
 from subprocess import Popen
 
 import daemon.shared as shared
 import core.exceptions as ex
 from env import Env
+from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
+from utilities.lazy import lazy, unset_lazy
+
 
 MIN_PARALLEL = 6
 MIN_OVERLOADED_PARALLEL = 2
-DEQUEUE_INTERVAL = 2
-ENQUEUE_INTERVAL = 30
-FUTURE = 60
-MIN_DEQUEUE_INTERVAL = 0.5
+JANITOR_PROCS_INTERVAL = 0.95
+SCHEDULE_INTERVAL = 10
+DEQUEUE_INTERVAL = 5
 JANITOR_CERTS_INTERVAL = 3600
 ACTIONS_SKIP_ON_UNPROV = [
     "sync_all",
@@ -25,10 +28,20 @@ ACTIONS_SKIP_ON_UNPROV = [
     "resource_monitor",
     "run",
 ]
+NMON_STATUS_OFF = [
+    "init",
+    "upgrade",
+    "shutting",
+    "maintenance",
+]
+
 
 class Scheduler(shared.OsvcThread):
     name = "scheduler"
     delayed = {}
+    blacklist = {}
+    lasts = {}
+    session_ids = {}
     running = set()
     dropped_via_notify = set()
     certificates = {}
@@ -62,6 +75,7 @@ class Scheduler(shared.OsvcThread):
                 "rid": rid,
                 "queued": entry["queued"],
                 "expire": entry["expire"],
+                "csum": entry["csum"],
             })
         return data
 
@@ -69,6 +83,7 @@ class Scheduler(shared.OsvcThread):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.scheduler"), {"node": Env.nodename, "component": self.name})
         self.log.info("scheduler started")
+        self.update_status()
         self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
             devnull = os.devnull
@@ -81,6 +96,7 @@ class Scheduler(shared.OsvcThread):
                 self.do()
             except Exception as exc:
                 self.log.exception(exc)
+                time.sleep(0.2)
             if self.stopped():
                 self.kill_procs()
                 sys.exit(0)
@@ -88,45 +104,34 @@ class Scheduler(shared.OsvcThread):
     def do(self):
         self.reload_config()
         last = 0
-        done = 0
-        init = True
         while True:
             if self.stopped():
                 break
+            changed = False
             now = time.time()
-            self.now = self.run_time(now)
-            future = self.now + FUTURE
-            self.janitor_run_done()
-            self.janitor_certificates()
-            if shared.NMON_DATA.status not in ("init", "upgrade", "shutting"):
-                if init:
-                    init = False
-                    last = now
-                    self.run_scheduler(self.now)
-                elif now - last >= ENQUEUE_INTERVAL:
-                    last = now
-                    self.run_scheduler(future)
-                self.dequeue_actions()
             done = self.janitor_procs()
-            if not done:
-                self.do_wait()
+            self.janitor_run_done()
+            if done or last + SCHEDULE_INTERVAL <= now:
+                last = now
+                self.janitor_certificates(now)
+                self.janitor_blacklist()
+                nmon = self.get_node_monitor()
+                if nmon and nmon.status not in NMON_STATUS_OFF:
+                    self.run_scheduler(now)
+                    changed = True
+            if now >= self.next_expire(now):
+                self.dequeue_actions(now)
+                changed = True
+            if changed:
+                self.update_status()
+            self.sleep()
 
-    def do_wait(self):
+    def sleep(self):
         with shared.SCHED_TICKER:
-            shared.SCHED_TICKER.wait(self.dequeue_delay())
+            shared.SCHED_TICKER.wait(JANITOR_PROCS_INTERVAL)
 
-    def dequeue_delay(self):
-        """
-        Returns DEQUEUE_INTERVAL with drift correction, to try and
-        do a loop on regular interval, whatever the loop duration.
-        """
-        delay = DEQUEUE_INTERVAL - (time.time() - self.now)
-        if delay < MIN_DEQUEUE_INTERVAL:
-            delay = MIN_DEQUEUE_INTERVAL
-        return delay
-
-    def janitor_certificates(self):
-        if self.now < self.last_janitor_certs + JANITOR_CERTS_INTERVAL:
+    def janitor_certificates(self, now):
+        if now < self.last_janitor_certs + JANITOR_CERTS_INTERVAL:
             return
         if self.first_available_node() != Env.nodename:
             return
@@ -144,7 +149,10 @@ class Scheduler(shared.OsvcThread):
                 continue
             if ca != self.cluster_ca:
                 continue
-            cf_mtime = shared.CLUSTER_DATA.get(Env.nodename, {}).get("services", {}).get("config", {}).get(obj.path, {}).get("updated")
+            try:
+                cf_mtime = self.get_service_config(obj.path, Env.nodename).updated
+            except AttributeError:
+                continue
             if cf_mtime is None:
                 continue
             if obj.path not in self.certificates or self.certificates[obj.path]["mtime"] < cf_mtime:
@@ -160,7 +168,7 @@ class Scheduler(shared.OsvcThread):
             expire = self.certificates[obj.path]["expire"]
             if not expire:
                 continue
-            expire_delay = expire - self.now
+            expire_delay = expire - now
             #print(obj.path, "expire in:", print_duration(expire_delay))
             if expire_delay < 3600:
                 self.log.info("renew %s certificate, expiring in %s", obj.path, print_duration(expire_delay))
@@ -171,7 +179,7 @@ class Scheduler(shared.OsvcThread):
             sigs = set(shared.RUN_DONE)
             shared.RUN_DONE = set()
         if not sigs:
-            return
+            return 0
         inter = sigs & self.running
         if not inter:
             return
@@ -179,6 +187,7 @@ class Scheduler(shared.OsvcThread):
         self.running -= inter
         self.dropped_via_notify |= inter
         #self.log.debug("dropped_via_notify: %s", self.dropped_via_notify)
+        return
 
     def drop_running(self, sigs):
         """
@@ -189,19 +198,44 @@ class Scheduler(shared.OsvcThread):
         not_dropped_yet = sigs - self.dropped_via_notify
         self.running -= not_dropped_yet
         self.dropped_via_notify -= sigs
+        self.purge_cache()
 
-    def exec_action(self, sigs, cmd):
+    def purge_cache(self):
+        purged = []
+        for session_id, sigset in self.session_ids.items():
+            if not sigset & self.running:
+                purge_cache_session(session_id)
+                purged.append(session_id)
+        for session_id in purged:
+            del self.session_ids[session_id]
+
+    def exec_action(self, sigs, path, action, rids, queued, now, session_id):
+        cmd_args = self.get_cmd_args(action, path, rids)
+        cmd_log = ["om",] + cmd_args
+        cmd = Env.om + cmd_args
+        self.log.info("run '%s'", " ".join(cmd_log))
+
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
-        env["OSVC_SCHED_TIME"] = str(self.now)
+        env["OSVC_SCHED_TIME"] = str(now)
+        env["OSVC_PARENT_SESSION_UUID"] = session_id
+
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
                       stdin=self.devnull, close_fds=os.name!="nt",
                       env=env)
         try:
             proc = Popen(cmd, **kwargs)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as err:
+            self.log.warning("unable to start cmd: '%s' failed with %s", cmd, str(err))
             return
-        self.running |= set(sigs)
+        sigset = set(sigs)
+        self.running |= sigset
+        try:
+            self.session_ids[session_id] |= sigset
+        except KeyError:
+            self.session_ids[session_id] = sigset
+        for sig in sigs:
+            self.lasts[sig] = now
         self.push_proc(proc=proc,
                        cmd=cmd,
                        on_success="drop_running",
@@ -209,29 +243,17 @@ class Scheduler(shared.OsvcThread):
                        on_error="drop_running",
                        on_error_args=[sigs])
 
-    def format_cmd(self, action, path=None, rids=None):
-        if path is None:
-            cmd = Env.om + ["node", action]
-        elif isinstance(path, list):
-            cmd = Env.om + ["svc", "-s", ",".join(path), action, "--waitlock=5"]
-            if len(path) > 1:
-                cmd.append("--parallel")
-        else:
-            cmd = Env.om + ["svc", "-s", path, action, "--waitlock=5"]
-        if rids:
-            cmd += ["--rid", ",".join(sorted(list(rids)))]
-        cmd.append("--cron")
-        return cmd
+    @staticmethod
 
-    def format_log_cmd(self, action, path=None, rids=None):
+    def get_cmd_args(action, path=None, rids=None):
         if path is None:
-            cmd = ["om", "node", action]
+            cmd = ["node", action]
         elif isinstance(path, list):
-            cmd = ["om", "svc", "-s", ",".join(path), action, "--waitlock=5"]
+            cmd = ["svc", "-s", ",".join(path), action, "--waitlock=1"]
             if len(path) > 1:
                 cmd.append("--parallel")
         else:
-            cmd = ["om", "svc", "-s", path, action, "--waitlock=5"]
+            cmd = ["svc", "-s", path, action, "--waitlock=1"]
         if rids:
             cmd += ["--rid", ",".join(sorted(list(rids)))]
         cmd.append("--cron")
@@ -245,7 +267,13 @@ class Scheduler(shared.OsvcThread):
         else:
             self.log.debug("skip already queued action '%s'", sig)
 
-    def queue_action(self, action, delay=0, path=None, rid=None, now=None):
+    def next_expire(self, now):
+        try:
+            return min([t["expire"] for t in self.delayed.values()])
+        except ValueError:
+            return now + DEQUEUE_INTERVAL
+
+    def queue_action(self, action, delay=0, path=None, rid=None, now=None, csum=None):
         sig = (action, path, rid)
         if delay is None:
             delay = 0
@@ -257,23 +285,24 @@ class Scheduler(shared.OsvcThread):
             return
         exp = now + delay
         self.delayed[sig] = {
-            "queued": self.now,
+            "queued": now,
             "expire": exp,
             "delay": delay,
+            "csum": csum,
         }
         if not delay:
-            self.log.debug("queued action '%s' for run in %s", sig, print_duration(exp-self.now))
+            self.log.debug("queued action '%s' for run in %s", sig, print_duration(exp-now))
         else:
-            self.log.debug("queued action '%s' for run in %s + %s delay", sig, print_duration(exp-self.now), print_duration(delay))
+            self.log.debug("queued action '%s' for run in %s + %s delay", sig, print_duration(exp-now), print_duration(delay))
         return
 
-    def get_todo(self):
+    def get_todo(self, now):
         """
         Merge queued tasks, sort by queued date, and return the first
         <n> tasks, where <n> is the number of open slots in the running
         queue.
         """
-        todo = {}
+        todo = []
         merge = {}
         open_slots = max(self.max_tasks() - len(self.procs), 0)
         if not open_slots:
@@ -281,7 +310,7 @@ class Scheduler(shared.OsvcThread):
         self.janitor_delayed()
 
         for sig, task in self.delayed.items():
-            if task["expire"] > self.now:
+            if task["expire"] > now:
                 continue
             action, path, rid = sig
             merge_key = (action, path)
@@ -296,61 +325,82 @@ class Scheduler(shared.OsvcThread):
             if None in data["rids"]:
                 data["rids"] = None
                 sigs = [(action, path, None)]
-                merge_key = (path is None, action, None)
             else:
                 sigs = [(action, path, rid) for rid in data["rids"]]
-                merge_key = (path is None, action, tuple(sorted(list(data["rids"]))))
-            if merge_key not in todo:
-                todo[merge_key] = {
-                    "action": action,
-                    "rids": data["rids"],
-                    "path": [path] if path else None,
-                    "sigs": sigs,
-                    "queued": data["task"]["queued"],
-                }
+            todo.append({
+                "action": action,
+                "rids": data["rids"],
+                "path": path,
+                "sigs": sigs,
+                "queued": data["task"]["queued"],
+            })
+        return sorted(todo, key=lambda task: task["queued"])[:open_slots]
+
+    def janitor_blacklist(self):
+        csum = self.csum()
+        for sig in list(self.blacklist):
+            action, path, rid = sig
+            _csum = self.blacklist[sig]
+            if path is None:
+                if _csum != csum:
+                    self.log.info("remove from blacklist: %s", action)
+                    del self.blacklist[sig]
             else:
-                todo[merge_key]["sigs"] += sigs
-                if path:
-                    todo[merge_key]["path"].append(path)
-                if data["task"]["queued"] < todo[merge_key]["queued"]:
-                    todo[merge_key]["queued"] = data["task"]["queued"]
-        return sorted(todo.values(), key=lambda task: task["queued"])[:open_slots]
+                ocsum = self.node_data.get(["services", "config", path, "csum"], None)
+                if _csum != ocsum:
+                    self.log.info("remove from blacklist: %s %s %s", path, action, rid or None)
+                    del self.blacklist[sig]
 
     def janitor_delayed(self):
         drop = []
+        csum = self.csum()
         for sig, task in self.delayed.items():
             action, path, rid = sig
             if not path:
+                if csum and csum != task["csum"]:
+                    self.log.info("drop action '%s' on %s%s: node or cluster config changed",
+                                  action, path, " " + rid if rid else "")
+                    drop.append(sig)
+                continue
+            if path not in shared.SERVICES:
+                self.log.info("drop action '%s' on %s%s: object deleted",
+                              action, path, " " +rid if rid else "")
+                drop.append(sig)
+                continue
+            ocsum = self.node_data.get(["services", "config", path, "csum"], None)
+            if ocsum and ocsum != task["csum"]:
+                self.log.info("drop action '%s' on %s%s: object config changed",
+                              action, path, " " + rid if rid else "")
+                drop.append(sig)
                 continue
             if not rid:
                 continue
             try:
-                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=shared.CLUSTER_DATA)
+                shared.SERVICES[path].get_resource(rid).check_requires(action, cluster_data=self.run_cluster_data)
             except KeyError:
                 # deleted during previous iterations
                 drop.append(sig)
                 continue
             except (ex.Error, ex.ContinueAction) as exc:
-                self.log.info("drop queued %s on %s %s: %s", action, path, rid, exc)
+                self.log.info("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
             except Exception as exc:
-                self.log.error("drop queued %s on %s %s: %s", action, path, rid, exc)
+                self.log.error("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
         self.delete_queued(drop)
 
-    def dequeue_actions(self):
+    def dequeue_actions(self, now):
         """
         Get merged tasks to run from get_todo(), execute them and purge the
         delayed hash.
         """
+        unset_lazy(self, "run_cluster_data")
         dequeued = []
-        for task in self.get_todo():
-            cmd = self.format_cmd(task["action"], task["path"], task["rids"])
-            log_cmd = self.format_log_cmd(task["action"], task["path"], task["rids"])
-            self.log.info("run '%s' queued %s ago", " ".join(log_cmd), print_duration(self.now - task["queued"]))
-            self.exec_action(task["sigs"], cmd)
+        session_id = str(uuid.uuid4())
+        for task in self.get_todo(now):
+            self.exec_action(task["sigs"], task["path"], task["action"], task["rids"], task["queued"], now, session_id)
             dequeued += task["sigs"]
         self.delete_queued(dequeued)
 
@@ -393,21 +443,67 @@ class Scheduler(shared.OsvcThread):
                             pass
         return data
 
-    def run_time(self, now):
-        return int(now // 60 * 60)
+    def csum(self):
+        ncsum = self.node_data.get(["config", "csum"], None)
+        if not ncsum:
+            return
+        ccsum = self.node_data.get(["services", "config", "cluster", "csum"], None)
+        if not ccsum:
+            return
+        return ",".join([ncsum, ccsum])
+
+    def local_last(self, sig, fname, obj):
+        try:
+            last = self.lasts[sig]
+        except KeyError:
+            last = obj.sched.get_last(fname)
+            if last:
+                last = time.mktime(last.timetuple())
+                self.lasts[sig] = last
+        return last
+
+    @lazy
+    def run_cluster_data(self):
+        return self.nodes_data.get()
 
     def run_scheduler(self, now):
         #self.log.info("run scheduler")
         nonprov = []
 
-        if shared.NODE:
-            shared.NODE.options.cron = True
-            for action in shared.NODE.sched.actions:
-                try:
-                    delay = shared.NODE.sched.validate_action(action, now=now)
-                except ex.AbortAction:
+        if not shared.NODE:
+            return
+
+        shared.NODE.options.cron = True
+
+        csum = self.csum()
+        if not csum:
+            return
+
+        for action, parms in shared.NODE.sched.actions.items():
+            for p in parms:
+                if p.req_collector and not shared.NODE.collector_env.dbopensvc:
                     continue
-                self.queue_action(action, delay, now=now)
+                sig = (action, None, None)
+                if sig in self.delayed:
+                    continue
+                if sig in self.blacklist:
+                    continue
+                if sig in self.running:
+                    continue
+                last = self.local_last(sig, p.fname, shared.NODE)
+                try:
+                    _next, _interval = shared.NODE.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
+                except Exception as exc:
+                    self.log.warning("node %s %s: %s", p.section, action, exc)
+                    self.blacklist[sig] = csum
+                    continue
+                if not _next:
+                    self.blacklist[sig] = csum
+                    continue
+                _next = time.mktime(_next.timetuple())
+                delay = _next - now
+                self.queue_action(action, delay, None, None, now=now, csum=csum)
+
         for path in list(shared.SERVICES):
             try:
                 svc = shared.SERVICES[path]
@@ -416,30 +512,55 @@ class Scheduler(shared.OsvcThread):
                 continue
             svc.options.cron = True
             svc.sched.configure()
-            try:
-                provisioned = shared.AGG[path].provisioned
-            except KeyError:
+            csum = self.node_data.get(["services", "config", path, "csum"], None)
+            agg = self.get_service_agg(path)
+            if not agg:
                 continue
             lasts = self.get_lasts(svc)
             for action, parms in svc.sched.actions.items():
-                if provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
+                if agg.provisioned in ("mixed", False) and action in ACTIONS_SKIP_ON_UNPROV:
                     nonprov.append(action+"@"+path)
                     continue
-                try:
-                    data = svc.sched.validate_action(action, lasts=lasts, now=now)
-                except ex.AbortAction as exc:
-                    self.log.debug("skip %s on %s: validation", action, path)
-                    continue
-                try:
-                    rids, delay = data
-                except TypeError:
-                    delay = data
-                    rids = None
-                if rids is None:
-                    self.queue_action(action, delay, path, rids, now=now)
-                else:
-                    for rid in rids:
-                        self.queue_action(action, delay, path, rid, now=now)
+                for p in parms:
+                    if p.req_collector and not shared.NODE.collector_env.dbopensvc:
+                        continue
+                    rid = p.section if p.section != "DEFAULT" else None
+                    sig = (action, path, rid)
+                    if sig in self.delayed:
+                        continue
+                    if sig in self.blacklist:
+                        continue
+                    if sig in self.running:
+                        continue
+                    last = self.local_last(sig, p.fname, svc)
+                    try:
+                        cluster_last = lasts[p.section][action]["last"]
+                        if not last or cluster_last > last:
+                            # local last may be more up-to-date due to CRM task runs notifications
+                            last = cluster_last
+                    except KeyError:
+                        pass
+                    try:
+                        _next, _interval = svc.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
+                    except Exception as exc:
+                        self.log.warning("%s %s %s: %s", path, p.section, action, exc)
+                        self.log.exception(exc)
+                        self.blacklist[sig] = csum
+                        continue
+                    if not _next:
+                        self.blacklist[sig] = csum
+                        continue
+                    if rid:
+                        try:
+                            svc.get_resource(rid).check_requires(action, cluster_data=self.run_cluster_data)
+                        except (KeyError, AttributeError):
+                            continue
+                        except (ex.Error, ex.ContinueAction) as exc:
+                            # run_requires not satisfied
+                            continue
+                    _next = time.mktime(_next.timetuple())
+                    delay = _next - now
+                    self.queue_action(action, delay, path, rid, now=now, csum=csum)
 
         # log a scheduler loop digest
         msg = []
@@ -447,4 +568,3 @@ class Scheduler(shared.OsvcThread):
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
         if len(msg) > 0:
             self.log.debug(" ".join(msg))
-

@@ -29,6 +29,7 @@ class TestDaemonRun:
 
     @staticmethod
     def test_refuse_to_run_when_osvcd_lock_is_held(loop_forever):
+        import os
         from time import sleep
 
         def lock_holder():
@@ -36,16 +37,20 @@ class TestDaemonRun:
             with cmlock(lockfile=Env.paths.daemon_lock):
                 sleep(50)
 
-        from multiprocessing import Process
-        proc = Process(target=lock_holder)
-        proc.start()
+        pid = os.fork()
+        if pid > 0:
+            sleep(0.05)
+        else:
+            lock_holder()
+            return
+
         sleep(0.5)
         with pytest.raises(SystemExit) as error:
             main(['--debug', '-f'])
-        proc.terminate()
-        proc.join(timeout=1)
+        os.kill(pid, 9)
         assert loop_forever.call_count == 0
         assert error.value.code == 1
+        os.waitpid(pid, 0)
 
     @staticmethod
     def test_run_loop_forever_when_no_other_daemon_are_here(loop_forever):

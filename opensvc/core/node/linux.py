@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 from itertools import islice
 
@@ -112,11 +113,15 @@ class Node(BaseNode):
     def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto", **kwargs):
         if dst is None:
             return
+        if ":" in dst:
+            cmd = ["ip", "-6"]
+        else:
+            cmd = ["ip"]
         if tunnel in ("auto", "never"):
             if gw is not None:
-                cmd = ["ip", "route", "replace", dst, "via", gw, "table", table]
+                cmd += ["route", "replace", dst, "via", gw, "table", table]
             elif dev is not None:
-                cmd = ["ip", "route", "replace", dst, "dev", dev, "table", table]
+                cmd += ["route", "replace", dst, "dev", dev, "table", table]
             out, err, ret = justcall(cmd)
         else:
             err = ""
@@ -126,14 +131,42 @@ class Node(BaseNode):
                 self.log.info(line)
         elif tunnel == "always" or "invalid gateway" in err or "is unreachable" in err:
             tun = self.network_tunnel_ipip_add(local_ip, gw)
-            cmd = ["ip", "route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
+            cmd += ["route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
             self.vcall(cmd)
         else:
             self.log.info(" ".join(cmd))
             for line in out.splitlines():
                 self.log.info(line)
 
-    def mac_from_ip(self, ip):
+    def mac_from_ip6(self, name):
+        """
+        When the device with the lowest mac is removed from the bridge or when
+        a new device with the lowest mac is added to the bridge, all containers
+        can experience tcp hangs while the arp table resynchronizes.
+
+        Setting a mac address to the bridge explicitely avoids these mac address
+        changes.
+
+        Forge the mac address using a 6a:58 prefix followed by the bridge original
+        random address last 4 bytes.
+        """
+        cmd = ["ip", "link", "show", "dev", name]
+        out, _, _ = justcall(cmd)
+        mac = out.strip().split("\n")[-1].split()[1]
+        return "6a:58" + mac[5:]
+
+    def mac_from_ip4(self, ip):
+        """
+        When the device with the lowest mac is removed from the bridge or when
+        a new device with the lowest mac is added to the bridge, all containers
+        can experience tcp hangs while the arp table resynchronizes.
+
+        Setting a mac address to the bridge explicitely avoids these mac address
+        changes.
+
+        Forge the mac address using a 0a:58 prefix followed by the bridge ipv4
+        address converted to hexa (same algorithm used in k8s).
+        """
         mac = "0a:58"
         for i in ip.split("/", 1)[0].split("."):
             mac += ":%.2x" % int(i)
@@ -152,9 +185,12 @@ class Node(BaseNode):
             self.vcall(cmd)
         cmd = ["ip", "link", "show", "dev", name]
         out, _, _ = justcall(cmd)
-        mac = self.mac_from_ip(ip)
+        if ":" in ip:
+            mac = self.mac_from_ip6(name)
+        else:
+            mac = self.mac_from_ip4(ip)
         if mac not in out:
-            cmd = ["ip", "link", "set", "dev", name, "address", self.mac_from_ip(ip)]
+            cmd = ["ip", "link", "set", "dev", name, "address", mac]
             self.vcall(cmd)
         if "DOWN" in out:
             cmd = ["ip", "link", "set", "dev", name, "up"]
@@ -199,20 +235,34 @@ class Node(BaseNode):
             return
         chain = "osvc-" + name
         comment = "name: %s" % name
-        self.network_ipt_add_chain(chain, nat=True)
-        for net in nets.values():
-            if net["config"]["network"] == "undef":
-                continue
-            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="RETURN", comment=comment, where="head")
-        self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment, where="tail")
         src = data.get("cni", {}).get("data", {}).get("ipam", {}).get("subnet")
         if not src:
             src = data.get("cni", {}).get("data", {}).get("network")
-        self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment)
-        self.network_ipt_add_rule(chain="FORWARD", nat=False, indev="obr_"+name, act="ACCEPT", comment=comment)
-        self.network_ipt_add_rule(chain="FORWARD", nat=False, outdev="obr_"+name, act="ACCEPT", comment=comment)
+        if src and ":" in src:
+            af = socket.AF_INET6
+        else:
+            af = socket.AF_INET
 
-    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail", indev=None, outdev=None):
+        self.network_ipt_add_chain(chain, nat=True, af=af)
+
+        for net in nets.values():
+            if net["config"]["network"] == "undef":
+                continue
+            dst = net["config"]["network"]
+            _af = socket.AF_INET6 if ":" in dst else socket.AF_INET
+            if af != _af:
+                continue
+            self.network_ipt_add_rule(chain, nat=True, dst=net["config"]["network"], act="RETURN", comment=comment, where="head", af=af)
+
+        if af == socket.AF_INET6:
+            self.network_ipt_add_rule(chain=chain, nat=True, dst="::/0", act="MASQUERADE", comment=comment, where="tail", af=af)
+        else:
+            self.network_ipt_add_rule(chain=chain, nat=True, dst="!224.0.0.0/4", act="MASQUERADE", comment=comment, where="tail", af=af)
+        self.network_ipt_add_rule(chain="POSTROUTING", nat=True, src=src, act=chain, comment=comment, af=af)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, indev="obr_"+name, act="ACCEPT", comment=comment, af=af)
+        self.network_ipt_add_rule(chain="FORWARD", nat=False, outdev="obr_"+name, act="ACCEPT", comment=comment, af=af)
+
+    def network_ipt_add_rule(self, chain=None, nat=False, dst=None, src=None, act="RETURN", comment=None, where="tail", indev=None, outdev=None, af=socket.AF_INET):
         if nat:
             nat = ["-t", "nat"]
         else:
@@ -221,7 +271,10 @@ class Node(BaseNode):
             where = "-I"
         else:
             where = "-A"
-        cmd1 = ["iptables"] + nat
+        if af == socket.AF_INET6:
+            cmd1 = ["ip6tables"] + nat
+        else:
+            cmd1 = ["iptables"] + nat
         cmd2 = [chain]
         if indev:
             cmd2 += ["-i", indev]
@@ -250,12 +303,14 @@ class Node(BaseNode):
         if ret != 0 and err:
             self.log.error(err)
 
-    def network_ipt_add_chain(self, chain, nat=False):
-        if nat:
-            nat = ["-t", "nat"]
+    def network_ipt_add_chain(self, chain, nat=False, af=socket.AF_INET):
+        if af == socket.AF_INET6:
+            cmd = ["ip6tables"]
         else:
-            nat = []
-        cmd = ["iptables"] + nat + ["-N", chain]
+            cmd = ["iptables"]
+        if nat:
+            cmd += ["-t", "nat"]
+        cmd += ["-N", chain]
         out, err, ret = justcall(cmd)
         if "already exist" in err:
             return

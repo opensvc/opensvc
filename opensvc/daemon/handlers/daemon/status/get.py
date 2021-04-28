@@ -1,5 +1,6 @@
 import daemon.handler
 
+
 class Handler(daemon.handler.BaseHandler):
     """
     Return a hash indexed by thead id, containing the status data
@@ -43,7 +44,7 @@ class Handler(daemon.handler.BaseHandler):
         data = thr.daemon_status()
         namespaces = thr.get_namespaces()
         return thr.filter_daemon_status(
-            data,
+            thr.data_without_non_updated_gens(data),
             namespace=options.namespace,
             namespaces=namespaces,
             selector=options.selector,

@@ -5,6 +5,7 @@ import re
 import foreign.six as six
 from utilities.converters import print_duration, print_size
 from utilities.render.color import colorize, color, unicons
+from utilities.render.listener import fmt_listener
 from env import Env
 from core.status import colorize_status
 from utilities.naming import ANSI_ESCAPE, ANSI_ESCAPE_B, split_path, strip_path, format_path_selector, abbrev
@@ -493,7 +494,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         dev = cf.get("dev", "")
         relay = cf.get("relay", "")
         if addr and port:
-            config = addr + ":" + str(port)
+            config = fmt_listener(addr, port)
         elif dev:
             config = os.path.basename(dev)
         elif relay:
@@ -563,7 +564,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
         out.append((
             " "+colorize(key, color.BOLD),
             state,
-            _data["config"]["addr"]+":"+str(_data["config"]["port"]),
+            fmt_listener(_data["config"]["addr"], _data["config"]["port"]),
             fmt_tid(_data, stats_data),
             fmt_thr_tasks(key, stats_data),
             fmt_thr_cpu_usage(key, prev_stats_data, stats_data),
@@ -984,7 +985,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                         slave_parents[child] = set([path])
                     else:
                         slave_parents[child] |= set([path])
-                global_expect = _data["monitor"].get("global_expect")
+                global_expect = _data.get("monitor", {}).get("global_expect")
                 if global_expect and "@" in global_expect:
                     global_expect = global_expect[:global_expect.index("@")+1]
                 services[path].nodes[_node] = {
@@ -992,9 +993,9 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                     "preserved": _data.get("preserved"),
                     "overall": _data.get("overall", "undef"),
                     "frozen": _data.get("frozen", False),
-                    "mon": _data["monitor"].get("status", ""),
+                    "mon": _data.get("monitor", {}).get("status", ""),
                     "global_expect": global_expect,
-                    "placement": _data["monitor"].get("placement", ""),
+                    "placement": _data.get("monitor", {}).get("placement", ""),
                     "provisioned": _data.get("provisioned"),
                     "drp": _data.get("drp"),
                 }

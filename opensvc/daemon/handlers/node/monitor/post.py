@@ -42,7 +42,7 @@ class Handler(daemon.handler.BaseHandler):
         error = []
         data = {"data": {}}
         try:
-            self.validate_cluster_global_expect(options.global_expect)
+            self.validate_cluster_global_expect(options.global_expect, thr=thr)
         except ex.AbortAction as exc:
             info.append(str(exc))
         except ex.Error as exc:
@@ -63,14 +63,18 @@ class Handler(daemon.handler.BaseHandler):
             data["error"] = error
         return data
 
-    def validate_cluster_global_expect(self, global_expect):
+    def validate_cluster_global_expect(self, global_expect, thr=None):
         if global_expect is None:
             return
+        try:
+            frozen = thr.daemon_status_data.get(["monitor", "frozen"])
+        except KeyError:
+            frozen = None
         if global_expect == "thawed":
-            if shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "thawed":
+            if frozen == "thawed":
                 raise ex.AbortAction("cluster is already thawed")
         elif global_expect == "frozen":
-            if shared.DAEMON_STATUS.get("monitor", {}).get("frozen") == "frozen":
+            if frozen == "frozen":
                 raise ex.AbortAction("cluster is already frozen")
         else:
             raise ex.Error("invalid global_expect value: %s" % global_expect)

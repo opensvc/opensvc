@@ -68,8 +68,6 @@ class SyncHp3parsnap(Sync):
         if len(data) < len(self.vv_names):
             return False
         last = self.lastsync_s_to_datetime(data[0]['CreationTime'])
-        if self.skip_sync(datetime.datetime.utcnow()-last):
-            return False
         try:
             self.check_requires("sync_update")
         except ex.Error:

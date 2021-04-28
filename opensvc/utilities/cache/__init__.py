@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 from functools import wraps
 
@@ -13,8 +14,8 @@ def cache_uuid():
     return os.environ.get("OSVC_CACHE_UUID") or Env.session_uuid
 
 
-def get_cache_d():
-    return os.path.join(Env.paths.pathvar, "cache", cache_uuid())
+def get_cache_d(sid=None):
+    return os.path.join(Env.paths.pathvar, "cache", sid or cache_uuid())
 
 
 def cache(sig):
@@ -106,7 +107,6 @@ def clear_cache(sig, o=None):
 
 
 def purge_cache():
-    import shutil
     cache_d = get_cache_d()
     try:
         shutil.rmtree(cache_d)
@@ -114,8 +114,15 @@ def purge_cache():
         pass
 
 
+def purge_cache_session(sid):
+    cache_d = get_cache_d(sid)
+    try:
+        shutil.rmtree(cache_d)
+    except:
+        pass
+
+
 def purge_cache_expired():
-    import shutil
     cache_d = os.path.join(Env.paths.pathvar, "cache")
     if not os.path.exists(cache_d) or not os.path.isdir(cache_d):
         return

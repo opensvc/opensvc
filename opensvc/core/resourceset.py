@@ -3,9 +3,9 @@ Defines the resource set class, which is a collection of resources.
 """
 from __future__ import print_function
 
-import os
 import sys
 import logging
+from multiprocessing import Process
 
 import core.exceptions as ex
 import core.status
@@ -36,9 +36,10 @@ class ResourceSet(object):
             for resource in resources:
                 self += resource
         try:
-            self.driver_group = self.rid.split(":")[0]
+            self.driver_group, self.subset_name = self.rid.split(":")
         except ValueError:
             self.driver_group = ""
+            self.subset_name = self.rid
 
     def __lt__(self, other):
         return self.rid < other.rid
@@ -274,32 +275,37 @@ class ResourceSet(object):
         xtags = kwargs.get("xtags", set())
         xtypes = kwargs.get("xtypes")
         types = kwargs.get("types")
-
-        if self.parallel:
-            # verify we can actually do parallel processing, fallback to serialized
-            try:
-                from multiprocessing import Process
-                if Env.sysname == "Windows":
-                    from multiprocessing import set_executable
-                    set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
-            except:
-                self.parallel = False
-
         resources = self.action_resources(action, tags, xtags, xtypes, types)
+        resources = [r for r in resources if not r.skip and not r.is_disabled() and (action != "rollback" or r.can_rollback)]
         barrier = None
 
-        if not self.svc.options.dry_run and \
-           self.parallel and len(resources) > 1 and \
-           action not in ["presync", "postsync"]:
+        if self.parallel:
+            if Env.sysname == "Windows":
+                parallel = False
+            else:
+                parallel = True
+        else:
+            parallel = False
+
+        if not self.svc.options.dry_run \
+                and parallel \
+                and len(resources) > 1 and \
+                action not in ["presync", "postsync"]:
             procs = {}
+            self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
+            from utilities.process_title import set_process_title  # warm up for side effect
             for resource in resources:
                 if not resource.can_rollback and action == "rollback":
                     continue
                 if resource.skip or resource.is_disabled():
                     continue
-                proc = Process(target=self.action_job, args=(resource, action,))
+                title = "om %s --subset %s --rid %s %s" % (resource.svc.path,
+                                                           self.subset_name,
+                                                           resource.rid,
+                                                           action)
+                proc = Process(target=self._action_job, args=(title, resource, action,))
                 proc.start()
-                resource.log.info("action %s started in child process %d"%(action, proc.pid))
+                resource.log.info("action %s started in child process %d" % (action, proc.pid))
                 procs[resource.rid] = proc
                 if self.svc.options.upto and resource.rid == self.svc.options.upto:
                     barrier = "reached 'up to %s' barrier" % resource.rid
@@ -307,25 +313,29 @@ class ResourceSet(object):
                 if self.svc.options.downto and resource.rid == self.svc.options.downto:
                     barrier = "reached 'down to %s' barrier" % resource.rid
                     break
+
             for proc in procs.values():
                 proc.join()
+
             err = []
             for resource in resources:
                 if resource.rid not in procs:
                     continue
                 proc = procs[resource.rid]
-                if proc.exitcode == 1 and not resource.optional:
+                exitcode = proc.exitcode
+                if exitcode == 1 and not resource.optional:
                     err.append(resource.rid)
-                elif proc.exitcode == 2:
+                elif exitcode == 2:
                     # can_rollback resource property is lost with the thread
                     # the action_job tells us what to do with it through its exitcode
                     resource.can_rollback = True
+
             if len(err) > 0:
                 raise ex.Error("%s non-optional resources jobs returned "
-                                  "with error" % ",".join(err))
+                               "with error" % ",".join(err))
         else:
             if self.svc.options.dry_run and \
-               self.parallel and len(resources) > 1 and \
+               parallel and len(resources) > 1 and \
                action not in ["presync", "postsync"]:
                 self.log.info("entering parallel subset")
             for resource in resources:
@@ -359,11 +369,13 @@ class ResourceSet(object):
         if barrier:
             raise ex.EndAction(barrier)
 
-    def action_job(self, resource, action):
+    def _action_job(self, title, resource, action):
         """
         The worker job used for parallel execution of a resource action in
         a resource set.
         """
+        from utilities.process_title import set_process_title
+        set_process_title(title)
         try:
             getattr(resource, 'action')(action)
         except ex.Error as exc:
@@ -392,7 +404,7 @@ class ResourceSet(object):
             "node": Env.nodename,
             "sid": Env.session_uuid,
             "cron": self.svc.options.cron,
-            "subset": self.rid,
+            "subset": self.subset_name,
         }
         return logging.LoggerAdapter(self.logger, extra)
 
@@ -410,6 +422,7 @@ class ResourceSet(object):
             l.insert(1, self.svc.namespace.lower())
         name = ".".join(l)
         return logging.getLogger(name)
+
 
 if __name__ == "__main__":
     pass

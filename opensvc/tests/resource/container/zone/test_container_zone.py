@@ -1,10 +1,17 @@
 import os
 
 import pytest
+try:
+    # noinspection PyCompatibility
+    from unittest.mock import call
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    from mock import call
 
 import core.exceptions as ex
 from core.objects.svc import Svc
 from drivers.resource.container.zone import ContainerZone
+from utilities.lazy import set_lazy
 
 LIB_CLASS = 'drivers.resource.container.zone.ContainerZone'
 
@@ -27,6 +34,11 @@ def zone_unconfigure(mocker):
 @pytest.fixture(scope='function')
 def zoneadm(mocker):
     return mocker.patch.object(ContainerZone, 'zoneadm')
+
+
+@pytest.fixture(scope='function')
+def zone_refresh(mocker):
+    return mocker.patch.object(ContainerZone, 'zone_refresh')
 
 
 @pytest.fixture(scope='function')
@@ -596,3 +608,80 @@ class TestCreateSysidcfg:
         zone.create_sysidcfg()
         with open(zone.sysidcfg, 'r') as sysidcfg_file:
             assert expected in sysidcfg_file.read()
+
+
+@pytest.mark.ci
+class TestDetach:
+    @staticmethod
+    def test_does_nothing_when_zone_does_not_exist(
+            zoneadm,
+            zone_refresh,
+            zone):
+        zone.detach()
+        zoneadm.assert_not_called()
+        zone_refresh.assert_not_called()
+
+    @staticmethod
+    def test_does_nothing_when_zone_is_only_configured(
+            zoneadm,
+            zone_refresh,
+            zone):
+        set_lazy(zone, "state", "configured")
+        zone.detach()
+        zoneadm.assert_not_called()
+        zone_refresh.assert_not_called()
+
+    @staticmethod
+    def test_call_zoneadm_detach_then_refresh(
+            mocker,
+            zoneadm,
+            zone_refresh,
+            zone):
+        zoneadm.return_value = 0
+        manager = mocker.Mock()
+        manager.attach_mock(zoneadm, 'zoneadm')
+        manager.attach_mock(zone_refresh, 'zone_refresh')
+        set_lazy(zone, "state", "installed")
+
+        zone.detach()
+
+        assert manager.mock_calls == [
+            call.zoneadm('detach'),
+            call.zone_refresh()
+        ]
+
+    @staticmethod
+    def test_detach_with_force_when_first_detach_fails(
+            mocker,
+            zoneadm,
+            zone_refresh,
+            zone):
+        zoneadm.side_effect = [ex.Error("need -F"), 0]
+        manager = mocker.Mock()
+        manager.attach_mock(zoneadm, 'zoneadm')
+        manager.attach_mock(zone_refresh, 'zone_refresh')
+        set_lazy(zone, "state", "installed")
+
+        zone.detach()
+
+        assert manager.mock_calls == [
+            call.zoneadm('detach'),
+            call.zoneadm("detach", option=["-F"]),
+            call.zone_refresh(),
+        ]
+
+
+@pytest.mark.ci
+class TestZoneRefresh:
+    @staticmethod
+    @pytest.mark.parametrize('property',
+                             ['zone_data', 'state', 'brand', 'zonepath'])
+    def test_zone_refresh_unset_lazy_property(
+            zone,
+            property,
+    ):
+        zone.kw_zonepath = None
+        set_lazy(zone, property, property)
+        assert getattr(zone, property) == property
+        zone.zone_refresh()
+        assert getattr(zone, property) is None

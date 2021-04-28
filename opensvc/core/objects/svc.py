@@ -115,6 +115,11 @@ ACTION_ASYNC = {
         "local": True,
         "kinds": ["svc", "vol", "usr", "sec", "cfg"],
     },
+    "restart": {
+        "target": "restarted",
+        "progress": "restarting",
+        "local": True,
+    },
     "shutdown": {
         "target": "shutdown",
         "progress": "shutting",
@@ -878,8 +883,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         Install signal handlers.
         """
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        try:
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+        except ValueError:
+            # signal only works in main thread
+            pass
 
     def systemd_join_agent_service(self):
         from utilities.systemd import systemd_system, systemd_join
@@ -1399,7 +1408,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         For encap commands
         """
-        if "__main__" in sys.argv[0]:
+        if "__main__" in sys.argv[0] or sys.argv[0] == "om":
             # skip selector or subsystem name too
             cmd = sys.argv[2:]
         else:
@@ -1778,7 +1787,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Print the service configuration in the format specified by --format.
         """
         if want_context() or (not self.cd and not os.path.exists(self.paths.cf)):
-            buff = self.remote_service_config(self.options.node)
+            node, buff = self.remote_service_config(self.options.node)
             if buff is None:
                 raise ex.Error("could not fetch remote config")
             try:
@@ -1868,7 +1877,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return 1
         from utilities.files import fsum
         if want_context() or not os.path.exists(self.paths.cf):
-            refcf = self.remote_service_config_fetch()
+            node, refcf = self.remote_service_config_fetch()
             need_send = True
             tmpcf = refcf + ".tmp"
             shutil.copy2(refcf, tmpcf)
@@ -1876,6 +1885,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             refcf = self.paths.cf
             need_send = False
             tmpcf = self.make_temp_config()
+            node = None
         os.system(' '.join((editor, tmpcf)))
         if fsum(tmpcf) == fsum(refcf):
             os.unlink(tmpcf)
@@ -1885,7 +1895,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if need_send:
             try:
                 return self.node.install_service(self.path, fpath=tmpcf,
-                                                 restore=True)
+                                                 restore=True, node=node)
             finally:
                 os.unlink(refcf)
                 os.unlink(tmpcf)
@@ -1999,14 +2009,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except Exception as exc:
             self.log.warning("notify scheduler action is done failed: %s", str(exc))
 
-    def wake_monitor(self):
-        if self.options.no_daemon:
-            return
+    def post_object_status(self, data):
         req = {
-            "action": "wake_monitor",
+            "action": "object_status",
             "options": {
                 "path": self.path,
-                "immediate": True,
+                "data": data,
             }
         }
         try:
@@ -2021,11 +2029,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if status and data.get("errno") != ECONNREFUSED:
                 # ECONNREFUSED (ie daemon down)
                 if error:
-                    self.log.warning("wake monitor failed: %s", error)
+                    self.log.warning("post object status failed: %s", error)
                 else:
-                    self.log.warning("wake monitor failed")
+                    self.log.warning("post object status failed")
         except Exception as exc:
-            self.log.warning("wake monitor failed: %s", str(exc))
+            self.log.warning("post object status failed: %s", str(exc))
 
     def set_service_monitor(self, status=None, local_expect=None, global_expect=None, stonith=None, path=None,
                             best_effort=False):
@@ -2070,7 +2078,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 raise
 
     def remote_service_config_fetch(self, nodename=None):
-        buff = self.remote_service_config(nodename=nodename)
+        node, buff = self.remote_service_config(nodename=nodename)
         if not buff:
             raise ex.Error
         tmpfile = tempfile.NamedTemporaryFile()
@@ -2078,7 +2086,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         tmpfile.close()
         with open(fname, "w") as tmpfile:
             tmpfile.write(buff)
-        return fname
+        return node, fname
 
     def remote_service_config(self, nodename=None):
         req = {
@@ -2099,13 +2107,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
             for node in data["nodes"]:
                 break
             try:
-                return data["nodes"][node]["data"]
+                return node, data["nodes"][node]["data"]
             except Exception:
-                return
+                return None, None
         try:
-            return data["data"]
+            return None, data["data"]
         except Exception:
-            return
+            return None, None
 
     def daemon_service_action(self, action=None, options=None, server=None, node=None, sync=True, timeout=None,
                               collect=False, action_mode=True):
@@ -2474,6 +2482,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         return data
 
     def csum_status_data(self, data):
+        """
+        This checksum is used by the collector thread to detect changes
+        requiring a collector update.
+        """
         h = hashlib.md5()
 
         def fn(h, val):
@@ -2502,7 +2514,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 json.dump(data, filep)
             os.utime(fpath, (-1, data["updated"]))
             shutil.move(fpath, self.status_data_dump)
-            self.wake_monitor()
+            self.post_object_status(data)
         except Exception as exc:
             self.log.warning("failed to update %s: %s",
                              self.status_data_dump, str(exc))
@@ -3225,34 +3237,34 @@ class Svc(PgMixin, BaseSvc):
         monitor_schedule = self.oget('DEFAULT', 'monitor_schedule')
 
         self.sched.update({
-            "compliance_auto": SchedOpts(
+            "compliance_auto": [SchedOpts(
                 "DEFAULT",
                 fname="last_comp_check",
                 schedule_option="comp_schedule",
                 req_collector=True,
-            ),
-            "push_resinfo": SchedOpts(
+            )],
+            "push_resinfo": [SchedOpts(
                 "DEFAULT",
                 fname="last_push_resinfo",
                 schedule_option="resinfo_schedule",
                 req_collector=True,
-            ),
+            )],
         })
         if not self.encap:
             self.sched.update({
-                "status": SchedOpts(
+                "status": [SchedOpts(
                     "DEFAULT",
                     fname="last_status",
                     schedule_option="status_schedule"
-                )
+                )]
             })
             if self.has_monitored_resources() or monitor_schedule is not None:
                 self.sched.update({
-                    "resource_monitor": SchedOpts(
+                    "resource_monitor": [SchedOpts(
                         "DEFAULT",
                         fname="last_resource_monitor",
                         schedule_option="monitor_schedule"
-                    )
+                    )]
                 })
 
         resource_schedules = {}
@@ -3734,6 +3746,7 @@ class Svc(PgMixin, BaseSvc):
             "env": self.svc_env,
             "placement": self.placement,
             "topology": self.topology,
+            "frozen": self.frozen(),
             "subsets": {},
             "resources": {},
         }
@@ -3748,9 +3761,6 @@ class Svc(PgMixin, BaseSvc):
                 "flex_min": self.flex_min,
                 "flex_max": self.flex_max,
             })
-        frozen = self.frozen()
-        if frozen:
-            data["frozen"] = frozen
         if not self.constraints:
             data["constraints"] = self.constraints
         if self.slaves:
@@ -3878,19 +3888,23 @@ class Svc(PgMixin, BaseSvc):
         The resource monitor action. Refresh important resources at a different
         schedule.
         """
-        data1 = self.print_status_data()
+        from utilities.journaled_data import JournaledData
+        dataset = JournaledData(
+            initial_data=self.print_status_data(),
+            journal_head=[],
+        )
         for resource in self.get_resources():
             if resource.monitor or resource.nb_restart:
                 resource.status(refresh=True)
         if self.need_encap_resource_monitor():
             self.encap_cmd(["resource_monitor"])
-        data2 = self.print_status_data_eval(write_data=False)
-        import foreign.json_delta as json_delta
-        diff = json_delta.diff(data1, data2, verbose=False, array_align=False, compare_lengths=False)
+        data = self.print_status_data_eval(write_data=False)
+        dataset.set([], data)
+        diff = dataset.pop_diff()
         significant_changes = [change for change in diff if change[0][-1] not in ("updated", "csum")]
         if significant_changes:
             self.log.debug("changes detected in monitored resources: %s", significant_changes)
-            self.write_status_data(data2)
+            self.write_status_data(data)
 
     def reboot(self):
         """
@@ -4479,7 +4493,6 @@ class Svc(PgMixin, BaseSvc):
 
     def boot(self):
         self.options.force = True
-        self.options.no_daemon = True
         self.master_boot()
 
     @_master_action
@@ -4550,39 +4563,46 @@ class Svc(PgMixin, BaseSvc):
         self.abort_start_done = True
         resources = [res for res in self.get_resources()
                      if not res.skip and not res.is_disabled() and hasattr(res, "abort_start")]
-        if Env.sysname == "Windows" or len(resources) < 2:
+        if len(resources) < 2:
             parallel = False
         else:
             try:
+                # noinspection PyUnresolvedReferences
                 from multiprocessing import Process
                 parallel = True
-
-                def wrapper(func):
-                    try:
-                        if func():
-                            sys.exit(1)
-                    except ex.Signal:
-                        sys.exit(1)
             except ImportError:
                 parallel = False
 
-        procs = {}
-        for resource in resources:
-            if not parallel:
+        if not parallel:
+            for resource in resources:
                 if resource.abort_start():
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
-            else:
-                proc = Process(target=wrapper, args=[resource.abort_start])
+        else:
+            from utilities.process_title import set_process_title
+
+            def wrapper(proc_title, func):
+                set_process_title(proc_title)
+                try:
+                    if func():
+                        sys.exit(1)
+                except ex.Signal:
+                    sys.exit(1)
+
+            procs = {}
+            for resource in resources:
+                title = "om %s --rid %s check abort start" % (resource.svc.path, resource.rid)
+                # noinspection PyUnboundLocalVariable
+                proc = Process(target=wrapper, args=(title, resource.abort_start))
                 proc.start()
                 procs[resource.rid] = proc
 
-        if parallel:
             err = []
             for rid, proc in procs.items():
                 proc.join()
                 if proc.exitcode > 0:
                     err.append(rid)
+
             if len(err) > 0:
                 raise ex.Error("start aborted due to resource %s "
                                "conflict" % ",".join(err))

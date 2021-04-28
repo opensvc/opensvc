@@ -11,15 +11,19 @@ import core.exceptions as ex
 import daemon.shared as shared
 from env import Env
 from .hb import Hb
+from utilities.render.listener import fmt_listener
+
 
 class HbUcast(Hb):
     """
     A class factorizing common methods and properties for the unicast
     heartbeat tx and rx child classes.
     """
-    config_change = False
-    timeout = None
-    peer_config = None
+    def __init__(self, name, role=None):
+        super(HbUcast, self).__init__(name, role)
+        self.peer_config = {}
+        self.config_change = False
+        self.timeout = None
 
     def status(self, **kwargs):
         data = Hb.status(self, **kwargs)
@@ -58,7 +62,7 @@ class HbUcast(Hb):
                 if addr is not None:
                     pass
                 elif nodename == Env.nodename:
-                    addr = "0.0.0.0"
+                    addr = "::"
                 else:
                     addr = nodename
                 peer_config[nodename] = {
@@ -82,26 +86,29 @@ class HbUcast(Hb):
 
         self.max_handlers = len(self.hb_nodes) * 4
 
+
 class HbUcastTx(HbUcast):
     """
     The unicast heartbeat tx class.
     """
     sock_tmo = 1.0
 
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="tx")
+    def __init__(self, name, role="tx"):
+        super(HbUcastTx, self).__init__(name, role=role)
 
     def run(self):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
 
         try:
             while True:
                 self.do()
                 if self.stopped():
+                    self.log.info('sys.exit()')
                     sys.exit(0)
                 with shared.HB_TX_TICKER:
                     shared.HB_TX_TICKER.wait(self.interval)
@@ -126,16 +133,14 @@ class HbUcastTx(HbUcast):
             self._do(message, message_bytes, nodename, config)
 
     def _do(self, message, message_bytes, nodename, config):
+        sock = None
         try:
-            #self.log.info("sending to %s:%s", config["addr"], config["port"])
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(self.sock_tmo)
-            sock.bind((self.peer_config[Env.nodename]["addr"], 0))
-            sock.connect((config["addr"], config["port"]))
-            sock.sendall((message+"\0").encode())
+            # self.log.info("sending to %s:%s", config["addr"], config["port"])
+            sock = socket.create_connection((config["addr"], config["port"]), self.sock_tmo)
+            sock.sendall((message+"\0").encode())  # pylint: disable=no-member
             self.set_last(nodename)
             self.push_stats(message_bytes)
-        except socket.timeout as exc:
+        except socket.timeout:
             self.push_stats()
             if self.get_last(nodename).success:
                 self.log.warning("send to %s (%s:%d) timeout", nodename,
@@ -147,63 +152,79 @@ class HbUcastTx(HbUcast):
                 self.log.warning("send to %s (%s:%d) error: %s", nodename,
                                  config["addr"], config["port"], str(exc))
             self.set_last(nodename, success=False)
+        except Exception as exc:
+            self.push_stats()
+            if self.get_last(nodename).success:
+                self.log.error("send to %s (%s:%d) unexpected error: %s", nodename,
+                                 config["addr"], config["port"], str(exc))
+            self.set_last(nodename, success=False)
         finally:
             self.set_beating(nodename)
-            sock.close()
+            if sock is not None:
+                sock.close()
+
 
 class HbUcastRx(HbUcast):
     """
     The unicast heartbeat rx class.
     """
-    sock_accept_tmo = 2.0
-    sock_recv_tmo = 5.0
-
-    def __init__(self, name):
-        HbUcast.__init__(self, name, role="rx")
+    def __init__(self, name, role="rx"):
+        super(HbUcastRx, self).__init__(name, role=role)
         self.sock = None
+        self.sock_accept_tmo = 2.0
+        self.sock_recv_tmo = 5.0
 
     def _configure(self):
-        HbUcast._configure(self)
+        super(HbUcastRx, self)._configure()
         if not self.config_change:
             return
         self.config_change = False
         if self.sock:
             self.sock.close()
-        lexc = None
+        local_exception = None
         for _ in range(3):
             try:
                 self.configure_listener()
                 return
             except socket.error as exc:
-                lexc = exc
+                local_exception = exc
                 time.sleep(1)
-        self.log.error("init error: %s", str(lexc))
+        self.log.error("init error: %s", str(local_exception))
         raise ex.AbortAction
 
     def configure_listener(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        addr = self.peer_config[Env.nodename]["addr"]
+        port = self.peer_config[Env.nodename]["port"]
+        af = socket.AF_INET6 if ":" in addr else socket.AF_INET
+        self.sock = socket.socket(af, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((self.peer_config[Env.nodename]["addr"],
-                        self.peer_config[Env.nodename]["port"]))
+        self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(self.sock_accept_tmo)
+        self.log.info("listening on %s", fmt_listener(addr, port))
 
     def run(self):
         self.set_tid()
         try:
             self.configure()
-        except ex.AbortAction:
+        except ex.AbortAction as exc:
+            self.log.exception("error during configure step", exc)
             return
-
-        self.log.info("listening on %s:%s",
-                      self.peer_config[Env.nodename]["addr"],
-                      self.peer_config[Env.nodename]["port"])
+        except Exception as exc:
+            self.log.error("%s", exc)
+            raise exc
 
         while True:
-            self.do()
+            try:
+                self.do()
+            except Exception as exc:
+                self.log.error("during do(): %s", exc)
+                self.log.exception(exc)
+                raise exc
             if self.stopped():
                 self.join_threads()
                 self.sock.close()
+                self.log.info('sys.exit()')
                 sys.exit(0)
 
     def do(self):
@@ -262,7 +283,7 @@ class HbUcastRx(HbUcast):
             self.set_beating(nodename)
             return
         try:
-            self.store_rx_data(data, nodename)
+            self.queue_rx_data(data, nodename)
             self.set_last(nodename)
         except Exception as exc:
             if self.get_last(nodename).success:

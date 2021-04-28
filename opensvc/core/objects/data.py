@@ -91,7 +91,7 @@ class DataMixin(object):
         if foreign.six.PY2:
             data += sys.stdin.read()
         else:
-            data += sys.stdin.buffer.read()
+            data += sys.stdin.buffer.read()  # pylint: disable=no-member
         self.add_key(key, data)
 
     def add_uri(self, key, path, append=None):

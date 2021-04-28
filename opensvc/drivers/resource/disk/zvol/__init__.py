@@ -1,5 +1,4 @@
 import os
-import signal
 import time
 
 import core.exceptions as ex

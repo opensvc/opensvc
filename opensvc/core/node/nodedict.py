@@ -657,9 +657,9 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "listener",
         "keyword": "tls_addr",
-        "default": "0.0.0.0",
+        "default": "::",
         "example": "1.2.3.4",
-        "text": "The ip addr the daemon tls listener must listen on. Usually set to the cluster vip if 0.0.0.0 is not adequate."
+        "text": "The ip addr the daemon tls listener must listen on."
     },
     {
         "section": "listener",
@@ -671,16 +671,16 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "listener",
         "keyword": "addr",
-        "default": "0.0.0.0",
+        "default": "::",
         "example": "1.2.3.4",
-        "text": "The ip addr the daemon listener must listen on."
+        "text": "The ip addr the daemon raw listener must listen on."
     },
     {
         "section": "listener",
         "keyword": "port",
         "convert": "integer",
         "default": 1214,
-        "text": """The port the daemon listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the :c-action:`dequeue actions` node action upon receive. The :kw:`listener.port` parameter is sent to the collector upon :c-action:`pushasset`. The collector uses this port to notify the node."""
+        "text": """The port the daemon raw listener must listen on. In pull action mode, the collector sends a tcp packet to the server to notify there are actions to unqueue. The opensvc daemon executes the :c-action:`dequeue actions` node action upon receive. The :kw:`listener.port` parameter is sent to the collector upon :c-action:`pushasset`. The collector uses this port to notify the node."""
     },
     {
         "section": "listener",

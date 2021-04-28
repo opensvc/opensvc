@@ -353,7 +353,7 @@ class HbDiskRx(HbDisk):
                     # discard too old dataset
                     continue
                 self.last_updated[nodename] = updated
-                self.store_rx_data(_data, nodename)
+                self.queue_rx_data(_data, nodename)
                 self.push_stats(len(slot_data))
                 self.set_last(nodename)
             except Exception as exc:
