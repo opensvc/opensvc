@@ -114,14 +114,14 @@ class Node(BaseNode):
         if dst is None:
             return
         if ":" in dst:
-            cmd = ["ip", "-6"]
+            ipcmd = ["ip", "-6"]
         else:
-            cmd = ["ip"]
+            ipcmd = ["ip"]
         if tunnel in ("auto", "never"):
             if gw is not None:
-                cmd += ["route", "replace", dst, "via", gw, "table", table]
+                cmd = ipcmd + ["route", "replace", dst, "via", gw, "table", table]
             elif dev is not None:
-                cmd += ["route", "replace", dst, "dev", dev, "table", table]
+                cmd = ipcmd + ["route", "replace", dst, "dev", dev, "table", table]
             out, err, ret = justcall(cmd)
         else:
             err = ""
@@ -131,7 +131,7 @@ class Node(BaseNode):
                 self.log.info(line)
         elif tunnel == "always" or "invalid gateway" in err or "is unreachable" in err:
             tun = self.network_tunnel_ipip_add(local_ip, gw)
-            cmd += ["route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
+            cmd = ipcmd + ["route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
             self.vcall(cmd)
         else:
             self.log.info(" ".join(cmd))
