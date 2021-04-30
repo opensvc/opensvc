@@ -25,7 +25,7 @@ def session(fn):
 
 class Pool(BasePool):
     type = "hcs"
-    capabilities = ["roo", "rwo", "shared", "blk", "fc"]
+    capabilities = ["rox", "rwx", "roo", "rwo", "shared", "blk", "fc"]
 
 
     @lazy
