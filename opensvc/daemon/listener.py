@@ -432,6 +432,10 @@ class Listener(shared.OsvcThread):
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
                 continue
+            except OSError as exc:
+                if conn and exc.errno == 9: # EBADF
+                    conn.close()
+                continue
             except ConnectionAbortedError:
                 if conn:
                     conn.close()
