@@ -1441,7 +1441,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def transitions_maxed(self):
         transitions = self.transition_count()
-        if transitions <= shared.NODE.max_parallel:
+        if transitions < shared.NODE.max_parallel:
             return False
         self.duplog("info", "delay services orchestration: "
                     "%(transitions)d/%(max)d transitions already "
