@@ -682,7 +682,7 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.service_command_factory()
         monitor_test.prepare_monitor_idle()
         monitor_test.monitor._lazy_ready_period = 0.001
-        max_parallel = 3
+        max_parallel = 4
         shared.NODE._lazy_max_parallel = max_parallel
         # service list ordered by priority
         services = [
@@ -708,7 +708,7 @@ class TestMonitorOrchestratorStart(object):
         for expected_service_start in [services[0:4], services[4:8], services[8:12]]:
             monitor_test.log('COMMENT: ensure start of %s', expected_service_start)
             monitor_test.do()
-            count += max_parallel + 1
+            count += max_parallel
             for svc in expected_service_start:
                 monitor_test.assert_command_has_been_launched([
                     call(svc, ["start"]),
