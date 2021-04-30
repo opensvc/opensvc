@@ -5553,6 +5553,8 @@ class Svc(PgMixin, BaseSvc):
             resources = self.get_resources("container")
             if len(resources) == 1:
                 rid = resources[0].rid
+            elif len(resources) == 0:
+                raise ex.Error("this svc has no container")
             else:
                 raise ex.Error("this svc has multiple containers. select one with --rid <id>")
         elif is_string(self.options.rid):
