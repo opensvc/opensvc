@@ -196,8 +196,14 @@ def demote(user_uid, user_gid):
     Return a privilege demotion function to plug as Popen() preexec_fn keyword
     argument, customized for <user_uid> and <user_gid>.
     """
-    os.setgid(user_gid)
-    os.setuid(user_uid)
+    try:
+        os.setresgid(user_gid, user_gid, user_gid)
+        os.setresuid(user_uid, user_uid, user_uid)
+    except AttributeError:
+        # os.setresgid not implemented in this python interpreter.
+        # use the next best thing.
+        os.setregid(user_gid, user_gid)
+        os.setreuid(user_uid, user_uid)
 
 class StatusWARN(Exception):
     """
