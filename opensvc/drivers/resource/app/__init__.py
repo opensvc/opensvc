@@ -438,15 +438,22 @@ class App(Resource):
         try:
             status = self.is_up()
         except:
-            status = 1
+            status = core.status.DOWN
 
-        if status == 0:
+        if status == core.status.UP:
             self.log.info("%s is already started", self.label)
             return
 
         ret = self.run("start", cmd)
         if ret != 0:
             raise ex.Error("exit code %d" % ret)
+        def iu():
+            try:
+                r = self.is_up()
+            except:
+                r = core.status.DOWN
+            return r in (core.status.UP, core.status.NA)
+        self.wait_for_fn(iu, self.start_timeout, 1)
         self.can_rollback = True
 
     def stop(self):
