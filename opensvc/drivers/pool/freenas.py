@@ -11,7 +11,7 @@ LOCK_NAME = "freenas_create_disk"
 
 class Pool(BasePool):
     type = "freenas"
-    capabilities = ["roo", "rwo", "shared", "blk", "iscsi"]
+    capabilities = ["roo", "rwo", "rox", "rwx", "shared", "blk", "iscsi"]
 
     @lazy
     def insecure_tpc(self):
