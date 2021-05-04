@@ -453,7 +453,8 @@ class App(Resource):
             except:
                 r = core.status.DOWN
             return r in (core.status.UP, core.status.NA)
-        self.wait_for_fn(iu, self.start_timeout, 1)
+        if self.start_timeout is not None:
+            self.wait_for_fn(iu, self.start_timeout, 1)
         self.can_rollback = True
 
     def stop(self):
