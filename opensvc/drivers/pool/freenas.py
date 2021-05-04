@@ -1,13 +1,12 @@
 from __future__ import print_function
 
-import sys
-
 import core.exceptions as ex
 from utilities.lazy import lazy
 from drivers.array.freenas import Freenass
 from core.pool import BasePool
 
-LOCK_NAME = "freenas_create_disk"
+LOCK_NAME = "freenas_update_disk"
+LOCK_TIMEOUT = 120
 
 class Pool(BasePool):
     type = "freenas"
@@ -30,7 +29,16 @@ class Pool(BasePool):
         return self.oget("blocksize")
 
     def delete_disk(self, name=None, disk_id=None):
-        return self.array.del_iscsi_zvol(name=name, volume=self.diskgroup)
+        lock_id = None
+        result = {}
+        try:
+            lock_id = self.node._daemon_lock(LOCK_NAME, timeout=LOCK_TIMEOUT, on_error="raise")
+            self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
+            result = self.array.del_iscsi_zvol(name=name, volume=self.diskgroup)
+        finally:
+            self.node._daemon_unlock(LOCK_NAME, lock_id)
+            self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
+            return result
 
     def create_disk(self, name, size, nodes=None):
         mappings = self.get_mappings(nodes)
@@ -39,7 +47,7 @@ class Pool(BasePool):
         lock_id = None
         result = {}
         try:
-            lock_id = self.node._daemon_lock(LOCK_NAME, timeout=120, on_error="raise")
+            lock_id = self.node._daemon_lock(LOCK_NAME, timeout=LOCK_TIMEOUT, on_error="raise")
             self.log.info("lock acquired: name=%s id=%s", LOCK_NAME, lock_id)
             result = self.array.add_iscsi_zvol(name=name, size=size,
                                                volume=self.diskgroup,
@@ -51,7 +59,7 @@ class Pool(BasePool):
         finally:
             self.node._daemon_unlock(LOCK_NAME, lock_id)
             self.log.info("lock released: name=%s id=%s", LOCK_NAME, lock_id)
-        return result
+            return result
 
     def translate(self, name=None, size=None, fmt=True, shared=False):
         data = []
