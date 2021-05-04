@@ -655,6 +655,9 @@ class Volume(Resource):
             raise ex.Error("volume provision returned %d" % ret)
         self.can_rollback = True
         self.can_rollback_vol_instance = True
+        self.post_provision_reset_lazy()
+
+    def post_provision_reset_lazy(self):
         self.unset_lazy("device")
         self.unset_lazy("mount_point")
         self.unset_lazy("volsvc")
