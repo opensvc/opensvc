@@ -330,6 +330,9 @@ class ResourceSet(object):
                     # the action_job tells us what to do with it through its exitcode
                     resource.can_rollback = True
 
+                if action == "provision" and resource.type == "volume":
+                    # need reset lazy in current process, (subprocess reset lazy has no effect)
+                    resource.post_provision_reset_lazy()
             if len(err) > 0:
                 raise ex.Error("%s non-optional resources jobs returned "
                                "with error" % ",".join(err))
