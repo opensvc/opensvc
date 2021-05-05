@@ -220,9 +220,12 @@ class Node(BaseNode):
         cmd = ["ip", "tunnel", "show", "mode", mode, "local", src, "remote", dst]
         out, err, ret = justcall(cmd)
         if ret == 0:
-            current_name = out.splitlines()[0].split(":")[0]
-            if current_name != name:
-                self.vcall(["ip", "tunnel", "delete", current_name])
+            try:
+                current_name = out.splitlines()[0].split(":")[0]
+                if current_name != name:
+                    self.vcall(["ip", "tunnel", "delete", current_name])
+            except IndexError:
+                pass
 
         cmd = ["ip", "tunnel", action, name, "mode", mode,
                "local", src, "remote", dst]
