@@ -14,6 +14,7 @@ from core.objects.svcdict import KEYS
 from utilities.cache import cache
 from utilities.lazy import lazy
 from utilities.proc import justcall, call_log, which
+from utilities.render.listener import fmt_listener
 
 RE_MINOR = r"^\s*device\s*/dev/drbd([0-9]+).*;"
 RE_PORT = r"^\s*address.*:([0-9]+).*;"
@@ -746,12 +747,15 @@ class DiskDrbd(Resource):
         fmt_on_device = "        device    %s;\n"        # pep8: disable=E222
         fmt_on_disk =   "        disk      %s;\n"        # pep8: disable=E222
         fmt_on_meta =   "        meta-disk internal;\n"  # pep8: disable=E222
-        fmt_on_addr =   "        address   %s:%s;\n"     # pep8: disable=E222
+        fmt_on_addr =   "        address   %s;\n"        # pep8: disable=E222
         fmt_on_nid =    "        node-id   %d;\n"        # pep8: disable=E222
         buff_content = fmt_on_device % device
         buff_content += fmt_on_disk % disk
         buff_content += fmt_on_meta
-        buff_content += fmt_on_addr % (addr, str(port))
+        listener = fmt_listener(addr, port)
+        if listener.startswith("["):
+            listener = "ipv6 " + listener
+        buff_content += fmt_on_addr % listener
         if node_id is not None:
             buff_content += fmt_on_nid % node_id
         buff_on = fmt_on % (node, buff_content)
@@ -763,13 +767,17 @@ class DiskDrbd(Resource):
         else:
             return self.format_config_v8(device, freeport)
 
-    def format_config_v9(self, device, freeport):
+    def get_node_addr(self, node):
         import socket
+        addrinfo = socket.getaddrinfo(node, None)[0]
+        return addrinfo[4][0]
+
+    def format_config_v9(self, device, freeport):
         fmt_res =       "resource %s {\n%s%s}\n"
         buff_on = ""
         for node_id, node in enumerate(self.svc.ordered_nodes):
             disk = self.oget("disk", impersonate=node)
-            addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
+            addr = self.oget("addr", impersonate=node) or self.get_node_addr(node)
             port = self.oget("port", impersonate=node) or freeport
             buff_on += self.format_on(node, device, disk, addr, port, node_id=node_id)
         buff_mesh = "    connection-mesh {\n        hosts %s;\n    }\n" % " ".join(self.svc.ordered_nodes)
@@ -777,12 +785,11 @@ class DiskDrbd(Resource):
         return buff
 
     def format_config_v8(self, device, freeport):
-        import socket
         fmt_res =       "resource %s {\n%s}\n"
         buff_on = ""
         for node in self.svc.ordered_nodes:
             disk = self.oget("disk", impersonate=node)
-            addr = self.oget("addr", impersonate=node) or socket.gethostbyname(node)
+            addr = self.oget("addr", impersonate=node) or self.get_node_addr(node)
             port = self.oget("port", impersonate=node) or freeport
             buff_on += self.format_on(node, device, disk, addr, port)
         buff = fmt_res % (self.res, buff_on)
@@ -818,9 +825,8 @@ class DiskDrbd(Resource):
 
     def add_node_to_config(self, buff, node=None):
         node = node or Env.nodename
-        import socket
         disk = self.oget("disk")
-        addr = self.oget("addr") or socket.gethostbyname(node)
+        addr = self.oget("addr") or self.getnode_addr(node)
         port = self.oget("port") or self.read_first_port(buff)
         device = self.read_first_device(buff)
         node_id = self.read_next_node_id(buff)
