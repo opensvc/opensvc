@@ -832,7 +832,7 @@ class DiskDrbd(Resource):
     def add_node_to_config(self, buff, node=None):
         node = node or Env.nodename
         disk = self.oget("disk")
-        addr = self.oget("addr") or self.getnode_addr(node)
+        addr = self.oget("addr") or self.get_node_addr(node)
         port = self.oget("port") or self.read_first_port(buff)
         device = self.read_first_device(buff)
         node_id = self.read_next_node_id(buff)
