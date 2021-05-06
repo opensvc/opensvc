@@ -752,7 +752,13 @@ class DiskDrbd(Resource):
         buff_content = fmt_on_device % device
         buff_content += fmt_on_disk % disk
         buff_content += fmt_on_meta
-        listener = fmt_listener(addr, port)
+        if isinstance(port, str):
+            int_port = int(port)
+        elif isinstance(port, int):
+            int_port = port
+        else:
+            raise ex.Error("expected string or int for port, got type %s %s" % (type(port), port))
+        listener = fmt_listener(addr, int_port)
         if listener.startswith("["):
             listener = "ipv6 " + listener
         buff_content += fmt_on_addr % listener
