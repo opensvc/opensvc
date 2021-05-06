@@ -48,11 +48,11 @@ def allocations(mocker):
 
 
 @pytest.fixture(scope='function')
-def gethostbyname(mocker):
+def get_node_addr(mocker):
     def func(name):
         return 'ip-' + name
 
-    mocker.patch.object(socket, 'gethostbyname', side_effect=func)
+    mocker.patch.object(DiskDrbd, 'get_node_addr', side_effect=func)
 
 
 @pytest.fixture(scope='function')
@@ -136,7 +136,7 @@ class TestDrbdWriteConfig:
     @pytest.mark.usefixtures('_daemon_lock', '_daemon_unlock')
     @pytest.mark.usefixtures('node_daemon_post', 'svc_daemon_post')
     @pytest.mark.usefixtures('daemon_get_allocations')
-    @pytest.mark.usefixtures('gethostbyname')
+    @pytest.mark.usefixtures('get_node_addr')
     @pytest.mark.parametrize('capabilities, disk_cd, expected_config', [
         [['disk.drbd'],
          {"type": "drbd", "res": "foo", "disk": "a_disk"},
