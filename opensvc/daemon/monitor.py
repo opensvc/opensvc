@@ -1441,7 +1441,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def transitions_maxed(self):
         transitions = self.transition_count()
-        if transitions <= shared.NODE.max_parallel:
+        if transitions < shared.NODE.max_parallel:
             return False
         self.duplog("info", "delay services orchestration: "
                     "%(transitions)d/%(max)d transitions already "
@@ -3057,9 +3057,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         provisioned = 0
         total = 0
         for instance in self.get_service_instances(path).values():
-            try:
-                instance_provisioned = instance["provisioned"]
-            except KeyError:
+            instance_provisioned = instance.get("provisioned")
+            if instance_provisioned is None:
+                # all resources [un]provision=true or disable, no resources
                 continue
             total += 1
             if instance_provisioned is True:

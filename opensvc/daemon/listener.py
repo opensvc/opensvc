@@ -19,7 +19,7 @@ import re
 import datetime
 from foreign.six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen
-from errno import EADDRINUSE, ECONNRESET, EPIPE
+from errno import EADDRINUSE, ECONNRESET, EPIPE, EBADF
 
 try:
     import ssl
@@ -431,6 +431,10 @@ class Listener(shared.OsvcThread):
                 self.stats.sessions.clients[addr[0]].accepted += 1
                 #self.log.info("accept %s", str(addr))
             except socket.timeout:
+                continue
+            except OSError as exc:
+                if conn and exc.errno == EBADF:
+                    conn.close()
                 continue
             except ConnectionAbortedError:
                 if conn:

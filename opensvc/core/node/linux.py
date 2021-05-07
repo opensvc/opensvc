@@ -4,6 +4,7 @@ import time
 from itertools import islice
 
 import utilities.os.linux
+import utilities.ping
 from utilities.lazy import lazy
 from utilities.proc import justcall
 
@@ -110,7 +111,7 @@ class Node(BaseNode):
         return sum(float(time) for time in
                 islice(stat_line.split(), 2, 5))
 
-    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto", **kwargs):
+    def network_route_add(self, dst=None, gw=None, dev=None, local_ip=None, brdev=None, brip=None, table=None, tunnel="auto", node=None, **kwargs):
         if dst is None:
             return
         if ":" in dst:
@@ -130,30 +131,18 @@ class Node(BaseNode):
             for line in out.splitlines():
                 self.log.info(line)
         elif tunnel == "always" or "invalid gateway" in err or "is unreachable" in err:
-            tun = self.network_tunnel_ipip_add(local_ip, gw)
-            cmd = ipcmd + ["route", "replace", dst, "dev", tun["dev"], "src", brip.split("/")[0], "table", table]
-            self.vcall(cmd)
+            name = self.network_tunnel_ipip_name(node, gw)
+            tun = self.network_tunnel_ipip_add(name, local_ip, gw)
+            self.network_tunnel_ipip_route_add(ipcmd, dst, tun["dev"], brip.split("/", 1)[0], table)
         else:
             self.log.info(" ".join(cmd))
             for line in out.splitlines():
                 self.log.info(line)
 
-    def mac_from_ip6(self, name):
-        """
-        When the device with the lowest mac is removed from the bridge or when
-        a new device with the lowest mac is added to the bridge, all containers
-        can experience tcp hangs while the arp table resynchronizes.
-
-        Setting a mac address to the bridge explicitely avoids these mac address
-        changes.
-
-        Forge the mac address using a 6a:58 prefix followed by the bridge original
-        random address last 4 bytes.
-        """
-        cmd = ["ip", "link", "show", "dev", name]
-        out, _, _ = justcall(cmd)
-        mac = out.strip().split("\n")[-1].split()[1]
-        return "6a:58" + mac[5:]
+    def network_tunnel_ipip_route_add(self, ipcmd, dst, dev, src, table):
+        utilities.ping.check_ping(src, timeout=5, count=1)
+        cmd = ipcmd + ["route", "replace", dst, "dev", dev, "src", src, "table", table]
+        self.vcall(cmd)
 
     def mac_from_ip4(self, ip):
         """
@@ -181,17 +170,18 @@ class Node(BaseNode):
         cmd = ["ip", "addr", "show", "dev", name]
         out, _, _ = justcall(cmd)
         if " "+ip+" " not in out:
-            cmd = ["ip", "addr", "add", ip, "dev", name]
+            if ":" in ip:
+                cmd = ["ip", "-6", "addr", "add", "dev", name, "scope", "global", ip]
+            else:
+                cmd = ["ip", "addr", "add", ip, "dev", name]
             self.vcall(cmd)
         cmd = ["ip", "link", "show", "dev", name]
         out, _, _ = justcall(cmd)
-        if ":" in ip:
-            mac = self.mac_from_ip6(name)
-        else:
+        if ":" not in ip:
             mac = self.mac_from_ip4(ip)
-        if mac not in out:
-            cmd = ["ip", "link", "set", "dev", name, "address", mac]
-            self.vcall(cmd)
+            if mac not in out:
+                cmd = ["ip", "link", "set", "dev", name, "address", mac]
+                self.vcall(cmd)
         if "DOWN" in out:
             cmd = ["ip", "link", "set", "dev", name, "up"]
             self.vcall(cmd)
@@ -204,16 +194,40 @@ class Node(BaseNode):
             if marker in line:
                 return line.split()[-1]
 
-    def network_tunnel_ipip_add(self, src, dst):
+    def network_tunnel_ipip_name(self, nodename, dst):
+        if ":" in dst:
+            name = "otun%d" % self.cluster_nodes.index(nodename)
+        else:
+            name = "tun" + dst.split("/", 1)[0].replace(".", "")
+        return name
+
+    def network_tunnel_ipip_add(self, name, src, dst):
         src_dev = self.network_ip_intf(src)
-        name = "tun" + dst.split("/", 1)[0].replace(".", "")
-        cmd = ["ip", "tunnel", "show", name]
+        if ":" in dst:
+            ipcmd = ["ip", "-6"]
+            mode = "ip6ip6"
+        else:
+            ipcmd = ["ip"]
+            mode = "ipip"
+        cmd = ipcmd + ["tunnel", "show", name]
         out, err, ret = justcall(cmd)
         if out:
             action = "change"
         else:
             action = "add"
-        cmd = ["ip", "tunnel", action, name, "mode", "ipip",
+
+        # detect a relayout causing tunnel renames
+        cmd = ["ip", "tunnel", "show", "mode", mode, "local", src, "remote", dst]
+        out, err, ret = justcall(cmd)
+        if ret == 0:
+            try:
+                current_name = out.splitlines()[0].split(":")[0]
+                if current_name != name:
+                    self.vcall(["ip", "tunnel", "delete", current_name])
+            except IndexError:
+                pass
+
+        cmd = ["ip", "tunnel", action, name, "mode", mode,
                "local", src, "remote", dst]
         if src_dev:
             cmd += ["dev", src_dev]

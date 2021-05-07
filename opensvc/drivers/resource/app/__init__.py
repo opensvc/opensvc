@@ -196,8 +196,14 @@ def demote(user_uid, user_gid):
     Return a privilege demotion function to plug as Popen() preexec_fn keyword
     argument, customized for <user_uid> and <user_gid>.
     """
-    os.setgid(user_gid)
-    os.setuid(user_uid)
+    try:
+        os.setresgid(user_gid, user_gid, user_gid)
+        os.setresuid(user_uid, user_uid, user_uid)
+    except AttributeError:
+        # os.setresgid not implemented in this python interpreter.
+        # use the next best thing.
+        os.setregid(user_gid, user_gid)
+        os.setreuid(user_uid, user_uid)
 
 class StatusWARN(Exception):
     """
@@ -432,15 +438,23 @@ class App(Resource):
         try:
             status = self.is_up()
         except:
-            status = 1
+            status = core.status.DOWN
 
-        if status == 0:
+        if status == core.status.UP:
             self.log.info("%s is already started", self.label)
             return
 
         ret = self.run("start", cmd)
         if ret != 0:
             raise ex.Error("exit code %d" % ret)
+        def iu():
+            try:
+                r = self.is_up()
+            except:
+                r = core.status.DOWN
+            return r in (core.status.UP, core.status.NA)
+        if self.start_timeout is not None:
+            self.wait_for_fn(iu, self.start_timeout, 1)
         self.can_rollback = True
 
     def stop(self):
