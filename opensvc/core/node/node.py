@@ -3333,8 +3333,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             ret = 1
 
         for svc in self.svcs:
+            svc.action("status", options)
             if options.provision:
-                svc.action("status", options)
                 svc.action("provision", options)
             if hasattr(svc, "on_create"):
                 getattr(svc, "on_create")()
