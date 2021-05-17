@@ -105,13 +105,25 @@ def _set_cgroup(o, t, name, key, force=False):
     if key not in o.pg_settings:
         return
     value = o.pg_settings[key]
-    cgp = get_cgroup_path(o, t)
     if value is None:
         return
+    cgp = get_cgroup_path(o, t)
+    cocgp = glob.glob(cgp+"/lxc.payload.*")
+    err = None
+    for _cgp in cocgp + [cgp] + cocgp:
+        try:
+            __set_cgroup(o, _cgp, value, t, name, key, force=force)
+            err = None
+        except Exception as e:
+            err = e
+    if err:
+        o.log.warning("%s", err)
+
+def __set_cgroup(o, cgp, value, t, name, key, force=False):
     if name == "memory.oom_control":
-        current = get_cgroup(o, t, name).split(os.linesep)[0].split()[-1]
+        current = get_current(cgp, name).split(os.linesep)[0].split()[-1]
     else:
-        current = get_cgroup(o, t, name).strip()
+        current = get_current(cgp, name).strip()
     if not force and current == str(value):
         return
     path = os.path.join(cgp, name)
@@ -125,12 +137,15 @@ def _set_cgroup(o, t, name, key, force=False):
         with open(path, 'w') as f:
             f.write(str(value))
         log.info('/bin/echo %s > %s'%(value, path))
-    except Exception as e:
-        log.warning("failed to set process group setting %s to %s" % (value, path))
+    except Exception:
+        raise Exception("failed to set process group setting %s to %s" % (value, path))
 
 def get_cgroup(o, t, name):
     o.log.debug("get_cgroup : start %s, %s" %(t, name))
     cgp = get_cgroup_path(o, t)
+    return get_current(cgp, name)
+
+def get_current(cgp, name):
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
         raise ex.Error("can not find %s"%path)
