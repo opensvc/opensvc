@@ -24,7 +24,7 @@ KEYWORDS = [
         "keyword": "timeout",
         "convert": "duration",
         "at": True,
-        "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overriden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance action when an app launcher did not return.",
+        "text": "Wait for <duration> before declaring the app launcher action a failure. Can be overridden by :kw:`<action>_timeout`. If no timeout is set, the agent waits indefinitely for the app launcher to return. A timeout can be coupled with :kw:`optional=true` to not abort a service instance action when an app launcher did not return.",
         "example": "180"
     },
     {
@@ -46,7 +46,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
+        "text": "A whitespace separated list of ``<var>=<secret name>/<key path>``. A shell expression splitter is applied, so double quotes can be around ``<secret name>/<key path>`` only or whole ``<var>=<secret name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -54,7 +54,7 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression splitter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
@@ -62,14 +62,14 @@ KEYWORDS = [
         "at": True,
         "convert": "shlex",
         "default": [],
-        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression spliter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
+        "text": "The whitespace separated list of ``<var>=<config name>/<key path>``. A shell expression splitter is applied, so double quotes can be around ``<config name>/<key path>`` only or whole ``<var>=<config name>/<key path>``. Variables are uppercased.",
         "example": "CRT=cert1/server.crt PEM=cert1/server.pem"
     },
     {
         "keyword": "retcodes",
         "at": True,
         "default": "0:up 1:down",
-        "text": "The whitespace separated list of ``<retcode>=<status name>``. All undefined retcodes are mapped to the 'warn' status.",
+        "text": "The whitespace separated list of ``<retcode>:<status name>``. All undefined retcodes are mapped to the 'warn' status.",
         "example": "0:up 1:down 3:n/a"
     },
     {
