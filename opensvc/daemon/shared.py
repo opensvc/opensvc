@@ -402,7 +402,7 @@ class OsvcThread(threading.Thread, Crypt):
                     comm()
                     poll()
                     break
-                elif exit_code < 0:
+                elif exit_code is not None and exit_code < 0:
                     # avoid wait on defunct process
                     break
                 time.sleep(1)
