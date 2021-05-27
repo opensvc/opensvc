@@ -166,3 +166,5 @@ class DiskLv(BaseDiskLv):
 
         self.svc.node.unset_lazy("devtree")
 
+    def boot(self):
+        self.do_stop()
