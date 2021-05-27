@@ -11,7 +11,7 @@ from .. import BaseDisk, BASE_KEYWORDS
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
 from utilities.proc import which
-from utilities.string import is_string
+from utilities.string import is_string, is_glob
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "raw"
@@ -179,7 +179,7 @@ class BaseDiskRaw(BaseDisk):
                 self.devs.add(src)
                 continue
             else:
-                if not os.path.exists(dev) or not self.verify_dev(dev):
+                if not is_glob(dev) and not os.path.exists(dev) or not self.verify_dev(dev):
                     self.devs_not_found.add(dev)
                     continue
             l = set(glob.glob(dev))
