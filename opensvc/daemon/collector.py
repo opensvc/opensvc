@@ -1,12 +1,15 @@
 """
 Collector Thread
 """
+import json
+import os
 import sys
 import logging
 import time
 
 import daemon.shared as shared
 from env import Env
+from utilities.naming import svc_pathvar
 
 MAX_QUEUED = 1000
 
@@ -97,15 +100,37 @@ class Collector(shared.OsvcThread):
 
         return last_status, last_status_changed
 
+    def config_sent_file(self, path):
+        return os.path.join(svc_pathvar(path), "config_sent.json")
+
+    def load_config_sent(self, path):
+        p = self.config_sent_file(path)
+        with open(p, "r") as f:
+            return json.load(f)
+
+    def dump_config_sent(self, path, csum):
+        p = self.config_sent_file(path)
+        with open(p, "w") as f:
+            json.dump({
+                "sent": time.time(),
+                "csum": csum,
+            }, f)
+
     def get_last_config(self, data):
         last_config = {}
-        last_config_changed = []
+        last_config_changed = {}
         for path, sdata in data["nodes"].get(Env.nodename, {}).get("services", {}).get("config", {}).items():
+            if path not in self.last_config:
+                # first time we see this path, try populating our cache from the object's config_sent.json
+                try:
+                    self.last_config[path] = self.load_config_sent(path)["csum"]
+                except Exception as exc:
+                    self.last_config[path] = "force_send"
             config_csum = sdata.get("csum", 0)
             prev_config_csum = self.last_config.get(path, 0)
             if prev_config_csum and config_csum != prev_config_csum:
                 # don't send all configs on daemon start
-                last_config_changed.append(path)
+                last_config_changed[path] = config_csum
             last_config[path] = config_csum
         self.last_config = last_config
         return last_config_changed
@@ -163,16 +188,23 @@ class Collector(shared.OsvcThread):
                 self.log.error("call push_containerinfo: %s", exc)
                 shared.NODE.collector.disable()
 
-    def send_service_config(self, path):
+    def send_service_config(self, path, csum):
         if path not in shared.SERVICES:
             return
         self.log.info("send service %s config", path)
         with shared.SERVICES_LOCK:
             try:
                 shared.NODE.collector.call("push_config", shared.SERVICES[path])
+                sent = True
             except Exception as exc:
                 self.log.error("call push_config: %s", exc)
                 shared.NODE.collector.disable()
+                sent = False
+        if sent:
+            try:
+                self.dump_config_sent(path, csum)
+            except Exception as exc:
+                self.log.warning("writing config sent persistent cache file: %s", exc)
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
@@ -261,8 +293,8 @@ class Collector(shared.OsvcThread):
             return
 
         last_config_changed = self.get_last_config(data)
-        for path in last_config_changed:
-            self.send_service_config(path)
+        for path, csum in last_config_changed.items():
+            self.send_service_config(path, csum)
             self.send_containerinfo(path)
 
         if self.speaker():
