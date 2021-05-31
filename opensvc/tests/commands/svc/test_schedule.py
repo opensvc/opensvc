@@ -38,7 +38,7 @@ class TestPrintSchedule:
         }
 
     @staticmethod
-    @pytest.mark.parametrize('schedule_def', ['@2', '@2s', '@60'])
+    @pytest.mark.parametrize('schedule_def', ['@2', '@2s', '@60', '~08:01-09:59'])
     def test_define_correct_custom_status_schedule(mocker, capsys, schedule_def):
         svcname = "pytest"
         mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
