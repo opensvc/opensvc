@@ -71,3 +71,17 @@ class TestPrintSchedule:
             action = get_action(json.loads(capsys.readouterr().out), "status")
             next_runs.add(action["next_run"])
         assert len(next_runs) > 3
+
+    @staticmethod
+    def test_ensure_next_run_is_fixed_when_no_tilde_in_custom_schedule(mocker, capsys):
+        svcname = "pytest"
+        mocker.patch.dict(os.environ, {"OSVC_DETACHED": "1"})
+        with capsys.disabled():
+            assert Mgr()(argv=["-s", svcname, "create", "--kw", "status_schedule=08:01-09:59"]) == 0
+            assert Mgr()(argv=["-s", svcname, "print", "schedule"]) == 0
+        next_runs = set()
+        for i in range(4):
+            assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+            action = get_action(json.loads(capsys.readouterr().out), "status")
+            next_runs.add(action["next_run"])
+        assert len(next_runs) == 1
