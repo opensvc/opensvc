@@ -203,7 +203,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "comp_schedule",
         "at": True,
-        "default": "00:00-06:00@361",
+        "default": "~00:00-06:00",
         "text": "The service compliance run schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {
@@ -256,7 +256,7 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "push_schedule",
         "at": True,
-        "default": "00:00-06:00@361",
+        "default": "~00:00-06:00",
         "text": "The service configuration emission to the collector schedule. See ``usr/share/doc/schedule`` for the schedule syntax."
     },
     {

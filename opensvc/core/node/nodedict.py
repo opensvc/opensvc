@@ -548,7 +548,7 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
     {
         "section": "sysreport",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`sysreport` node action, which check all modules and fix only modules flagged ``autofix``. See usr/share/doc/schedule for the schedule syntax."
     },
     {
@@ -567,7 +567,7 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
     {
         "section": "stats",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushstats` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
@@ -580,31 +580,31 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
     {
         "section": "checks",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushchecks` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "packages",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushpkg` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "patches",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushpatch` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "asset",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushasset` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {
         "section": "disks",
         "keyword": "schedule",
-        "default": "00:00-06:00",
+        "default": "~00:00-06:00",
         "text": "Schedule parameter for the :c-action:`pushdisks` node action. See usr/share/doc/schedule for the schedule syntax."
     },
     {

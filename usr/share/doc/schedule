@@ -8,10 +8,16 @@ Schedule Syntax
               pattern
 
      <timeranges> := <timerange>[,<timerange>]
-       <timerange> := <begin>:<end>@<interval>
-          <begin> <end> := <hour>:<minute>
+       <timerange> := [~]<begin>[:<end>][@<interval>]
+          ~
+            run randomly in <begin>-<begin+interval> instead of <begin>
+          <begin> <end> := <hour>:<minute>[:<second>]
+          <end>
+            default: run only once at <begin>.
           <interval>
             type: duration expression (default unit: minutes)
+            example: 20m
+            default: run only once in the timerange.
 
      <days> := <day>[-<day>][,<day>[-<day>]]
         <day> := <day_of_week>[:<day_of_month>]
