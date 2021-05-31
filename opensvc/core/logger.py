@@ -209,6 +209,18 @@ def initLogger(root, logfile, handlers=None, sid=True):
         except:
             facility = "daemon"
         try:
+            # get() returns a list if multiple "syslog" sections are found.
+            # use the last definition.
+            facility = [f for f in facility if f][-1]
+        except:
+            pass
+        try:
+            # verify the facility exists
+            import syslog
+            syslog.__dict__["LOG_"+facility.upper()]
+        except Exception as exc:
+            facility = "daemon"
+        try:
             lvl = config.get("syslog", "level").upper()
             lvl = getattr(logging, lvl)
         except:
