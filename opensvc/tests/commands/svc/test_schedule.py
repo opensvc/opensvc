@@ -67,7 +67,7 @@ class TestPrintSchedule:
             assert Mgr()(argv=["-s", svcname, "print", "schedule"]) == 0
         next_runs = set()
         for i in range(4):
-            assert Mgr()(argv=["-s", svcname, "print", "schedule", "--format", "json"]) == 0
+            assert Mgr()(argv=["-s", svcname, "print", "schedule", "--local", "--format", "json"]) == 0
             action = get_action(json.loads(capsys.readouterr().out), "status")
             next_runs.add(action["next_run"])
         assert len(next_runs) > 3
