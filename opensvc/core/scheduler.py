@@ -346,57 +346,65 @@ class Schedule(object):
     def data(self):
         data = []
         for schedule in self.schedule:
-            schedule_orig = schedule
-            schedule = schedule.strip()
-            if len(schedule) == 0:
-                continue
-            if schedule.startswith("!"):
-                exclude = True
-                schedule = schedule[1:].strip()
-            else:
-                exclude = False
-            if len(schedule) == 0:
-                continue
-            elements = schedule.split()
-            ecount = len(elements)
-            if ecount == 1:
-                _data = {
-                    "timeranges": self.parse_timerange(elements[0]),
-                    "day": ALL_DAYS,
-                    "week": ALL_WEEKS,
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 2:
-                _tr, _day = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": ALL_WEEKS,
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 3:
-                _tr, _day, _week = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": self.parse_week(_week),
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 4:
-                _tr, _day, _week, _month = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": self.parse_week(_week),
-                    "month": self.parse_month(_month),
-                }
-            else:
-                raise SchedSyntaxError("invalid number of element, '%d' not in "
-                                       "(1, 2, 3, 4)" % ecount)
-            _data["exclude"] = exclude
-            _data["raw"] = schedule_orig
-            data.append(_data)
+            try:
+                one = self.data_one(schedule)
+            except Exception as exc:
+                one = None
+            if one:
+                data.append(one)
         return data
+
+    def data_one(self, schedule):
+        schedule_orig = schedule
+        schedule = schedule.strip()
+        if len(schedule) == 0:
+            return {}
+        if schedule.startswith("!"):
+            exclude = True
+            schedule = schedule[1:].strip()
+        else:
+            exclude = False
+        if len(schedule) == 0:
+            return {}
+        elements = schedule.split()
+        ecount = len(elements)
+        if ecount == 1:
+            _data = {
+                "timeranges": self.parse_timerange(elements[0]),
+                "day": ALL_DAYS,
+                "week": ALL_WEEKS,
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 2:
+            _tr, _day = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": ALL_WEEKS,
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 3:
+            _tr, _day, _week = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": self.parse_week(_week),
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 4:
+            _tr, _day, _week, _month = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": self.parse_week(_week),
+                "month": self.parse_month(_month),
+            }
+        else:
+            raise SchedSyntaxError("invalid number of element, '%d' not in "
+                                   "(1, 2, 3, 4)" % ecount)
+        _data["raw"] = schedule_orig
+        _data["exclude"] = exclude
+        return _data
 
     def parse_day(self, day):
         """
@@ -435,7 +443,7 @@ class Schedule(object):
             try:
                 day_of_month = int(day_of_month)
             except ValueError:
-                raise SchedSyntaxError("day_of_month is not a number")
+                raise SchedSyntaxError("day_of_month %s is not a number" % day_of_month)
 
         day = parse_calendar_expression(day)
         if day in ("*", ""):
