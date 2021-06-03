@@ -103,6 +103,36 @@ class TestNodemgr:
         assert isinstance(schedules, list)
         assert len(schedules) > 0
 
+    @staticmethod
+    def test_delay_on_default_schedules(tmp_file, capture_stdout):
+        """
+        Print node schedules (json format)
+        """
+        default_actions_with_delay = [
+            "checks",
+            "pushstats",
+            "pushpkg",
+            "pushpatch",
+            "pushasset",
+            "pushdisks",
+            "sysreport",
+        ]
+        with capture_stdout(tmp_file):
+            ret = commands.node.main(argv=["print", "schedule", "--format", "json", "--color", "no"])
+
+        assert ret == 0
+        with open(tmp_file) as json_file:
+            schedules = json.load(json_file)
+        assert isinstance(schedules, list)
+        actions_def = [(s["action"], s["schedule_definition"])
+                       for s in schedules
+                       if s["action"] in default_actions_with_delay]
+        for action, sched_def in actions_def:
+            assert sched_def[0] == "~",\
+                "action %s default schedule without delay: %s" % (action, sched_def)
+        assert len(actions_def) == len(default_actions_with_delay),\
+            "some default actions are missing: %s" % actions_def
+
     def test_print_config(self):
         """
         Print node config
