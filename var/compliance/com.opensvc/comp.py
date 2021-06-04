@@ -320,8 +320,9 @@ class CompObject(object):
         api = self.collector_api()
         url = api["url"]
         request = Request(url+path)
-        base64string = base64.encodestring('%s:%s' % (api["username"], api["password"])).replace('\n', '')
-        request.add_header("Authorization", "Basic %s" % base64string)
+        s = "%s:%s" % (api["username"], api["password"])
+        base64string = base64.b64encode(s.encode("ascii"))
+        request.add_header("Authorization", "Basic %s" % base64string.decode("ascii"))
         return request
 
     def collector_rest_get(self, path, load_json=True):
