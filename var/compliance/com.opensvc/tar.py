@@ -180,6 +180,8 @@ class Tar(CompObject):
         cmd = ["tar", "-C", path, "--compare", "--file", tmpfname]
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = proc.communicate()
+        out = bdecode(out)
+        err = bdecode(err)
         if proc.returncode == 0:
             return RET_OK
         elif immutable is False:
