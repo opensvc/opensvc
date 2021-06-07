@@ -196,10 +196,24 @@ class TestSchedule(object):
         "23:00-23:59@61@10",
         "23:00-23:02 mon 1 12 4",
         "21-22 mon 1 12",
-        ["10:00-11:00", "14-15"],  # mix valid and invalid time range
-        ["14-15", "10:00-11:00"],  # mix valid and invalid time range
+        "14-15",
     ])
-    def test_it_detect_invalid_schedule_definitions(
+    def test_it_drop_invalid_schedule_definitions_from_data(
             schedule_s):
-        with pytest.raises(SchedSyntaxError):
-            Schedule(schedule_s).data
+        expected_data = [
+            {
+                'timeranges': [{'probabilistic': False, 'begin': '09:00', 'end': '09:20', 'interval': 3600}],
+                'day': [{'weekday': 1, 'monthday': 1},
+                        {'weekday': 2, 'monthday': 1},
+                        {'weekday': 3, 'monthday': 1},
+                        {'weekday': 4, 'monthday': 1},
+                        {'weekday': 5, 'monthday': 1},
+                        {'weekday': 6, 'monthday': 1},
+                        {'weekday': 7, 'monthday': 1}],
+                'week': [1],
+                'month': [1],
+                'raw': '09:00-09:20@60 :1st 1 january', 'exclude': False}
+        ]
+        assert Schedule([schedule_s, "09:00-09:20@60 :1st 1 january"]).data == expected_data
+        assert Schedule(["09:00-09:20@60 :1st 1 january", schedule_s]).data == expected_data
+        assert Schedule(schedule_s).data == []
