@@ -280,10 +280,54 @@ def in_timerange(timerange, now=None):
                           (timerange["begin"], timerange["end"]))
 
 
+def timerange_delay(timerange, d):
+    """
+    Return a delay in seconds, compatible with the timerange.
+
+    The daemon scheduler thread will honor this delay,
+    executing the task only when expired.
+
+    This algo is meant to level collector's load which peaks
+    when tasks trigger at the same second on every nodes.
+    """
+    if not timerange.get("probabilistic", False):
+        return 0
+
+    try:
+        begin = time_to_seconds(timerange["begin"])
+        end = time_to_seconds(timerange["end"])
+        second = time_to_seconds(d)
+    except:
+        raise SchedNotAllowed("time conversion error delay eval")
+
+    # day change in the timerange
+    if begin > end:
+        end += DAY_SECONDS
+    if second < begin:
+        second += DAY_SECONDS
+
+    length = end - begin
+    remaining = end - second - 1
+
+    if remaining < 1:
+        # no need to delay for tasks with a short remaining valid time
+        return 0
+
+    if timerange["interval"] < length:
+        # don't delay if interval < period length, because the user
+        # expects the action to run multiple times in the period. And
+        # '@<n>' interval-only schedule are already different across
+        # nodes due to daemons not starting at the same moment.
+        return 0
+
+    rnd = random.random()
+
+    return int(remaining*rnd)
+
+
 class Schedule(object):
-    def __init__(self, schedule, probabilistic=False, last=None):
+    def __init__(self, schedule, last=None):
         self.schedule = self.normalize_schedule(schedule)
-        self.probabilistic = probabilistic
         self.last = last
 
     @staticmethod
@@ -302,57 +346,64 @@ class Schedule(object):
     def data(self):
         data = []
         for schedule in self.schedule:
-            schedule_orig = schedule
-            schedule = schedule.strip()
-            if len(schedule) == 0:
-                continue
-            if schedule.startswith("!"):
-                exclude = True
-                schedule = schedule[1:].strip()
-            else:
-                exclude = False
-            if len(schedule) == 0:
-                continue
-            elements = schedule.split()
-            ecount = len(elements)
-            if ecount == 1:
-                _data = {
-                    "timeranges": self.parse_timerange(elements[0]),
-                    "day": ALL_DAYS,
-                    "week": ALL_WEEKS,
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 2:
-                _tr, _day = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": ALL_WEEKS,
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 3:
-                _tr, _day, _week = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": self.parse_week(_week),
-                    "month": ALL_MONTHS,
-                }
-            elif ecount == 4:
-                _tr, _day, _week, _month = elements
-                _data = {
-                    "timeranges": self.parse_timerange(_tr),
-                    "day": self.parse_day(_day),
-                    "week": self.parse_week(_week),
-                    "month": self.parse_month(_month),
-                }
-            else:
-                raise SchedSyntaxError("invalid number of element, '%d' not in "
-                                       "(1, 2, 3, 4)" % ecount)
-            _data["exclude"] = exclude
-            _data["raw"] = schedule_orig
-            data.append(_data)
+            try:
+                one = self.data_one(schedule)
+                data.append(one)
+            except Exception as exc:
+                pass
         return data
+
+    def data_one(self, schedule):
+        schedule_orig = schedule
+        schedule = schedule.strip()
+        if len(schedule) == 0:
+            return {}
+        if schedule.startswith("!"):
+            exclude = True
+            schedule = schedule[1:].strip()
+        else:
+            exclude = False
+        if len(schedule) == 0:
+            return {}
+        elements = schedule.split()
+        ecount = len(elements)
+        if ecount == 1:
+            _data = {
+                "timeranges": self.parse_timerange(elements[0]),
+                "day": ALL_DAYS,
+                "week": ALL_WEEKS,
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 2:
+            _tr, _day = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": ALL_WEEKS,
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 3:
+            _tr, _day, _week = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": self.parse_week(_week),
+                "month": ALL_MONTHS,
+            }
+        elif ecount == 4:
+            _tr, _day, _week, _month = elements
+            _data = {
+                "timeranges": self.parse_timerange(_tr),
+                "day": self.parse_day(_day),
+                "week": self.parse_week(_week),
+                "month": self.parse_month(_month),
+            }
+        else:
+            raise SchedSyntaxError("invalid number of element, '%d' not in "
+                                   "(1, 2, 3, 4)" % ecount)
+        _data["raw"] = schedule_orig
+        _data["exclude"] = exclude
+        return _data
 
     def parse_day(self, day):
         """
@@ -391,7 +442,7 @@ class Schedule(object):
             try:
                 day_of_month = int(day_of_month)
             except ValueError:
-                raise SchedSyntaxError("day_of_month is not a number")
+                raise SchedSyntaxError("day_of_month %s is not a number" % day_of_month)
 
         day = parse_calendar_expression(day)
         if day in ("*", ""):
@@ -457,27 +508,29 @@ class Schedule(object):
                 end = seconds_to_time(end_s)
             return {"begin": begin, "end": end}
 
-        probabilistic = self.probabilistic
-
         tr_list = []
         for _spec in spec.split(","):
-            if len(_spec) == 0 or _spec == "*":
-                tr_data = {
-                    "probabilistic": probabilistic,
-                    "begin": "00:00",
-                    "end": "23:59",
-                    "interval": DAY_SECONDS,
-                }
+            tr_data = {
+                "probabilistic": False,
+                "begin": "00:00",
+                "end": "23:59",
+                "interval": DAY_SECONDS,
+            }
+            if len(_spec) == 0:
+                tr_list.append(tr_data)
+                continue
+            if _spec[0] == "~":
+                tr_data["probabilistic"] = True
+                _spec = _spec[1:]
+            if _spec == "*":
                 tr_list.append(tr_data)
                 continue
             ecount = _spec.count("@")
             if ecount == 0:
-                tr_data = parse_timerange(_spec)
+                tr_data.update(parse_timerange(_spec))
                 tr_data["interval"] = interval_from_timerange(tr_data)
                 if tr_data["interval"] <= min_tr_len + 1:
                     tr_data["probabilistic"] = False
-                else:
-                    tr_data["probabilistic"] = probabilistic
                 tr_list.append(tr_data)
                 continue
 
@@ -487,15 +540,14 @@ class Schedule(object):
                 raise SchedSyntaxError("missing @<interval> in '%s'" % _spec)
             if ecount > 2:
                 raise SchedSyntaxError("only one @<interval> allowed in '%s'" % _spec)
-            tr_data = parse_timerange(elements[0])
+            tr_data.update(parse_timerange(elements[0]))
             try:
                 tr_data["interval"] = convert_duration(elements[1], _from="m", _to="s")
             except ValueError as exc:
                 raise SchedSyntaxError("interval '%s' is not a valid duration expression: %s" % (elements[1], exc))
             tr_len = interval_from_timerange(tr_data)
             if tr_len <= min_tr_len + 1 or tr_data["interval"] < tr_len:
-                probabilistic = False
-            tr_data["probabilistic"] = probabilistic
+                tr_data["probabilistic"] = False
             tr_list.append(tr_data)
         return tr_list
 
@@ -582,7 +634,7 @@ class Schedule(object):
                     if schedule.get("exclude"):
                         return _timerange_remaining(timerange)
                     _in_timerange_interval(timerange)
-                    return _timerange_delay(timerange)
+                    return timerange_delay(timerange, now)
                 except SchedNotAllowed as exc:
                     errors.append(str(exc))
             raise SchedNotAllowed(", ".join(errors))
@@ -604,50 +656,6 @@ class Schedule(object):
             remaining = end - second
 
             return remaining
-
-        def _timerange_delay(timerange):
-            """
-            Return a delay in seconds, compatible with the timerange.
-
-            The daemon scheduler thread will honor this delay,
-            executing the task only when expired.
-
-            This algo is meant to level collector's load which peaks
-            when tasks trigger at the same second on every nodes.
-            """
-            if not timerange.get("probabilistic", False):
-                return 0
-
-            try:
-                begin = time_to_seconds(timerange["begin"])
-                end = time_to_seconds(timerange["end"])
-                second = time_to_seconds(now)
-            except:
-                raise SchedNotAllowed("time conversion error delay eval")
-
-            # day change in the timerange
-            if begin > end:
-                end += DAY_SECONDS
-            if second < begin:
-                second += DAY_SECONDS
-
-            length = end - begin
-            remaining = end - second - 1
-
-            if remaining < 1:
-                # no need to delay for tasks with a short remaining valid time
-                return 0
-
-            if timerange["interval"] < length:
-                # don't delay if interval < period length, because the user
-                # expects the action to run multiple times in the period. And
-                # '@<n>' interval-only schedule are already different across
-                # nodes due to daemons not starting at the same moment.
-                return 0
-
-            rnd = random.random()
-
-            return int(remaining*rnd)
 
         def _in_timerange_interval(timerange):
             """
@@ -811,6 +819,11 @@ class Schedule(object):
                 if in_timerange_safe(tr, di):
                     return di, interval
                 raise SchedNotAllowed
+            if tr["probabilistic"]:
+                delay = timerange_delay(tr, d)
+                pd = d + datetime.timedelta(seconds=delay)
+                pinterval = interval - delay
+                return pd, pinterval
             return d, interval
 
         # the candidate date is outside timeranges, return the closest range's (begin, interval)
@@ -825,7 +838,12 @@ class Schedule(object):
                 if in_timerange_safe(tr, di):
                     return di, interval
                 continue
-            return d, tr.get("interval")
+            if tr["probabilistic"]:
+                delay = timerange_delay(tr, d)
+                pd = d + datetime.timedelta(seconds=delay)
+                pinterval = interval - delay
+                return pd, pinterval
+            return d, interval
 
         raise SchedNotAllowed
 
@@ -967,11 +985,7 @@ class Scheduler(object):
         """
         if schedules is None:
             schedules = self.get_schedule_raw(section, option)
-        if section and section.startswith("sync"):
-            probabilistic = False
-        else:
-            probabilistic = True
-        return Schedule(schedules, probabilistic)
+        return Schedule(schedules)
 
     def get_timestamp_f(self, fname, success=False):
         """

@@ -187,8 +187,8 @@ DEFAULT_STATUS_GROUPS = [
 
 CONFIG_DEFAULTS = {
     'sync#i0_schedule': '@60',
-    'sync_schedule': '04:00-06:00',
-    'comp_schedule': '00:00-06:00',
+    'sync_schedule': '~04:00-06:00',
+    'comp_schedule': '~00:00-06:00',
     'status_schedule': '@9',
     'monitor_schedule': '@1',
     'resinfo_schedule': '@60',

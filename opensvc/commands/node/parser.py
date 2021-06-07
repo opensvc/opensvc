@@ -944,10 +944,16 @@ ACTIONS = {
         "collector_list_nodes": {
             "msg": "Show the list of nodes matching the filterset pointed by "
                    ":opt:`--filterset`.",
+            "options": [
+                OPT.filterset,
+            ],
         },
         "collector_list_services": {
             "msg": "Show the list of services matching the filterset pointed "
                    "by :opt:`--filterset`.",
+            "options": [
+                OPT.filterset,
+            ],
         },
         "collector_list_filtersets": {
             "msg": "Show the list of filtersets available on the collector. "

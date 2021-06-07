@@ -130,9 +130,9 @@ ACTIONS_NO_MULTIPLE_SERVICES = [
 ]
 
 CONFIG_DEFAULTS = {
-    "push_schedule": "00:00-06:00",
-    "sync_schedule": "04:00-06:00",
-    "comp_schedule": "02:00-06:00",
+    "push_schedule": "~00:00-06:00",
+    "sync_schedule": "~04:00-06:00",
+    "comp_schedule": "~02:00-06:00",
     "collect_stats_schedule": "@10",
     "no_schedule": "",
 }
