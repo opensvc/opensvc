@@ -348,10 +348,9 @@ class Schedule(object):
         for schedule in self.schedule:
             try:
                 one = self.data_one(schedule)
-            except Exception as exc:
-                one = None
-            if one:
                 data.append(one)
+            except Exception as exc:
+                pass
         return data
 
     def data_one(self, schedule):
