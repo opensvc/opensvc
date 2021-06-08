@@ -1272,7 +1272,7 @@ def nodeconf_params():
         import configparser as ConfigParser
     import copy
     try:
-        config = ConfigParser.RawConfigParser()
+        config = ConfigParser.RawConfigParser(strict=False)
     except AttributeError:
         logit("issue occured while trying to instantiate configparser")
         return
