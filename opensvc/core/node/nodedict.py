@@ -554,7 +554,7 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
     {
         "section": "compliance",
         "keyword": "schedule",
-        "default": "02:00-06:00",
+        "default": "~02:00-06:00",
         "text": "Schedule parameter for the :c-action:`compliance auto` node action, which check all modules and fix only modules flagged ``autofix``. See usr/share/doc/schedule for the schedule syntax."
     },
     {
