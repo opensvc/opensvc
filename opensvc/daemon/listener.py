@@ -315,7 +315,7 @@ class Listener(shared.OsvcThread):
                 self.join_threads()
                 if Env.sysname == "Linux":
                     self.certfs.stop()
-                sys.exit(0)
+                self.exit()
 
     def status(self, **kwargs):
         data = shared.OsvcThread.status(self, **kwargs)

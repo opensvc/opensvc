@@ -108,8 +108,7 @@ class HbUcastTx(HbUcast):
             while True:
                 self.do()
                 if self.stopped():
-                    self.log.info('sys.exit()')
-                    sys.exit(0)
+                    self.exit()
                 with shared.HB_TX_TICKER:
                     shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
@@ -224,8 +223,7 @@ class HbUcastRx(HbUcast):
             if self.stopped():
                 self.join_threads()
                 self.sock.close()
-                self.log.info('sys.exit()')
-                sys.exit(0)
+                self.exit()
 
     def do(self):
         self.reload_config()

@@ -91,7 +91,7 @@ class Dns(shared.OsvcThread):
                 self.log.debug("stop event received (%d handler threads to join)", len(self.threads))
                 self.join_threads()
                 self.sock.close()
-                sys.exit(0)
+                self.exit()
 
     def wait_monitor(self):
         while True:
