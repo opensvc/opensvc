@@ -424,7 +424,7 @@ class Asset(BaseAsset):
         if self.container:
             return 'n/a'
         serial = self._get_serial_1()
-        if serial in ('Unknown', 'Not Specified'):
+        if serial in ('Unknown', 'Not Specified', '0000000'):
             serial = self._get_serial_2()
         if serial in ('Unknown') and self.os_release['id'] == 'raspbian':
             serial = self._get_serial_raspbian()
