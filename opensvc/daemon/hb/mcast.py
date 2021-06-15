@@ -156,7 +156,7 @@ class HbMcastTx(HbMcast):
                 self.do()
                 if self.stopped():
                     self.sock.close()
-                    sys.exit(0)
+                    self.exit()
                 with shared.HB_TX_TICKER:
                     shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
@@ -256,7 +256,7 @@ class HbMcastRx(HbMcast):
             if self.stopped():
                 self.join_threads()
                 self.sock.close()
-                sys.exit(0)
+                self.exit()
 
     def do(self):
         def handle(data, addr):

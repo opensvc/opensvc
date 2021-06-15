@@ -186,7 +186,7 @@ class CollectorRpc(object):
         tmpp = f.name
         f.close()
         with open(tmpp, "w") as f:
-            l = json.dump(l, f)
+            json.dump(l, f)
         shutil.move(tmpp, p)
         return l
 

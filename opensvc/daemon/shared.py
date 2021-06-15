@@ -2,6 +2,7 @@
 A module to share variables used by osvcd threads.
 """
 import os
+import sys
 import threading
 import time
 import hashlib
@@ -311,6 +312,19 @@ class OsvcThread(threading.Thread, Crypt):
         if self.tid:
             data["tid"] = self.tid
         return data
+
+    def exit(self, exit_status=0):
+        """
+        exit daemon thread helper, daemon threads data are only updated while
+        running, we are stopping
+        """
+        if self.stopped():
+            new_state = "stopped"
+        else:
+            new_state = "terminated"
+        self.thread_data.set(["state"], new_state)
+        self.log.info('sys.exit(%d)', exit_status)
+        sys.exit(exit_status)
 
     def thread_stats(self):
         if self.tid is None:

@@ -67,13 +67,13 @@ class HbRelayTx(HbRelay):
         except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
-            sys.exit(1)
+            self.exit(1)
 
         try:
             while True:
                 self.do()
                 if self.stopped():
-                    sys.exit(0)
+                    self.exit()
                 with shared.HB_TX_TICKER:
                     shared.HB_TX_TICKER.wait(self.interval)
         except Exception as exc:
@@ -137,13 +137,13 @@ class HbRelayRx(HbRelay):
         except ex.AbortAction as exc:
             self.log.error(exc)
             self.stop()
-            sys.exit(1)
+            self.exit(1)
         self.log.info("receive from relay %s", self.relay)
 
         while True:
             self.do()
             if self.stopped():
-                sys.exit(0)
+                self.exit()
             with shared.HB_TX_TICKER:
                 shared.HB_TX_TICKER.wait(self.interval)
 
