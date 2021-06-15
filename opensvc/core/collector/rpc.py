@@ -7,12 +7,16 @@ import random
 import socket
 import sys
 import time
+import json
+import shutil
+import tempfile
 from datetime import datetime
 
 import core.exceptions as ex
 import foreign.six as six
 from env import Env
 from utilities.naming import split_path
+from utilities.converters import print_duration
 
 socket.setdefaulttimeout(5)
 
@@ -154,15 +158,67 @@ class CollectorRpc(object):
                          'comp_log_actions']
         self.log = logging.getLogger("xmlrpc")
 
+    def list_methods(self, t):
+        if self.list_methods_outdated(t):
+            try:
+                l = self.remote_list_methods(t)
+                self.dump_list_methods(t, l)
+                return l
+            except Exception:
+                pass
+        l = self.load_list_methods(t)
+        return l
+
+    def remote_list_methods(self, t):
+        self.log.info("refresh %s methods", t)
+        if t == "proxy":
+            return self.proxy.system.listMethods()
+        else:
+            return self.comp_proxy.system.listMethods()
+
+    @staticmethod
+    def file_list_methods(t):
+        return os.path.join(Env.paths.pathvar, "node", "rpc_list_methods."+t)
+
+    def dump_list_methods(self, t, l):
+        p = self.file_list_methods(t)
+        f = tempfile.NamedTemporaryFile(prefix="rpc_list_methods."+t+".", dir=os.path.dirname(p))
+        tmpp = f.name
+        f.close()
+        with open(tmpp, "w") as f:
+            l = json.dump(l, f)
+        shutil.move(tmpp, p)
+        return l
+
+    def list_methods_outdated(self, t):
+        p = self.file_list_methods(t)
+        try:
+            mtime = os.path.getmtime(p)
+        except Exception:
+            self.log.info("no %s method list cache", t)
+            return True
+        now = time.time()
+        threshold = mtime + 86400 + random.random()*3600 # 1d + random(1h)
+        if now > threshold:
+            self.log.info("%s method list cache too old (%s)", t, print_duration(now-mtime))
+            return True
+        return False
+
+    def load_list_methods(self, t):
+        self.log.debug("get %s method list from cache", t)
+        p = self.file_list_methods(t)
+        with open(p, "r") as f:
+            l = json.load(f)
+            return l
+
     def get_methods_dbopensvc(self):
         if self.node.collector_env.dbopensvc is None:
             self.proxy_methods = []
             return
-        self.log.debug("get dbopensvc method list")
         try:
             if self.proxy is None:
                 self.proxy = get_proxy(self.node.collector_env.dbopensvc)
-            self.proxy_methods = self.proxy.system.listMethods()
+            self.proxy_methods = self.list_methods("proxy")
         except Exception as exc:
             self.log.error("get dbopensvc methods: %s", exc)
             self.proxy = get_proxy(DUMMY_URL)
@@ -173,11 +229,10 @@ class CollectorRpc(object):
         if self.node.collector_env.dbcompliance is None:
             self.comp_proxy_methods = []
             return
-        self.log.debug("get dbcompliance method list")
         try:
             if self.comp_proxy is None:
                 self.comp_proxy = get_proxy(self.node.collector_env.dbcompliance)
-            self.comp_proxy_methods = self.comp_proxy.system.listMethods()
+            self.comp_proxy_methods = self.list_methods("comp_proxy")
         except Exception as exc:
             self.log.error("get dbcompliance methods: %s", exc)
             self.comp_proxy = get_proxy(DUMMY_URL)

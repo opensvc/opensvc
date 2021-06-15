@@ -1932,37 +1932,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Downloads and installs the compliance module archive from the url
         specified as node.repocomp or node.repo in node.conf.
         """
-        repocomp = self.oget("node", "repocomp")
-        repo = self.oget("node", "repo")
-        if repocomp:
-            pkg_name = repocomp.strip('/') + "/current"
-        elif repo:
-            pkg_name = repo.strip('/') + "/compliance/current"
-        else:
-            if self.options.cron:
-                return 0
-            print("node.repo or node.repocomp must be set in node.conf",
-                  file=sys.stderr)
-            return 1
 
-        from utilities.uri import Uri
-        print("get %s" % pkg_name)
-        secure = self.oget("node", "secure_fetch")
-        try:
-            with Uri(pkg_name, secure=secure).fetch() as fpath:
-                self._updatecomp(fpath)
-        except IOError as exc:
-            print("download failed", ":", exc, file=sys.stderr)
-            if self.options.cron:
-                return 0
-            return 1
-        return 0
-
-    def _updatecomp(self, fpath):
-        """
-        Installs the compliance module archive from the downloaded archive.
-        """
         def do(fpath):
+            """
+            Installs the compliance module archive from the downloaded archive.
+            """
             tmpp = os.path.join(Env.paths.pathtmp, 'compliance')
             backp = os.path.join(Env.paths.pathtmp, 'compliance.bck')
             compp = os.path.join(Env.paths.pathvar, 'compliance')
@@ -1998,6 +1972,31 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             shutil.move(compp, backp)
             shutil.move(tmpp, compp)
 
+        repocomp = self.oget("node", "repocomp")
+        repo = self.oget("node", "repo")
+        if repocomp:
+            pkg_name = repocomp.strip('/') + "/current"
+        elif repo:
+            pkg_name = repo.strip('/') + "/compliance/current"
+        else:
+            if self.options.cron:
+                return 0
+            print("node.repo or node.repocomp must be set in node.conf",
+                  file=sys.stderr)
+            return 1
+
+        from utilities.uri import Uri
+        print("get %s" % pkg_name)
+        secure = self.oget("node", "secure_fetch")
+        try:
+            with Uri(pkg_name, secure=secure).fetch() as fpath:
+                do(fpath)
+        except IOError as exc:
+            print("download failed", ":", exc, file=sys.stderr)
+            if self.options.cron:
+                return 0
+            return 1
+        return 0
 
     def updatepkg(self):
         """
