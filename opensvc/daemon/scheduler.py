@@ -99,7 +99,7 @@ class Scheduler(shared.OsvcThread):
                 time.sleep(0.2)
             if self.stopped():
                 self.kill_procs()
-                sys.exit(0)
+                self.exit()
 
     def do(self):
         self.reload_config()

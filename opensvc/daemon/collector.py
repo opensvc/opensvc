@@ -33,7 +33,7 @@ class Collector(shared.OsvcThread):
 
         while True:
             if self.stopped():
-                sys.exit(0)
+                self.exit()
             try:
                 self.do()
                 self.update_status()
