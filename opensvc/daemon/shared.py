@@ -322,8 +322,11 @@ class OsvcThread(threading.Thread, Crypt):
             new_state = "stopped"
         else:
             new_state = "terminated"
-        self.thread_data.set(["state"], new_state)
-        self.log.info('sys.exit(%d)', exit_status)
+        try:
+            self.thread_data.set(["state"], new_state)
+        except KeyError:
+            pass
+        self.log.info('thread exits with code %d', exit_status)
         sys.exit(exit_status)
 
     def thread_stats(self):
