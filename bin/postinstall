@@ -1271,8 +1271,16 @@ def nodeconf_params():
     except ImportError:
         import configparser as ConfigParser
     import copy
+    kwargs = {}
     try:
-        config = ConfigParser.RawConfigParser(strict=False)
+        ConfigParser.RawConfigParser(strict=False)
+        kwargs["strict"] = False
+    except Exception:
+        # older version of python have no strict kwarg,
+        # but behave like newer with strict=False
+        pass
+    try:
+        config = ConfigParser.RawConfigParser(**kwargs)
     except AttributeError:
         logit("issue occured while trying to instantiate configparser")
         return
