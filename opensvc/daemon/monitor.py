@@ -678,7 +678,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def init_data(self):
         self._update_cluster_data()
-        shared.GEN = 0
+        if shared.GEN > 1:
+            self.log.warning("monitor init data after thread crashed at gen %s", shared.GEN)
+            # inc GEN to ensure out of sequence patch detection on peer
+            shared.GEN = shared.GEN + 2
+            # Ensure ask full from peers
+            shared.PEER_GEN_MERGED = {peer: 0 for peer in shared.PEER_GEN_MERGED}
+            # no diff until one peer node receive our full
+            shared.LOCAL_GEN_MERGED_ON_PEER = {peer: 0 for peer in shared.LOCAL_GEN_MERGED_ON_PEER}
+            # reset GEN_DIFF to ensure fresh patch sequence
+            shared.GEN_DIFF = {}
         initial_data = {
             "compat": shared.COMPAT_VERSION,
             "api": shared.API_VERSION,

@@ -164,7 +164,7 @@ class Hb(shared.OsvcThread):
             self.log.debug("ping node %s", nodename if nodename else "*")
             if self.msg_type != 'ping':
                 self.msg_type = 'ping'
-                self.log.info('change message type to %s', self.msg_type)
+                self.log.info('change message type to %s (gen %s)', self.msg_type, shared.GEN)
             message = self.encrypt({
                 "kind": "ping",
                 "compat": shared.COMPAT_VERSION,
@@ -181,7 +181,7 @@ class Hb(shared.OsvcThread):
                 return None, 0
             if self.msg_type != 'full':
                 self.msg_type = 'full'
-                self.log.info('change message type to %s', self.msg_type)
+                self.log.info('change message type to %s (gen %s)', self.msg_type, shared.GEN)
             with shared.HB_MSG_LOCK:
                 if shared.HB_MSG is not None:
                     return shared.HB_MSG, shared.HB_MSG_LEN
@@ -196,7 +196,7 @@ class Hb(shared.OsvcThread):
             self.log.debug("send gen %d-%d deltas to %s", begin, shared.GEN, nodename if nodename else "*") # COMMENT
             if self.msg_type != 'patch':
                 self.msg_type = 'patch'
-                self.log.info('change message type to %s', self.msg_type)
+                self.log.info('change message type to %s (gen %s)', self.msg_type, shared.GEN)
             data = {}
             for gen, delta in shared.GEN_DIFF.items():
                 if gen <= begin:
