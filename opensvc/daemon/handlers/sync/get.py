@@ -51,7 +51,7 @@ class Handler(daemon.handler.BaseHandler):
         return {"status": 1, "data": {"satisfied": False, "gen": ref_gen}}
 
     def match(self, ref_gen):
-        for node, gen in shared.LOCAL_GEN.items():
+        for node, gen in shared.LOCAL_GEN_MERGED_ON_PEER.items():
             try:
                 if gen < ref_gen:
                     return False
