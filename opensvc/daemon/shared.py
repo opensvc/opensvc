@@ -39,7 +39,7 @@ class OsvcJournaledData(JournaledData):
                 ["updated"],
             ],
             # disable journaling if we have no peer, as nothing purges the journal
-            journal_condition=lambda: bool(LOCAL_GEN),
+            journal_condition=lambda: bool(LOCAL_GEN_MERGED_ON_PEER),
         )
 
 
@@ -71,10 +71,10 @@ CONFIG_LOCK = RLock()
 GEN = 1
 
 # track the generation of the local dataset on peer nodes
-LOCAL_GEN = {}
+LOCAL_GEN_MERGED_ON_PEER = {}
 
 # track the generation of the peer datasets we merged
-REMOTE_GEN = {}
+PEER_GEN_MERGED = {}
 
 # track the local dataset gen diffs pending merge by peers
 GEN_DIFF = {}
@@ -1013,12 +1013,12 @@ class OsvcThread(threading.Thread, Crypt):
         with RX_LOCK:
             self.nodes_data.unset_safe([nodename])
             try:
-                del LOCAL_GEN[nodename]
+                del LOCAL_GEN_MERGED_ON_PEER[nodename]
             except KeyError:
                 pass
             try:
                 # will ask for a full when the node comes back again
-                del REMOTE_GEN[nodename]
+                del PEER_GEN_MERGED[nodename]
             except KeyError:
                 pass
 
@@ -1349,16 +1349,16 @@ class OsvcThread(threading.Thread, Crypt):
         Get oldest generation of the local dataset on peers.
         """
         if nodename is None:
-            gens = LOCAL_GEN.values()
+            gens = LOCAL_GEN_MERGED_ON_PEER.values()
             if len(gens) == 0:
                 return 0, 0
             gen = min(gens)
             num = len(gens)
             # self.log.info("oldest gen is %d amongst %d nodes", gen, num)
         else:
-            if nodename not in LOCAL_GEN:
+            if nodename not in LOCAL_GEN_MERGED_ON_PEER:
                 return 0, 0
-            gen = LOCAL_GEN.get(nodename, 0)
+            gen = LOCAL_GEN_MERGED_ON_PEER.get(nodename, 0)
             num = 1
             # self.log.info("gen on node %s is %d", nodename, gen)
         return gen, num
@@ -1389,7 +1389,7 @@ class OsvcThread(threading.Thread, Crypt):
         if inc:
             GEN += 1
         gen = {Env.nodename: GEN}
-        gen.update(REMOTE_GEN)
+        gen.update(PEER_GEN_MERGED)
         return gen
 
     def node_overloaded(self, nodename=None):
