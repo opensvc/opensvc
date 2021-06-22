@@ -198,10 +198,17 @@ class Hb(shared.OsvcThread):
                 self.msg_type = 'patch'
                 self.log.info('change message type to %s (gen %s)', self.msg_type, shared.GEN)
             data = {}
-            for gen, delta in shared.GEN_DIFF.items():
-                if gen <= begin:
-                    continue
-                data[gen] = delta
+            try:
+                for gen, delta in shared.GEN_DIFF.items():
+                    if gen <= begin:
+                        continue
+                    data[gen] = delta
+            except:
+                # Protect from GEN_DIFF 'dictionary changed size' during iteration
+                # - purge_log()
+                # - reset during monitor crash init_data()
+                self.log.info("wait next iteration to create patch message (gen %s)", shared.GEN)
+                return None, 0
             message = self.encrypt({
                 "kind": "patch",
                 "deltas": data,
