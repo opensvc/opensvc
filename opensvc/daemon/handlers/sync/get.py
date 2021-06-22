@@ -51,11 +51,16 @@ class Handler(daemon.handler.BaseHandler):
         return {"status": 1, "data": {"satisfied": False, "gen": ref_gen}}
 
     def match(self, ref_gen):
-        for node, gen in shared.LOCAL_GEN_MERGED_ON_PEER.items():
-            try:
-                if gen < ref_gen:
-                    return False
-            except TypeError:
-                continue
-        return True
+        matched = True
+        with shared.RX_LOCK:
+            # Protect from LOCAL_GEN_MERGED_ON_PEER delete items
+            # during hb::delete_peer_data(...)
+            for node, gen in shared.LOCAL_GEN_MERGED_ON_PEER.items():
+                try:
+                    if gen < ref_gen:
+                        matched = False
+                        break
+                except TypeError:
+                    continue
+        return matched
 
