@@ -682,10 +682,14 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.log.warning("monitor init data after thread crashed at gen %s", shared.GEN)
             # inc GEN to ensure out of sequence patch detection on peer
             shared.GEN = shared.GEN + 2
-            # Ensure ask full from peers
-            shared.PEER_GEN_MERGED = {peer: 0 for peer in shared.PEER_GEN_MERGED}
-            # no diff until one peer node receive our full
-            shared.LOCAL_GEN_MERGED_ON_PEER = {peer: 0 for peer in shared.LOCAL_GEN_MERGED_ON_PEER}
+            with shared.RX_LOCK:
+                # Protect from LOCAL_GEN_MERGED_ON_PEER, PEER_GEN_MERGED delete items
+                # during hb::delete_peer_data(...)
+                #
+                # Ensure ask full from peers
+                shared.PEER_GEN_MERGED = {peer: 0 for peer in shared.PEER_GEN_MERGED}
+                # no diff until one peer node receive our full
+                shared.LOCAL_GEN_MERGED_ON_PEER = {peer: 0 for peer in shared.LOCAL_GEN_MERGED_ON_PEER}
             # reset GEN_DIFF to ensure fresh patch sequence
             shared.GEN_DIFF = {}
         initial_data = {
@@ -4167,7 +4171,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if data is None:
             self.log.info("drop corrupted rx data from %s", nodename)
         peer_gen_merged = shared.PEER_GEN_MERGED.get(nodename, 0)
+        local_gen_merged_on_peer = shared.LOCAL_GEN_MERGED_ON_PEER.get(nodename, 0)
         local_gen_merged_on_peer_from_message = data.get("gen", {}).get(Env.nodename, 0)
+        peer_gen_from_message = data.get("gen", {}).get(nodename, 0)
         kind = data.get("kind", "full")
         change = False
         # self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
@@ -4187,14 +4193,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 if shared.PEER_GEN_MERGED.get(nodename) is None:
                     self.log.info("undefined gen for %s dataset, drop patch and "
                                   "ask for a full (peer has gen %s of our dataset)", nodename, local_gen_merged_on_peer_from_message)
-                    self.update_node_gen(nodename, peer_gen_merged=0, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+                    self.update_node_gen(nodename,
+                                         peer_gen_merged=0,
+                                         local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
                 return False
             deltas = data.get("deltas", [])
             gens = sorted([int(gen) for gen in deltas])
             gens = [gen for gen in gens if gen > peer_gen_merged]
             if len(gens) == 0:
                 # self.log.info("no more recent gen in received deltas")
-                if local_gen_merged_on_peer_from_message > shared.LOCAL_GEN_MERGED_ON_PEER[nodename]:
+                if local_gen_merged_on_peer_from_message > local_gen_merged_on_peer:
                     shared.LOCAL_GEN_MERGED_ON_PEER[nodename] = local_gen_merged_on_peer_from_message
                     self.nodes_data.set([nodename, "gen", Env.nodename], local_gen_merged_on_peer_from_message)
                 return False
@@ -4207,40 +4215,51 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         # don't be alarming on daemon start: it is normal we receive a out-of-sequence patch
                         self.log.warning("unsynchronized node %s dataset. merged gen %d, received out of sequence %d. "
                                          "ask for a full.", nodename, peer_gen_merged, gen)
-                    self.update_node_gen(nodename, peer_gen_merged=0, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+                    self.update_node_gen(nodename,
+                                         peer_gen_merged=0,
+                                         local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
                     break
                 try:
                     self.nodes_data.patch([nodename], deltas[str(gen)])
                     peer_gen_merged = gen
-                    self.update_node_gen(nodename, peer_gen_merged=gen, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+                    self.update_node_gen(nodename,
+                                         peer_gen_merged=peer_gen_merged,
+                                         local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
                     self.log.debug("patch node %s dataset to gen %d, peer has gen %d of our dataset",
-                                   nodename, shared.PEER_GEN_MERGED[nodename],
-                                   shared.LOCAL_GEN_MERGED_ON_PEER[nodename])
+                                   nodename,
+                                   peer_gen_merged,
+                                   local_gen_merged_on_peer_from_message)
                     if not nodes_info_change:
                         nodes_info_change |= self.patch_has_nodes_info_change(deltas[str(gen)])
                     change = True
                 except Exception as exc:
                     self.log.warning("failed to apply node %s dataset gen %d patch: %s. "
                                      "ask for a full: %s", nodename, gen, deltas[str(gen)], exc)
-                    self.update_node_gen(nodename, peer_gen_merged=0, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+                    self.update_node_gen(nodename,
+                                         peer_gen_merged=0,
+                                         local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
                     break
             if nodes_info_change:
                 self.on_nodes_info_change()
             return change
         elif kind == "ping":
-            self.update_node_gen(nodename, peer_gen_merged=0, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+            self.update_node_gen(nodename,
+                                 peer_gen_merged=0,
+                                 local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
             self.nodes_data.set([nodename, "monitor"], data["monitor"])
             self.log.debug("reset node %s dataset gen, peer has gen %d of our dataset",
-                           nodename, shared.LOCAL_GEN_MERGED_ON_PEER[nodename])
+                           nodename, local_gen_merged_on_peer_from_message)
             change = True
         else:
-            data_gen = data.get("gen", {}).get(nodename)
-            if data_gen is None:
+            if peer_gen_from_message == 0:
+                # GEN starts at 1, this message is 1st message after init_data gen: {}
                 self.log.debug("no 'gen' in full dataset from %s: drop", nodename)
                 return False
-            last_gen = shared.PEER_GEN_MERGED.get(nodename)
-            if last_gen is not None and last_gen >= data_gen:
-                self.log.debug("already installed or beyond %s gen %d dataset: drop", nodename, data_gen)
+            if peer_gen_merged >= peer_gen_from_message:
+                self.log.debug("already installed or beyond %s gen %d dataset (current gen merged: %s): drop",
+                               nodename,
+                               peer_gen_from_message,
+                               peer_gen_merged)
                 return False
             node_status = data.get("monitor", {}).get("status")
             if node_status in ("init", "maintenance", "upgrade") and self.nodes_data.exists([nodename]):
@@ -4251,11 +4270,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     data["services"]["status"][path] = idata
 
             self.nodes_data.set([nodename], data)
-            new_gen = data.get("gen", {}).get(nodename, 0)
-            self.update_node_gen(nodename, peer_gen_merged=new_gen, local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
+            self.update_node_gen(nodename,
+                                 peer_gen_merged=peer_gen_from_message,
+                                 local_gen_merged_on_peer=local_gen_merged_on_peer_from_message)
             self.log.info("install node %s full dataset gen %d, peer has gen %d of our dataset",
-                          nodename, shared.PEER_GEN_MERGED[nodename],
-                          shared.LOCAL_GEN_MERGED_ON_PEER[nodename])
+                          nodename,
+                          peer_gen_from_message,
+                          local_gen_merged_on_peer_from_message)
             self.on_nodes_info_change()
             change = True
         return change
