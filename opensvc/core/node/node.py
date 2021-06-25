@@ -1052,15 +1052,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         A list of metrics can be disabled from the task configuration section,
         using the 'disable' option.
         """
-        fpath = self.sched.get_timestamp_f(self.sched.actions["pushstats"].fname,
-                                           success=True)
         try:
-            with open(fpath, "r") as ofile:
-                buff = ofile.read()
-            start = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f\n")
-            now = datetime.datetime.now()
+            start = self.sched.get_last(self.sched.actions["pushstats"][0].fname)
+            now = time.time()
             delta = now - start
-            interval = delta.days * 1440 + delta.seconds // 60 + 10
+            interval = delta // 60 + 10
         except:
             interval = 1450
         if interval < 21:

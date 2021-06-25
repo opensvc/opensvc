@@ -934,11 +934,11 @@ class Scheduler(object):
             ofile.write(buff+os.linesep)
         return True
 
-    def get_last(self, fname):
+    def get_last(self, fname, success=False):
         """
         Return the last task run timestamp, fetched from the on-disk cache.
         """
-        timestamp_f = self.get_timestamp_f(fname)
+        timestamp_f = self.get_timestamp_f(fname, success=success)
         if not os.path.exists(timestamp_f):
             return
         try:
