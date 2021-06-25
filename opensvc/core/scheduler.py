@@ -117,6 +117,9 @@ class SchedOpts(object):
 
     __repr__ = __str__
 
+def to_time(dt):
+    return time.mktime(dt.timetuple()) + dt.microsecond / 1E6
+
 def sched_action(func):
     """
     A decorator in charge of updating the scheduler tasks and subtasks
@@ -918,14 +921,16 @@ class Scheduler(object):
         Create missing parent directories if needed.
         """
         if last is None:
-            last = datetime.datetime.now()
+            last = time.time()
+        elif type(last) == datetime.datetime:
+            last = to_time(last)
         if not timestamp_f.startswith(os.sep):
             timestamp_f = self.get_timestamp_f(timestamp_f)
         timestamp_d = os.path.dirname(timestamp_f)
         if not os.path.isdir(timestamp_d):
             os.makedirs(timestamp_d, 0o755)
+        buff = repr(last)
         with open(timestamp_f, 'w') as ofile:
-            buff = last.strftime("%Y-%m-%d %H:%M:%S.%f")
             ofile.write(buff+os.linesep)
         return True
 
@@ -939,10 +944,19 @@ class Scheduler(object):
         try:
             with open(timestamp_f, 'r') as ofile:
                 buff = ofile.read()
-            last = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f"+os.linesep)
-            return last
         except (OSError, IOError, ValueError):
             return
+        try:
+            last = datetime.datetime.fromtimestamp(float(buff))
+            return to_time(last)
+        except ValueError:
+            pass
+        try:
+            last = datetime.datetime.strptime(buff, "%Y-%m-%d %H:%M:%S.%f"+os.linesep)
+            return to_time(last)
+        except ValueError:
+            pass
+        return 0
 
     def get_schedule_raw(self, section, option):
         """
@@ -1067,14 +1081,14 @@ class Scheduler(object):
         for _data in data:
             node = head_node.add_node()
             node.add_column(_data["action"], color.LIGHTBLUE)
-            node.add_column(_data["last_run"])
-            node.add_column(_data["next_run"])
+            node.add_column(datetime.datetime.fromtimestamp(_data["last_run"]).strftime("%Y-%m-%d %H:%M:%S"))
+            node.add_column(datetime.datetime.fromtimestamp(_data["next_run"]).strftime("%Y-%m-%d %H:%M:%S"))
             node.add_column(_data["config_parameter"])
             node.add_column(_data["schedule_definition"])
 
         tree.out()
 
-    def print_schedule_data(self):
+    def print_schedule_data(self, with_next=True):
         """
         Return a list of dict of schedule information for all tasks.
         """
@@ -1082,20 +1096,20 @@ class Scheduler(object):
         data = []
         now = datetime.datetime.now()
         for action in self.scheduler_actions:
-            data += self._print_schedule_data(action, now)
+            data += self._print_schedule_data(action, now, with_next=with_next)
         return data
 
-    def _print_schedule_data(self, action, now):
+    def _print_schedule_data(self, action, now, with_next=True):
         """
         Return a dict of a scheduled task, or list of dict of a task-set,
         containing schedule information.
         """
         data = []
         for sopt in self.scheduler_actions[action]:
-            data += [self.__print_schedule_data(action, sopt, now)]
+            data += [self.__print_schedule_data(action, sopt, now, with_next=with_next)]
         return sorted(data, key=lambda x: x["config_parameter"])
 
-    def __print_schedule_data(self, action, sopt, now):
+    def __print_schedule_data(self, action, sopt, now, with_next=True):
         """
         Return a dict of a scheduled task information.
         """
@@ -1115,9 +1129,7 @@ class Scheduler(object):
 
         try:
             last = self.get_last(fname)
-            last_s = last.strftime("%Y-%m-%d %H:%M:%S")
         except (AttributeError, IOError, OSError):
-            last_s = "-"
             last = None
 
         if section != "DEFAULT":
@@ -1128,20 +1140,17 @@ class Scheduler(object):
 
         data = dict(
             action=action,
-            last_run=last_s,
+            last_run=last,
             config_parameter=param,
             schedule_definition=schedule_s,
         )
 
-        if schedule_s in ("-", "@0", "malformed"):
-            result = None
-        else:
-            result = schedule.get_next(now, last=last)[0]
-        if result:
-            next_s = result.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            next_s = "-"
-        data["next_run"] = next_s
+        if with_next:
+            if schedule_s in ("-", "@0", "malformed"):
+                nxt = 0
+            else:
+                nxt = to_time(schedule.get_next(now, last=last)[0])
+            data["next_run"] = nxt
 
         return data
 

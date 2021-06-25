@@ -1424,13 +1424,19 @@ class ClientHandler(shared.OsvcThread):
                       close_fds=os.name!="nt")
             return
 
+        def peer_clustername(nodename):
+            cname = shared.NODE.oget("cluster", "name", impersonate=nodename)
+            if not cname:
+                return cname
+            return cname.lower()
+
         if self.encrypted:
             clustername, nodename, data = self.decrypt(data, sender_id=self.addr[0])
             if nodename in self.cluster_drpnodes:
                 result = {"status": 401, "error": "drp node %s is not allowed to request" % nodename}
                 self.raw_send_result(result)
                 return
-            if clustername != "join" and shared.NODE.oget("cluster", "name", impersonate=nodename) != clustername:
+            if clustername != "join" and peer_clustername(nodename) != clustername:
                 result = {"status": 401, "error": "node %s is not a cluster %s node" % (nodename, clustername)}
                 self.raw_send_result(result)
                 return

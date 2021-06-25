@@ -458,7 +458,6 @@ class Scheduler(shared.OsvcThread):
         except KeyError:
             last = obj.sched.get_last(fname)
             if last:
-                last = time.mktime(last.timetuple())
                 self.lasts[sig] = last
         return last
 
