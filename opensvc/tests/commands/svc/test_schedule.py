@@ -32,7 +32,7 @@ class TestPrintSchedule:
         assert get_action(json.loads(capsys.readouterr().out), "status") == {
             "action": "status",
             "config_parameter": "DEFAULT.status_schedule",
-            "last_run": "-",
+            "last_run": None,
             "next_run": ANY,
             "schedule_definition": "@10"
         }
@@ -51,12 +51,12 @@ class TestPrintSchedule:
         assert action == {
             "action": "status",
             "config_parameter": "DEFAULT.status_schedule",
-            "last_run": "-",
+            "last_run": None,
             "next_run": ANY,
             "schedule_definition": schedule_def
         }
         # ensure correct datetime format
-        datetime.datetime.strptime(action['next_run'], "%Y-%m-%d %H:%M:%S")
+        datetime.datetime.fromtimestamp(action['next_run'])
 
     @staticmethod
     def test_ensure_delay_when_tilde_in_custom_schedule(mocker, capsys):

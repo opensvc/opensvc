@@ -1078,11 +1078,17 @@ class Scheduler(object):
         head_node.add_column("Config Parameter", color.BOLD)
         head_node.add_column("Schedule Definition", color.BOLD)
 
+        def add_column_date(timestamp):
+            if timestamp is None:
+                node.add_column("-")
+            else:
+                node.add_column(datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S"))
+
         for _data in data:
             node = head_node.add_node()
             node.add_column(_data["action"], color.LIGHTBLUE)
-            node.add_column(datetime.datetime.fromtimestamp(_data["last_run"]).strftime("%Y-%m-%d %H:%M:%S"))
-            node.add_column(datetime.datetime.fromtimestamp(_data["next_run"]).strftime("%Y-%m-%d %H:%M:%S"))
+            add_column_date(_data["last_run"])
+            add_column_date(_data["next_run"])
             node.add_column(_data["config_parameter"])
             node.add_column(_data["schedule_definition"])
 
