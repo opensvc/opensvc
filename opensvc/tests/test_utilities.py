@@ -4,6 +4,7 @@ import logging
 
 import pytest
 
+from core.capabilities import capabilities
 from core.extconfig import read_cf, eval_expr
 from utilities.chunker import chunker
 from utilities.files import *
@@ -16,6 +17,19 @@ from utilities.net.converters import *
 from utilities.proc import is_exe, justcall, lcall, qcall, vcall, which, call, drop_option
 from utilities.render.banner import banner
 from utilities.string import bencode, bdecode, empty_string, is_string
+
+
+@pytest.mark.ci
+class TestCapabilities:
+    @staticmethod
+    @pytest.mark.usefixtures("osvc_path_tests")
+    def test_capabilities_has_node_x_cache():
+        assert capabilities.has("node.x.cache.name")
+
+    @staticmethod
+    @pytest.mark.usefixtures("osvc_path_tests")
+    def test_has_capabilities():
+        assert len(capabilities.data) > 1
 
 
 @pytest.mark.ci
@@ -57,7 +71,7 @@ class TestUtilities:
             assert False
 
     @staticmethod
-    def test_cache():
+    def test_cache(osvc_path_tests):
         """
         Session cache
         """
@@ -72,6 +86,36 @@ class TestUtilities:
         test_obj.foo("bar", data=datetime.datetime.now())
         clear_cache("foo.bar")
         purge_cache()
+
+    @staticmethod
+    def test_named_cache(osvc_path_tests):
+        class ObjTest(object):
+            def __init__(self, rid):
+                self.rid = rid
+
+            @cache("foo.{args[0].rid}.{args[1]}", sid="subSysX")
+            def foo(self, _, data=None):
+                data = data or 0
+                return data
+
+        test_obj = ObjTest(rid="app#1")
+        test_obj_clone = ObjTest(rid="app#1")
+
+        assert test_obj.foo("bar1", data="initial1") == "initial1"
+        assert test_obj_clone.foo("bar1", data="") == "initial1"
+        assert test_obj.foo("bar1", data="") == "initial1"
+
+        assert test_obj.foo("bar2", data="initial2") == "initial2"
+        assert test_obj.foo("bar2", data="") == "initial2"
+        assert test_obj.foo("bar1", data="") == "initial1"
+
+        clear_cache("foo.app#1.bar1", sid="subSysX")
+        assert test_obj.foo("bar1", data="updated1") == "updated1"
+        assert test_obj.foo("bar1", data="") == "updated1"
+        assert test_obj.foo("bar2", data="") == "initial2"
+
+        purge_cache_session("subSysX")
+        assert test_obj.foo("bar1", data="updated1.1") == "updated1.1"
 
     @staticmethod
     def test_lazy():
