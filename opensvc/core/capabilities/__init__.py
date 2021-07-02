@@ -17,7 +17,9 @@ class BaseCapabilities(object):
         return cap in self.data
 
     def scan_generic(self):
-        data = []
+        data = [
+            "node.x.cache.name",
+        ]
         if which("stat"):
             data.append("node.x.stat")
         if has_docker(["docker"]):

@@ -17,8 +17,14 @@ def cache_uuid():
 def get_cache_d(sid=None):
     return os.path.join(Env.paths.pathvar, "cache", sid or cache_uuid())
 
-
-def cache(sig):
+def cache(sig, sid=None):
+    """
+    Decorator for function that needs cache
+    :param sig: signature for cached entries, based on decorated function
+                *args and **kwargs
+    :param sid: optional subdir name for cache directory,
+                default value is OSVC_CACHE_UUID or Env.session_uuid
+    """
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
@@ -32,7 +38,7 @@ def cache(sig):
             else:
                 _sig = sig.format(args=args, kwargs=kwargs)
 
-            fpath = cache_fpath(_sig)
+            fpath = cache_fpath(_sig, sid=sid)
 
             try:
                 lfd = utilities.lock.lock(timeout=30, delay=0.1, lockfile=fpath + '.lock', intent="cache")
@@ -55,8 +61,8 @@ def cache(sig):
     return wrapper
 
 
-def cache_fpath(sig):
-    cache_d = get_cache_d()
+def cache_fpath(sig, sid=None):
+    cache_d = get_cache_d(sid=sid)
     makedirs(cache_d)
     sig = sig.replace("/", "(slash)")
     fpath = os.path.join(cache_d, sig)
@@ -90,10 +96,10 @@ def cache_get(fpath, log=None):
     return data
 
 
-def clear_cache(sig, o=None):
+def clear_cache(sig, o=None, sid=None):
     if o and hasattr(o, "cache_sig_prefix"):
         sig = o.cache_sig_prefix + sig
-    fpath = cache_fpath(sig)
+    fpath = cache_fpath(sig, sid=sid)
     if not os.path.exists(fpath):
         return
     if o and hasattr(o, "log"):
