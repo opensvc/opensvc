@@ -274,11 +274,10 @@ class TestDiskMdStatus:
 
     @staticmethod
     @pytest.mark.usefixtures('mdadm_scan')
-    def test_up_when_no_md_device_files(md_with_uuid):
+    def test_down_when_no_md_device_files(md_with_uuid):
         with open(md_with_uuid.mdadm_cf, 'w') as f:
             f.write('AUTO -all\n')
         assert md_with_uuid._status() == DOWN
-        assert md_with_uuid.status_log.call_args == call('unable to find a devpath for md')
 
     @staticmethod
     @pytest.mark.usefixtures('mdadm_detail', 'mdadm_scan')

@@ -1469,7 +1469,7 @@ class Resource(object):
 
     def schedule_info(self, sopt):
         try:
-            last = float(self.svc.sched.get_last(sopt.fname).strftime("%s.%f"))
+            last = self.svc.sched.get_last(sopt.fname)
         except Exception:
             return {}
         data = {

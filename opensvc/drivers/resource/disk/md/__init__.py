@@ -322,7 +322,7 @@ class DiskMd(BaseDisk):
         ]
         for state in false_states:
             if state in states:
-                self.status_log(buff)
+                self.log.debug("status eval'ed down because: %s", buff)
                 return False
         return True
 
