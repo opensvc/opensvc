@@ -799,10 +799,12 @@ class Resource(object):
         A helper function to execute a test function until it returns True
         or the number of retries is exhausted.
         """
-        for tick in range(tmo//delay):
+        if func():
+            return
+        for tick in range(int(tmo//delay)):
+            time.sleep(delay)
             if func():
                 return
-            time.sleep(delay)
         raise ex.Error(errmsg)
 
     def base_devs(self):

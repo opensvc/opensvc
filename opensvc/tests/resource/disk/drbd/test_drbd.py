@@ -347,7 +347,7 @@ class TestDrbdadmUp:
         with pytest.raises(ex.Error):
             disk.drbdadm_up()
         assert just_call.call_args_list == [call(['drbdadm', 'up', 'foo'])]
-        assert disk.call.call_args_list == [call(['drbdadm', 'dstate', 'foo'])] * 5
+        assert disk.call.call_args_list == [call(['drbdadm', 'dstate', 'foo'])] * 6
 
 
 @pytest.mark.ci
