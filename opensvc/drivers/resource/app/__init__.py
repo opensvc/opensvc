@@ -447,13 +447,20 @@ class App(Resource):
         ret = self.run("start", cmd)
         if ret != 0:
             raise ex.Error("exit code %d" % ret)
+
         def iu():
             try:
                 r = self.is_up()
+            except StatusNA:
+                r = core.status.NA
             except:
                 r = core.status.DOWN
+            if r == core.status.NA:
+                self.log.info("stop waiting for resource status up (currently n/a)")
             return r in (core.status.UP, core.status.NA)
+
         if self.start_timeout is not None:
+            self.log.info("wait for resource status up")
             self.wait_for_fn(iu, self.start_timeout, 1)
         self.can_rollback = True
 
