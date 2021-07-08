@@ -56,7 +56,10 @@ class Fs(BaseFs):
             if self.fs_type == "bind" or "bind" in self.mount_options:
                 if not self._device.startswith(os.sep):
                     l = self._device.split("/")
-                    vol = self.svc.get_volume(l[0])
+                    try:
+                        vol = self.svc.get_volume(l[0])
+                    except ex.Error:
+                        return
                     if vol.mount_point is not None:
                         l[0] = vol.mount_point
                         return "/".join(l)

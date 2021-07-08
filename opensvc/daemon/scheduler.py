@@ -431,7 +431,7 @@ class Scheduler(shared.OsvcThread):
                     data[rid] = sdata
                 else:
                     for action, adata in sdata.items():
-                        if "last" not in adata:
+                        if adata.get("last") is None:
                             continue
                         if action not in data[rid]:
                             data[rid][action] = adata
@@ -439,6 +439,9 @@ class Scheduler(shared.OsvcThread):
                         try:
                             if data[rid][action]["last"] < adata["last"]:
                                 data[rid][action] = adata
+                        except TypeError:
+                            # None < None, None < int
+                            data[rid][action] = adata
                         except KeyError:
                             pass
         return data
