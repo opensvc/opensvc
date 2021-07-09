@@ -30,3 +30,18 @@ class TestStartApp:
             " when start command is .../bin/true"
             " and no checker"
         )
+
+    @staticmethod
+    def test_exit_code_1_when_start_command_exit_non_0(demote):
+        svcname = "pytest"
+        create_args = [
+            "-s", svcname,
+            "create",
+            "--kw", "app#1.start=%s" % env.Env.syspaths.false,
+        ]
+        assert Mgr()(argv=create_args) == 0
+        assert Mgr()(argv=["-s", svcname, "start", "--local"]) == 1, (
+            "start app should have exit code 0"
+            " when start command is .../bin/true"
+            " and no checker"
+        )
