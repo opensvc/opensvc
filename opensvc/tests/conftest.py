@@ -329,3 +329,11 @@ def linux_is_not_a_container(request, mocker):
     """use @pytest.mark.linux_is_not_a_container to disable this fixture"""
     if 'disable_linux_is_not_a_container' not in request.keywords:
         return mocker.patch('utilities.asset.linux.is_container', return_value=False)
+
+
+@pytest.fixture(scope='function')
+def demote(mocker):
+    """
+    may be used to test app without root user
+    """
+    return mocker.patch('drivers.resource.app.demote')
