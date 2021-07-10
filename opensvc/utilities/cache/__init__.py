@@ -17,7 +17,7 @@ def cache_uuid():
 def get_cache_d(sid=None):
     return os.path.join(Env.paths.pathvar, "cache", sid or cache_uuid())
 
-def cache(sig, sid=None):
+def cache(sig, sid=None, ttl=0):
     """
     Decorator for function that needs cache
     :param sig: signature for cached entries, based on decorated function
@@ -47,6 +47,8 @@ def cache(sig, sid=None):
                     log.warning("cache locking error: %s. run command uncached." % str(e))
                 return fn(*args, **kwargs)
             try:
+                if ttl > 0 and is_expired(fpath, ttl):
+                    raise Exception("cache TTL reached: %s" % fpath)
                 data = cache_get(fpath, log=log)
             except Exception as e:
                 if log:
@@ -142,5 +144,7 @@ def purge_cache_expired():
         except:
             pass
 
-
-
+def is_expired(fpath, ttl):
+    if os.path.isfile(fpath):
+        return time.time() > os.stat(fpath).st_mtime + ttl
+    return False

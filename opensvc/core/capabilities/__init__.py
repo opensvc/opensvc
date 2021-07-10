@@ -19,6 +19,7 @@ class BaseCapabilities(object):
     def scan_generic(self):
         data = [
             "node.x.cache.name",
+            "node.x.cache.ttl",
         ]
         if which("stat"):
             data.append("node.x.stat")
