@@ -88,6 +88,25 @@ class TestUtilities:
         purge_cache()
 
     @staticmethod
+    def test_cache_ttl(osvc_path_tests, mocker):
+        now = time.time()
+        mocker.patch("utilities.cache.time.time",
+                     side_effect=[now, now+1, now+2, now + 6])
+
+        class ObjTest(object):
+            @cache("foo", ttl=5)
+            def foo(self, _, data=None):
+                data = data or 0
+                return data
+
+        test_obj = ObjTest()
+        assert test_obj.foo("bar") == 0
+        assert test_obj.foo("bar", data=1) == 0
+        assert test_obj.foo("bar", data=1) == 0
+        assert test_obj.foo("bar", data=1) == 0
+        assert test_obj.foo("bar", data=2) == 2
+
+    @staticmethod
     def test_named_cache(osvc_path_tests):
         class ObjTest(object):
             def __init__(self, rid):
