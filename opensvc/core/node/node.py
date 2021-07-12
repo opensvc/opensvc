@@ -4975,28 +4975,20 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pools = all_pools
         volumes = self.pools_volumes()
 
-        queue = Queue()
-        procs = {}
-        for name in pools:
-            title = "om pool --name %s --status" % (name)
-            pool = self.get_pool(name)
-            proc = Process(target=self._pool_status_job,
-                           args=(queue, title, name, pool, volumes, usage))
-            proc.start()
-            procs[name] = proc
-
+        from utilities.concurrent_futures import get_concurrent_futures
+        futures = {}
         data = {}
-        for name, proc in procs.items():
-            proc.join()
-        while not queue.empty():
-            name, pool_status = queue.get()
-            data[name] = pool_status
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            for name in pools:
+                pool = self.get_pool(name)
+                futures[name] = executor.submit(self._pool_status_job, name, pool, volumes, usage)
+            for name, future in futures.items():
+                data[name] = future.result(timeout=None)
         return data
 
     @staticmethod
-    def _pool_status_job(queue, title, name, pool, volumes, usage):
-        from utilities.process_title import set_process_title
-        set_process_title(title)
+    def _pool_status_job(name, pool, volumes, usage):
         try:
             pool_status = pool.pool_status(usage=usage)
         except Exception as exc:
@@ -5010,7 +5002,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pool_status["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
         else:
             pool_status["volumes"] = []
-        queue.put((name, pool_status))
+        return pool_status
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
         candidates1 = []
