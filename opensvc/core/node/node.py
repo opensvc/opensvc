@@ -4939,14 +4939,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         print(tree)
 
-    def pools_volumes(self):
-        try:
-            data = self._daemon_status(silent=True)["monitor"]
-        except Exception as exc:
-            return {}
+    def pools_volumes(self, mon_status=None):
+        if mon_status is None:
+            try:
+                mon_status = self._daemon_status(silent=True)["monitor"]
+            except Exception as exc:
+                return {}
         pools = {}
         done = []
-        for nodename, ndata in data["nodes"].items():
+        for nodename, ndata in mon_status["nodes"].items():
             if not isinstance(ndata, dict):
                 continue
             for path, sdata in ndata.get("services", {}).get("status", {}).items():
@@ -4959,7 +4960,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "path": path,
                     "size": sdata.get("size", 0),
                     "children": children,
-                    "orphan": not children or not any(child in data["services"] for child in children),
+                    "orphan": not children or not any(child in mon_status["services"] for child in children),
                 }
                 try:
                     pools[poolname].append(vdata)
@@ -4967,13 +4968,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
-    def pool_status_data(self, usage=True, pools=None):
+    def pool_status_data(self, usage=True, pools=None, mon_status=None):
         all_pools = self.pool_ls_data()
         if pools:
             pools = [p["name"] for p in pools if p["name"] in all_pools]
         else:
             pools = all_pools
-        volumes = self.pools_volumes()
+        volumes = self.pools_volumes(mon_status=mon_status)
 
         from utilities.concurrent_futures import get_concurrent_futures
         futures = {}

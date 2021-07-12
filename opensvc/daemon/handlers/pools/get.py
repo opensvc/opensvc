@@ -16,6 +16,7 @@ class Handler(daemon.handler.BaseHandler):
     }
 
     def action(self, nodename, thr=None, **kwargs):
-        data = shared.NODE.pool_status_data()
+        mon_status = thr.daemon_status_data.get(["monitor"])
+        data = shared.NODE.pool_status_data(mon_status=mon_status)
         return data
 
