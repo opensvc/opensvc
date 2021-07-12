@@ -4970,8 +4970,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def pool_status_data(self, usage=True, pools=None, mon_status=None):
         all_pools = self.pool_ls_data()
-        if pools:
-            pools = [p["name"] for p in pools if p["name"] in all_pools]
+        if isinstance(pools, list):
+            try:
+                pools = [p["name"] for p in pools if p["name"] in all_pools]
+            except TypeError:
+                # already a list of names
+                pass
         else:
             pools = all_pools
         volumes = self.pools_volumes(mon_status=mon_status)
