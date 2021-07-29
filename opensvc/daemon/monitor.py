@@ -4266,6 +4266,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 for path, _, idata in self.iter_services_instances(nodenames=[nodename]):
                     if path in data["services"]["status"]:
                         continue
+                    if path not in data["services"]["config"]:
+                        # don't preserve instance status when not anymore in config
+                        continue
                     idata["preserved"] = True
                     data["services"]["status"][path] = idata
 
