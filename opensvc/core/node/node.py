@@ -4939,14 +4939,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         print(tree)
 
-    def pools_volumes(self):
-        try:
-            data = self._daemon_status(silent=True)["monitor"]
-        except Exception as exc:
-            return {}
+    def pools_volumes(self, mon_status=None):
+        if mon_status is None:
+            try:
+                mon_status = self._daemon_status(silent=True)["monitor"]
+            except Exception as exc:
+                return {}
         pools = {}
         done = []
-        for nodename, ndata in data["nodes"].items():
+        for nodename, ndata in mon_status["nodes"].items():
             if not isinstance(ndata, dict):
                 continue
             for path, sdata in ndata.get("services", {}).get("status", {}).items():
@@ -4959,7 +4960,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "path": path,
                     "size": sdata.get("size", 0),
                     "children": children,
-                    "orphan": not children or not any(child in data["services"] for child in children),
+                    "orphan": not children or not any(child in mon_status["services"] for child in children),
                 }
                 try:
                     pools[poolname].append(vdata)
@@ -4967,36 +4968,32 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pools[poolname] = [vdata]
         return pools
 
-    def pool_status_data(self, usage=True, pools=None):
+    def pool_status_data(self, usage=True, pools=None, mon_status=None):
         all_pools = self.pool_ls_data()
-        if pools:
-            pools = [p["name"] for p in pools if p["name"] in all_pools]
+        if isinstance(pools, list):
+            try:
+                pools = [p["name"] for p in pools if p["name"] in all_pools]
+            except TypeError:
+                # already a list of names
+                pass
         else:
             pools = all_pools
-        volumes = self.pools_volumes()
+        volumes = self.pools_volumes(mon_status=mon_status)
 
-        queue = Queue()
-        procs = {}
-        for name in pools:
-            title = "om pool --name %s --status" % (name)
-            pool = self.get_pool(name)
-            proc = Process(target=self._pool_status_job,
-                           args=(queue, title, name, pool, volumes, usage))
-            proc.start()
-            procs[name] = proc
-
+        from utilities.concurrent_futures import get_concurrent_futures
+        futures = {}
         data = {}
-        for name, proc in procs.items():
-            proc.join()
-        while not queue.empty():
-            name, pool_status = queue.get()
-            data[name] = pool_status
+        concurrent_futures = get_concurrent_futures()
+        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+            for name in pools:
+                pool = self.get_pool(name)
+                futures[name] = executor.submit(self._pool_status_job, name, pool, volumes, usage)
+            for name, future in futures.items():
+                data[name] = future.result(timeout=None)
         return data
 
     @staticmethod
-    def _pool_status_job(queue, title, name, pool, volumes, usage):
-        from utilities.process_title import set_process_title
-        set_process_title(title)
+    def _pool_status_job(name, pool, volumes, usage):
         try:
             pool_status = pool.pool_status(usage=usage)
         except Exception as exc:
@@ -5010,7 +5007,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             pool_status["volumes"] = sorted(volumes[name], key=lambda x: x["path"])
         else:
             pool_status["volumes"] = []
-        queue.put((name, pool_status))
+        return pool_status
 
     def find_pool(self, poolname=None, pooltype=None, access=None, size=None, fmt=None, shared=False, usage=True):
         candidates1 = []
