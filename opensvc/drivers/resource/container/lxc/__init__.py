@@ -407,6 +407,9 @@ class ContainerLxc(BaseContainer):
         if ":" in rootfs:
             # zfs:/tank/svc1, nbd:file1, dir:/foo ...
             rootfs = rootfs.split(":", 1)[-1]
+            if rootfs and not rootfs.startswith("/"):
+                # zfs:tank/svc1
+                rootfs = "/" + rootfs
         return rootfs
 
     @property
