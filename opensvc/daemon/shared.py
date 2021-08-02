@@ -188,16 +188,17 @@ def daemon_mutex_status(log=None):
     if log:
         # TODO find better way to get log hnadlers locks
         # logging.PlaceHolder is not in logging public api
-        logger_keys = list(log.manager.loggerDict)
+        loggerDict = log.logger.manager.loggerDict
+        logger_keys = list(loggerDict)
         for k in logger_keys:
             try:
-                logger_item = log.manager.loggerDict[k]
+                logger_item = loggerDict[k]
                 if not isinstance(logger_item, logging.PlaceHolder):
                     i = 0
                     for h in logger_item.handlers:
                         i += 1
                         if h.lock:
-                            data["logger[%s]-handler[%s]" % (logger_item.name, repr(h))] = str(h.lock)
+                            data["logger[%s]-%d-handler[%s]" % (logger_item.name, i, repr(h))] = str(h.lock)
             except:
                 # best effort to retrieve logger handlers locks
                 pass
