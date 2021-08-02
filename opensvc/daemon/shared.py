@@ -1,6 +1,7 @@
 """
 A module to share variables used by osvcd threads.
 """
+import logging
 import os
 import sys
 import threading
@@ -163,6 +164,37 @@ try:
     LOCKS_LOCK.name = "LOCKS"
 except AttributeError:
     pass
+
+
+def daemon_mutex_status(log=None):
+    data = {
+        "JOURNAL": str(DAEMON_STATUS.lock),
+        "THREADS": str(THREADS_LOCK),
+        "NODE": str(NODE_LOCK),
+        "SERVICES": str(SERVICES_LOCK),
+        "HB_MSG": str(HB_MSG_LOCK),
+        "CONFIG": str(CONFIG_LOCK),
+        "RUN_DONE": str(RUN_DONE_LOCK),
+        "LOCKS": str(LOCKS_LOCK),
+    }
+
+    if log:
+        # TODO find better way to get log hnadlers locks
+        # logging.PlaceHolder is not in logging public api
+        logger_keys = list(log.manager.loggerDict)
+        for k in logger_keys:
+            try:
+                logger_item = log.manager.loggerDict[k]
+                if not isinstance(logger_item, logging.PlaceHolder):
+                    i = 0
+                    for h in logger_item.handlers:
+                        i += 1
+                        if h.lock:
+                            data["logger[%s]-handler[%s]" % (logger_item.name, repr(h))] = str(h.lock)
+            except:
+                # best effort to retrieve logger handlers locks
+                pass
+    return data
 
 
 def wake_heartbeat_tx():
