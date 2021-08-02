@@ -873,6 +873,7 @@ class ClientHandler(shared.OsvcThread):
                 "addr": self.addr[0],
                 "encrypted": self.encrypted,
                 "progress": "init",
+                "ident": self.ident,
             })
             if self.scheme == "h2":
                 self.handle_h2_client()
