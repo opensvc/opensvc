@@ -1174,13 +1174,18 @@ class ClientHandler(shared.OsvcThread):
         query = parse_qs(parsed_path.query)
         method = headers.get(":method", "GET")
         accept = headers.get("accept", "").split(",")
+        sending_progress = "sending %s /%s result" % (method, path)
         if path == "favicon.ico":
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return 200, "image/x-icon", ICON
         elif path in ("", "index.html"):
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index()
         elif path == "index.js":
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index_js()
         elif "text/html" in accept:
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index()
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
@@ -1201,6 +1206,7 @@ class ClientHandler(shared.OsvcThread):
             handler = self.get_handler(method, data["action"])
         except ex.HTTP as exc:
             result = {"status": exc.status, "error": exc.msg}
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return exc.status, content_type, result
 
         try:
@@ -1211,6 +1217,7 @@ class ClientHandler(shared.OsvcThread):
             if handler.access:
                 status = 401
                 result = {"status": status, "error": "Not Authorized"}
+                self.parent.stats.sessions.alive[self.sid].progress = sending_progress
                 return status, content_type, result
 
         try:
