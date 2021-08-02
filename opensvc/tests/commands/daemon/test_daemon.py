@@ -253,8 +253,15 @@ class TestNodemgrDaemonActions:
             status = json.load(status_file)
         print(status)
         assert len(status) > 0, "no mutexes returned"
-        for name, value in status.get_items():
-            assert "unlocked" in value, "'%s' mutex is not unlocked, value: '%s'" % (name, value)
+        mutex_busy = 0
+        mutex_free = 0
+        for name, value in status.items():
+            if "owner=None" in value or "unlocked" in value:
+                mutex_free =+ 1
+            else:
+                mutex_busy =+ 1
+        assert mutex_free > mutex_busy, \
+            "found more busy than free mutexes: \n%s" % status
         assert len([k for k in status.keys() if "logger" in k]) > 0, "no logger in mutexes"
 
         print('daemon status...')
