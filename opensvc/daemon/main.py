@@ -163,6 +163,10 @@ class Daemon(object):
                 "services": {},
             }
         }
+        try:
+            initial_data["daemon"] = {"ident": threading.get_ident()}
+        except:
+            pass
         shared.DAEMON_STATUS.set([], initial_data)
 
     @lazy

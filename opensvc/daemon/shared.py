@@ -343,6 +343,8 @@ class OsvcThread(threading.Thread, Crypt):
             data["alerts"] = self.alerts
         if self.tid:
             data["tid"] = self.tid
+        if hasattr(self, "ident"):
+            data["ident"] = self.ident
         return data
 
     def exit(self, exit_status=0):
