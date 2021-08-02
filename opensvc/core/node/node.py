@@ -95,6 +95,7 @@ ACTIONS_CUSTOM_REMOTE = (
     "logs",
     "ping",
     "events",
+    "daemon_mutex_status",
     "daemon_stats",
     "daemon_status",
     "daemon_blacklist_status",
@@ -3907,6 +3908,41 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def daemon_lock_release(self):
         timeout = convert_duration(self.options.timeout)
         self._daemon_unlock(self.options.name, self.options.id, timeout=timeout)
+
+    def _daemon_mutex(self, server=None):
+        action = "daemon_mutex"
+        return self.daemon_get(
+            {
+                "action": action,
+            },
+            timeout=DEFAULT_DAEMON_TIMEOUT,
+            with_result=True,
+            server=server
+        )
+
+    @formatter
+    def daemon_mutex_status(self):
+        data = self._daemon_mutex(server=self.options.server)
+        status, error, info = self.parse_result(data)
+        if error:
+            raise ex.Error(error)
+        if status != 0:
+            raise ex.Error("api return status %s" % status)
+        mutexes = data['data'].get("mutexes", {})
+        if self.options.format in ("json", "flat_json"):
+            return mutexes
+        from utilities.render.forest import Forest
+        from utilities.render.color import color
+        tree = Forest()
+        node = tree.add_node()
+        node.add_column("name", color.BOLD)
+        node.add_column("detail", color.BOLD)
+        for name in sorted(mutexes.keys()):
+            leaf = node.add_node()
+            lock_info = mutexes[name]
+            leaf.add_column(name, color.BROWN)
+            leaf.add_column(lock_info)
+        print(tree)
 
     def daemon_stats(self, paths=None, node=None):
         if node:

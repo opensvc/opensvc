@@ -246,6 +246,17 @@ class TestNodemgrDaemonActions:
         assert status['listener']['state'] == 'running'
         assert status['scheduler']['state'] == 'running'
 
+        print('daemon mutex status json...')
+        with capture_stdout(tmp_file):
+            assert commands.daemon.main(argv=["mutex", "status", "--format", "json"]) == 0
+        with open(tmp_file, 'r') as status_file:
+            status = json.load(status_file)
+        print(status)
+        assert len(status) > 0, "no mutexes returned"
+        for name, value in status.get_items():
+            assert "unlocked" in value, "'%s' mutex is not unlocked, value: '%s'" % (name, value)
+        assert len([k for k in status.keys() if "logger" in k]) > 0, "no logger in mutexes"
+
         print('daemon status...')
         assert commands.daemon.main(argv=["status", "--debug"]) == 0
 

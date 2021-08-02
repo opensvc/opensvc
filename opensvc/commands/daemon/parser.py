@@ -103,6 +103,9 @@ ACTIONS = {
         "dns_dump": {
             "msg": "Dump the content of the cluster zone.",
         },
+        "mutex_status": {
+            "msg": "Show daemon mutex status.",
+        },
     },
 }
 
