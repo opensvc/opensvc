@@ -4249,8 +4249,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if not self._daemon_running():
             return
         options = {}
-        if self.options.thr_id:
+        if self.options.thr_id is not None:
             options["thr_id"] = self.options.thr_id
+        if self.options.session_id is not None:
+            options["session_id"] = self.options.session_id
         if os.environ.get("OPENSVC_AGENT_UPGRADE"):
             options["upgrade"] = True
         data = self.daemon_post(
@@ -4262,15 +4264,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             print(error, file=sys.stderr)
         if status:
             return data
-        while True:
-            if not self._daemon_running():
-                break
+        if self.options.session_id is not None:
+            # Don't wait for stop when stopping a client session
+            return data
+        while self._daemon_running():
             time.sleep(0.1)
         return data
 
     def daemon_stop(self):
         data = None
-        if self.options.thr_id is None and self.daemon_handled_by_systemd():
+        if self.options.thr_id is None and self.options.session_id is None and self.daemon_handled_by_systemd():
             # 'systemctl restart <osvcunit>' when the daemon has been started
             # manually causes a direct 'om daemon start', which fails,
             # and systemd fallbacks to 'om daemon stop' and leaves the
@@ -4279,8 +4282,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if self.daemon_active_systemd():
                 self.daemon_stop_systemd()
             else:
-                if self._daemon_running():
+                if self.options.session_id is not None or self._daemon_running():
                     data = self._daemon_stop()
+        elif self.options.thr_id is not None and self.options.session_id is not None:
+            raise ex.Error("can't use both --thread-id and --session-id")
         elif self._daemon_running():
             data = self._daemon_stop()
         if data is None:

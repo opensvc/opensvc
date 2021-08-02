@@ -24,10 +24,14 @@ OPT = Storage({
         action="store", dest="secret",
         help="The cluster secret used as the AES key in the cluster "
              "communications."),
+    "session_id": Option(
+        "--session-id", default=None, action="store", dest="session_id",
+        help="Specify an alive daemon listener client session id, as listed:cmd:`om daemon "
+             "status` output."),
     "thr_id": Option(
         "--thread-id", default=None, action="store", dest="thr_id",
         help="Specify a daemon thread, as listed in the :cmd:`om daemon "
-             "status` output."),
+             "status --format <json|flat_json>` output."),
     "timeout": Option(
         "--timeout",
         action="store", dest="time",
@@ -81,9 +85,12 @@ ACTIONS = {
             ],
         },
         "stop": {
-            "msg": "Stop the daemon or a daemon thread pointed by :opt:`--thread-id`.",
+            "msg": ("Stop the daemon or a daemon thread pointed by :opt:`--thread-id`."
+                    " listener clients can be marked for stop with session id `xxx` can be marked for stop using"
+                    " `--thread-id session-id-xxx`."),
             "options": [
                 OPT.thr_id,
+                OPT.session_id,
             ],
         },
         "join": {
