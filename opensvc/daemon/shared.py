@@ -124,6 +124,11 @@ LOCKS_LOCK = RLock()
 RX = queue.Queue()
 RX_LOCK = RLock()
 
+# DEFERRED_STOP_LISTENER_CLIENTS define set of listener client session-id marked to be stopped
+DEFERRED_STOP_LISTENER_CLIENTS = set()
+# DEFERRED_STOP_LISTENER_CLIENTS_LOCK serialize access to DEFERRED_STOP_LISTENER_CLIENTS
+DEFERRED_STOP_LISTENER_CLIENTS_LOCK = threading.RLock()
+
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
@@ -162,6 +167,7 @@ try:
     HB_MSG_LOCK.name = "HB_MSG"
     RUN_DONE_LOCK.name = "RUN_DONE"
     LOCKS_LOCK.name = "LOCKS"
+    DEFERRED_STOP_LISTENER_CLIENTS_LOCK.name = "DEFERRED_STOP_LISTENER_CLIENTS"
 except AttributeError:
     pass
 
@@ -176,6 +182,7 @@ def daemon_mutex_status(log=None):
         "CONFIG": str(CONFIG_LOCK),
         "RUN_DONE": str(RUN_DONE_LOCK),
         "LOCKS": str(LOCKS_LOCK),
+        "DEFERRED_STOP_LISTENER_CLIENTS": str(DEFERRED_STOP_LISTENER_CLIENTS_LOCK),
     }
 
     if log:

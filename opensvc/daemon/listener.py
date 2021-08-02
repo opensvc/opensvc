@@ -6,7 +6,7 @@ import importlib
 import json
 import os
 import pkgutil
-import sys
+
 import socket
 import logging
 import time
@@ -77,6 +77,12 @@ ROUTED_ACTIONS = {
         "backlogs": "object_backlogs",
     },
 }
+
+
+def defer_stop_client(session_id):
+    """add 'session_id' to list of listener clients to be stopped"""
+    with shared.DEFERRED_STOP_LISTENER_CLIENTS_LOCK:
+        shared.DEFERRED_STOP_LISTENER_CLIENTS.add(session_id)
 
 
 class Close(Exception):
@@ -386,6 +392,7 @@ class Listener(shared.OsvcThread):
         if ts > self.last_janitors + JANITORS_INTERVAL:
             self.janitor_crl()
             self.janitor_procs()
+            self.janitor_clients_to_stop()
             self.janitor_threads()
             self.janitor_events()
             self.janitor_relay()
@@ -452,6 +459,26 @@ class Listener(shared.OsvcThread):
             except RuntimeError as exc:
                 self.log.warning(exc)
                 conn.close()
+
+    def janitor_clients_to_stop(self):
+        """
+        tries to stop client handlers that have been added to CLIENT_STOP set
+        cleanup CLIENT_STOP set when done
+        """
+        with shared.DEFERRED_STOP_LISTENER_CLIENTS_LOCK:
+            if len(shared.DEFERRED_STOP_LISTENER_CLIENTS) == 0:
+                return
+            for thr in self.threads:
+                thr_sid = thr.sid
+                if thr_sid not in shared.DEFERRED_STOP_LISTENER_CLIENTS:
+                    continue
+                try:
+                    self.log.info("ask client thread %s to stop", thr_sid)
+                    thr.stop()
+                except:
+                    # not started, or already ended
+                    pass
+            shared.DEFERRED_STOP_LISTENER_CLIENTS.clear()
 
     def janitor_crl(self):
         if not self.tls_sock:
