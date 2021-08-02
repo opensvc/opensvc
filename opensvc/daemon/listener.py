@@ -850,6 +850,8 @@ class ClientHandler(shared.OsvcThread):
             self.usr_auth = None
             self.usr_grants = {}
         self.events_counter = 0
+        self.sid = str(uuid.uuid4())
+
 
     def __str__(self):
         try:
@@ -867,7 +869,6 @@ class ClientHandler(shared.OsvcThread):
     def run(self):
         try:
             close = True
-            self.sid = str(uuid.uuid4())
             self.parent.stats.sessions.alive[self.sid] = Storage({
                 "created": time.time(),
                 "addr": self.addr[0],
