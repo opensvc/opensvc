@@ -15,14 +15,14 @@ class TestStartApp:
         create_args = [
             "-s", svcname,
             "create",
-            "--kw", "start_timeout=1",
+            "--kw", "start_timeout=2",
             "--kw", "app#1.start=%s" % env.Env.syspaths.true,
         ]
         assert Mgr()(argv=create_args) == 0
         begin = time.time()
         exit_code = Mgr()(argv=["-s", svcname, "start", "--local"])
 
-        assert time.time() - begin < 0.5, \
+        assert time.time() - begin < 1.5, \
             "wait for resource status up should return earlier when no checker"
 
         assert exit_code == 0, (
