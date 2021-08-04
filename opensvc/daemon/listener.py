@@ -1506,7 +1506,8 @@ class ClientHandler(shared.OsvcThread):
     def raw_send_result(self, result):
         if result is None:
             return
-        self.parent.stats.sessions.alive[self.sid].progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
+        progress = "sending %s result" % self.parent.stats.sessions.alive[self.sid].progress
+        self.parent.stats.sessions.alive[self.sid].progress = progress
         self.conn.setblocking(True)
         if self.encrypted:
             message = self.encrypt(result)
@@ -1517,9 +1518,9 @@ class ClientHandler(shared.OsvcThread):
                 self.conn.sendall(chunk)
             except socket.error as exc:
                 if exc.errno == EPIPE:
-                    self.log.info(exc)
+                    self.log.info("sendall '%s' while '%s'", exc, progress)
                 else:
-                    self.log.warning(exc)
+                    self.log.warning("sendall '%s' while '%s'", exc, progress)
                 break
         message_len = len(message)
         self.parent.stats.sessions.tx += message_len
