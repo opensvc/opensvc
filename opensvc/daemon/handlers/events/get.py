@@ -83,6 +83,9 @@ class Handler(daemon.handler.BaseHandler):
                 "fn": "h2_push_action_events",
             })
         else:
-            thr.raw_push_action_events()
-
-
+            try:
+                thr.raw_push_action_events()
+            except BlockingIOError as exc:
+                thr.log.info("end client handler 'GET events' on BlockingIOError '%s'", exc)
+            except BrokenPipeError as exc:
+                thr.log.info("end client handler 'GET events' on BrokenPipeError '%s'", exc)
