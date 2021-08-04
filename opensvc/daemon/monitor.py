@@ -3603,7 +3603,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         left = set(self.list_nodes()) - set(self.cluster_nodes)
         for node in left:
             self.log.info("purge left node %s data", node)
-            self.thread_data.unset_safe(["nodes", node])
+            self.delete_peer_data(node)
 
     def update_node_data(self):
         """
@@ -4178,6 +4178,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         change = False
         # self.log.debug("received %s from node %s: current gen %d, our gen local:%s peer:%s",
         #                kind, nodename, current_gen, shared.LOCAL_GEN.get(nodename), our_gen_on_peer) # COMMENT
+
+        if nodename not in self.cluster_nodes + self.cluster_drpnodes:
+            self.log.info("drop %s message from non member node %s", kind, nodename)
+            return change
+
         if kind == "patch":
             if not self.nodes_data.exists([nodename]):
                 # happens during init, or after join. ignore the patch, and ask for a full

@@ -6,7 +6,7 @@ import importlib
 import json
 import os
 import pkgutil
-import sys
+
 import socket
 import logging
 import time
@@ -65,6 +65,7 @@ if six.PY2:
 
 RE_LOG_LINE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-2][0-9]:[0-6][0-9]:[0-6][0-9],[0-9]{3} .* \| ")
 JANITORS_INTERVAL = 0.5
+LSNR_CLIENT_DELAY_AFTER_RESET = 0.1
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
 
 ROUTED_ACTIONS = {
@@ -77,6 +78,12 @@ ROUTED_ACTIONS = {
         "backlogs": "object_backlogs",
     },
 }
+
+
+def defer_stop_client(session_id):
+    """add 'session_id' to list of listener clients to be stopped"""
+    with shared.DEFERRED_STOP_LISTENER_CLIENTS_LOCK:
+        shared.DEFERRED_STOP_LISTENER_CLIENTS.add(session_id)
 
 
 class Close(Exception):
@@ -386,6 +393,7 @@ class Listener(shared.OsvcThread):
         if ts > self.last_janitors + JANITORS_INTERVAL:
             self.janitor_crl()
             self.janitor_procs()
+            self.janitor_clients_to_stop()
             self.janitor_threads()
             self.janitor_events()
             self.janitor_relay()
@@ -452,6 +460,26 @@ class Listener(shared.OsvcThread):
             except RuntimeError as exc:
                 self.log.warning(exc)
                 conn.close()
+
+    def janitor_clients_to_stop(self):
+        """
+        tries to stop client handlers that have been added to CLIENT_STOP set
+        cleanup CLIENT_STOP set when done
+        """
+        with shared.DEFERRED_STOP_LISTENER_CLIENTS_LOCK:
+            if len(shared.DEFERRED_STOP_LISTENER_CLIENTS) == 0:
+                return
+            for thr in self.threads:
+                thr_sid = thr.sid
+                if thr_sid not in shared.DEFERRED_STOP_LISTENER_CLIENTS:
+                    continue
+                try:
+                    self.log.info("ask client thread %s to stop", thr_sid)
+                    thr.stop()
+                except:
+                    # not started, or already ended
+                    pass
+            shared.DEFERRED_STOP_LISTENER_CLIENTS.clear()
 
     def janitor_crl(self):
         if not self.tls_sock:
@@ -850,6 +878,8 @@ class ClientHandler(shared.OsvcThread):
             self.usr_auth = None
             self.usr_grants = {}
         self.events_counter = 0
+        self.sid = str(uuid.uuid4())
+
 
     def __str__(self):
         try:
@@ -867,12 +897,12 @@ class ClientHandler(shared.OsvcThread):
     def run(self):
         try:
             close = True
-            self.sid = str(uuid.uuid4())
             self.parent.stats.sessions.alive[self.sid] = Storage({
                 "created": time.time(),
                 "addr": self.addr[0],
                 "encrypted": self.encrypted,
                 "progress": "init",
+                "ident": self.ident,
             })
             if self.scheme == "h2":
                 self.handle_h2_client()
@@ -884,6 +914,7 @@ class ClientHandler(shared.OsvcThread):
             close = False
         except (OSError, socket.error) as exc:
             if exc.errno in (0, ECONNRESET):
+                time.sleep(LSNR_CLIENT_DELAY_AFTER_RESET)
                 pass
         except RuntimeError as exc:
             self.log.error("%s", exc)
@@ -1174,13 +1205,18 @@ class ClientHandler(shared.OsvcThread):
         query = parse_qs(parsed_path.query)
         method = headers.get(":method", "GET")
         accept = headers.get("accept", "").split(",")
+        sending_progress = "sending %s /%s result" % (method, path)
         if path == "favicon.ico":
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return 200, "image/x-icon", ICON
         elif path in ("", "index.html"):
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index()
         elif path == "index.js":
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index_js()
         elif "text/html" in accept:
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index()
         multiplexed = stream["request_headers"].get(Headers.multiplexed) is not None
         node = stream["request_headers"].get(Headers.node)
@@ -1201,6 +1237,7 @@ class ClientHandler(shared.OsvcThread):
             handler = self.get_handler(method, data["action"])
         except ex.HTTP as exc:
             result = {"status": exc.status, "error": exc.msg}
+            self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return exc.status, content_type, result
 
         try:
@@ -1211,6 +1248,7 @@ class ClientHandler(shared.OsvcThread):
             if handler.access:
                 status = 401
                 result = {"status": status, "error": "Not Authorized"}
+                self.parent.stats.sessions.alive[self.sid].progress = sending_progress
                 return status, content_type, result
 
         try:

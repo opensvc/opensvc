@@ -532,6 +532,7 @@ class Crypt(object):
                 buff = sock.recv(bufsize)
             except SSLError as exc:
                 if exc.errno == ssl.SSL_ERROR_WANT_READ:
+                    time.sleep(PAUSE)
                     continue
                 raise
             break

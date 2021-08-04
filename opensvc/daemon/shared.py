@@ -1,6 +1,7 @@
 """
 A module to share variables used by osvcd threads.
 """
+import logging
 import os
 import sys
 import threading
@@ -123,6 +124,11 @@ LOCKS_LOCK = RLock()
 RX = queue.Queue()
 RX_LOCK = RLock()
 
+# DEFERRED_STOP_LISTENER_CLIENTS define set of listener client session-id marked to be stopped
+DEFERRED_STOP_LISTENER_CLIENTS = set()
+# DEFERRED_STOP_LISTENER_CLIENTS_LOCK serialize access to DEFERRED_STOP_LISTENER_CLIENTS
+DEFERRED_STOP_LISTENER_CLIENTS_LOCK = threading.RLock()
+
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
@@ -161,8 +167,42 @@ try:
     HB_MSG_LOCK.name = "HB_MSG"
     RUN_DONE_LOCK.name = "RUN_DONE"
     LOCKS_LOCK.name = "LOCKS"
+    DEFERRED_STOP_LISTENER_CLIENTS_LOCK.name = "DEFERRED_STOP_LISTENER_CLIENTS"
 except AttributeError:
     pass
+
+
+def daemon_mutex_status(log=None):
+    data = {
+        "JOURNAL": str(DAEMON_STATUS.lock),
+        "THREADS": str(THREADS_LOCK),
+        "NODE": str(NODE_LOCK),
+        "SERVICES": str(SERVICES_LOCK),
+        "HB_MSG": str(HB_MSG_LOCK),
+        "CONFIG": str(CONFIG_LOCK),
+        "RUN_DONE": str(RUN_DONE_LOCK),
+        "LOCKS": str(LOCKS_LOCK),
+        "DEFERRED_STOP_LISTENER_CLIENTS": str(DEFERRED_STOP_LISTENER_CLIENTS_LOCK),
+    }
+
+    if log:
+        # TODO find better way to get log hnadlers locks
+        # logging.PlaceHolder is not in logging public api
+        loggerDict = log.logger.manager.loggerDict
+        logger_keys = list(loggerDict)
+        for k in logger_keys:
+            try:
+                logger_item = loggerDict[k]
+                if not isinstance(logger_item, logging.PlaceHolder):
+                    i = 0
+                    for h in logger_item.handlers:
+                        i += 1
+                        if h.lock:
+                            data["logger[%s]-%d-handler[%s]" % (logger_item.name, i, repr(h))] = str(h.lock)
+            except:
+                # best effort to retrieve logger handlers locks
+                pass
+    return data
 
 
 def wake_heartbeat_tx():
@@ -311,6 +351,8 @@ class OsvcThread(threading.Thread, Crypt):
             data["alerts"] = self.alerts
         if self.tid:
             data["tid"] = self.tid
+        if hasattr(self, "ident"):
+            data["ident"] = self.ident
         return data
 
     def exit(self, exit_status=0):

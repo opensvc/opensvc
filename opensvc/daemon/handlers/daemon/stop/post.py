@@ -2,6 +2,8 @@ import time
 
 import daemon.handler
 import daemon.shared as shared
+from daemon.listener import defer_stop_client
+
 
 class Handler(daemon.handler.BaseHandler):
     """
@@ -18,15 +20,24 @@ class Handler(daemon.handler.BaseHandler):
         {
             "name": "thr_id",
             "required": False,
-            "desc": "The id of a thread to stop. The special value 'tx' causes all tx threads to stop.",
+            "desc": ("The id of a thread to stop. The special value 'tx' causes all tx threads to stop."
+                     " 'thr_id' option can not be used when 'session_id' is used."),
             "example": "hb#1.tx",
+            "format": "string",
+        },
+        {
+            "name": "session_id",
+            "required": False,
+            "desc": ("The session id of a listener client thread to stop (deferred action)."
+                     " option 'session_id' can not be used when option 'thr_id' is used."),
+            "example": "4e4ca91f-fe6d-472f-a7bb-64dd5364a8f1",
             "format": "string",
         },
     ]
 
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
-        if not options.thr_id:
+        if options.thr_id is None and options.session_id is None:
             thr.log_request("stop daemon", nodename, **kwargs)
             if options.get("upgrade"):
                 thr.set_nmon(status="upgrade")
@@ -36,6 +47,12 @@ class Handler(daemon.handler.BaseHandler):
                 thr.log.info("announce maintenance state")
             time.sleep(5)
             shared.DAEMON_STOP.set()
+            return {"status": 0}
+        if options.thr_id is not None and options.session_id is not None:
+            return {"error": "can't use both 'thr_id' and 'session_id' options in same call", "status": 1}
+        elif options.session_id is not None:
+            if options.session_id:
+                defer_stop_client(options.session_id)
             return {"status": 0}
         elif options.thr_id == "tx":
             thr_ids = [thr_id for thr_id in shared.THREADS.keys() if thr_id.endswith("tx")]
@@ -60,4 +77,3 @@ class Handler(daemon.handler.BaseHandler):
                 with shared.THREADS_LOCK:
                     shared.THREADS[thr_id].join()
         return {"status": 0}
-
