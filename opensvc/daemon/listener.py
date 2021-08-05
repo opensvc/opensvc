@@ -1387,11 +1387,6 @@ class ClientHandler(shared.OsvcThread):
                 pass
             except socket.timeout:
                 pass
-            except socket.error as exc:
-                if exc.errno in (0, ECONNRESET):
-                    continue
-                self.log.error("%s", exc)
-                return
             except h2.exceptions.StreamClosedError:
                 return
             except ConnectionResetError:
