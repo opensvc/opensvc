@@ -3792,6 +3792,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         # merge node monitors
         local_frozen = self.node_data.get(["frozen"], default=0)
+        global_expects = set()
+        logged_global_expects = set()
         for nodename in nodenames:
             try:
                 nmon = self.get_node_monitor(nodename)
@@ -3801,12 +3803,21 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             if global_expect is None:
                 continue
+            global_expects.add(global_expect)
             if (global_expect == "frozen" and not local_frozen) or \
                (global_expect == "thawed" and local_frozen):
-                self.log.info("node %s wants local node %s", nodename, global_expect)
+                if global_expect not in logged_global_expects:
+                    logged_global_expects.add(global_expect)
+                    self.log.info("node %s wants local node %s", nodename, global_expect)
+        if len(global_expects) == 1:
+            global_expect = global_expects.pop()
+            if (global_expect == "frozen" and not local_frozen) or \
+                    (global_expect == "thawed" and local_frozen):
+                self.log.info("peers wants local node %s", global_expect)
                 self.set_nmon(global_expect=global_expect)
-            # else:
-            #     self.log.info("node %s wants local node %s, already is", nodename, global_expect)
+        elif len(global_expects) > 1:
+                self.log.info("wait for node global expect consensus amongst peers (%s)",
+                              ",".join(global_expects))
 
         # merge every service monitors
         for path, instance in self.iter_local_services_instances():
