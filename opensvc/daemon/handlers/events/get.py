@@ -83,6 +83,8 @@ class Handler(daemon.handler.BaseHandler):
                 "fn": "h2_push_action_events",
             })
         else:
-            thr.raw_push_action_events()
-
-
+            try:
+                thr.raw_push_action_events()
+            except OSError as exc:
+                # example: BlockingIOError, BrokenPipeError
+                thr.log.info("end client handler 'GET events' on '%s'", exc)
