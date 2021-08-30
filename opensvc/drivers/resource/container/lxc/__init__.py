@@ -449,7 +449,7 @@ class ContainerLxc(BaseContainer):
         except (OSError, IOError):
             # errno 17: file exists
             pass
-        paths = [path]
+        paths = []
         while path != ppath:
             path = os.path.dirname(path)
             paths.append(path)
@@ -460,6 +460,8 @@ class ContainerLxc(BaseContainer):
                     continue
                 if current_val == "":
                     parent_val = self.get_sysfs(ppath, parm)
+                    if parent_val is None:
+                        raise ex.Error("failed to read %s/%s" % (ppath, parm))
                     self.set_sysfs(path, parm, parent_val)
             parm = "cgroup.clone_children"
             current_val = self.get_sysfs(path, parm)
@@ -496,9 +498,16 @@ class ContainerLxc(BaseContainer):
             except Exception as exc:
                 self.log.debug("failed to remove leftover cgroup %s: %s", path, str(exc))
 
+    def create_pg(self):
+        """
+        Disable the normal create_pg(), so we can schedule it after set_cpuset_clone_children().
+        """
+        pass
+
     def container_start(self):
         self.cleanup_cgroup()
         self.set_cpuset_clone_children()
+        super(ContainerLxc, self).create_pg()
         self.install_cf()
         self.lxc('start')
 
