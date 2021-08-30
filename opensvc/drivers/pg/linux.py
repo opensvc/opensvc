@@ -342,7 +342,7 @@ def create_cgroup(cgp, log=None):
             pass
         else:
             raise
-    set_sysfs(cgp+"/cgroup.clone_children", "1")
+    set_sysfs(cgp+"/cgroup.clone_children", "1", log=log)
     for parm in ("cpus", "mems"):
         parent_val = get_sysfs(cgp+"/../cpuset."+parm)
         set_sysfs(cgp+"/cpuset."+parm, parent_val, log=log)
@@ -355,6 +355,8 @@ def get_sysfs(path):
         return
 
 def set_sysfs(path, val, log=None):
+    if val is None:
+        return
     current_val = get_sysfs(path)
     if current_val is None:
         return
