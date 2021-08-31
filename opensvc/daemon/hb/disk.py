@@ -15,6 +15,7 @@ import core.exceptions as ex
 from env import Env
 from .hb import Hb
 from utilities.string import bdecode
+#from utilities.converters import print_duration
 
 class HbDisk(Hb):
     """
@@ -228,15 +229,21 @@ class HbDiskTx(HbDisk):
             self.stop()
             self.exit(1)
 
-        try:
-            while True:
+        while True:
+            try:
                 self.do()
-                if self.stopped():
-                    self.exit()
-                with shared.HB_TX_TICKER:
-                    shared.HB_TX_TICKER.wait(self.interval)
-        except Exception as exc:
-            self.log.exception(exc)
+            except ex.AbortAction as exc:
+                self.log.error(exc)
+                self.set_last(success=False)
+                self.set_beating()
+            except Exception as exc:
+                self.log.exception(exc)
+                self.set_last(success=False)
+                self.set_beating()
+            if self.stopped():
+                self.exit()
+            with shared.HB_TX_TICKER:
+                shared.HB_TX_TICKER.wait(self.interval)
 
     def do(self):
         self.janitor_procs()
@@ -291,15 +298,22 @@ class HbDiskRx(HbDisk):
 
         loop = 0
         while True:
-            loop += 1
-            if loop > 5:
-                loop = 0
-                missing = self.missing_peers()
-                if missing:
-                    self.log.info("reload slots for missing peers: %s", ", ".join(missing))
-                    with self.hb_fo() as fo:
-                        self.load_peer_config(fo=fo)
-            self.do()
+            try:
+                loop += 1
+                if loop > 5:
+                    loop = 0
+                    missing = self.missing_peers()
+                    if missing:
+                        self.log.info("reload slots for missing peers: %s", ", ".join(missing))
+                        with self.hb_fo() as fo:
+                            self.load_peer_config(fo=fo)
+                self.do()
+            except ex.AbortAction as exc:
+                self.log.error(exc)
+                self.set_peers_beating()
+            except Exception as exc:
+                self.log.exception("%s", exc)
+                self.set_peers_beating()
             if self.stopped():
                 self.exit()
             with shared.HB_TX_TICKER:
@@ -347,15 +361,16 @@ class HbDiskRx(HbDisk):
                 last_updated = self.last_updated.get(nodename)
                 if last_updated is not None and last_updated == updated:
                     # remote tx has not rewritten its slot
-                    #self.log.info("node %s has not updated its slot", nodename)
+                    #self.log.info("node %s has not updated its slot (age: %s)", nodename, print_duration(time.time()-updated))
                     continue
                 if updated < time.time() - self.timeout:
                     # discard too old dataset
+                    #self.log.info("node %s has a too old dataset (age: %s)", nodename, print_duration(time.time()-updated))
                     continue
-                self.last_updated[nodename] = updated
                 self.queue_rx_data(_data, nodename)
                 self.push_stats(len(slot_data))
                 self.set_last(nodename)
+                self.last_updated[nodename] = updated
             except Exception as exc:
                 self.push_stats()
                 if self.get_last(nodename).success:
