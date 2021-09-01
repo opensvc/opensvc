@@ -25,6 +25,8 @@ KillMode=process
 Restart=on-failure
 OOMScoreAdjust=-1000
 PIDFile=/var/lib/opensvc/osvcd.pid
+Delegate=yes
+Slice=opensvc.slice
 
 [Install]
 WantedBy=multi-user.target
