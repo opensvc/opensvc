@@ -434,7 +434,7 @@ def apiretry(func):
                         data = r.json()
                     except Exception:
                         data = {}
-                    self.dump(func.__name__, uri, status=r.status_code, _result=data, **kwargs)
+                    #self.dump(func.__name__, uri, status=r.status_code, _result=data, **kwargs)
                 self.log.info("  response status %d: %s (%s)" % (r.status_code, desc, uri), {"f_stream": False})
                 time.sleep(delay)
                 continue
