@@ -443,26 +443,20 @@ class OsvcThread(threading.Thread, Crypt):
                 # subprocess.Popen()
                 ret = lambda: data.proc.returncode
                 poll = lambda: data.proc.poll()
-                comm = lambda: data.proc.communicate()
                 kill = lambda: data.proc.kill()
             else:
                 # multiprocessing.Process()
                 ret = lambda: data.proc.exitcode
-                poll = lambda: None
-                comm = lambda: None
+                poll = lambda: data.proc.is_alive()
                 kill = lambda: data.proc.terminate()
             try:
                 kill()
             except ProcessLookupError:  # pylint: disable=undefined-variable
                 continue
             for _ in range(self.stop_tmo):
+                poll()
                 exit_code = ret()
                 if exit_code is not None:
-                    comm()
-                    poll()
-                    break
-                elif exit_code is not None and exit_code < 0:
-                    # avoid wait on defunct process
                     break
                 time.sleep(1)
 
