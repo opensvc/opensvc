@@ -591,7 +591,7 @@ class OsvcThread(threading.Thread, Crypt):
                 continue
         return False
 
-    def set_nmon(self, status=None, local_expect=None, global_expect=None):
+    def set_nmon(self, status=None, local_expect=None, global_expect=None, global_expect_updated_origin=None):
         changed = False
         nmon = self.get_node_monitor()
         if status:
@@ -633,6 +633,7 @@ class OsvcThread(threading.Thread, Crypt):
                 changed = True
                 nmon.global_expect = global_expect
                 nmon.global_expect_updated = time.time()
+                nmon.global_expect_updated_origin = global_expect_updated_origin or time.time()
 
         if changed:
             self.node_data.set(["monitor"], nmon)

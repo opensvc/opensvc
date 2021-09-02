@@ -3785,28 +3785,40 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         Set the global expect received through heartbeats as local expect, if
         the service instance is not already in the expected status.
         """
-        nodenames = self.list_nodes()
-        if Env.nodename not in nodenames:
+        other_nodenames = self.list_nodes()
+        if Env.nodename not in other_nodenames:
             return
-        nodenames.remove(Env.nodename)
+        other_nodenames.remove(Env.nodename)
 
-        # merge node monitors
+        # merge node monitors, only select most recent not None global_expect
         local_frozen = self.node_data.get(["frozen"], default=0)
-        for nodename in nodenames:
+        local_global_expect = self.node_data.get(["monitor", "global_expect"], default=None)
+        if local_global_expect is not None:
+            global_expect = local_global_expect
+            global_expect_updated_origin = self.node_data.get(["monitor", "global_expect_updated_origin"], default=0)
+        else:
+            global_expect = None
+            global_expect_updated_origin = 0
+        global_expect_source_node = None
+        for nodename in other_nodenames:
             try:
-                nmon = self.get_node_monitor(nodename)
-                global_expect = nmon.global_expect
+                remote = self.get_node_monitor(nodename)
+                remote_global_expect = remote.global_expect
+                remote_global_expect_updated_origin = remote.global_expect_updated_origin or 0
             except KeyError:
                 # sender daemon is outdated
                 continue
-            if global_expect is None:
-                continue
-            if (global_expect == "frozen" and not local_frozen) or \
-               (global_expect == "thawed" and local_frozen):
-                self.log.info("node %s wants local node %s", nodename, global_expect)
-                self.set_nmon(global_expect=global_expect)
-            # else:
-            #     self.log.info("node %s wants local node %s, already is", nodename, global_expect)
+            if remote_global_expect in ["frozen", "thawed"] and remote_global_expect_updated_origin > global_expect_updated_origin:
+                global_expect = remote_global_expect
+                global_expect_updated_origin = remote_global_expect_updated_origin
+                global_expect_source_node = nodename
+
+        if local_global_expect != global_expect and \
+                ((global_expect == "frozen" and not local_frozen) or
+                 (global_expect == "thawed" and local_frozen)):
+            self.log.info("node %s wants local node %s", global_expect_source_node, global_expect)
+            # Preserve global_expect_updated_origin
+            self.set_nmon(global_expect=global_expect, global_expect_updated_origin=global_expect_updated_origin)
 
         # merge every service monitors
         for path, instance in self.iter_local_services_instances():
@@ -3816,7 +3828,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if smon.global_expect == "aborted":
                 # refuse a new global expect if aborting
                 continue
-            for nodename in nodenames:
+            for nodename in other_nodenames:
                 rinstance = self.get_service_instance(path, nodename)
                 if rinstance is None:
                     continue
