@@ -605,7 +605,6 @@ class OsvcThread(threading.Thread, Crypt):
                 changed = True
                 nmon.status = status
                 nmon.status_updated = time.time()
-                nmon.global_expect_updated = time.time()
 
         if local_expect:
             if local_expect == "unset":
