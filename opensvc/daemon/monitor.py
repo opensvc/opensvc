@@ -3410,16 +3410,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return True
 
     def set_nmon_g_expect_from_status(self):
-        nmon = self.get_node_monitor()
-        if nmon.global_expect is None:
+        global_expect = self.get_node_monitor().global_expect
+        if global_expect is None:
             return
-        if nmon.global_expect == "frozen" and self.all_nodes_frozen():
-            self.log.info("node global expect is %s and is frozen",
-                          nmon.global_expect)
+        if global_expect == "frozen" and self.all_nodes_frozen():
+            self.log.info("node global expect %s is now reached on all nodes",
+                          global_expect)
             self.set_nmon(global_expect="unset")
-        elif nmon.global_expect == "thawed" and self.all_nodes_thawed():
-            self.log.info("node global expect is %s and is thawed",
-                          nmon.global_expect)
+        elif global_expect == "thawed" and self.all_nodes_thawed():
+            self.log.info("node global expect %s is now reached on all nodes",
+                          global_expect)
             self.set_nmon(global_expect="unset")
 
     def set_smon_g_expect_from_status(self, path, smon, status):
