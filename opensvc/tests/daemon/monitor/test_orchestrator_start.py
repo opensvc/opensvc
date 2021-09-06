@@ -81,6 +81,12 @@ orchestrate = ha""" % str_uuid(),
     "s3-prio-7": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 7"]),
     "s2-prio-8": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 8"]),
     "s1-prio-9": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 9"]),
+
+    "restart-0": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag"]),
+    "restart-1": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 1"]),
+    "restart-2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 2"]),
+    "restart-3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 3"]),
+
 }
 
 
@@ -196,6 +202,14 @@ class MonitorTest(object):
             self.log('COMMENT: ASSERT %s has been called', call_element)
             assert call_element in self.service_command.call_args_list
 
+    def assert_a_command_has_been_launched_x_times(self, call, count):
+        found = 0
+        self.log('COMMENT: ASSERT %s has been called %d times', call, count)
+        for called_element in self.service_command.call_args_list:
+            if call == called_element:
+                found = found + 1
+        assert found == count, "found %s calls" % self.service_command.call_args_list
+
     def assert_command_has_not_been_launched(self, call_list):
         for call_element in call_list:
             self.log('COMMENT: ASSERT %s has not been called', call_element)
@@ -218,6 +232,7 @@ class MonitorTest(object):
             topology="failover",
             frozen=0,
             flex_min=None,
+            resources=None,
     ):
         if not os.path.exists(svc_pathvar(path)):
             os.makedirs(svc_pathvar(path))
@@ -243,6 +258,9 @@ class MonitorTest(object):
         if "prio-" in path:
             priority = int(path[path.find("prio-") + 5:])
             status['priority'] = priority
+
+        if resources:
+            status["resources"] = resources
 
         self.log("\nCOMMENT: create %s status.json, with %s", path, status)
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
@@ -715,3 +733,90 @@ class TestMonitorOrchestratorStart(object):
                 ])
                 monitor_test.create_service_status(svc, status="up", overall="up")
             assert monitor_test.service_command.call_count == count
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('has_node_config')
+@pytest.mark.usefixtures('shared_data')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('has_cluster_config')
+@pytest.mark.usefixtures('wait_listener')
+@pytest.mark.usefixtures('get_boot_id')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('popen_communicate')
+class TestMonitorOrchestratorResourcesOrchestrate(object):
+    @staticmethod
+    @pytest.mark.parametrize("restart", [0, 1, 2, 3])
+    def test_monitor_ensure_restart_is_called_x_times_when_rid_failure_is_detected(
+            mocker,
+            restart
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "restart-%s" % restart
+        monitor_test.create_svc_config(svc)
+        monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
+            "status": "down",
+            "type": "fs.flag",
+            "label": "fs.flag",
+            "provisioned": {
+                "state": True,
+                "mtime": time.time()
+            },
+            "monitor": True,
+        }})
+        for _ in range(10):
+            monitor_test.do()
+
+        monitor_test.assert_command_has_not_been_launched([
+            call(svc, ["start"]),
+        ])
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), restart)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == restart + 1
+
+    @staticmethod
+    def test_monitor_ensure_retry_count_is_reset_when_a_restart_succeed_after_rid_failure(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "restart-3"
+        monitor_test.create_svc_config(svc)
+
+        def create_service_status(status):
+            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
+                "status": status,
+                "type": "fs.flag",
+                "label": "fs.flag",
+                "provisioned": {
+                    "state": True,
+                    "mtime": time.time()
+                },
+                "monitor": True,
+            }})
+
+        monitor_test.log('COMMENT: ensure some restart is tried')
+        create_service_status("down")
+        for _ in range(2):
+            monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 2
+
+        monitor_test.log('COMMENT: ensure no more restart is tried, when rid is restarted successfully')
+        create_service_status("up")
+        for _ in range(10):
+            monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 0
+
+        monitor_test.log('COMMENT: ensure restart is retried after new failure detected')
+        create_service_status("down")
+        for _ in range(10):
+            monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2 + 3)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 4
