@@ -1732,12 +1732,16 @@ class OsvcThread(threading.Thread, Crypt):
 
     @staticmethod
     def data_without_non_updated_gens(data):
-        """Return data without non updated gen"""
+        """Return data without non updated gen
+        when our gen information is not yet part of remote node gens, return original data
+        """
         local_node = Env.nodename
         for other_node in [n for n in data.get("monitor", {"nodes": {}})["nodes"].keys() if n != local_node]:
-            if "gen" in data["monitor"]["nodes"][other_node]:
+            other_node_gens = data["monitor"]["nodes"][other_node].get("gen", {})
+            # Only filter remote node known gens when local node gen is known by remote
+            if local_node in other_node_gens:
                 data["monitor"]["nodes"][other_node]["gen"] = {
-                    local_node: data["monitor"]["nodes"][other_node]["gen"][local_node]
+                    local_node: other_node_gens[local_node]
                 }
         return data
 
