@@ -3339,6 +3339,11 @@ class Svc(PgMixin, BaseSvc):
             kwargs['restart'] = resource.restart if hasattr(resource, "restart") else False
 
         try:
+            kwargs['restart_delay'] = self.conf_get(pr_rid, "restart_delay")
+        except ex.OptNotFound:
+            kwargs['restart_delay'] = resource.restart_delay if hasattr(resource, "restart_delay") else 0
+
+        try:
             kwargs['monitor'] = self.conf_get(pr_rid, "monitor")
         except ex.OptNotFound:
             kwargs['monitor'] = resource.monitor
