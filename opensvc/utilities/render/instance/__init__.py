@@ -25,7 +25,11 @@ def fmt_flags(resource, idata):
 
     rid = resource.get("rid")
     restart = resource.get("restart", 0)
-    retries = idata.get("monitor", {}).get("restart", {}).get(rid, 0)
+    i_restart = idata.get("monitor", {}).get("restart", {}).get(rid, {})
+    if isinstance(i_restart, dict):
+        retries = i_restart.get("retries", 0)
+    else:  # fallback on non restart_delay support
+        retries = i_restart
     if not isinstance(restart, int) or restart < 1:
         restart_flag = "."
     else:
