@@ -1083,6 +1083,7 @@ class Resource(object):
           ["shared", str(self.shared).lower()],
           ["encap", str(self.encap).lower()],
           ["restart", str(self.nb_restart)],
+          ["restart_delay", str(self.restart_delay)],
         ]
         if self.subset:
             data.append(["subset", self.subset])
