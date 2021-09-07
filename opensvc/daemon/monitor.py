@@ -1495,7 +1495,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         "resource": resource,
                         "restart": nb_restart,
                     })
-                self.inc_smon_retries(svc.path, rid)
+                self.inc_smon_retries(svc.path, rid, retries=retries)
                 if resource.get("monitor"):
                     candidates = self.placement_candidates(svc)
                     if candidates != [Env.nodename] and len(candidates) > 0:
@@ -1525,7 +1525,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     })
                     return False
             else:
-                self.inc_smon_retries(svc.path, rid)
+                try:
+                    restart_delay = svc.get_resource(rid, with_encap=True).restart_delay
+                except AttributeError:
+                    restart_delay = 0
+                if restart_delay and (time.time() - self.get_smon_retries_updated(svc.path, rid)) < restart_delay:
+                    return False
+                self.inc_smon_retries(svc.path, rid, retries=retries)
                 self.event("resource_restart", {
                     "path": svc.path,
                     "rid": rid,
@@ -1549,7 +1555,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if retries > nb_restart:
                 return False
             if retries >= nb_restart:
-                self.inc_smon_retries(svc.path, rid)
+                self.inc_smon_retries(svc.path, rid, retries=retries)
                 self.event("max_stdby_resource_restart", {
                     "path": svc.path,
                     "rid": rid,
@@ -1557,7 +1563,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     "restart": nb_restart,
                 })
                 return False
-            self.inc_smon_retries(svc.path, rid)
+            self.inc_smon_retries(svc.path, rid, retries=retries)
             self.event("stdby_resource_restart", {
                 "path": svc.path,
                 "rid": rid,
@@ -1599,7 +1605,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.service_startstandby_resources(svc.path, stdby_rids)
 
         # same for encap resources
-        rids = []
         for crid, cdata in instance.get("encap", {}).items():
             if cdata.get("frozen"):
                 continue
@@ -3384,16 +3389,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.node_data.unset_safe(["services", "status", path, "monitor", "restart", rid])
 
     def get_smon_retries(self, path, rid):
-        return self.node_data.get(["services", "status", path, "monitor", "restart", rid], default=0)
+        return self.node_data.get(["services", "status", path, "monitor", "restart", rid, "retries"], default=0)
 
-    def inc_smon_retries(self, path, rid):
+    def get_smon_retries_updated(self, path, rid):
+        return self.node_data.get(["services", "status", path, "monitor", "restart", rid, "updated"], default=0)
+
+    def inc_smon_retries(self, path, rid, retries=0):
         smon = self.get_service_monitor(path)
         if not smon:
             return
-        try:
-            self.node_data.inc(["services", "status", path, "monitor", "restart", rid])
-        except TypeError:
-            self.node_data.merge(["services", "status", path, "monitor"], {"restart": {rid: 1}})
+        restart = {"retries": retries + 1, "updated": time.time()}
+        self.node_data.merge(["services", "status", path, "monitor"], {"restart": {rid: restart}})
 
     def all_nodes_frozen(self):
         for nodename in self.list_nodes():

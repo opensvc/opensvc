@@ -87,6 +87,9 @@ orchestrate = ha""" % str_uuid(),
     "restart-2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 2"]),
     "restart-3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 3"]),
 
+    "restart-delay": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 3", "restart_delay = 1s"]),
+
+    "restart-toc": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "monitor = true", "[fs#1]", "type = flag", "restart = 3",]),
 }
 
 
@@ -766,7 +769,6 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
                 "state": True,
                 "mtime": time.time()
             },
-            "monitor": True,
         }})
         for _ in range(10):
             monitor_test.do()
@@ -797,7 +799,6 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
                     "state": True,
                     "mtime": time.time()
                 },
-                "monitor": True,
             }})
 
         monitor_test.log('COMMENT: ensure some restart is tried')
@@ -820,3 +821,123 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
             monitor_test.do()
         monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2 + 3)
         assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 4
+
+    @staticmethod
+    def test_monitor_respect_restart_delay_before_restart_rid_failure(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "restart-delay"
+        monitor_test.create_svc_config(svc)
+
+        def create_service_status(status):
+            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
+                "status": status,
+                "type": "fs.flag",
+                "label": "fs.flag",
+                "provisioned": {
+                    "state": True,
+                    "mtime": time.time()
+                },
+            }})
+        monitor_test.log('')
+        monitor_test.log('COMMENT: set do max_shortloops to 0 for full do()')
+
+        monitor_test.monitor.max_shortloops = 0
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: ensure 1st restart is tried without delay')
+        create_service_status("down")
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 1)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 1
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: ensure no other restarts before delay')
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 1)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 1
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: ensure restart if delay reached')
+        monitor_test.monitor.node_data.set(["services", "status", svc, "monitor", "restart", "fs#1", "updated"],
+                                           time.time() - 4)
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 2
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: ensure no other restart tries before delay')
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 2)
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: delay reached now')
+        monitor_test.monitor.node_data.set(["services", "status", svc, "monitor", "restart", "fs#1", "updated"],
+                                           time.time() - 4)
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 3)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 3
+
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 3)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 4, "max retries is not reached !"
+
+    @staticmethod
+    def test_monitor_toc_monitored_object_with_failed_rids(
+            mocker,
+    ):
+        mocker.patch.object(Monitor, 'placement_candidates', return_value=["other_node1"])
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "restart-toc"
+        monitor_test.create_svc_config(svc)
+
+        def create_service_status(status):
+            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
+                "status": status,
+                "type": "fs.flag",
+                "label": "fs.flag",
+                "provisioned": {
+                    "state": True,
+                    "mtime": time.time()
+                },
+                "monitor": True,
+            }})
+        monitor_test.log('')
+        monitor_test.log('COMMENT: set do max_shortloops to 0 for full do()')
+
+        monitor_test.monitor.max_shortloops = 0
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: ensure restart retries until max restarts reached')
+        create_service_status("down")
+        for i in [1, 2, 3]:
+            monitor_test.do()
+            monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), i)
+            assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == i
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: max retries reached, expect service toc now')
+        monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1']), 3)
+        assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 4
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['toc']), 1)
+        assert monitor_test.monitor.node_data.get(["services", "status", svc, "monitor", "status"]) == "tocing"
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: expect no other toc after max retries exceed restart')
+        for _ in range(4):
+            monitor_test.do()
+            monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['toc']), 1)
+            assert monitor_test.monitor.node_data.get(["services", "status", svc, "monitor", "status"]) == "idle"

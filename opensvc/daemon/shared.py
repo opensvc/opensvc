@@ -215,7 +215,7 @@ def wake_heartbeat_tx():
 
 def wake_monitor(reason="unknown", immediate=False):
     """
-    Notify the monitor thread to do they periodic job immediatly
+    Notify the monitor thread to do they periodic job immediately
     """
     global MON_CHANGED
     if immediate and reason:
