@@ -41,6 +41,9 @@ def get_subset(svc, section, impersonate=None):
 def get_restart(svc, section, impersonate=None):
     return svc.oget(section, "restart", impersonate=impersonate)
 
+def get_restart_delay(svc, section, impersonate=None):
+    return svc.oget(section, "restart_delay", impersonate=impersonate)
+
 def get_disabled(svc, section, impersonate=None):
     return svc.oget(section, "disable", impersonate=impersonate)
 
@@ -108,6 +111,7 @@ def add_resource(svc, driver_group, s):
             "encap": encap,
             "subset": svc.oget(s, "subset", impersonate=enode),
             "nb_restart": get_restart(svc, s, impersonate=enode),
+            "restart_delay": get_restart_delay(svc, s, impersonate=enode),
             "monitor": get_monitor(svc, s, impersonate=enode),
             "disabled": get_disabled(svc, s, impersonate=enode),
         })
