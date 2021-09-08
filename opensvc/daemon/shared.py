@@ -62,7 +62,7 @@ DAEMON_STATUS = OsvcJournaledData()
 COMPAT_VERSION = 10
 
 # expose api handlers version
-API_VERSION = 6
+API_VERSION = 7
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
