@@ -1474,6 +1474,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             # self.log.info("resource %s orchestrator out (disabled)", svc.path)
             return
 
+        def is_delayed_restart(rid):
+            try:
+                restart_delay = svc.get_resource(rid, with_encap=True).restart_delay
+            except AttributeError:
+                return False
+            if not restart_delay:
+                return False
+            if time.time() - self.get_smon_retries_updated(svc.path, rid) < restart_delay:
+                return True
+            return False
+
         def monitored_resource(svc, rid, resource, smon):
             if resource.get("disable"):
                 return False
@@ -1524,13 +1535,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         "resource": resource,
                     })
                     return False
+            elif is_delayed_restart(rid):
+                return False
             else:
-                try:
-                    restart_delay = svc.get_resource(rid, with_encap=True).restart_delay
-                except AttributeError:
-                    restart_delay = 0
-                if restart_delay and (time.time() - self.get_smon_retries_updated(svc.path, rid)) < restart_delay:
-                    return False
                 self.inc_smon_retries(svc.path, rid, retries=retries)
                 self.event("resource_restart", {
                     "path": svc.path,
@@ -1554,7 +1561,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False
-            if retries >= nb_restart:
+            elif retries >= nb_restart:
                 self.inc_smon_retries(svc.path, rid, retries=retries)
                 self.event("max_stdby_resource_restart", {
                     "path": svc.path,
@@ -1563,6 +1570,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     "restart": nb_restart,
                 })
                 return False
+            elif is_delayed_restart(rid):
+                return
+
             self.inc_smon_retries(svc.path, rid, retries=retries)
             self.event("stdby_resource_restart", {
                 "path": svc.path,

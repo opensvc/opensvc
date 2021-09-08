@@ -853,8 +853,7 @@ KEYWORDS = [
                 "If a resource has a restart set to a value >0, its status is evaluated "
                 "at the frequency defined by :kw:`DEFAULT.monitor_schedule` "
                 "instead of the frequency defined by :kw:`DEFAULT.status_schedule`. "
-                "Non standby resources can also define :kw:`restart_delay` to define a minimum delay to wait before "
-                "next resource restart. "
+                ":kw:`restart_delay` defines the interval between two restarts. "
                 "Standby resources have a particular value to ensure best effort to restart standby resources, "
                 "default value is 2, and value lower than 2 are changed to 2."
     },
@@ -865,8 +864,7 @@ KEYWORDS = [
         "at": True,
         "default": 0,
         "convert": "duration",
-        "text": "Define minimum delay between two triggered restarts of a same resource (used when :kw:`restart`is defined)."
-                "It is only used on non standby resources. "
+        "text": "Define minimum delay between two triggered restarts of a same resource (used when :kw:`restart`is defined). "
                 "Default value is 0 (no delay)."
     },
     {

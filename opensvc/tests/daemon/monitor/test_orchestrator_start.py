@@ -82,14 +82,24 @@ orchestrate = ha""" % str_uuid(),
     "s2-prio-8": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 8"]),
     "s1-prio-9": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "priority = 9"]),
 
-    "restart-0": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag"]),
-    "restart-1": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 1"]),
-    "restart-2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 2"]),
-    "restart-3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 3"]),
+    "restart-0": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                            "[fs#1]", "type = flag"]),
+    "restart-1": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                            "[fs#1]", "type = flag", "restart = 1"]),
+    "restart-2": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                            "[fs#1]", "type = flag", "restart = 2"]),
+    "restart-3": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                            "[fs#1]", "type = flag", "restart = 3"]),
+    "restart-3-stdby": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                                  "[fs#1]", "type = flag", "restart = 3", "standby = True"]),
 
-    "restart-delay": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "[fs#1]", "type = flag", "restart = 3", "restart_delay = 1s"]),
+    "restart-delay": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                                "[fs#1]", "type = flag", "restart = 3", "restart_delay = 1s"]),
+    "restart-delay-stdby": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+                                      "[fs#1]", "type = flag", "restart = 3", "restart_delay = 1s", "standby = true"]),
 
-    "restart-toc": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "monitor = true", "[fs#1]", "type = flag", "restart = 3",]),
+    "restart-toc": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha", "monitor = true",
+                              "[fs#1]", "type = flag", "restart = 3"]),
 }
 
 
@@ -121,8 +131,8 @@ def last_boot_id(mocker, osvc_path_tests):
 
 @pytest.fixture(scope='function')
 def popen_communicate(mocker):
+    mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
     return mocker.patch.object(Popen, 'communicate', return_value=("", ""))
-    return mocker.patch.object(Asset, 'get_boot_id', return_value=boot_id)
 
 
 @pytest.fixture(scope='function')
@@ -265,7 +275,7 @@ class MonitorTest(object):
         if resources:
             status["resources"] = resources
 
-        self.log("\nCOMMENT: create %s status.json, with %s", path, status)
+        self.log("\nCOMMENT: create %s status.json, with %s", path, json.dumps(status, indent=2))
         open(svc_pathvar(path, "status.json"), 'w').write(json.dumps(status))
         post_object_status(thr=self.monitor, path=path, status=status)
 
@@ -526,7 +536,7 @@ class TestMonitorOrchestratorStart(object):
                                                        frozen=0)
         else:
             monitor_test.assert_command_has_not_been_launched([
-                call(svcname, ["start",]),
+                call(svcname, ["start"]),
             ])
 
         monitor_test.do()
@@ -540,7 +550,7 @@ class TestMonitorOrchestratorStart(object):
             monitor_test.assert_smon_status(svcname, final_status)
             if '/no start/' in title:
                 monitor_test.assert_command_has_not_been_launched([
-                    call(svcname, ["start",]),
+                    call(svcname, ["start"]),
                 ])
             if '/has start/' in title:
                 log("COMMENT: no more service command has been launched: count=%s",
@@ -738,6 +748,29 @@ class TestMonitorOrchestratorStart(object):
             assert monitor_test.service_command.call_count == count
 
 
+def _resources(status, standby=False, monitor=False):
+    """
+    test helper that prepare resources data for fs#1 with standby and monitor
+    for create_service_status()
+    """
+    resources = {
+        "fs#1": {
+            "status": "stdby %s" % status if standby else status,
+            "type": "fs.flag",
+            "label": "fs.flag",
+            "provisioned": {
+                "state": True,
+                "mtime": time.time()
+            }
+        }
+    }
+    if standby:
+        resources["fs#1"]["standby"] = True
+    if monitor:
+        resources["fs#1"]["monitor"] = True
+    return resources
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('osvc_path_tests')
 @pytest.mark.usefixtures('has_node_config')
@@ -761,15 +794,7 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
         monitor_test.monitor._lazy_ready_period = 0.001
         svc = "restart-%s" % restart
         monitor_test.create_svc_config(svc)
-        monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
-            "status": "down",
-            "type": "fs.flag",
-            "label": "fs.flag",
-            "provisioned": {
-                "state": True,
-                "mtime": time.time()
-            },
-        }})
+        monitor_test.create_service_status(svc, status="up", overall="up", resources=_resources("down"))
         for _ in range(10):
             monitor_test.do()
 
@@ -780,26 +805,20 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
         assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == restart + 1
 
     @staticmethod
+    @pytest.mark.parametrize("svc", ["restart-3", "restart-3-stdby"])
     def test_monitor_ensure_retry_count_is_reset_when_a_restart_succeed_after_rid_failure(
             mocker,
+            svc,
     ):
         monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
         monitor_test.service_command_factory()
         monitor_test.prepare_monitor_idle()
         monitor_test.monitor._lazy_ready_period = 0.001
-        svc = "restart-3"
         monitor_test.create_svc_config(svc)
 
         def create_service_status(status):
-            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
-                "status": status,
-                "type": "fs.flag",
-                "label": "fs.flag",
-                "provisioned": {
-                    "state": True,
-                    "mtime": time.time()
-                },
-            }})
+            monitor_test.create_service_status(svc, status="up", overall="up",
+                                               resources=_resources(status, "stdby" in svc))
 
         monitor_test.log('COMMENT: ensure some restart is tried')
         create_service_status("down")
@@ -823,26 +842,21 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
         assert monitor_test.monitor.get_smon_retries(svc, "fs#1") == 4
 
     @staticmethod
+    @pytest.mark.parametrize("svc", ["restart-delay", "restart-delay-stdby"])
     def test_monitor_respect_restart_delay_before_restart_rid_failure(
             mocker,
+            svc
     ):
         monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
         monitor_test.service_command_factory()
         monitor_test.prepare_monitor_idle()
         monitor_test.monitor._lazy_ready_period = 0.001
-        svc = "restart-delay"
         monitor_test.create_svc_config(svc)
 
         def create_service_status(status):
-            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
-                "status": status,
-                "type": "fs.flag",
-                "label": "fs.flag",
-                "provisioned": {
-                    "state": True,
-                    "mtime": time.time()
-                },
-            }})
+            monitor_test.create_service_status(svc, status="up", overall="up",
+                                               resources=_resources(status, "stdby" in svc))
+
         monitor_test.log('')
         monitor_test.log('COMMENT: set do max_shortloops to 0 for full do()')
 
@@ -904,16 +918,9 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
         monitor_test.create_svc_config(svc)
 
         def create_service_status(status):
-            monitor_test.create_service_status(svc, status="up", overall="up", resources={"fs#1": {
-                "status": status,
-                "type": "fs.flag",
-                "label": "fs.flag",
-                "provisioned": {
-                    "state": True,
-                    "mtime": time.time()
-                },
-                "monitor": True,
-            }})
+            monitor_test.create_service_status(svc, status="up", overall="up",
+                                               resources=_resources(status, monitor=True))
+
         monitor_test.log('')
         monitor_test.log('COMMENT: set do max_shortloops to 0 for full do()')
 
