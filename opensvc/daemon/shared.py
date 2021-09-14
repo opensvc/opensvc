@@ -62,7 +62,7 @@ DAEMON_STATUS = OsvcJournaledData()
 COMPAT_VERSION = 10
 
 # expose api handlers version
-API_VERSION = 6
+API_VERSION = 7
 
 # node and cluster conf lock to block reading changes during a multi-write
 # transaction (ex daemon join)
@@ -215,7 +215,7 @@ def wake_heartbeat_tx():
 
 def wake_monitor(reason="unknown", immediate=False):
     """
-    Notify the monitor thread to do they periodic job immediatly
+    Notify the monitor thread to do they periodic job immediately
     """
     global MON_CHANGED
     if immediate and reason:

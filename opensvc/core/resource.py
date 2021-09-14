@@ -52,6 +52,7 @@ class Resource(object):
                  disabled=False,
                  monitor=False,
                  restart=0,
+                 restart_delay=0,
                  tags=None,
                  standby=None,
                  enable_provision=False,
@@ -76,6 +77,7 @@ class Resource(object):
         self.skip = False
         self.monitor = monitor
         self.nb_restart = restart
+        self.restart_delay = restart_delay
         self.rstatus = None
         self.skip_provision = not enable_provision
         self.skip_unprovision = not enable_unprovision
@@ -1081,6 +1083,7 @@ class Resource(object):
           ["shared", str(self.shared).lower()],
           ["encap", str(self.encap).lower()],
           ["restart", str(self.nb_restart)],
+          ["restart_delay", str(self.restart_delay)],
         ]
         if self.subset:
             data.append(["subset", self.subset])
