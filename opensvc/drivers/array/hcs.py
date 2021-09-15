@@ -896,7 +896,11 @@ class Hcs(object):
         if end_ldev_id is not None:
             d["endLdevId"] = end_ldev_id
         path = "/ldevs"
-        data = self.post(path, data=d)
+        retry = {
+            "condition": lambda x: x.get("error", {}).get("detailCode") == "30000E-2-2E11-2205",
+            "message": "retry ldev add: resource group locked by another user",
+        }
+        data = self.post(path, data=d, retry=retry)
         ldev_id = int(data["affectedResources"][0].split("/")[-1])
         ldev = self.get_ldev(oid=ldev_id)
         self.set_label(ldev_id, name)

@@ -116,7 +116,22 @@ def multipath_flush(dev, log=None):
     cmd = [Env.syspaths.multipath, "-f", dev]
     ret, out, err = call(cmd, info=True, outlog=True, log=log)
     if ret != 0:
+        dump_device_users(dev, log=log)
+        for tick in range(int(5//0.5)):
+            time.sleep(0.5)
+            ret, out, err = call(cmd, info=True, outlog=True, log=log)
+            if ret == 0:
+                return
         raise ex.Error
+
+def dump_device_users(dev, log=None):
+    log.info("===== dump device users : %s =====", dev)
+    call(["lsblk"], info=True, outlog=True, log=log)
+    call(["exportfs", "-v"], info=True, outlog=True, log=log)
+    call(["zpool", "status"], info=True, outlog=True, log=log)
+    call(["lsof", dev], info=True, outlog=True, log=log)
+    call(["fuser", "-v", dev], info=True, outlog=True, log=log)
+    log.info("========================= %s =====", dev)
 
 def dev_ready(dev, log=None):
     cmd = ['sg_turs', dev]
