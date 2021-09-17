@@ -77,6 +77,9 @@ LOCAL_GEN_MERGED_ON_PEER = {}
 # track the generation of the peer datasets we merged
 PEER_GEN_MERGED = {}
 
+# The lock to serialize PEER_GEN_MERGED & LOCAL_GEN_MERGED_ON_PEER updates from threads
+GEN_MERGED_LOCK = RLock()
+
 # track the local dataset gen diffs pending merge by peers
 GEN_DIFF = {}
 
@@ -120,9 +123,7 @@ MON_CHANGED = []
 LOCKS = {}
 LOCKS_LOCK = RLock()
 
-# The lock to serialize data updates from rx threads
 RX = queue.Queue()
-RX_LOCK = RLock()
 
 # DEFERRED_STOP_LISTENER_CLIENTS define set of listener client session-id marked to be stopped
 DEFERRED_STOP_LISTENER_CLIENTS = set()
@@ -1045,8 +1046,8 @@ class OsvcThread(threading.Thread, Crypt):
             self.split_handler()
 
     def delete_peer_data(self, nodename):
-        self.log.info('delete node %s from nodes data', nodename)
-        with RX_LOCK:
+        self.log.info('deleting node %s from nodes data', nodename)
+        with GEN_MERGED_LOCK:
             self.nodes_data.unset_safe([nodename])
             try:
                 del LOCAL_GEN_MERGED_ON_PEER[nodename]
@@ -1057,6 +1058,7 @@ class OsvcThread(threading.Thread, Crypt):
                 del PEER_GEN_MERGED[nodename]
             except KeyError:
                 pass
+        self.log.info('deleted node %s from nodes data', nodename)
 
     def peer_down(self, nodename, exclude=None):
         """
@@ -1381,6 +1383,10 @@ class OsvcThread(threading.Thread, Crypt):
                 return nodename
 
     def get_oldest_gen(self, nodename=None):
+        with GEN_MERGED_LOCK:
+            return self.get_oldest_gen_locked(nodename)
+
+    def get_oldest_gen_locked(self, nodename):
         """
         Get oldest generation of the local dataset on peers.
         """

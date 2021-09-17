@@ -52,7 +52,7 @@ class Handler(daemon.handler.BaseHandler):
 
     def match(self, ref_gen):
         matched = True
-        with shared.RX_LOCK:
+        with shared.GEN_MERGED_LOCK:
             # Protect from LOCAL_GEN_MERGED_ON_PEER delete items
             # during hb::delete_peer_data(...)
             for node, gen in shared.LOCAL_GEN_MERGED_ON_PEER.items():
