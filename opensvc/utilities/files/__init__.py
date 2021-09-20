@@ -1,6 +1,8 @@
 import os
 import stat
 
+from errno import EEXIST
+
 PROTECTED_DIRS = [
     '/',
     '/bin',
@@ -62,7 +64,7 @@ def makedirs(path, mode=None, uid=None, gid=None):
         mode = mode or 0o755
         os.makedirs(path, mode)
     except OSError as exc:
-        if exc.errno == 17:
+        if exc.errno == EEXIST:
             pass
         else:
             raise
