@@ -225,7 +225,13 @@ def list_print(data, right=None):
     outs = ""
     if len(data) == 0:
         return ""
-    widths = [0] * len(data[-1])
+    widths = 0
+    for line in data:
+        if len(line) != 0:
+            widths = [0] * len(line)
+            break
+    if widths == 0:
+        return ""
     _data = []
     for line in data:
         _data.append(tuple(map(lambda x: x.encode("utf-8") if x is not None else "".encode("utf-8"), line)))
