@@ -682,7 +682,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.log.warning("monitor init data after thread crashed at gen %s", shared.GEN)
             # inc GEN to ensure out of sequence patch detection on peer
             shared.GEN = shared.GEN + 2
-            with shared.RX_LOCK:
+            with shared.GEN_MERGED_LOCK:
                 # Protect from LOCAL_GEN_MERGED_ON_PEER, PEER_GEN_MERGED delete items
                 # during hb::delete_peer_data(...)
                 #
@@ -3413,14 +3413,20 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def all_nodes_frozen(self):
         for nodename in self.list_nodes():
-            frozen = self.thread_data.get(["nodes", nodename, "frozen"])
+            # when nodename data are present, but frozen state is unknown,
+            # consider not yet frozen (thawed),
+            # nodename will be removed from list_nodes() by house keeping jobs
+            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=0)
             if not frozen:
                 return False
         return True
 
     def all_nodes_thawed(self):
         for nodename in self.list_nodes():
-            frozen = self.thread_data.get(["nodes", nodename, "frozen"])
+            # when nodename data are present, but frozen state is unknown,# when nodename data are present,
+            # consider not yet thawed (frozen),
+            # nodename will be removed from list_nodes() by house keeping jobs
+            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=1)
             if frozen:
                 return False
         return True
@@ -4172,6 +4178,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return False
 
     def update_node_gen(self, nodename, local_gen_merged_on_peer=0, peer_gen_merged=0):
+        with shared.GEN_MERGED_LOCK:
+            self._update_node_gen_locked(nodename, local_gen_merged_on_peer, peer_gen_merged)
+
+    def _update_node_gen_locked(self, nodename, local_gen_merged_on_peer=0, peer_gen_merged=0):
         shared.LOCAL_GEN_MERGED_ON_PEER[nodename] = local_gen_merged_on_peer
         shared.PEER_GEN_MERGED[nodename] = peer_gen_merged
         gdata = {
@@ -4192,10 +4202,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 nodename, data, hbname = shared.RX.get_nowait()
             except queue.Empty:
                 break
-            change |= self._merge_rx(nodename, data, hbname)
+            with shared.GEN_MERGED_LOCK:
+                change |= self._merge_rx_locked(nodename, data, hbname)
         return change
 
-    def _merge_rx(self, nodename, data, hbname):
+    def _merge_rx_locked(self, nodename, data, hbname):
         if data is None:
             self.log.info("drop corrupted rx data from %s", nodename)
         peer_gen_merged = shared.PEER_GEN_MERGED.get(nodename, 0)

@@ -29,7 +29,8 @@ class Handler(daemon.handler.BaseHandler):
             raise ex.Error("Can't ask a full from ourself")
         if options.peer not in thr.cluster_nodes:
             raise ex.Error("Can't ask a full from %s: not in cluster.nodes" % options.peer)
-        shared.PEER_GEN_MERGED[options.peer] = 0
+        with shared.GEN_MERGED_LOCK:
+            shared.PEER_GEN_MERGED[options.peer] = 0
         result = {
             "info": "remote %s asked for a full" % options.peer,
             "status": 0,

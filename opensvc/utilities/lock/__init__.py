@@ -11,6 +11,7 @@ import os
 import time
 
 import foreign.six as six
+from utilities.files import makedirs
 
 
 class LockNoLockFile(Exception):
@@ -155,7 +156,7 @@ def lock_nowait(lockfile=None, intent=None):
         lockfd = os.open(lockfile, flags, 0o644)
     except Exception as exc:
         if hasattr(exc, "errno") and getattr(exc, "errno") == 2:
-            os.makedirs(lock_dir)
+            makedirs(lock_dir)
             try:
                 lockfd = os.open(lockfile, flags, 0o644)
             except Exception as exc:
