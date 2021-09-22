@@ -3414,9 +3414,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def all_nodes_frozen(self):
         for nodename in self.list_nodes():
             # when nodename data are present, but frozen state is unknown,
-            # consider not yet frozen (thawed),
-            # nodename will be removed from list_nodes() by house keeping jobs
-            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=0)
+            # consider frozen,
+            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=1)
             if not frozen:
                 return False
         return True
@@ -3424,9 +3423,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def all_nodes_thawed(self):
         for nodename in self.list_nodes():
             # when nodename data are present, but frozen state is unknown,# when nodename data are present,
-            # consider not yet thawed (frozen),
-            # nodename will be removed from list_nodes() by house keeping jobs
-            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=1)
+            # consider thawed frozen,
+            frozen = self.thread_data.get(["nodes", nodename, "frozen"], default=0)
             if frozen:
                 return False
         return True
