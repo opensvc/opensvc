@@ -11,14 +11,27 @@ completion_fpath = os.path.join(pathsvc, "usr", "share", "bash_completion.d", "o
 sys.path.insert(0, pathlib)
 
 import commands.mgr.parser
-import commands.svcmgr.parser
-import commands.nodemgr.parser
+import commands.svc.parser
+import commands.node.parser
 
 template = """
 
 %(lists)s
 
 om="setns getns unsetns node cluster svc vol net pool daemon array"
+
+load_svcs()
+{
+    if [ "$OSVC_NAMESPACE" != "" -a "$OSVC_NAMESPACE" != "root" ]
+    then
+        svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null | grep "^$OSVC_NAMESPACE/")
+        echo "$svcs"
+        echo "$svcs" | grep "^$OSVC_NAMESPACE/" | sed -e "s/^$OSVC_NAMESPACE\///"
+        echo "$svcs" | grep "^$OSVC_NAMESPACE/" | sed -e "s/^$OSVC_NAMESPACE\/svc\///"
+    else
+        cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null
+    fi
+}
 
 opt_has_arg()
 {
@@ -43,7 +56,7 @@ _comp_handler()
 
     if [ $COMP_CWORD -eq 1 -a "${COMP_WORDS[0]}" == "om" ]
     then
-        svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
+        svcs=$(load_svcs)
         COMPREPLY=( $(compgen -W "$om $svcs" -- ${a}) )
         return 0
     fi
@@ -58,7 +71,7 @@ _comp_handler()
             return 0
             ;;
         --service|-s)
-            svcs=$(cat /var/lib/opensvc/list.services /opt/opensvc/var/list.services 2>/dev/null)
+            svcs=$(load_svcs)
             COMPREPLY=( $(compgen -W "${svcs}" -- ${a}) )
             return 0
             ;;
@@ -192,11 +205,11 @@ def do_prog_lists(prog, actions, global_opts, deprecated_options, opts):
 
 def do_opts_with_arg():
     opts_with_arg = set()
-    for section in commands.svcmgr.parser.ACTIONS:
-        for action in commands.svcmgr.parser.ACTIONS[section]:
-            l = commands.svcmgr.parser.ACTIONS[section][action].get("options", []) + commands.mgr.parser.GLOBAL_OPTS
-            for name in commands.svcmgr.parser.DEPRECATED_OPTIONS:
-                opt = commands.svcmgr.parser.OPT[name]
+    for section in commands.svc.parser.ACTIONS:
+        for action in commands.svc.parser.ACTIONS[section]:
+            l = commands.svc.parser.ACTIONS[section][action].get("options", []) + commands.mgr.parser.GLOBAL_OPTS
+            for name in commands.svc.parser.DEPRECATED_OPTIONS:
+                opt = commands.svc.parser.OPT[name]
                 try:
                     l.remove(opt)
                 except ValueError:
@@ -205,11 +218,11 @@ def do_opts_with_arg():
                 if opt.action not in ("store", "append"):
                     continue
                 opts_with_arg |= set(str(opt).split("/"))
-    for section in commands.nodemgr.parser.ACTIONS:
-        for action in commands.nodemgr.parser.ACTIONS[section]:
-            l = commands.nodemgr.parser.ACTIONS[section][action].get("options", []) + commands.nodemgr.parser.GLOBAL_OPTS
-            for name in commands.nodemgr.parser.DEPRECATED_OPTIONS:
-                opt = commands.svcmgr.parser.OPT[name]
+    for section in commands.node.parser.ACTIONS:
+        for action in commands.node.parser.ACTIONS[section]:
+            l = commands.node.parser.ACTIONS[section][action].get("options", []) + commands.node.parser.GLOBAL_OPTS
+            for name in commands.node.parser.DEPRECATED_OPTIONS:
+                opt = commands.svc.parser.OPT[name]
                 try:
                     l.remove(opt)
                 except ValueError:
@@ -227,8 +240,8 @@ def do_opts_with_arg():
 
 def do_lists():
     buff = ""
-    buff += do_prog_lists("svcmgr", commands.svcmgr.parser.ACTIONS, commands.mgr.parser.GLOBAL_OPTS, commands.svcmgr.parser.DEPRECATED_OPTIONS, commands.svcmgr.parser.OPT)
-    buff += do_prog_lists("nodemgr", commands.nodemgr.parser.ACTIONS, commands.nodemgr.parser.GLOBAL_OPTS, commands.nodemgr.parser.DEPRECATED_OPTIONS, commands.nodemgr.parser.OPT)
+    buff += do_prog_lists("svcmgr", commands.svc.parser.ACTIONS, commands.mgr.parser.GLOBAL_OPTS, commands.svc.parser.DEPRECATED_OPTIONS, commands.svc.parser.OPT)
+    buff += do_prog_lists("nodemgr", commands.node.parser.ACTIONS, commands.node.parser.GLOBAL_OPTS, commands.node.parser.DEPRECATED_OPTIONS, commands.node.parser.OPT)
     buff += do_opts_with_arg()
     return buff
 
