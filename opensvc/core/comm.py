@@ -83,9 +83,14 @@ class SockReset(Exception):
 
 
 try:
-    from Crypto.Cipher import AES
-    from Crypto import __version__ as version
-    CRYPTO_MODULE = "pycrypto %s" % version
+    try:
+        from Crypto.Cipher import AES
+        from Crypto import __version__ as version
+        CRYPTO_MODULE = "pycrypto %s" % version
+    except ImportError:
+        from Cryptodome.Cipher import AES
+        from Cryptodome import __version__ as version
+        CRYPTO_MODULE = "pycryptodome %s" % version
 
     def _encrypt(message, key, _iv):
         """
@@ -94,7 +99,7 @@ try:
         message = pyaes.util.append_PKCS7_padding(
             zlib.compress(message)
         )
-        obj = AES.new(key, AES.MODE_CBC, _iv)
+        obj = AES.new(to_bytes(key), AES.MODE_CBC, _iv)
         ciphertext = obj.encrypt(message)
         return ciphertext
 
@@ -102,7 +107,7 @@ try:
         """
         Low level decrypter.
         """
-        obj = AES.new(key, AES.MODE_CBC, _iv)
+        obj = AES.new(to_bytes(key), AES.MODE_CBC, _iv)
         message = obj.decrypt(ciphertext)
         return zlib.decompress(pyaes.util.strip_PKCS7_padding(message))
 except ImportError:
