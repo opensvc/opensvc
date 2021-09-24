@@ -56,14 +56,11 @@ from utilities.render.color import formatter
 from utilities.storage import Storage
 from utilities.string import bdecode
 
-try:
-    from foreign.six.moves.urllib.request import Request, urlopen
-    from foreign.six.moves.urllib.error import HTTPError
-    from foreign.six.moves.urllib.parse import urlencode
-except ImportError:
-    # pylint false positive
-    pass
 
+Request = six.moves.urllib.request.Request
+urlopen = six.moves.urllib.request.urlopen
+HTTPError = six.moves.urllib.error.HTTPError
+urlencode = six.moves.urllib.parse.urlencode
 
 if six.PY2:
     BrokenPipeError = IOError
@@ -3005,7 +3002,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             comment = re.sub(r"(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
-        from foreign.six.moves import input
         for key, default_val in env.items():
             if key.endswith(".comment"):
                 continue
@@ -3015,7 +3011,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             comment = env.get(comment_key)
             if comment:
                 print_comment(comment)
-            newval = input("%s [%s] > " % (key, str(default_val)))
+            newval = six.moves.input("%s [%s] > " % (key, str(default_val)))
             if newval != "":
                 env[key] = newval
         return env
