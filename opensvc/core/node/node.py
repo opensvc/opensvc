@@ -9,13 +9,18 @@ The node
 """
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import fnmatch
+import json
 import logging
 import os
+import re
+import shlex
+
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 import foreign.six as six
 
@@ -39,7 +44,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
 from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.cache import purge_cache_expired
-from utilities.converters import *
+from utilities.converters import print_duration, print_size, convert_duration
 from utilities.drivers import driver_import
 from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
@@ -2997,7 +3002,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             Print a env keyword comment. For use in the interactive service
             create codepath.
             """
-            import re
             comment = re.sub(r"(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
