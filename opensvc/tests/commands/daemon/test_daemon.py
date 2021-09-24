@@ -264,6 +264,15 @@ class TestNodemgrDaemonActions:
             "found more busy than free mutexes: \n%s" % status
         assert len([k for k in status.keys() if "logger" in k]) > 0, "no logger in mutexes"
 
+        print('daemon stats json...')
+        with capture_stdout(tmp_file):
+            assert commands.daemon.main(argv=["stats", "--debug", "--format", "json"]) == 0
+        with open(tmp_file, 'r') as stats_file:
+            stats = json.load(stats_file)
+        print(stats)
+        assert stats[Env.nodename]["daemon"]["cpu"]["time"] >= 0, \
+            "unable to detect daemon cpu time"
+
         print('daemon status...')
         assert commands.daemon.main(argv=["status", "--debug"]) == 0
 
