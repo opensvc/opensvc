@@ -160,7 +160,8 @@ class NetworksMixin(object):
         nets = self.networks_data_from_cni_confs()
         sections = list(self.conf_sections("network"))
         if "network#default" not in sections:
-            sections.append("network#default")
+            if self.oget(section, "network") not in ("None", "none", None):
+                sections.append("network#default")
         for section in sections:
             _, name = section.split("#", 1)
             config = {}
@@ -171,6 +172,8 @@ class NetworksMixin(object):
                     config["subnets"] = self.oget_scopes(section, "subnet", rtype=config["type"])
                     config["gateway"] = self.oget_scopes(section, "gateway", rtype=config["type"])
             if not config:
+                continue
+            if config.get("network") in ("None", "none", None):
                 continue
             routes = self.routes(name, config)
             if config["type"] == "routed_bridge" and not any(config["subnets"][n] for n in config["subnets"]):
