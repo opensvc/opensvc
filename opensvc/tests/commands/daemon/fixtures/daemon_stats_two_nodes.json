@@ -1,0 +1,345 @@
+{
+  "nodes": {
+    "node2": {
+      "status": 0,
+      "data": {
+        "timestamp": 1632475231.8544164,
+        "daemon": {
+          "cpu": {
+            "time": 111944.8
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "node": {
+          "cpu": {
+            "time": 17517941.68
+          }
+        },
+        "services": {
+          "svcproxy": {
+            "cpu": {
+              "time": 67.874716326
+            },
+            "mem": {
+              "total": 4837376
+            },
+            "blk": {
+              "r": 502,
+              "w": 13,
+              "rb": 52076544,
+              "wb": 36864
+            },
+            "tasks": 1,
+            "net": {
+              "r": 969352223,
+              "w": 742098792,
+              "rb": 862436984396,
+              "wb": 402590188449
+            },
+            "created": 1632475136.9823627
+          },
+          "system/vol/dns-vol1": {
+            "mem": {
+              "total": 0
+            }
+          },
+          "nsprd/svc/vpn": {
+            "mem": {
+              "total": 0
+            }
+          },
+          "system/vol/dns": {
+            "cpu": {
+              "time": 2015.803239675
+            },
+            "mem": {
+              "total": 29634560
+            },
+            "blk": {
+              "r": 216,
+              "w": 1,
+              "rb": 12419072,
+              "wb": 4096
+            },
+            "tasks": 14,
+            "net": {
+              "r": 969352224,
+              "w": 742098792,
+              "rb": 862436984986,
+              "wb": 402590188449
+            },
+            "created": 1630400176.3392835
+          },
+          "system/svc/vip": {
+            "mem": {
+              "total": 0
+            }
+          }
+        },
+        "dns": {
+          "threads": 1,
+          "procs": 0,
+          "cpu": {
+            "time": 562.13
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "listener": {
+          "threads": 2,
+          "procs": 0,
+          "cpu": {
+            "time": 6854.94
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "collector": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 15464.45
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "monitor": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 66105.19
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "scheduler": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 8210.11
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "hb#0.rx": {
+          "threads": 1,
+          "procs": 0,
+          "cpu": {
+            "time": 447.95
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "hb#0.tx": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 566.95
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "hb#1.rx": {
+          "threads": 1,
+          "procs": 0,
+          "cpu": {
+            "time": 462.87
+          },
+          "mem": {
+            "total": 3167
+          }
+        },
+        "hb#1.tx": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 584.13
+          },
+          "mem": {
+            "total": 3167
+          }
+        }
+      }
+    },
+    "node3": {
+      "status": 0,
+      "data": {
+        "timestamp": 1632475231.9782674,
+        "daemon": {
+          "cpu": {
+            "time": 89106.5
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "node": {
+          "cpu": {
+            "time": 16694510.77
+          }
+        },
+        "services": {
+          "nsprd/svc/vpn": {
+            "mem": {
+              "total": 0
+            }
+          },
+          "system/svc/vip": {
+            "mem": {
+              "total": 0
+            }
+          },
+          "system/vol/dns-vol1": {
+            "mem": {
+              "total": 0
+            }
+          },
+          "system/svc/dns": {
+            "cpu": {
+              "time": 2897.719708169
+            },
+            "mem": {
+              "total": 25030656
+            },
+            "blk": {
+              "r": 893,
+              "w": 1,
+              "rb": 29528064,
+              "wb": 4096
+            },
+            "tasks": 14,
+            "net": {
+              "r": 1657037027,
+              "w": 2366953867,
+              "rb": 604698876762,
+              "wb": 1171486211620
+            },
+            "created": 1630395831.240511
+          },
+          "system/vol/dns": {
+            "cpu": {
+              "time": 2897.719708169
+            },
+            "mem": {
+              "total": 25030656
+            },
+            "blk": {
+              "r": 893,
+              "w": 1,
+              "rb": 29528064,
+              "wb": 4096
+            },
+            "tasks": 14,
+            "net": {
+              "r": 1657037030,
+              "w": 2366953870,
+              "rb": 604698877639,
+              "wb": 1171486212497
+            },
+            "created": 1630395831.240511
+          }
+        },
+        "dns": {
+          "threads": 3,
+          "procs": 0,
+          "cpu": {
+            "time": 559.58
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "listener": {
+          "threads": 3,
+          "procs": 0,
+          "cpu": {
+            "time": 6931.53
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "collector": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 9396.92
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "monitor": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 50086.73
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "scheduler": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 8690.71
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "hb#0.rx": {
+          "threads": 1,
+          "procs": 0,
+          "cpu": {
+            "time": 386.42
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "hb#0.tx": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 547.79
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "hb#1.rx": {
+          "threads": 1,
+          "procs": 0,
+          "cpu": {
+            "time": 391.42
+          },
+          "mem": {
+            "total": 3355
+          }
+        },
+        "hb#1.tx": {
+          "threads": 0,
+          "procs": 0,
+          "cpu": {
+            "time": 564.82
+          },
+          "mem": {
+            "total": 3355
+          }
+        }
+      }
+    }
+  },
+  "status": 0
+}

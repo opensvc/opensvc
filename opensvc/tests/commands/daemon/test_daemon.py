@@ -12,6 +12,13 @@ from core.node import Node
 from daemon.main import main as daemon_main
 from env import Env
 
+try:
+    # noinspection PyCompatibility
+    from unittest.mock import call
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    from mock import call
+
 
 @pytest.fixture(scope='function')
 def daemon_join(mocker):
@@ -163,7 +170,7 @@ class TestNodemgrDaemonJoin:
                             "id": "810aea42-5faf-11eb-a714-080027001711",
                             "secret": "xxx"
                         },
-                        "metadata": {"name": "cluster", "kind": "ccfg", "namespace": None }
+                        "metadata": {"name": "cluster", "kind": "ccfg", "namespace": None}
                     },
                     "mtime": 1611653218.393235
                 }
@@ -312,3 +319,59 @@ class TestDaemonStart:
     def test_return_1_if_errors_during_start_native(daemon_is_not_running, daemon_start_native):
         daemon_start_native.side_effect = ex.Error
         assert commands.daemon.main(argv=["start"]) == 1
+
+
+def load_json(name):
+    with open(os.path.join(os.path.dirname(__file__), "fixtures", name + ".json"), "r") as f:
+        return json.load(f)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
+class TestDaemonStats:
+    @staticmethod
+    @pytest.mark.parametrize("nodes", ["*", "node1", "node1,node2"])
+    def test_it_sends_correct_api_call(mocker, nodes):
+        daemon_get = mocker.patch.object(Node, "daemon_get", return_value={"status": 0, "data": {}})
+        assert commands.daemon.main(argv=["stats", "--node", nodes]) == 0
+        daemon_get.assert_called_once_with({
+            'action': 'daemon_stats',
+            'options': {'selector': '**'}},
+            node=nodes,
+            server='',
+            silent=False,
+            timeout=5)
+
+    @staticmethod
+    @pytest.mark.parametrize("name", ["conn_refused", "one_node", "two_nodes", "one_node_with_error", "two_nodes_with_error"])
+    def test_it_returns_0(mocker, name):
+        mocker.patch.object(Node, "daemon_get", return_value=load_json("daemon_stats_" + name))
+        assert commands.daemon.main(argv=["stats"]) == 0
+
+    @staticmethod
+    def test_it_returns_0_when_daemon_request_raises(mocker, log):
+        mocker.patch.object(Node, "daemon_get", side_effect=Exception("socket error..."))
+        assert commands.daemon.main(argv=["stats"]) == 0
+        log.warning.assert_has_calls([call("daemon stats error")])
+
+    @staticmethod
+    @pytest.mark.parametrize("name", ["one_node", "two_nodes", "one_node_with_error", "two_nodes_with_error"])
+    def test_it_output_some_available_stats(mocker, capture_stdout, tmp_file, name):
+        mocker.patch.object(Node, "daemon_get", return_value=load_json("daemon_stats_" + name))
+
+        with capture_stdout(tmp_file):
+            assert commands.daemon.main(argv=["stats"]) == 0
+        with open(tmp_file, 'r') as output_file:
+            output = output_file.read()
+        assert "cpu.time" in output
+
+    @staticmethod
+    @pytest.mark.parametrize("name", ["conn_refused", "one_node_with_error", "two_nodes_with_error"])
+    def test_it_log_errors(mocker, log, name):
+        mocker.patch.object(Node, "daemon_get", return_value=load_json("daemon_stats_" + name))
+        assert commands.daemon.main(argv=["stats"]) == 0
+        if "one_nodes_with_error" in name:
+            log.warning.assert_has_calls([call("daemon stats error")])
+        if "two_nodes_with_error" in name:
+            log.warning.assert_has_calls([call("daemon stats error for node %s", "node-error")])
+

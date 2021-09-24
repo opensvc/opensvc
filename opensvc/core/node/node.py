@@ -3955,25 +3955,37 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return self.print_data(data, default_fmt="flat_json")
 
     def _daemon_stats(self, paths=None, silent=False, node=None, server=None):
-        data = self.daemon_get(
-            {
-                "action": "daemon_stats",
-                "options": {
-                    "selector": ",".join(paths) if paths else "**",
-                }
-            },
-            node=node,
-            server=server,
-            silent=silent,
-            timeout=5,
-        )
-        if data is None or data.get("status", 0) != 0:
+        # this private function is used by svcmon, need fix this
+        try:
+            data = self.daemon_get(
+                {
+                    "action": "daemon_stats",
+                    "options": {
+                        "selector": ",".join(paths) if paths else "**",
+                    }
+                },
+                node=node,
+                server=server,
+                silent=silent,
+                timeout=5,
+            )
+        except:
+            self.log.warning("daemon stats error")
             return
+        if data is None:
+            return
+        if data.get("status", 0) != 0:
+            if "nodes" in data:
+                for node in data["nodes"]:
+                    if data["nodes"][node].get("status", 0) != 0:
+                        self.log.warning("daemon stats error for node %s", node)
+            else:
+                self.log.warning("daemon stats error")
+
         if "nodes" in data:
-            data = dict((n, d["data"]) for n, d in data["nodes"].items())
+            return dict((n, d.get("data", {})) for n, d in data["nodes"].items())
         else:
-            data = data["data"]
-        return data
+            return data.get("data")
 
     def daemon_status(self, paths=None, server=None):
         if server:
