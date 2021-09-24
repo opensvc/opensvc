@@ -122,7 +122,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
     def use_mpathpersist(self, disk):
         if not self.has_capability("disk.scsireserv.mpathpersist"):
             return False
-        if [disk] != self.devs[disk]:
+        if [disk] != self.devs.get(disk, []):
             return True
         return False
 
