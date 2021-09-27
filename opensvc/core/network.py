@@ -160,8 +160,7 @@ class NetworksMixin(object):
         nets = self.networks_data_from_cni_confs()
         sections = list(self.conf_sections("network"))
         if "network#default" not in sections:
-            if self.oget(section, "network") not in ("None", "none", None):
-                sections.append("network#default")
+            sections.append("network#default")
         for section in sections:
             _, name = section.split("#", 1)
             config = {}
