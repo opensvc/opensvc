@@ -205,7 +205,7 @@ class TestNodemgrDaemonReJoin:
 class TestNodemgrDaemonActions:
     @staticmethod
     @pytest.mark.slow
-    def test_start_status_restart_stop_with_running_check(mocker, osvc_path_tests, capture_stdout, tmp_file):
+    def test_start_status_restart_stop_with_running_check(mocker, capture_stdout, tmp_file):
         wait_time_for_osvcd_ready = 8
         if 'OPENSVC_CI_EXTRA_TIME_OSVCD_STARTUP' in os.environ:
             # give extra time when slow ci
@@ -297,9 +297,6 @@ class TestNodemgrDaemonActions:
 
         print('daemon is not running...')
         assert commands.daemon.main(argv=["running", "--debug"]) > 0
-
-        with open(os.path.join(str(osvc_path_tests), "log", "node.log"), "r") as log_file:
-            assert "Traceback" not in log_file.read()
 
 
 @pytest.mark.ci
