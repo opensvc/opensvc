@@ -103,6 +103,7 @@ class TestDiskMdProvisionSuccess:
         md.provisioner()
         mdadm_create.assert_called_once_with(
             argv=['/sbin/mdadm', '--create', '/dev/md/s.disk.1', '--force',
+                  '--run',
                   '--quiet', '--metadata=default', '-n', '2', '/dev/loop1',
                   '/dev/loop2'],
             input=b'no\n')

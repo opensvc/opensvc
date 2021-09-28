@@ -539,7 +539,7 @@ class DiskMd(BaseDisk):
         if invalid_devname_message:
             raise ex.Error(invalid_devname_message)
         name = self.devname()
-        argv = [self.mdadm, '--create', name, '--force', '--quiet',
+        argv = [self.mdadm, '--create', name, '--force', '--run', '--quiet',
                '--metadata=default']
         argv += ['-n', str(number_devs)]
         if level:
