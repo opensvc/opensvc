@@ -172,6 +172,8 @@ class NetworksMixin(object):
                     config["gateway"] = self.oget_scopes(section, "gateway", rtype=config["type"])
             if not config:
                 continue
+            if config.get("network") in ("None", "none", None):
+                continue
             routes = self.routes(name, config)
             if config["type"] == "routed_bridge" and not any(config["subnets"][n] for n in config["subnets"]):
                 self.log.info("initial %s routed_bridge network subnets assignment:", name)
