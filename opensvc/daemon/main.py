@@ -379,7 +379,7 @@ class Daemon(object):
             changed |= self.start_thread("dns", Dns)
         if self.need_start("listener"):
             changed |= self.start_thread("listener", Listener)
-        if shared.NODE and shared.NODE.collector_env.dbopensvc and self.need_start("collector"):
+        if self._need_collector() and self.need_start("collector"):
             changed |= self.start_thread("collector", Collector)
         if self.need_start("monitor"):
             changed |= self.start_thread("monitor", Monitor)
@@ -413,7 +413,7 @@ class Daemon(object):
                 changed = True
 
             # clean up collector thread no longer needed
-            if shared.NODE and not shared.NODE.collector_env.dbopensvc and "collector" in self.threads:
+            if not self._need_collector() and "collector" in self.threads:
                 self.log.info("stopping collector thread, no longer needed")
                 self.threads["collector"].stop()
                 self.threads["collector"].join()
@@ -424,6 +424,10 @@ class Daemon(object):
         if changed:
             with shared.THREADS_LOCK:
                 shared.THREADS = self.threads
+
+    @staticmethod
+    def _need_collector():
+        return shared.NODE and shared.NODE.collector_env.dbopensvc and shared.NODE.collector_env.uuid
 
     def init_nodeconf(self):
         if not os.path.exists(Env.paths.pathetc):
