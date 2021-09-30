@@ -143,7 +143,10 @@ class Collector(shared.OsvcThread):
     def do(self):
         self.reload_config()
         self.init_collector()
-        if shared.NODE.collector.disabled():
+        if shared.NODE.collector_env.uuid == "":
+            # don't even queue
+            pass
+        elif shared.NODE.collector.disabled():
             self.queue_limit()
         else:
             self.run_collector()
