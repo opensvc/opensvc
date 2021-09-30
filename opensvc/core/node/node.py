@@ -9,13 +9,18 @@ The node
 """
 from __future__ import absolute_import, division, print_function
 
+import datetime
 import fnmatch
+import json
 import logging
 import os
+import re
+import shlex
+
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 import foreign.six as six
 
@@ -39,7 +44,7 @@ from utilities.naming import (ANSI_ESCAPE, factory, fmt_path, glob_services_conf
 from utilities.render.command import format_command
 from utilities.selector import selector_config_match, selector_parse_fragment, selector_parse_op_fragment
 from utilities.cache import purge_cache_expired
-from utilities.converters import *
+from utilities.converters import print_duration, print_size, convert_duration
 from utilities.drivers import driver_import
 from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
@@ -2997,7 +3002,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             Print a env keyword comment. For use in the interactive service
             create codepath.
             """
-            import re
             comment = re.sub(r"(\[.+://.+])", lambda m: get_href(m.group(1)), comment)
             print(comment)
 
@@ -3955,25 +3959,37 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         return self.print_data(data, default_fmt="flat_json")
 
     def _daemon_stats(self, paths=None, silent=False, node=None, server=None):
-        data = self.daemon_get(
-            {
-                "action": "daemon_stats",
-                "options": {
-                    "selector": ",".join(paths) if paths else "**",
-                }
-            },
-            node=node,
-            server=server,
-            silent=silent,
-            timeout=5,
-        )
-        if data is None or data.get("status", 0) != 0:
+        # this private function is used by svcmon, need fix this
+        try:
+            data = self.daemon_get(
+                {
+                    "action": "daemon_stats",
+                    "options": {
+                        "selector": ",".join(paths) if paths else "**",
+                    }
+                },
+                node=node,
+                server=server,
+                silent=silent,
+                timeout=5,
+            )
+        except:
+            self.log.warning("daemon stats error")
             return
+        if data is None:
+            return
+        if data.get("status", 0) != 0:
+            if "nodes" in data:
+                for node in data["nodes"]:
+                    if data["nodes"][node].get("status", 0) != 0:
+                        self.log.warning("daemon stats error for node %s", node)
+            else:
+                self.log.warning("daemon stats error")
+
         if "nodes" in data:
-            data = dict((n, d["data"]) for n, d in data["nodes"].items())
+            return dict((n, d.get("data", {})) for n, d in data["nodes"].items())
         else:
-            data = data["data"]
-        return data
+            return data.get("data")
 
     def daemon_status(self, paths=None, server=None):
         if server:
