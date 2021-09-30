@@ -143,8 +143,8 @@ class Pool(BasePool):
             if ret != 0:
                 return data
             l = out.splitlines()[-1].split()
-            data["free"] = int(l[1].split(".")[0])
-            data["size"] = int(l[0].split(".")[0])
+            data["free"] = int(l[1].split(".")[0].rstrip("k"))
+            data["size"] = int(l[0].split(".")[0].rstrip("k"))
             data["used"] = data["size"] - data["free"]
             return data
         else:
