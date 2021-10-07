@@ -1,0 +1,20 @@
+<?xml version="1.0" standalone="yes" ?>
+<SymCLI_ML>
+    <DG>
+        <Device>
+            <Dev_Info>
+                <dev_name>00056</dev_name>
+                <configuration>RDF1+TDEV</configuration>
+                <ld_name>DEV001</ld_name>
+                <status>Ready</status>
+            </Dev_Info>
+            <Front_End>
+                <Port>
+                    <pd_name>/dev/sdg</pd_name>
+                    <director>07E</director>
+                    <port>1</port>
+                </Port>
+            </Front_End>
+        </Device>
+    </DG>
+</SymCLI_ML>
