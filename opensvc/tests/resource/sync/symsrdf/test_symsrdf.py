@@ -10,7 +10,10 @@ from drivers.resource.sync.symsrdfs import SyncSymsrdfs
 @pytest.mark.usefixtures("osvc_path_tests")
 class TestListPd:
     @staticmethod
-    @pytest.mark.parametrize("tc", ["1"])
+    @pytest.mark.parametrize("tc", [
+        "1",
+        "mixed-dev_name-length"
+    ])
     def test_returns_correct_dev_list_from_sym_output(mocker, tc):
         mocker.patch.object(SyncSymsrdfs, "call")
         r = SyncSymsrdfs()

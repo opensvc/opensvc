@@ -117,7 +117,7 @@ class SyncSymsrdfs(Sync):
         xml = XML(out)
         for e in xml.findall("Inquiry/Dev_Info"):
             pd_name = e.find("pd_name").text
-            dev_name = e.find("dev_name").text
+            dev_name = e.find("dev_name").text.lstrip("0")
             if dev_name not in inq:
                 inq[dev_name] = []
             inq[dev_name].append(pd_name)
@@ -152,7 +152,7 @@ class SyncSymsrdfs(Sync):
         devs = []
         xml = XML(out)
         for e in xml.findall("DG/Device/Dev_Info"):
-            dev_name = e.find("dev_name").text
+            dev_name = e.find("dev_name").text.lstrip("0")
             if dev_name in inq:
                 devs += inq[dev_name]
 
