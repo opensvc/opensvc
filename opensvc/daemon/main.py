@@ -164,7 +164,7 @@ class Daemon(object):
             }
         }
         if hasattr(threading, "get_ident"):
-            initial_data["daemon"] = {"ident": threading.get_ident()}  # pylint: disable=no-member
+            initial_data["daemon"] = {"ident": threading.get_ident(), "state": "running"}  # pylint: disable=no-member
         shared.DAEMON_STATUS.set([], initial_data)
 
     @lazy
