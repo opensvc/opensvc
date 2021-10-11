@@ -992,9 +992,8 @@ class OsvcThread(threading.Thread, Crypt):
         n_extra_votes = len(extra_votes)
         if live + n_extra_votes > total / 2:
             self.log.info("cluster is split, we have quorum: "
-                    "%(live)d+%(avote)d out of %(total)d votes (%(a)s)",
-                    live=live, avote=n_extra_votes, total=total,
-                    a=",".join(extra_votes))
+                          "%(live)d+%(avote)d out of %(total)d votes (%(a)s)",
+                          dict(live=live, avote=n_extra_votes, total=total, a=",".join(extra_votes)))
             return
         self.event(self.split_action, {
             "reason": "split",
