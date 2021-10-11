@@ -250,6 +250,9 @@ class TestNodemgrDaemonActions:
         with open(tmp_file, 'r') as status_file:
             status = json.load(status_file)
         print(status)
+        if "daemon" in status:
+            assert status['daemon']['state'] == 'running'
+        assert status['monitor']['state'] == 'running'
         assert status['listener']['state'] == 'running'
         assert status['scheduler']['state'] == 'running'
 
