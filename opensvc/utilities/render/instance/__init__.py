@@ -134,6 +134,8 @@ def instance_notice(overall=None, frozen=None, node_frozen=None, constraints=Non
         notice.append("constraints violation")
     if provisioned is False:
         notice.append(colorize("not provisioned", color.RED))
+    elif provisioned == "mixed":
+        notice.append(colorize("part-provisioned", color.RED))
     if priority != Env.default_priority:
         notice.append(colorize("p%d" % priority, color.LIGHTBLUE))
     if monitor == {}:
