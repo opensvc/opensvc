@@ -468,6 +468,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             # provisioned
             if nd.get("provisioned") is False:
                 provisioned = colorize("P", color.RED)
+            elif nd.get("provisioned") == "mixed":
+                provisioned = colorize("P", color.RED)
             else:
                 provisioned = ""
 
