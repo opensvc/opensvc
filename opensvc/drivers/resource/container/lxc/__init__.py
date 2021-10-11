@@ -224,6 +224,7 @@ class ContainerLxc(BaseContainer):
         self.create_environment = create_environment
         self.create_configs_environment = create_configs_environment
         self.create_secrets_environment = create_secrets_environment
+        self.custom_create_pg = True
 
     def on_add(self):
         if "lxc-attach" in ' '.join(self.runmethod):
@@ -498,16 +499,10 @@ class ContainerLxc(BaseContainer):
             except Exception as exc:
                 self.log.debug("failed to remove leftover cgroup %s: %s", path, str(exc))
 
-    def create_pg(self):
-        """
-        Disable the normal create_pg(), so we can schedule it after set_cpuset_clone_children().
-        """
-        pass
-
     def container_start(self):
         self.cleanup_cgroup()
         self.set_cpuset_clone_children()
-        super(ContainerLxc, self).create_pg()
+        self.create_pg()
         self.install_cf()
         self.lxc('start')
 

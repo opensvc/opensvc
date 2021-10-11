@@ -137,6 +137,7 @@ class BaseContainer(Resource):
         if guestos is not None:
             self.guestos = guestos.lower()
         self.booted = False
+        self.custom_create_pg = False
 
     @lazy
     def name(self):
@@ -315,7 +316,8 @@ class BaseContainer(Resource):
         self.promote_rw()
         self.getaddr()
         where = self.where_up()
-        self.create_pg()
+        if not self.custom_create_pg:
+            self.create_pg()
         if where is not None:
             self.log.info("container %s already started on %s" % (self.label, where))
             return
