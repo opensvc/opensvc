@@ -981,24 +981,19 @@ class OsvcThread(threading.Thread, Crypt):
 
     def split_handler(self):
         if not self.quorum:
-            self.duplog("info",
-                        "cluster is split, ignore as cluster.quorum is "
-                        "false", msgid="quorum disabled")
+            self.log.info("cluster is split, ignore as cluster.quorum is false")
             return
         if self.freezer.node_frozen():
-            self.duplog("info",
-                        "cluster is split, ignore as the node is frozen",
-                        msgid="quorum disabled")
+            self.log.info("cluster is split, ignore as the node is frozen")
             return
         total = len(self.cluster_nodes) + self.arbitrators_config_count()
         live = self.live_nodes_count()
         extra_votes = self.arbitrators_votes()
         n_extra_votes = len(extra_votes)
         if live + n_extra_votes > total / 2:
-            self.duplog("info", "cluster is split, we have quorum: "
-                        "%(live)d+%(avote)d out of %(total)d votes (%(a)s)",
-                        live=live, avote=n_extra_votes, total=total,
-                        a=",".join(extra_votes))
+            self.log.info("cluster is split, we have quorum: "
+                          "%(live)d+%(avote)d out of %(total)d votes (%(a)s)",
+                          dict(live=live, avote=n_extra_votes, total=total, a=",".join(extra_votes)))
             return
         self.event(self.split_action, {
             "reason": "split",

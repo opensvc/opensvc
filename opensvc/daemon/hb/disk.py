@@ -82,6 +82,10 @@ class HbDisk(Hb):
                 new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC  # (Darwin, SunOS) pylint: disable=no-member
             else:
                 raise ex.AbortAction("%s must be a block device" % new_dev)
+            if new_dev.startswith("/dev/dm-"):
+                raise ex.AbortAction("%s is not static enough a name to allow. please use a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path" % new_dev)
+            if new_dev.startswith("/dev/sd"):
+                self.log.warning("%s is not a static name. using a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path is safer", new_dev)
         else:
             if not stat.S_ISCHR(statinfo.st_mode):
                 raise ex.AbortAction("%s must be a char device" % new_dev)
