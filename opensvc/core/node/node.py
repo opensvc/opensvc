@@ -3756,6 +3756,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for node, _data in data.get("nodes", {}).items():
             try:
                 _data = _data["data"]
+                if _data["key"] is None:
+                    raise KeyError
                 _data["key"] = self.normalize_ssh_key(_data["key"])
             except KeyError:
                 errs +=1
