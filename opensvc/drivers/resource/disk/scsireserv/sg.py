@@ -32,6 +32,8 @@ def driver_capabilities(node=None):
     return data
 
 class DiskScsireservSg(BaseDiskScsireserv):
+    reg_pp = None
+
     def scsireserv_supported(self):
         if not self.has_capability("disk.scsireserv"):
             self.status_log("sg_persist or mpathpersist must be installed to use scsi-3 reservations")
@@ -156,7 +158,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
 
     def get_reg_pp(self, dev):
         did = DiskInfo(deferred=True).disk_id(dev)
-        if not hasattr(self, "reg_pp") or not isinstance(self.reg_pp, dict):
+        if self.reg_pp is None or not isinstance(self.reg_pp, dict):
             try:
                 self.reg_pp = self.var_data_load()["registrations_per_path"]
             except Exception:
