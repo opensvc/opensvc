@@ -1,10 +1,15 @@
 import os
+import json
+import math
+import re
 import time
 from subprocess import *
 
 import core.exceptions as ex
 from core.capabilities import capabilities
 from env import Env
+from utilities.diskinfo import DiskInfo
+from utilities.files import makedirs
 from utilities.lazy import lazy
 from utilities.proc import justcall
 from utilities.string import bdecode
@@ -83,33 +88,115 @@ class DiskScsireservSg(BaseDiskScsireserv):
         ret, out, err = self.call(cmd)
         return ret, out, err
 
+
+    def var_data_dump_path(self):
+        return os.path.join(self.var_d, "data.json")
+
+    def var_data_load(self):
+        try:
+            with open(self.var_data_dump_path(), "r") as f:
+                return json.load(f)
+        except Exception:
+            return {
+                "registrations_per_path": {},
+            }
+
+    def var_data_dump(self, data):
+        p = self.var_data_dump_path()
+        makedirs(os.path.dirname(p))
+        self.log.debug("write %s in %s", data, p)
+        with open(p, "w") as f:
+            json.dump(data, f, indent=4)
+
+    @staticmethod
+    def read_gen(buff):
+        r = re.findall("generation=(0x[0-9a-fA-F]+)", buff, re.MULTILINE)
+        try:
+            return int(r[0], 0)
+        except Exception:
+            return -1
+
+    def read_dev_registrations(self, mpath):
+        n_paths = 0
+        n_registered = 0
+        out = ""
+        paths = self.devs.get(mpath, [])
+        n_paths = len(paths)
+        if self.use_mpathpersist(mpath):
+            ret, out, err = self.read_mpath_registrations(mpath)
+            n_registered = out.count(self.hostid)
+        else:
+            for path in paths:
+                ret, out, err = self.read_path_registrations(path)
+                if ret != 0:
+                    continue
+                n_registered = out.count(self.hostid)
+                break
+        gen = self.read_gen(out)
+        return n_paths, n_registered, gen
+
     def read_registrations(self):
         n_paths = 0
         n_registered = 0
-        for mpath, paths in self.devs.items():
-            if self.use_mpathpersist(mpath):
-                ret, out, err = self.read_mpath_registrations(mpath)
-                n_paths += len(paths)
-                n_registered += out.count(self.hostid)
-            else:
-                for path in paths:
-                    ret, out, err = self.read_path_registrations(path)
-                    if ret != 0:
-                        continue
-                    n_paths += len(paths)
-                    n_registered += out.count(self.hostid)
-                    break
+        for dev in self.devs:
+            dev_n_paths, dev_n_registered, _ = self.read_dev_registrations(dev)
+            n_paths += dev_n_paths
+            n_registered += dev_n_registered
         return n_paths, n_registered
 
     def check_all_paths_registered(self):
-        n_paths, n_registered = self.read_registrations()
-        if n_registered == n_paths:
+        infos, warns, errs = self.check_all_paths_registered_issues()
+        if len(errs) > 0:
+            # keep first: this one degrades the resource status to warn
+            raise ex.Error("\n".join(errs+warns))
+        for s in warns:
+            self.status_log(s, "warn")
+        for s in infos:
+            self.status_log(s, "info")
+
+    def get_reg_pp(self, dev):
+        did = DiskInfo(deferred=True).disk_id(dev)
+        if not hasattr(self, "reg_pp") or not isinstance(self.reg_pp, dict):
+            try:
+                self.reg_pp = self.var_data_load()["registrations_per_path"]
+            except Exception:
+                self.reg_pp = {}
+        try:
+            return self.reg_pp.get(did)
+        except AttributeError:
+            # corrupted cache
+            self.reg_pp = {}
+            return None
+
+    def set_reg_pp(self, dev, val):
+        did = DiskInfo(deferred=True).disk_id(dev)
+        current = self.get_reg_pp(did)
+        if current == val:
             return
-        if n_registered == 0:
-            return
-        if n_registered > n_paths:
-            raise ex.Signal("%d/%d paths registered" % (n_registered, n_paths))
-        raise ex.Error("%d/%d paths registered" % (n_registered, n_paths))
+        self.reg_pp[did] = val
+        data = self.var_data_load()
+        data["registrations_per_path"] = self.reg_pp
+        self.var_data_dump(data)
+
+    def check_all_paths_registered_issues(self):
+        infos = []
+        warns = []
+        errs = []
+        for dev in self.devs:
+            reg_pp = self.get_reg_pp(dev)
+            if reg_pp is None:
+                infos.append("%s registered paths count check disabled until restart" % dev)
+                continue
+            n_paths, n_registered, _ = self.read_dev_registrations(dev)
+            n_paths = math.ceil(n_paths/reg_pp)
+            if n_registered == n_paths:
+                continue
+            if n_registered == 0:
+                continue
+            if n_registered > n_paths:
+                warns.append("%s %d/%d paths registered (%d reg per path)" % (dev, n_registered, n_paths, reg_pp))
+            errs.append("%s %d/%d paths registered (%d reg per path)" % (dev, n_registered, n_paths, reg_pp))
+        return infos, warns, errs
 
     def disk_registered(self, disk):
         ret, out, err = self.read_path_registrations(disk)
@@ -127,6 +214,16 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return False
 
     def disk_register(self, disk):
+        _, _, gen1 = self.read_dev_registrations(disk)
+        try:
+            return self._disk_register(disk)
+        finally:
+            _, n_paths, gen2 = self.read_dev_registrations(disk)
+            if n_paths >0:
+                reg_pp = int((gen2 - gen1)/n_paths)
+                self.set_reg_pp(disk, reg_pp)
+
+    def _disk_register(self, disk):
         if self.use_mpathpersist(disk):
             return self.mpath_register(disk)
         else:
@@ -302,7 +399,6 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret
 
     def _disk_preempt_reservation(self, disk, oldkey):
-        from utilities.diskinfo import DiskInfo
         if self.no_preempt_abort or DiskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = "--preempt"
         else:
