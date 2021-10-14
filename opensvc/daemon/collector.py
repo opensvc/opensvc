@@ -164,6 +164,8 @@ class Collector(shared.OsvcThread):
 
     def unqueue_xmlrpc(self):
         while True:
+            if self.stopped():
+                return
             try:
                 args, kwargs = shared.COLLECTOR_XMLRPC_QUEUE.pop()
             except IndexError:
@@ -179,6 +181,8 @@ class Collector(shared.OsvcThread):
                 shared.NODE.collector.disable()
 
     def send_containerinfo(self, path):
+        if self.stopped():
+            return
         if path not in shared.SERVICES:
             return
         if not shared.SERVICES[path].has_encap_resources:
@@ -192,6 +196,8 @@ class Collector(shared.OsvcThread):
                 shared.NODE.collector.disable()
 
     def send_service_config(self, path, csum):
+        if self.stopped():
+            return
         if path not in shared.SERVICES:
             return
         self.log.info("send service %s config", path)
@@ -222,6 +228,8 @@ class Collector(shared.OsvcThread):
         self.last_comm = time.time()
 
     def ping(self, data):
+        if self.stopped():
+            return
         self.log.debug("ping the collector")
         try:
             result = shared.NODE.collector.call("daemon_ping")
