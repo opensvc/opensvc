@@ -996,7 +996,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return self.do_print_action(action, options)
 
         if self.published_action(action, options):
-            if self.node.oget("node", "dblog"):
+            if self.node.oget("node", "dblog") and self.node.collector_env.dbopensvc and self.node.collector_env.uuid:
                 err = self.do_logged_action(action, options)
             else:
                 self.log_action_header(action, options)

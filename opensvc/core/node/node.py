@@ -3701,7 +3701,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             },
             server=self.options.server,
             silent=True,
-            timeout=2,
+            timeout=DEFAULT_DAEMON_TIMEOUT,
         )
         if data is None or data["status"] != 0:
             # the daemon is not running or refused the connection,
