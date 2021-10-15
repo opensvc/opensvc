@@ -93,6 +93,13 @@ orchestrate = ha""" % str_uuid(),
     "restart-3-stdby": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
                                   "[fs#1]", "type = flag", "restart = 3", "standby = True"]),
 
+    "restart-multiple-3": "\n".join([
+        "[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
+        "[fs#1]", "type = flag", "restart = 3",
+        "[fs#2]", "type = flag", "restart = 5",
+        "[fs#3]", "type = flag", "restart = 2",
+    ]),
+
     "restart-delay": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
                                 "[fs#1]", "type = flag", "restart = 3", "restart_delay = 1s"]),
     "restart-delay-stdby": "\n".join(["[DEFAULT]", "id = %s" % str_uuid(), "nodes = *", "orchestrate = ha",
@@ -748,13 +755,13 @@ class TestMonitorOrchestratorStart(object):
             assert monitor_test.service_command.call_count == count
 
 
-def _resources(status, standby=False, monitor=False):
+def _resources(status, standby=False, monitor=False, rid="fs#1"):
     """
     test helper that prepare resources data for fs#1 with standby and monitor
     for create_service_status()
     """
     resources = {
-        "fs#1": {
+        rid: {
             "status": "stdby %s" % status if standby else status,
             "type": "fs.flag",
             "label": "fs.flag",
@@ -765,9 +772,9 @@ def _resources(status, standby=False, monitor=False):
         }
     }
     if standby:
-        resources["fs#1"]["standby"] = True
+        resources[rid]["standby"] = True
     if monitor:
-        resources["fs#1"]["monitor"] = True
+        resources[rid]["monitor"] = True
     return resources
 
 
@@ -948,3 +955,43 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
             monitor_test.do()
             monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['toc']), 1)
             assert monitor_test.monitor.node_data.get(["services", "status", svc, "monitor", "status"]) == "idle"
+
+    @staticmethod
+    @pytest.mark.parametrize("restart", [3])
+    def test_monitor_ensure_restart_retries_are_correct_when_multiple_rids_have_retries(
+            mocker,
+            restart
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "restart-multiple-%s" % restart
+        monitor_test.create_svc_config(svc)
+        resources = _resources("down")
+        resources.update(_resources("down", rid="fs#2"))
+        resources.update(_resources("up", rid="fs#3"))
+        monitor_test.create_service_status(svc, status="up", overall="up", resources=resources)
+        for _ in range(10):
+            monitor_test.do()
+
+        expected_retries = {
+            "fs#1": restart + 1,
+            "fs#2": 6,
+            "fs#3": 0,
+        }
+        monitor_test.log('COMMENT: ASSERT retries are %s' % expected_retries)
+        assert {
+            "fs#1": monitor_test.monitor.get_smon_retries(svc, "fs#1"),
+            "fs#2": monitor_test.monitor.get_smon_retries(svc, "fs#2"),
+            "fs#3": monitor_test.monitor.get_smon_retries(svc, "fs#3"),
+        } == expected_retries, "expected retries mismatch"
+
+        monitor_test.assert_command_has_not_been_launched([
+            call(svc, ["start"]),
+            call(svc, ["start", "--rid", "fs#1,fs#2,fs#3"]),
+            call(svc, ["start", "--rid", "fs#3"]),
+            call(svc, ["start", "--rid", "fs#1"]),
+        ])
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1,fs#2']), restart)
+        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#2']), 5 - restart)
