@@ -2,6 +2,7 @@ import os
 import json
 import math
 import re
+import shutil
 import time
 from subprocess import *
 
@@ -107,8 +108,9 @@ class DiskScsireservSg(BaseDiskScsireserv):
         p = self.var_data_dump_path()
         makedirs(os.path.dirname(p))
         self.log.debug("write %s in %s", data, p)
-        with open(p, "w") as f:
+        with open(p+".swp", "w") as f:
             json.dump(data, f, indent=4)
+        shutil.move(p+".swp", p)
 
     @staticmethod
     def read_gen(buff):
