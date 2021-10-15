@@ -3409,7 +3409,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if not smon:
             return
         restart = {"retries": retries + 1, "updated": time.time()}
-        self.node_data.merge(["services", "status", path, "monitor"], {"restart": {rid: restart}})
+        try:
+            self.node_data.merge(["services", "status", path, "monitor", "restart"], {rid: restart})
+        except TypeError:
+            self.node_data.set(["services", "status", path, "monitor", "restart"], {rid: restart})
 
     def all_nodes_frozen(self):
         for nodename in self.list_nodes():
