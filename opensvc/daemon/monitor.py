@@ -152,7 +152,7 @@ class MonitorObjectOrchestratorManualMixin(object):
                 raise Defer("wait: children are not stopped yet")
             elif smon.status == "wait children":
                 self.set_smon(svc.path, status="idle")
-        
+
         def step_freeze():
             if self.instance_frozen(svc.path):
                 return
@@ -187,7 +187,7 @@ class MonitorObjectOrchestratorManualMixin(object):
                 raise Defer("wait: children are not stopped yet")
             elif smon.status == "wait children":
                 self.set_smon(svc.path, status="idle")
-        
+
         def step_freeze():
             if self.instance_frozen(svc.path):
                 return
@@ -3276,6 +3276,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.thread_data.merge([], data)
 
     def update_services_config(self):
+        """
+        manage node_data ["services", "config"] area
+            with paths info from object config files
+        purge deleted services from:
+            shared.SERVICES["<path>]
+        """
         config = {}
         for path in list_services():
             cfg = svc_pathcf(path)
@@ -3652,6 +3658,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                               defer=True, origin=origin)
             del shared.DEFERRED_SET_SMON[:]
 
+    def get_service_monitor_global_expect_info(self, path):
+        """
+        Return global expect information from Monitor data of a service
+        """
+        try:
+            data = self.node_data.get(["services", "status", path, "monitor"])
+            return data.get("global_expect", None), data.get("global_expect_updated", 0)
+        except KeyError:
+            return None, 0
+
     def update_node_data(self):
         """
         Rescan services config and status.
@@ -3678,14 +3694,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         # purge deleted service instances
         for path in self.node_data.keys(["services", "status"]):
-            sconf = self.get_service_config(path, Env.nodename)
-            if sconf:
+            if self.node_data.exists(["services", "config", path]):
                 continue
             if not self.node_data.exists(["services", "status", path, "monitor"]):
                 continue
-            smon = self.get_service_monitor(path)
-            global_expect = smon.global_expect
-            global_expect_updated = smon.global_expect_updated or 0
+            global_expect, global_expect_updated = self.get_service_monitor_global_expect_info(path)
             if global_expect is not None and time.time() < global_expect_updated + 3:
                 # keep the smon around for a while
                 # self.log.info("relay foreign service %s global expect %s",
@@ -4352,4 +4365,3 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.on_nodes_info_change()
             change = True
         return change
-
