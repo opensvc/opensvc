@@ -233,22 +233,32 @@ class BaseDiskScsireserv(Resource):
         if self.ack_all_unit_attention() != 0:
             return core.status.WARN
         r = core.status.Status("n/a")
+        diag_messages = []
         for d in self.devs:
             try:
                 key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
                 if key is None:
-                    self.log.debug("disk %s is not reserved" % d)
+                    msg = "disk %s is not reserved" % d
+                    self.log.debug(msg)
                     r += core.status.DOWN
+                    diag_messages += [msg]
                 elif key != self.hostid:
-                    self.log.debug("disk %s is reserved by another host whose key is %s" % (d, key))
+                    msg = "disk %s is reserved by another host whose key is %s" % (d, key)
+                    self.log.debug(msg)
                     r += core.status.DOWN
+                    diag_messages += [msg]
                 else:
-                    self.log.debug("disk %s is correctly reserved" % d)
+                    msg = "disk %s is reserved by localhost" % d
+                    self.log.debug(msg)
                     r += core.status.UP
+                    diag_messages += [msg]
             except ex.ScsiPrNotsupported as exc:
                 self.status_log("%s: pr not supported" % d)
             except ex.Error as exc:
                 self.status_log(str(exc))
+        if r.status == core.status.WARN:
+            for msg in diag_messages:
+                self.status_log(msg)
         return r.status
 
 
