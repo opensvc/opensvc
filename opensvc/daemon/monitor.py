@@ -3313,7 +3313,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         with shared.SERVICES_LOCK:
             for path in list(shared.SERVICES.keys()):
                 if path not in config:
-                    self.log.info("purge deleted %s from daemon data", path)
+                    self.log.info("purge deleted object %s from daemon data", path)
                     del shared.SERVICES[path]
                     self.node_data.unset_safe(["services", "status", path])
         self.node_data.set(["services", "config"], config)
@@ -3668,8 +3668,8 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 #               path, global_expect)
                 continue
             try:
+                self.log.info("purge deleted object %s from daemon status data", path)
                 self.node_data.unset(["services", "status", path])
-                self.log.debug("purge deleted service %s from status data", path)
             except KeyError:
                 pass
 
