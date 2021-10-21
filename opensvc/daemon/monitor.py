@@ -1674,7 +1674,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if smon and path in self.list_cluster_paths():
                 # deleting service: unset global expect if done cluster-wide
                 agg = self.get_service_agg(path)
-                self.set_smon_g_expect_from_status(path, smon, agg.avail)
+                self.set_smon_g_expect_from_status(path, smon, agg)
             return
         if self.peer_init(svc):
             return
@@ -1687,7 +1687,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 # self.log.info("service %s orchestrator out (mon status %s)", svc.path, smon.status)
                 return
         agg = self.get_service_agg(path)
-        self.set_smon_g_expect_from_status(svc.path, smon, agg.avail)
+        self.set_smon_g_expect_from_status(svc.path, smon, agg)
         if nmon.status in ("shutting", "draining"):
             self.object_orchestrator_shutting(svc, smon, agg.avail)
         elif smon.global_expect:
@@ -3445,149 +3445,149 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                           global_expect)
             self.set_nmon(global_expect="unset")
 
-    def set_smon_g_expect_from_status(self, path, smon, status):
+    def set_smon_g_expect_from_status_handle_stopped(self, path, smon, agg, instance):
+        status = agg.status
+        local_frozen = instance.get("frozen", 0)
+        stopped = status in STOPPED_STATES
+        if not stopped or not local_frozen:
+            return
+        self.log.info("service %s global expect is %s and its global "
+                      "status is %s", path, smon.global_expect, status)
+        self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status_handle_shutdown(self, path, smon, agg, instance):
+        status = agg.status
+        local_frozen = instance.get("frozen", 0)
+        if not self.get_agg_shutdown(path) or not local_frozen:
+            return
+        self.log.info("service %s global expect is %s and its global "
+                      "status is %s", path, smon.global_expect, status)
+        self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status_handle_started(self, path, smon, agg, instance):
+        status = agg.status
+        local_frozen = instance.get("frozen", 0)
+        if smon.placement == "none":
+            self.set_smon(path, global_expect="unset")
+        if status in STARTED_STATES and not local_frozen:
+            self.log.info("service %s global expect is %s and its global "
+                          "status is %s", path, smon.global_expect, status)
+            self.set_smon(path, global_expect="unset")
+            return
+        agg = self.get_service_agg(path)
+        if agg.frozen != "thawed":
+            return
+        svc = self.get_service(path)
+        if self.peer_warn(path, with_self=True):
+            self.set_smon(path, global_expect="unset")
+            return
+
+    def set_smon_g_expect_from_status_handle_frozen(self, path, smon, agg, _):
+        if agg.frozen != "frozen":
+            return
+        self.log.debug("service %s global expect is %s, already is",
+                       path, smon.global_expect)
+        self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status_handle_thawed(self, path, smon, agg, _):
+        if agg.frozen != "thawed":
+            return
+        self.log.debug("service %s global expect is %s, already is",
+                       path, smon.global_expect)
+        self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status_handle_unprovisioned(self, path, smon, agg, _):
+        status = agg.status
+        stopped = status in STOPPED_STATES
+        if agg.provisioned not in (False, "n/a") or not stopped:
+            return
+        self.log.debug("service %s global expect is %s, already is", path, smon.global_expect)
+        self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status_handle_provisioned(self, path, smon, agg, _):
+        if agg.provisioned not in (True, "n/a"):
+            return
+        if smon.placement == "none":
+            self.set_smon(path, global_expect="unset")
+        if agg.avail in ("up", "n/a"):
+            # provision success, thaw
+            self.set_smon(path, global_expect="thawed")
+        else:
+            self.set_smon(path, global_expect="started")
+
+    def set_smon_g_expect_from_status_handle_purged(self, path, smon, agg, _):
+        deleted = self.get_agg_deleted(path)
+        purged = self.get_agg_purged(agg.provisioned, deleted)
+        if purged is not True:
+            return
+        self.log.debug("service %s global expect is %s, already is",
+                       path, smon.global_expect)
+        self.node_data.unset_safe(["services", "status", path, "monitor"])
+
+    def set_smon_g_expect_from_status_handle_deleted(self, path, smon, *_):
+        deleted = self.get_agg_deleted(path)
+        if deleted is not True:
+            return
+        self.log.debug("service %s global expect is %s, already is",
+                       path, smon.global_expect)
+        self.node_data.unset_safe(["services", "status", path, "monitor"])
+
+    def set_smon_g_expect_from_status_handle_aborted(self, path, smon, *_):
+        if not self.get_agg_aborted(path):
+            return
+        self.log.info("service %s action aborted", path)
+        self.set_smon(path, global_expect="unset")
+        if smon.status and smon.status.startswith("wait "):
+            # don't leave lingering "wait" mon state when we no longer
+            # have a target state to reach
+            self.set_smon(path, status="idle")
+
+    def set_smon_g_expect_from_status_handle_placed(self, path, smon, agg, _):
+        if agg.frozen != "thawed":
+            return
+        if agg.placement in ("optimal", "n/a") and \
+           agg.avail in ("up", "n/a"):
+            self.set_smon(path, global_expect="unset")
+            return
+        svc = self.get_service(path)
+        if svc is None:
+            # foreign
+            return
+        candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
+        candidates = self.placement_leaders(svc, candidates=candidates)
+        peers = self.peers_options(path, candidates, ["place failed"])
+        if not peers and self.non_leaders_stopped(path, ["place failed"]):
+            self.log.info("service %s global expect is %s, not optimal "
+                          "and no options left", path, smon.global_expect)
+            self.set_smon(path, global_expect="unset")
+            return
+
+    def set_smon_g_expect_from_status_handle_placed_at(self, path, smon, *_):
+        target = smon.global_expect.split("@")[-1].split(",")
+        if self.instances_started_or_start_failed(path, target):
+            self.set_smon(path, global_expect="unset")
+
+    def set_smon_g_expect_from_status(self, path, smon, agg):
         """
         Align global_expect with the actual service states.
         """
         instance = self.get_service_instance(path, Env.nodename)
-        agg = self.get_service_agg(path)
-
         if instance is None:
             return
 
-        def handle_stopped():
-            local_frozen = instance.get("frozen", 0)
-            stopped = status in STOPPED_STATES
-            if not stopped or not local_frozen:
-                return
-            self.log.info("service %s global expect is %s and its global "
-                          "status is %s", path, smon.global_expect, status)
-            self.set_smon(path, global_expect="unset")
-
-        def handle_shutdown():
-            local_frozen = instance.get("frozen", 0)
-            if not self.get_agg_shutdown(path) or not local_frozen:
-                return
-            self.log.info("service %s global expect is %s and its global "
-                          "status is %s", path, smon.global_expect, status)
-            self.set_smon(path, global_expect="unset")
-
-        def handle_started():
-            local_frozen = instance.get("frozen", 0)
-            if smon.placement == "none":
-                self.set_smon(path, global_expect="unset")
-            if status in STARTED_STATES and not local_frozen:
-                self.log.info("service %s global expect is %s and its global "
-                              "status is %s", path, smon.global_expect, status)
-                self.set_smon(path, global_expect="unset")
-                return
-            agg = self.get_service_agg(path)
-            if agg.frozen != "thawed":
-                return
-            svc = self.get_service(path)
-            if self.peer_warn(path, with_self=True):
-                self.set_smon(path, global_expect="unset")
-                return
-
-        def handle_frozen():
-            agg = self.get_service_agg(path)
-            if agg.frozen != "frozen":
-                return
-            self.log.debug("service %s global expect is %s, already is",
-                           path, smon.global_expect)
-            self.set_smon(path, global_expect="unset")
-
-        def handle_thawed():
-            if agg.frozen != "thawed":
-                return
-            self.log.debug("service %s global expect is %s, already is",
-                           path, smon.global_expect)
-            self.set_smon(path, global_expect="unset")
-
-        def handle_unprovisioned():
-            stopped = status in STOPPED_STATES
-            if agg.provisioned not in (False, "n/a") or not stopped:
-                return
-            self.log.debug("service %s global expect is %s, already is", path, smon.global_expect)
-            self.set_smon(path, global_expect="unset")
-
-        def handle_provisioned():
-            if agg.provisioned not in (True, "n/a"):
-                return
-            if smon.placement == "none":
-                self.set_smon(path, global_expect="unset")
-            if agg.avail in ("up", "n/a"):
-                # provision success, thaw
-                self.set_smon(path, global_expect="thawed")
-            else:
-                self.set_smon(path, global_expect="started")
-
-        def handle_purged():
-            deleted = self.get_agg_deleted(path)
-            purged = self.get_agg_purged(agg.provisioned, deleted)
-            if purged is not True:
-                return
-            self.log.debug("service %s global expect is %s, already is",
-                           path, smon.global_expect)
-            self.node_data.unset_safe(["services", "status", path, "monitor"])
-
-        def handle_deleted():
-            deleted = self.get_agg_deleted(path)
-            if deleted is not True:
-                return
-            self.log.debug("service %s global expect is %s, already is",
-                           path, smon.global_expect)
-            self.node_data.unset_safe(["services", "status", path, "monitor"])
-
-        def handle_aborted():
-            if not self.get_agg_aborted(path):
-                return
-            self.log.info("service %s action aborted", path)
-            self.set_smon(path, global_expect="unset")
-            if smon.status and smon.status.startswith("wait "):
-                # don't leave lingering "wait" mon state when we no longer
-                # have a target state to reach
-                self.set_smon(path, status="idle")
-
-        def handle_placed():
-            if agg.frozen != "thawed":
-                return
-            if agg.placement in ("optimal", "n/a") and \
-               agg.avail in ("up", "n/a"):
-                self.set_smon(path, global_expect="unset")
-                return
-            svc = self.get_service(path)
-            if svc is None:
-                # foreign
-                return
-            candidates = self.placement_candidates(svc, discard_start_failed=False, discard_frozen=False)
-            candidates = self.placement_leaders(svc, candidates=candidates)
-            peers = self.peers_options(path, candidates, ["place failed"])
-            if not peers and self.non_leaders_stopped(path, ["place failed"]):
-                self.log.info("service %s global expect is %s, not optimal "
-                              "and no options left", path, smon.global_expect)
-                self.set_smon(path, global_expect="unset")
-                return
-
-        def handle_placed_at():
-            target = smon.global_expect.split("@")[-1].split(",")
-            if self.instances_started_or_start_failed(path, target):
-                self.set_smon(path, global_expect="unset")
-
         try:
             ge, at = smon.global_expect.split("@", 1)
-            handler = "handle_%s_at" % ge
+            handler = "set_smon_g_expect_from_status_handle_%s_at" % ge
         except AttributeError:
             return
         except ValueError:
-            handler = "handle_" + smon.global_expect
+            handler = "set_smon_g_expect_from_status_handle_" + smon.global_expect
 
-        try:
-            fn = locals()[handler]
-        except KeyError:
+        fn = getattr(self, handler)
+        if fn is None:
             return
 
-        fn()
+        fn(path, smon, agg, instance)
 
     def get_arbitrators_data(self):
         if self.arbitrators_data is None or self.last_arbitrator_ping < time.time() - self.arbitrators_check_period:
