@@ -807,7 +807,7 @@ class Listener(shared.OsvcThread):
         try:
             self.sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sockuxh2.bind(Env.paths.lsnruxh2sock)
-            self.sockuxh2.listen(1)
+            self.sockuxh2.listen(128)
             self.sockuxh2.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind http/2 listener %s error: %s", Env.paths.lsnruxh2sock, exc)
@@ -833,7 +833,7 @@ class Listener(shared.OsvcThread):
         try:
             self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sockux.bind(Env.paths.lsnruxsock)
-            self.sockux.listen(1)
+            self.sockux.listen(128)
             self.sockux.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind raw listener %s error: %s", Env.paths.lsnruxsock, exc)

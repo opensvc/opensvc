@@ -173,9 +173,14 @@ class Handler(daemon.handler.BaseHandler):
         allowed_kinds = ALLOWED_KINDS.get(global_expect)
         if allowed_kinds is not None and kind not in allowed_kinds:
             raise ex.Error("reject set global_expect=%s request on %s: not supported on %s objects" % (global_expect, path, kind))
-        if global_expect in ("frozen", "aborted", "provisioned"):
-            # allow provision target state on just-created service
+
+        if global_expect in ("frozen", "aborted"):
+            # allow frozen, aborted target state on just-created service
             return
+
+        peers = thr.get_service_peers(path)
+        if not thr.wait_service_config_consensus(path, peers=peers, timeout=10):
+            raise ex.AbortAction("%s unable to reach config consensus amongs nodes: %s" % (path, ",".join(peers)))
 
         # wait for object to appear
         for i in range(5):

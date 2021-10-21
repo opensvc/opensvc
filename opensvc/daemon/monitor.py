@@ -3220,44 +3220,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 continue
             return data
 
-    def wait_service_config_consensus(self, path, peers, timeout=60):
-        if len(peers) < 2:
-            return True
-        self.log.info("wait for service %s consensus on config amongst peers %s",
-                      path, ",".join(peers))
-        for _ in range(timeout):
-            if self.service_config_consensus(path, peers):
-                return True
-            time.sleep(1)
-        self.log.error("service %s couldn't reach config consensus in %d seconds",
-                       path, timeout)
-        return False
-
-    def service_config_consensus(self, path, peers):
-        if len(peers) < 2:
-            self.log.debug("%s auto consensus. peers: %s", path, peers)
-            return True
-        ref_csum = None
-        for peer in peers:
-            if peer not in self.list_nodes():
-                # discard unreachable nodes from the consensus
-                continue
-            try:
-                csum = self.get_service_config(path, peer).csum
-            except (TypeError, KeyError, AttributeError):
-                # self.log.debug("service %s peer %s has no config cksum yet", path, peer)
-                return False
-            except Exception as exc:
-                self.log.exception(exc)
-                return False
-            if ref_csum is None:
-                ref_csum = csum
-            if ref_csum is not None and ref_csum != csum:
-                # self.log.debug("service %s peer %s has a different config cksum", path, peer)
-                return False
-        self.log.info("service %s config consensus reached", path)
-        return True
-
     def update_status(self):
         data = self.status()
         data.update({
