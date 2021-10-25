@@ -3468,7 +3468,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
         svc = self.get_service(path)
         if svc and not self.has_service_config_consensus(path, svc.peers):
-            self.log.info("%s has not yet consensus", path)
+            self.log.debug("%s has not yet config consensus", path)
             return
         agg = self.get_service_agg(path)
 
