@@ -1869,6 +1869,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 })
                 self.service_start(svc.path)
                 return
+            if instance.avail == "up":
+                # avoid: smon idle->ready->idle when avail is warn, but instance is up
+                return
             self.log.info("failover service %s status %s", svc.path,
                           status)
             self.set_smon(svc.path, "ready")
