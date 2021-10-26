@@ -3233,7 +3233,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                        path, timeout)
         return False
 
-    def service_config_consensus(self, path, peers):
+    def has_service_config_consensus(self, path, peers):
         if len(peers) < 2:
             self.log.debug("%s auto consensus. peers: %s", path, peers)
             return True
@@ -3255,6 +3255,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if ref_csum is not None and ref_csum != csum:
                 # self.log.debug("service %s peer %s has a different config cksum", path, peer)
                 return False
+        return True
+
+    def service_config_consensus(self, path, peers):
+        if not self.has_service_config_consensus(path, peers):
+            return False
         self.log.info("service %s config consensus reached", path)
         return True
 
@@ -3449,11 +3454,23 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         """
         Align global_expect with the actual service states.
         """
-        instance = self.get_service_instance(path, Env.nodename)
-        agg = self.get_service_agg(path)
+        try:
+            ge, at = smon.global_expect.split("@", 1)
+            handler = "handle_%s_at" % ge
+        except AttributeError:
+            return
+        except ValueError:
+            handler = "handle_" + smon.global_expect
 
+        instance = self.get_service_instance(path, Env.nodename)
         if instance is None:
             return
+
+        svc = self.get_service(path)
+        if svc and not self.has_service_config_consensus(path, svc.peers):
+            self.log.debug("%s has not yet config consensus", path)
+            return
+        agg = self.get_service_agg(path)
 
         def handle_stopped():
             local_frozen = instance.get("frozen", 0)
@@ -3573,14 +3590,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             target = smon.global_expect.split("@")[-1].split(",")
             if self.instances_started_or_start_failed(path, target):
                 self.set_smon(path, global_expect="unset")
-
-        try:
-            ge, at = smon.global_expect.split("@", 1)
-            handler = "handle_%s_at" % ge
-        except AttributeError:
-            return
-        except ValueError:
-            handler = "handle_" + smon.global_expect
 
         try:
             fn = locals()[handler]
