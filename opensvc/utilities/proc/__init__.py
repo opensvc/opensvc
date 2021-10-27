@@ -50,6 +50,40 @@ def which(program):
     return
 
 
+def oom_score_adj(pid="self", value=0):
+    """update pid oom_score_adj value"""
+    oom_score_adj_file = "/proc/%s/oom_score_adj" % pid
+    if os.path.exists(oom_score_adj_file):
+        with open(oom_score_adj_file, "w") as f:
+            f.write(str(value))
+
+
+def reset_self_oom_score_adj():
+    """reset process oom_score_adj value to 0"""
+    oom_score_adj(pid="self", value=0)
+
+
+def get_updated_preexec_fn(preexec_fn):
+    """
+    Return updated preexec_fn function
+    On Linux, the returned updated preexec_fn with reset process oom_score_adj
+    value to 0.
+    May be used to prevent inherited oom_score_adj values from opensvc daemon
+    process.
+    """
+    if Env.sysname != "Linux":
+        return preexec_fn
+
+    if preexec_fn is None:
+        return reset_self_oom_score_adj
+    else:
+        def func():
+            preexec_fn()
+            reset_self_oom_score_adj()
+
+        return func
+
+
 def justcall(argv=None, stdin=None, input=None):
     """
     Call subprocess' Popen(argv, stdout=PIPE, stderr=PIPE, stdin=stdin)
@@ -100,6 +134,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
     start = time.time()
     if "close_fds" not in kwargs:
         kwargs["close_fds"] = close_fds
+    kwargs["preexec_fn"] = get_updated_preexec_fn(kwargs.get("preexec_fn"))
     os.environ["PYTHONIOENCODING"] = "UTF-8"
     rout, wout = os.pipe()
     rerr, werr = os.pipe()
@@ -238,6 +273,8 @@ def call(argv,
 
     if cache and cmd not in Env.call_cache:
         log.debug("cache miss for '%s'" % cmd)
+
+    preexec_fn = get_updated_preexec_fn(preexec_fn)
 
     if not cache or cmd not in Env.call_cache:
         try:
