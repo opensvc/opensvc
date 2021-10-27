@@ -3393,7 +3393,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     },
                 },
                 server=server,
-                timeout=11,
+                timeout=4 * DEFAULT_DAEMON_TIMEOUT,
             )
             status, error, info = self.parse_result(result)
             if status == 501:

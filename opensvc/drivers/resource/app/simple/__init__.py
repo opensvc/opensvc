@@ -10,7 +10,7 @@ import core.status
 from .. import App as BaseApp, KEYWORDS as BASE_KEYWORDS, StatusNA
 from env import Env
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall
+from utilities.proc import justcall, get_updated_preexec_fn
 
 DRIVER_GROUP = "app"
 DRIVER_BASENAME = "simple"
@@ -277,6 +277,7 @@ class AppSimple(BaseApp):
         except ValueError as exc:
             self.log.error("%s", exc)
             return 1
+        kwargs["preexec_fn"] = get_updated_preexec_fn(kwargs.get("preexec_fn"))
         user = kwargs.get("env").get("LOGNAME")
         if isinstance(cmd, list):
             cmd_s = ' '.join(cmd)
