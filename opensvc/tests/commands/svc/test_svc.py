@@ -129,7 +129,7 @@ class TestUpdate:
     @staticmethod
     def test_it_updates_config(mock_sysname, tmp_file, capture_stdout):
         svcname = "pytest"
-        mock_sysname("linux")
+        mock_sysname("Linux")
         assert Mgr()(argv=["-s", svcname, "create"]) == 0
 
         assert Mgr()(argv=["-s", svcname, "update", "--resource", '{"rid": "fs#1", "type": "flag"}', "--local"]) == 0
