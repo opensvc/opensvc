@@ -78,8 +78,8 @@ def get_updated_preexec_fn(preexec_fn):
         return reset_self_oom_score_adj
     else:
         def func():
-            preexec_fn()
             reset_self_oom_score_adj()
+            preexec_fn()
 
         return func
 
