@@ -60,8 +60,11 @@ def oom_score_adj(pid="self", value=0):
 
 def reset_self_oom_score_adj():
     """reset process oom_score_adj value to 0"""
-    oom_score_adj(pid="self", value=0)
-
+    try:
+        oom_score_adj(pid="self", value=0)
+    except OSError:
+        # Ignore OSError when decrease oom_score_adj
+        pass
 
 def get_updated_preexec_fn(preexec_fn):
     """
