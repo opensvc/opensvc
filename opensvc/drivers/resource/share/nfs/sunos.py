@@ -40,7 +40,7 @@ class ShareNfs(Resource):
             raise ex.InitError(str(e))
 
     def get_opts(self):
-        cmd = ["share", "-F", "nfs", "-A"]
+        cmd = ["share", "-F", "nfs"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             return ""
