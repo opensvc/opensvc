@@ -186,7 +186,7 @@ class Handler(daemon.handler.BaseHandler):
                 break
             time.sleep(1)
         if not instances:
-            raise ex.Error("object does not exist")
+            raise ex.Error("object %s does not exist" % path)
 
         ges = set()
         for nodename, _data in instances.items():
@@ -243,7 +243,7 @@ class Handler(daemon.handler.BaseHandler):
             return
         instances = thr.get_service_instances(path)
         if not instances:
-            raise ex.Error("object does not exist")
+            raise ex.Error("object %s does not exist" % path)
         if destination_nodes == "<peer>":
             instance = list(instances.values())[0]
             if instance.get("topology") == "flex":

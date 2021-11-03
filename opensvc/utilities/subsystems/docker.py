@@ -113,7 +113,7 @@ class ContainerLib(object):
         """
         data = {}
         for container in self.container_ps:  # pylint: disable=not-an-iterable
-            for name in container.get("Names", "").split(","):
+            for name in self._container_names(container):
                 try:
                     data[name].append(container)
                 except KeyError:
@@ -491,6 +491,15 @@ class ContainerLib(object):
             if self.container_data_dir.startswith(mntpt):  # pylint: disable=no-member
                 return mntpt_res[mntpt]
 
+    @staticmethod
+    def _container_names(container):
+        names = container.get("Names", [])
+        if isinstance(names, str):
+            # docker
+            return names.split(",")
+        else:
+            # podman
+            return names
 
 
 class DockerLib(ContainerLib):
