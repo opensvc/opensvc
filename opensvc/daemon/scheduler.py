@@ -91,6 +91,10 @@ class Scheduler(shared.OsvcThread):
             devnull = "/dev/null"
         self.devnull = os.open(devnull, os.O_RDWR)
 
+        if not self.csum:
+            self.log.warning("run scheduler is suspended until cluster config object exists (%s)",
+                             Env.paths.clusterconf)
+
         while True:
             try:
                 self.do()
