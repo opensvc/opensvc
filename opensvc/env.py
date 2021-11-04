@@ -8,6 +8,9 @@ from uuid import uuid4
 from utilities.storage import Storage
 
 
+_sysname, _, _, _, _machine, _ = platform.uname()
+
+
 def create_or_update_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
@@ -35,7 +38,11 @@ class Paths(object):
             self.pathetc = '/etc/opensvc'
             self.pathetcns = '/etc/opensvc/namespaces'
             self.pathlog = '/var/log/opensvc'
-            self.pathtmpv = '/var/tmp/opensvc'
+            if _sysname != "SunOS":
+                self.pathtmpv = '/var/tmp/opensvc'
+            else:
+                # Prevent use of /var/tmp (may conflict with /system/filesystem/minimal)
+                self.pathtmpv = '/var/lib/opensvc/tmp'
             self.pathvar = '/var/lib/opensvc'
             self.pathdoc = '/usr/share/doc/opensvc'
             self.pathhtml = '/usr/share/opensvc/html'
@@ -175,7 +182,7 @@ class Env(object):
         "afs", "ncpfs", "glusterfs", "cephfs",
     ]
     _platform = sys.platform
-    sysname, x, x, x, machine, x = platform.uname()
+    sysname = _sysname
     module_sysname = sysname.lower().replace("-", "")
     nodename = socket.gethostname().lower()
     fqdn = socket.getfqdn().lower()
