@@ -43,7 +43,10 @@ if lsb:
     pathetc = "/etc/opensvc"
     pathvar = "/var/lib/opensvc"
     pathlck = '/var/lib/opensvc/lock'
-    pathtmp = "/var/tmp/opensvc"
+    if sysname != "SunOS":
+        pathtmp = "/var/tmp/opensvc"
+    else:
+        pathtmp = "/var/tmp_opensvc"
     pathlog = "/var/log/opensvc"
     pathbin = "/usr/share/opensvc/bin"
     pathlib = "/usr/share/opensvc/opensvc"
