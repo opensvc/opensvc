@@ -73,6 +73,7 @@ class HbDisk(Hb):
         if not os.path.exists(new_dev):
             raise ex.AbortAction("%s does not exist" % new_dev)
 
+        conf_dev = new_dev
         new_dev = os.path.realpath(new_dev)
         new_flags = os.O_RDWR
         statinfo = os.stat(new_dev)
@@ -82,10 +83,10 @@ class HbDisk(Hb):
                 new_flags |= os.O_DIRECT | os.O_SYNC | os.O_DSYNC  # (Darwin, SunOS) pylint: disable=no-member
             else:
                 raise ex.AbortAction("%s must be a block device" % new_dev)
-            if new_dev.startswith("/dev/dm-"):
-                raise ex.AbortAction("%s is not static enough a name to allow. please use a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path" % new_dev)
-            if new_dev.startswith("/dev/sd"):
-                self.log.warning("%s is not a static name. using a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path is safer", new_dev)
+            if conf_dev.startswith("/dev/dm-"):
+                raise ex.AbortAction("%s is not static enough a name to allow. please use a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path" % conf_dev)
+            if conf_dev.startswith("/dev/sd"):
+                self.log.warning("%s is not a static name. using a /dev/mapper/<name> or /dev/by-<attr>/<value> dev path is safer", conf_dev)
         else:
             if not stat.S_ISCHR(statinfo.st_mode):
                 raise ex.AbortAction("%s must be a char device" % new_dev)
