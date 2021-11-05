@@ -689,7 +689,6 @@ class CollectorRpc(object):
                 continue
             h[stat] = sp.get(stat)
             print("%s stats: %d samples" % (stat, len(h[stat][1])))
-        import json
         args = [json.dumps(h)]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         print("pushing")
@@ -785,12 +784,10 @@ class CollectorRpc(object):
         if data.get("encap", False):
             self.log.info("skip push status for encap object %s", svcname)
             return
-        import json
         args = [svcname, json.dumps(data), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_status(*args)
 
     def push_daemon_status(self, data, changes=None, sync=True):
-        import json
         args = [json.dumps(data), json.dumps(changes), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_daemon_status(*args)
 
@@ -1107,7 +1104,6 @@ class CollectorRpc(object):
     def push_hcs(self, objects=None, sync=True):
         if objects is None:
             objects = []
-        import json
         import drivers.array.hcs as m
         try:
             arrays = m.Hcss(objects)
@@ -1149,7 +1145,6 @@ class CollectorRpc(object):
     def push_dorado(self, objects=None, sync=True):
         if objects is None:
             objects = []
-        import json
         import drivers.array.dorado as m
         try:
             arrays = m.Dorados(objects)
