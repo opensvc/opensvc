@@ -957,12 +957,8 @@ class OsvcThread(threading.Thread, Crypt):
         return NODE.oget("node", "ready_period")
 
     def in_maintenance_grace_period(self, nmon):
-        if nmon.status in ("upgrade", "init"):
-            return True
-        if nmon.status == "maintenance" and \
-           nmon.status_updated > time.time() - self.maintenance_grace_period:
-            return True
-        return False
+        return nmon.status in ("maintenance", "upgrade") and \
+           nmon.status_updated > time.time() - self.maintenance_grace_period
 
     def arbitrators_votes(self):
         votes = []

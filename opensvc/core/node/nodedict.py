@@ -524,7 +524,14 @@ The default ruser is root for all nodes. ruser accepts a list of user[@node] ...
         "keyword": "maintenance_grace_period",
         "convert": "duration",
         "default": 60,
-        "text": "A duration expression, like ``1m30s``, defining how long the daemon retains a remote in-maintenance node data. The maintenance state is announced to peers on daemon stop and daemon restart, but not on daemon shutdown. As long as the remote node data are retained, the local daemon won't opt-in to takeover its running instances. This parameter should be adjusted to span the daemon restart time."
+        "text": "A duration expression, like ``1m30s``, defining how long the daemon retains a"
+                " remote in-maintenance (daemon restart or upgrade) node data."
+                " The maintenance state is announced to peers on daemon stop and daemon restart."
+                " The upgrade state is announced to peers on daemon stop for upgrade."
+                " The maintenance grace period does not apply to shutdown state."
+                " As long as the remote node data are retained, the local daemon won't try to takeover"
+                " its running instances."
+                " This parameter should be adjusted to span the daemon restart time."
     },
     {
         "section": "node",
