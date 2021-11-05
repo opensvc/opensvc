@@ -23,6 +23,8 @@ socket.setdefaulttimeout(5)
 kwargs = {}
 try:
     import ssl
+
+    # noinspection PyUnresolvedReferences
     kwargs["context"] = ssl._create_unverified_context()
     kwargs["allow_none"] = True
 except:
@@ -378,7 +380,7 @@ class CollectorRpc(object):
             if len(msg) > trim_lim:
                 msg = msg[:trim_head]+" <trimmed> "+msg[-trim_tail:]
 
-            pids |= set([pid])
+            pids |= {pid}
             if lvl is None or lvl == "DEBUG":
                 continue
             elif lvl == "ERROR":
@@ -426,7 +428,7 @@ class CollectorRpc(object):
         """ If logfile is empty, default to current process pid
         """
         if len(pids) == 0:
-            pids = set([os.getpid()])
+            pids = {os.getpid()}
 
         duration = datetime.strptime(end, "%Y-%m-%d %H:%M:%S") - \
                    datetime.strptime(begin, "%Y-%m-%d %H:%M:%S")
@@ -487,7 +489,6 @@ class CollectorRpc(object):
             with codecs.open(svc.paths.cf, 'r', encoding="utf8") as f:
                 buff = f.read()
                 return buff
-            return
 
         vars = ['svc_name',
                 'cluster_id',
@@ -1230,7 +1231,7 @@ class CollectorRpc(object):
         if "push_checks" not in self.proxy_methods:
             print("'push_checks' method is not exported by the collector")
             return
-        vars = [\
+        vars = [
             "chk_nodename",
             "chk_svcname",
             "chk_type",
@@ -1241,7 +1242,7 @@ class CollectorRpc(object):
         now = str(datetime.now())
         for chk_type, d in data.items():
             for instance in d:
-                vals.append([\
+                vals.append([
                     Env.nodename,
                     instance["path"],
                     chk_type,
