@@ -785,8 +785,19 @@ class DockerLib(ContainerLib):
     def _docker_running_shared(self):
         """
         Return True if the docker daemon is running.
+
+        Old docker daemons return {}.
+        Recent docker daemons return {
+            'ServerErrors': ['Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?'],
+            'ClientInfo': {
+                'Debug': False,
+                'Context': 'default',
+                'Plugins': [],
+                'Warnings': None
+            }
+        }
         """
-        if self.docker_info == {}:
+        if not self.docker_info.get("ServerVersion"):
             return False
         return True
 
