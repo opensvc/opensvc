@@ -627,6 +627,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.compat = True
         self.last_node_data = None
         self.init_steps = set()
+        self.shortloops = 0
 
     def init(self):
         self.set_tid()
@@ -635,7 +636,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.event("monitor_started")
         self.startup = time.time()
         self.rejoin_grace_period_expired = False
-        self.shortloops = 0
         self.unfreeze_when_all_nodes_joined = False
         self.node_frozen = self.freezer.node_frozen()
         self.init_data()
@@ -777,9 +777,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         terminated = self.janitor_procs() + self.janitor_threads()
         changed = self.merge_rx()
         changed |= self.mon_changed()
-        if self.get_node_monitor().status == "init" and self.services_have_init_status():
-            self.set_nmon(status="rejoin")
-            self.rejoin_grace_period_expired = False
+        if self.get_node_monitor().status == "init":
+            have_init_status, service_need_status = self.services_have_init_status()
+            if have_init_status:
+                self.set_nmon(status="rejoin")
+                self.rejoin_grace_period_expired = False
+            elif service_need_status:
+                self.service_status(service_need_status)
         if terminated == 0 and not changed and self.shortloops < self.max_shortloops:
             self.shortloops += 1
             if self.shortloops == self.max_shortloops:
@@ -1324,6 +1328,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         )
 
     def services_have_init_status(self):
+        """
+        return True, None if all service have status
+        when some status are missing:
+            if monitor is up since less than 60s or init steps are not completed return False, None
+            else return False, <path without status>
+        """
         need_log = (time.time() - self.startup) > 60
         for path in list_services():
             try:
@@ -1331,7 +1341,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except KeyError:
                 if need_log:
                     self.duplog("info", "init waiting for %(path)s daemon object allocation", path=path)
-                return False
+                return False, None
             if Env.nodename not in svc.peers:
                 # a configuration file is present, but foreign: don't wait for a status.json
                 continue
@@ -1339,14 +1349,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             try:
                 mtime = os.path.getmtime(fpath)
             except Exception:
-                if need_log:
+                if need_log or self.init_steps_done():
                     self.duplog("info", "init waiting for %(path)s status to exist", path=path)
-                return False
+                    return False, path
+                return False, None
             if self.startup > mtime:
-                if need_log:
+                if need_log or self.init_steps_done():
                     self.duplog("info", "init waiting for %(path)s status refresh", path=path)
-                return False
-        return True
+                    return False, path
+                return False, None
+        return True, None
 
     def services_purge_status(self, paths=None):
         paths = paths or list_services()

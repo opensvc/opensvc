@@ -649,6 +649,60 @@ class TestMonitorOrchestratorStart(object):
         monitor_test.assert_nmon_status("idle", "status now idle because it has all service status")
 
     @staticmethod
+    def test_during_boot_monitor_rescan_missing_status_and_become_idle_after_all_status_created(
+            mocker,
+            last_boot_id,
+    ):
+        init_steps_done = mocker.patch.object(Monitor, 'init_steps_done', return_value=False)
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.create_svc_config("ha1")
+        monitor_test.create_svc_config("ha2")
+        monitor_test.prepare_monitor()
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: verify stay in init until init_steps_done')
+        for _ in range(5):
+            monitor_test.do()
+            monitor_test.assert_nmon_status("init", "status stay in init verify stay in init until init_steps_done")
+
+        monitor_test.log('')
+        monitor_test.log('COMMENT: simulate init steps done')
+        init_steps_done.return_value = True
+        count = 0
+        for _ in range(3):
+            monitor_test.do()
+            count = count + 1
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+            monitor_test.assert_a_command_has_been_launched_x_times(
+                call("ha2", ["status", "--refresh", "--waitlock=0"], local=False),
+                count)
+
+        monitor_test.create_service_status("ha2")
+        monitor_test.log('')
+        monitor_test.log('COMMENT: now verify refresh of next missing service status')
+        count = 0
+        for _ in range(6):
+            monitor_test.do()
+            count = count + 1
+            monitor_test.assert_nmon_status("init", "status stay in init because it waits for service status")
+            monitor_test.assert_a_command_has_been_launched_x_times(
+                call("ha1", ["status", "--refresh", "--waitlock=0"], local=False),
+                count)
+        monitor_test.create_service_status("ha1")
+        monitor_test.log('')
+        monitor_test.log('COMMENT: verify no more refresh are done')
+        for _ in range(3):
+            monitor_test.do()
+        monitor_test.assert_a_command_has_been_launched_x_times(
+            call("ha2", ["status", "--refresh", "--waitlock=0"], local=False),
+            3)
+        monitor_test.assert_a_command_has_been_launched_x_times(
+            call("ha1", ["status", "--refresh", "--waitlock=0"], local=False),
+            6)
+        monitor_test.assert_nmon_status("idle", "status now idle because it has all service status")
+
+    @staticmethod
     @pytest.mark.skip
     def test_monitor_ensure_call_service_status_on_services_without_status(
             mocker,
