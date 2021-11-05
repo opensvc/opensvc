@@ -477,6 +477,9 @@ class CollectorRpc(object):
             self.proxy.update_resinfo(*args)
 
     def push_config(self, svc, sync=True):
+        if svc.encap:
+            self.log.info("skip push config for encap object %s", svc.path)
+            return
         def repr_config(svc):
             import codecs
             if not os.path.exists(svc.paths.cf):
@@ -779,6 +782,9 @@ class CollectorRpc(object):
         return self.proxy.daemon_ping(*args)
 
     def push_status(self, svcname, data, sync=True):
+        if data.get("encap", False):
+            self.log.info("skip push status for encap object %s", svcname)
+            return
         import json
         args = [svcname, json.dumps(data), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_status(*args)
