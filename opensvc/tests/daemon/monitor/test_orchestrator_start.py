@@ -619,6 +619,11 @@ class TestMonitorOrchestratorStart(object):
             call(ANY, ["boot", "--parallel"]),
             call("cluster", ["status", "--parallel", "--refresh"], local=False),
         ]
+        if len(services) > 0:
+            # retry
+            expected_calls += [
+                call(services[0], ['status', '--refresh', '--waitlock=0'], local=False),
+            ]
         monitor_test.prepare_monitor()
         monitor_test.assert_command_has_been_launched(expected_calls)
         assert monitor_test.service_command.call_args_list == expected_calls
