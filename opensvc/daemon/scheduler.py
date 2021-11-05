@@ -91,10 +91,6 @@ class Scheduler(shared.OsvcThread):
             devnull = "/dev/null"
         self.devnull = os.open(devnull, os.O_RDWR)
 
-        if not self.csum:
-            self.log.warning("run scheduler is suspended until cluster config object exists (%s)",
-                             Env.paths.clusterconf)
-
         while True:
             try:
                 self.do()
@@ -455,8 +451,8 @@ class Scheduler(shared.OsvcThread):
         if not ncsum:
             return
         ccsum = self.node_data.get(["services", "config", "cluster", "csum"], None)
-        if not ccsum:
-            return
+        if ccsum is None:
+            ccsum = ""
         return ",".join([ncsum, ccsum])
 
     def local_last(self, sig, fname, obj):
