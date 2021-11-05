@@ -89,8 +89,8 @@ def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
 
 def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     log.info("call remote function %s in %s mode"%(fn, mode))
+    _b = datetime.now()
     try:
-        _b = datetime.now()
         buff = getattr(proxy, fn)(*args, **kwargs)
         _e = datetime.now()
         _d = _e - _b
