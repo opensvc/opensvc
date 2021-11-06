@@ -7,6 +7,7 @@ from utilities.lazy import lazy
 from core.resource import Resource
 from utilities.proc import justcall
 from utilities.net.getaddr import getaddr
+from utilities.storage import Storage
 
 KW_START_TIMEOUT = {   
     "keyword": "start_timeout",
@@ -411,7 +412,6 @@ class BaseContainer(Resource):
         )
         return elems
 
-
     def dns_options(self, options):
         ndots_done = False
         edns0_done = False
@@ -437,3 +437,12 @@ class BaseContainer(Resource):
             options.append("use-vc")
         return options
 
+    def as_storage(self):
+        container_info = self.get_container_info()
+        return Storage({
+            "vm_hostname": self.vm_hostname,
+            "container.guestos": self.guestos,
+            "vmem": container_info["vmem"],
+            "vcpu": container_info["vcpus"],
+            "zonepath": self.zonepath if hasattr(self, "zonepath") else ""
+        })

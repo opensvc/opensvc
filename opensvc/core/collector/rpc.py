@@ -491,9 +491,9 @@ class CollectorRpc(object):
 
         def repr_config(svc):
             import codecs
-            if not os.path.exists(svc.paths.cf):
+            if not os.path.exists(svc.paths_cf):
                 return
-            with codecs.open(svc.paths.cf, 'r', encoding="utf8") as f:
+            with codecs.open(svc.paths_cf, 'r', encoding="utf8") as f:
                 buff = f.read()
                 return buff
 
@@ -515,7 +515,7 @@ class CollectorRpc(object):
                 'svc_ha']
 
         vals = [svc.path,
-                svc.node.cluster_id,
+                svc.cluster_id,
                 svc.topology,
                 svc.flex_min,
                 svc.flex_max,
@@ -535,7 +535,7 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.update_service(*args)
 
-    def push_containerinfo(self, svc, sync=True):
+    def push_containerinfo(self, path, containers, sync=True):
         vars = ['mon_svcname',
                 'mon_nodname',
                 'mon_vmname',
@@ -545,15 +545,16 @@ class CollectorRpc(object):
                 'mon_containerpath']
         vals = []
 
-        for container in svc.get_resources('container'):
-            container_info = container.get_container_info()
-            vals += [[svc.path,
-                      Env.nodename,
-                      container.vm_hostname,
-                      container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
-                      container_info['vmem'],
-                      container_info['vcpus'],
-                      container.zonepath if hasattr(container, 'zonepath') else ""]]
+        for container in containers:
+            vals += [[
+                path,
+                Env.nodename,
+                container.vm_hostname,
+                container.guestos,
+                container.vmem,
+                container.vcpus,
+                container.zonepath
+            ]]
 
         if len(vals) > 0:
             args = [vars, vals]
