@@ -183,32 +183,43 @@ class Collector(shared.OsvcThread):
     def send_containerinfo(self, path):
         if self.stopped():
             return
-        if path not in shared.SERVICES:
-            return
-        if not shared.SERVICES[path].has_encap_resources:
-            return
-        self.log.info("send service %s container info", path)
+
         with shared.SERVICES_LOCK:
-            try:
-                shared.NODE.collector.call("push_containerinfo", shared.SERVICES[path])
-            except Exception as exc:
-                self.log.error("call push_containerinfo: %s", exc)
-                shared.NODE.collector.disable()
+            if path not in shared.SERVICES:
+                return
+            service = shared.SERVICES[path]
+            if not service.has_encap_resources:
+                return
+            containers = service.containers_as_storage_list()
+
+        if len(containers) == 0:
+            return
+
+        self.log.info("send service %s container info", path)
+        try:
+            shared.NODE.collector.call("push_containerinfo", path, containers)
+        except Exception as exc:
+            self.log.error("call push_containerinfo %s: %s", path, exc)
+            shared.NODE.collector.disable()
 
     def send_service_config(self, path, csum):
         if self.stopped():
             return
-        if path not in shared.SERVICES:
-            return
-        self.log.info("send service %s config", path)
+
         with shared.SERVICES_LOCK:
-            try:
-                shared.NODE.collector.call("push_config", shared.SERVICES[path])
-                sent = True
-            except Exception as exc:
-                self.log.error("call push_config: %s", exc)
-                shared.NODE.collector.disable()
-                sent = False
+            if path not in shared.SERVICES:
+                return
+            svc = shared.SERVICES[path].as_storage()
+
+        self.log.info("send service %s config", path)
+        try:
+            shared.NODE.collector.call("push_config", svc)
+            sent = True
+        except Exception as exc:
+            self.log.error("call push_config %s: %s", path, exc)
+            shared.NODE.collector.disable()
+            sent = False
+
         if sent:
             try:
                 self.dump_config_sent(path, csum)

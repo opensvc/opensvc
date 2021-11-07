@@ -23,9 +23,11 @@ socket.setdefaulttimeout(5)
 kwargs = {}
 try:
     import ssl
+
+    # noinspection PyUnresolvedReferences
     kwargs["context"] = ssl._create_unverified_context()
     kwargs["allow_none"] = True
-except:
+except Exception:
     pass
 
 try:
@@ -33,13 +35,13 @@ try:
 except ImportError:
     import xmlrpc.client as xmlrpclib
 
+
 def get_proxy(uri):
     try:
         return xmlrpclib.ServerProxy(uri, **kwargs)
     except Exception as e:
         if "__init__" in str(e):
             return xmlrpclib.ServerProxy(uri)
-
 
 
 Env.warned = False
@@ -60,6 +62,7 @@ try:
     log.addHandler(filehandler)
 except Exception as e:
     pass
+
 
 def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
     tries = 5
@@ -85,24 +88,26 @@ def do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
         log.warning("retry call %s on error %s" % (fn, s))
     log.error("failed to call %s after %d tries" % (fn, tries))
 
+
 def _do_call(fn, args, kwargs, log, proxy, mode="synchronous"):
-    log.info("call remote function %s in %s mode"%(fn, mode))
+    log.info("call remote function %s in %s mode" % (fn, mode))
+    _b = datetime.now()
     try:
-        _b = datetime.now()
         buff = getattr(proxy, fn)(*args, **kwargs)
         _e = datetime.now()
         _d = _e - _b
-        log.info("call %s done in %d.%03d seconds"%(fn, _d.seconds, _d.microseconds//1000))
+        log.info("call %s done in %d.%03d seconds" % (fn, _d.seconds, _d.microseconds//1000))
         return buff
     except (OSError, Exception) as exc:
         # socket.gaierror (name resolution failure) is a subclass of OSError in py3.3+
         _e = datetime.now()
         _d = _e - _b
-        log.error("call %s error after %d.%03d seconds: %s"%(fn, _d.seconds, _d.microseconds//1000, exc))
+        log.error("call %s error after %d.%03d seconds: %s" % (fn, _d.seconds, _d.microseconds//1000, exc))
         if hasattr(exc, "faultString"):
             raise ex.Error(getattr(exc, "faultString").split(":", 1)[-1])
         else:
             raise ex.Error(str(exc))
+
 
 class CollectorRpc(object):
     def call(self, *args, **kwargs):
@@ -198,7 +203,7 @@ class CollectorRpc(object):
             self.log.info("no %s method list cache", t)
             return True
         now = time.time()
-        threshold = mtime + 86400 + random.random()*3600 # 1d + random(1h)
+        threshold = mtime + 86400 + random.random()*3600  # 1d + random(1h)
         if now > threshold:
             self.log.info("%s method list cache too old (%s)", t, print_duration(now-mtime))
             return True
@@ -223,7 +228,7 @@ class CollectorRpc(object):
             self.log.error("get dbopensvc methods: %s", exc)
             self.proxy = get_proxy(DUMMY_URL)
             self.proxy_methods = []
-        self.log.debug("%d feed methods"%len(self.proxy_methods))
+        self.log.debug("%d feed methods" % len(self.proxy_methods))
 
     def get_methods_dbcompliance(self):
         if self.node.collector_env.dbcompliance is None:
@@ -237,7 +242,7 @@ class CollectorRpc(object):
             self.log.error("get dbcompliance methods: %s", exc)
             self.comp_proxy = get_proxy(DUMMY_URL)
             self.comp_proxy_methods = []
-        self.log.debug("%d compliance methods"%len(self.comp_proxy_methods))
+        self.log.debug("%d compliance methods" % len(self.comp_proxy_methods))
 
     def init(self, fn=None):
         if fn is not None:
@@ -261,7 +266,8 @@ class CollectorRpc(object):
                 raise Exception
             dbopensvc_ip = a[0][-1][0]
         except Exception:
-            self.log.error("could not resolve %s to an ip address. disable collector updates."%self.node.collector_env.dbopensvc_host)
+            self.log.error("could not resolve %s to an ip address. disable collector updates.",
+                           self.node.collector_env.dbopensvc_host)
             self.proxy = get_proxy(DUMMY_URL)
             return
         try:
@@ -271,7 +277,7 @@ class CollectorRpc(object):
             self.log.error("init dbopensvc: %s", exc)
             self.proxy = get_proxy(DUMMY_URL)
             return
-        self.log.info("feed proxy %s"%str(self.proxy))
+        self.log.info("feed proxy %s", str(self.proxy))
 
     def init_comp_proxy(self):
         try:
@@ -280,16 +286,17 @@ class CollectorRpc(object):
                 raise Exception
             dbcompliance_ip = a[0][-1][0]
         except Exception:
-            self.log.error("could not resolve %s to an ip address. disable collector updates."%self.node.collector_env.dbcompliance_host)
+            self.log.error("could not resolve %s to an ip address. disable collector updates.",
+                           self.node.collector_env.dbcompliance_host)
             self.comp_proxy = get_proxy(DUMMY_URL)
             return
         try:
             self.comp_proxy = get_proxy(self.node.collector_env.dbcompliance)
             self.get_methods_dbcompliance()
-        except:
+        except Exception:
             self.comp_proxy = get_proxy(DUMMY_URL)
             return
-        self.log.info("compliance proxy %s"%str(self.comp_proxy))
+        self.log.info("compliance proxy %s", str(self.comp_proxy))
 
     def disable(self):
         self.proxy = None
@@ -311,7 +318,8 @@ class CollectorRpc(object):
         return False
 
     def begin_action(self, svcname, action, version, begin, cron):
-        args = [['svcname',
+        args = [
+            ['svcname',
              'action',
              'hostname',
              'version',
@@ -378,7 +386,7 @@ class CollectorRpc(object):
             if len(msg) > trim_lim:
                 msg = msg[:trim_head]+" <trimmed> "+msg[-trim_tail:]
 
-            pids |= set([pid])
+            pids |= {pid}
             if lvl is None or lvl == "DEBUG":
                 continue
             elif lvl == "ERROR":
@@ -426,7 +434,7 @@ class CollectorRpc(object):
         """ If logfile is empty, default to current process pid
         """
         if len(pids) == 0:
-            pids = set([os.getpid()])
+            pids = {os.getpid()}
 
         duration = datetime.strptime(end, "%Y-%m-%d %H:%M:%S") - \
                    datetime.strptime(begin, "%Y-%m-%d %H:%M:%S")
@@ -477,14 +485,17 @@ class CollectorRpc(object):
             self.proxy.update_resinfo(*args)
 
     def push_config(self, svc, sync=True):
+        if svc.encap:
+            self.log.info("skip push config for encap object %s", svc.path)
+            return
+
         def repr_config(svc):
             import codecs
-            if not os.path.exists(svc.paths.cf):
+            if not os.path.exists(svc.paths_cf):
                 return
-            with codecs.open(svc.paths.cf, 'r', encoding="utf8") as f:
+            with codecs.open(svc.paths_cf, 'r', encoding="utf8") as f:
                 buff = f.read()
                 return buff
-            return
 
         vars = ['svc_name',
                 'cluster_id',
@@ -504,7 +515,7 @@ class CollectorRpc(object):
                 'svc_ha']
 
         vals = [svc.path,
-                svc.node.cluster_id,
+                svc.cluster_id,
                 svc.topology,
                 svc.flex_min,
                 svc.flex_max,
@@ -524,7 +535,7 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.update_service(*args)
 
-    def push_containerinfo(self, svc, sync=True):
+    def push_containerinfo(self, path, containers, sync=True):
         vars = ['mon_svcname',
                 'mon_nodname',
                 'mon_vmname',
@@ -534,15 +545,16 @@ class CollectorRpc(object):
                 'mon_containerpath']
         vals = []
 
-        for container in svc.get_resources('container'):
-            container_info = container.get_container_info()
-            vals += [[svc.path,
-                      Env.nodename,
-                      container.vm_hostname,
-                      container.guestos if hasattr(container, 'guestos') and container.guestos is not None else "",
-                      container_info['vmem'],
-                      container_info['vcpus'],
-                      container.zonepath if hasattr(container, 'zonepath') else ""]]
+        for container in containers:
+            vals += [[
+                path,
+                Env.nodename,
+                container.vm_hostname,
+                container.guestos,
+                container.vmem,
+                container.vcpus,
+                container.zonepath
+            ]]
 
         if len(vals) > 0:
             args = [vars, vals]
@@ -574,7 +586,7 @@ class CollectorRpc(object):
                  disk["dg"],
                  Env.nodename,
                  service["region"],
-            ])
+                ])
             if disk["used"] < disk["size"]:
                 vals.append([
                  disk_id,
@@ -586,7 +598,7 @@ class CollectorRpc(object):
                  disk["dg"],
                  Env.nodename,
                  0,
-            ])
+                ])
 
         args = [vars, vals]
         args += [(self.node.collector_env.uuid, Env.nodename)]
@@ -634,7 +646,7 @@ class CollectorRpc(object):
             print("No package found. Skip push.")
             return
         else:
-            print("Pushing %d packages information."%n)
+            print("Pushing %d packages information." % n)
         n_fields = len(vals[0])
         if n_fields >= 5:
             vars.append('pkg_type')
@@ -682,11 +694,10 @@ class CollectorRpc(object):
         for stat in ['cpu', 'mem_u', 'proc', 'swap', 'block',
                      'blockdev', 'netdev', 'netdev_err', 'svc', 'fs_u']:
             if disable is not None and stat in disable:
-                print("%s collection is disabled in node configuration"%stat)
+                print("%s collection is disabled in node configuration" % stat)
                 continue
             h[stat] = sp.get(stat)
             print("%s stats: %d samples" % (stat, len(h[stat][1])))
-        import json
         args = [json.dumps(h)]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         print("pushing")
@@ -779,12 +790,13 @@ class CollectorRpc(object):
         return self.proxy.daemon_ping(*args)
 
     def push_status(self, svcname, data, sync=True):
-        import json
+        if data.get("encap", False):
+            self.log.info("skip push status for encap object %s", svcname)
+            return
         args = [svcname, json.dumps(data), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_status(*args)
 
     def push_daemon_status(self, data, changes=None, sync=True):
-        import json
         args = [json.dumps(data), json.dumps(changes), (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.push_daemon_status(*args)
 
@@ -797,14 +809,14 @@ class CollectorRpc(object):
         import drivers.sanswitch.brocade as m
         try:
             brocades = m.Brocades(objects)
-        except:
+        except Exception:
             return
         for brocade in brocades:
             vals = []
             for key in brocade.keys:
                 try:
                     vals.append(getattr(brocade, 'get_'+key)())
-                except:
+                except Exception:
                     print("error fetching", key)
                     continue
             args = [brocade.name, brocade.keys, vals]
@@ -820,7 +832,7 @@ class CollectorRpc(object):
         import drivers.array.vioserver as m
         try:
             vioservers = m.VioServers(objects)
-        except:
+        except Exception:
             return
         for vioserver in vioservers:
             vals = []
@@ -859,7 +871,7 @@ class CollectorRpc(object):
         import drivers.array.necism as m
         try:
             necisms = m.NecIsms(objects)
-        except:
+        except Exception:
             return
         for necism in necisms:
             vals = []
@@ -878,7 +890,7 @@ class CollectorRpc(object):
         import drivers.array.hp3par as m
         try:
             hp3pars = m.Hp3pars(objects)
-        except:
+        except Exception:
             return
         for hp3par in hp3pars:
             vals = []
@@ -897,7 +909,7 @@ class CollectorRpc(object):
         import drivers.array.centera as m
         try:
             centeras = m.Centeras(objects)
-        except:
+        except Exception:
             return
         for centera in centeras:
             vals = []
@@ -918,7 +930,7 @@ class CollectorRpc(object):
         import drivers.array.emcvnx as m
         try:
             emcvnxs = m.EmcVnxs(objects)
-        except:
+        except Exception:
             return
         for emcvnx in emcvnxs:
             vals = []
@@ -939,7 +951,7 @@ class CollectorRpc(object):
         import drivers.array.netapp as m
         try:
             netapps = m.Netapps(objects)
-        except:
+        except Exception:
             return
         for netapp in netapps:
             vals = []
@@ -960,7 +972,7 @@ class CollectorRpc(object):
         import drivers.array.ibmsvc as m
         try:
             ibmsvcs = m.IbmSvcs(objects)
-        except:
+        except Exception:
             return
         for ibmsvc in ibmsvcs:
             vals = []
@@ -972,12 +984,12 @@ class CollectorRpc(object):
 
     def push_nsr(self, sync=True):
         if 'update_nsr' not in self.proxy_methods:
-           print("'update_nsr' method is not exported by the collector")
-           return
+            print("'update_nsr' method is not exported by the collector")
+            return
         import drivers.backupsrv.networker as m
         try:
             nsr = m.Nsr()
-        except:
+        except Exception:
             return
         vals = []
         for key in nsr.keys:
@@ -986,19 +998,19 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         try:
             self.proxy.update_nsr(*args)
-        except:
+        except Exception:
             print("error pushing nsr index")
 
     def push_ibmds(self, objects=None, sync=True):
         if objects is None:
             objects = []
         if 'update_ibmds' not in self.proxy_methods:
-           print("'update_ibmds' method is not exported by the collector")
-           return
+            print("'update_ibmds' method is not exported by the collector")
+            return
         import drivers.array.ibmds as m
         try:
             ibmdss = m.IbmDss(objects)
-        except:
+        except Exception:
             return
         for ibmds in ibmdss:
             vals = []
@@ -1008,19 +1020,19 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_ibmds(*args)
-            except:
+            except Exception:
                 print("error pushing", ibmds.name)
 
     def push_gcedisks(self, objects=None, sync=True):
         if objects is None:
             objects = []
         if 'update_gcedisks' not in self.proxy_methods:
-           print("'update_gcedisks' method is not exported by the collector")
-           return
+            print("'update_gcedisks' method is not exported by the collector")
+            return
         import drivers.array.gce as m
         try:
             arrays = m.GceDiskss(objects)
-        except:
+        except Exception:
             return
         for array in arrays:
             vals = []
@@ -1037,12 +1049,12 @@ class CollectorRpc(object):
         if objects is None:
             objects = []
         if 'update_freenas' not in self.proxy_methods:
-           print("'update_freenas' method is not exported by the collector")
-           return
+            print("'update_freenas' method is not exported by the collector")
+            return
         import drivers.array.freenas as m
         try:
             arrays = m.Freenass(objects)
-        except:
+        except Exception:
             return
         for array in arrays:
             vals = []
@@ -1052,19 +1064,19 @@ class CollectorRpc(object):
             args += [(self.node.collector_env.uuid, Env.nodename)]
             try:
                 self.proxy.update_freenas(*args)
-            except:
+            except Exception:
                 print("error pushing", array.name)
 
     def push_xtremio(self, objects=None, sync=True):
         if objects is None:
             objects = []
         if 'update_xtremio' not in self.proxy_methods:
-           print("'update_xtremio' method is not exported by the collector")
-           return
+            print("'update_xtremio' method is not exported by the collector")
+            return
         import drivers.array.xtremio as m
         try:
             arrays = m.Arrays(objects)
-        except:
+        except Exception:
             return
         for array in arrays:
             vals = []
@@ -1088,7 +1100,7 @@ class CollectorRpc(object):
         import drivers.array.eva as m
         try:
             evas = m.Evas(objects)
-        except:
+        except Exception:
             return
         for eva in evas:
             vals = []
@@ -1101,7 +1113,6 @@ class CollectorRpc(object):
     def push_hcs(self, objects=None, sync=True):
         if objects is None:
             objects = []
-        import json
         import drivers.array.hcs as m
         try:
             arrays = m.Hcss(objects)
@@ -1143,7 +1154,6 @@ class CollectorRpc(object):
     def push_dorado(self, objects=None, sync=True):
         if objects is None:
             objects = []
-        import json
         import drivers.array.dorado as m
         try:
             arrays = m.Dorados(objects)
@@ -1229,7 +1239,7 @@ class CollectorRpc(object):
         if "push_checks" not in self.proxy_methods:
             print("'push_checks' method is not exported by the collector")
             return
-        vars = [\
+        vars = [
             "chk_nodename",
             "chk_svcname",
             "chk_type",
@@ -1240,7 +1250,7 @@ class CollectorRpc(object):
         now = str(datetime.now())
         for chk_type, d in data.items():
             for instance in d:
-                vals.append([\
+                vals.append([
                     Env.nodename,
                     instance["path"],
                     chk_type,

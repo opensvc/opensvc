@@ -2838,6 +2838,30 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def configure_scheduler(self, *args, **kwargs):
         pass
 
+    def as_storage(self):
+        return Storage({
+            "path": self.path,
+            "path_cf": self.paths.cf,
+            "cluster_id": self.node.cluster_id,
+            "topology": self.topology,
+            "flex_min": self.flex_min,
+            "flex_max": self.flex_max,
+            "flex_target": self.flex_target,
+            "flex_cpu_low_threshold": self.flex_cpu_low_threshold,
+            "flex_cpu_high_threshold": self.flex_cpu_high_threshold,
+            "svc_env": self.svc_env,
+            "nodes": self.nodes,
+            "drpnode": self.drpnode,
+            "drpnodes": self.drpnodes,
+            "comment": self.comment,
+            "app": self.app,
+            "encap": self.encap,
+        })
+
+    def containers_as_storage_list(self):
+        return [container.as_storage()
+                for container in self.get_resources('container')]
+
 
 class Svc(PgMixin, BaseSvc):
     """
