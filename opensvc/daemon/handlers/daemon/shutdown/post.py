@@ -44,7 +44,7 @@ class Handler(daemon.handler.BaseHandler):
                 _, _, kind = split_path(path)
                 if kind not in ("svc", "vol"):
                     continue
-                thr.set_smon(path, local_expect="shutdown")
+                thr.defer_set_smon(path, local_expect="shutdown", origin="post /daemon_shutdown")
             self.wait_shutdown(thr=thr)
 
             # send a last status to peers so they can takeover asap
