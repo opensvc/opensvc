@@ -491,9 +491,10 @@ class CollectorRpc(object):
 
         def repr_config(svc):
             import codecs
-            if not os.path.exists(svc.paths_cf):
+            cfg_file = svc.path_cf
+            if not os.path.exists(cfg_file):
                 return
-            with codecs.open(svc.paths_cf, 'r', encoding="utf8") as f:
+            with codecs.open(cfg_file, 'r', encoding="utf8") as f:
                 buff = f.read()
                 return buff
 

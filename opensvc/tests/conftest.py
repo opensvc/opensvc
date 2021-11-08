@@ -166,6 +166,30 @@ config = %s
 
 
 @pytest.fixture(scope='function')
+def has_node_dbopensvc_config(osvc_path_tests):
+
+    pathetc = env.Env.paths.pathetc
+    if not os.path.exists(pathetc):
+        os.mkdir(pathetc)
+    with open(os.path.join(pathetc, 'node.conf'), mode='w+') as node_config_file:
+        """This fixture set non default port and tls_port for listener.
+        This avoid port conflict with live daemon.
+        """
+        config_txt = """
+[node]
+dbopensvc = http://localhost:8888
+uuid = "abcd"
+[listener]
+port = 1224
+tls_port = 1225
+
+[cni]
+config = %s
+""" % str(os.path.join(str(osvc_path_tests), 'cni.config'))
+        node_config_file.write(config_txt)
+
+
+@pytest.fixture(scope='function')
 def has_service_lvm(osvc_path_tests, mock_sysname):
     mock_sysname('Linux')
     pathetc = env.Env.paths.pathetc

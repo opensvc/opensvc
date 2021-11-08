@@ -4933,7 +4933,7 @@ class Svc(PgMixin, BaseSvc):
         Push the service config to the collector. Usually done
         automatically by the collector thread.
         """
-        self.node.collector.call('push_config', self)
+        self.node.collector.call('push_config', self.send_service_config_args())
 
     def push_resinfo(self):
         """
