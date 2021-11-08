@@ -437,7 +437,7 @@ class BaseContainer(Resource):
             options.append("use-vc")
         return options
 
-    def as_storage(self):
+    def send_containerinfo_arg(self):
         container_info = self.get_container_info()
         return Storage({
             "vm_hostname": self.vm_hostname,

@@ -2838,7 +2838,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
     def configure_scheduler(self, *args, **kwargs):
         pass
 
-    def as_storage(self):
+    def send_service_config_args(self):
         return Storage({
             "path": self.path,
             "path_cf": self.paths.cf,
@@ -2857,10 +2857,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "app": self.app,
             "encap": self.encap,
         })
-
-    def containers_as_storage_list(self):
-        return [container.as_storage()
-                for container in self.get_resources('container')]
 
 
 class Svc(PgMixin, BaseSvc):
