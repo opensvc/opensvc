@@ -190,7 +190,8 @@ class Collector(shared.OsvcThread):
             service = shared.SERVICES[path]
             if not service.has_encap_resources:
                 return
-            containers = service.containers_as_storage_list()
+            containers = [container.send_containerinfo_arg()
+                          for container in service.get_resources('container')]
 
         if len(containers) == 0:
             return
@@ -209,7 +210,7 @@ class Collector(shared.OsvcThread):
         with shared.SERVICES_LOCK:
             if path not in shared.SERVICES:
                 return
-            svc = shared.SERVICES[path].as_storage()
+            svc = shared.SERVICES[path].send_service_config_args()
 
         self.log.info("send service %s config", path)
         try:
