@@ -122,19 +122,14 @@ class Handler(daemon.handler.BaseHandler):
                     options.global_expect = new_ge
                 if options.global_expect:
                     data["data"]["global_expect"] = options.global_expect
-                info.append("%s target state set to %s" % (path, options.global_expect))
-                set_smon_result = thr.set_smon(
+                info.append("%s defer target state set to %s" % (path, options.global_expect))
+                thr.defer_set_smon(
                     path, status=options.status,
                     local_expect=options.local_expect,
                     global_expect=options.global_expect,
                     reset_retries=options.reset_retries,
                     stonith=options.stonith,
                 )
-                if set_smon_result is False:
-                    message = "skipped set %s monitor with:" % path
-                    for option in ["status", "local_expect", "global_expect", "reset_retries", "stonith"]:
-                        message += " %s=%s" % (option, options.get(option))
-                    thr.log.info(message)
         data["status"] = len(errors)
         if info:
             data["info"] = info

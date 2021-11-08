@@ -130,6 +130,11 @@ DEFERRED_STOP_LISTENER_CLIENTS = set()
 # DEFERRED_STOP_LISTENER_CLIENTS_LOCK serialize access to DEFERRED_STOP_LISTENER_CLIENTS
 DEFERRED_STOP_LISTENER_CLIENTS_LOCK = threading.RLock()
 
+# DEFERRED_SET_SMON define set of deferred smon changes
+DEFERRED_SET_SMON = set()
+# DEFERRED_SET_SMON_LOCK serialize access to DEFERRED_SET_SMON
+DEFERRED_SET_SMON_LOCK = threading.RLock()
+
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
@@ -749,6 +754,21 @@ class OsvcThread(threading.Thread, Crypt):
         if changed:
             smon_view.set([], smon)
             wake_monitor(reason="%s mon change" % path)
+
+    @staticmethod
+    def defer_set_smon(
+            path, status=None, local_expect=None, global_expect=None,
+            reset_retries=False, stonith=None, expected_status=None):
+        with DEFERRED_SET_SMON_LOCK:
+            DEFERRED_SET_SMON.add((
+                path,
+                status,
+                local_expect,
+                global_expect,
+                reset_retries,
+                stonith,
+                expected_status
+            ))
 
     def get_node_monitor(self, nodename=None):
         """

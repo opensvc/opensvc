@@ -57,7 +57,7 @@ class Handler(daemon.handler.BaseHandler):
                 _, _, kind = split_path(path)
                 if kind not in ("svc", "vol"):
                     continue
-                thr.set_smon(path, local_expect="shutdown")
+                thr.defer_set_smon(path, local_expect="shutdown")
             if options.wait:
                 try:
                     self.wait_shutdown(timeout=options.time, thr=thr)
