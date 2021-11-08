@@ -444,5 +444,5 @@ class BaseContainer(Resource):
             "container.guestos": self.guestos,
             "vmem": container_info["vmem"],
             "vcpu": container_info["vcpus"],
-            "zonepath": self.zonepath if hasattr(self, "zonepath") else ""
+            "zonepath": getattr(self, "zonepath", ""),
         })
