@@ -3621,6 +3621,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         return self.arbitrators_data
 
     def update_cluster_data(self):
+        self.apply_deferred_smon()
         self.update_node_data()
         self.purge_left_nodes()
         self.merge_hb_data()
@@ -3639,6 +3640,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         for node in left:
             self.log.info("purge left node %s data", node)
             self.delete_peer_data(node)
+
+    def apply_deferred_smon(self):
+        with shared.DEFERRED_SET_SMON_LOCK:
+            for path, status, local_expect, global_expect, reset_retries, \
+                    stonith, expected_status, origin in shared.DEFERRED_SET_SMON:
+                self.set_smon(path, status=status, local_expect=local_expect,
+                              global_expect=global_expect,
+                              reset_retries=reset_retries, stonith=stonith,
+                              expected_status=reset_retries,
+                              defer=True, origin=origin)
+            del shared.DEFERRED_SET_SMON[:]
 
     def update_node_data(self):
         """

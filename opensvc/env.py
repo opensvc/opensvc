@@ -8,6 +8,9 @@ from uuid import uuid4
 from utilities.storage import Storage
 
 
+_sysname, _, _, _, _machine, _ = platform.uname()
+
+
 def create_or_update_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
@@ -16,9 +19,10 @@ def create_or_update_dir(d):
         now = time.time()
         try:
             os.utime(d, (now, now))
-        except:
+        except Exception:
             # unprivileged
             pass
+
 
 class Paths(object):
     def __init__(self, osvc_root_path=None, detect=False):
@@ -35,7 +39,11 @@ class Paths(object):
             self.pathetc = '/etc/opensvc'
             self.pathetcns = '/etc/opensvc/namespaces'
             self.pathlog = '/var/log/opensvc'
-            self.pathtmpv = '/var/tmp/opensvc'
+            if _sysname != "SunOS":
+                self.pathtmpv = '/var/tmp/opensvc'
+            else:
+                # Prevent use of /var/tmp (may conflict with /system/filesystem/minimal)
+                self.pathtmpv = '/var/lib/opensvc/tmp'
             self.pathvar = '/var/lib/opensvc'
             self.pathdoc = '/usr/share/doc/opensvc'
             self.pathhtml = '/usr/share/opensvc/html'
@@ -106,6 +114,7 @@ class Paths(object):
         create_or_update_dir(self.pathtmpv)
         self.tmp_prepared = True
 
+
 class Env(object):
     """Class to store globals
     """
@@ -175,7 +184,7 @@ class Env(object):
         "afs", "ncpfs", "glusterfs", "cephfs",
     ]
     _platform = sys.platform
-    sysname, x, x, x, machine, x = platform.uname()
+    sysname = _sysname
     module_sysname = sysname.lower().replace("-", "")
     nodename = socket.gethostname().lower()
     fqdn = socket.getfqdn().lower()
@@ -183,22 +192,32 @@ class Env(object):
     listener_tls_port = 1215
 
     # programs to execute remote command on other nodes or virtual hosts
-    if _platform == "sunos5" :
+    if _platform == "sunos5":
         if os.path.exists('/usr/local/bin/ssh'):
-            rsh = "/usr/local/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
-            rcp = "/usr/local/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+            rsh = "/usr/local/bin/ssh -q -o StrictHostKeyChecking=no" \
+                  " -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+            rcp = "/usr/local/bin/scp -q -o StrictHostKeyChecking=no" \
+                  " -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
         else:
-            rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -n"
-            rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
+            rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no " \
+                  "-o ForwardX11=no -o BatchMode=yes -n"
+            rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no " \
+                  " -o ForwardX11=no -o BatchMode=yes"
     elif os.path.exists('/etc/vmware-release'):
-        rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
-        rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes"
+        rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no " \
+              "-o ForwardX11=no -o BatchMode=yes"
+        rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no " \
+              "-o ForwardX11=no -o BatchMode=yes"
     elif sysname == 'OSF1':
-        rsh = "ssh -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
-        rcp = "scp -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+        rsh = "ssh -o StrictHostKeyChecking=no -o ForwardX11=no " \
+              "-o BatchMode=yes -o ConnectTimeout=10"
+        rcp = "scp -o StrictHostKeyChecking=no -o ForwardX11=no "\
+              "-o BatchMode=yes -o ConnectTimeout=10"
     else:
-        rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
-        rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no -o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+        rsh = "/usr/bin/ssh -q -o StrictHostKeyChecking=no " \
+              "-o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
+        rcp = "/usr/bin/scp -q -o StrictHostKeyChecking=no " \
+              "-o ForwardX11=no -o BatchMode=yes -o ConnectTimeout=10"
 
     vt_cloud = ["vcloud", "openstack", "amazon"]
     vt_libvirt = ["kvm"]

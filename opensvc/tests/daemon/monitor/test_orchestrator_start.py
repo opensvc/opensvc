@@ -9,6 +9,7 @@ import pytest
 
 import env
 from daemon.handlers.object.status.post import Handler as HandlerObjectStatusPost
+from daemon.handlers.object.monitor.post import Handler as HandlerObjectMonitorPost
 from daemon.main import Daemon
 # noinspection PyUnresolvedReferences
 from daemon.monitor import Monitor, shared, queue
@@ -18,6 +19,7 @@ from utilities.naming import svc_pathvar
 
 boot_id = str(time.time())
 post_object_status_handler = HandlerObjectStatusPost()
+post_object_monitor_handler = HandlerObjectMonitorPost()
 
 
 def str_uuid():
@@ -190,6 +192,12 @@ class MonitorTest(object):
         with open(os.path.join(pathetc, '%s.conf' % s), mode='w+') as svc_file:
             svc_file.write(SERVICES[s])
 
+    def delete_svc_config(self, s):
+        f_name = os.path.join(env.Env.paths.pathetc, '%s.conf' % s)
+        if os.path.exists(f_name):
+            self.log("COMMENT: delete service %s.conf config file: %s", s, f_name)
+            os.unlink(f_name)
+
     def do(self):
         self.log('\nCOMMENT: monitor.do()')
         time.sleep(0.01)  # Simulate time elapsed between 2 do() iteration
@@ -217,6 +225,13 @@ class MonitorTest(object):
                      svcname, local_expect, message, json.dumps(smon))
         assert smon.local_expect == local_expect
 
+    def assert_smon_global_expect(self, svcname, global_expect, message=None):
+        smon = self.monitor.get_service_monitor(svcname)
+        if message:
+            self.log('COMMENT: ASSERT smon global_expect for svc %s is "%s" (reason: %s), full value is %s',
+                     svcname, global_expect, message, json.dumps(smon))
+        assert smon.global_expect == global_expect
+
     def assert_command_has_been_launched(self, call_list):
         for call_element in call_list:
             self.log('COMMENT: ASSERT %s has been called', call_element)
@@ -234,6 +249,16 @@ class MonitorTest(object):
         for call_element in call_list:
             self.log('COMMENT: ASSERT %s has not been called', call_element)
             assert call_element not in self.service_command.call_args_list
+
+    def post_object_monitor(self, path, global_expect=None):
+        self.log("\nCOMMENT: post object monitor %s global_expect: %s", path, global_expect)
+        req = {"options": {"path": path}}
+        if global_expect:
+            req["options"]["global_expect"] = global_expect
+        post_object_monitor_handler.action(
+            env.Env.nodename,
+            thr=self.monitor,
+            **req)
 
     def create_cluster_status(self):
         self.log('\nCOMMENT: create ccfg/cluster status.json')
@@ -995,3 +1020,110 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
         ])
         monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1,fs#2']), restart)
         monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#2']), 5 - restart)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('has_node_config')
+@pytest.mark.usefixtures('shared_data')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('has_cluster_config')
+@pytest.mark.usefixtures('wait_listener')
+@pytest.mark.usefixtures('get_boot_id')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('popen_communicate')
+class TestMonitorVsPostObject(object):
+    @staticmethod
+    def test_post_object_status_are_deleted_by_monitor_if_config_file_is_absent(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor.max_shortloops = 0
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "ha1"
+        monitor_test.create_svc_config(svc)
+
+        def assert_smon_has_states(status="idle", local_expect="started"):
+            monitor_test.assert_smon_status(svc, status, "ensure existing smon")
+            monitor_test.assert_smon_local_expect(svc, local_expect, "ensure existing smon")
+
+        def assert_smon_has_no_states():
+            monitor_test.log("COMMENT: assert %s has no states", svc)
+            assert monitor_test.monitor.node_data.get(["services", "status", svc], default=None) is None, \
+                "%s has smon states" % svc
+
+        monitor_test.log('\n------\nCOMMENT: initial status %s is no states', svc)
+        assert_smon_has_no_states()
+
+        monitor_test.log('\n------\nCOMMENT: simulate post object status on %s', svc)
+        monitor_test.create_service_status(svc, status="up", overall="up", resources=_resources("up"))
+        monitor_test.do()
+        assert_smon_has_states(status="idle", local_expect="started")
+
+        monitor_test.log('\n------\nCOMMENT: simulate deletion of config file for %s', svc)
+        monitor_test.delete_svc_config(svc)
+        assert_smon_has_states(status="idle", local_expect="started")
+        monitor_test.do()
+        assert_smon_has_no_states()
+
+        monitor_test.log('\n------\nCOMMENT: inline set_smon %s to idle', svc)
+        monitor_test.monitor.set_smon(svc, status="idle", local_expect="started")
+        assert_smon_has_states(status="idle", local_expect="started")
+        monitor_test.do()
+        assert_smon_has_no_states()
+
+    @staticmethod
+    def test_post_object_monitor_global_expect_not_deleted_when_no_config_file(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor.max_shortloops = 0
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "ha1"
+
+        monitor_test.log('\n------\nCOMMENT: posting global expect %s to frozen', svc)
+        monitor_test.post_object_monitor(svc, global_expect="frozen")
+        for _ in range(4):
+            monitor_test.do()
+        monitor_test.assert_smon_global_expect(
+            svc,
+            "frozen",
+            "persist even if no config file")
+
+    @staticmethod
+    def test_post_object_monitor_global_expect_are_deleted_when_too_old_and_no_config_file(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor.max_shortloops = 0
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "ha1"
+
+        def assert_smon_has_no_states():
+            monitor_test.log("COMMENT: assert %s has no states", svc)
+            assert monitor_test.monitor.node_data.get(["services", "status", svc], default=None) is None, \
+                "%s has smon states" % svc
+
+        monitor_test.log('\n------\nCOMMENT: posting global expect %s to frozen', svc)
+        monitor_test.post_object_monitor(svc, global_expect="frozen")
+        monitor_test.do()
+        monitor_test.assert_smon_global_expect(
+            svc,
+            "frozen",
+            "persist even if no config file")
+
+        monitor_test.log('\n------\nCOMMENT: make %s global_expect_updated to past 5 seconds', svc)
+        monitor_test.monitor.node_data.set(["services", "status", svc, "monitor", "global_expect_updated"],
+                                           time.time() - 5)
+        monitor_test.assert_smon_global_expect(svc, "frozen", "initial state")
+        monitor_test.do()
+
+        monitor_test.log('\n------\nCOMMENT: expect purged status if global_expect is old')
+        monitor_test.do()
+        assert_smon_has_no_states()

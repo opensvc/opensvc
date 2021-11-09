@@ -130,6 +130,11 @@ DEFERRED_STOP_LISTENER_CLIENTS = set()
 # DEFERRED_STOP_LISTENER_CLIENTS_LOCK serialize access to DEFERRED_STOP_LISTENER_CLIENTS
 DEFERRED_STOP_LISTENER_CLIENTS_LOCK = threading.RLock()
 
+# DEFERRED_SET_SMON define list of deferred smon changes
+DEFERRED_SET_SMON = []
+# DEFERRED_SET_SMON_LOCK serialize access to DEFERRED_SET_SMON
+DEFERRED_SET_SMON_LOCK = threading.RLock()
+
 # thread loop conditions and helpers
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
@@ -642,7 +647,11 @@ class OsvcThread(threading.Thread, Crypt):
 
     def set_smon(self, path, status=None, local_expect=None,
                  global_expect=None, reset_retries=False,
-                 stonith=None, expected_status=None):
+                 stonith=None, expected_status=None,
+                 defer=False, origin=""):
+        msg = "defer" if defer else ""
+        if origin:
+            msg += " from %s" % origin
         instance = self.get_service_instance(path, Env.nodename)
         if not instance:
             self.node_data.set(["services", "status", path], {"resources": {}})
@@ -674,11 +683,12 @@ class OsvcThread(threading.Thread, Crypt):
             if status != smon.status \
                     and (not expected_status or expected_status == smon.status):
                 self.log.info(
-                    "%s monitor status change: %s => %s",
+                    "%s monitor status change: %s => %s %s",
                     path,
                     smon.status if
                     smon.status else "none",
-                    status
+                    status,
+                    msg,
                 )
                 if smon.status is not None \
                         and "failed" in smon.status \
@@ -701,11 +711,12 @@ class OsvcThread(threading.Thread, Crypt):
                 local_expect = None
             if local_expect != smon.local_expect:
                 self.log.info(
-                    "%s monitor local expect change: %s => %s",
+                    "%s monitor local expect change: %s => %s %s",
                     path,
                     smon.local_expect if
                     smon.local_expect else "none",
-                    local_expect
+                    local_expect,
+                    msg,
                 )
                 smon.local_expect = local_expect
                 smon.local_expect_updated = time.time()
@@ -718,18 +729,19 @@ class OsvcThread(threading.Thread, Crypt):
                 global_expect = "restarted@%s" % time.time()
             if global_expect != smon.global_expect:
                 self.log.info(
-                    "%s monitor global expect change: %s => %s",
+                    "%s monitor global expect change: %s => %s %s",
                     path,
                     smon.global_expect if
                     smon.global_expect else "none",
-                    global_expect
+                    global_expect,
+                    msg,
                 )
                 smon.global_expect = global_expect
                 smon.global_expect_updated = time.time()
                 changed = True
         if reset_retries and "restart" in smon:
             self.log.info("%s monitor resources restart count "
-                          "reset", path)
+                          "reset %s", path, msg)
             del smon["restart"]
             changed = True
 
@@ -738,17 +750,37 @@ class OsvcThread(threading.Thread, Crypt):
                 stonith = None
             if stonith != smon.stonith:
                 self.log.info(
-                    "%s monitor stonith change: %s => %s",
+                    "%s monitor stonith change: %s => %s %s",
                     path,
                     smon.stonith if
                     smon.stonith else "none",
-                    stonith
+                    stonith,
+                    msg,
                 )
                 smon.stonith = stonith
                 changed = True
         if changed:
             smon_view.set([], smon)
             wake_monitor(reason="%s mon change" % path)
+
+    def defer_set_smon(
+            self,
+            path, status=None, local_expect=None, global_expect=None,
+            reset_retries=False, stonith=None, expected_status=None,
+            origin=""):
+
+        with DEFERRED_SET_SMON_LOCK:
+            DEFERRED_SET_SMON.append((
+                path,
+                status,
+                local_expect,
+                global_expect,
+                reset_retries,
+                stonith,
+                expected_status,
+                origin,
+            ))
+        wake_monitor(reason="%s defer smon call" % path)
 
     def get_node_monitor(self, nodename=None):
         """

@@ -6,7 +6,7 @@ import utilities.os.sunos
 repo_subdir = "sunos-pkg"
 
 def gen_adminfile():
-    filename = "/var/tmp/opensvc.adminfile"
+    filename = "/tmp/opensvc.adminfile"
     f = open (filename, 'w')
     f.write("mail=\n")
     f.write("instance=overwrite\n")
