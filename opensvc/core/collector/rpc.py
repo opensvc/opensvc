@@ -603,7 +603,13 @@ class CollectorRpc(object):
 
         args = [vars, vals]
         args += [(self.node.collector_env.uuid, Env.nodename)]
-        self.proxy.register_disks(*args)
+
+        # Avoid "read timeout" error for big datasets: add 1s every 50 disks
+        oldtmo = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(oldtmo+len(vals)//50+1)
+        proxy = get_proxy(self.node.collector_env.dbopensvc)
+
+        proxy.register_disks(*args)
 
         #
         # register disks this node provides to its VM
@@ -628,7 +634,8 @@ class CollectorRpc(object):
 
         args = [vars, vals]
         args += [(self.node.collector_env.uuid, Env.nodename)]
-        self.proxy.register_diskinfo(*args)
+        proxy.register_diskinfo(*args)
+        socket.setdefaulttimeout(oldtmo)
 
     def push_stats_fs_u(self, l, sync=True):
         args = [l[0], l[1]]
