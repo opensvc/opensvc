@@ -3644,13 +3644,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def apply_deferred_smon(self):
         with shared.DEFERRED_SET_SMON_LOCK:
             for path, status, local_expect, global_expect, reset_retries, \
-                    stonith, expected_status in shared.DEFERRED_SET_SMON:
-                self.log.info("apply defer smon for %s", path)
+                    stonith, expected_status, origin in shared.DEFERRED_SET_SMON:
                 self.set_smon(path, status=status, local_expect=local_expect,
                               global_expect=global_expect,
                               reset_retries=reset_retries, stonith=stonith,
-                              expected_status=reset_retries)
-            shared.DEFERRED_SET_SMON.clear()
+                              expected_status=reset_retries,
+                              defer=True, origin=origin)
+            del shared.DEFERRED_SET_SMON[:]
 
     def update_node_data(self):
         """
