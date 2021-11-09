@@ -379,18 +379,15 @@ def apiretry(func):
             return False
         if "state" not in data:
             return False
-        if data.get("status") == "Completed":
-            return False
         return True
 
     def is_retryable_error(data):
-        #return data.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS or \
-        return data.get("messageId") in RETRYABLE_ERROR_MSG_IDS
+        return data.get("error", {}).get("messageId") in RETRYABLE_ERROR_MSG_IDS or \
+               data.get("messageId") in RETRYABLE_ERROR_MSG_IDS
 
     def check_condition(self, data, condition, msg):
-        common_condition = lambda x: is_retryable_error(x) and not is_job_response(x)
         try:
-            cc = common_condition(data)
+            cc = is_retryable_error(data)
         except Exception:
             cc = False
         try:
@@ -415,9 +412,11 @@ def apiretry(func):
         retry = retry or {}
         count = retry.get("count", self.retry)
         delay = retry.get("delay", self.delay)
+        barrier = time.time() + count*delay
         msg = retry.get("message")
         condition = retry.get("condition", lambda: False)
-        for _ in range(count):
+        short_delay = 0.5
+        while True:
             try:
                 r = func(self, uri, **kwargs)
             except ex.Error as exc:
@@ -426,8 +425,9 @@ def apiretry(func):
                 raise ex.Error("hcs api request error: %s" % str(exc))
             if r.status_code == 401:
                 self.session_data = None
-                time.sleep(0.5)
-                continue
+                if time.time() + short_delay < barrier:
+                    time.sleep(short_delay)
+                    continue
             if r.status_code in RETRYABLE_STATUS:
                 desc = RETRYABLE_STATUS[r.status_code]
                 if msg:
@@ -437,8 +437,9 @@ def apiretry(func):
                         data = {}
                     #self.dump(func.__name__, uri, status=r.status_code, _result=data, **kwargs)
                 self.log.info("  response status %d: %s (%s)" % (r.status_code, desc, uri), {"f_stream": False})
-                time.sleep(delay)
-                continue
+                if time.time() + delay < barrier:
+                    time.sleep(delay)
+                    continue
             if r.status_code in NON_RETRYABLE_STATUS:
                 desc = NON_RETRYABLE_STATUS[r.status_code]
                 try:
@@ -450,13 +451,16 @@ def apiretry(func):
             if not r.text:
                 return
             data = r.json()
-            if check_condition(self, data, condition, msg):
-                time.sleep(delay)
-                continue
+            if not is_job_response(data) and check_condition(self, data, condition, msg):
+                if time.time() + delay < barrier:
+                    time.sleep(delay)
+                    self.log.info("  retry sync request: %s (%s)" % (data, uri), {"f_stream": False})
+                    continue
             if func.__name__ != "get":
                 data = self.check_result(func.__name__, uri, result=data, **kwargs)
-                if check_condition(self, data, condition, msg):
-                    time.sleep(delay)
+                if time.time() + short_delay < barrier and check_condition(self, data, condition, msg):
+                    time.sleep(short_delay)
+                    self.log.info("  retry async request: %s (%s)" % (data.get("state"), uri), {"f_stream": False})
                     continue
                 if data.get("state") == "Failed":
                     self.dump(func.__name__, uri, _result=data, **kwargs)
