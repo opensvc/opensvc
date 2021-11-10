@@ -170,7 +170,7 @@ class ContainerLib(object):
         try:
             self.docker_exe
         except ex.InitError:
-            return ""
+            return {}
         cmd = [self.docker_exe, "info"] + self.json_opt
         try:
             data = json.loads(justcall(cmd)[0])
@@ -372,12 +372,11 @@ class ContainerLib(object):
         Return the docker drivers keys conttributed to resinfo.
         """
         data = []
-        if "Driver" in self.docker_info:  # pylint: disable=unsupported-membership-test
-            # pylint: disable=unsubscriptable-object
-            data.append(["", "storage_driver", self.docker_info["Driver"]])
-        if "ExecutionDriver" in self.docker_info:  # pylint: disable=unsupported-membership-test
-            # pylint: disable=unsubscriptable-object
-            data.append(["", "exec_driver", self.docker_info["ExecutionDriver"]])
+        di = dict(self.docker_info) # dict cast to please pylint
+        if "Driver" in di:
+            data.append(["", "storage_driver", di["Driver"]])
+        if "ExecutionDriver" in di:
+            data.append(["", "exec_driver", di["ExecutionDriver"]])
         return data
 
     def _docker_info_images(self):
@@ -555,8 +554,8 @@ class DockerLib(ContainerLib):
         else:
             self.docker_pid_file = None
             try:
-                # pylint: disable=unsubscriptable-object
-                set_lazy(self, "container_data_dir", self.docker_info["DockerRootDir"])
+                di = dict(self.docker_info) # dict cast to please pylint
+                set_lazy(self, "container_data_dir", di["DockerRootDir"])
             except (KeyError, TypeError):
                 set_lazy(self, "container_data_dir", None)
 
@@ -785,10 +784,20 @@ class DockerLib(ContainerLib):
     def _docker_running_shared(self):
         """
         Return True if the docker daemon is running.
+
+        Old docker daemons return {}.
+        Recent docker daemons return {
+            'ServerErrors': ['Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?'],
+            'ClientInfo': {
+                'Debug': False,
+                'Context': 'default',
+                'Plugins': [],
+                'Warnings': None
+            }
+        }
         """
-        if self.docker_info == {}:
-            return False
-        return True
+        di = dict(self.docker_info) # dict cast to please pylint
+        return di.get("ServerVersion") is not None
 
     def _docker_running_private(self):
         """

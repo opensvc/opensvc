@@ -169,12 +169,19 @@ def add_mandatory_syncs(svc):
         kwargs["options"] += svc.conf_get(kwargs["rid"], "options")
     except ex.OptNotFound:
         pass
+    try:
+        kwargs["schedule"] = svc.conf_get(kwargs["rid"], "schedule")
+    except ex.OptNotFound:
+        kwargs["schedule"] = "@60m"
+    try:
+        kwargs["sync_max_delay"] = svc.conf_get(kwargs["rid"], "sync_max_delay")
+    except ex.OptNotFound:
+        kwargs["sync_max_delay"] = 3660
     kwargs["reset_options"] = svc.oget(kwargs["rid"], "reset_options")
     kwargs["target"] = list(target)
     kwargs["internal"] = True
     kwargs["disabled"] = get_disabled(svc, kwargs["rid"])
     kwargs["optional"] = get_optional(svc, kwargs["rid"])
-    kwargs.update(sync_kwargs(svc, kwargs["rid"]))
     r = mod.SyncRsync(**kwargs)
     svc += r
 
