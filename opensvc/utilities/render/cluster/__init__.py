@@ -225,21 +225,18 @@ def list_print(data, right=None):
     outs = ""
     if len(data) == 0:
         return ""
-    widths = 0
-    for line in data:
-        if len(line) != 0:
-            widths = [0] * len(line)
-            break
-    if widths == 0:
-        return ""
+    column_count = max([0] + [len(line) for line in data])
+    if column_count == 0:
+        return
+    widths = [0] * column_count
     _data = []
     for line in data:
         _data.append(tuple(map(lambda x: x.encode("utf-8") if x is not None else "".encode("utf-8"), line)))
     for line in _data:
         for i, val in enumerate(line):
-            strlen = bare_len(val)
-            if strlen > widths[i]:
-                widths[i] = strlen
+            col_len = bare_len(val)
+            if col_len > widths[i]:
+                widths[i] = col_len
     for line in _data:
         _line = []
         for i, val in enumerate(line):
@@ -700,7 +697,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             "",
         ])
         load_daemon()
-        for key in sorted([key for key in data if key != "cluster"]):
+        for key in sorted([key for key in data if key not in ("cluster", "daemon")]):
             if key.startswith("hb#"):
                 load_hb(key, data[key])
             elif key == "monitor":
