@@ -4671,7 +4671,6 @@ class Svc(PgMixin, BaseSvc):
         ]
         if not self.can_sync(rtypes, 'nodes'):
             return
-        self.presync()
         self.sub_set_action(rtypes, "sync_nodes")
 
     def sync_drp(self):
@@ -4684,7 +4683,6 @@ class Svc(PgMixin, BaseSvc):
         ]
         if not self.can_sync(rtypes, 'drpnodes'):
             return
-        self.presync()
         self.sub_set_action(rtypes, "sync_drp")
 
     def sync_swap(self):
@@ -4827,7 +4825,6 @@ class Svc(PgMixin, BaseSvc):
         if not self.can_sync(["sync"]):
             return
         self.sync_update()
-        self.presync()
         rtypes = [
             "sync.rsync",
             "sync.btrfs",

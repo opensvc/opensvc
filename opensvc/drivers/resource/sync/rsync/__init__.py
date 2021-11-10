@@ -222,6 +222,7 @@ class SyncRsync(Sync):
         self.timeout = 3600
         self.options = options
         self.reset_options = reset_options
+        self.presync_done = False
 
     def __str__(self):
         return "%s src=%s dst=%s options=%s target=%s" % (
@@ -564,8 +565,19 @@ class SyncRsync(Sync):
     def add_resource_files_to_sync(self):
         if self.rid != "sync#i0":
             return
-        for resource in self.svc.get_resources():
-            self.src += resource.files_to_sync()
+        for r in self.svc.get_resources():
+            self.src += r.files_to_sync()
+        if self.presync_done:
+            return
+        for r in self.svc.get_resources():
+            if r.disabled:
+                continue
+            if r.encap and not self.svc.encap:
+                continue
+            if not hasattr(r, "presync"):
+                continue
+            r.presync()
+        self.presync_done = True
 
     def _info(self):
         self.add_resource_files_to_sync()
