@@ -697,7 +697,7 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
             "",
         ])
         load_daemon()
-        for key in sorted([key for key in data if key != "cluster"]):
+        for key in sorted([key for key in data if key not in ("cluster", "daemon")]):
             if key.startswith("hb#"):
                 load_hb(key, data[key])
             elif key == "monitor":
