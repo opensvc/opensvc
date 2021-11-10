@@ -6,6 +6,7 @@ import time
 import pytest
 
 import commands.daemon
+import commands.svcmon
 import core.exceptions as ex
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.node import Node
@@ -285,6 +286,12 @@ class TestNodemgrDaemonActions:
 
         print('daemon status...')
         assert commands.daemon.main(argv=["status", "--debug"]) == 0
+
+        print('om mon...')
+        assert commands.svcmon.main(argv=["mon"]) == 0
+
+        print('om mon --format compact...')
+        assert commands.svcmon.main(argv=["mon", "--format", "compact"]) == 0
 
         print('daemon restart...')
         assert commands.daemon.main(argv=["restart", "--debug"]) == 0
