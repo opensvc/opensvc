@@ -2611,9 +2611,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if rids:
             self.delete_sections(rids)
         else:
+            self.set_purge_collector_tag()
             self.delete_service_conf()
             self.delete_service_logs()
-            self.set_purge_collector_tag()
 
     def delete_service_logs(self):
         """
@@ -5537,6 +5537,7 @@ class Svc(PgMixin, BaseSvc):
             self.unprovision()
 
         if not self.command_is_scoped():
+            self.set_purge_collector_tag()
             if os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
                 # the daemon only delete the whole service, so no
                 # need to remove this node from the nodes list of
@@ -5569,7 +5570,6 @@ class Svc(PgMixin, BaseSvc):
                     )
             self.delete_service_conf()
             self.delete_service_logs()
-            self.set_purge_collector_tag()
         else:
             self.delete_resources()
 
