@@ -2233,8 +2233,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if len(data) > 0:
                 self.collector.call('collector_update_action_queue', data)
 
-    @staticmethod
-    def dequeue_action(action):
+    def dequeue_action(self, action):
         """
         Execute the node or object action described in payload element
         received from the collector's action queue.
@@ -2244,7 +2243,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             cmd = [Env.paths.om, "svc", "-s", action.get("svcname")]
         cmd += shlex.split(action.get("command", ""))
-        print("dequeue action %s" % " ".join(cmd))
+        self.log.info("dequeue action %s", " ".join(cmd))
         out, err, ret = justcall(cmd)
         return ret, out, err
 
