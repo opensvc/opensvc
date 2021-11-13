@@ -2213,7 +2213,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         while True:
             actions = self.collector.call('collector_get_action_queue')
             if actions is None:
-                raise ex.Error("unable to fetch actions scheduled by the collector")
+                msg = "unable to fetch actions scheduled by the collector"
+                self.log.warning(msg)
+                raise ex.Error(msg)
             n_actions = len(actions)
             if n_actions == 0:
                 break
