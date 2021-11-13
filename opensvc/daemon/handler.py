@@ -15,6 +15,10 @@ class BaseHandler(object):
     prototype = []
     stream = False
     multiplex = "on-demand"
+    routes = (("", ""),)
+
+    def get_origin(self, extra_info_func):
+        return "%s /%s %s" % (self.routes[0][0], self.routes[0][1], extra_info_func())
 
     def rbac(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)

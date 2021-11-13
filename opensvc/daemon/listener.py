@@ -21,6 +21,9 @@ from foreign.six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=
 from subprocess import Popen
 from errno import EADDRINUSE, ECONNRESET, EPIPE, EBADF
 
+from core.objects.usr import Usr
+
+
 try:
     import ssl
     import foreign.h2 as h2
@@ -1105,6 +1108,17 @@ class ClientHandler(shared.OsvcThread):
             self.conn.close()
             raise ex.Error("x509 auth failed: %s (valid cert, unknown user)" % cn)
         return usr
+
+    def get_user_info(self):
+        if isinstance(self.usr, Usr):
+            user = self.usr.name
+        else:
+            user = ""
+        if isinstance(self.addr, list):
+            addr = self.addr[0]
+        else:
+            addr = ""
+        return "%s@%s" % (user, addr)
 
     def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):
         response_headers = [
