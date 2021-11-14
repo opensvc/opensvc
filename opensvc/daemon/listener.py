@@ -1114,10 +1114,8 @@ class ClientHandler(shared.OsvcThread):
             user = self.usr.name
         else:
             user = ""
-        if isinstance(self.addr, list):
+        if self.addr:
             addr = self.addr[0]
-        else:
-            addr = ""
         return "%s@%s" % (user, addr)
 
     def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):
