@@ -1462,6 +1462,7 @@ class ClientHandler(shared.OsvcThread):
             dequ = data == "dequeue_actions"
         if dequ:
             self.parent.stats.sessions.alive[self.sid].progress = "dequeue_actions"
+            self.log.info("call: om node dequeue action")
             p = Popen(Env.om + ["node", 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")
