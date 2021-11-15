@@ -21,6 +21,9 @@ from foreign.six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=
 from subprocess import Popen
 from errno import EADDRINUSE, ECONNRESET, EPIPE, EBADF
 
+from core.objects.usr import Usr
+
+
 try:
     import ssl
     import foreign.h2 as h2
@@ -1106,6 +1109,15 @@ class ClientHandler(shared.OsvcThread):
             raise ex.Error("x509 auth failed: %s (valid cert, unknown user)" % cn)
         return usr
 
+    def get_user_info(self):
+        if isinstance(self.usr, Usr):
+            user = self.usr.name
+        else:
+            user = ""
+        if self.addr:
+            addr = self.addr[0]
+        return "%s@%s" % (user, addr)
+
     def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):
         response_headers = [
             (':status', str(status)),
@@ -1450,6 +1462,7 @@ class ClientHandler(shared.OsvcThread):
             dequ = data == "dequeue_actions"
         if dequ:
             self.parent.stats.sessions.alive[self.sid].progress = "dequeue_actions"
+            self.log.info("call: om node dequeue action")
             p = Popen(Env.om + ["node", 'dequeue_actions'],
                       stdout=None, stderr=None, stdin=None,
                       close_fds=os.name!="nt")

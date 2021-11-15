@@ -159,6 +159,8 @@ class MonitorTest(object):
         self.mocker = mocker
         if mocker:
             self.mocker.patch.object(Monitor, 'monitor_period', 0.000001)
+            # needed hack when monitor thread is used to simulate listener client thread
+            self.mocker.patch.object(Monitor, 'get_user_info', create=True, return_value="tester@local")
         self.monitor = Monitor()
         self.monitor._lazy_cluster_nodes = cluster_nodes or []
         self.execs = {"service_command_exe": env.Env.syspaths.true}

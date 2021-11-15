@@ -2213,7 +2213,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         while True:
             actions = self.collector.call('collector_get_action_queue')
             if actions is None:
-                raise ex.Error("unable to fetch actions scheduled by the collector")
+                msg = "unable to fetch actions scheduled by the collector"
+                self.log.warning(msg)
+                raise ex.Error(msg)
             n_actions = len(actions)
             if n_actions == 0:
                 break
@@ -2233,8 +2235,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if len(data) > 0:
                 self.collector.call('collector_update_action_queue', data)
 
-    @staticmethod
-    def dequeue_action(action):
+    def dequeue_action(self, action):
         """
         Execute the node or object action described in payload element
         received from the collector's action queue.
@@ -2244,7 +2245,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             cmd = [Env.paths.om, "svc", "-s", action.get("svcname")]
         cmd += shlex.split(action.get("command", ""))
-        print("dequeue action %s" % " ".join(cmd))
+        self.log.info("dequeue action %s", " ".join(cmd))
         out, err, ret = justcall(cmd)
         return ret, out, err
 
