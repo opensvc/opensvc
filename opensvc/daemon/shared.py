@@ -1193,7 +1193,7 @@ class OsvcThread(threading.Thread, Crypt):
         def discard_hard_anti_affinity(nodename):
             if not svc.hard_anti_affinity:
                 return False
-            for path in svc.hard_affinity:
+            for path in svc.hard_anti_affinity:
                 try:
                     status = self.nodes_data.get([nodename, "services", "status", path, "avail"])
                 except KeyError:
