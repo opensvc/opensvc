@@ -2236,8 +2236,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     raise ex.Error(msg)
                 else:
                     msg = ("unable to fetch actions scheduled by the collector"
-                           " retry %s/%s, next retry in %ss"
-                           % (retry, max_retry, retry_delay))
+                           ", retry %s/%s in %ss" % (retry, max_retry, retry_delay))
                     self.log.info(msg)
                     time.sleep(retry_delay)
                     continue
