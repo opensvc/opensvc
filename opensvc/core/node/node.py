@@ -54,7 +54,7 @@ from utilities.proc import call, justcall, vcall, which, check_privs, daemon_pro
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
-from utilities.string import bdecode
+from utilities.string import bdecode, base64encode
 
 try:
     from foreign.six.moves.urllib.request import Request, urlopen
@@ -2711,7 +2711,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Make a request to the collector's rest api
         """
-        import base64
         api = self.collector_api(path=path)
         url = api["url"]
         if not url.startswith("https"):
@@ -2719,10 +2718,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                            "non-encrypted transport")
         request = Request(url+rpath)
         auth_string = '%s:%s' % (api["username"], api["password"])
-        if six.PY3:
-            base64string = base64.encodestring(auth_string.encode()).decode()
-        else:
-            base64string = base64.encodestring(auth_string)
+        base64string = base64encode(auth_string)
         base64string = base64string.replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
         return request

@@ -1,4 +1,16 @@
 import foreign.six as six
+import base64
+
+def base64encode(buff):
+    """
+    base64.encodestring has been deprecated in Python 3.1 and removed from Python 3.9
+    """
+    if six.PY3:
+        base64string = base64.encodebytes(buff.encode()).decode()
+    else:
+        base64string = base64.encodestring(buff)
+    return base64string
+
 
 def bencode(buff):
     """
