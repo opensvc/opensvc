@@ -1,4 +1,18 @@
 import foreign.six as six
+import base64
+
+
+def base64encode(buff):
+    """
+    base64.encodestring has been deprecated in Python 3.1 and removed from Python 3.9
+    """
+    if six.PY3:
+        base64string = base64.encodebytes(buff.encode()).decode()  # pylint: disable=no-member
+    else:
+        # noinspection PyDeprecation
+        base64string = base64.encodestring(buff)  # pylint: disable=no-member
+    return base64string
+
 
 def bencode(buff):
     """
@@ -28,7 +42,7 @@ def try_decode(string, codecs=None):
     for i in codecs:
         try:
             return string.decode(i)
-        except:
+        except Exception:
             pass
     return string
 
@@ -53,4 +67,3 @@ def is_glob(text):
     if len(set(text) & set("?*[")) > 0:
         return True
     return False
-

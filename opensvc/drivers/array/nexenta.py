@@ -5,6 +5,7 @@ import core.exceptions as ex
 from foreign.six.moves.urllib.request import Request, urlopen # pylint: disable=import-error
 from foreign.six.moves.urllib.error import URLError # pylint: disable=import-error
 from utilities.naming import factory, split_path
+from utilities.string import base64encode
 from core.node import Node
 
 class logger(object):
@@ -68,7 +69,7 @@ class Nexenta(object):
         data = {"method": method, "params": params, "object": obj}
         data = json.dumps(data)
         request = Request(self.url, data)
-        base64string = base64.encodestring('%s:%s' % (self.username, self.password))[:-1]
+        base64string = base64encode('%s:%s' % (self.username, self.password))[:-1]
         request.add_header('Authorization', 'Basic %s' % base64string)
         request.add_header('Content-Type' , 'application/json')
         try:
