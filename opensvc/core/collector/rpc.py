@@ -1485,6 +1485,16 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_update_action_queue(*args)
 
+    def collector_update_action_queue_received(self, data, sync=True):
+        args = [data]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
+        return self.proxy.collector_update_action_queue_received(*args)
+
+    def collector_get_action_queue_v2(self, sync=True):
+        args = [Env.nodename]
+        args += [(self.node.collector_env.uuid, Env.nodename)]
+        return self.proxy.collector_get_action_queue_v2(*args)
+
 
 if __name__ == "__main__":
     x = CollectorRpc()
