@@ -1713,7 +1713,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def object_orchestrator_auto(self, svc, smon, status):
         """
         Automatic instance start decision.
-        Verifies hard and soft affinity and anti-affinity, then routes to
+        Verifies hard affinity and anti-affinity, then routes to
         failover and flex specific policies.
         """
         if status == "unknown":
@@ -1766,8 +1766,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
 
         candidates = self.placement_candidates(svc)
-        if not self.pass_soft_affinities(svc, candidates):
-            return
 
         if svc.topology == "failover":
             self.object_orchestrator_auto_failover(svc, smon, status, candidates)
@@ -2239,22 +2237,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             break
         self.set_smon(svc.path, global_expect="unset", status="idle")
 
-    def pass_soft_affinities(self, svc, candidates):
-        if candidates != [Env.nodename]:
-            # the local node is not the only candidate, we can apply soft
-            # affinity filtering
-            if svc.soft_anti_affinity:
-                intersection = set(self.get_local_paths()) & set(svc.soft_anti_affinity)
-                if len(intersection) > 0:
-                    # self.log.info("%s orchestrator out (soft anti-affinity with %s)",
-                    #               svc.path, ','.join(intersection))
-                    return False
-            if svc.soft_affinity:
-                intersection = set(self.get_local_paths()) & set(svc.soft_affinity)
-                if len(intersection) < len(set(svc.soft_affinity)):
-                    # self.log.info("%s orchestrator out (soft affinity with %s)",
-                    #               svc.path, ','.join(intersection))
-                    return False
         return True
 
     def end_rejoin_grace_period(self, reason=""):
@@ -2689,16 +2671,6 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return count
         except Exception as exc:
             return 0
-
-    def up_service_instances(self, path):
-        nodenames = []
-        for nodename, instance in self.get_service_instances(path).items():
-            if instance["avail"] == "up":
-                nodenames.append(nodename)
-            elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning",
-                                                       "placing"):
-                nodenames.append(nodename)
-        return nodenames
 
     def parent_transitioning(self, svc):
         if len(svc.parents) == 0:
