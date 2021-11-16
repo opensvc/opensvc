@@ -3648,7 +3648,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 self.set_smon(path, status=status, local_expect=local_expect,
                               global_expect=global_expect,
                               reset_retries=reset_retries, stonith=stonith,
-                              expected_status=reset_retries,
+                              expected_status=expected_status,
                               defer=True, origin=origin)
             del shared.DEFERRED_SET_SMON[:]
 
