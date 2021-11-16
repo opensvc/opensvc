@@ -535,11 +535,11 @@ class OsvcThread(threading.Thread, Crypt):
     def instances_busy(self):
         data = self.node_data.get(["services", "status"])
         for path, sdata in data.items():
-            status = sdata.get("monitor", {}).get("status") 
+            status = sdata.get("monitor", {}).get("status")
             if status not in (None, "idle") and "failed" not in status:
                 return True
         return False
-            
+
     def reload_config(self):
         if not self._node_conf_event.is_set():
             return
@@ -1253,10 +1253,54 @@ class OsvcThread(threading.Thread, Crypt):
     def placement_ranks(self, svc, candidates=None):
         if candidates is None:
             candidates = self.placement_candidates(svc)
+        candidates = self.placement_ranks_policy(svc, candidates)
+        candidates = self.placement_ranks_soft_affinities(svc, candidates)
+        return candidates
+
+    def placement_ranks_policy(self, svc, candidates):
         try:
-            return getattr(self, self.rankers[svc.placement])(svc, candidates)
+            candidates = getattr(self, self.rankers[svc.placement])(svc, candidates)
         except AttributeError:
-            return [Env.nodename]
+            candidates = [Env.nodename]
+        return candidates
+
+    def placement_ranks_soft_affinities(self, svc, candidates):
+        if len(candidates) < 2:
+            return candidates
+
+        def ranked_up_candidates(o, candidates):
+            l = self.up_service_instances(o)
+            return [n for n in candidates if n in l]
+
+        def ranked_non_up_candidates(o, candidates):
+            l = self.up_service_instances(o)
+            return [n for n in candidates if n not in l]
+
+        def softaf(candidates):
+            for o in sorted(svc.soft_affinity, reverse=True):
+                l = ranked_up_candidates(o, candidates)
+                candidates = l + [n for n in candidates if n not in l]
+            return candidates
+
+        def softaaf(candidates):
+            for o in sorted(svc.soft_anti_affinity, reverse=True):
+                l = ranked_non_up_candidates(o, candidates)
+                candidates = l + [n for n in candidates if n not in l]
+            return candidates
+
+        candidates = softaf(candidates)
+        candidates = softaaf(candidates)
+        return candidates
+
+    def up_service_instances(self, path):
+        nodenames = []
+        for nodename, instance in self.get_service_instances(path).items():
+            if instance["avail"] == "up":
+                nodenames.append(nodename)
+            elif instance["monitor"].get("status") in ("restarting", "starting", "wait children", "provisioning",
+                                                       "placing"):
+                nodenames.append(nodename)
+        return nodenames
 
     def duplog(self, lvl, msg, **kwargs):
         sig = str(kwargs.items())
