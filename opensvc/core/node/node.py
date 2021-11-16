@@ -2210,15 +2210,45 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The dequeue_actions node action entrypoint.
         Poll the collector action queue until emptied.
         """
+        method = "collector_get_action_queue_v2"
+        ack_method = "collector_update_action_queue_received"
+        use_retryable_version = True
+        max_retry = 3
+        retry = 0
+        retry_delay = 30
+        try:
+            methods = self.collector.load_list_methods("proxy")
+        except Exception:
+            methods = []
+        if method not in methods:
+            method = "collector_get_action_queue"
+            use_retryable_version = False
+            max_retry = 0
+
+        self.log.info("dequeue actions")
         while True:
-            actions = self.collector.call('collector_get_action_queue')
+            actions = self.collector.call(method)
             if actions is None:
-                msg = "unable to fetch actions scheduled by the collector"
-                self.log.warning(msg)
-                raise ex.Error(msg)
+                retry = retry + 1
+                if retry > max_retry:
+                    msg = "unable to fetch actions scheduled by the collector"
+                    self.log.warning(msg)
+                    raise ex.Error(msg)
+                else:
+                    msg = ("unable to fetch actions scheduled by the collector"
+                           " retry %s/%s, next retry in %ss"
+                           % (retry, max_retry, retry_delay))
+                    self.log.info(msg)
+                    time.sleep(retry_delay)
+                    continue
             n_actions = len(actions)
             if n_actions == 0:
                 break
+
+            if use_retryable_version:
+                ack_ids = [(action.get("id")) for action in actions]
+                self.collector.call(ack_method, ack_ids)
+
             data = []
             reftime = time.time()
             for action in actions:
