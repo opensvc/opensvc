@@ -1364,6 +1364,16 @@ def purge_collector_api_cache():
         logit("unlink file %s"%fname)
         os.unlink(fname)
 
+
+def purge_collector_rpc_method_cache():
+    logit("begin")
+    for name in ("proxy", "comp_proxy"):
+        fname = os.path.join(pathvar, "node", "rpc_list_methods.%s" % name)
+        if os.path.exists(fname) and os.path.isfile(fname):
+            logit("unlink file %s" % fname)
+            os.unlink(fname)
+
+
 def chmod_directories():
     logit("begin")
     if not hasattr(os, "walk"):
@@ -1579,6 +1589,7 @@ try:
     install_pythonlink()
     nodeconf_params()
     purge_collector_api_cache()
+    purge_collector_rpc_method_cache()
     chmod_directories()
     convert_to_lsb()
     move_env_to_conf()
