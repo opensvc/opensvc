@@ -1,15 +1,14 @@
 import os
 import time
-from subprocess import *
 
 import core.exceptions as ex
 from core.capabilities import capabilities
 from env import Env
-from utilities.lazy import lazy
 from utilities.proc import justcall
-from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
+
+# noinspection PyUnusedLocal
 def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
@@ -17,14 +16,34 @@ def driver_capabilities(node=None):
         data.append("disk.scsireserv")
         data.append("disk.scsireserv.sg_persist")
     if which("mpathpersist"):
+        version = [0, 0, 0]
         out, err, ret = justcall(["multipath", "-h"])
         for line in err.splitlines():
             version = [int(v) for v in line.split()[1].strip("v").split(".")]
             break
         if version > [0, 7, 8]:
-            data.append("disk.scsireserv")
-            data.append("disk.scsireserv.mpathpersist")
+
+            def mpathpersist_enabled_in_conf(output):
+                for conf_line in output.splitlines():
+                    if "reservation_key file" in conf_line:
+                        return True
+                return False
+
+            def multipath_get_conf():
+                conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
+                if exit_code == 0:
+                    return conf_output
+                # fallback to config file if multipathd is not running yet
+                conf_output, _, exit_code = justcall(["multipath", "-t"])
+                if exit_code == 0:
+                    return conf_output
+                return ""
+
+            if mpathpersist_enabled_in_conf(multipath_get_conf()):
+                data.append("disk.scsireserv")
+                data.append("disk.scsireserv.mpathpersist")
     return data
+
 
 class DiskScsireservSg(BaseDiskScsireserv):
     def scsireserv_supported(self):
@@ -33,7 +52,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return False
         return True
 
-    def set_read_only(self, val):
+    @staticmethod
+    def set_read_only(val):
         if Env.sysname != "Linux":
             return
         os.environ["SG_PERSIST_O_RDONLY"] = str(val)
@@ -173,7 +193,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
             self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
         return ret
 
-    def dev_to_mpath_dev(self, devpath):
+    @staticmethod
+    def dev_to_mpath_dev(devpath):
         if "node.x.multipath" not in capabilities:
             return devpath
         cmd = [Env.syspaths.multipath, "-l", "-v1", devpath]
