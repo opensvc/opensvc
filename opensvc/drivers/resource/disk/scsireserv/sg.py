@@ -10,6 +10,7 @@ from utilities.proc import justcall
 from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
+
 def driver_capabilities(node=None):
     from utilities.proc import which
     data = []
@@ -22,9 +23,28 @@ def driver_capabilities(node=None):
             version = [int(v) for v in line.split()[1].strip("v").split(".")]
             break
         if version > [0, 7, 8]:
-            data.append("disk.scsireserv")
-            data.append("disk.scsireserv.mpathpersist")
+
+            def mpathpersist_enabled_in_conf(output):
+                for conf_line in output.splitlines():
+                    if "reservation_key file" in conf_line:
+                        return True
+                return False
+
+            def multipath_get_conf():
+                conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
+                if exit_code == 0:
+                    return conf_output
+                # fallback to config file if multipathd is not running yet
+                conf_output, _, exit_code = justcall(["multipath", "-t"])
+                if exit_code == 0:
+                    return conf_output
+                return ""
+
+            if mpathpersist_enabled_in_conf(multipath_get_conf()):
+                data.append("disk.scsireserv")
+                data.append("disk.scsireserv.mpathpersist")
     return data
+
 
 class DiskScsireservSg(BaseDiskScsireserv):
     def scsireserv_supported(self):
