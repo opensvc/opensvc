@@ -148,6 +148,49 @@ class TestReferencesConfigValidate(object):
     def test_validate_config_result_is_not_0_when_corrupt():
         assert Mgr()(argv=["-s", SVCNAME, "validate", "config"]) > 0
 
+    @staticmethod
+    @pytest.mark.usefixtures("has_svc_with_valid_ref")
+    @pytest.mark.parametrize("lines", (
+            ["priority = "],
+            ["priority = ", "comment = blah"],
+            ["priority = ioio"],
+            ["priority = {env.prio}", "[env]", "prio ="],
+    ))
+    def test_validate_config_detect_invalid_default_config(lines):
+        config_lines = ['[DEFAULT]', 'id = %s' % ID]
+        config_lines += lines
+        svc_conf_file = os.path.join(Env.paths.pathetc, "%s.conf" % SVCNAME)
+        with open(svc_conf_file, "w") as f:
+            f.write("\n".join(config_lines))
+        print("---- print config")
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config"]) == 0
+        print("---- validate config")
+        assert Mgr()(argv=["-s", SVCNAME, "validate", "config"]) != 0
+        print("---- print config --eval")
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config", "--eval"]) == 0
+
+    @staticmethod
+    @pytest.mark.usefixtures("has_svc_with_valid_ref")
+    @pytest.mark.parametrize("lines", (
+            ["comment = blah"],
+            ["priority = 12", "comment = blah"],
+            ["priority = 14"],
+            ["priority = {env.prio}", "[env]", "prio = 12"],
+            ["priority = {env.prio}", "[env]", "prio = 12", "[fs#1]", "type = flag"],
+    ))
+    def test_validate_config_detect_valid_default_config(lines):
+        config_lines = ['[DEFAULT]', 'id = %s' % ID]
+        config_lines += lines
+        svc_conf_file = os.path.join(Env.paths.pathetc, "%s.conf" % SVCNAME)
+        with open(svc_conf_file, "w") as f:
+            f.write("\n".join(config_lines))
+        print("---- print config")
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config"]) == 0
+        print("---- validate config")
+        assert Mgr()(argv=["-s", SVCNAME, "validate", "config"]) == 0
+        print("---- print config --eval")
+        assert Mgr()(argv=["-s", SVCNAME, "print", "config", "--eval"]) == 0
+
 
 @pytest.mark.ci
 @pytest.mark.usefixtures("has_svc_with_ref")

@@ -779,7 +779,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def priority(self):
-        return self.oget("DEFAULT", "priority")
+        prio = self.oget("DEFAULT", "priority")
+        if prio is None:
+            return Env.default_priority
+        return prio
 
     @lazy
     def cd(self):
