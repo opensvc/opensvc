@@ -4,13 +4,12 @@ import time
 import core.exceptions as ex
 from core.capabilities import capabilities
 from env import Env
-from utilities.proc import justcall
+from utilities.proc import justcall, which
 from . import BaseDiskScsireserv
 
 
 # noinspection PyUnusedLocal
 def driver_capabilities(node=None):
-    from utilities.proc import which
     data = []
     if which("sg_persist"):
         data.append("disk.scsireserv")
