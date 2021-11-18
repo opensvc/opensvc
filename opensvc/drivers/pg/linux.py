@@ -4,9 +4,17 @@ import glob
 import core.exceptions as ex
 from utilities.converters import convert_size
 
-UNIFIED_MNT = "/sys/fs/cgroup/unified"
-UNIFIED = os.path.exists(UNIFIED_MNT)
 DRIVER_BASENAME = 'pg'
+
+if os.path.exists("/sys/fs/cgroup/cgroup.procs"):
+    UNIFIED_MNT = "/sys/fs/cgroup"
+    UNIFIED = True
+elif os.path.exists("/sys/fs/cgroup/unified"):
+    UNIFIED_MNT = "/sys/fs/cgroup/unified"
+    UNIFIED = True
+else:
+    UNIFIED_MNT = "/sys/fs/cgroup/unified"
+    UNIFIED = False
 
 CONTROLLERS = [
     "blkio",
@@ -25,7 +33,7 @@ CONTROLLERS = [
 ]
 
 def get_cgroup_mntpt(t):
-    if UNIFIED and t is None:
+    if UNIFIED:
         return UNIFIED_MNT
     p = '/proc/mounts'
     if not os.path.exists(p):

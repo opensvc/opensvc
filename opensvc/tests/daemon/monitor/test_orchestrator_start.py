@@ -10,6 +10,7 @@ import pytest
 import env
 from daemon.handlers.object.status.post import Handler as HandlerObjectStatusPost
 from daemon.handlers.object.monitor.post import Handler as HandlerObjectMonitorPost
+from daemon.handlers.object.clear.post import Handler as HandlerObjectClearPost
 from daemon.main import Daemon
 # noinspection PyUnresolvedReferences
 from daemon.monitor import Monitor, shared, queue
@@ -20,6 +21,7 @@ from utilities.naming import svc_pathvar
 boot_id = str(time.time())
 post_object_status_handler = HandlerObjectStatusPost()
 post_object_monitor_handler = HandlerObjectMonitorPost()
+post_object_clear_handler = HandlerObjectClearPost()
 
 
 def str_uuid():
@@ -159,6 +161,9 @@ class MonitorTest(object):
         self.mocker = mocker
         if mocker:
             self.mocker.patch.object(Monitor, 'monitor_period', 0.000001)
+            # needed hack when monitor thread is used to simulate listener client thread
+            self.mocker.patch.object(Monitor, 'get_user_info', create=True, return_value="tester@local")
+            self.mocker.patch.object(Monitor, 'log_request', create=True, return_value="mock log_request result")
         self.monitor = Monitor()
         self.monitor._lazy_cluster_nodes = cluster_nodes or []
         self.execs = {"service_command_exe": env.Env.syspaths.true}
@@ -250,12 +255,22 @@ class MonitorTest(object):
             self.log('COMMENT: ASSERT %s has not been called', call_element)
             assert call_element not in self.service_command.call_args_list
 
-    def post_object_monitor(self, path, global_expect=None):
+    def post_object_monitor(self, path, global_expect=None, status=None):
         self.log("\nCOMMENT: post object monitor %s global_expect: %s", path, global_expect)
         req = {"options": {"path": path}}
+        if status:
+            req["options"]["status"] = status
         if global_expect:
             req["options"]["global_expect"] = global_expect
         post_object_monitor_handler.action(
+            env.Env.nodename,
+            thr=self.monitor,
+            **req)
+
+    def post_object_clear(self, path):
+        self.log("\nCOMMENT: post object clear %s", path)
+        req = {"options": {"path": path}}
+        post_object_clear_handler.action(
             env.Env.nodename,
             thr=self.monitor,
             **req)
@@ -1127,3 +1142,50 @@ class TestMonitorVsPostObject(object):
         monitor_test.log('\n------\nCOMMENT: expect purged status if global_expect is old')
         monitor_test.do()
         assert_smon_has_no_states()
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')
+@pytest.mark.usefixtures('has_node_config')
+@pytest.mark.usefixtures('shared_data')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('has_cluster_config')
+@pytest.mark.usefixtures('wait_listener')
+@pytest.mark.usefixtures('get_boot_id')
+@pytest.mark.usefixtures('mock_daemon')
+@pytest.mark.usefixtures('popen_communicate')
+class TestMonitorVsPostObjectClear(object):
+    @staticmethod
+    def test_post_object_clear_remove_failing_status(
+            mocker,
+    ):
+        monitor_test = MonitorTest(mocker=mocker, cluster_nodes=[env.Env.nodename])
+        monitor_test.service_command_factory()
+        monitor_test.prepare_monitor_idle()
+        monitor_test.monitor.max_shortloops = 0
+        monitor_test.monitor._lazy_ready_period = 0.001
+        svc = "ha1"
+        monitor_test.create_svc_config(svc)
+        monitor_test.create_service_status(svc, status="up", overall="up", resources=_resources("up"))
+
+        monitor_test.log("\n------\nCOMMENT: post initial %s status 'stop failed', verify status after monitor.do()",
+                         svc)
+        monitor_test.post_object_monitor(svc, status="stop failed")
+        monitor_test.log("\n------\nCOMMENT: verify monitor.do() has applied deferred %s state to 'stop failed'", svc)
+        monitor_test.do()
+        monitor_test.assert_smon_status(svc, "stop failed", "ensure monitor apply deferred smon changes")
+
+        for i in range(1, 3):
+            monitor_test.log("\n------\nCOMMENT: verify %s status 'failed stop' preserved after monitor.do()", svc)
+            monitor_test.do()
+            monitor_test.assert_smon_status(svc, "stop failed", "ensure smon.status keep its status: 'stop failed'")
+
+        monitor_test.log("\n------\nCOMMENT: simulate post object clear on %s, then ensure status is 'idle'", svc)
+        monitor_test.post_object_clear(svc)
+        monitor_test.do()
+        monitor_test.assert_smon_status(svc, "idle", "ensure initial smon.status stay 'idle' after clear")
+
+        monitor_test.log("\n------\nCOMMENT: ensure %s status stay 'idle' after monitor.do()", svc)
+        for _ in range(3):
+            monitor_test.do()
+            monitor_test.assert_smon_status(svc, "idle", "ensure initial smon.status stay idle after clear")

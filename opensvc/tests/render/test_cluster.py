@@ -7,11 +7,19 @@ from utilities.render.cluster import format_cluster
 @pytest.mark.ci
 class TestFormatCluster(object):
     @staticmethod
-    def test_show_monitor_state_undef_when_monitor_has_not_yet_state(mocker):
+    @pytest.mark.parametrize("with_daemon_key", [True, False])
+    def test_show_monitor_state_undef_when_monitor_has_not_yet_state(mocker, with_daemon_key):
         mocker.patch.object(Env, "nodename", "node1")
         mocker.patch("utilities.render.color.use_color", "no")
+        data = {"monitor": {"nodes": {}, "services": {}}}
+        if with_daemon_key:
+            data["daemon"] = {
+                "ident": 140492433717056,
+                "state": "running"
+            }
+
         output = format_cluster(node=[Env.nodename],
-                                data={"monitor": {"nodes": {}, "services": {}}})
+                                data=data)
         assert output == """Threads              node1
  daemon    running |      
  monitor   undef  
@@ -116,4 +124,24 @@ Nodes                node1
                                 })
         assert output == """*/svc/flg1                  node1
  flg1      up ha    0/1   | X#   
+"""
+
+    @staticmethod
+    def test_can_be_called_without_nodes():
+        data = {
+            "cluster": {
+                "nodes": []
+            },
+            "monitor": {
+                "nodes": {},
+                "services": {},
+            },
+        }
+        output = format_cluster(data=data)
+        assert "monitor undef" in output
+        assert output == """Threads         
+ daemon  running
+ monitor undef  
+
+*/svc/*         
 """

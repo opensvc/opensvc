@@ -4,33 +4,51 @@ import math
 import re
 import shutil
 import time
-from subprocess import *
 
 import core.exceptions as ex
 from core.capabilities import capabilities
 from env import Env
+from utilities.proc import justcall, which
 from utilities.diskinfo import DiskInfo
 from utilities.files import makedirs
-from utilities.lazy import lazy
-from utilities.proc import justcall
-from utilities.string import bdecode
 from . import BaseDiskScsireserv
 
+
+# noinspection PyUnusedLocal
 def driver_capabilities(node=None):
-    from utilities.proc import which
     data = []
     if which("sg_persist"):
         data.append("disk.scsireserv")
         data.append("disk.scsireserv.sg_persist")
     if which("mpathpersist"):
+        version = [0, 0, 0]
         out, err, ret = justcall(["multipath", "-h"])
         for line in err.splitlines():
             version = [int(v) for v in line.split()[1].strip("v").split(".")]
             break
         if version > [0, 7, 8]:
-            data.append("disk.scsireserv")
-            data.append("disk.scsireserv.mpathpersist")
+
+            def mpathpersist_enabled_in_conf(output):
+                for conf_line in output.splitlines():
+                    if "reservation_key file" in conf_line:
+                        return True
+                return False
+
+            def multipath_get_conf():
+                conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
+                if exit_code == 0:
+                    return conf_output
+                # fallback to config file if multipathd is not running yet
+                conf_output, _, exit_code = justcall(["multipath", "-t"])
+                if exit_code == 0:
+                    return conf_output
+                return ""
+
+            if mpathpersist_enabled_in_conf(multipath_get_conf()):
+                data.append("disk.scsireserv")
+                data.append("disk.scsireserv.mpathpersist")
     return data
+
 
 class DiskScsireservSg(BaseDiskScsireserv):
     reg_pp = None
@@ -41,7 +59,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return False
         return True
 
-    def set_read_only(self, val):
+    @staticmethod
+    def set_read_only(val):
         if Env.sysname != "Linux":
             return
         os.environ["SG_PERSIST_O_RDONLY"] = str(val)
@@ -91,7 +110,6 @@ class DiskScsireservSg(BaseDiskScsireserv):
         ret, out, err = self.call(cmd)
         return ret, out, err
 
-
     def var_data_dump_path(self):
         return os.path.join(self.var_d, "data.json")
 
@@ -121,7 +139,6 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return -1
 
     def read_dev_registrations(self, mpath):
-        n_paths = 0
         n_registered = 0
         out = ""
         paths = self.devs.get(mpath, [])
@@ -223,7 +240,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return self._disk_register(disk)
         finally:
             _, n_paths, gen2 = self.read_dev_registrations(disk)
-            if n_paths >0:
+            if n_paths > 0:
                 reg_pp = int((gen2 - gen1)/n_paths)
                 self.set_reg_pp(disk, reg_pp)
 
@@ -274,7 +291,8 @@ class DiskScsireservSg(BaseDiskScsireserv):
             self.log.error("failed to unregister key %s with disk %s" % (self.hostid, disk))
         return ret
 
-    def dev_to_mpath_dev(self, devpath):
+    @staticmethod
+    def dev_to_mpath_dev(devpath):
         if "node.x.multipath" not in capabilities:
             return devpath
         cmd = [Env.syspaths.multipath, "-l", "-v1", devpath]
@@ -403,6 +421,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret
 
     def _disk_preempt_reservation(self, disk, oldkey):
+        from utilities.diskinfo import DiskInfo
         if self.no_preempt_abort or DiskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = "--preempt"
         else:

@@ -30,6 +30,6 @@ class Handler(daemon.handler.BaseHandler):
         if smon.status.endswith("ing"):
             return {"info": "skip clear on %s instance" % smon.status, "status": 0}
         thr.log_request("clear %s monitor status" % options.path, nodename, **kwargs)
-        thr.defer_set_smon(options.path, status="idle", reset_retries=True, origin="post /object_clear")
+        thr.defer_set_smon(options.path, status="idle", reset_retries=True, origin=self.get_origin(thr.get_user_info))
         return {"status": 0, "info": "%s instance cleared" % options.path}
 

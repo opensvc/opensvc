@@ -5,6 +5,7 @@ from .sg import DiskScsireservSg, driver_capabilities
 
 DRIVER_GROUP = "disk"
 DRIVER_BASENAME = "scsireserv"
+assert driver_capabilities  # ensure driver scan its capabilities
 
 
 class DiskScsireserv(DiskScsireservSg):

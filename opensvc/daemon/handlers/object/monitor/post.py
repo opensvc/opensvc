@@ -129,7 +129,7 @@ class Handler(daemon.handler.BaseHandler):
                     global_expect=options.global_expect,
                     reset_retries=options.reset_retries,
                     stonith=options.stonith,
-                    origin="post /object_monitor",
+                    origin=self.get_origin(thr.get_user_info),
                 )
         data["status"] = len(errors)
         if info:

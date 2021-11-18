@@ -54,7 +54,7 @@ from utilities.proc import call, justcall, vcall, which, check_privs, daemon_pro
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.storage import Storage
-from utilities.string import bdecode
+from utilities.string import bdecode, base64encode
 
 try:
     from foreign.six.moves.urllib.request import Request, urlopen
@@ -2210,13 +2210,44 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The dequeue_actions node action entrypoint.
         Poll the collector action queue until emptied.
         """
+        method = "collector_get_action_queue_v2"
+        ack_method = "collector_update_action_queue_received"
+        use_retryable_version = True
+        max_retry = 3
+        retry = 0
+        retry_delay = 30
+        try:
+            methods = self.collector.load_list_methods("proxy")
+        except Exception:
+            methods = []
+        if method not in methods:
+            method = "collector_get_action_queue"
+            use_retryable_version = False
+            max_retry = 0
+
+        self.log.info("dequeue actions")
         while True:
-            actions = self.collector.call('collector_get_action_queue')
+            actions = self.collector.call(method)
             if actions is None:
-                raise ex.Error("unable to fetch actions scheduled by the collector")
+                retry = retry + 1
+                if retry > max_retry:
+                    msg = "unable to fetch actions scheduled by the collector"
+                    self.log.warning(msg)
+                    raise ex.Error(msg)
+                else:
+                    msg = ("unable to fetch actions scheduled by the collector"
+                           ", retry %s/%s in %ss" % (retry, max_retry, retry_delay))
+                    self.log.info(msg)
+                    time.sleep(retry_delay)
+                    continue
             n_actions = len(actions)
             if n_actions == 0:
                 break
+
+            if use_retryable_version:
+                ack_ids = [(action.get("id")) for action in actions]
+                self.collector.call(ack_method, ack_ids)
+
             data = []
             reftime = time.time()
             for action in actions:
@@ -2233,8 +2264,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if len(data) > 0:
                 self.collector.call('collector_update_action_queue', data)
 
-    @staticmethod
-    def dequeue_action(action):
+    def dequeue_action(self, action):
         """
         Execute the node or object action described in payload element
         received from the collector's action queue.
@@ -2244,7 +2274,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             cmd = [Env.paths.om, "svc", "-s", action.get("svcname")]
         cmd += shlex.split(action.get("command", ""))
-        print("dequeue action %s" % " ".join(cmd))
+        self.log.info("dequeue action %s", " ".join(cmd))
         out, err, ret = justcall(cmd)
         return ret, out, err
 
@@ -2680,7 +2710,6 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Make a request to the collector's rest api
         """
-        import base64
         api = self.collector_api(path=path)
         url = api["url"]
         if not url.startswith("https"):
@@ -2688,10 +2717,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                            "non-encrypted transport")
         request = Request(url+rpath)
         auth_string = '%s:%s' % (api["username"], api["password"])
-        if six.PY3:
-            base64string = base64.encodestring(auth_string.encode()).decode()
-        else:
-            base64string = base64.encodestring(auth_string)
+        base64string = base64encode(auth_string)
         base64string = base64string.replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
         return request

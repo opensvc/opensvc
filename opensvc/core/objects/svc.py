@@ -34,7 +34,7 @@ from utilities.fcache import fcache
 from utilities.files import makedirs
 from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
 from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
-                              svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory)
+                              svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory, split_path)
 from utilities.proc import (action_triggers, drop_option, find_editor,
                             init_locale, justcall, lcall, vcall)
 from utilities.storage import Storage
@@ -2351,6 +2351,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         action_triggers(self, trigger, action, **kwargs)
 
+    def availstatus(self):
+        data = self.print_status_data(mon_data=False, refresh=False)
+        return core.status.Status(data.get("avail", "n/a")).value()
+
     def status(self):
         """
         Return the aggregate status a service.
@@ -4581,6 +4585,30 @@ class Svc(PgMixin, BaseSvc):
         self.sub_set_action(START_GROUPS, "set_unprovisioned")
 
     def abort_start(self):
+        self.abort_start_drivers()
+        self.abort_start_affinity()
+
+    def abort_start_affinity(self):
+        if self.running_action != "start":
+            return
+        if self.options.force or os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            # allow CRM actions originating from the daemon
+            # allow CRM actions with --force
+            return
+        for path in self.hard_affinity:
+            name, namespace, kind = split_path(path)
+            svc = factory(kind)(name, namespace, volatile=True, node=self.node)
+            s = svc.availstatus()
+            if s not in (core.status.UP, core.status.NA):
+                raise ex.Error("hard affinity with %s is not satisfied (currently %s). use --force if you really want to start" % (path, core.status.status_str(s)))
+        for path in self.hard_anti_affinity:
+            name, namespace, kind = split_path(path)
+            svc = factory(kind)(name, namespace, volatile=True, node=self.node)
+            s = svc.availstatus()
+            if s not in (core.status.DOWN, core.status.STDBY_UP, core.status.STDBY_DOWN, core.status.NA):
+                raise ex.Error("hard anti affinity with %s is not satisfied (currently %s). use --force if you really want to start" % (path, core.status.status_str(s)))
+
+    def abort_start_drivers(self):
         """
         Give a chance to all resources concerned by the action to voice up
         their rebutal of the action before it begins.
@@ -4671,7 +4699,6 @@ class Svc(PgMixin, BaseSvc):
         ]
         if not self.can_sync(rtypes, 'nodes'):
             return
-        self.presync()
         self.sub_set_action(rtypes, "sync_nodes")
 
     def sync_drp(self):
@@ -4684,7 +4711,6 @@ class Svc(PgMixin, BaseSvc):
         ]
         if not self.can_sync(rtypes, 'drpnodes'):
             return
-        self.presync()
         self.sub_set_action(rtypes, "sync_drp")
 
     def sync_swap(self):
@@ -4827,7 +4853,6 @@ class Svc(PgMixin, BaseSvc):
         if not self.can_sync(["sync"]):
             return
         self.sync_update()
-        self.presync()
         rtypes = [
             "sync.rsync",
             "sync.btrfs",
