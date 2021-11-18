@@ -26,11 +26,11 @@ class Node(BaseNode):
 
     def shutdown(self):
         cmd = ["init", "5"]
-        ret, out, err = self.vcall(cmd)
+        self.vcall(cmd)
 
     def _reboot(self):
         cmd = ["init", "6"]
-        ret, out, err = self.vcall(cmd)
+        self.vcall(cmd)
 
     def stats_meminfo(self):
         """
