@@ -111,7 +111,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret, out, err
 
     def var_data_dump_path(self):
-        return os.path.join(self.var_d, "data.json")
+        return os.path.join(str(self.var_d), "data.json")
 
     def var_data_load(self):
         try:
@@ -420,7 +420,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             self.log.error("failed to reserve disk %s" % disk)
         return ret
 
-    def _disk_preempt_reservation(self, disk, oldkey):
+    def _disk_preempt_reservation(self, disk, old_key):
         from utilities.diskinfo import DiskInfo
         if self.no_preempt_abort or DiskInfo(deferred=True).disk_vendor(disk).strip() in ["VMware"]:
             preempt_opt = "--preempt"
@@ -428,10 +428,10 @@ class DiskScsireservSg(BaseDiskScsireserv):
             preempt_opt = "--preempt-abort"
         self.set_read_only(0)
         if self.use_mpathpersist(disk):
-            cmd = ["mpathpersist", "--out", preempt_opt, "--param-sark=" + oldkey, "--param-rk=" + self.hostid,
+            cmd = ["mpathpersist", "--out", preempt_opt, "--param-sark=" + old_key, "--param-rk=" + self.hostid,
                    "--prout-type=" + self.prtype, disk]
         else:
-            cmd = ["sg_persist", "-n", "--out", preempt_opt, "--param-sark=" + oldkey, "--param-rk=" + self.hostid,
+            cmd = ["sg_persist", "-n", "--out", preempt_opt, "--param-sark=" + old_key, "--param-rk=" + self.hostid,
                    "--prout-type=" + self.prtype, disk]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
