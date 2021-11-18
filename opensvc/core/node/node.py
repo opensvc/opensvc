@@ -5226,7 +5226,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         self.stats_data = data
         return data
 
-    def get_tid(self):
+    @staticmethod
+    def get_tid():
         return
 
     def cpu_time(self, stat_path='/proc/stat'):
