@@ -1343,13 +1343,6 @@ class ExtConfigMixin(object):
             for option in cd.get("DEFAULT", {}):
                 if option == "comment":
                     continue
-                if option in ["priority"]:
-                    value = self.conf_get("DEFAULT", option, cd=cd, stack=[])
-                    if value is None:
-                        self.log.error("Invalid option 'DEFAULT.%s = %s'",
-                                       option,
-                                       cd.get("DEFAULT").get(option))
-                        ret["errors"] += 1
                 key = self.kwstore.sections["DEFAULT"].getkey(option)
                 if key is None:
                     found = False
