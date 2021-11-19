@@ -32,17 +32,24 @@ def osvc_path_tests_fixture(tmpdir):
     env.Env.paths.pathlock = os.path.join(test_dir, 'lock')
     env.Env.paths.nodeconf = os.path.join(test_dir, 'etc', 'node.conf')
     env.Env.paths.clusterconf = os.path.join(test_dir, 'etc', 'cluster.conf')
+    env.Env.paths.lsnruxsockd = os.path.join(test_dir, 'var', 'lsnr')
     env.Env.paths.lsnruxsock = os.path.join(test_dir, 'var', 'lsnr', 'lsnr.sock')
     env.Env.paths.lsnruxh2sock = os.path.join(test_dir, 'var', 'lsnr', 'h2.sock')
+    env.Env.paths.certs = os.path.join(test_dir, 'var', 'certs')
     env.Env.paths.daemon_pid = os.path.join(test_dir, 'var', "osvcd.pid")
     env.Env.paths.daemon_pid_args = os.path.join(test_dir, 'var', "osvcd.pid.args")
     env.Env.paths.nodes_info = os.path.join(test_dir, 'var', "nodes_info.json")
     env.Env.paths.capabilities = os.path.join(test_dir, 'var', "capabilities.json")
+    env.Env.paths.daemon_lock = os.path.join(env.Env.paths.pathlock, "osvcd.lock")
     env.Env.syspaths.ip = '/bin_ip_cmd_test'
-    os.makedirs(os.path.join(env.Env.paths.pathvar, 'lsnr'))
-    os.makedirs(os.path.join(env.Env.paths.pathvar, 'node'))
-    os.makedirs(env.Env.paths.pathtmpv)
-    os.makedirs(env.Env.paths.pathlog)
+    for p in [
+        env.Env.paths.lsnruxsockd,
+        os.path.join(env.Env.paths.pathvar, 'node'),
+        env.Env.paths.pathtmpv,
+        env.Env.paths.pathlog
+    ]:
+        if not os.path.exists(p):
+            os.makedirs(p)
     return tmpdir
 
 
