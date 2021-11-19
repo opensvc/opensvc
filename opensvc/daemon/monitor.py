@@ -1443,11 +1443,17 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.sync_services_conf()
 
     def prioritized_paths(self):
+
         def prio(path):
             try:
-                return self.instances_status_data.get([path, "priority"])
+                priority = self.instances_status_data.get([path, "priority"])
+                if priority is None:
+                    return Env.default_priority
+                else:
+                    return priority
             except KeyError:
                 return Env.default_priority
+
         paths = self.instances_status_data.keys()
         data = [(path, prio(path)) for path in paths]
         return [d[0] for d in sorted(data, key=lambda x: x[1])]
