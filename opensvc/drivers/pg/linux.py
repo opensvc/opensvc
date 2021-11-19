@@ -9,9 +9,6 @@ DRIVER_BASENAME = 'pg'
 if os.path.exists("/sys/fs/cgroup/cgroup.procs"):
     UNIFIED_MNT = "/sys/fs/cgroup"
     UNIFIED = True
-elif os.path.exists("/sys/fs/cgroup/unified"):
-    UNIFIED_MNT = "/sys/fs/cgroup/unified"
-    UNIFIED = True
 else:
     UNIFIED_MNT = "/sys/fs/cgroup/unified"
     UNIFIED = False
@@ -350,7 +347,10 @@ def create_cgroup(cgp, log=None):
             pass
         else:
             raise
-    set_sysfs(cgp+"/cgroup.clone_children", "1", log=log)
+    if UNIFIED:
+        set_sysfs(cgp+"/cgroup.subtree_control", "+cpuset +cpu +io +memory +pids", log=log)
+    else:
+        set_sysfs(cgp+"/cgroup.clone_children", "1", log=log)
     for parm in ("cpus", "mems"):
         parent_val = get_sysfs(cgp+"/../cpuset."+parm)
         set_sysfs(cgp+"/cpuset."+parm, parent_val, log=log)
