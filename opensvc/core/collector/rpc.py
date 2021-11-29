@@ -573,7 +573,6 @@ class CollectorRpc(object):
                 'disk_nodename',
                 'disk_region']
         vals = []
-        served_disks = []
 
         for disk_id, disk in data["disks"].items():
             for svcname, service in disk["services"].items():
