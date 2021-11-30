@@ -3287,6 +3287,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                         self.service_status(path)
                 except OSError:
                     pass
+                shared.reconfigure_scheduler()
             with shared.SERVICES_LOCK:
                 scope = sorted(list(shared.SERVICES[path].peers))
             config[path] = {

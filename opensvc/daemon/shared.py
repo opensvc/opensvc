@@ -139,6 +139,7 @@ DEFERRED_SET_SMON_LOCK = threading.RLock()
 DAEMON_STOP = threading.Event()
 MON_TICKER = threading.Condition()
 COLLECTOR_TICKER = threading.Condition()
+SCHED_RECONF = threading.Event()
 SCHED_TICKER = threading.Condition()
 HB_TX_TICKER = threading.Condition()
 
@@ -244,6 +245,15 @@ def wake_scheduler():
     """
     Notify the scheduler thread to do they periodic job immediatly
     """
+    with SCHED_TICKER:
+        SCHED_TICKER.notify_all()
+
+
+def reconfigure_scheduler():
+    """
+    Notify the scheduler thread to do they periodic job immediatly
+    """
+    SCHED_RECONF.set()
     with SCHED_TICKER:
         SCHED_TICKER.notify_all()
 

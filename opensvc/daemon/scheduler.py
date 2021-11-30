@@ -111,7 +111,8 @@ class Scheduler(shared.OsvcThread):
             now = time.time()
             done = self.janitor_procs()
             self.janitor_run_done()
-            if done or last + SCHEDULE_INTERVAL <= now:
+            if done or last + SCHEDULE_INTERVAL <= now or shared.SCHED_RECONF.is_set():
+                shared.SCHED_RECONF.clear()
                 last = now
                 self.janitor_certificates(now)
                 self.janitor_blacklist()
