@@ -14,12 +14,13 @@ from utilities.cache import cache, clear_cache
 from foreign.six.moves.urllib.request import Request, build_opener # pylint: disable=import-error
 from foreign.six.moves.urllib.parse import urlencode # pylint: disable=import-error
 from utilities.proc import justcall, which
+from utilities.string import bdecode
 
 if Env.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def reformat(s):
-    lines = s.split('\n')
+    lines = bdecode(s).split('\n')
     for i, line in enumerate(lines):
         if '%' in line:
             # skip prompt
@@ -338,7 +339,7 @@ class Hp3par(object):
         rcg_s = lines[0]
         options_start = rcg_s.index('"')
         rcg_options = rcg_s[options_start+1:-1].split(",")
-        rcg_options = map(lambda x: x.strip(), rcg_options)
+        rcg_options = list(map(lambda x: x.strip(), rcg_options))
         rcg_v = rcg_s[:options_start].split(",")
         rcg_data = {}
         for a, b in zip(cols_rcg, rcg_v):
