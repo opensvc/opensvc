@@ -120,6 +120,39 @@ class SchedOpts(object):
 def to_time(dt):
     return time.mktime(dt.timetuple()) + dt.microsecond / 1E6
 
+
+def trace_sched_action():
+    """
+    Create a trace flag from OSVC_SCHED_FLAG env var
+    This trace flag can be used from daemon scheduler to ensure crm task has been launched
+    """
+    flag_launched = os.environ.get("OSVC_SCHED_FLAG")
+    if not flag_launched:
+        return
+    try:
+        last = datetime.datetime.fromtimestamp(float(os.environ["OSVC_SCHED_TIME"]))
+    except Exception:
+        last = str(datetime.datetime.now())
+    timestamp(flag_launched, last=last)
+
+
+def timestamp(timestamp_f, last=None):
+    """
+    Update the timestamp file <timestamp_f>.
+    Create missing parent directories if needed.
+    """
+    if last is None:
+        last = time.time()
+    elif type(last) == datetime.datetime:
+        last = to_time(last)
+    timestamp_d = os.path.dirname(timestamp_f)
+    if not os.path.isdir(timestamp_d):
+        os.makedirs(timestamp_d, 0o755)
+    buff = repr(last)
+    with open(timestamp_f, 'w') as ofile:
+        ofile.write(buff+os.linesep)
+
+
 def sched_action(func):
     """
     A decorator in charge of updating the scheduler tasks and subtasks
@@ -131,6 +164,7 @@ def sched_action(func):
         self.sched.configure(action=action)
         if action in self.sched.actions:
             self.sched.action_timestamps(action, options.rid)
+            trace_sched_action()
         try:
             ret = func(self, action, options)
         except ex.AbortAction:
@@ -913,27 +947,6 @@ class Scheduler(object):
             getattr(self.obj, self.configure_method)(*args, **kwargs)
         self.configured = True
 
-    def _timestamp(self, timestamp_f, last=None):
-        """
-        Update the timestamp file <timestamp_f>.
-        If <timestamp_f> if is not a fullpath, consider it parented to
-        <pathvar>.
-        Create missing parent directories if needed.
-        """
-        if last is None:
-            last = time.time()
-        elif type(last) == datetime.datetime:
-            last = to_time(last)
-        if not timestamp_f.startswith(os.sep):
-            timestamp_f = self.get_timestamp_f(timestamp_f)
-        timestamp_d = os.path.dirname(timestamp_f)
-        if not os.path.isdir(timestamp_d):
-            os.makedirs(timestamp_d, 0o755)
-        buff = repr(last)
-        with open(timestamp_f, 'w') as ofile:
-            ofile.write(buff+os.linesep)
-        return True
-
     def get_last(self, fname, success=False):
         """
         Return the last task run timestamp, fetched from the on-disk cache.
@@ -1037,7 +1050,7 @@ class Scheduler(object):
             last = datetime.datetime.now()
 
         for tsfile in tsfiles:
-            self._timestamp(tsfile, last=last)
+            timestamp(tsfile, last=last)
 
     def print_schedule(self):
         """
@@ -1162,17 +1175,16 @@ class Scheduler(object):
 
 if __name__ == '__main__':
     now = datetime.datetime.now()
-    last = datetime.datetime.now()
-#    s = Schedule("00:10-01:00@1,03:10-04:00@10,@1h sun-mon:last,fri:first,wed 10-40 2,jun-aug")
-#    Schedule("18:00-19:00@10").validate(now.replace(hour=18, minute=51), last=now.replace(hour=18, minute=51))
-#    Schedule("18:00-19:00@10").validate(now.replace(hour=15, minute=01))
-#    s = Schedule(["14:00-21:00@10", "!12:00-18:55", "!19:10-20:00"])
+    last_value = datetime.datetime.now()
+    # s = Schedule("00:10-01:00@1,03:10-04:00@10,@1h sun-mon:last,fri:first,wed 10-40 2,jun-aug")
+    # Schedule("18:00-19:00@10").validate(now.replace(hour=18, minute=51), last=now.replace(hour=18, minute=51))
+    # Schedule("18:00-19:00@10").validate(now.replace(hour=15, minute=01))
+    # s = Schedule(["14:00-21:00@10", "!12:00-18:55", "!19:10-20:00"])
     s = Schedule("@11s mon:last")
-#    s = Schedule("")
+    # s = Schedule("")
     print(json.dumps(s.data, indent=4))
     for _ in range(10):
-        last, interval = s.get_next(now=last, last=last)
-        if not last:
+        last_value, interval = s.get_next(now=last_value, last=last_value)
+        if not last_value:
             break
-        print(last, last.strftime("%c"), interval)
-
+        print(last_value, last_value.strftime("%c"), interval)

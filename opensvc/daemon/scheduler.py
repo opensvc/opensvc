@@ -200,6 +200,17 @@ class Scheduler(shared.OsvcThread):
         #self.privlog.debug("dropped_via_notify: %s", self.dropped_via_notify)
         return
 
+    def post_exec_action(self, sigs, flag_launched, cmd_s):
+        """
+        Verify lost tasks (tasks where flag_launched has not been created)
+        then call drop_running
+        """
+        if not os.path.exists(flag_launched):
+            self.log.warning("failed run '%s'", cmd_s)
+        else:
+            os.unlink(flag_launched)
+        self.drop_running(sigs)
+
     def drop_running(self, sigs):
         """
         Drop for running tasks signatures those not yet dropped via
@@ -226,9 +237,12 @@ class Scheduler(shared.OsvcThread):
         cmd = Env.om + cmd_args
         self.privlog.info("run '%s'", " ".join(cmd_log))
 
+        flag_name = "launched.%s.%s" % (",".join(["-".join([str(s) for s in sig]) for sig in sigs]), session_id)
+        flag_launched = str(os.path.join(Env.paths.pathvar, "scheduler", flag_name))
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         env["OSVC_SCHED_TIME"] = str(now)
+        env["OSVC_SCHED_FLAG"] = flag_launched
         env["OSVC_PARENT_SESSION_UUID"] = session_id
 
         kwargs = dict(stdout=self.devnull, stderr=self.devnull,
@@ -249,13 +263,12 @@ class Scheduler(shared.OsvcThread):
             self.lasts[sig] = now
         self.push_proc(proc=proc,
                        cmd=cmd,
-                       on_success="drop_running",
-                       on_success_args=[sigs],
-                       on_error="drop_running",
-                       on_error_args=[sigs])
+                       on_success="post_exec_action",
+                       on_success_args=[sigs, flag_launched, " ".join(cmd_log)],
+                       on_error="post_exec_action",
+                       on_error_args=[sigs, flag_launched, " ".join(cmd_log)])
 
     @staticmethod
-
     def get_cmd_args(action, path=None, rids=None):
         if path is None:
             cmd = ["node", action]
