@@ -206,7 +206,7 @@ class Scheduler(shared.OsvcThread):
         then call drop_running
         """
         if not os.path.exists(flag_launched):
-            self.log.warning("failed run '%s'", cmd_s)
+            self.privlog.warning("failed run '%s'", cmd_s)
         else:
             os.unlink(flag_launched)
         self.drop_running(sigs)
