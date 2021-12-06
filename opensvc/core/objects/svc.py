@@ -2249,6 +2249,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         todo = [
           ('INC', os.path.join(Env.paths.pathlog, "node.log")),
+          ('INC', os.path.join(Env.paths.pathlog, "node.scheduler.log")),
           ('INC', os.path.join(Env.paths.pathlog, "xmlrpc.log")),
           ('INC', os.path.join(self.log_d, self.name+".log")),
           ('INC', self.var_d),

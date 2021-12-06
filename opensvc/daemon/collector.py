@@ -229,9 +229,9 @@ class Collector(shared.OsvcThread):
 
     def send_daemon_status(self, data):
         if self.last_status_changed:
-            self.log.info("send daemon status, %d changes", len(self.last_status_changed))
+            self.log.debug("send daemon status, %d changes", len(self.last_status_changed))
         else:
-            self.log.info("send daemon status, resync")
+            self.log.debug("send daemon status, resync")
         try:
             shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:

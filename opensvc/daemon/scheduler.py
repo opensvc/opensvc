@@ -10,6 +10,7 @@ from subprocess import Popen
 
 import daemon.shared as shared
 import core.exceptions as ex
+import core.logger
 from env import Env
 from utilities.cache import purge_cache_session
 from utilities.converters import print_duration
@@ -83,6 +84,7 @@ class Scheduler(shared.OsvcThread):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.scheduler"), {"node": Env.nodename, "component": self.name})
         self.log.info("scheduler started")
+        self.privlog.info("scheduler started")
         self.update_status()
         self.cluster_ca = "system/sec/ca-"+self.cluster_name
         if hasattr(os, "devnull"):
@@ -95,11 +97,19 @@ class Scheduler(shared.OsvcThread):
             try:
                 self.do()
             except Exception as exc:
-                self.log.exception(exc)
+                self.log.error("exception logged in scheduler.log")
+                self.privlog.exception(exc)
                 time.sleep(0.2)
             if self.stopped():
                 self.kill_procs()
                 self.exit()
+
+    @lazy
+    def privlog(self):
+        log_file = os.path.join(Env.paths.pathlog, "node.scheduler.log")
+        core.logger.initLogger(Env.nodename+".osvcd.scheduler", log_file, handlers=["file"], sid=False)
+        return logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.scheduler"),
+                                     {"node": Env.nodename, "component": self.name})
 
     def do(self):
         self.reload_config()
@@ -172,7 +182,7 @@ class Scheduler(shared.OsvcThread):
             expire_delay = expire - now
             #print(obj.path, "expire in:", print_duration(expire_delay))
             if expire_delay < 3600:
-                self.log.info("renew %s certificate, expiring in %s", obj.path, print_duration(expire_delay))
+                self.privlog.info("renew %s certificate, expiring in %s", obj.path, print_duration(expire_delay))
                 obj.gen_cert()
 
     def janitor_run_done(self):
@@ -184,10 +194,10 @@ class Scheduler(shared.OsvcThread):
         inter = sigs & self.running
         if not inter:
             return
-        self.log.debug("run done notifications: %s", inter)
+        self.privlog.debug("run done notifications: %s", inter)
         self.running -= inter
         self.dropped_via_notify |= inter
-        #self.log.debug("dropped_via_notify: %s", self.dropped_via_notify)
+        #self.privlog.debug("dropped_via_notify: %s", self.dropped_via_notify)
         return
 
     def drop_running(self, sigs):
@@ -214,7 +224,7 @@ class Scheduler(shared.OsvcThread):
         cmd_args = self.get_cmd_args(action, path, rids)
         cmd_log = ["om",] + cmd_args
         cmd = Env.om + cmd_args
-        self.log.info("run '%s'", " ".join(cmd_log))
+        self.privlog.info("run '%s'", " ".join(cmd_log))
 
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
@@ -227,7 +237,7 @@ class Scheduler(shared.OsvcThread):
         try:
             proc = Popen(cmd, **kwargs)
         except KeyboardInterrupt as err:
-            self.log.warning("unable to start cmd: '%s' failed with %s", cmd, str(err))
+            self.privlog.warning("unable to start cmd: '%s' failed with %s", cmd, str(err))
             return
         sigset = set(sigs)
         self.running |= sigset
@@ -262,11 +272,11 @@ class Scheduler(shared.OsvcThread):
 
     def promote_queued_action(self, sig, delay, now):
         if delay == 0 and self.delayed[sig]["delay"] > 0 and self.delayed[sig]["expire"] > now:
-            self.log.debug("promote queued action '%s' to run asap", sig)
+            self.privlog.debug("promote queued action '%s' to run asap", sig)
             self.delayed[sig]["delay"] = 0
             self.delayed[sig]["expire"] = now
         else:
-            self.log.debug("skip already queued action '%s'", sig)
+            self.privlog.debug("skip already queued action '%s'", sig)
 
     def next_expire(self, now):
         try:
@@ -279,7 +289,7 @@ class Scheduler(shared.OsvcThread):
         if delay is None:
             delay = 0
         if sig in self.running:
-            self.log.debug("skip already running action '%s'", sig)
+            self.privlog.debug("skip already running action '%s'", sig)
             return
         if sig in self.delayed:
             self.promote_queued_action(sig, delay, now)
@@ -292,9 +302,9 @@ class Scheduler(shared.OsvcThread):
             "csum": csum,
         }
         if not delay:
-            self.log.debug("queued action '%s' for run in %s", sig, print_duration(exp-now))
+            self.privlog.debug("queued action '%s' for run in %s", sig, print_duration(exp-now))
         else:
-            self.log.debug("queued action '%s' for run in %s + %s delay", sig, print_duration(exp-now), print_duration(delay))
+            self.privlog.debug("queued action '%s' for run in %s + %s delay", sig, print_duration(exp-now), print_duration(delay))
         return
 
     def get_todo(self, now):
@@ -344,12 +354,12 @@ class Scheduler(shared.OsvcThread):
             _csum = self.blacklist[sig]
             if path is None:
                 if _csum != csum:
-                    self.log.info("remove from blacklist: %s", action)
+                    self.privlog.info("remove from blacklist: %s", action)
                     del self.blacklist[sig]
             else:
                 ocsum = self.node_data.get(["services", "config", path, "csum"], None)
                 if _csum != ocsum:
-                    self.log.info("remove from blacklist: %s %s %s", path, action, rid or None)
+                    self.privlog.info("remove from blacklist: %s %s %s", path, action, rid or None)
                     del self.blacklist[sig]
 
     def janitor_delayed(self):
@@ -359,19 +369,19 @@ class Scheduler(shared.OsvcThread):
             action, path, rid = sig
             if not path:
                 if csum and csum != task["csum"]:
-                    self.log.info("drop action '%s' on %s%s: node or cluster config changed",
-                                  action, path, " " + rid if rid else "")
+                    self.privlog.info("drop action '%s' on %s%s: node or cluster config changed",
+                                      action, path, " " + rid if rid else "")
                     drop.append(sig)
                 continue
             if path not in shared.SERVICES:
-                self.log.info("drop action '%s' on %s%s: object deleted",
-                              action, path, " " +rid if rid else "")
+                self.privlog.info("drop action '%s' on %s%s: object deleted",
+                                  action, path, " " +rid if rid else "")
                 drop.append(sig)
                 continue
             ocsum = self.node_data.get(["services", "config", path, "csum"], None)
             if ocsum and ocsum != task["csum"]:
-                self.log.info("drop action '%s' on %s%s: object config changed",
-                              action, path, " " + rid if rid else "")
+                self.privlog.info("drop action '%s' on %s%s: object config changed",
+                                  action, path, " " + rid if rid else "")
                 drop.append(sig)
                 continue
             if not rid:
@@ -383,11 +393,11 @@ class Scheduler(shared.OsvcThread):
                 drop.append(sig)
                 continue
             except (ex.Error, ex.ContinueAction) as exc:
-                self.log.info("drop action '%s' on %s %s: %s", action, path, rid, exc)
+                self.privlog.info("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
             except Exception as exc:
-                self.log.error("drop action '%s' on %s %s: %s", action, path, rid, exc)
+                self.privlog.error("drop action '%s' on %s %s: %s", action, path, rid, exc)
                 drop.append(sig)
                 continue
         self.delete_queued(drop)
@@ -470,7 +480,7 @@ class Scheduler(shared.OsvcThread):
         return self.nodes_data.get()
 
     def run_scheduler(self, now):
-        #self.log.info("run scheduler")
+        #self.privlog.debug("run scheduler")
         nonprov = []
 
         if not shared.NODE:
@@ -497,7 +507,7 @@ class Scheduler(shared.OsvcThread):
                 try:
                     _next, _interval = shared.NODE.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
                 except Exception as exc:
-                    self.log.warning("node %s %s: %s", p.section, action, exc)
+                    self.privlog.warning("node %s %s: %s", p.section, action, exc)
                     self.blacklist[sig] = csum
                     continue
                 if not _next:
@@ -546,8 +556,8 @@ class Scheduler(shared.OsvcThread):
                     try:
                         _next, _interval = svc.sched.get_schedule(p.section, p.schedule_option).get_next(now, last)
                     except Exception as exc:
-                        self.log.warning("%s %s %s: %s", path, p.section, action, exc)
-                        self.log.exception(exc)
+                        self.privlog.warning("%s %s %s: %s", path, p.section, action, exc)
+                        self.privlog.exception(exc)
                         self.blacklist[sig] = csum
                         continue
                     if not _next:
@@ -570,4 +580,4 @@ class Scheduler(shared.OsvcThread):
         if len(nonprov) > 0:
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
         if len(msg) > 0:
-            self.log.debug(" ".join(msg))
+            self.privlog.debug(" ".join(msg))
