@@ -204,13 +204,21 @@ class Scheduler(shared.OsvcThread):
         #self.privlog.debug("dropped_via_notify: %s", self.dropped_via_notify)
         return
 
-    def post_exec_action(self, sigs, flag_launched, cmd_s):
+    def post_exec_action(self, sigs, flag_launched, cmd_s, proc):
         """
         Verify lost tasks (tasks where flag_launched has not been created)
         then call drop_running
         """
         if not os.path.exists(flag_launched):
-            self.privlog.warning("failed run '%s'", cmd_s)
+            if proc is None:
+                exit_code = 'no proc'
+            elif hasattr(proc, "poll"):
+                exit_code = proc.returncode
+            elif hasattr(proc, "exitcode"):
+                exit_code = proc.exitcode
+            else:
+                exit_code = None
+            self.privlog.warning("failed run '%s' exit code:%s", cmd_s, exit_code)
         else:
             os.unlink(flag_launched)
         self.drop_running(sigs)
@@ -276,9 +284,9 @@ class Scheduler(shared.OsvcThread):
         self.push_proc(proc=proc,
                        cmd=cmd,
                        on_success="post_exec_action",
-                       on_success_args=[sigs, flag_launched, " ".join(cmd_log)],
+                       on_success_args=[sigs, flag_launched, " ".join(cmd_log), proc],
                        on_error="post_exec_action",
-                       on_error_args=[sigs, flag_launched, " ".join(cmd_log)])
+                       on_error_args=[sigs, flag_launched, " ".join(cmd_log), proc])
 
     @staticmethod
     def get_cmd_args(action, path=None, rids=None):
