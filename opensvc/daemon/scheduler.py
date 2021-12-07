@@ -3,7 +3,8 @@ Scheduler Thread
 """
 import logging
 import os
-import sys
+from shutil import rmtree
+
 import time
 import uuid
 from subprocess import Popen
@@ -92,6 +93,7 @@ class Scheduler(shared.OsvcThread):
         else:
             devnull = "/dev/null"
         self.devnull = os.open(devnull, os.O_RDWR)
+        self.purge_trace()
 
         while True:
             try:
@@ -102,6 +104,7 @@ class Scheduler(shared.OsvcThread):
                 time.sleep(0.2)
             if self.stopped():
                 self.kill_procs()
+                self.purge_trace()
                 self.exit()
 
     @lazy
@@ -137,7 +140,8 @@ class Scheduler(shared.OsvcThread):
                 self.update_status()
             self.sleep()
 
-    def sleep(self):
+    @staticmethod
+    def sleep():
         with shared.SCHED_TICKER:
             shared.SCHED_TICKER.wait(JANITOR_PROCS_INTERVAL)
 
@@ -200,13 +204,21 @@ class Scheduler(shared.OsvcThread):
         #self.privlog.debug("dropped_via_notify: %s", self.dropped_via_notify)
         return
 
-    def post_exec_action(self, sigs, flag_launched, cmd_s):
+    def post_exec_action(self, sigs, flag_launched, cmd_s, proc):
         """
         Verify lost tasks (tasks where flag_launched has not been created)
         then call drop_running
         """
         if not os.path.exists(flag_launched):
-            self.privlog.warning("failed run '%s'", cmd_s)
+            if proc is None:
+                exit_code = 'no proc'
+            elif hasattr(proc, "poll"):
+                exit_code = proc.returncode
+            elif hasattr(proc, "exitcode"):
+                exit_code = proc.exitcode
+            else:
+                exit_code = None
+            self.privlog.warning("failed run '%s' exit code:%s", cmd_s, exit_code)
         else:
             os.unlink(flag_launched)
         self.drop_running(sigs)
@@ -231,6 +243,14 @@ class Scheduler(shared.OsvcThread):
         for session_id in purged:
             del self.session_ids[session_id]
 
+    def purge_trace(self):
+        if os.path.exists(self.trace_dir):
+            try:
+                rmtree(self.trace_dir)
+                os.makedirs(self.trace_dir, 0o755)
+            except Exception:
+                pass
+
     def exec_action(self, sigs, path, action, rids, queued, now, session_id):
         cmd_args = self.get_cmd_args(action, path, rids)
         cmd_log = ["om",] + cmd_args
@@ -238,7 +258,7 @@ class Scheduler(shared.OsvcThread):
         self.privlog.info("run '%s'", " ".join(cmd_log))
 
         flag_name = "launched.%s.%s" % (",".join(["-".join([str(s) for s in sig]) for sig in sigs]), session_id)
-        flag_launched = str(os.path.join(Env.paths.pathvar, "scheduler", flag_name))
+        flag_launched = str(os.path.join(self.trace_dir, flag_name))
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
         env["OSVC_SCHED_TIME"] = str(now)
@@ -264,9 +284,9 @@ class Scheduler(shared.OsvcThread):
         self.push_proc(proc=proc,
                        cmd=cmd,
                        on_success="post_exec_action",
-                       on_success_args=[sigs, flag_launched, " ".join(cmd_log)],
+                       on_success_args=[sigs, flag_launched, " ".join(cmd_log), proc],
                        on_error="post_exec_action",
-                       on_error_args=[sigs, flag_launched, " ".join(cmd_log)])
+                       on_error_args=[sigs, flag_launched, " ".join(cmd_log), proc])
 
     @staticmethod
     def get_cmd_args(action, path=None, rids=None):
@@ -594,3 +614,7 @@ class Scheduler(shared.OsvcThread):
             msg.append("non provisioned service skipped: %s." % ", ".join(nonprov))
         if len(msg) > 0:
             self.privlog.debug(" ".join(msg))
+
+    @property
+    def trace_dir(self):
+        return os.path.join(Env.paths.pathvar, "scheduler")
