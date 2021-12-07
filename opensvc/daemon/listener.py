@@ -101,7 +101,8 @@ class Listener(shared.OsvcThread):
     stage = "init"
     events_grace_period = True
     sock_tmo = 1.0
-    sockmap = {}
+    sockmap = {}  # dict fd -> socket
+    _sockmap = {}  # dict name -> (fd, socket)
     last_janitors = 0
     crl_expire = 0
     crl_mode = None
@@ -429,7 +430,7 @@ class Listener(shared.OsvcThread):
                     tls = True
                     encrypted = False
                 else:
-                    print("bug")
+                    self.log.error("unexpected accepted fd %s", fd)
                     continue
                 if addr[0] not in self.stats.sessions.clients:
                     self.stats.sessions.clients[addr[0]] = Storage({
@@ -718,13 +719,10 @@ class Listener(shared.OsvcThread):
                 self.tls_sock.close()
             except socket.error:
                 pass
-            try:
-                del self.sockmap[self.tls_sock.fileno()]
-            except KeyError:
-                pass
+            self._del_sockmap("tls_sock")
             self.tls_port = port
             self.tls_addr = addr
-        else:
+        elif self._has_sockmap("tls_sock"):
             self.log.info("tls listener %s config unchanged", fmt_listener(self.tls_addr, self.tls_port))
             return
 
@@ -751,7 +749,7 @@ class Listener(shared.OsvcThread):
             self.log.info("failed tls listener init: %s", exc)
             return
         self.log.info("listening on %s using http/2 tls with client auth", fmt_listener(self.tls_addr, self.tls_port))
-        self.sockmap[self.tls_sock.fileno()] = self.tls_sock
+        self._update_sockmap("tls_sock", self.tls_sock)
 
     def setup_sock(self):
         port = shared.NODE.oget("listener", "port")
@@ -764,13 +762,10 @@ class Listener(shared.OsvcThread):
                 self.sock.close()
             except socket.error:
                 pass
-            try:
-                del self.sockmap[self.sock.fileno()]
-            except KeyError:
-                pass
+            self._del_sockmap("sock")
             self.port = port
             self.addr = addr
-        else:
+        elif self._has_sockmap("sock"):
             self.log.info("aes listener %s config unchanged", fmt_listener(self.addr, self.port))
             return
 
@@ -790,7 +785,7 @@ class Listener(shared.OsvcThread):
             self.alert("error", "bind aes listener %s error: %s", fmt_listener(self.addr, self.port), exc)
             return
         self.log.info("listening on %s using aes encryption", fmt_listener(self.addr, self.port))
-        self.sockmap[self.sock.fileno()] = self.sock
+        self._update_sockmap("sock", self.sock)
 
     def setup_sockux_h2(self):
         if os.name == "nt":
@@ -816,7 +811,7 @@ class Listener(shared.OsvcThread):
             self.alert("error", "bind http/2 listener %s error: %s", Env.paths.lsnruxh2sock, exc)
             return
         self.log.info("listening on %s using http/2", Env.paths.lsnruxh2sock)
-        self.sockmap[self.sockuxh2.fileno()] = self.sockuxh2
+        self._update_sockmap("sockuxh2", self.sockuxh2)
 
     def setup_sockux(self):
         if os.name == "nt":
@@ -842,13 +837,26 @@ class Listener(shared.OsvcThread):
             self.alert("error", "bind raw listener %s error: %s", Env.paths.lsnruxsock, exc)
             return
         self.log.info("listening on %s", Env.paths.lsnruxsock)
-        self.sockmap[self.sockux.fileno()] = self.sockux
+        self._update_sockmap("sockux", self.sockux)
 
     def setup_socks(self):
         self.setup_socktls()
         self.setup_sock()
         self.setup_sockux()
         self.setup_sockux_h2()
+
+    def _del_sockmap(self, name):
+        try:
+            del self._sockmap[name]
+        except KeyError:
+            pass
+
+    def _has_sockmap(self, name):
+        return name in self._sockmap
+
+    def _update_sockmap(self, name, s):
+        self._sockmap[name] = (s.fileno(), s)
+        self.sockmap = {fd: sock for fd, sock in self._sockmap.values()}
 
 
 class ClientHandler(shared.OsvcThread):
