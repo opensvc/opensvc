@@ -333,6 +333,10 @@ class ResourceSet(object):
                 if action == "provision" and resource.type == "volume":
                     # need reset lazy in current process, (subprocess reset lazy has no effect)
                     resource.post_provision_reset_lazy()
+                if action in ("stop", "start", "provision", "unprovision") and hasattr(resource, "is_up_clear_cache"):
+                    # need reset lazy in current process, (subprocess reset lazy has no effect)
+                    # for ex: docker caches container_id, dockerlib caches the ps data, etc...
+                    getattr(resource, "is_up_clear_cache")()
             if len(err) > 0:
                 raise ex.Error("%s non-optional resources jobs returned "
                                "with error" % ",".join(err))

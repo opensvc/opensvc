@@ -145,12 +145,20 @@ def timestamp(timestamp_f, last=None):
         last = time.time()
     elif type(last) == datetime.datetime:
         last = to_time(last)
-    timestamp_d = os.path.dirname(timestamp_f)
-    if not os.path.isdir(timestamp_d):
-        os.makedirs(timestamp_d, 0o755)
     buff = repr(last)
-    with open(timestamp_f, 'w') as ofile:
-        ofile.write(buff+os.linesep)
+    try:
+        with open(timestamp_f, 'w') as ofile:
+            ofile.write(buff+os.linesep)
+    except (OSError, IOError):
+        timestamp_d = os.path.dirname(timestamp_f)
+        try:
+            os.makedirs(timestamp_d, 0o755)
+        except (OSError, IOError):
+            # another // call may have created this dir
+            # ignore error, and try again write file
+            pass
+        with open(timestamp_f, 'w') as ofile:
+            ofile.write(buff+os.linesep)
 
 
 def sched_action(func):

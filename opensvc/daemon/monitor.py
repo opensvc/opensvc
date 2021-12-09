@@ -2011,7 +2011,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if smon.status in ("shutdown", "shutdown failed"):
                 return
             if self.is_instance_shutdown(instance):
-                self.set_smon(svc.path, local_expect="unset")
+                if smon.status == "wait children":
+                    # volumes may be in "wait children" but stopped by their
+                    # last consumer => clear their "wait children" state.
+                    new_status = "idle"
+                else:
+                    new_status = None
+                self.set_smon(svc.path, local_expect="unset", status=new_status)
                 return
             if not self.local_children_down(svc):
                 self.set_smon(svc.path, status="wait children")

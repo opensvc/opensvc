@@ -66,6 +66,8 @@ if six.PY2:
     ConnectionResetError = _ConnectionResetError
     ConnectionAbortedError = _ConnectionAbortedError
 
+
+LISTENER_SLOTS = 128
 RE_LOG_LINE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-2][0-9]:[0-6][0-9]:[0-6][0-9],[0-9]{3} .* \| ")
 JANITORS_INTERVAL = 0.5
 ICON = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABigAAAYoBM5cwWAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJKSURBVDiNbZJLSNRRFMZ/5/5HbUidRSVSuGhMzUKiB9SihYaJQlRSm3ZBuxY9JDRb1NSi7KGGELRtIfTcJBjlItsohT0hjcpQSsM0CMfXzP9xWszM35mpA/dy7+Wc7/vOd67wn9gcuZ8bisa3xG271LXthTdNL/rZ0B0VQbNzA+mX2ra+kL04d86NxY86QpEI8catv0+SIyOMNnr6aa4ba/aylL2cTdVI6tBwrbfUXvKeOXY87Ng2jm3H91dNnWrd++U89kIx7jw48+DMf0bcOtk0MA5gABq6egs91+pRCKc01lXOnG2tn4yAKUYkmWpATDlqevRjdb4PYMWDrSiVqIKCosMX932vAYoQQ8bCgGoVajcDmIau3jxP9bj6/igoFqiTuCeLkDQQQOSEDm3PMQEnfxeqhYlSH6Si6WF4EJjIZE+1AqiGCAZ3GoT1yYcEuSqqMDBacOXMo5JORDJBRJa9V0qMqkiGfHwt1vORlW3ND9ZdB/mZNDANJNmgUXcsnTmx+WCBvuH8G6/GC276BpLmA95XMxvVQdC5NOYkkC8ocG9odRCRzEkI0yzF3pn+SM2SKrfJiCRQYp9uqf9l/p2E3pIdr20DkCvBS6o64tMvtzLTfmTiQlGh05w1iSFyQ23+R3rcsjsqrlPr4X3Q5f6nOw7/iOwpX+wEsyLNwLcIB6TsSQzASon+1n83unbboTtiaczz3FVXD451VG+cawfyEAHPGcdzruPOHpOKp39SdcvzyAqdOh3GsyoBsLxJ1hS+F4l42Xl/Abn0Ctwc5dldAAAAAElFTkSuQmCC")
@@ -737,7 +739,7 @@ class Listener(shared.OsvcThread):
             self.tls_sock = socket.socket(af, socket.SOCK_STREAM)
             self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.tls_sock, self.tls_addr, self.tls_port)
-            self.tls_sock.listen(128)
+            self.tls_sock.listen(LISTENER_SLOTS)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind tls listener %s error: %s", fmt_listener(self.tls_addr, self.tls_port), exc)
@@ -779,7 +781,7 @@ class Listener(shared.OsvcThread):
             self.sock = socket.socket(af, socket.SOCK_STREAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.bind_inet(self.sock, self.addr, self.port)
-            self.sock.listen(128)
+            self.sock.listen(LISTENER_SLOTS)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind aes listener %s error: %s", fmt_listener(self.addr, self.port), exc)
@@ -805,7 +807,7 @@ class Listener(shared.OsvcThread):
         try:
             self.sockuxh2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sockuxh2.bind(Env.paths.lsnruxh2sock)
-            self.sockuxh2.listen(1)
+            self.sockuxh2.listen(LISTENER_SLOTS)
             self.sockuxh2.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind http/2 listener %s error: %s", Env.paths.lsnruxh2sock, exc)
@@ -831,7 +833,7 @@ class Listener(shared.OsvcThread):
         try:
             self.sockux = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sockux.bind(Env.paths.lsnruxsock)
-            self.sockux.listen(1)
+            self.sockux.listen(LISTENER_SLOTS)
             self.sockux.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind raw listener %s error: %s", Env.paths.lsnruxsock, exc)
