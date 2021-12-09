@@ -5085,7 +5085,7 @@ class Svc(PgMixin, BaseSvc):
                 cmd_results = justcall(cmd)
             if cmd_results[2] != 0:
                 raise ex.Error("failed to send %s to %s" % (self.paths.cf, container.name))
-            self.log.info("send %s to %s", self.paths.cf, container.name)
+            self.log.info("sent %s to %s", self.paths.cf, container.name)
 
             cmd = ["create", "--restore", "--config", encap_cf]
             try:
