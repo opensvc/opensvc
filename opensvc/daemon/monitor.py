@@ -3388,6 +3388,125 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     # Service-specific monitor data helpers
     #
     #########################################################################
+
+    def set_smon(self, path, status=None, local_expect=None,
+                 global_expect=None, reset_retries=False,
+                 stonith=None, expected_status=None,
+                 defer=False, origin=""):
+        msg = "defer" if defer else ""
+        if origin:
+            msg += " from %s" % origin
+        instance = self.get_service_instance(path, Env.nodename)
+        if not instance:
+            self.node_data.set(["services", "status", path], {"resources": {}})
+        smon_view = self.node_data.view(["services", "status", path, "monitor"])
+        smon = Storage(smon_view.get([], default={"status": "idle"}))
+        if instance and not instance.get("resources", {}) \
+                and not status \
+                and ((global_expect is None and local_expect is None and status == "idle")  # TODO refactor this
+                     or global_expect not in (
+                             "frozen",
+                             "thawed",
+                             "aborted",
+                             "unset",
+                             "deleted",
+                             "purged")):
+            # skip slavers, wrappers, scalers
+            return False
+        # will set changed to True if an update occur, this will avoid wake_monitor calls
+        changed = False
+        if not smon:
+            smon_view.set([], {
+                "status": "idle",
+                "status_updated": time.time(),
+                "global_expect_updated": time.time(),
+            })
+            changed = True
+        if status:
+            reset_placement = False
+            if status != smon.status \
+                    and (not expected_status or expected_status == smon.status):
+                self.log.info(
+                    "%s monitor status change: %s => %s %s",
+                    path,
+                    smon.status if
+                    smon.status else "none",
+                    status,
+                    msg,
+                )
+                if smon.status is not None \
+                        and "failed" in smon.status \
+                        and "failed" not in status:
+                    # the placement might become "leader" after transition
+                    # from "failed" to "not-failed". recompute asap so the
+                    # orchestrator won't take an undue "stop_instance"
+                    # decision.
+                    reset_placement = True
+                smon.status = status
+                smon.status_updated = time.time()
+                changed = True
+            if reset_placement:
+                smon.placement = self.get_service_placement(path)
+                smon.status_updated = time.time()
+                changed = True
+
+        if local_expect:
+            if local_expect == "unset":
+                local_expect = None
+            if local_expect != smon.local_expect:
+                self.log.info(
+                    "%s monitor local expect change: %s => %s %s",
+                    path,
+                    smon.local_expect if
+                    smon.local_expect else "none",
+                    local_expect,
+                    msg,
+                )
+                smon.local_expect = local_expect
+                smon.local_expect_updated = time.time()
+                changed = True
+
+        if global_expect:
+            if global_expect == "unset":
+                global_expect = None
+            elif global_expect == "restarted":
+                global_expect = "restarted@%s" % time.time()
+            if global_expect != smon.global_expect:
+                self.log.info(
+                    "%s monitor global expect change: %s => %s %s",
+                    path,
+                    smon.global_expect if
+                    smon.global_expect else "none",
+                    global_expect,
+                    msg,
+                )
+                smon.global_expect = global_expect
+                smon.global_expect_updated = time.time()
+                changed = True
+        if reset_retries and "restart" in smon:
+            self.log.info("%s monitor resources restart count "
+                          "reset %s", path, msg)
+            del smon["restart"]
+            changed = True
+
+        if stonith:
+            if stonith == "unset":
+                stonith = None
+            if stonith != smon.stonith:
+                self.log.info(
+                    "%s monitor stonith change: %s => %s %s",
+                    path,
+                    smon.stonith if
+                    smon.stonith else "none",
+                    stonith,
+                    msg,
+                )
+                smon.stonith = stonith
+                changed = True
+        if changed:
+            smon_view.set([], smon)
+            shared.wake_monitor(reason="%s mon change" % path)
+
     def reset_smon_retries(self, path, rid):
         self.node_data.unset_safe(["services", "status", path, "monitor", "restart", rid])
 
