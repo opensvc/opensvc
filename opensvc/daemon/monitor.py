@@ -1733,23 +1733,23 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
         if svc.topology == "failover" and smon.local_expect == "started":
             # decide if local_expect=started should be reset
-            if status == "up" and self.get_service_instance(svc.path, Env.nodename).avail != "up":
+            svc_instance = self.get_service_instance(svc.path, Env.nodename)
+            if svc_instance is None:
+                return
+            if status == "up" and svc_instance.avail != "up":
                 self.log.info("%s is globally up but the local instance is "
                               "not and is in 'started' local expect. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
             elif self.service_started_instances_count(svc.path) > 1 \
-                    and self.get_service_instance(svc.path, Env.nodename).avail != "up" \
+                    and svc_instance.avail != "up" \
                     and not self.placement_leader(svc):
                 self.log.info("%s has multiple instance in 'started' "
                               "local expect and we are not leader. reset",
                               svc.path)
                 self.set_smon(svc.path, local_expect="unset")
-            elif status != "up" \
-                    and self.get_service_instance(svc.path, Env.nodename).avail in ("down",
-                                                                                    "stdby down",
-                                                                                    "undef",
-                                                                                    "n/a") \
+            elif status != "up"\
+                    and svc_instance.avail in ("down", "stdby down", "undef", "n/a") \
                     and not self.resources_orchestrator_will_handle(svc):
                 self.log.info("%s is not up and no resource monitor "
                               "action will be attempted, but "
