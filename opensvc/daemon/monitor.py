@@ -627,6 +627,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         self.compat = True
         self.last_node_data = None
         self.init_steps = set()
+        self.transitions = set([])
 
     def init(self):
         self.set_tid()
@@ -692,6 +693,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 shared.LOCAL_GEN_MERGED_ON_PEER = {peer: 0 for peer in shared.LOCAL_GEN_MERGED_ON_PEER}
             # reset GEN_DIFF to ensure fresh patch sequence
             shared.GEN_DIFF = {}
+            self.transitions = set([])
         initial_data = {
             "compat": shared.COMPAT_VERSION,
             "api": shared.API_VERSION,
@@ -733,11 +735,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             self.log.exception(exc)
 
     def transition_count(self):
-        count = 0
-        for path, smon in self.iter_local_services_monitors():
-            if smon.status and smon.status != "scaling" and smon.status.endswith("ing"):
-                count += 1
-        return count
+        return len(self.transitions)
 
     def set_next(self, timeout):
         """
@@ -3309,6 +3307,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     self.log.info("purge deleted object %s from daemon data", path)
                     del shared.SERVICES[path]
                     self.node_data.unset_safe(["services", "status", path])
+                    self.transitions.discard(path)
         self.node_data.set(["services", "config"], config)
         return config
 
@@ -3442,6 +3441,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                     # orchestrator won't take an undue "stop_instance"
                     # decision.
                     reset_placement = True
+                if status != "scaling" and status.endswith("ing"):
+                    self.transitions.add(path)
+                else:
+                    self.transitions.discard(path)
+
                 smon.status = status
                 smon.status_updated = time.time()
                 changed = True
@@ -3798,6 +3802,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             try:
                 self.log.info("purge deleted object %s from daemon status data", path)
                 self.node_data.unset(["services", "status", path])
+                self.transitions.discard(path)
             except KeyError:
                 pass
 
