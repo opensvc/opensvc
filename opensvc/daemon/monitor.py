@@ -1732,7 +1732,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if svc.topology == "failover" and smon.local_expect == "started":
             # decide if local_expect=started should be reset
             svc_instance = self.get_service_instance(svc.path, Env.nodename)
-            if svc_instance is None:
+            if svc_instance is None or len(smon.restart or {}) > 0:
                 return
             if status == "up" and svc_instance.avail != "up":
                 self.log.info("%s is globally up but the local instance is "
