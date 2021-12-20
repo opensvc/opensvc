@@ -287,7 +287,7 @@ class Arrays(object):
                 print(err, file=sys.stderr)
                 continue
             tree = fromstring(out)
-            for symm in tree.getiterator('Symm_Info'):
+            for symm in tree.iter('Symm_Info'):
                 model = symm.find('model').text
                 if model.startswith('VMAX'):
                     self.arrays.append(Vmax(name, symcli_path, symcli_connect, username, password, node=self.node))
@@ -494,7 +494,7 @@ class SymMixin(object):
                         d[e.tag] = e.text
             return d
 
-        for elem in tree.getiterator(key):
+        for elem in tree.iter(key):
             data.append(parse_elem(elem, as_list, exclude))
 
         return data
