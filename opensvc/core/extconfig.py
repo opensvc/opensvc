@@ -828,7 +828,7 @@ class ExtConfigMixin(object):
                 val = self.handle_reference(ref, scope=scope,
                                             impersonate=impersonate,
                                             cd=cd, section=section,
-                                            stack=stack)
+                                            stack=[]+(stack or []))
             except ex.NotSupported:
                 val = OPEN + ref + CLOSE
             except ex.NotAvailable:
