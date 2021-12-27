@@ -59,6 +59,8 @@ REFS = [  # (name, value, expected_evaluated_value),
     ("no_change_mixed1", "{aBcDe}", "{aBcDe}"),
     ("no_change_mixed2", "{FOO1..2}", "{FOO1..2}"),
     ("no_change_mixed3", "{{{FOO1..2}}}", "{{{FOO1..2}}}"),
+    ("repeat_item", "repeat_value", "repeat_value"),
+    ("repeat_100_ref", " ".join(["{repeat_item}"]*100), " ".join(["repeat_value"]*100)),
 
     # modifiers
     ("mod_upper", "{upper:clustername}", "DEFAULT"),
@@ -178,6 +180,7 @@ class TestReferencesConfigValidate(object):
             ["priority = 14"],
             ["priority = {env.prio}", "[env]", "prio = 12"],
             ["priority = {env.prio}", "[env]", "prio = 12", "[fs#1]", "type = flag"],
+            ["[env]", "a = foo", "multiple = %s" % " ".join(["{a}"]*40)],
     ))
     def test_validate_config_detect_valid_priority_config(lines):
         config_lines = ['[DEFAULT]', 'id = %s' % ID]
