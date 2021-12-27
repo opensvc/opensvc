@@ -94,7 +94,7 @@ REFS = [  # (name, value, expected_evaluated_value),
     ("baz", "abc", "abc"),
     ("bar", "{baz}ref", "abcref"),
     ("foo_bar_ref", "a={bar} b={bar} c={bar}",  "a=abcref b=abcref c=abcref"),
-    ("foo_bar_ref_max", " ".join(["{bar}"] * int(MAX_RECURSION / 4)), " ".join(["abcref"] * int(MAX_RECURSION / 4))),
+    ("foo_bar_ref_max", " ".join(["{bar}"] * int(MAX_RECURSION * 40)), " ".join(["abcref"] * int(MAX_RECURSION * 40))),
 ]
 
 ref_names = [key[0] for key in REFS]
