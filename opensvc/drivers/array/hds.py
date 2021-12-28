@@ -301,7 +301,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd, scoped=scoped)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("StorageArray"):
+        for elem in tree.iter("StorageArray"):
             data.append(elem.attrib)
         return data
 
@@ -315,14 +315,14 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for e_lu in tree.getiterator("LogicalUnit"):
+        for e_lu in tree.iter("LogicalUnit"):
             lu = e_lu.attrib
             lu["Path"] = []
-            for e_path in e_lu.getiterator("Path"):
+            for e_path in e_lu.iter("Path"):
                 lu["Path"].append(e_path.attrib)
-            for e_ldev in e_lu.getiterator("LDEV"):
+            for e_ldev in e_lu.iter("LDEV"):
                 ldev = e_ldev.attrib
-                for e_label in e_ldev.getiterator("ObjectLabel"):
+                for e_label in e_ldev.iter("ObjectLabel"):
                     lu["label"] = e_label.attrib["label"]
             data.append(lu)
         return data
@@ -363,7 +363,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("Pool"):
+        for elem in tree.iter("Pool"):
             data.append(elem.attrib)
         return data
 
@@ -379,7 +379,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("ArrayGroup"):
+        for elem in tree.iter("ArrayGroup"):
             data.append(elem.attrib)
         return data
 
@@ -391,7 +391,7 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("Port"):
+        for elem in tree.iter("Port"):
             port = elem.attrib
             port["worldWidePortName"] = port["worldWidePortName"].replace(".", "").lower()
             data.append(port)
@@ -409,15 +409,15 @@ class Array(object):
         out, err, ret = self.cmd(cmd)
         tree = fromstring(out)
         data = []
-        for elem in tree.getiterator("HostStorageDomain"):
+        for elem in tree.iter("HostStorageDomain"):
             d = elem.attrib
             d["WWN"] = []
             d["Path"] = []
-            for subelem in elem.getiterator("WWN"):
+            for subelem in elem.iter("WWN"):
                 wwn = subelem.attrib
                 wwn["WWN"] = wwn["WWN"].replace(".", "").lower()
                 d["WWN"].append(wwn)
-            for subelem in elem.getiterator("Path"):
+            for subelem in elem.iter("Path"):
                 path = subelem.attrib
                 d["Path"].append(path)
             data.append(d)

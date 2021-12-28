@@ -230,7 +230,7 @@ class DiskDrbd(Resource):
             tree = fromstring(self.dump_xml())
         except Exception:
             return
-        for res in tree.getiterator("resource"):
+        for res in tree.iter("resource"):
             if res.attrib["name"] != self.res:
                 continue
             return res
@@ -240,14 +240,14 @@ class DiskDrbd(Resource):
         res = self.res_xml()
         if res is None:
             return set()
-        for host in res.getiterator("host"):
+        for host in res.iter("host"):
             if host.attrib["name"] != Env.nodename:
                 continue
             d = host.find("device")
             if d is not None:
                 devps |= set([d.text])
                 continue
-            for volume in res.getiterator("volume"):
+            for volume in res.iter("volume"):
                 d = volume.find("device")
                 if d is None:
                     continue
@@ -259,7 +259,7 @@ class DiskDrbd(Resource):
         res = self.res_xml()
         if res is None:
             return set()
-        for host in res.getiterator("host"):
+        for host in res.iter("host"):
             if host.attrib["name"] != Env.nodename:
                 continue
             d = host.find("disk")

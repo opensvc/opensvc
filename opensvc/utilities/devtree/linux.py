@@ -403,7 +403,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
             return
         from xml.etree import ElementTree as etree
         tree = etree.fromstring(out.decode())
-        for res in tree.getiterator('resource'):
+        for res in tree.iter('resource'):
             for host in res.findall('host'):
                 if host.attrib['name'] != Env.nodename:
                     continue
