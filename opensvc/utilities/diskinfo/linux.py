@@ -137,6 +137,17 @@ class DiskInfo(BaseDiskInfo):
             s = self._scsi_id(dev, ["-p", "pre-spc3-83"])
         return s
 
+    @lazy
+    def scsi_id_path(self):
+        if which('scsi_id'):
+            return 'scsi_id'
+        elif which('/lib/udev/scsi_id'):
+            return '/lib/udev/scsi_id'
+        elif which('/usr/lib/udev/scsi_id'):
+            return '/usr/lib/udev/scsi_id'
+        else:
+            return None
+
     def _scsi_id(self, dev, args=None):
         if args is None:
             args = []
@@ -145,13 +156,9 @@ class DiskInfo(BaseDiskInfo):
             return wwid
         if dev in self.disk_ids:
             return self.disk_ids[dev]
-        if which('scsi_id'):
-            scsi_id = 'scsi_id'
-        elif which('/lib/udev/scsi_id'):
-            scsi_id = '/lib/udev/scsi_id'
-        else:
-            return ""
-        cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
+        if not self.scsi_id_path:
+            return
+        cmd = [self.scsi_id_path, '-g', '-u'] + args + ['-d', dev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
@@ -162,7 +169,7 @@ class DiskInfo(BaseDiskInfo):
             self.disk_ids[dev] = id
             return id
         sdev = dev.replace("/dev/", "/block/")
-        cmd = [scsi_id, '-g', '-u'] + args + ['-s', sdev]
+        cmd = [self.scsi_id_path, '-g', '-u'] + args + ['-s', sdev]
         out, err, ret = justcall(cmd)
         if ret == 0:
             id = out.split('\n')[0]
