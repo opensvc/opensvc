@@ -149,6 +149,8 @@ class DiskInfo(BaseDiskInfo):
             scsi_id = 'scsi_id'
         elif which('/lib/udev/scsi_id'):
             scsi_id = '/lib/udev/scsi_id'
+        elif which('/usr/lib/udev/scsi_id'):
+            scsi_id = '/usr/lib/udev/scsi_id'
         else:
             return ""
         cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
