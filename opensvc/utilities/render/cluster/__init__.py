@@ -327,7 +327,8 @@ def format_cluster(paths=None, node=None, data=None, prev_stats_data=None,
                 "status": "",
             }
         elif topology == "flex":
-            info["status"] = "%d/%d" % (data["n_up"], data["flex_target"])
+            flex_target = str(data["flex_target"]) if data["flex_target"] else "#"
+            info["status"] = "%d/%s" % (data["n_up"], flex_target)
         if data["avail"] == "n/a":
             info["status"] = ""
         info = "%(orchestrate)-5s %(status)-5s" % info

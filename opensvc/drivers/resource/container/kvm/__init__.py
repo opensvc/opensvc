@@ -287,7 +287,7 @@ class ContainerKvm(BaseContainer):
                 f.close()
 
         # check if drp flag is already set up
-        for disk in tree.getiterator("disk"):
+        for disk in tree.iter("disk"):
             e = disk.find('source')
             if e is None:
                 continue
@@ -326,7 +326,7 @@ class ContainerKvm(BaseContainer):
             tree.parse(self.cf)
         except Exception as exc:
             return data
-        for dev in tree.getiterator('disk'):
+        for dev in tree.iter('disk'):
             s = dev.find('source')
             if s is None:
                  continue

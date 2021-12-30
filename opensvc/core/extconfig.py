@@ -957,10 +957,14 @@ class ExtConfigMixin(object):
 
         # 1st try: supported keyword
         try:
-            return self._conf_get(s, o, t=t, scope=scope,
+            _val = self._conf_get(s, o, t=t, scope=scope,
                                   impersonate=impersonate,
                                   use_default=use_default, cd=cd,
                                   section=section, rtype=rtype, stack=stack)
+            if _val is not None:
+                # allow x repeats of valid ref
+                stack.pop()
+            return _val
         except ex.RequiredOptNotFound:
             if deprecated_keywords is None:
                 if verbose:
@@ -974,10 +978,14 @@ class ExtConfigMixin(object):
         exc = False
         for deprecated_keyword in deprecated_keywords:
             try:
-                return self._conf_get(s, deprecated_keyword, t=t, scope=scope,
+                _val = self._conf_get(s, deprecated_keyword, t=t, scope=scope,
                                       impersonate=impersonate,
                                       use_default=use_default, cd=cd,
                                       section=section, rtype=rtype, stack=stack)
+                if _val is not None:
+                    # allow x repeats of valid ref
+                    stack.pop()
+                return _val
             except ex.RequiredOptNotFound:
                 exc = True
         if exc:

@@ -65,7 +65,7 @@ class DiskVdisk(Resource):
         except:
             self.log.error("failed to parse %s"%self.svc.resources_by_id['container'].cf)
             raise ex.Error
-        for dev in tree.getiterator('disk'):
+        for dev in tree.iter('disk'):
             s = dev.find('source')
             if s is None:
                  continue
