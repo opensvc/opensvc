@@ -47,7 +47,7 @@ KEYWORDS = BASE_KEYWORDS + [
         "convert": "integer",
         "default": 0,
         "default_text": "(nodes_count*2)-1",
-        "text": "The integer value to use in create-md --max-peers"
+        "text": "The integer value to use in create-md --max-peers. The driver ensures the value is not lesser than the number of instances."
     },
     {
         "keyword": "addr",
@@ -586,12 +586,13 @@ class DiskDrbd(Resource):
         Return the value to use in create-md --max-peers
         """
         v = self.oget("max_peers")
-        min_v = len(self.svc.nodes)
+        n_nodes = len(self.svc.nodes)
+        min_v = n_nodes - 1
         if min_v < 1:
             min_v = 1
         max_v = MAX_NODES - 1
         if v == 0:
-            v = (min_v * 2) - 1
+            v = (n_nodes * 2) - 1
         if v < min_v:
             v = min_v
         if v > max_v:
