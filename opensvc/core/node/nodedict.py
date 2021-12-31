@@ -1109,6 +1109,14 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
+        "rtype": "drbd",
+        "keyword": "max_peers",
+        "convert": "integer",
+        "default": 0,
+        "text": "The number of drbd peer nodes to configure in the metadata. The default value allows growing x2."
+    },
+    {
+        "section": "pool",
         "rtype": "zpool",
         "keyword": "name",
         "required": True,
