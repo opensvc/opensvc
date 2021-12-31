@@ -42,6 +42,14 @@ KEYWORDS = BASE_KEYWORDS + [
         "text": "The path of the device to provision the drbd on."
     },
     {
+        "keyword": "max_peers",
+        "provisioning": True,
+        "convert": "integer",
+        "default": 0,
+        "default_text": "(nodes_count*2)-1",
+        "text": "The integer value to use in create-md --max-peers"
+    },
+    {
         "keyword": "addr",
         "required": False,
         "provisioning": True,
@@ -573,11 +581,28 @@ class DiskDrbd(Resource):
             return False
         return True
 
+    def max_peers(self):
+        """
+        Return the value to use in create-md --max-peers
+        """
+        v = self.oget("max_peers")
+        min_v = len(self.svc.nodes)
+        if min_v < 1:
+            min_v = 1
+        max_v = MAX_NODES - 1
+        if v == 0:
+            v = (min_v * 2) - 1
+        if v < min_v:
+            v = min_v
+        if v > max_v:
+            v = max_v
+        return v
+
     def create_md(self):
         if self.has_md():
             self.log.info("resource %s already has metadata" % self.res)
             return
-        cmd = ["drbdadm", "create-md", "--force", self.res]
+        cmd = ["drbdadm", "create-md", "--force", "--max-peers", str(self.max_peers()), self.res]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error()
