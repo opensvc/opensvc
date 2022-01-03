@@ -124,7 +124,7 @@ class BaseCapabilities(object):
         data = {"tags": [], "labels": {}}
         for s in l:
             try:
-                label, val = "=".split(s, 1)
+                label, val = s.split("=", 1)
                 data["labels"][label] = val
             except ValueError:
                 data["tags"].append(s)
