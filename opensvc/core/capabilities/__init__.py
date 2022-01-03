@@ -14,76 +14,67 @@ DRIVER_CAP_PREFIX = "drivers.resource."
 
 class BaseCapabilities(object):
     def __contains__(self, cap):
-        return cap in self.data
+        return cap in self.data["tags"]
 
     def scan_generic(self):
-        data = [
+        tags = [
             "node.x.cache.name",
             "node.x.cache.ttl",
         ]
-        if which("stat"):
-            data.append("node.x.stat")
+        labels = {}
+
+        for tag, bp in (
+            ("node.x.stat", "stat"),
+            ("node.x.exportfs", "exportfs"),
+            ("node.x.findfs", "findfs"),
+            ("node.x.podman", "/usr/bin/podman"),
+            ("node.x.ip", "/sbin/ip"),
+            ("node.x.netstat", "netstat"),
+            ("node.x.ifconfig", "ifconfig"),
+            ("node.x.powermt", "powermt"),
+            ("node.x.vxdmpadm", "vxdmpadm"),
+            ("node.x.udevadm", "udevadm"),
+            ("node.x.drbdadm", "drbdadm"),
+            ("node.x.vmware-cmd", "vmware-cmd"),
+            ("node.x.zfs", "zfs"),
+            ("node.x.zpool", "zpool"),
+            ("node.x.git", "git"),
+            ("node.x.share", "share"),
+            ("node.x.srp", "srp"),
+            ("node.x.srp_su", "srp_su"),
+            ("node.x.hpvmstatus", "/opt/hpvm/bin/hpvmstatus"),
+            ("node.x.hpvmstart", "/opt/hpvm/bin/hpvmstart"),
+            ("node.x.hpvmstop", "/opt/hpvm/bin/hpvmstop"),
+            ("node.x.blkid", Env.syspaths.blkid),
+            ("node.x.losetup", Env.syspaths.losetup),
+            ("node.x.multipath", Env.syspaths.multipath),
+            ("node.x.dmsetup", Env.syspaths.dmsetup),
+            ("node.x.scsi_id", ("scsi_id", "/lib/udev/scsi_id", "/usr/lib/scsi_id")),
+        ):
+            if not isinstance(bp, tuple):
+                bp = (bp,)
+            for bpc in bp:
+                p = which(bpc)
+                if not p:
+                    continue
+                tags.append(tag)
+                labels[tag+".path"] = p
+                break
+
         if has_docker(["docker"]):
-            data.append("node.x.docker")
+            tags.append("node.x.docker")
         if has_docker(["docker.io"]):
-            data.append("node.x.docker.io")
+            tags.append("node.x.docker.io")
         if has_docker(["dockerd"]):
-            data.append("node.x.dockerd")
-        if which("exportfs"):
-            data.append("node.x.exportfs")
-        if which("findfs"):
-            data.append("node.x.findfs")
-        if which("/usr/bin/podman"):
-            data.append("node.x.podman")
-        if which("/sbin/ip"):
-            data.append("node.x.ip")
-        if which("netstat"):
-            data.append("node.x.netstat")
-        if which("ifconfig"):
-            data.append("node.x.ifconfig")
-        if which("powermt"):
-            data.append("node.x.powermt")
-        if which("vxdmpadm"):
-            data.append("node.x.vxdmpadm")
-        if which("udevadm"):
-            data.append("node.x.udevadm")
-        if which("drbdadm"):
-            data.append("node.x.drbdadm")
-        if which("vmware-cmd"):
-            data.append("node.x.vmware-cmd")
-        if which("zfs"):
-            data.append("node.x.zfs")
-        if which("zpool"):
-            data.append("node.x.zpool")
-        if which("git"):
-            data.append("node.x.git")
-        if which("share"):
-            data.append("node.x.share")
-        if which("srp"):
-            data.append("node.x.srp")
-        if which("srp_su"):
-            data.append("node.x.srp_su")
-        if which("/opt/hpvm/bin/hpvmstatus"):
-            data.append("node.x.hpvmstatus")
-        if which("/opt/hpvm/bin/hpvmstart"):
-            data.append("node.x.hpvmstart")
-        if which("/opt/hpvm/bin/hpvmstop"):
-            data.append("node.x.hpvmstop")
-        if which(Env.syspaths.blkid):
-            data.append("node.x.blkid")
-        if which(Env.syspaths.losetup):
-            data.append("node.x.losetup")
-        if which(Env.syspaths.multipath):
-            data.append("node.x.multipath")
-        if which(Env.syspaths.dmsetup):
-            data.append("node.x.dmsetup")
-        return data
+            tags.append("node.x.dockerd")
+
+        return {"tags": tags, "labels": labels}
     
     def need_refresh(self):
         return False
 
     def scan_os(self):
-        return []
+        return {"tags": [], "labels": {}}
 
     def scan(self, node=None):
         from core.objects.svcdict import SECTIONS
@@ -92,35 +83,67 @@ class BaseCapabilities(object):
             from core.node import Node
             node = Node()
         data = self.scan_generic()
-        data += self.scan_os()
+        osdata = self.scan_os()
+        data["tags"] += osdata["tags"]
+        data["labels"].update(osdata["labels"])
         for mod in iter_drivers(SECTIONS):
             if not hasattr(mod, DRIVER_CAP_FN):
                 if hasattr(mod, "DRIVER_GROUP") and hasattr(mod, "DRIVER_BASENAME"):
                     # consider the driver active by default
-                    data += ["%s%s.%s" % (DRIVER_CAP_PREFIX, mod.DRIVER_GROUP, mod.DRIVER_BASENAME)]
+                    data["tags"] += ["%s%s.%s" % (DRIVER_CAP_PREFIX, mod.DRIVER_GROUP, mod.DRIVER_BASENAME)]
                 continue
             try:
-                data += [DRIVER_CAP_PREFIX + cap for cap in getattr(mod, DRIVER_CAP_FN)(node=node)]
+                for cap in getattr(mod, DRIVER_CAP_FN)(node=node):
+                    if isinstance(cap, tuple):
+                        cap, val = cap
+                        pcap = DRIVER_CAP_PREFIX + cap
+                        data["labels"][pcap] = val
+                    else:
+                        pcap = DRIVER_CAP_PREFIX + cap
+                        data["tags"].append(pcap)
             except Exception as exc:
                 print(mod, exc, file=sys.stderr)
-        data = sorted([cap for cap in set(data)])
+        self.dump(data)
+        return data
+
+    @staticmethod
+    def as_list(data):
+        l = data["tags"]
+        for k, v in data["labels"].items():
+            l.append("%s=%s" % (k, v))
+        return sorted(l)
+
+    def dump(self, data):
+        data = self.as_list(data)
         with open(Env.paths.capabilities, "w") as f:
             json.dump(data, f)
-        return data
     
+    def load(self):
+        with open(Env.paths.capabilities, "r") as f:
+            l = json.load(f)
+        data = {"tags": [], "labels": {}}
+        for s in l:
+            try:
+                label, val = "=".split(s, 1)
+                data["labels"][label] = val
+            except ValueError:
+                data["tags"].append(s)
+        return data
+
     @lazy
     def data(self):
         if self.need_refresh():
             return self.scan()
         try:
-            with open(Env.paths.capabilities, "r") as f:
-                return json.load(f)
-        except Exception:
+            return self.load()
+        except Exception as exc:
             return self.scan()
     
     def has(self, cap):
-        return cap in self.data
+        return cap in self.data["tags"]
 
+    def get(self, cap):
+        return self.data["labels"].get(cap)
 
 try:
     _package = __package__ or __spec__.name # pylint: disable=undefined-variable
