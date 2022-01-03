@@ -38,8 +38,8 @@ class ResourceSet(object):
         try:
             self.driver_group, self.subset_name = self.rid.split(":")
         except ValueError:
-            self.driver_group = ""
-            self.subset_name = self.rid
+            self.driver_group = self.rid
+            self.subset_name = ""
 
     def __lt__(self, other):
         return self.rid < other.rid
