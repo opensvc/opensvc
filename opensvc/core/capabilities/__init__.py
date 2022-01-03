@@ -12,6 +12,7 @@ from utilities.subsystems.docker import has_docker
 DRIVER_CAP_FN = "driver_capabilities"
 DRIVER_CAP_PREFIX = "drivers.resource."
 
+
 class BaseCapabilities(object):
     def __contains__(self, cap):
         return cap in self.data["tags"]
@@ -24,32 +25,33 @@ class BaseCapabilities(object):
         labels = {}
 
         for tag, bp in (
-            ("node.x.stat", "stat"),
+            ("node.x.blkid", Env.syspaths.blkid),
+            ("node.x.dmsetup", Env.syspaths.dmsetup),
+            ("node.x.drbdadm", "drbdadm"),
             ("node.x.exportfs", "exportfs"),
             ("node.x.findfs", "findfs"),
-            ("node.x.podman", "/usr/bin/podman"),
-            ("node.x.ip", "/sbin/ip"),
-            ("node.x.netstat", "netstat"),
-            ("node.x.ifconfig", "ifconfig"),
-            ("node.x.powermt", "powermt"),
-            ("node.x.vxdmpadm", "vxdmpadm"),
-            ("node.x.udevadm", "udevadm"),
-            ("node.x.drbdadm", "drbdadm"),
-            ("node.x.vmware-cmd", "vmware-cmd"),
-            ("node.x.zfs", "zfs"),
-            ("node.x.zpool", "zpool"),
             ("node.x.git", "git"),
+            ("node.x.hpvmstart", "/opt/hpvm/bin/hpvmstart"),
+            ("node.x.hpvmstatus", "/opt/hpvm/bin/hpvmstatus"),
+            ("node.x.hpvmstop", "/opt/hpvm/bin/hpvmstop"),
+            ("node.x.ifconfig", "ifconfig"),
+            ("node.x.ip", "/sbin/ip"),
+            ("node.x.losetup", Env.syspaths.losetup),
+            ("node.x.lvs  ", "/sbin/lvs"),
+            ("node.x.multipath", Env.syspaths.multipath),
+            ("node.x.netstat", "netstat"),
+            ("node.x.podman", "/usr/bin/podman"),
+            ("node.x.powermt", "powermt"),
+            ("node.x.scsi_id", ("scsi_id", "/lib/udev/scsi_id", "/usr/lib/scsi_id")),
             ("node.x.share", "share"),
             ("node.x.srp", "srp"),
             ("node.x.srp_su", "srp_su"),
-            ("node.x.hpvmstatus", "/opt/hpvm/bin/hpvmstatus"),
-            ("node.x.hpvmstart", "/opt/hpvm/bin/hpvmstart"),
-            ("node.x.hpvmstop", "/opt/hpvm/bin/hpvmstop"),
-            ("node.x.blkid", Env.syspaths.blkid),
-            ("node.x.losetup", Env.syspaths.losetup),
-            ("node.x.multipath", Env.syspaths.multipath),
-            ("node.x.dmsetup", Env.syspaths.dmsetup),
-            ("node.x.scsi_id", ("scsi_id", "/lib/udev/scsi_id", "/usr/lib/scsi_id")),
+            ("node.x.stat", "stat"),
+            ("node.x.udevadm", "udevadm"),
+            ("node.x.vmware-cmd", "vmware-cmd"),
+            ("node.x.vxdmpadm", "vxdmpadm"),
+            ("node.x.zfs", "zfs"),
+            ("node.x.zpool", "zpool"),
         ):
             if not isinstance(bp, tuple):
                 bp = (bp,)
