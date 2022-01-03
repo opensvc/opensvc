@@ -5312,11 +5312,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @formatter
     def scan_capabilities(self):
-        return capabilities.scan(node=self)
+        return capabilities.as_list(capabilities.scan(node=self))
 
     @formatter
     def print_capabilities(self):
-        return capabilities.data
+        return capabilities.as_list(capabilities.data)
 
     def post_commit(self):
         self.unset_all_lazy()
