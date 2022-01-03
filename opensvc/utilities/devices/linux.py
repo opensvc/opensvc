@@ -265,7 +265,8 @@ def get_blockdev_sd_slaves(syspath):
     return slaves
 
 def lv_exists(self, device):
-    if qcall([Env.syspaths.lvs, device]) == 0:
+    lvs_path = capabilities.get("node.x.lvs.path")
+    if lvs_path and qcall([lvs_path, device]) == 0:
         return True
     return False
 
