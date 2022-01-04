@@ -34,6 +34,13 @@ KEYWORDS = BASE_KEYWORDS + [
         "text": "The name of the sec object hosting the crypt secrets. The sec object must be in the same namespace than the object defining the disk.crypt resource.",
         "default": "{name}",
     },
+    {
+        "keyword": "label",
+        "at": True,
+        "text": "The label to set in the metadata.",
+        "default": "{fqdn}",
+        "provisioning": True,
+    },
 ]
 
 KEYS.register_driver(
@@ -60,11 +67,13 @@ class DiskCrypt(BaseDisk):
                  name=None,
                  dev=None,
                  secret=None,
+                 label=None,
                  **kwargs):
         super(DiskCrypt, self).__init__(type='disk.crypt', **kwargs)
         self.dev = dev
         self.name = name
         self.secret = secret
+        self.fmtlabel = label
 
     @lazy
     def label(self):  # pylint: disable=method-hidden
@@ -77,6 +86,7 @@ class DiskCrypt(BaseDisk):
           ["name", name],
           ["dev", dev],
           ["secret", self.secret],
+          ["label", self.fmtlabel],
         ]
         return data
 
@@ -272,6 +282,10 @@ class DiskCrypt(BaseDisk):
             "--cipher", "aes-xts-plain64",
             "--type", "luks2",
             "--batch-mode",
+        ]
+        if self.fmtlabel:
+            cmd += ["--label", self.fmtlabel]
+        cmd += [
             dev,
             "-"
         ]
