@@ -29,6 +29,13 @@ KEYWORDS = BASE_KEYWORDS + [
         "example": "/dev/{fqdn}/lv1"
     },
     {
+        "keyword": "manage_passphrase",
+        "at": True,
+        "convert": "boolean",
+        "text": "By default, on provision the driver allocates a new random passphrase (256 printable chars), and forgets it on unprovision. If set to false, require a passphrase to be already present in the sec object to provision, and don't remove it on unprovision.",
+        "default": True,
+    },
+    {
         "keyword": "secret",
         "at": True,
         "text": "The name of the sec object hosting the crypt secrets. The sec object must be in the same namespace than the object defining the disk.crypt resource.",
@@ -56,7 +63,7 @@ def driver_capabilities(node=None):
         return ["disk.crypt"]
     return []
 
-def passphrase():
+def gen_passphrase():
     import string
     import random
     characters = string.ascii_letters + string.digits + string.punctuation
@@ -68,12 +75,14 @@ class DiskCrypt(BaseDisk):
                  dev=None,
                  secret=None,
                  label=None,
+                 manage_passphrase=True,
                  **kwargs):
         super(DiskCrypt, self).__init__(type='disk.crypt', **kwargs)
         self.dev = dev
         self.name = name
         self.secret = secret
         self.fmtlabel = label
+        self.manage_passphrase = manage_passphrase
 
     @lazy
     def label(self):  # pylint: disable=method-hidden
@@ -103,6 +112,10 @@ class DiskCrypt(BaseDisk):
     def forget_passphrase(self):
         sec = self.sec()
         key = self.passphrase_key()
+        if not self.manage_passphrase:
+            self.log.info("leave key %s in %s", key, sec.path)
+            return
+        self.log.info("remove key %s in %s", key, sec.path)
         sec.remove_key(key)
 
     def passphrase_strict(self):
@@ -114,12 +127,10 @@ class DiskCrypt(BaseDisk):
             raise ex.Error("%s has no %s key" % (sec.path, key))
         return sec.decode_key(key)
 
-    def passphrase(self):
+    def passphrase_new(self):
         sec = self.sec()
         key = self.passphrase_key()
-        if sec.exists() and sec.has_key(key):
-            return sec.decode_key(key)
-        new_pp = passphrase()
+        new_pp = gen_passphrase()
         sec.add_key(key, new_pp)
         return new_pp
 
@@ -249,15 +260,13 @@ class DiskCrypt(BaseDisk):
             return
 
         dev = self.get_dev()
-        if dev is None:
-            return
-
-        cmd = ["cryptsetup", "luksErase", "--batch-mode", dev]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ex.Error
+        if dev is not None:
+            cmd = ["cryptsetup", "luksErase", "--batch-mode", dev]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ex.Error
+            self.svc.node.unset_lazy("devtree")
         self.forget_passphrase()
-        self.svc.node.unset_lazy("devtree")
 
     def provisioned(self):
         return self.has_it()
@@ -274,7 +283,11 @@ class DiskCrypt(BaseDisk):
         if dev is None:
             raise ex.Error("skip crypt provisioning: no dev")
 
-        pp = self.passphrase()
+        if self.manage_passphrase:
+            pp = self.passphrase_new()
+        else:
+            pp = self.passphrase_strict()
+
         cmd = [
             "cryptsetup", "luksFormat",
             "--hash", "sha512",
