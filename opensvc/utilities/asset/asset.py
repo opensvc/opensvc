@@ -336,7 +336,7 @@ class BaseAsset(object):
             return
         return out[:3] + ":" + out[3:]
 
-    def get_connect_to(self):
+    def get_connect_to(self, model=None):
         s = None
         source = self.s_default
         try:
@@ -344,7 +344,7 @@ class BaseAsset(object):
             source = self.s_config
         except (ex.OptNotFound, ex.RequiredOptNotFound):
             try:
-                s = self._get_connect_to()
+                s = self._get_connect_to(model=model)
                 source = self.s_probe
             except AttributeError:
                 pass
@@ -356,8 +356,8 @@ class BaseAsset(object):
             "source": source
         }
 
-    def _get_connect_to(self):
-        if self.data["model"]["value"] != "Google":
+    def _get_connect_to(self, model=None):
+        if model != "Google":
             return
         if not which("gcloud"):
             return
@@ -657,105 +657,105 @@ class BaseAsset(object):
         }
 
     def get_asset_dict(self):
-        self.data = {}
-        self.data['nodename'] = {
+        data = {}
+        data['nodename'] = {
             "title": "nodename",
             "value": Env.nodename,
             "source": self.s_probe
         }
-        self.data['fqdn'] = {
+        data['fqdn'] = {
             "title": "fqdn",
             "value": Env.fqdn,
             "source": self.s_probe
         }
-        self.data['version'] = self.get_version()
-        self.data['os_name'] = {
+        data['version'] = self.get_version()
+        data['os_name'] = {
             "title": "os name",
             "value": Env.sysname,
             "source": self.s_probe
         }
-        self.data['os_vendor'] = self.get_os_vendor()
-        self.data['os_release'] = self.get_os_release()
-        self.data['os_kernel'] = self.get_os_kernel()
-        self.data['os_arch'] = self.get_os_arch()
-        self.data['mem_bytes'] = self.get_mem_bytes()
-        self.data['mem_banks'] = self.get_mem_banks()
-        self.data['mem_slots'] = self.get_mem_slots()
-        self.data['cpu_freq'] = self.get_cpu_freq()
-        self.data['cpu_threads'] = self.get_cpu_threads()
-        self.data['cpu_cores'] = self.get_cpu_cores()
-        self.data['cpu_dies'] = self.get_cpu_dies()
-        self.data['cpu_model'] = self.get_cpu_model()
-        self.data['serial'] = self.get_serial()
-        self.data['model'] = self.get_model()
-        self.data['manufacturer'] = self.get_manufacturer()
-        self.data['bios_version'] = self.get_bios_version()
-        self.data['sp_version'] = self.get_sp_version()
-        self.data['node_env'] = self.get_node_env()
-        self.data['enclosure'] = self.get_enclosure()
-        self.data['listener_port'] = self.get_listener_port()
-        self.data['cluster_id'] = self.get_cluster_id()
-        connect_to = self.get_connect_to()
+        data['os_vendor'] = self.get_os_vendor()
+        data['os_release'] = self.get_os_release()
+        data['os_kernel'] = self.get_os_kernel()
+        data['os_arch'] = self.get_os_arch()
+        data['mem_bytes'] = self.get_mem_bytes()
+        data['mem_banks'] = self.get_mem_banks()
+        data['mem_slots'] = self.get_mem_slots()
+        data['cpu_freq'] = self.get_cpu_freq()
+        data['cpu_threads'] = self.get_cpu_threads()
+        data['cpu_cores'] = self.get_cpu_cores()
+        data['cpu_dies'] = self.get_cpu_dies()
+        data['cpu_model'] = self.get_cpu_model()
+        data['serial'] = self.get_serial()
+        data['model'] = self.get_model()
+        data['manufacturer'] = self.get_manufacturer()
+        data['bios_version'] = self.get_bios_version()
+        data['sp_version'] = self.get_sp_version()
+        data['node_env'] = self.get_node_env()
+        data['enclosure'] = self.get_enclosure()
+        data['listener_port'] = self.get_listener_port()
+        data['cluster_id'] = self.get_cluster_id()
+        connect_to = self.get_connect_to(model=data["model"]["value"])
         if connect_to is not None:
-            self.data['connect_to'] = connect_to
+            data['connect_to'] = connect_to
         last_boot = self.get_last_boot()
         if last_boot is not None:
-            self.data['last_boot'] = last_boot
+            data['last_boot'] = last_boot
         sec_zone = self.get_sec_zone()
         if sec_zone is not None:
-            self.data['sec_zone'] = sec_zone
+            data['sec_zone'] = sec_zone
         asset_env = self.get_asset_env()
         if asset_env is not None:
-            self.data['asset_env'] = asset_env
+            data['asset_env'] = asset_env
         tz = self.get_tz()
         if tz is not None:
-            self.data['tz'] = tz
+            data['tz'] = tz
         loc_country = self.get_loc_country()
         if loc_country is not None:
-            self.data['loc_country'] = loc_country
+            data['loc_country'] = loc_country
         loc_city = self.get_loc_city()
         if loc_city is not None:
-            self.data['loc_city'] = loc_city
+            data['loc_city'] = loc_city
         loc_building = self.get_loc_building()
         if loc_building is not None:
-            self.data['loc_building'] = loc_building
+            data['loc_building'] = loc_building
         loc_room = self.get_loc_room()
         if loc_room is not None:
-            self.data['loc_room'] = loc_room
+            data['loc_room'] = loc_room
         loc_rack = self.get_loc_rack()
         if loc_rack is not None:
-            self.data['loc_rack'] = loc_rack
+            data['loc_rack'] = loc_rack
         loc_addr = self.get_loc_addr()
         if loc_addr is not None:
-            self.data['loc_addr'] = loc_addr
+            data['loc_addr'] = loc_addr
         loc_floor = self.get_loc_floor()
         if loc_floor is not None:
-            self.data['loc_floor'] = loc_floor
+            data['loc_floor'] = loc_floor
         loc_zip = self.get_loc_zip()
         if loc_zip is not None:
-            self.data['loc_zip'] = loc_zip
+            data['loc_zip'] = loc_zip
         team_integ = self.get_team_integ()
         if team_integ is not None:
-            self.data['team_integ'] = team_integ
+            data['team_integ'] = team_integ
         team_support = self.get_team_support()
         if team_support is not None:
-            self.data['team_support'] = team_support
+            data['team_support'] = team_support
         hardware = self.get_hardware()
         if hardware is not None:
-            self.data['hardware'] = hardware
+            data['hardware'] = hardware
         hba = self.get_hba()
         if hba is not None:
-            self.data['hba'] = hba
+            data['hba'] = hba
         targets = self.get_targets()
         if targets is not None:
-            self.data['targets'] = targets
+            data['targets'] = targets
         lan = self.get_lan()
         if lan is not None:
-            self.data['lan'] = lan
+            data['lan'] = lan
         uids = self.get_uids()
         if uids is not None:
-            self.data['uids'] = uids
+            data['uids'] = uids
         gids = self.get_gids()
         if gids is not None:
-            self.data['gids'] = gids
-        return self.data
+            data['gids'] = gids
+        return data
