@@ -1925,7 +1925,7 @@ class ClientHandler(shared.OsvcThread):
         else:
             self.rbac_requires(action=action)
 
-        if action == "create":
+        if action in ("create", "object_create"):
             return self.create_multiplex(handler, options, data, nodename, action, stream_id=stream_id)
         node = data.get("node")
         if data.get("multiplexed") or handler.multiplex == "never":
