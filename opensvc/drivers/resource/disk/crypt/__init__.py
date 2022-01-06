@@ -25,6 +25,7 @@ KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "dev",
         "at": True,
+        "required": True,
         "text": "The fullpath of the underlying block device.",
         "example": "/dev/{fqdn}/lv1"
     },
@@ -33,6 +34,7 @@ KEYWORDS = BASE_KEYWORDS + [
         "at": True,
         "convert": "boolean",
         "text": "By default, on provision the driver allocates a new random passphrase (256 printable chars), and forgets it on unprovision. If set to false, require a passphrase to be already present in the sec object to provision, and don't remove it on unprovision.",
+        "provisioning": True,
         "default": True,
     },
     {
@@ -44,7 +46,7 @@ KEYWORDS = BASE_KEYWORDS + [
     {
         "keyword": "label",
         "at": True,
-        "text": "The label to set in the metadata.",
+        "text": "The label to set in the cryptsetup metadata writen on dev. A label helps admin understand the role of a device.",
         "default": "{fqdn}",
         "provisioning": True,
     },
@@ -96,6 +98,7 @@ class DiskCrypt(BaseDisk):
           ["dev", dev],
           ["secret", self.secret],
           ["label", self.fmtlabel],
+          ["manage_passphrase", self.manage_passphrase],
         ]
         return data
 
