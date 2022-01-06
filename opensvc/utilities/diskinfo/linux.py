@@ -13,9 +13,10 @@ import utilities.devtree.veritas
 import utilities.devices.linux
 from .diskinfo import BaseDiskInfo
 
+from core.capabilities import capabilities
 from env import Env
 from utilities.lazy import lazy
-from utilities.proc import justcall, which
+from utilities.proc import justcall
 
 class DiskInfo(BaseDiskInfo):
     disk_ids = {}
@@ -69,9 +70,8 @@ class DiskInfo(BaseDiskInfo):
     def cciss_id(self, dev):
         if dev in self.disk_ids:
             return self.disk_ids[dev]
-        if which('cciss_id'):
-            cciss_id = 'cciss_id'
-        else:
+        cciss_id = capabilities.get("node.x.cciss.path")
+        if not cciss_id:
             return ""
         cmd = [cciss_id, dev]
         out, err, ret = justcall(cmd)
@@ -127,7 +127,7 @@ class DiskInfo(BaseDiskInfo):
         if hasattr(self, "mpath_h"):
             return self.mpath_h
         self.mpath_h = {}
-        if which(Env.syspaths.multipath):
+        if capabilities.has("node.x.multipath"):
             self.load_mpath_native()
         return self.mpath_h
 
@@ -145,11 +145,8 @@ class DiskInfo(BaseDiskInfo):
             return wwid
         if dev in self.disk_ids:
             return self.disk_ids[dev]
-        if which('scsi_id'):
-            scsi_id = 'scsi_id'
-        elif which('/lib/udev/scsi_id'):
-            scsi_id = '/lib/udev/scsi_id'
-        else:
+        scsi_id = capabilities.get("node.x.scsi_id.path")
+        if not scsi_id:
             return ""
         cmd = [scsi_id, '-g', '-u'] + args + ['-d', dev]
         out, err, ret = justcall(cmd)

@@ -11,7 +11,7 @@ except ImportError:
 import core.exceptions as ex
 from core.node import Node
 from core.objects.svc import Svc
-from drivers.resource.disk.drbd import DiskDrbd, driver_capabilities
+from drivers.resource.disk.drbd import DiskDrbd, driver_capabilities, MAX_NODES
 
 
 @pytest.fixture(scope='function')
@@ -26,11 +26,15 @@ def sleep(mocker):
 
 @pytest.fixture(scope='function')
 def get_disk():
-    def func(cd=None):
+    def func(cd=None, nodes=None, max_peers=None):
         cd_svc = cd or {
             "DEFAULT": {"nodes": "node1 node2"},
             "disk#1": {"type": "drbd", "res": "foo", "disk": "a_disk"}
         }
+        if nodes:
+            cd_svc["DEFAULT"]["nodes"] = nodes
+        if max_peers:
+            cd_svc["disk#1"]["max_peers"] = max_peers
         svc = Svc(name='plop', volatile=True, node=Node(), cd=cd_svc)
         return svc.get_resource('disk#1')
 
@@ -256,7 +260,9 @@ class TestDrbdCreateMd:
         mocker.patch.object(DiskDrbd, 'has_md', return_value=False)
         mocker.patch.object(DiskDrbd, 'vcall', return_value=(0, '', ''))
         disk.create_md()
-        disk.vcall.assert_called_once_with(['drbdadm', 'create-md', '--force', 'foo'])
+        disk.vcall.assert_called_once_with(['drbdadm', 'create-md', '--force',
+                                            '--max-peers', '3',
+                                            'foo'])
 
     @staticmethod
     @pytest.mark.parametrize('mdadm_exit_code', range(1, 10))
@@ -459,7 +465,44 @@ class TestDrbdProvisionerAlternateTestMethod:
                                             call(['drbdadm', 'primary', '--force', 'foo']),
                                             call(['drbdadm', 'primary', '--force', 'foo']),
                                             call(['drbdadm', 'cstate', 'foo'])]
-        assert disk.vcall.call_args_list == [call(['drbdadm', 'create-md', '--force', 'foo'])]
+        assert disk.vcall.call_args_list == [call(['drbdadm', 'create-md', '--force', '--max-peers', '3', 'foo'])]
         assert disk.call.call_args_list == [call(['drbdadm', '--', '--force', 'dump-md', 'foo'],
                                                  errlog=False, outlog=False),
                                             call(['drbdadm', 'dstate', 'foo'])]
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+class TestDrbdMaxPeers:
+    @staticmethod
+    @pytest.mark.parametrize("nodes, max_peers, expected_max_peers", [
+        # automatic value when unset: 2 * len(nodes) - 1
+        ["node1 node2", None, 3],
+        ["node1 node2 node3", None, 5],
+        ["node1 node2 node3 node4", None, 7],
+        ["node1 node2 node3 node4 node5", None, 9],
+
+        # when value set is low: len(nodes) - 1
+        ["node1 node2", 1, 1],
+        ["node1 node2 node3", 1, 2],
+        ["node1 node2 node3 node4", 1, 3],
+        ["node1 node2 node3 node4 node5", 2, 4],
+
+        ["node1 node2", 1, 1],
+        ["node1 node2 node3", 2, 2],
+        ["node1 node2 node3 node4", 2, 3],
+        ["node1 node2 node3 node4 node5", 2, 4],
+
+        # when value set is too high:  MAX_NODES - 1
+        ["node1 node2", MAX_NODES, MAX_NODES - 1],
+        ["node1 node2", MAX_NODES * 2, MAX_NODES - 1],
+
+        # else use value set
+        ["node1 node2", 8, 8],
+        ["node1 node2 node3", 6, 6],
+        ["node1 node2 node3", 10, 10],
+        ["node1 node2 node3 node4", 6, 6],
+        ["node1 node2 node3 node4 node5", 6, 6],
+    ])
+    def test_ensure_max_peers_is_correct(get_disk, nodes, max_peers, expected_max_peers):
+        disk = get_disk(nodes=nodes, max_peers=max_peers)
+        assert disk.max_peers() == expected_max_peers

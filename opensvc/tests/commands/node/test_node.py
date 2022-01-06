@@ -58,6 +58,33 @@ class TestNodemgrFreezeThawActions:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
+@pytest.mark.parametrize("action", ["print", "scan"])
+class TestNodemgrCapabilities:
+    @staticmethod
+    def test_node_print_capabilities_format_default(capsys, action):
+        assert commands.node.main(argv=[action, "capabilities"]) == 0
+        assert "drivers.resource.app.simple" in capsys.readouterr().out
+
+    @staticmethod
+    def test_node_print_capabilities_format_table(capsys, action):
+        assert commands.node.main(argv=[action, "capabilities", "--format", "table"]) == 0
+        assert "drivers.resource.app.simple" in capsys.readouterr().out
+
+    @staticmethod
+    def test_node_print_capabilities_format_json(capsys, action):
+        assert commands.node.main(argv=[action, "capabilities", "--format", "json"]) == 0
+        assert "drivers.resource.app.simple" in json.loads(capsys.readouterr().out)
+
+    @staticmethod
+    def test_node_print_capabilities_has_some_path_entries(capsys, action):
+        assert commands.node.main(argv=[action, "capabilities"]) == 0
+        out = capsys.readouterr().out
+        for s in ["node.x.stat.path=/", "node.x.netstat.path=/"]:
+            assert s in out
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_euid_0', 'osvc_path_tests')
 class TestNodemgr:
     @staticmethod
     @pytest.mark.parametrize('action_return_value', [0, 13])
