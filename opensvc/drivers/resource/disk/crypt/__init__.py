@@ -68,7 +68,7 @@ def driver_capabilities(node=None):
 def gen_passphrase():
     import string
     import random
-    characters = string.ascii_letters + string.digits + string.punctuation
+    characters = string.ascii_letters + string.digits + '!"#$%&()*+,-./:;<=>?@[]^_`{|}~'
     return "".join(random.choice(characters) for i in range(256))
 
 class DiskCrypt(BaseDisk):
