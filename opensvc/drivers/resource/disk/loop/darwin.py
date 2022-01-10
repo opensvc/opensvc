@@ -84,6 +84,8 @@ class DiskLoop(BaseDiskLoop):
                 self.log.info("create file %s, size %s"%(self.loopfile, self.size))
                 f.seek(convert_size(self.size, _to='b', _round=512)-1)
                 f.write('\0')
+            self.chown()
+            self.chmod()
         except Exception as e:
             raise ex.Error("failed to create %s: %s"% (self.loopfile, str(e)))
         self.svc.node.unset_lazy("devtree")

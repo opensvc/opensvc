@@ -170,7 +170,7 @@ class DataMixin(object):
                 buff = buff.decode()
             except:
                 raise ex.Error("binary keys are not editable")
-        no_newline = os.sep not in try_decode(buff)
+        no_newline = os.linesep not in try_decode(buff)
         editor = find_editor()
         fpath = self.tempfilename()
         create_protected_file(fpath, buff)

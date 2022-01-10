@@ -1,3 +1,5 @@
+import os
+
 from .. import BaseDisk, BASE_KEYWORDS
 from env import Env
 from core.resource import Resource
@@ -50,3 +52,16 @@ class BaseDiskLoop(Resource):
 
     def __str__(self):
         return "%s loopfile=%s" % (super(BaseDiskLoop, self).__str__(), self.loopfile)
+
+    def chown(self):
+        if os.name != 'posix':
+            return
+        self.log.info("chown 0:0 %s", self.loopfile)
+        os.chown(self.loopfile, 0, 0)
+
+    def chmod(self):
+        if os.name != 'posix':
+            return
+        self.log.info("chmod 600 %s", self.loopfile)
+        os.chmod(self.loopfile, 0o0600)
+
