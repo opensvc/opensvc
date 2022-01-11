@@ -1,6 +1,11 @@
 import daemon.shared as shared
 from utilities.naming import split_path, factory
 
+ALLOWED_HOST_PATHS = [
+    "/etc/localtime",
+    "/etc/timezone",
+]
+
 class ObjectCreateMixin(object):
     def rbac_create_data(self, payload=None , thr=None, **kwargs):
         if thr.usr is False:
@@ -101,6 +106,8 @@ class ObjectCreateMixin(object):
                     _errors = []
                     for __val in _val:
                         if __val.startswith("/"):
+                            if __val.split(":")[0] in ALLOWED_HOST_PATHS:
+                                continue
                             _errors.append("%s: keyword %s.%s=%s host paths require the root role" % (path, section, key, __val))
                             continue
                     if _errors:
