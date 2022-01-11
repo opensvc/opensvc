@@ -778,7 +778,7 @@ def install_rc():
             logit("arch with systemd")
             copyrc = False
             activate = activate_systemd
-    elif reldata["ID"] in ("sles", "caasp") or os.path.exists('/etc/SuSE-release'):
+    elif reldata["ID"] in ("sles", "caasp", "opensuse-leap") or os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.suse')
