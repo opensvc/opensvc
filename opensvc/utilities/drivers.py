@@ -5,6 +5,7 @@ from env import Env
 
 DEFAULT_HEAD = "drivers"
 SITE_HEAD = "site_opensvc.drivers"
+_DRIVERS = set()
 
 
 def driver_import(*args, **kwargs):
@@ -69,6 +70,12 @@ def _driver_import(*args, **kwargs):
     if mod:
         if not hasattr(mod, "DRIVER_BASENAME") and "drivers.resource." in mod.__name__:
             raise ImportError("module %s does not set DRIVER_BASENAME" % mod.__file__)
+        try:
+            klass = driver_class(mod)
+            _DRIVERS.add((mod, klass))
+        except Exception:
+            # Don't register loaded drivers without driver class
+            pass
         return mod
     raise ImportError("no module found: %s" % initial_modname)
 
@@ -118,3 +125,11 @@ def iter_drivers(groups=None):
 def load_drivers(groups=None):
     for mod in iter_drivers(groups):
         pass
+
+
+def rtypes_with_callable(func_name):
+    """
+    returns drivers rtypes from loaded drivers class that implement callable func_name
+    """
+    return ["%s.%s" % (drv.DRIVER_GROUP, drv.DRIVER_BASENAME) for drv, klass in _DRIVERS
+            if hasattr(drv, "DRIVER_GROUP") and callable(getattr(klass, func_name, None))]
