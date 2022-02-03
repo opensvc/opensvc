@@ -340,6 +340,7 @@ class SyncRsync(Sync):
             raise ex.syncNoNodesToSync
 
         self.add_resource_files_to_sync()
+        self.resources_presync()
 
         if "delay_snap" in self.tags:
             if not hasattr(self.rset, 'snaps'):
@@ -567,6 +568,10 @@ class SyncRsync(Sync):
             return
         for r in self.svc.get_resources():
             self.src += r.files_to_sync()
+
+    def resources_presync(self):
+        if self.rid != "sync#i0":
+            return
         if self.presync_done:
             return
         for r in self.svc.get_resources():
