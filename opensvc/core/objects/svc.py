@@ -4146,7 +4146,7 @@ class Svc(PgMixin, BaseSvc):
             raise ex.EncapUnjoinable
         if "resource_monitor" in cmd:
             try:
-                self.encap_json_status(container, refresh=True, push_config=False, cache=False)
+                self.encap_json_status(container, refresh=False, push_config=False, cache=False)
             except (ex.NotAvailable, ex.EncapUnjoinable, ex.Error):
                 pass
         elif "print" not in cmd and "create" not in cmd:
