@@ -278,7 +278,21 @@ class TestAddKeyWhenKeyAlreadyExistsMustFail:
         assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) == 0
         assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) != 0
 
-        
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
+class TestCreateAddDecodeRemove:
+    @staticmethod
+    @pytest.mark.parametrize('key', ['lowercase', 'camelCase', 'UPPERCASE', "A.init"])
+    @pytest.mark.parametrize('obj', ['demo/cfg/name1', 'demo/sec/name'])
+    def test_add_decode_remove_decode_key(capture_stdout, tmp_file, obj, key):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', key, '--value', 'john']) == 0
+        assert Mgr(selector=obj)(['decode', '--key', key]) == 0
+        Mgr(selector=obj)(['remove', '--key', key])
+        assert Mgr(selector=obj)(['decode', '--key', key]) == 1
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
 class DecodeFrom:
