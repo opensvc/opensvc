@@ -586,6 +586,7 @@ class ExtConfigMixin(object):
             modifier = lambda x: "[%s]" % x if ":" in str(x) else x
 
         # hardcoded references
+        val = None
         if _ref == "nodename":
             val = Env.nodename
         elif _ref == "short_nodename":
@@ -682,13 +683,12 @@ class ExtConfigMixin(object):
                 SECRETS.append(val)
             except ex.Error as exc:
                 val = ""
-        else:
-            val = None
 
         _v = None
         if val is None:
             # use DEFAULT as the implicit section
             n_dots = _ref.count(".")
+            _section = ""
             if n_dots == 0 and section and section != "DEFAULT":
                 _section = section
                 _v = _ref
