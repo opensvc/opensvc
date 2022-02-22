@@ -790,6 +790,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return self.raw_cd
         return self.parse_config_file(self.paths.cf)
 
+    def cd_clear_caches(self):
+        self.raw_cd = None
+        self.unset_lazy("cd")
+
     @lazy
     def disabled(self):
         return self.oget("DEFAULT", "disable")

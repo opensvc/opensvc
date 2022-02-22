@@ -192,6 +192,7 @@ class ExtConfigMixin(object):
         """
         Delete config file sections.
         """
+        self.cd_clear_caches()
         if sections is None:
             sections = []
         try:
@@ -224,6 +225,7 @@ class ExtConfigMixin(object):
         self.unset_multi(kws)
 
     def unset_multi(self, kws):
+        self.cd_clear_caches()
         try:
             cd = self.private_cd
         except AttributeError:
@@ -354,6 +356,7 @@ class ExtConfigMixin(object):
             return self.set_mono(eval=eval)
 
     def set_multi(self, kws, eval=False, validation=True):
+        self.cd_clear_caches()
         try:
             cd = self.private_cd
         except AttributeError:
@@ -404,6 +407,7 @@ class ExtConfigMixin(object):
         self._set_multi(changes, validation=validation)
 
     def set_mono(self, eval=False):
+        self.cd_clear_caches()
         try:
             cd = self.private_cd
         except AttributeError:
