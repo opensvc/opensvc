@@ -239,7 +239,8 @@ class ExtConfigMixin(object):
                 option = kw
             if 'DEFAULT' not in section:
                 section = section.lower()
-            option = option.lower()
+            if section not in ("data", "env"):
+                option = option.lower()
             try:
                 del cd[section][option]
                 deleted += 1
@@ -363,7 +364,7 @@ class ExtConfigMixin(object):
             if "=" not in kw:
                 raise ex.Error("malformed kw expression: %s: no '='" % kw)
             keyword, value = kw.split("=", 1)
-            if 'DEFAULT' not in keyword and not keyword.startswith("data."):
+            if 'DEFAULT' not in keyword and not keyword.startswith("data.") and not keyword.startswith("env."):
                 keyword = keyword.lower()
             if keyword[-1] == "-":
                 op = "remove"
@@ -425,7 +426,9 @@ class ExtConfigMixin(object):
         else:
             op = "set"
             value = self.options.value
-        keyword = self.options.param.lower()
+        keyword = self.options.param
+        if 'DEFAULT' not in keyword and not keyword.startswith("data.") and not keyword.startswith("env."):
+            keyword = keyword.lower()
         index = self.options.index
         changes = []
         if "." in keyword and "#" not in keyword:
@@ -583,6 +586,7 @@ class ExtConfigMixin(object):
             modifier = lambda x: "[%s]" % x if ":" in str(x) else x
 
         # hardcoded references
+        val = None
         if _ref == "nodename":
             val = Env.nodename
         elif _ref == "short_nodename":
@@ -679,13 +683,12 @@ class ExtConfigMixin(object):
                 SECRETS.append(val)
             except ex.Error as exc:
                 val = ""
-        else:
-            val = None
 
         _v = None
         if val is None:
             # use DEFAULT as the implicit section
             n_dots = _ref.count(".")
+            _section = ""
             if n_dots == 0 and section and section != "DEFAULT":
                 _section = section
                 _v = _ref
@@ -863,11 +866,9 @@ class ExtConfigMixin(object):
 
     def handle_references(self, s, scope=False, impersonate=None, cd=None,
                           section=None, stack=None):
-        cacheable = self.cacheable(s)
-        if cacheable:
-            key = (str(s), scope, impersonate)
-            if key in self.ref_cache:
-                return self.ref_cache[key]
+        key = self.ref_cache_key(s, scope, impersonate)
+        if key and key in self.ref_cache:
+            return self.ref_cache[key]
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
@@ -880,9 +881,14 @@ class ExtConfigMixin(object):
         except Exception as e:
             raise
             raise ex.Error("%s: reference evaluation failed: %s" % (s, str(e)))
-        if val is not None and cacheable:
+        if key and val is not None:
             self.ref_cache[key] = val
         return val
+
+    def ref_cache_key(self, s, scope, impersonate):
+        if not self.cacheable(s):
+            return
+        return (str(s), scope, impersonate)
 
     @staticmethod
     def cacheable(s):
