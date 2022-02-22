@@ -239,7 +239,8 @@ class ExtConfigMixin(object):
                 option = kw
             if 'DEFAULT' not in section:
                 section = section.lower()
-            option = option.lower()
+            if section not in ("data", "env"):
+                option = option.lower()
             try:
                 del cd[section][option]
                 deleted += 1
@@ -363,7 +364,7 @@ class ExtConfigMixin(object):
             if "=" not in kw:
                 raise ex.Error("malformed kw expression: %s: no '='" % kw)
             keyword, value = kw.split("=", 1)
-            if 'DEFAULT' not in keyword and not keyword.startswith("data."):
+            if 'DEFAULT' not in keyword and not keyword.startswith("data.") and not keyword.startswith("env."):
                 keyword = keyword.lower()
             if keyword[-1] == "-":
                 op = "remove"
@@ -425,7 +426,8 @@ class ExtConfigMixin(object):
         else:
             op = "set"
             value = self.options.value
-        keyword = self.options.param.lower()
+        if 'DEFAULT' not in self.options.param and not self.options.param.startswith("data.") and not self.options.param.startswith("env."):
+            keyword = self.options.param.lower()
         index = self.options.index
         changes = []
         if "." in keyword and "#" not in keyword:
