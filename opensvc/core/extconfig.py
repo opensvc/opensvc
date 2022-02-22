@@ -866,11 +866,9 @@ class ExtConfigMixin(object):
 
     def handle_references(self, s, scope=False, impersonate=None, cd=None,
                           section=None, stack=None):
-        cacheable = self.cacheable(s)
-        if cacheable:
-            key = (str(s), scope, impersonate)
-            if key in self.ref_cache:
-                return self.ref_cache[key]
+        key = self.ref_cache_key(s, scope, impersonate)
+        if key and key in self.ref_cache:
+            return self.ref_cache[key]
         try:
             val = self._handle_references(s, scope=scope,
                                           impersonate=impersonate,
@@ -883,9 +881,14 @@ class ExtConfigMixin(object):
         except Exception as e:
             raise
             raise ex.Error("%s: reference evaluation failed: %s" % (s, str(e)))
-        if val is not None and cacheable:
+        if key and val is not None:
             self.ref_cache[key] = val
         return val
+
+    def ref_cache_key(self, s, scope, impersonate):
+        if not self.cacheable(s):
+            return
+        return (str(s), scope, impersonate)
 
     @staticmethod
     def cacheable(s):
