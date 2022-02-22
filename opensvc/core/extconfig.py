@@ -426,8 +426,9 @@ class ExtConfigMixin(object):
         else:
             op = "set"
             value = self.options.value
-        if 'DEFAULT' not in self.options.param and not self.options.param.startswith("data.") and not self.options.param.startswith("env."):
-            keyword = self.options.param.lower()
+        keyword = self.options.param
+        if 'DEFAULT' not in keyword and not keyword.startswith("data.") and not keyword.startswith("env."):
+            keyword = keyword.lower()
         index = self.options.index
         changes = []
         if "." in keyword and "#" not in keyword:
