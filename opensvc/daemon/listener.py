@@ -19,7 +19,7 @@ import re
 import datetime
 from foreign.six.moves.urllib.parse import urlparse, parse_qs # pylint: disable=import-error
 from subprocess import Popen
-from errno import EADDRINUSE, ECONNRESET, EPIPE, EBADF
+from errno import EADDRINUSE, ECONNRESET, EPIPE, EBADF, EAFNOSUPPORT
 
 from core.objects.usr import Usr
 
@@ -114,9 +114,9 @@ class Listener(shared.OsvcThread):
     tls_sock = None
     tls_context = None
     tls_port = -1
-    tls_addr = ""
+    tls_addr = None
     port = -1
-    addr = ""
+    addr = None
     handlers = {}
 
     @lazy
@@ -706,6 +706,36 @@ class Listener(shared.OsvcThread):
                     continue
                 raise
 
+    def af_inet_socket(self, addr):
+        if addr:
+            addrinfo = socket.getaddrinfo(addr, None)[0]
+            addr = addrinfo[4][0]
+
+        if addr and "." in addr:
+            return socket.socket(socket.AF_INET, socket.SOCK_STREAM), addr
+
+        try:
+            # try to open a inet6 socket
+            sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        except socket.error as exc:
+            if exc.errno == EAFNOSUPPORT and not addr:
+                self.log.info("ipv6 is disabled by the host, fallback to ipv4 only")
+                return socket.socket(socket.AF_INET, socket.SOCK_STREAM), "0.0.0.0"
+            raise
+
+        if addr == "::":
+            try:
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+            except socket.error as exc:
+                self.log.info("failed to disable ipv[46] dual-stack for [::]. continue with the host default.")
+        elif not addr:
+            addr = "::"
+            try:
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except socket.error as exc:
+                self.log.info("ipv[46] dual-stack is not available on the host. fallback to ipv6 only")
+        return sock, addr
+
     def setup_socktls(self, force=False):
         self.vip
         if not has_ssl:
@@ -713,7 +743,7 @@ class Listener(shared.OsvcThread):
             return
         port = shared.NODE.oget("listener", "tls_port")
         addr = shared.NODE.oget("listener", "tls_addr")
-        if self.tls_port < 0 or not self.tls_addr:
+        if self.tls_port < 0 or self.tls_addr is None:
             self.tls_port = port
             self.tls_addr = addr
         elif force or port != self.tls_port or addr != self.tls_addr:
@@ -729,16 +759,10 @@ class Listener(shared.OsvcThread):
             return
 
         try:
-            addrinfo = socket.getaddrinfo(self.tls_addr, None)[0]
             self.tls_context = self.get_http2_ssl_context()
-            self.tls_addr = addrinfo[4][0]
-            if ":" in self.tls_addr:
-                af = socket.AF_INET6
-            else:
-                af = socket.AF_INET
-            self.tls_sock = socket.socket(af, socket.SOCK_STREAM)
+            self.tls_sock, addr = self.af_inet_socket(self.tls_addr)
             self.tls_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.bind_inet(self.tls_sock, self.tls_addr, self.tls_port)
+            self.bind_inet(self.tls_sock, addr, self.tls_port)
             self.tls_sock.listen(LISTENER_SLOTS)
             self.tls_sock.settimeout(self.sock_tmo)
         except socket.error as exc:
@@ -756,7 +780,7 @@ class Listener(shared.OsvcThread):
     def setup_sock(self):
         port = shared.NODE.oget("listener", "port")
         addr = shared.NODE.oget("listener", "addr")
-        if self.port < 0 or not self.addr:
+        if self.port < 0 or self.addr is None:
             self.port = port
             self.addr = addr
         elif port != self.port or addr != self.addr:
@@ -772,15 +796,9 @@ class Listener(shared.OsvcThread):
             return
 
         try:
-            addrinfo = socket.getaddrinfo(self.addr, None)[0]
-            self.addr = addrinfo[4][0]
-            if ":" in self.addr:
-                af = socket.AF_INET6
-            else:
-                af = socket.AF_INET
-            self.sock = socket.socket(af, socket.SOCK_STREAM)
+            self.sock, addr = self.af_inet_socket(self.addr)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.bind_inet(self.sock, self.addr, self.port)
+            self.bind_inet(self.sock, addr, self.port)
             self.sock.listen(LISTENER_SLOTS)
             self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
@@ -793,7 +811,7 @@ class Listener(shared.OsvcThread):
         if os.name == "nt":
             return
         if self.sockuxh2:
-            self.log.info("raw listener %s config unchanged", Env.paths.lsnruxsock)
+            self.log.info("h2 listener %s config unchanged", Env.paths.lsnruxh2sock)
             return
         if not os.path.exists(Env.paths.lsnruxsockd):
             os.makedirs(Env.paths.lsnruxsockd)
