@@ -541,6 +541,11 @@ class MonitorObjectOrchestratorManualMixin(object):
                 raise Defer("stop: local instance blocking mon status (%s)" % smon.status)
             if not (set(target) & set(candidates)):
                 raise Defer("stop: no candidate to takeover")
+            if not self.children_down(svc):
+                self.set_smon(svc.path, status="wait children")
+                raise Defer("wait: children are not stopped yet")
+            elif smon.status == "wait children":
+                self.set_smon(svc.path, status="idle")
             self.event("instance_stop", {
                 "reason": "target",
                 "path": svc.path,
@@ -549,7 +554,9 @@ class MonitorObjectOrchestratorManualMixin(object):
             raise Defer("stop: action started")
 
         def step_wait_parents():
-            dep = self.parents_available(svc)
+            pavail = self.parents_available(svc)
+            ptrans = self.parent_transitioning(svc)
+            dep = pavail and not ptrans
             if not dep and instance.avail not in STARTED_STATES:
                 self.set_smon(svc.path, status="wait parents")
                 raise Defer("wait: parents are not started yet")
@@ -2688,7 +2695,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         for parent in svc.parents:
             if parent == svc.path:
                 continue
-            if self.peer_transitioning(parent, discard_local=False):
+            if self.peer_transitioning(parent, discard_local=False, with_waiters=True):
                 return True
         return False
 
@@ -2761,7 +2768,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if ge.startswith("placed"):
                 return nodename
 
-    def peer_transitioning(self, path, discard_local=True):
+    def peer_transitioning(self, path, discard_local=True, with_waiters=False):
         """
         Return the nodename of the first peer with the service in a transition
         state.
@@ -2769,7 +2776,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         for nodename, instance in self.get_service_instances(path).items():
             if discard_local and nodename == Env.nodename:
                 continue
-            if instance["monitor"].get("status", "").endswith("ing"):
+            status = instance["monitor"].get("status", "")
+            if status.endswith("ing"):
+                return nodename
+            if with_waiters and status.startswith("wait"):
                 return nodename
 
     def peer_start_failed(self, path):
