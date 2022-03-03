@@ -1307,9 +1307,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Send to the collector the service status after an action, and
         the action log.
         """
-        self.node.daemon_collector_xmlrpc('end_action', self.path, action,
-                                          begin, end, self.options.cron,
-                                          actionlogfile)
+        try:
+            self.node.daemon_collector_xmlrpc("end_action", self.path, action,
+                                              begin, end, self.options.cron,
+                                              actionlogfile)
+        except Exception as exc:
+            self.log.warning("failed to send logs to the collector: %s", exc)
+
         try:
             logging.shutdown()
         except:
@@ -1325,9 +1329,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
         begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Provision a database entry to store action log later
-        self.node.daemon_collector_xmlrpc("begin_action", self.path,
-                                          action, self.node.agent_version,
-                                          begin, self.options.cron)
+        try:
+            self.node.daemon_collector_xmlrpc("begin_action", self.path,
+                                              action, self.node.agent_version,
+                                              begin, self.options.cron)
+        except Exception as exc:
+            self.log.warning("failed to init logs on the collector: %s", exc)
+            self.log_action_header(action, options)
+            return self.do_action(action, options)
 
         # Per action logfile to push to database at the end of the action
         tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=Env.paths.pathtmp,
