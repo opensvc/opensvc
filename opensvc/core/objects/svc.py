@@ -1307,9 +1307,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Send to the collector the service status after an action, and
         the action log.
         """
-        self.node.daemon_collector_xmlrpc('end_action', self.path, action,
-                                          begin, end, self.options.cron,
-                                          actionlogfile)
+        try:
+            self.node.daemon_collector_xmlrpc("end_action", self.path, action,
+                                              begin, end, self.options.cron,
+                                              actionlogfile)
+        except Exception as exc:
+            self.log.warning("failed to send logs to the collector: %s", exc)
+
         try:
             logging.shutdown()
         except:
