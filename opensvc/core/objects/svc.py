@@ -2927,10 +2927,6 @@ class Svc(PgMixin, BaseSvc):
         return False
 
     @lazy
-    def parents(self):
-        return self.oget("DEFAULT", "parents")
-
-    @lazy
     def placement(self):
         return self.oget("DEFAULT", "placement")
 
@@ -3006,6 +3002,13 @@ class Svc(PgMixin, BaseSvc):
         Volume service property
         """
         return self.oget("DEFAULT", "access")
+
+    @lazy
+    def parents(self):
+        parents = self.oget("DEFAULT", "parents")
+        for i, parent in enumerate(parents):
+            parents[i] = resolve_path(parent, self.namespace)
+        return parents
 
     @lazy
     def children(self):
