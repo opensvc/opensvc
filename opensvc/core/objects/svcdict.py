@@ -18,6 +18,7 @@ SECTIONS = [
 
 STARTABLE_SECTIONS = [
     "DEFAULT",
+    "sync",
     "ip",
     "fs",
     "disk",
