@@ -183,7 +183,7 @@ class BaseTask(Resource):
     def stop(self):
         self.remove_last_run_retcode()
 
-    def start(self):
+    def boot(self):
         self.remove_last_run_retcode()
 
     @lazy
