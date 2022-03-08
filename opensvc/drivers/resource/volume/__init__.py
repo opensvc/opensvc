@@ -594,7 +594,7 @@ class Volume(Resource):
         return volume_children_not_in_svc_parents
 
     def claim(self, volume):
-        if self.shared:
+        if self.shared and len(self.svc.nodes) > 1:
             if self.owned(volume):
                 self.log.info("shared volume %s is already claimed by %s",
                               volume.path, self.svc.path)
