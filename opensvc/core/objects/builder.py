@@ -39,10 +39,18 @@ def get_subset(svc, section, impersonate=None):
     return svc.oget(section, "subset", impersonate=impersonate)
 
 def get_restart(svc, section, impersonate=None):
-    return svc.oget(section, "restart", impersonate=impersonate)
+    try:
+        return svc.oget(section, "restart", impersonate=impersonate)
+    except ValueError:
+        # tasks don't support restart
+        return 0
 
 def get_restart_delay(svc, section, impersonate=None):
-    return svc.oget(section, "restart_delay", impersonate=impersonate)
+    try:
+        return svc.oget(section, "restart_delay", impersonate=impersonate)
+    except ValueError:
+        # tasks don't support restart_delay
+        return 0
 
 def get_disabled(svc, section, impersonate=None):
     return svc.oget(section, "disable", impersonate=impersonate)
