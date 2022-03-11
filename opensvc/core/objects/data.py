@@ -28,6 +28,10 @@ class DataMixin(object):
         self._add(self.options.key, self.options.value_from)
 
     def change(self):
+        if not self.has_key(self.options.key):
+            raise ex.Error("key '%s' does not exist. use the 'add' action to add it." % self.options.key)
+        if self.options.value is None and self.options.value_from is None:
+            raise ex.Error("a value or value source mut be specified for a change action.")
         self._add(self.options.key, self.options.value_from)
 
     def remove(self):
