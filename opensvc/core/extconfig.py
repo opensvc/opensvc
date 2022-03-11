@@ -351,9 +351,9 @@ class ExtConfigMixin(object):
         else:
             eval = False
         if self.options.kw is not None:
-            return self.set_multi(self.options.kw, eval=eval)
+            self.set_multi(self.options.kw, eval=eval)
         else:
-            return self.set_mono(eval=eval)
+            self.set_mono(eval=eval)
 
     def set_multi(self, kws, eval=False, validation=True):
         self.cd_clear_caches()
@@ -404,7 +404,7 @@ class ExtConfigMixin(object):
             else:
                 # <rid>.keyword[@<scope>]
                 changes.append(self.set_mangle(keyword, op, value, index, eval))
-        self._set_multi(changes, validation=validation)
+        return self._set_multi(changes, validation=validation)
 
     def set_mono(self, eval=False):
         self.cd_clear_caches()
@@ -449,7 +449,7 @@ class ExtConfigMixin(object):
             # <rid>.keyword[@<scope>]
             changes.append(self.set_mangle(keyword, op, value, index, eval))
 
-        self._set_multi(changes)
+        return self._set_multi(changes)
 
     def set_mangle(self, keyword, op, value, index, eval):
         def list_value(keyword):
@@ -505,7 +505,7 @@ class ExtConfigMixin(object):
 
     def _set(self, section, option, value, validation=True):
         changes = [(section, option, value, False)]
-        self._set_multi(changes, validation=validation)
+        return self._set_multi(changes, validation=validation)
 
     def _set_one(self, section, option, value):
         value = try_decode(value)
@@ -528,19 +528,21 @@ class ExtConfigMixin(object):
         return changed
 
     def _set_multi(self, changes, validation=True):
-        changed = False
+        applied = []
         for change in changes:
             if change is None:
                 continue
             section, option, value, eval = change
-            changed |= self._set_one(section, option, value)
-            changed = True
-        if not changed:
-            return
+            changed = self._set_one(section, option, value)
+            if changed:
+                applied.append(change)
+        if len(applied) == 0:
+            return applied
         try:
             self.commit(validation=validation)
         except (IOError, OSError) as exc:
             raise ex.Error(str(exc))
+        return applied
 
     #########################################################################
     #

@@ -43,8 +43,11 @@ class Sec(DataMixin, BaseSvc):
         if data is None:
             raise ex.Error("secret value can not be empty")
         data = "crypt:"+base64.urlsafe_b64encode(self.encrypt(data, cluster_name="join", encode=True)).decode()
-        self.set_multi(["data.%s=%s" % (key, data)])
-        self.log.info("secret key '%s' added (%s)", key, print_size(len(data), compact=True, unit="b"))
+        applied = self.set_multi(["data.%s=%s" % (key, data)])
+        if len(applied) == 0:
+            return
+        did = "added" if self.running_action == "add" else "changed"
+        self.log.info("secret key '%s' %s (%s)", key, did, print_size(len(data), compact=True, unit="b"))
         # refresh if in use
         self.postinstall(key)
 
