@@ -898,7 +898,7 @@ def gen_keys():
     if ret == 127:
         logit("ssh-keygen command not found, skipping key creation", stdout=True)
         return
-    cmd = ['ssh-keygen', '-t', 'rsa', '-b', '2048', '-P', '""', '-f', priv]
+    cmd = ['ssh-keygen', '-t', 'rsa', '-P', '""', '-f', priv]
     try:
         ret = osrun(' '.join(cmd))
     except:
