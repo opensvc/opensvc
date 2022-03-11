@@ -351,9 +351,9 @@ class ExtConfigMixin(object):
         else:
             eval = False
         if self.options.kw is not None:
-            return self.set_multi(self.options.kw, eval=eval)
+            self.set_multi(self.options.kw, eval=eval)
         else:
-            return self.set_mono(eval=eval)
+            self.set_mono(eval=eval)
 
     def set_multi(self, kws, eval=False, validation=True):
         self.cd_clear_caches()
