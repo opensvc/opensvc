@@ -254,6 +254,7 @@ class Daemon(object):
         self.log.info(" python:        %s", sys.version.split()[0])
         self.log.info(" crypto module: %s", CRYPTO_MODULE)
         caps = capabilities.scan(node=shared.NODE)
+        caps = capabilities.as_list(caps)
         self.log.info("%d capabilities:", len(caps))
         for cap in caps:
             self.log.info(" %s", cap)

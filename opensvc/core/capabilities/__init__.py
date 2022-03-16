@@ -37,7 +37,7 @@ class BaseCapabilities(object):
             ("node.x.ifconfig", "ifconfig"),
             ("node.x.ip", "/sbin/ip"),
             ("node.x.losetup", Env.syspaths.losetup),
-            ("node.x.lvs  ", "/sbin/lvs"),
+            ("node.x.lvs", "/sbin/lvs"),
             ("node.x.multipath", Env.syspaths.multipath),
             ("node.x.netstat", "netstat"),
             ("node.x.podman", "/usr/bin/podman"),
