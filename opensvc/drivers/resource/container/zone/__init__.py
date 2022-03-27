@@ -537,6 +537,10 @@ class ContainerZone(BaseContainer):
             (zoneid, zonename, state, zonepath, uuid, brand, iptype, rw, macp, dummy) = l
         elif n_fields == 7:
             (zoneid, zonename, state, zonepath, uuid, brand, iptype) = l
+        elif n_fields ==  11:
+            # since 11.4.43.0.1.113.3:
+            # -:pioupiou:installed:/pioupiou/solaris11:adxxxxxx-4cxx-420b-855a-a5111e7xxxxx:solaris:excl:-:::
+            (zoneid, zonename, state, zonepath, uuid, brand, iptype, rw, macp, dummy, dummy) = l
         else:
             raise ex.Error("Unexpected zoneadm list output: %s"%out)
         if zonename != self.name:
