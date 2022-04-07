@@ -157,6 +157,9 @@ class DiskVg(BaseDisk):
     def pvscan(self):
         cmd = ["pvscan", "--cache"]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
+        if 'Not using lvmetad because config setting use_lvmetad=0' in err:
+            cmd = ["pvscan"]
+            ret, out, err = self.vcall(cmd, warn_to_info=True)
         self.clear_cache("vg.lvs")
         self.clear_cache("lvs.attr")
         self.clear_cache("vg.tags")
