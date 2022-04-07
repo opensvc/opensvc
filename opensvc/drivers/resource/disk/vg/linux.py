@@ -154,16 +154,8 @@ class DiskVg(BaseDisk):
         (ret, out, err) = self.vcall(cmd)
         self.clear_cache("vg.tags")
 
-    @lazy
-    def has_metad(self):
-        cmd = ["pgrep", "lvmetad"]
-        out, err, ret = justcall(cmd)
-        return ret == 0
-
     def pvscan(self):
-        cmd = ["pvscan"]
-        if self.has_metad:
-            cmd += ["--cache"]
+        cmd = ["pvscan", "--cache"]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         self.clear_cache("vg.lvs")
         self.clear_cache("lvs.attr")
