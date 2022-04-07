@@ -187,7 +187,7 @@ class DiskCrypt(BaseDisk):
     def sub_devs(self):
         dev = self.get_dev()
         if dev is None:
-            return
+            return set([])
         return set([dev])
 
     def exposed_dev(self):

@@ -42,7 +42,7 @@ class BaseCapabilities(object):
             ("node.x.netstat", "netstat"),
             ("node.x.podman", "/usr/bin/podman"),
             ("node.x.powermt", "powermt"),
-            ("node.x.scsi_id", ("scsi_id", "/lib/udev/scsi_id", "/usr/lib/scsi_id")),
+            ("node.x.scsi_id", ("scsi_id", "/lib/udev/scsi_id", "/usr/lib/udev/scsi_id")),
             ("node.x.share", "share"),
             ("node.x.srp", "srp"),
             ("node.x.srp_su", "srp_su"),
@@ -110,7 +110,7 @@ class BaseCapabilities(object):
 
     @staticmethod
     def as_list(data):
-        l = data["tags"]
+        l = [] + data["tags"]
         for k, v in data["labels"].items():
             l.append("%s=%s" % (k, v))
         return sorted(l)
