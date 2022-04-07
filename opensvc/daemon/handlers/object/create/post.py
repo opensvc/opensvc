@@ -104,7 +104,7 @@ class Handler(daemon.handler.BaseHandler, daemon.rbac.ObjectCreateMixin):
         if options.provision:
             cmd.append("--provision")
         thr.log_request("create/update %s" % ",".join(paths), nodename, **kwargs)
-        proc = thr.service_command(None, cmd, stdout=PIPE, stderr=PIPE, stdin=json.dumps(options.data))
+        proc = thr.service_command(None, cmd, stdout=PIPE, stderr=PIPE, stdin=json.dumps(options.data), local=False)
         if options.sync:
             out, err = proc.communicate()
             result = {

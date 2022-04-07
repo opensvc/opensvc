@@ -278,7 +278,81 @@ class TestAddKeyWhenKeyAlreadyExistsMustFail:
         assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) == 0
         assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) != 0
 
-        
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
+class TestCfgSecAdd:
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_with_value_syntax(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'foo']) == 0
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_accept_add_again_key_when_no_value_or_no_from(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1']) == 0
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_refuse_add_with_value_when_key_already_exists(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', "--value", "foo"]) != 0
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_refuse_add_with_from_when_key_already_exists(tmp_file, obj):
+        with open(tmp_file, 'w+') as f:
+            f.write('something')
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', "--from", str(tmp_file)]) != 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
+class TestCfgSecChange:
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_with_value_syntax(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'foo']) == 0
+        assert Mgr(selector=obj)(['change', '--key', 'key1', '--value', 'Foo']) == 0
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_with_from_syntax(tmp_file, obj):
+        with open(tmp_file, 'w+') as f:
+            f.write('something')
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--from', str(tmp_file)]) == 0
+        assert Mgr(selector=obj)(['change', '--key', 'key1', '--from', str(tmp_file)]) == 0
+
+    @staticmethod
+    @pytest.mark.parametrize('obj', ['demo/cfg/name', 'demo/sec/name'])
+    def test_refuse_when_missing_value_or_from(obj):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', 'key1', '--value', 'foo']) == 0
+        assert Mgr(selector=obj)(['change', '--key', 'key1']) != 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('has_cluster_config', 'has_privs')
+class TestCreateAddDecodeRemove:
+    @staticmethod
+    @pytest.mark.parametrize('key', ['lowercase', 'camelCase', 'UPPERCASE', "A.init"])
+    @pytest.mark.parametrize('obj', ['demo/cfg/name1', 'demo/sec/name'])
+    def test_add_decode_remove_decode_key(capture_stdout, tmp_file, obj, key):
+        assert Mgr(selector=obj)(['create']) == 0
+        assert Mgr(selector=obj)(['add', '--key', key, '--value', 'john']) == 0
+        assert Mgr(selector=obj)(['decode', '--key', key]) == 0
+        Mgr(selector=obj)(['remove', '--key', key])
+        assert Mgr(selector=obj)(['decode', '--key', key]) == 1
+
+
 @pytest.mark.ci
 @pytest.mark.usefixtures('has_service_with_cfg', 'has_privs')
 class DecodeFrom:

@@ -215,6 +215,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             configs.append(Env.paths.nodeconf)
         return self.parse_config_file(configs)
 
+    def cd_clear_caches(self):
+        self.raw_cd = None
+        self.unset_lazy("cd")
+
     @lazy
     def private_cd(self):
         return self.parse_config_file(self.paths.cf)

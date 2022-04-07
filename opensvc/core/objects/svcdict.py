@@ -16,6 +16,18 @@ SECTIONS = [
     "volume",
 ]
 
+STARTABLE_SECTIONS = [
+    "DEFAULT",
+    "sync",
+    "ip",
+    "fs",
+    "disk",
+    "share",
+    "container",
+    "app",
+    "volume",
+]
+
 DATA_SECTIONS = [
     "certificate",
     "expose",
@@ -838,7 +850,7 @@ KEYWORDS = [
         "text": "Assign the resource to a specific subset."
     },
     {
-        "sections": SECTIONS,
+        "sections": STARTABLE_SECTIONS,
         "keyword": "restart",
         "generic": True,
         "at": True,
@@ -858,7 +870,7 @@ KEYWORDS = [
                 "default value is 2, and value lower than 2 are changed to 2."
     },
     {
-        "sections": SECTIONS,
+        "sections": STARTABLE_SECTIONS,
         "keyword": "restart_delay",
         "generic": True,
         "at": True,

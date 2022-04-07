@@ -778,7 +778,7 @@ def install_rc():
             logit("arch with systemd")
             copyrc = False
             activate = activate_systemd
-    elif reldata["ID"] in ("sles", "caasp") or os.path.exists('/etc/SuSE-release'):
+    elif reldata["ID"] in ("sles", "caasp", "opensuse-leap") or os.path.exists('/etc/SuSE-release'):
         rc = '/etc/init.d/opensvc'
         params = '/etc/sysconfig/opensvc'
         src = os.path.join(pathini, 'opensvc.init.suse')
@@ -898,7 +898,7 @@ def gen_keys():
     if ret == 127:
         logit("ssh-keygen command not found, skipping key creation", stdout=True)
         return
-    cmd = ['ssh-keygen', '-t', 'rsa', '-b', '2048', '-P', '""', '-f', priv]
+    cmd = ['ssh-keygen', '-t', 'rsa', '-P', '""', '-f', priv]
     try:
         ret = osrun(' '.join(cmd))
     except:

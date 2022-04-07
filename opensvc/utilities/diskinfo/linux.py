@@ -30,6 +30,8 @@ class DiskInfo(BaseDiskInfo):
     def disk_id(self, dev):
         if 'cciss' in dev:
             id = self.cciss_id(dev)
+        elif dev.startswith('/dev/disk/by-id/dm-uuid-mpath-'):
+            id = dev.replace('/dev/disk/by-id/dm-uuid-mpath-', '')[1:]
         elif dev.startswith('/dev/disk/by-id/wwn-0x'):
             id = dev.replace('/dev/disk/by-id/wwn-0x', '')
         elif dev.startswith('/dev/disk/by-id/scsi-2'):

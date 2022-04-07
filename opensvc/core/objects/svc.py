@@ -29,7 +29,7 @@ from core.resourceset import ResourceSet
 from core.scheduler import SchedOpts, Scheduler, sched_action
 from env import Env, Paths
 from utilities.converters import *
-from utilities.drivers import driver_import
+from utilities.drivers import driver_import, rtypes_with_callable
 from utilities.fcache import fcache
 from utilities.files import makedirs
 from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
@@ -790,6 +790,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return self.raw_cd
         return self.parse_config_file(self.paths.cf)
 
+    def cd_clear_caches(self):
+        self.raw_cd = None
+        self.unset_lazy("cd")
+
     @lazy
     def disabled(self):
         return self.oget("DEFAULT", "disable")
@@ -1303,9 +1307,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Send to the collector the service status after an action, and
         the action log.
         """
-        self.node.daemon_collector_xmlrpc('end_action', self.path, action,
-                                          begin, end, self.options.cron,
-                                          actionlogfile)
+        try:
+            self.node.daemon_collector_xmlrpc("end_action", self.path, action,
+                                              begin, end, self.options.cron,
+                                              actionlogfile)
+        except Exception as exc:
+            self.log.warning("failed to send logs to the collector: %s", exc)
+
         try:
             logging.shutdown()
         except:
@@ -1321,9 +1329,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
         begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Provision a database entry to store action log later
-        self.node.daemon_collector_xmlrpc("begin_action", self.path,
-                                          action, self.node.agent_version,
-                                          begin, self.options.cron)
+        try:
+            self.node.daemon_collector_xmlrpc("begin_action", self.path,
+                                              action, self.node.agent_version,
+                                              begin, self.options.cron)
+        except Exception as exc:
+            self.log.warning("failed to init logs on the collector: %s", exc)
+            self.log_action_header(action, options)
+            return self.do_action(action, options)
 
         # Per action logfile to push to database at the end of the action
         tmpfile = tempfile.NamedTemporaryFile(delete=False, dir=Env.paths.pathtmp,
@@ -2914,10 +2927,6 @@ class Svc(PgMixin, BaseSvc):
         return False
 
     @lazy
-    def parents(self):
-        return self.oget("DEFAULT", "parents")
-
-    @lazy
     def placement(self):
         return self.oget("DEFAULT", "placement")
 
@@ -2993,6 +3002,13 @@ class Svc(PgMixin, BaseSvc):
         Volume service property
         """
         return self.oget("DEFAULT", "access")
+
+    @lazy
+    def parents(self):
+        parents = self.oget("DEFAULT", "parents")
+        for i, parent in enumerate(parents):
+            parents[i] = resolve_path(parent, self.namespace)
+        return parents
 
     @lazy
     def children(self):
@@ -4146,7 +4162,7 @@ class Svc(PgMixin, BaseSvc):
             raise ex.EncapUnjoinable
         if "resource_monitor" in cmd:
             try:
-                self.encap_json_status(container, refresh=True, push_config=False, cache=False)
+                self.encap_json_status(container, refresh=False, push_config=False, cache=False)
             except (ex.NotAvailable, ex.EncapUnjoinable, ex.Error):
                 pass
         elif "print" not in cmd and "create" not in cmd:
@@ -4693,60 +4709,32 @@ class Svc(PgMixin, BaseSvc):
         self.all_set_action("presync")
         self.presync_done = True
 
+    def _sync_gen(self, method):
+        self.sub_set_action(rtypes_with_callable(method), method)
+
     def sync_nodes(self):
-        rtypes = [
-            "sync.rsync",
-            "sync.zfs",
-            "sync.btrfs",
-            "sync.docker",
-            "sync.dds",
-        ]
+        rtypes = rtypes_with_callable("sync_nodes")
         if not self.can_sync(rtypes, 'nodes'):
             return
         self.sub_set_action(rtypes, "sync_nodes")
 
     def sync_drp(self):
-        rtypes = [
-            "sync.rsync",
-            "sync.zfs",
-            "sync.btrfs",
-            "sync.docker",
-            "sync.dds",
-        ]
+        rtypes = rtypes_with_callable("sync_drp")
         if not self.can_sync(rtypes, 'drpnodes'):
             return
         self.sub_set_action(rtypes, "sync_drp")
 
     def sync_swap(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.symsrdfs",
-            "sync.hp3par",
-            "sync.nexenta",
-        ]
-        self.sub_set_action(rtypes, "sync_swap")
+        self._sync_gen("sync_swap")
 
     def sync_revert(self):
-        rtypes = [
-            "sync.hp3par",
-        ]
-        self.sub_set_action(rtypes, "sync_revert")
+        self._sync_gen("sync_revert")
 
     def sync_resume(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.symsrdfs",
-            "sync.hp3par",
-            "sync.nexenta",
-        ]
-        self.sub_set_action(rtypes, "sync_resume")
+        self._sync_gen("sync_resume")
 
     def sync_quiesce(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.nexenta",
-        ]
-        self.sub_set_action(rtypes, "sync_quiesce")
+        self._sync_gen("sync_quiesce")
 
     def resync(self):
         self.stop()
@@ -4754,82 +4742,28 @@ class Svc(PgMixin, BaseSvc):
         self.start()
 
     def sync_resync(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.nexenta",
-            "sync.radossnap",
-            "sync.radosclone",
-            "sync.dds",
-            "sync.symclone",
-            "sync.symsnap",
-            "sync.ibmdssnap",
-            "sync.evasnap",
-            "sync.necismsnap",
-            "disk.md",
-        ]
-        self.sub_set_action(rtypes, "sync_resync")
+        self._sync_gen("sync_resync")
 
     def sync_break(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.nexenta",
-            "sync.hp3par",
-            "sync.symclone",
-            "sync.symsnap",
-        ]
-        self.sub_set_action(rtypes, "sync_break")
+        self._sync_gen("sync_break")
 
     def sync_update(self):
-        rtypes = [
-            "sync.netapp",
-            "sync.nexenta",
-            "sync.hp3par",
-            "sync.hp3parsnap",
-            "sync.dds",
-            "sync.btrfssnap",
-            "sync.zfs",
-            "sync.zfssnap",
-            "sync.s3",
-            "sync.symclone",
-            "sync.symsnap",
-            "sync.ibmdssnap",
-        ]
-        self.sub_set_action(rtypes, "sync_update")
+        self._sync_gen("sync_update")
 
     def sync_full(self):
-        rtypes = [
-            "sync.dds",
-            "sync.zfs",
-            "sync.btrfs",
-            "sync.s3",
-        ]
-        self.sub_set_action(rtypes, "sync_full")
+        self._sync_gen("sync_full")
 
     def sync_restore(self):
-        rtypes = [
-            "sync.s3",
-            "sync.symclone",
-            "sync.symsnap",
-        ]
-        self.sub_set_action(rtypes, "sync_restore")
+        self._sync_gen("sync_restore")
 
     def sync_split(self):
-        rtypes = [
-            "sync.symsrdfs",
-        ]
-        self.sub_set_action(rtypes, "sync_split")
+        self._sync_gen("sync_split")
 
     def sync_establish(self):
-        rtypes = [
-            "sync.symsrdfs",
-        ]
-        self.sub_set_action(rtypes, "sync_establish")
+        self._sync_gen("sync_establish")
 
     def sync_verify(self):
-        rtypes = [
-            "sync.dds",
-        ]
-        self.sub_set_action(rtypes, "sync_verify")
+        self._sync_gen("sync_verify")
 
     def can_sync(self, rtypes=None, target=None):
         """
@@ -4857,13 +4791,7 @@ class Svc(PgMixin, BaseSvc):
         if not self.can_sync(["sync"]):
             return
         self.sync_update()
-        rtypes = [
-            "sync.rsync",
-            "sync.btrfs",
-            "sync.docker",
-            "sync.dds",
-        ]
-        self.sub_set_action(rtypes, "sync_all")
+        self._sync_gen("sync_all")
 
     def service_status(self):
         """

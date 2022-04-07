@@ -22,10 +22,16 @@ from utilities.string import bencode
 class DataMixin(object):
     def add(self):
         if self.options.key and self.has_key(self.options.key):
+            if self.options.value is None and self.options.value_from is None:
+                return
             raise ex.Error("key '%s' already exists. use the 'change' action to change the current value." % self.options.key)
         self._add(self.options.key, self.options.value_from)
 
     def change(self):
+        if not self.has_key(self.options.key):
+            raise ex.Error("key '%s' does not exist. use the 'add' action to add it." % self.options.key)
+        if self.options.value is None and self.options.value_from is None:
+            raise ex.Error("a value or value source mut be specified for a change action.")
         self._add(self.options.key, self.options.value_from)
 
     def remove(self):
@@ -170,7 +176,7 @@ class DataMixin(object):
                 buff = buff.decode()
             except:
                 raise ex.Error("binary keys are not editable")
-        no_newline = os.sep not in try_decode(buff)
+        no_newline = os.linesep not in try_decode(buff)
         editor = find_editor()
         fpath = self.tempfilename()
         create_protected_file(fpath, buff)

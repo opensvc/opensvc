@@ -37,8 +37,11 @@ class Cfg(DataMixin, BaseSvc):
             data = "base64:"+bdecode(base64.urlsafe_b64encode(bencode(data)))
         else:
             data = "literal:"+data
-        self.set_multi(["data.%s=%s" % (key, data)])
-        self.log.info("configuration key '%s' added (%s)", key, print_size(len(data), compact=True, unit="b"))
+        applied = self.set_multi(["data.%s=%s" % (key, data)])
+        if len(applied) == 0:
+            return
+        did = "added" if self.running_action == "add" else "changed"
+        self.log.info("configuration key '%s' %s (%s)", key, did, print_size(len(data), compact=True, unit="b"))
         # refresh if in use
         self.postinstall(key)
 
