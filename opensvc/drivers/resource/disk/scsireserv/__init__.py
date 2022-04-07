@@ -303,6 +303,8 @@ class BaseDiskScsireserv(Resource):
         self.get_hostid()
         if not self.scsireserv_supported():
             return
+        if hasattr(self.peer_resource, "rescan_sub_devs"):
+            self.peer_resource.rescan_sub_devs()
         if self._status() == core.status.UP:
             self.log.info("already started")
             return

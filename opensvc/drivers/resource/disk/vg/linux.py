@@ -64,6 +64,8 @@ KEYS.register_driver(
     driver_basename_aliases=DRIVER_BASENAME_ALIASES,
 )
 
+VGSCANS = 0
+
 def driver_capabilities(node=None):
     from utilities.proc import which
     if which("vgdisplay"):
@@ -298,6 +300,9 @@ class DiskVg(BaseDisk):
             data[vgname].append(os.path.realpath(pvname.strip()))
         return data
 
+    def rescan_sub_devs(self):
+        self.vgscan_once()
+
     def sub_devs(self):
         if not self.has_it():
             return set()
@@ -333,6 +338,9 @@ class DiskVg(BaseDisk):
         self.vgscan()
         return self.has_it()
 
+    def provisioner_shared_non_leader(self):
+        self.pvscan()
+
     def unprovisioner(self):
         if not self.has_it():
             return
@@ -346,9 +354,17 @@ class DiskVg(BaseDisk):
         self.clear_cache("vg.pvs")
         self.svc.node.unset_lazy("devtree")
 
+    def vgscan_once(self):
+        global VGSCANS
+        if VGSCANS > 0:
+            return
+        self.vgscan()
+
     def vgscan(self):
+        global VGSCANS
         cmd = [Env.syspaths.vgscan, "--cache"]
         justcall(cmd)
+        VGSCANS += 1
 
     def has_pv(self, pv):
         cmd = [Env.syspaths.pvscan, "--cache", pv]
