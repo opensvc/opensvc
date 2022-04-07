@@ -110,7 +110,7 @@ class BaseCapabilities(object):
 
     @staticmethod
     def as_list(data):
-        l = data["tags"]
+        l = [] + data["tags"]
         for k, v in data["labels"].items():
             l.append("%s=%s" % (k, v))
         return sorted(l)
