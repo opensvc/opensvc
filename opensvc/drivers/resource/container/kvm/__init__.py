@@ -68,6 +68,8 @@ class ContainerKvm(BaseContainer):
                  virtinst=None,
                  **kwargs):
         super(ContainerKvm, self).__init__(type="container.kvm", **kwargs)
+        self.refresh_provisioned_on_provision = True
+        self.refresh_provisioned_on_unprovision = True
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
@@ -121,6 +123,12 @@ class ContainerKvm(BaseContainer):
 
     def virsh_define(self):
         cmd = ['virsh', 'define', self.cf]
+        (ret, buff, err) = self.vcall(cmd)
+        if ret != 0:
+            raise ex.Error
+
+    def virsh_undefine(self):
+        cmd = ['virsh', 'undefine', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -195,6 +203,12 @@ class ContainerKvm(BaseContainer):
         if state in (None, "shut off", "no state"):
             return True
         return False
+
+    def is_defined(self):
+        if os.path.exists(self.cf):
+            return True
+        return False
+
 
     def get_container_info(self):
         cmd = ['virsh', 'dominfo', self.name]
@@ -395,4 +409,29 @@ class ContainerKvm(BaseContainer):
         self.setup_kvm()
         self.setup_ips()
         self.log.info("provisioned")
+        return True
+
+    def provisioned(self):
+        cmd = ['virsh', 'dominfo', self.name]
+        out, _, ret = justcall(cmd)
+        if ret != 0:
+            return False
+        return True
+
+    def unprovisioner(self):
+        if not self.provisioned():
+            self.log.debug("skip kvm unprovision: container is not provisioned")
+            return
+        if self.is_defined():
+            self.virsh_undefine()
+        self.log.info("unprovisioned")
+        return True
+
+    def unprovisioner_shared_non_leader(self):
+        if not self.provisioned():
+            self.log.debug("skip kvm unprovision: container is not provisioned")
+            return
+        if self.is_defined():
+            self.virsh_undefine()
+        self.log.info("unprovisioned")
         return True
