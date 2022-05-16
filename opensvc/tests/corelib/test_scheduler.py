@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from core.scheduler import Schedule, SchedNotAllowed, SchedSyntaxError
+from core.scheduler import Schedule, SchedNotAllowed, parse_calendar_expression
 
 SCHEDULES_NOT_ALLOWED = [
     ("", "2015-02-27 10:00"),
@@ -174,7 +174,7 @@ class TestSchedule(object):
             date_s,
             last_s):
         schedule = Schedule(schedule_s)
-        schedule.data
+        _ = schedule.data
         with pytest.raises(SchedNotAllowed, match="last run is too soon"):
             schedule.validate(to_datetime(date_s),
                               to_datetime(last_s))
@@ -217,3 +217,22 @@ class TestSchedule(object):
         assert Schedule([schedule_s, "09:00-09:20@60 :1st 1 january"]).data == expected_data
         assert Schedule(["09:00-09:20@60 :1st 1 january", schedule_s]).data == expected_data
         assert Schedule(schedule_s).data == []
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["mon", {1}],
+        ["monday", {1}],
+        ["sun", {7}],
+        ["sunday", {7}],
+        ["monday-sunday", {1, 2, 3, 4, 5, 6, 7}],
+        ["monday-wed", {1, 2, 3}],
+        ["sun-mon", {1, 7}],
+        ["sun-tue", {1, 2, 7}],
+        ["sun-wed", {1, 2, 3, 7}],
+        ["mon-monday", {1}],
+        ["mon-monday", {1}],
+        ["tuesday-tue", {2}],
+        ["sun-fri", {1, 2, 3, 4, 5, 7}],
+    ])
+    def test_parse_calendar_expression(spec, expected):
+        assert parse_calendar_expression(spec) == expected

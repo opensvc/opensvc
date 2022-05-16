@@ -55,13 +55,13 @@ CALENDAR_NAMES = {
     "fri": 5,
     "sat": 6,
     "sun": 7,
-    "monday": 0,
-    "tuesday": 1,
-    "wednesday": 2,
-    "thursday": 3,
-    "friday": 4,
-    "saturday": 5,
-    "sunday": 6,
+    "monday": 1,
+    "tuesday": 2,
+    "wednesday": 3,
+    "thursday": 4,
+    "friday": 5,
+    "saturday": 6,
+    "sunday": 7,
 }
 
 class SchedNotAllowed(Exception):
@@ -242,8 +242,11 @@ def parse_calendar_expression(spec):
         begin, end = subspec.split("-")
         begin = resolve_calendar_name(begin)
         end = resolve_calendar_name(end)
-        _range = sorted([begin, end])
-        elements |= set(range(_range[0], _range[1]+1))
+        if begin > end:
+            elements |= set(range(begin, 8))
+            elements |= set(range(1, end+1))
+        else:
+            elements |= set(range(begin, end+1))
     return elements
 
 def days_in_month(year, month):
