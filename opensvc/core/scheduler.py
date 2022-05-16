@@ -242,8 +242,11 @@ def parse_calendar_expression(spec):
         begin, end = subspec.split("-")
         begin = resolve_calendar_name(begin)
         end = resolve_calendar_name(end)
-        _range = sorted([begin, end])
-        elements |= set(range(_range[0], _range[1]+1))
+        if begin > end:
+            elements |= set(range(begin, 8))
+            elements |= set(range(1, end+1))
+        else:
+            elements |= set(range(begin, end+1))
     return elements
 
 def days_in_month(year, month):
