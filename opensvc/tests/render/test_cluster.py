@@ -1,6 +1,7 @@
 import pytest
 
 from env import Env
+from utilities.render import color
 from utilities.render.cluster import format_cluster
 
 
@@ -39,17 +40,17 @@ Nodes                node1
     def test_show_monitor_show_hash_when_service_is_a_drp_node(mocker):
         mocker.patch.object(Env, "nodename", "node1")
         mocker.patch("utilities.render.color.use_color", "no")
-        output = format_cluster(selector="flg1",sections="services",
+        output = format_cluster(selector="flg1", sections="services",
                                 node=[Env.nodename],
-                                data= {
+                                data={
                                     "monitor": {
                                         "nodes": {
                                             "node1": {
-                                                "services":{
+                                                "services": {
                                                     "config": {
                                                         "flg1": {
                                                             "csum": "4446e020698e58edcff4b026598f985a",
-                                                            "scope": ["node-1",],
+                                                            "scope": ["node-1"],
                                                             "updated": 1612259156.577508
                                                         },
                                                     },
@@ -137,7 +138,10 @@ Nodes                node1
                 "services": {},
             },
         }
+        previous_use_color = color.use_color
+        color.use_color = "no"
         output = format_cluster(data=data)
+        color.use_color = previous_use_color
         assert "monitor undef" in output
         assert output == """Threads         
  daemon  running
