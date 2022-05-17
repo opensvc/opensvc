@@ -223,7 +223,8 @@ def resolve_calendar_name(name):
             raise SchedSyntaxError("unknown calendar name '%s'" % name)
         return CALENDAR_NAMES[name]
 
-def parse_calendar_expression(spec):
+
+def parse_calendar_expression(spec, max):
     """
     Top level schedule definition parser.
     Split the definition into sub-schedules, and parse each one.
@@ -243,7 +244,7 @@ def parse_calendar_expression(spec):
         begin = resolve_calendar_name(begin)
         end = resolve_calendar_name(end)
         if begin > end:
-            elements |= set(range(begin, 8))
+            elements |= set(range(begin, max+1))
             elements |= set(range(1, end+1))
         else:
             elements |= set(range(begin, end+1))
@@ -492,7 +493,7 @@ class Schedule(object):
             except ValueError:
                 raise SchedSyntaxError("day_of_month %s is not a number" % day_of_month)
 
-        day = parse_calendar_expression(day)
+        day = parse_calendar_expression(day, 7)
         if day in ("*", ""):
             day = ALL_WEEKDAYS
         allowed_days = [{"weekday": d, "monthday": day_of_month} for d in day if d in ALL_WEEKDAYS]
@@ -503,7 +504,7 @@ class Schedule(object):
         """
         Convert to a list of integer weeks
         """
-        week = parse_calendar_expression(week)
+        week = parse_calendar_expression(week, 53)
         if week == "*":
             return ALL_WEEKS
         return sorted([w for w in week if 1 <= w <= 53])
@@ -527,7 +528,7 @@ class Schedule(object):
             if month_s in ("", "*"):
                 _allowed_months = ALL_MONTHS
             else:
-                _allowed_months = parse_calendar_expression(month_s)
+                _allowed_months = parse_calendar_expression(month_s, 12)
             if modulo_s is not None:
                 _allowed_months = modulo_filter(_allowed_months, modulo_s)
             allowed_months |= _allowed_months
