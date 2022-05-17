@@ -230,9 +230,31 @@ class TestSchedule(object):
         ["sun-tue", {1, 2, 7}],
         ["sun-wed", {1, 2, 3, 7}],
         ["mon-monday", {1}],
-        ["mon-monday", {1}],
         ["tuesday-tue", {2}],
         ["sun-fri", {1, 2, 3, 4, 5, 7}],
     ])
-    def test_parse_calendar_expression(spec, expected):
-        assert parse_calendar_expression(spec) == expected
+    def test_parse_calendar_expression_day(spec, expected):
+        assert parse_calendar_expression(spec, 7) == expected
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["jan", {1}],
+        ["january", {1}],
+        ["jan-apr", {1, 2, 3, 4}],
+        ["nov-feb", {1, 2, 11, 12}],
+        ["nov-jan", {1, 11, 12}],
+    ])
+    def test_parse_calendar_expression_month(spec, expected):
+        assert parse_calendar_expression(spec, 12) == expected
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["1", {1}],
+        ["1-41", set(range(1, 42))],
+        ["1-53", set(range(1, 54))],
+        ["8-53", set(range(8, 54))],
+        ["50-2", {1, 2, 50, 51, 52, 53}],
+
+    ])
+    def test_parse_calendar_expression_week(spec, expected):
+        assert parse_calendar_expression(spec, 53) == expected
