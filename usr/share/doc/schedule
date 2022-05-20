@@ -18,16 +18,19 @@ Schedule Syntax
             type: duration expression (default unit: minutes)
             example: 20m
             default: run only once in the timerange.
+       <timerange> := *
+          same as 00:00:00-23:59:59
 
      <days> := <day>[-<day>][,<day>[-<day>]]
         <day> := <day_of_week>[:<day_of_month>]
           <day_of_week>
              * iso week day format
-               type: integer between 0 and 6
+               type: integer between 1 and 7
              * literal format
                type: string in ("mon", "tue", "wed", "thu", "fri", "sat",
                      "sun", "monday", "tuesday", "wednesday", "thursday",
                      "friday", "saturday", "sunday")
+             * sun-tue is interpreted as 1,2,7 (wrapping)
           <day_of_month> := <literal> | +<nth> | -<nth> | <nth>
              <nth>
                type: integer
@@ -50,6 +53,7 @@ Schedule Syntax
                     "february", "march", "april", "may", "june", "july",
                     "august", "september", "october", "november",
                     "december")
+             * dec-feb is interpreted as 1,2,12 (wrapping)
           <month_filter> := %<modulo>[+<shift>]
             <modulo>
               type: integer
