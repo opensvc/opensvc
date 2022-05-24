@@ -1022,7 +1022,10 @@ class ExtConfigMixin(object):
         if s not in ("labels", "env", "data"):
             key = self.kwstore[section].getkey(o, rtype)
             if key is None:
-                if scope is None and t is None:
+                if s == "DEFAULT":
+                    # default values don't need a kw definition
+                    pass
+                elif scope is None and t is None:
                     raise ValueError("%s.%s not found in the "
                                      "keywords dictionary" % (s, o))
                 else:
@@ -1382,6 +1385,13 @@ class ExtConfigMixin(object):
                             break
                     if not found:
                         self.log.warning("ignored option DEFAULT.%s", option)
+                        ret["warnings"] += 1
+                elif "DEFAULT."+option in self.kwstore.deprecated_keywords:
+                        newkw = self.kwstore.deprecated_keywords["DEFAULT."+option]
+                        if newkw is None:
+                            self.log.warning("deprecated option DEFAULT.%s", option)
+                        else:
+                            self.log.warning("deprecated option DEFAULT.%s, use %s", option, newkw)
                         ret["warnings"] += 1
                 else:
                     # here we know its a native DEFAULT option
