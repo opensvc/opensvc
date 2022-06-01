@@ -417,15 +417,18 @@ class Section(object):
                 fkey = ".".join((self.section, rtype, keyword))
             if fkey in self.top.deprecated_keywords:
                 keyword = self.top.deprecated_keywords[fkey]
-                if keyword is None:
-                    return
+                new_keyword = self.top.deprecated_keywords[fkey]
+                if new_keyword:
+                    keyword = new_keyword
             k = self.data.get((rtype, keyword))
             if not k:
                 k = self.data.get((None, keyword))
         else:
             fkey = ".".join((self.section, keyword))
             if fkey in self.top.deprecated_keywords:
-                keyword = self.top.deprecated_keywords[fkey]
+                new_keyword = self.top.deprecated_keywords[fkey]
+                if new_keyword:
+                    keyword = new_keyword
             k = self.data.get((None, keyword))
         return k
 

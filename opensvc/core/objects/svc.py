@@ -608,23 +608,23 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if want_context():
             return
         try:
-            ordered_encapnodes = self.oget("DEFAULT", "encapnodes")
+            ordered_encapnodes = self.oget("DEFAULT", "encapnodes") or []
             self.encapnodes = set(ordered_encapnodes)
         except (AttributeError, ValueError):
             ordered_encapnodes = []
             self.encapnodes = set()
         try:
-            self.ordered_nodes = self.oget("DEFAULT", "nodes")
+            self.ordered_nodes = self.oget("DEFAULT", "nodes") or []
         except (AttributeError, ValueError):
             self.ordered_nodes = [Env.nodename]
         if self.encap and Env.nodename not in self.ordered_nodes:
             self.ordered_nodes = [Env.nodename]
         try:
-            self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes")
+            self.ordered_drpnodes = self.oget("DEFAULT", "drpnodes") or []
         except (AttributeError, ValueError):
             self.ordered_drpnodes = []
         try:
-            self.drpnode = self.oget("DEFAULT", "drpnode")
+            self.drpnode = self.oget("DEFAULT", "drpnode") or ""
         except (AttributeError, ValueError):
             self.drpnode = ""
         if self.drpnode and self.drpnode not in self.ordered_drpnodes:
