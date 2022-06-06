@@ -862,8 +862,14 @@ class SymMixin(object):
     def add_mvs(self, data):
         for i, mv in enumerate(data.get("mv", [])):
             pg = self.find_pg(mv["pg"])
-            if pg is None:
-                return
+            if not pg:
+                data["mv"][i]["result"] = [{
+                   "cmd": [],
+                   "ret": 1,
+                   "out": "",
+                   "err": "can't create the '%s' masking view: no pg" % mv["name"],
+                }]
+                continue
             cmd = ["create", "view", "-name", mv["name"], "-pg", pg]
             sgs = mv.get("sg", [])
             if sgs:
