@@ -109,9 +109,6 @@ class BaseDiskScsireserv(Resource):
 
 
     def disk_preempt_reservation(self, disk, oldkey):
-        if not self.svc.options.force and os.environ.get("OSVC_ACTION_ORIGIN") != "daemon":
-            self.log.error("%s is already reserved. use --force to override this safety net"%disk)
-            raise ex.Error
         return self._disk_preempt_reservation(disk, oldkey)
 
 
@@ -173,6 +170,24 @@ class BaseDiskScsireserv(Resource):
                 time.sleep(1)
         self.log.error("timed out waiting for reservation for disk %s" % disk)
         return 1
+
+
+    def safety(self):
+        if self.svc.options.force or os.environ.get("OSVC_ACTION_ORIGIN") == "daemon":
+            return
+        self.log.debug("starting safety. prkey %s"%self.hostid)
+        self.get_devs()
+        self.ack_all_unit_attention()
+        for d in self.devs:
+            try:
+                key = self.get_reservation_key(d) # pylint: disable=assignment-from-none
+            except ex.ScsiPrNotsupported as exc:
+                self.log.warning(str(exc))
+                continue
+            if key is None and key == self.hostid:
+                continue
+            self.log.error("%s is already reserved. use --force to override this safety net"%disk)
+            raise ex.Error
 
 
     def reserve(self):
@@ -256,6 +271,7 @@ class BaseDiskScsireserv(Resource):
         self.get_hostid()
         if not self.scsireserv_supported():
             return 0
+        self.safety()
         r = 0
         r += self.register()
         r += self.reserve()
