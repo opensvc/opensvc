@@ -186,7 +186,7 @@ class BaseDiskScsireserv(Resource):
                 continue
             if key is None and key == self.hostid:
                 continue
-            self.log.error("%s is already reserved. use --force to override this safety net"%disk)
+            self.log.error("%s is already reserved. use --force to override this safety net", d)
             raise ex.Error
 
 
