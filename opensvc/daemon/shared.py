@@ -655,6 +655,10 @@ class OsvcThread(threading.Thread, Crypt):
             self.node_data.set(["monitor"], nmon)
             wake_monitor(reason="node mon change")
 
+    def has_deferred_set_smon(
+        with DEFERRED_SET_SMON_LOCK:
+            return len(DEFERRED_SET_SMON) > 0
+
     def defer_set_smon(
             self,
             path, status=None, local_expect=None, global_expect=None,
