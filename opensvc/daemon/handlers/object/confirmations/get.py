@@ -1,4 +1,5 @@
 import daemon.handler
+import daemon.shared as shared
 
 from utilities.naming import split_path, factory
 
@@ -28,7 +29,7 @@ class Handler(daemon.handler.BaseHandler):
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
         name, namespace, kind = split_path(options.path)
-        svc = factory(kind)(name=name, namespace=namespace, volatile=True)
+        svc = factory(kind)(name=name, namespace=namespace, volatile=True, node=shared.NODE)
         data = {
             "status": 0,
             "data": [res.rid for res in svc.get_resources("task") if res.confirmation],

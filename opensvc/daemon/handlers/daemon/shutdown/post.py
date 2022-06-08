@@ -66,6 +66,8 @@ class Handler(daemon.handler.BaseHandler):
 
     def wait_shutdown(self, thr=None):
         def still_shutting(thr=None):
+            if thr.has_deferred_set_smon():
+                return True
             for path, smon in thr.iter_local_services_monitors():
                 if smon.local_expect == "shutdown":
                     return True

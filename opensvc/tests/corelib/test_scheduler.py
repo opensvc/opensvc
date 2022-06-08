@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from core.scheduler import Schedule, SchedNotAllowed, SchedSyntaxError
+from core.scheduler import Schedule, SchedNotAllowed, parse_calendar_expression
 
 SCHEDULES_NOT_ALLOWED = [
     ("", "2015-02-27 10:00"),
@@ -16,11 +16,9 @@ SCHEDULES_NOT_ALLOWED = [
     ("09:00", "2015-02-27 09:09"),
     ("09:20-09:00", "2015-02-27 09:09"),
     ("* fri", "2015-10-08 10:00"),
-    ("* *:-1", "2015-01-31 10:00"),
     ("* *:-2", "2015-01-24 10:00"),
     ("* *:-2", "2015-01-31 10:00"),
     ("* :last", "2015-01-30 10:00"),
-    ("* :last", "2015-01-31 10:00"),
     ("* :-2", "2015-01-31 10:00"),
     ("* :-2", "2015-01-05 10:00"),
     ("* :5", "2015-01-06 10:00"),
@@ -61,6 +59,8 @@ SCHEDULES_ALLOWED = [
     ("* *:first", "2015-01-01 10:00"),
     ("* *:1st", "2015-01-01 10:00"),
     ("* *:last", "2015-01-31 10:00"),
+    ("* :last", "2015-01-31 10:00"),
+    ("* *:-1", "2015-01-31 10:00"),
 
     ("* :fifth", "2015-01-05 10:00"),
     ("* :fourth", "2015-01-04 10:00"),
@@ -174,7 +174,7 @@ class TestSchedule(object):
             date_s,
             last_s):
         schedule = Schedule(schedule_s)
-        schedule.data
+        _ = schedule.data
         with pytest.raises(SchedNotAllowed, match="last run is too soon"):
             schedule.validate(to_datetime(date_s),
                               to_datetime(last_s))
@@ -217,3 +217,44 @@ class TestSchedule(object):
         assert Schedule([schedule_s, "09:00-09:20@60 :1st 1 january"]).data == expected_data
         assert Schedule(["09:00-09:20@60 :1st 1 january", schedule_s]).data == expected_data
         assert Schedule(schedule_s).data == []
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["mon", {1}],
+        ["monday", {1}],
+        ["sun", {7}],
+        ["sunday", {7}],
+        ["monday-sunday", {1, 2, 3, 4, 5, 6, 7}],
+        ["monday-wed", {1, 2, 3}],
+        ["sun-mon", {1, 7}],
+        ["sun-tue", {1, 2, 7}],
+        ["sun-wed", {1, 2, 3, 7}],
+        ["mon-monday", {1}],
+        ["tuesday-tue", {2}],
+        ["sun-fri", {1, 2, 3, 4, 5, 7}],
+    ])
+    def test_parse_calendar_expression_day(spec, expected):
+        assert parse_calendar_expression(spec, 7) == expected
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["jan", {1}],
+        ["january", {1}],
+        ["jan-apr", {1, 2, 3, 4}],
+        ["nov-feb", {1, 2, 11, 12}],
+        ["nov-jan", {1, 11, 12}],
+    ])
+    def test_parse_calendar_expression_month(spec, expected):
+        assert parse_calendar_expression(spec, 12) == expected
+
+    @staticmethod
+    @pytest.mark.parametrize("spec, expected", [
+        ["1", {1}],
+        ["1-41", set(range(1, 42))],
+        ["1-53", set(range(1, 54))],
+        ["8-53", set(range(8, 54))],
+        ["50-2", {1, 2, 50, 51, 52, 53}],
+
+    ])
+    def test_parse_calendar_expression_week(spec, expected):
+        assert parse_calendar_expression(spec, 53) == expected

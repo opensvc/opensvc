@@ -3079,7 +3079,9 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
     def get_agg_provisioned(self, path):
         provisioned = 0
         total = 0
+        instance_count = 0
         for instance in self.get_service_instances(path).values():
+            instance_count += 1
             instance_provisioned = instance.get("provisioned")
             if instance_provisioned is None:
                 # all resources [un]provision=true or disable, no resources
@@ -3089,7 +3091,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 provisioned += 1
             elif instance_provisioned == "mixed":
                 return "mixed"
-        if total == 0:
+        if instance_count == 0:
+            # no instances found yet, consider provisioned False until instances found
+            # False provisioned status will prevent scheduler from creating schedules
+            return False
+        elif total == 0:
             return "n/a"
         elif provisioned == total:
             return True
