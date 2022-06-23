@@ -184,7 +184,7 @@ class BaseDiskScsireserv(Resource):
             except ex.ScsiPrNotsupported as exc:
                 self.log.warning(str(exc))
                 continue
-            if key is None and key == self.hostid:
+            if key is None or key == self.hostid:
                 continue
             self.log.error("%s is already reserved. use --force to override this safety net", d)
             raise ex.Error
