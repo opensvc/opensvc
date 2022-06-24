@@ -19,7 +19,6 @@ class BaseDiskScsireserv(Resource):
                  **kwargs):
         self.no_preempt_abort = no_preempt_abort
         self.devs = {}
-        self.preempt_timeout = 10
         self.prtype = '5'
         self.hostid = None
         self.peer_resource = peer_resource

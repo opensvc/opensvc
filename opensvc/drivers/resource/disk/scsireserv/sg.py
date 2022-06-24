@@ -7,6 +7,12 @@ from env import Env
 from utilities.proc import justcall, which
 from . import BaseDiskScsireserv
 
+# maximum number of unit attention to read from a device during ack_unit_attention()
+ACK_UNIT_ATTENTION_RETRY_MAX = 10
+
+# delay to wait before retry ack unit attention on a device that reports unit attention
+ACK_UNIT_ATTENTION_RETRY_DELAY = 0.1
+
 
 # noinspection PyUnusedLocal
 def driver_capabilities(node=None):
@@ -63,7 +69,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return 0
         if self.use_mpathpersist(d):
             return 0
-        i = self.preempt_timeout
+        i = ACK_UNIT_ATTENTION_RETRY_MAX
         self.set_read_only(0)
         while i > 0:
             i -= 1
@@ -78,7 +84,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
                 return 0
             if "Unit Attention" in out or ret != 0:
                 self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
-                time.sleep(1)
+                time.sleep(ACK_UNIT_ATTENTION_RETRY_DELAY)
                 continue
             break
         if i == 0:
