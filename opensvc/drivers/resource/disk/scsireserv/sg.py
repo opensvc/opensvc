@@ -164,6 +164,13 @@ class DiskScsireservSg(BaseDiskScsireserv):
 
     def path_register(self, disk):
         self.set_read_only(0)
+        # Need ack unit attention from possible previous register-ignore on other paths
+        # example:
+        # Persistent reservation out:
+        #  Fixed format, current; Sense key: Unit Attention
+        #  Additional sense: Registrations preempted
+        #  PR out (Register and ignore existing key): Unit attention
+        self.ack_unit_attention(disk)
         cmd = ["sg_persist", "-n", "--out", "--register-ignore", "--param-sark=" + self.hostid, disk]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
