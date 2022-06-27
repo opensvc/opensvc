@@ -2244,6 +2244,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     self.log.info(msg)
                     time.sleep(retry_delay)
                     continue
+
+            if not isinstance(actions, list):
+                msg = "dequeue action failed %s" % actions
+                self.log.warning(msg)
+                raise ex.Error(msg)
+
+
             n_actions = len(actions)
             if n_actions == 0:
                 break
