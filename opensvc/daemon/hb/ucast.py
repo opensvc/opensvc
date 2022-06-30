@@ -5,6 +5,7 @@ import sys
 import socket
 import threading
 import time
+from errno import EAFNOSUPPORT
 
 import foreign.six as six
 import core.exceptions as ex
@@ -195,7 +196,16 @@ class HbUcastRx(HbUcast):
         addr = self.peer_config[Env.nodename]["addr"]
         port = self.peer_config[Env.nodename]["port"]
         af = socket.AF_INET6 if ":" in addr else socket.AF_INET
-        self.sock = socket.socket(af, socket.SOCK_STREAM)
+        try:
+            self.sock = socket.socket(af, socket.SOCK_STREAM)
+        except socket.error as exc:
+            if exc.errno == EAFNOSUPPORT and addr == "::" and af == socket.AF_INET6:
+                addr = "0.0.0.0"
+                self.peer_config[Env.nodename]["addr"] = addr
+                self.log.info("ipv6 is disabled by the host, fallback to ipv4 only")
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            else:
+                raise exc
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((addr, port))
         self.sock.listen(5)
