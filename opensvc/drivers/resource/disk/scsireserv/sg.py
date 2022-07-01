@@ -1,5 +1,6 @@
 import os
 import time
+import re
 
 import core.exceptions as ex
 from core.capabilities import capabilities
@@ -30,7 +31,7 @@ def driver_capabilities(node=None):
 
             def mpathpersist_enabled_in_conf(output):
                 for conf_line in output.splitlines():
-                    if "reservation_key file" in conf_line:
+                    if re.search(r'reservation_key\s+["]file["]', conf_line) is not None:
                         return True
                 return False
 
