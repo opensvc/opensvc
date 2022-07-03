@@ -15,6 +15,13 @@ ACK_UNIT_ATTENTION_RETRY_MAX = 10
 ACK_UNIT_ATTENTION_RETRY_DELAY = 0.1
 
 
+def mpathpersist_enabled_in_conf(output):
+    for conf_line in output.splitlines():
+        if re.search(r'^\s*reservation_key\s+("|)?file\1\s*$', conf_line) is not None:
+            return True
+    return False
+
+
 # noinspection PyUnusedLocal
 def driver_capabilities(node=None):
     data = []
@@ -28,13 +35,6 @@ def driver_capabilities(node=None):
             version = [int(v) for v in line.split()[1].strip("v").split(".")]
             break
         if version > [0, 7, 8]:
-
-            def mpathpersist_enabled_in_conf(output):
-                for conf_line in output.splitlines():
-                    if re.search(r'reservation_key\s+["]{0,1}file["]{0,1}', conf_line) is not None:
-                        return True
-                return False
-
             def multipath_get_conf():
                 conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
                 if exit_code == 0:
