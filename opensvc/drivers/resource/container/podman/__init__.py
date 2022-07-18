@@ -57,7 +57,7 @@ class ContainerPodman(ContainerDocker):
     """
     Docker container resource driver.
     """
-    default_net = "lo"
+    default_net = ""
     dns_option_option = "--dns-opt"
 
     def __init__(self, *args, **kwargs):
