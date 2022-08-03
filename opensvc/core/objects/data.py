@@ -277,12 +277,14 @@ class DataMixin(object):
         """
         Install a key decoded data in the host's volatile storage.
         """
-        if path.endswith("/"):
+        if path == "/":
+            pass
+        elif path.endswith("/"):
             dirname = os.path.basename(data["path"])
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
         else:
             dirpath = path + "/"
-        makedirs(dirpath, uid=uid, gid=gid, mode=dirmode)
+        makedirs(path, uid=uid, gid=gid, mode=dirmode)
         changed = False
         for key in data["keys"]:
             changed |= self.install_key(key, dirpath, uid=uid, gid=uid, mode=mode, dirmode=dirmode)
