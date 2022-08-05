@@ -867,7 +867,7 @@ class SymMixin(object):
                    "cmd": [],
                    "ret": 1,
                    "out": "",
-                   "err": "can't create the '%s' masking view: no pg" % mv["name"],
+                   "err": "can't create the '%s' masking view: no pg with port ids %s" % (mv["name"], mv["pg"]),
                 }]
                 continue
             cmd = ["create", "view", "-name", mv["name"], "-pg", pg]
