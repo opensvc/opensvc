@@ -807,7 +807,7 @@ class ContainerDocker(BaseContainer):
                     raise ex.Error("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
             else:
                 args += ["--net=" + self.netns]
-        elif not has_option("--net", args):
+        elif not has_option("--net", args) and self.default_net:
             args += ["--net=" + self.default_net]
 
         if self.pidns:
