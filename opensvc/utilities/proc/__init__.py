@@ -160,9 +160,7 @@ def lcall(cmd, logger, outlvl=logging.INFO, errlvl=logging.ERROR, timeout=None, 
             return logged
         for io in rlist:
             buff = os.read(io, 32768)
-            buff = bdecode(buff)
-            if six.PY2:
-                buff = buff.decode("utf8")
+            buff = buff.decode("utf-8", "ignore")
             if buff in ('', b''):
                 continue
             buff = pending[io] + buff
