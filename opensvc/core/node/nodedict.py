@@ -664,9 +664,9 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "listener",
         "keyword": "tls_addr",
-        "default": "::",
+        "default": "",
         "example": "1.2.3.4",
-        "text": "The ip addr the daemon tls listener must listen on."
+        "text": "The ip addr the daemon tls listener must listen on. The empty value used as default means: all ip4 and ip6."
     },
     {
         "section": "listener",
@@ -678,9 +678,9 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     {
         "section": "listener",
         "keyword": "addr",
-        "default": "::",
+        "default": "",
         "example": "1.2.3.4",
-        "text": "The ip addr the daemon raw listener must listen on."
+        "text": "The ip addr the daemon raw listener must listen on. The empty value used as default means: all ip4 and ip6."
     },
     {
         "section": "listener",

@@ -4,6 +4,7 @@ import math
 import re
 import shutil
 import time
+import re
 
 import core.exceptions as ex
 from core.capabilities import capabilities
@@ -12,6 +13,19 @@ from utilities.proc import justcall, which
 from utilities.diskinfo import DiskInfo
 from utilities.files import makedirs
 from . import BaseDiskScsireserv
+
+# maximum number of unit attention to read from a device during ack_unit_attention()
+ACK_UNIT_ATTENTION_RETRY_MAX = 10
+
+# delay to wait before retry ack unit attention on a device that reports unit attention
+ACK_UNIT_ATTENTION_RETRY_DELAY = 0.1
+
+
+def mpathpersist_enabled_in_conf(output):
+    for conf_line in output.splitlines():
+        if re.search(r'^\s*reservation_key\s+("|)?file\1\s*$', conf_line) is not None:
+            return True
+    return False
 
 
 # noinspection PyUnusedLocal
@@ -27,13 +41,6 @@ def driver_capabilities(node=None):
             version = [int(v) for v in line.split()[1].strip("v").split(".")]
             break
         if version > [0, 7, 8]:
-
-            def mpathpersist_enabled_in_conf(output):
-                for conf_line in output.splitlines():
-                    if "reservation_key file" in conf_line:
-                        return True
-                return False
-
             def multipath_get_conf():
                 conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
                 if exit_code == 0:
@@ -71,7 +78,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return 0
         if self.use_mpathpersist(d):
             return 0
-        i = self.preempt_timeout
+        i = ACK_UNIT_ATTENTION_RETRY_MAX
         self.set_read_only(0)
         while i > 0:
             i -= 1
@@ -86,7 +93,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
                 return 0
             if "Unit Attention" in out or ret != 0:
                 self.log.debug("disk %s reports 'Unit Attention' ... waiting" % d)
-                time.sleep(1)
+                time.sleep(ACK_UNIT_ATTENTION_RETRY_DELAY)
                 continue
             break
         if i == 0:
@@ -263,6 +270,13 @@ class DiskScsireservSg(BaseDiskScsireserv):
 
     def path_register(self, disk):
         self.set_read_only(0)
+        # Need ack unit attention from possible previous register-ignore on other paths
+        # example:
+        # Persistent reservation out:
+        #  Fixed format, current; Sense key: Unit Attention
+        #  Additional sense: Registrations preempted
+        #  PR out (Register and ignore existing key): Unit attention
+        self.ack_unit_attention(disk)
         cmd = ["sg_persist", "-n", "--out", "--register-ignore", "--param-sark=" + self.hostid, disk]
         ret, out, err = self.vcall(cmd)
         if ret != 0:

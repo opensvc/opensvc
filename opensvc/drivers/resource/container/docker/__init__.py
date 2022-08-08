@@ -534,11 +534,13 @@ class ContainerDocker(BaseContainer):
         """
         Remove the resource docker instance.
         """
+        if self.container_id is None:
+            return
         if not self.lib.docker_running():
             return
         if self.lib.docker_cmd is None:
             raise ex.Error("docker executable not found")
-        cmd = self.lib.docker_cmd + ['rm', self.container_name]
+        cmd = self.lib.docker_cmd + ['rm', self.container_id]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "No such container" in err:
@@ -805,7 +807,7 @@ class ContainerDocker(BaseContainer):
                     raise ex.Error("resource %s, referenced in %s.netns, does not exist" % (self.netns, self.rid))
             else:
                 args += ["--net=" + self.netns]
-        elif not has_option("--net", args):
+        elif not has_option("--net", args) and self.default_net:
             args += ["--net=" + self.default_net]
 
         if self.pidns:

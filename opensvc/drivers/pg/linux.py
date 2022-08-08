@@ -384,7 +384,9 @@ def thaw(o):
     return freezer(o, "THAWED")
 
 def pids(o, controller="memory"):
-    cgp = get_cgroup_path(o, controller)
+    cgp = get_cgroup_path(o, controller, create=False)
+    if not os.path.exists(cgp):
+        return []
     _pids = set()
     fname = "cgroup.procs"
     for path, _, files in os.walk(cgp):

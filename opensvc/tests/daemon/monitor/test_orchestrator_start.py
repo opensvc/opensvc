@@ -242,6 +242,15 @@ class MonitorTest(object):
             self.log('COMMENT: ASSERT %s has been called', call_element)
             assert call_element in self.service_command.call_args_list
 
+    def assert_count_of_matching_calls_is(self, calls, count):
+        found = 0
+        self.log('COMMENT: ASSERT count of %s calls is %d', calls, count)
+        for called_element in self.service_command.call_args_list:
+            for c in calls:
+                if c == called_element:
+                    found = found + 1
+        assert found == count, "found %s calls" % self.service_command.call_args_list
+
     def assert_a_command_has_been_launched_x_times(self, call, count):
         found = 0
         self.log('COMMENT: ASSERT %s has been called %d times', call, count)
@@ -1033,7 +1042,13 @@ class TestMonitorOrchestratorResourcesOrchestrate(object):
             call(svc, ["start", "--rid", "fs#3"]),
             call(svc, ["start", "--rid", "fs#1"]),
         ])
-        monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#1,fs#2']), restart)
+        monitor_test.assert_count_of_matching_calls_is(
+            [
+                # order of rid may differ, so search both rid order
+                call(svc, ['start', '--rid', 'fs#1,fs#2']),
+                call(svc, ['start', '--rid', 'fs#2,fs#1']),
+            ],
+            restart)
         monitor_test.assert_a_command_has_been_launched_x_times(call(svc, ['start', '--rid', 'fs#2']), 5 - restart)
 
 
