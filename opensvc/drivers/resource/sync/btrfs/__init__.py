@@ -16,8 +16,7 @@ DRIVER_BASENAME = "btrfs"
 KEYWORDS = [
     {
         "keyword": "src",
-        "convert": "list",
-        "at": True, 
+        "at": True,
         "required": True,
         "text": "Source subvolume of the sync."
     },
