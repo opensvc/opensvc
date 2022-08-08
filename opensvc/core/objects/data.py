@@ -278,7 +278,8 @@ class DataMixin(object):
         Install a key decoded data in the host's volatile storage.
         """
         if path == "/":
-            pass
+            self.log.warning("install dir key skip unexpected path: '/' for data %s", data)
+            return
         elif path.endswith("/"):
             dirname = os.path.basename(data["path"])
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
