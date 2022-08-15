@@ -1732,9 +1732,13 @@ class ExtConfigMixin(object):
             if six.PY2:
                 with codecs.open(tmpfpath, "w", "utf-8") as ofile:
                     ofile.write(buff)
+                    # ensure flush to disk in case of crash / fast reboot
+                    os.fsync(ofile)
             else:
                 with open(tmpfpath, "w") as ofile:
                     ofile.write(buff)
+                    # ensure flush to disk in case of crash / fast reboot
+                    os.fsync(ofile)
             shutil.move(tmpfpath, cf)
         except Exception as exc:
             raise ex.Error("failed to write %s: %s" % (cf, exc))
