@@ -856,6 +856,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 smon = self.get_service_monitor(path)
                 if not smon or smon.status == "deleting":
                     continue
+                remote_nmon = self.get_node_monitor(ref_nodename)
+                if remote_nmon.status in ("init", "rejoin", "upgrade", "maintenance"):
+                    # scope may be incomplete during unstable remote node status
+                    continue
                 self.log.info("node %s has the most recent %s config, "
                               "which no longer defines %s as a node.",
                               ref_nodename, path, Env.nodename)
