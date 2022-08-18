@@ -14,6 +14,7 @@ import time
 import uuid
 
 import daemon.shared as shared
+from core.configfile import move_config_file
 from core.freezer import Freezer
 from env import Env
 # noinspection PyUnresolvedReferences
@@ -957,10 +958,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if results["errors"] == 0:
                 dst = svc_pathcf(path)
                 makedirs(os.path.dirname(dst))
-                shutil.copy(filep.name, dst)
                 mtime = resp.get("mtime")
                 if mtime:
-                    os.utime(dst, (mtime, mtime))
+                    # tmpfpath updated time with be preserved by move_config_file
+                    os.utime(tmpfpath, (mtime, mtime))
+                move_config_file(tmpfpath, dst)
             else:
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", path, nodename)
@@ -971,7 +973,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except Exception as exc:
                 self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
-            os.unlink(tmpfpath)
+            try:
+                os.unlink(tmpfpath)
+            except Exception:
+                pass
 
         self.event("service_config_installed", {
             "path": path,
