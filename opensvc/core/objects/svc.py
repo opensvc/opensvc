@@ -19,6 +19,7 @@ import core.logger
 import core.status
 import utilities.lock
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
+from core.configfile import move_config_file
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -1918,8 +1919,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         else:
             results = self._validate_config(path=tmpcf)
             if results["errors"] == 0:
-                shutil.copy(tmpcf, self.paths.cf)
-                os.unlink(tmpcf)
+                try:
+                    move_config_file(tmpcf, self.paths.cf)
+                finally:
+                    try:
+                        os.unlink(tmpcf)
+                    except Exception:
+                        pass
             else:
                 print("your changes were not applied because of the errors "
                       "reported above. you can use the edit config command "
