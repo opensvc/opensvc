@@ -220,10 +220,25 @@ class TestUtilities:
         is_exe()
         """
         assert is_exe("/bin/ls") is True
-        assert is_exe("/dev/null") is False
         assert is_exe("/tmp") is False
         assert is_exe("/etc/hosts") is False
         assert is_exe("/etc/hosts", realpath=True) is False
+
+
+    @staticmethod
+    @pytest.mark.parametrize("mode, expected", [
+        (0o0100, True),
+        (0o0300, True),
+        (0o0577, True),
+        (0o0777, True),
+        (0o0600, False),
+    ])
+    def test_is_exe(tmp_file, mode, expected):
+        with open(tmp_file, "a+") as f:
+            f.write("foo")
+        os.chmod(tmp_file, mode)
+        assert is_exe(tmp_file) is expected
+
 
     @staticmethod
     def test_which(non_existing_file):
