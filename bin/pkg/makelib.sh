@@ -170,7 +170,9 @@ function prepare_chroot {
 	$SUDO find $CHROOT/etc/bash_completion.d -type f -exec $SUDO chmod 644 {} \; || return 1
 	$SUDO find $CHROOT/usr/share/man -type f -exec $SUDO chmod 644 {} \; || return 1
 	$SUDO find $CHROOT/usr/share/doc -type f -exec $SUDO chmod 644 {} \; || return 1
-
+  $SUDO find $CHROOT/ -name "*.pyc" -type f -exec rm -rf {} \;
+  $SUDO find $CHROOT/ -name "__pycache__" -type d -exec rm -rf {} \;
+  $SUDO find $CHROOT/ | egrep ".pyc$|__pycache__$" && return 1
 	return 0
 }
 
