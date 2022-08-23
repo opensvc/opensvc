@@ -79,6 +79,9 @@ LEADER_ABORT_STATES = (
 
 ETC_NS_SKIP = len(os.path.join(Env.paths.pathetcns, ""))
 
+# delay time before clear draining (1s)
+DELAY_CLEAR_DRAINING = 1
+
 # import cProfile
 # import pstats
 # pr = cProfile.Profile()
@@ -1661,7 +1664,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if nmon.status == "shutting":
             return
         if nmon.status == "draining":
-            self.node_orchestrator_clear_draining()
+            self.node_orchestrator_clear_draining(nmon.status_updated)
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
         if self.unfreeze_when_all_nodes_joined \
@@ -2003,7 +2006,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 })
                 self.service_stop(svc.path)
 
-    def node_orchestrator_clear_draining(self):
+    def node_orchestrator_clear_draining(self, nmon_status_updated):
+        # Don't clear draining too early, we need delay before check services local_expect
+        # local_expect are set using defer_set_smon(path, local_expect="shutdown" ... has been applied
+        if (time.time() - nmon_status_updated) < DELAY_CLEAR_DRAINING:
+            return
         for path, smon in self.iter_local_services_monitors():
             if not smon:
                 continue
