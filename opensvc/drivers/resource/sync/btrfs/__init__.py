@@ -102,7 +102,7 @@ class SyncBtrfs(Sync):
         )
 
     def sort_rset(self, rset):
-        rset.resources.sort(key=lambda x: x.src_subvol)
+        rset.resources.sort(key=lambda x: getattr(x, "src_subvol", x.rid))
 
     def _info(self):
         data = [

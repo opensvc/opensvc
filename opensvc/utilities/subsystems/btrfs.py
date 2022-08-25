@@ -112,7 +112,10 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvol', 'list', '-p', self.path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            raise InitError("error running btrfs subvol list %s:\n"%self.path+err)
+            cmd_string = " ".join(cmd)
+            if self.node is not None:
+                self.log.warning("command failed on %s: %s", self.node, cmd_string)
+            raise InitError("error running '%s': %s\n" % (cmd_string, err))
 
         for line in out.split("\n"):
             if len(line) == 0:
