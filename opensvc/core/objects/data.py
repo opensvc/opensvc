@@ -247,11 +247,12 @@ class DataMixin(object):
                     continue
                 rkeys, rdone = recurse(path + "/*", done)
                 done |= rdone
-                data.append({
-                    "type": "dir",
-                    "path": path,
-                    "keys": rkeys,
-                })
+                if len(rkeys) > 0:
+                    data.append({
+                        "type": "dir",
+                        "path": path,
+                        "keys": rkeys,
+                    })
             for path in keys:
                 if path != key and not fnmatch.fnmatch(path, key):
                     continue
@@ -285,7 +286,7 @@ class DataMixin(object):
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
         else:
             dirpath = path + "/"
-        makedirs(path, uid=uid, gid=gid, mode=dirmode)
+        makedirs(dirpath, uid=uid, gid=gid, mode=dirmode)
         changed = False
         for key in data["keys"]:
             changed |= self.install_key(key, dirpath, uid=uid, gid=uid, mode=mode, dirmode=dirmode)
