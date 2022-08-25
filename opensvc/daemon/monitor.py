@@ -14,6 +14,7 @@ import time
 import uuid
 
 import daemon.shared as shared
+from core.configfile import move_config_file
 from core.freezer import Freezer
 from env import Env
 # noinspection PyUnresolvedReferences
@@ -856,6 +857,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 smon = self.get_service_monitor(path)
                 if not smon or smon.status == "deleting":
                     continue
+                remote_nmon = self.get_node_monitor(ref_nodename)
+                if remote_nmon.status in ("init", "rejoin", "upgrade", "maintenance"):
+                    # scope may be incomplete during unstable remote node status
+                    continue
                 self.log.info("node %s has the most recent %s config, "
                               "which no longer defines %s as a node.",
                               ref_nodename, path, Env.nodename)
@@ -953,10 +958,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if results["errors"] == 0:
                 dst = svc_pathcf(path)
                 makedirs(os.path.dirname(dst))
-                shutil.copy(filep.name, dst)
                 mtime = resp.get("mtime")
                 if mtime:
-                    os.utime(dst, (mtime, mtime))
+                    # tmpfpath updated time with be preserved by move_config_file
+                    os.utime(tmpfpath, (mtime, mtime))
+                move_config_file(tmpfpath, dst)
             else:
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", path, nodename)
@@ -967,7 +973,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except Exception as exc:
                 self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
-            os.unlink(tmpfpath)
+            try:
+                os.unlink(tmpfpath)
+            except Exception:
+                pass
 
         self.event("service_config_installed", {
             "path": path,
