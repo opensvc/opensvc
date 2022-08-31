@@ -2646,7 +2646,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if api["url"].startswith("https"):
             try:
                 import ssl
-                kwargs = {"context": ssl._create_unverified_context()}
+                kwargs = {"context": ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)}
             except:
                 kwargs = {}
         else:
@@ -2772,7 +2772,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         try:
             import ssl
-            kwargs["context"] = ssl._create_unverified_context()
+            kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
         except (ImportError, AttributeError):
             pass
         return kwargs
