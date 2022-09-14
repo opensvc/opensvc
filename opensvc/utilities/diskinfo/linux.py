@@ -342,6 +342,7 @@ class DiskInfo(BaseDiskInfo):
                 log.info("scan %s target%s lun%s", os.path.basename(host), target_num, lun)
             os.system('echo - ' + target_num + ' ' + lun + ' >' + scan_f)
 
+        time.sleep(0.5)
         utilities.devices.linux.udevadm_settle()
         disks_after = glob.glob('/sys/block/sd*')
         disks_after += glob.glob('/sys/block/vd*')
