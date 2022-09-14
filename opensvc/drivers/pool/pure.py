@@ -123,8 +123,8 @@ class Pool(BasePool):
     def head(self):
         if self.pod:
             return self.pod
-        elif self.storagegroup:
-            return self.storagegroup
+        elif self.volumegroup:
+            return self.volumegroup
         else:
             return ""
 
