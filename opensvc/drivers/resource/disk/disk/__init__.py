@@ -134,7 +134,7 @@ class DiskDisk(Resource):
             result = pool.create_disk(self.name, size=self.size, nodes=self.svc.nodes)
         else:
             disk_id_kw = "disk_id@" + Env.nodename
-            name = self.name + "." + Env.nodename
+            name = self.name + pool.sep() + Env.nodename
             result = pool.create_disk(name, size=self.size, nodes=[Env.nodename])
         if not result:
             raise ex.Error("invalid create disk result: %s" % result)
@@ -173,7 +173,7 @@ class DiskDisk(Resource):
             name = self.name
         else:
             disk_id_kw = "disk_id@" + Env.nodename
-            name = self.name + "." + Env.nodename
+            name = self.name + pool.sep() + Env.nodename
         result = pool.delete_disk(name=name, disk_id=self.disk_id)
         for line in format_str_flat_json(result).splitlines():
             self.log.info(line)

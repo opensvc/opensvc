@@ -1074,6 +1074,30 @@ class CollectorRpc(object):
             except Exception:
                 print("error pushing", array.name)
 
+    def push_pure(self, objects=None, sync=True):
+        if objects is None:
+            objects = []
+        if 'update_pure' not in self.proxy_methods:
+           print("'update_pure' method is not exported by the collector")
+           return
+        import drivers.array.pure as m
+        try:
+            arrays = m.Arrays(objects)
+        except:
+            return
+        for array in arrays:
+            vals = []
+            for key in array.keys:
+                vals.append(json.dumps(getattr(array, 'get_'+key)()))
+            args = [array.name, array.keys, vals]
+            args += [(self.node.collector_env.uuid, Env.nodename)]
+            try:
+                self.proxy.update_pure(*args)
+            except Exception as exc:
+                print("error pushing", array.name, file=sys.stderr)
+                print(exc, file=sys.stderr)
+                raise ex.Error
+
     def push_xtremio(self, objects=None, sync=True):
         if objects is None:
             objects = []

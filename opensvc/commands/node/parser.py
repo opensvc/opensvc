@@ -709,6 +709,13 @@ ACTIONS = {
                 OPT.opt_object,
             ],
         },
+        "pushpure": {
+            "msg": "Push Pure Storage configurations to the collector.",
+            "options": [
+                OPT.cron,
+                OPT.opt_object,
+            ],
+        },
         "pushxtremio": {
             "msg": "Push XtremIO configurations to the collector.",
             "options": [

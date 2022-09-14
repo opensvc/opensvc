@@ -331,6 +331,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     schedule_option="no_schedule",
                     req_collector=True,
                 )],
+                "pushpure": [SchedOpts(
+                    "pure",
+                    schedule_option="no_schedule",
+                    req_collector=True,
+                )],
                 "pushgcedisks": [SchedOpts(
                     "gcedisks",
                     schedule_option="no_schedule",
@@ -1264,6 +1269,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         Inventories FreeNas storage arrays.
         """
         self.collector.call('push_freenas', self.options.objects)
+
+    def pushpure(self):
+        """
+        The pushpure action entrypoint.
+        Inventories PureStorage storage arrays.
+        """
+        self.collector.call('push_pure', self.options.objects)
 
     def pushxtremio(self):
         """
