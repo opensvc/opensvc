@@ -87,6 +87,7 @@ class DiskDisk(BaseDiskDisk):
         if not self.disk_id:
             raise ex.Error("disk_id is not set. should be at this point")
         self.svc.node._scanscsi(log=self.log)
+        time.sleep(2)
         self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
         if self.devpath and which(Env.syspaths.multipath):
