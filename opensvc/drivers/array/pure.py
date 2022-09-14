@@ -7,8 +7,8 @@ import logging
 import time
 
 import foreign.jwt as jwt
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization  # pylint: disable=import-error
+from cryptography.hazmat.backends import default_backend  # pylint: disable=import-error
 
 import core.exceptions as ex
 from env import Env
