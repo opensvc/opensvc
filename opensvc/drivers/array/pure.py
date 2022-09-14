@@ -869,7 +869,7 @@ class Array(object):
         results = []
         if mappings is not None and hostgroup is None:
             for host, hba_ids in self.mappings_to_hosts(mappings).items():
-                map_data = self._del_map(id=id, name=name, serial=serial, host=host, **kwargs)
+                self._del_map(id=id, name=name, serial=serial, host=host, **kwargs)
                 results += [host]
         else:
             hostgroup_deleted = set()
@@ -877,7 +877,7 @@ class Array(object):
                 if host:
                     if c["host"]["name"] != host:
                         continue
-                    map_data = self._del_map(id=id, name=name, serial=serial, host=c["host"]["name"], **kwargs)
+                    self._del_map(id=id, name=name, serial=serial, host=c["host"]["name"], **kwargs)
                     results += [c]
                 elif hostgroup:
                     if c["host_group"]["name"] != hostgroup:
@@ -885,18 +885,18 @@ class Array(object):
                     if c["host_group"]["name"] in hostgroup_deleted:
                         results += [c]
                         continue
-                    map_data = self._del_map(id=id, name=name, serial=serial, hostgroup=c["host_group"]["name"], **kwargs)
+                    self._del_map(id=id, name=name, serial=serial, hostgroup=c["host_group"]["name"], **kwargs)
                     results += [c]
                     hostgroup_deleted.add(c["host_group"]["name"])
                 elif c["host_group"]["name"]:
                     if c["host_group"]["name"] in hostgroup_deleted:
                         results += [c]
                         continue
-                    map_data = self._del_map(id=id, name=name, serial=serial, hostgroup=c["host_group"]["name"], **kwargs)
+                    self._del_map(id=id, name=name, serial=serial, hostgroup=c["host_group"]["name"], **kwargs)
                     results += [c]
                     hostgroup_deleted.add(c["host_group"]["name"])
                 else:
-                    map_data = self._del_map(id=id, name=name, serial=serial, host=c["host"]["name"], **kwargs)
+                    self._del_map(id=id, name=name, serial=serial, host=c["host"]["name"], **kwargs)
                     results += [c]
         return results
 
@@ -911,7 +911,7 @@ class Array(object):
             params["host_group_names"] = hostgroup
         if host:
             params["host_names"] = host
-        ret = self.delete("/connections", params=params)
+        self.delete("/connections", params=params)
 
     def del_diskinfo(self, disk_id):
         if disk_id in (None, ""):
