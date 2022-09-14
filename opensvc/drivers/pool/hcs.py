@@ -126,6 +126,10 @@ class Pool(BasePool):
         return self.oget("array")
 
     @property
+    def array_array(self):
+        return self.node.oget("array#"+self.array_name, "name") or self.array_name
+
+    @property
     def compression(self):
         return self.oget("compression")
 
@@ -136,9 +140,9 @@ class Pool(BasePool):
     @lazy
     def array(self):
         o = Hcss(log=self.log)
-        array = o.get_hcs(self.array_name)
+        array = o.get_hcs(self.array_array)
         if array is None:
-            raise ex.Error("array %s not found" % self.array_name)
+            raise ex.Error("array %s not found" % self.array_array)
         array.node = self.node
         return array
 
