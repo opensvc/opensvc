@@ -1,11 +1,11 @@
 name: OpenSVC agent CI
 on:
   push:
-    branches:    
+    branches:
       - b2.0
       - b2.1
   pull_request:
-    branches:    
+    branches:
       - b2.0
       - b2.1
 jobs:
@@ -19,7 +19,7 @@ jobs:
             PYTEST_EXTRA_ARGS: ""
           - python-version: 3.7
             PYTEST_EXTRA_ARGS: "--cov"
-        
+
     steps:
       - name: Checkout opensvc
         uses: actions/checkout@v2
