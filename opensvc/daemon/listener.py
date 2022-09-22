@@ -286,7 +286,7 @@ class Listener(shared.OsvcThread):
 
         try:
             ctx.set_npn_protocols(["h2", "http/1.1"])
-        except NotImplementedError:
+        except (NotImplementedError, AttributeError):
             pass
 
         return ctx

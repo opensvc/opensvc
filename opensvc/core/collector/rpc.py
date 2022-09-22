@@ -25,7 +25,8 @@ try:
     import ssl
 
     # noinspection PyUnresolvedReferences
-    kwargs["context"] = ssl._create_unverified_context()
+    # pylint: disable=no-member
+    kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
     kwargs["allow_none"] = True
 except Exception:
     pass

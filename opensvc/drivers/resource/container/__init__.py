@@ -438,11 +438,19 @@ class BaseContainer(Resource):
         return options
 
     def send_containerinfo_arg(self):
-        container_info = self.get_container_info()
-        return Storage({
+        data = Storage({
             "vm_hostname": self.vm_hostname,
             "container.guestos": self.guestos,
-            "vmem": container_info["vmem"],
-            "vcpu": container_info["vcpus"],
-            "zonepath": getattr(self, "zonepath", ""),
         })
+        try:
+            container_info = self.get_container_info()
+            data["vmem"] = container_info["vmem"]
+            data["vcpu"] = container_info["vcpus"]
+        except Exception:
+            pass
+        try:
+            data["zonepath"] = getattr(self, "zonepath", "")
+        except Exception:
+            # zonepath needs rootfs, which is not always available
+            pass
+        return data
