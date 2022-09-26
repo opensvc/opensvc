@@ -180,7 +180,7 @@ class SyncBtrfssnap(Sync):
             return
         snaps = []
         for sv in btrfs.subvols.values():
-            if not sv["path"].startswith(subvol):
+            if not sv["path"].startswith(subvol + '.'):
                 continue
             s = sv["path"].replace(subvol, "")
             l = s.split('.')
