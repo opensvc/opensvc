@@ -341,6 +341,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     schedule_option="no_schedule",
                     req_collector=True,
                 )],
+                "pushhcs": [SchedOpts(
+                    "hcs",
+                    schedule_option="no_schedule",
+                    req_collector=True,
+                )],
                 "pushhds": [SchedOpts(
                     "hds",
                     schedule_option="no_schedule",
