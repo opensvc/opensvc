@@ -1,5 +1,6 @@
 import json
 import time
+import os
 
 import core.exceptions as ex
 
@@ -104,6 +105,10 @@ class DiskDisk(Resource):
         return [
             ["disk_id", self.disk_id],
         ]
+
+    @lazy
+    def lockfile(self):
+        return os.path.join(Env.paths.pathvar, "disk.disk.lock")
 
     def configure(self, force=False):
         # OS specific
