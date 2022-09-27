@@ -11,6 +11,8 @@ A logical volume lv0 with segments on pv1 pv2 has two parent
 relations : lv0-pv1 and lv0-pv2
 
 """
+import os
+
 from utilities.render.forest import Forest
 from utilities.converters import print_size
 from env import Env
@@ -151,11 +153,14 @@ class Dev(object):
 
     def get_top_devs(self):
         if len(self.parents) == 0 or self.devtype == "multipath":
+            if not any(os.path.exists(p) for p in self.devpath):
+                return set()
             return set([self])
         d = set()
         for parent in self.parents:
             dev = self.get_dev(parent.parent)
-            d |= dev.get_top_devs()
+            if any(os.path.exists(p) for p in dev.devpath):
+                d |= dev.get_top_devs()
         return d
 
     def get_top_devs_chain(self, chain=None):
