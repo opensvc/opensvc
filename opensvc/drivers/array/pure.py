@@ -920,7 +920,8 @@ class Array(object):
         try:
             ret = self.node.collector_rest_delete("/disks/%s" % disk_id)
         except Exception as exc:
-            raise ex.Error(str(exc))
+            self.log.error("failed to delete the disk object in the collector: %s", exc)
+            return
         if "error" in ret:
             self.log.error("failed to delete the disk object in the collector: %s", ret["error"])
         return ret
