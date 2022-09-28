@@ -10,6 +10,7 @@ import foreign.jwt as jwt
 
 import core.exceptions as ex
 from env import Env
+from utilities.files import makedirs
 from utilities.storage import Storage
 from utilities.naming import factory, split_path
 from utilities.converters import convert_size
@@ -368,7 +369,8 @@ class Array(object):
     def cache_token(self, token):
         self.token = token
         p = self.token_cache_file()
-        os.makedirs(os.path.dirname(p), 0o700, exist_ok=True)
+        d = os.path.dirname(p)
+        makedirs(d, 0o700)
         fd = os.open(p, os.O_CREAT|os.O_WRONLY, mode=0o600)
         try:
             os.write(fd, token.encode())
