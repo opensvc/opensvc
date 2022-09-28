@@ -81,4 +81,3 @@ class Handler(daemon.handler.BaseHandler):
                 raise ex.TimeOut
             timeout -= 1
             time.sleep(1)
-

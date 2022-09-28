@@ -11,6 +11,7 @@ import sys
 import foreign.six as six
 
 import core.exceptions as ex
+from core.configfile import move_config_file
 from env import Env
 from utilities.naming import factory
 from utilities.files import makedirs
@@ -1735,7 +1736,7 @@ class ExtConfigMixin(object):
             else:
                 with open(tmpfpath, "w") as ofile:
                     ofile.write(buff)
-            shutil.move(tmpfpath, cf)
+            move_config_file(tmpfpath, cf)
         except Exception as exc:
             raise ex.Error("failed to write %s: %s" % (cf, exc))
         finally:

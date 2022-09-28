@@ -14,6 +14,7 @@ import time
 import uuid
 
 import daemon.shared as shared
+from core.configfile import move_config_file
 from core.freezer import Freezer
 from env import Env
 # noinspection PyUnresolvedReferences
@@ -77,6 +78,9 @@ LEADER_ABORT_STATES = (
 )
 
 ETC_NS_SKIP = len(os.path.join(Env.paths.pathetcns, ""))
+
+# delay time before clear draining (1s)
+DELAY_CLEAR_DRAINING = 1
 
 # import cProfile
 # import pstats
@@ -856,6 +860,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 smon = self.get_service_monitor(path)
                 if not smon or smon.status == "deleting":
                     continue
+                remote_nmon = self.get_node_monitor(ref_nodename)
+                if remote_nmon.status in ("init", "rejoin", "upgrade", "maintenance"):
+                    # scope may be incomplete during unstable remote node status
+                    continue
                 self.log.info("node %s has the most recent %s config, "
                               "which no longer defines %s as a node.",
                               ref_nodename, path, Env.nodename)
@@ -953,10 +961,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             if results["errors"] == 0:
                 dst = svc_pathcf(path)
                 makedirs(os.path.dirname(dst))
-                shutil.copy(filep.name, dst)
                 mtime = resp.get("mtime")
                 if mtime:
-                    os.utime(dst, (mtime, mtime))
+                    # tmpfpath updated time with be preserved by move_config_file
+                    os.utime(tmpfpath, (mtime, mtime))
+                move_config_file(tmpfpath, dst)
             else:
                 self.log.error("the service %s config fetched from node %s is "
                                "not valid", path, nodename)
@@ -967,7 +976,10 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             except Exception as exc:
                 self.log.error("service %s postinstall failed: %s", path, exc)
         finally:
-            os.unlink(tmpfpath)
+            try:
+                os.unlink(tmpfpath)
+            except Exception:
+                pass
 
         self.event("service_config_installed", {
             "path": path,
@@ -1652,7 +1664,7 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         if nmon.status == "shutting":
             return
         if nmon.status == "draining":
-            self.node_orchestrator_clear_draining()
+            self.node_orchestrator_clear_draining(nmon.status_updated)
         self.orchestrator_auto_grace()
         nmon = self.get_node_monitor()
         if self.unfreeze_when_all_nodes_joined \
@@ -1994,7 +2006,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 })
                 self.service_stop(svc.path)
 
-    def node_orchestrator_clear_draining(self):
+    def node_orchestrator_clear_draining(self, nmon_status_updated):
+        # Don't clear draining too early, we need delay before check services local_expect
+        # local_expect are set using defer_set_smon(path, local_expect="shutdown" ... has been applied
+        if (time.time() - nmon_status_updated) < DELAY_CLEAR_DRAINING:
+            return
         for path, smon in self.iter_local_services_monitors():
             if not smon:
                 continue

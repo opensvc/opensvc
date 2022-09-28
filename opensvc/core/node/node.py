@@ -29,6 +29,7 @@ import core.logger
 import core.objects.builder
 from core.capabilities import capabilities
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
+from core.configfile import move_config_file
 from core.contexts import want_context
 from core.extconfig import ExtConfigMixin
 from core.freezer import Freezer
@@ -941,9 +942,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return 0
         results = self._validate_config(path=path)
         if results["errors"] == 0:
-            import shutil
-            shutil.copy(path, Env.paths.nodeconf)
-            os.unlink(path)
+            try:
+                move_config_file(path, Env.paths.nodeconf)
+            finally:
+                try:
+                    os.unlink(path)
+                except Exception:
+                    pass
         else:
             print("your changes were not applied because of the errors "
                   "reported above. you can use the edit config command "
@@ -2641,7 +2646,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if api["url"].startswith("https"):
             try:
                 import ssl
-                kwargs = {"context": ssl._create_unverified_context()}
+                # pylint: disable=no-member
+                kwargs = {"context": ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)}
             except:
                 kwargs = {}
         else:
@@ -2767,7 +2773,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         try:
             import ssl
-            kwargs["context"] = ssl._create_unverified_context()
+            kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
         except (ImportError, AttributeError):
             pass
         return kwargs

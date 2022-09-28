@@ -247,11 +247,12 @@ class DataMixin(object):
                     continue
                 rkeys, rdone = recurse(path + "/*", done)
                 done |= rdone
-                data.append({
-                    "type": "dir",
-                    "path": path,
-                    "keys": rkeys,
-                })
+                if len(rkeys) > 0:
+                    data.append({
+                        "type": "dir",
+                        "path": path,
+                        "keys": rkeys,
+                    })
             for path in keys:
                 if path != key and not fnmatch.fnmatch(path, key):
                     continue
@@ -277,7 +278,10 @@ class DataMixin(object):
         """
         Install a key decoded data in the host's volatile storage.
         """
-        if path.endswith("/"):
+        if path == "/":
+            self.log.warning("install dir key skip unexpected path: '/' for data %s", data)
+            return
+        elif path.endswith("/"):
             dirname = os.path.basename(data["path"])
             dirpath = os.path.join(path.rstrip("/"), dirname, "")
         else:
