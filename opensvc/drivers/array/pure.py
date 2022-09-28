@@ -7,8 +7,6 @@ import logging
 import time
 
 import foreign.jwt as jwt
-from cryptography.hazmat.primitives import serialization  # pylint: disable=import-error
-from cryptography.hazmat.backends import default_backend  # pylint: disable=import-error
 
 import core.exceptions as ex
 from env import Env
@@ -383,6 +381,8 @@ class Array(object):
     def new_token(self):
         key = self.private_key.encode()
         try:
+            from cryptography.hazmat.primitives import serialization  # pylint: disable=import-error
+            from cryptography.hazmat.backends import default_backend  # pylint: disable=import-error
             private_key = serialization.load_pem_private_key(key, password=None, backend=default_backend())
         except Exception as exc:
             raise ex.Error(exc)
@@ -498,7 +498,8 @@ class Array(object):
             elif token:
                 params["continuation_token"] = token
             else:
-                return items
+                break
+        return items
 
     def headers(self):
         return {
