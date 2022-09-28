@@ -86,7 +86,12 @@ class DiskDisk(BaseDiskDisk):
         self.log.info("configure disk %s", self.disk_id)
         if not self.disk_id:
             raise ex.Error("disk_id is not set. should be at this point")
-        self.svc.node._scanscsi(log=self.log)
+        try:
+            with utilities.lock.cmlock(lockfile=self.lockfile, timeout=20):
+                self.svc.node._scanscsi(log=self.log)
+        except utilities.lock.LOCK_EXCEPTIONS as exc:
+            raise ex.Error("lock acquire: %s" % str(exc))
+        time.sleep(2)
         self.wait_anypath()
         self.svc.node.unset_lazy("devtree")
         if self.devpath and which(Env.syspaths.multipath):
