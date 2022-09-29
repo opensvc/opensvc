@@ -525,6 +525,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         self.hostid = Env.nodename
         self.volatile = volatile
         self.path = fmt_path(self.name, self.namespace, self.kind)
+        self.prev_env = None
 
         if log:
             self.set_lazy("log", log)
@@ -1139,6 +1140,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             err = getattr(self, action)()
             self.action_triggers("post", action)
             self.action_triggers("blocking_post", action, blocking=True)
+            self.restore_environ()
             return err
 
         try:
@@ -1772,6 +1774,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
                        "DEFAULT.drpnode nor DEFAULT.drpnodes" %
                        (action, Env.nodename))
 
+    def restore_environ(self):
+        if self.prev_env is None:
+            return
+        os.environ.clear()
+        os.environ.update(self.prev_env)
+
     def setup_environ(self, action=None, options=None):
         """
         Setup envionment variables.
@@ -1784,9 +1792,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if not action and os.environ.get("OPENSVC_SVCPATH") == self.path:
             return
+        self.prev_env = {}
+        self.prev_env.update(os.environ)
         os.environ['OPENSVC_SVCPATH'] = self.path
         os.environ['OPENSVC_SVCNAME'] = self.name
         os.environ['OPENSVC_SVC_ID'] = self.id
+        os.environ['OPENSVC_KIND'] = self.kind
         if self.namespace:
             os.environ['OPENSVC_NAMESPACE'] = self.namespace
         if action:
@@ -3930,6 +3941,7 @@ class Svc(PgMixin, BaseSvc):
         rsets_status = {}
         for rset in self.get_resourcesets(groups):
             rsets_status[rset.rid] = rset.status(refresh=refresh)
+        self.restore_environ()
         return rsets_status
 
     def need_encap_resource_monitor(self):
