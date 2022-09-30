@@ -1134,13 +1134,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
                 return 1
 
         def call_action(action):
-            self.setup_environ(action=action, options=options)
+            restore_environ = self.setup_environ(action=action, options=options)
             self.action_triggers("pre", action)
             self.action_triggers("blocking_pre", action, blocking=True)
             err = getattr(self, action)()
             self.action_triggers("post", action)
             self.action_triggers("blocking_post", action, blocking=True)
-            self.restore_environ()
+            restore_environ()
             return err
 
         try:
@@ -1774,12 +1774,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
                        "DEFAULT.drpnode nor DEFAULT.drpnodes" %
                        (action, Env.nodename))
 
-    def restore_environ(self):
-        if self.prev_env is None:
-            return
-        os.environ.clear()
-        os.environ.update(self.prev_env)
-
     def setup_environ(self, action=None, options=None):
         """
         Setup envionment variables.
@@ -1789,11 +1783,14 @@ class BaseSvc(Crypt, ExtConfigMixin):
         own setup_environ() method.
         """
         if action in ACTIONS_NO_TRIGGER:
-            return
+            return lambda:None
         if not action and os.environ.get("OPENSVC_SVCPATH") == self.path:
-            return
-        self.prev_env = {}
-        self.prev_env.update(os.environ)
+            return lambda:None
+        prev_env = {}
+        prev_env.update(os.environ)
+        def restore():
+            os.environ.clear()
+            os.environ.update(prev_env)
         os.environ['OPENSVC_SVCPATH'] = self.path
         os.environ['OPENSVC_SVCNAME'] = self.name
         os.environ['OPENSVC_SVC_ID'] = self.id
@@ -1808,6 +1805,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             os.environ['OPENSVC_LEADER'] = "0"
         for resource in self.get_resources():
             resource.setup_environ()
+        return restore
 
     def print_config(self):
         """
@@ -3937,11 +3935,11 @@ class Svc(PgMixin, BaseSvc):
         Return the aggregated status of all resources of the specified resource
         sets, as a dict of status indexed by resourceset id.
         """
-        self.setup_environ()
+        restore_environ = self.setup_environ()
         rsets_status = {}
         for rset in self.get_resourcesets(groups):
             rsets_status[rset.rid] = rset.status(refresh=refresh)
-        self.restore_environ()
+        restore_environ()
         return rsets_status
 
     def need_encap_resource_monitor(self):
