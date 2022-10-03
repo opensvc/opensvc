@@ -5,43 +5,31 @@ import sys
 import core.exceptions as ex
 from utilities.lazy import lazy
 from env import Env
-from drivers.array.hcs import Hcss
+from drivers.array.pure import Arrays
 from core.pool import BasePool
 
-def session(fn):
-    """
-    A decorator for caching the result of a function
-    """
-    attr_name = '_fcache_' + fn.__name__
-
-    def wrapper(self, *args, **kwargs):
-        try:
-            data = fn(self, *args, **kwargs)
-        finally:
-            self.array.close_session()
-        return data
-
-    return wrapper
-
 class Pool(BasePool):
-    type = "hcs"
+    type = "pure"
     capabilities = ["rox", "rwx", "roo", "rwo", "shared", "blk", "fc"]
 
 
     @lazy
     def lock_name(self):
-        return "hcs_%s_create_disk" % self.array_name
+        return "pure_%s_create_disk" % self.array_name
 
 
     def delete_disk(self, name=None, disk_id=None):
-        result = self.delete_disk_simple(name=name, disk_id=disk_id)
+        result = self.delete_disk_simple(disk_id=disk_id)
         return result
 
+    def serial_from_disk_id(self, disk_id):
+        if disk_id is None:
+            return
+        return disk_id[8:]
 
-    @session
-    def delete_disk_simple(self, name=None, disk_id=None):
-        return self.array.del_disk(name=name, naa=disk_id)
-
+    def delete_disk_simple(self, disk_id=None):
+        serial = self.serial_from_disk_id(disk_id)
+        return self.array.del_disk(serial=serial, now=self.delete_now)
 
     def array_nodes(self, nodes=None):
         if nodes is None:
@@ -62,12 +50,12 @@ class Pool(BasePool):
             volume.id.split("-")[0],
         )
 
+    def sep(self):
+        return "-"
+
     def create_disk(self, name, size, nodes=None):
         return self.create_disk_simple(name, size, nodes=nodes)
 
-
-
-    @session
     def create_disk_simple(self, name, size, nodes=None, array=None):
         if array is None:
             array = self.array
@@ -78,14 +66,15 @@ class Pool(BasePool):
         else:
             mappings = None
         lock_id = None
-        result = array.create_disk(name=name, size=size,
-                                   pool=self.storagepool,
-                                   start_ldev_id=self.start_ldev_id,
-                                   end_ldev_id=self.end_ldev_id,
-                                   resource_group=self.resource_group,
-                                   compression=self.compression,
-                                   dedup=self.dedup,
-                                   mappings=mappings)
+        if self.pod:
+            name = self.pod + "::" + name
+        elif self.volumegroup:
+            name = self.volumegroup + "/" + name
+        result = array.add_disk(name=name,
+                                size=size,
+                                pod=self.pod,
+                                volumegroup=self.volumegroup,
+                                mappings=mappings)
         return result
 
 
@@ -106,72 +95,66 @@ class Pool(BasePool):
 
 
     @property
-    def resource_group(self):
-        return self.oget("resource_group")
+    def delete_now(self):
+        return self.oget("delete_now")
 
     @property
-    def end_ldev_id(self):
-        return self.oget("end_ldev_id")
+    def volumegroup(self):
+        return self.oget("volumegroup")
 
     @property
-    def start_ldev_id(self):
-        return self.oget("start_ldev_id")
-
-    @property
-    def storagepool(self):
-        return self.oget("diskgroup")
+    def pod(self):
+        return self.oget("pod")
 
     @property
     def array_name(self):
         return self.oget("array")
 
-    @property
-    def array_array(self):
-        return self.node.oget("array#"+self.array_name, "name") or self.array_name
-
-    @property
-    def compression(self):
-        return self.oget("compression")
-
-    @property
-    def dedup(self):
-        return self.oget("dedup")
-
     @lazy
     def array(self):
-        o = Hcss(log=self.log)
-        array = o.get_hcs(self.array_array)
+        o = Arrays()
+        array = o.get_array(self.array_name)
         if array is None:
-            raise ex.Error("array %s not found" % self.array_array)
+            raise ex.Error("array %s not found" % self.array_name)
         array.node = self.node
         return array
 
+    @property
+    def head(self):
+        if self.pod:
+            return self.pod
+        elif self.volumegroup:
+            return self.volumegroup
+        else:
+            return ""
 
-    @session
     def pool_status(self, usage=True):
         from utilities.converters import convert_size
         data = {
             "type": self.type,
             "name": self.name,
-            "head": "array://%s/%s" % (self.array_name, self.storagepool),
+            "head": "array://%s/%s" % (self.array_name, self.head),
             "capabilities": self.capabilities,
         }
         if not usage:
             return data
         try:
-            status = self.array.get_pool_by_name(name=self.storagepool)
+            status = self.array.get_arrays()[0]
+            space = status["space"]
         except Exception as exc:
+            print(exc)
             data["error"] = str(exc)
             return data
-        data["size"] = convert_size(int(status["totalPhysicalCapacity"])*1024*1024, _to="KB")
-        data["free"] = convert_size(int(status["availablePhysicalVolumeCapacity"])*1024*1024, _to="KB")
-        data["used"] = data["size"] - data["free"]
+        data["size"] = status["capacity"] / 1024
+        data["used"] = space["total_physical"] / 1024
+        data["free"] = data["size"] - data["used"]
         return data
 
 
     def get_targets(self):
-        return [tgt["wwn"] for tgt in self.array.list_fc_port()]
-
+        qfilter = "services='scsi-fc' and enabled='true'"
+        tgts = [tgt["fc"]["wwn"].replace(":", "").lower() for tgt in self.array.get_network_interfaces(qfilter=qfilter)]
+        return tgts
 
     def get_mappings(self, nodes):
         return self._get_mappings(nodes, transport="fc")

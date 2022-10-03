@@ -979,7 +979,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "section": "pool",
         "keyword": "type",
         "default": "directory",
-        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual", "dorado", "hcs", "drbd"],
+        "candidates": ["directory", "loop", "vg", "zpool", "freenas", "share", "shm", "symmetrix", "virtual", "dorado", "hcs", "drbd", "pure"],
         "text": "The pool type."
     },
     {
@@ -995,7 +995,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
-        "rtype": ["freenas", "symmetrix", "dorado", "hcs"],
+        "rtype": ["freenas", "symmetrix", "dorado", "hcs", "pure"],
         "keyword": "array",
         "at": True,
         "required": True,
@@ -1003,7 +1003,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
-        "rtype": "hcs",
+        "rtype": ["hcs", "pure"],
         "keyword": "label_prefix",
         "text": "The prefix to add to the label assigned to the created disks."
     },
@@ -1018,6 +1018,25 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "rtype": "hcs",
         "keyword": "end_ldev_id",
         "text": "The end of the range of ldev ids to allocate from."
+    },
+    {
+        "section": "pool",
+        "rtype": "pure",
+        "keyword": "pod",
+        "text": "The pod to create volume into."
+    },
+    {
+        "section": "pool",
+        "rtype": "pure",
+        "keyword": "volumegroup",
+        "text": "The volumegroup to create volume into."
+    },
+    {
+        "section": "pool",
+        "rtype": "pure",
+        "keyword": "delete_now",
+        "text": "If set to false the pure volumes are not immediately deleted on unprovision, so a following provision action could fail.",
+        "default": True,
     },
     {
         "section": "pool",
@@ -1339,7 +1358,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "array",
         "keyword": "type",
-        "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio", "dorado", "hcs"],
+        "candidates": ["freenas", "hds", "eva", "nexenta", "vioserver", "centera", "symmetrix", "emcvnx", "netapp", "hp3par", "ibmds", "ibmsvc", "xtremio", "dorado", "hcs", "pure"],
         "required": True,
         "text": "The storage array driver name."
     },
@@ -1369,7 +1388,13 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "array",
-        "rtype": ["freenas", "xtremio", "dorado", "hcs"],
+        "rtype": ["pure"],
+        "keyword": "schedule",
+        "text": "Schedule parameter for the :c-action:`pushpure` node action. See usr/share/doc/schedule for the schedule syntax."
+    },
+    {
+        "section": "array",
+        "rtype": ["freenas", "xtremio", "dorado", "hcs", "pure"],
         "keyword": "api",
         "required": True,
         "example": "https://array.opensvc.com/api/v1.0",
@@ -1432,6 +1457,14 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "array",
+        "rtype": ["pure"],
+        "keyword": "secret",
+        "example": "system/sec/array1",
+        "required": True,
+        "text": "The secret to use to store the information required to create the login jwt, expressed as a <path> reference to a secret. The secret must be in the ``system`` namespace and must have the following keys: ``private_key``."
+    },
+    {
+        "section": "array",
         "rtype": ["freenas", "dorado", "hcs"],
         "keyword": "timeout",
         "convert": "duration",
@@ -1466,6 +1499,46 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "keyword": "symcli_connect",
         "example": "MY_SYMAPI_SERVER",
         "text": "Set the ``SYMCLI_CONNECT`` environment variable to this value, if set. If not set, the scsi communication channels are used. The value set must be declared in the ``/var/symapi/config/netcnfg`` file."
+    },
+    {
+        "section": "array",
+        "rtype": "pure",
+        "keyword": "username",
+        "example": "pureuser",
+        "text": "The username to use as the ``sub`` key in the payload of the login jwt.",
+        "required": True,
+    },
+    {
+        "section": "array",
+        "rtype": "pure",
+        "keyword": "insecure",
+        "convert": "boolean",
+        "default": False,
+        "text": "Disable secure socket verification",
+    },
+    {
+        "section": "array",
+        "rtype": "pure",
+        "keyword": "issuer",
+        "example": "pureuser",
+        "default_text": "<same as username>",
+        "text": "The issuer to use as the ``iss`` key in the payload of the login jwtusername.",
+    },
+    {
+        "section": "array",
+        "rtype": "pure",
+        "keyword": "key_id",
+        "example": "4a4ba128-7a45-434a-a06f-d61b1fadfe3c",
+        "text": "The key id to use as the ``kid`` key in the header of the login jwt.",
+        "required": True,
+    },
+    {
+        "section": "array",
+        "rtype": "pure",
+        "keyword": "client_id",
+        "example": "fb4ed5d5-fa47-4ae1-a6b9-e435595e0b2b",
+        "text": "The client id to use as the ``aud`` key in the payload of the login jwt.",
+        "required": True,
     },
     {
         "section": "array",

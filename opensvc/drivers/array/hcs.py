@@ -440,6 +440,12 @@ def apiretry(func):
                 if time.time() + delay < barrier:
                     time.sleep(delay)
                     continue
+            if func.__name__ == "delete" and r.status_code == 404 and "/sessions" in uri:
+                try:
+                    data = r.json()
+                except Exception:
+                    data = {}
+                return data
             if r.status_code in NON_RETRYABLE_STATUS:
                 desc = NON_RETRYABLE_STATUS[r.status_code]
                 try:

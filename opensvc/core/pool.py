@@ -102,6 +102,9 @@ class BasePool(object):
     def translate(self, name=None, size=None, fmt=True, shared=False):
         return []
 
+    def sep(self):
+        return "."
+
     def create_disk(self, name, size, nodes=None):
         return {}
 
