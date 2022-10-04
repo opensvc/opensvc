@@ -2892,6 +2892,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "comment": self.comment,
             "app": self.app,
             "encap": self.encap,
+            "ha": self.ha,
         })
 
 
