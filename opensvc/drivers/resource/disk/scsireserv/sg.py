@@ -22,6 +22,14 @@ def mpathpersist_enabled_in_conf(output):
     return False
 
 
+def parse_version(buff):
+    for line in buff.splitlines():
+        try:
+            return [int(v) for v in line.split()[1].strip("v").split(".")]
+        except Exception:
+            continue
+    return [0, 0, 0]
+
 # noinspection PyUnusedLocal
 def driver_capabilities(node=None):
     data = []
@@ -29,11 +37,8 @@ def driver_capabilities(node=None):
         data.append("disk.scsireserv")
         data.append("disk.scsireserv.sg_persist")
     if which("mpathpersist"):
-        version = [0, 0, 0]
-        out, err, ret = justcall(["multipath", "-h"])
-        for line in err.splitlines():
-            version = [int(v) for v in line.split()[1].strip("v").split(".")]
-            break
+        _, err, ret = justcall(["multipath", "-h"])
+        version = parse_version(err)
         if version > [0, 7, 8]:
             def multipath_get_conf():
                 conf_output, _, exit_code = justcall(["multipathd", "show", "config"])
