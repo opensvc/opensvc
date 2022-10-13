@@ -506,9 +506,14 @@ class Asset(BaseAsset):
         elif self.os_release['id'] == 'raspbian':
             model = self._get_revision_raspbian()
             return model
+        regexp = re.compile("^\s+Product Name:")
         for l in self.dmidecode:
-            if 'Product Name:' in l:
-                return l[l.index(":")+1:].strip()
+            if not regexp.match(l):
+                continue
+            model = l[l.index(":")+1:].strip()
+            if model == "Memory Drive Technology":
+                continue
+            return model
         return 'Unknown'
 
     def get_iscsi_hba_id(self):
