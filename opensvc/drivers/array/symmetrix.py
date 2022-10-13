@@ -1209,6 +1209,11 @@ class Vmax(SymMixin):
         except ex.Error as exc:
             self.log.info("rdf data: %s", exc)
             rdf_data = None
+        data = self.get_sym_dev_show(dev)
+        if len(data) != 1:
+            raise ex.Error("dev %s does not exist" % dev)
+        if data[0].get("Dev_Info", {}).get("snapvx_source") == "True":
+            raise ex.Error("dev %s is a snapvx_source. can not delete" % dev)
         self.set_dev_ro(dev)
         self.del_map(dev)
         self.deletepair(dev)
@@ -1221,7 +1226,7 @@ class Vmax(SymMixin):
             except ex.Error as exc:
                 if "A free of all allocations is required" in str(exc):
                     if retry == 1:
-                        raise ex.Error("dev %s is still not free of all allocations after 5 tries")
+                        raise ex.Error("dev %s is still not free of all allocations after 5 tries" % dev)
                     # retry
                     retry -= 1
                     time.sleep(5)
