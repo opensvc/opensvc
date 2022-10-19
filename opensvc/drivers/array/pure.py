@@ -690,7 +690,7 @@ class Array(object):
         driver_data["mappings"] = self.get_connections(qfilter="volume.id='%s'" % driver_data["volume"]["id"])
         results = {
             "driver_data": driver_data,
-            "disk_id": WWID_PREFIX + driver_data["volume"]["serial"],
+            "disk_id": WWID_PREFIX + driver_data["volume"]["serial"].lower(),
             "disk_devid": driver_data["volume"]["id"],
             "mappings": {},
         }
@@ -751,7 +751,7 @@ class Array(object):
         if len(data) == 0:
             raise ex.Error("volume does not exist")
 
-        disk_id = WWID_PREFIX + data[0]["serial"]
+        disk_id = WWID_PREFIX + data[0]["serial"].lower()
         self.del_map(id=data[0]["id"])
         params = {}
         params["names"] = data[0]["name"]
