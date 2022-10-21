@@ -555,6 +555,6 @@ class IpCni(IpHost):
             return False
         return True
 
-    def is_provisioned(self):
+    def is_provisioned(self, refresh=False):
         return
 
