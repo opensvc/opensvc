@@ -636,6 +636,10 @@ class Listener(shared.OsvcThread):
                             return change
                         value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                         return [key, value]
+                    if key_len == 3:
+                        if value is None:
+                            # the deleted object may no longer match the selector
+                            return change
                     if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[2]):
                         return change
                     else:
@@ -663,6 +667,10 @@ class Listener(shared.OsvcThread):
                                     return change
                                 value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                                 return [key, value]
+                            if key_len == 6:
+                                if value is None:
+                                    # the deleted object may no longer match the selector
+                                    return change
                             if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[5]):
                                 return change
                             else:
@@ -673,6 +681,10 @@ class Listener(shared.OsvcThread):
                                     return change
                                 value = dict((k, v) for k, v in value.items() if self.match_object_selector(thr.selector, namespaces=namespaces, path=k))
                                 return [key, value]
+                            if key_len == 6:
+                                if value is None:
+                                    # the deleted object may no longer match the selector
+                                    return change
                             if self.match_object_selector(thr.selector, namespaces=namespaces, path=key[5]):
                                 return change
                             else:
