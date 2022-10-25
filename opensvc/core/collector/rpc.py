@@ -24,11 +24,15 @@ kwargs = {}
 try:
     import ssl
 
-    # noinspection PyUnresolvedReferences
-    # pylint: disable=no-member
-    kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
+    if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
+        # noinspection PyUnresolvedReferences
+        # pylint: disable=no-member
+        kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
+    else:
+        kwargs["context"] = ssl._create_unverified_context()
+    kwargs["context"].set_ciphers("DEFAULT")
     kwargs["allow_none"] = True
-except Exception:
+except Exception as exc:
     pass
 
 try:
