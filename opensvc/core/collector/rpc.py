@@ -17,23 +17,12 @@ import foreign.six as six
 from env import Env
 from utilities.naming import split_path
 from utilities.converters import print_duration
+from utilities.uri import ssl_context_kwargs
 
 socket.setdefaulttimeout(5)
 
-kwargs = {}
-try:
-    import ssl
-
-    if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
-        # noinspection PyUnresolvedReferences
-        # pylint: disable=no-member
-        kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
-    else:
-        kwargs["context"] = ssl._create_unverified_context()
-    kwargs["context"].set_ciphers("DEFAULT")
-    kwargs["allow_none"] = True
-except Exception as exc:
-    pass
+kwargs = ssl_context_kwargs()
+kwargs["allow_none"] = True
 
 try:
     import xmlrpclib
