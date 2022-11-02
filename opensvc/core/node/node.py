@@ -2660,15 +2660,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         rpath = "/safe/%s/download" % safe_id
         api = self.collector_api(path=path)
         request = self.collector_request(rpath)
-        if api["url"].startswith("https"):
-            try:
-                import ssl
-                # pylint: disable=no-member
-                kwargs = {"context": ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)}
-            except:
-                kwargs = {}
-        else:
+        if not api["url"].startswith("https"):
             raise ex.Error("refuse to submit auth tokens through a non-encrypted transport")
+
+        kwargs = self.set_ssl_context()
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
@@ -2782,18 +2777,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @staticmethod
     def set_ssl_context(kwargs):
-        """
-        Python 2.7.9+ verifies certs by default and support the creationn
-        of an unverified context through ssl._create_unverified_context().
-        This method add an unverified context to a kwargs dict, when
-        necessary.
-        """
-        try:
-            import ssl
-            kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
-        except (ImportError, AttributeError):
-            pass
-        return kwargs
+        from utilities.uri import ssl_context_kwargs
+        return ssl_context_kwargs()
 
     def collector_rest_request(self, rpath, data=None, path=None, get_method="GET"):
         """

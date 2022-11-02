@@ -328,14 +328,10 @@ class CompObject(object):
     def collector_rest_get(self, path, load_json=True):
         api = self.collector_api()
         request = self.collector_request(path)
-        if api["url"].startswith("https"):
-            try:
-                import ssl
-                kwargs = {"context": ssl._create_unverified_context()}
-            except:
-                kwargs = {}
-        else:
+        if not api["url"].startswith("https"):
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
+        from utilities.uri import ssl_context_kwargs
+        kwargs = ssl_context_kwargs()
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
@@ -356,13 +352,9 @@ class CompObject(object):
         api = self.collector_api()
         request = self.collector_request(path)
         if api["url"].startswith("https"):
-            try:
-                import ssl
-                kwargs = {"context": ssl._create_unverified_context()}
-            except:
-                kwargs = {}
-        else:
             raise ComplianceError("refuse to submit auth tokens through a non-encrypted transport")
+        from utilities.uri import ssl_context_kwargs
+        kwargs = ssl_context_kwargs()
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
@@ -402,10 +394,8 @@ class CompObject(object):
 
     def urlretrieve(self, url, fpath):
         request = Request(url)
-        kwargs = {}
-        if sys.hexversion >= 0x02070900:
-            import ssl
-            kwargs["context"] = ssl._create_unverified_context()
+        from utilities.uri import ssl_context_kwargs
+        kwargs = ssl_context_kwargs()
         f = urlopen(request, **kwargs)
         with open(fpath, 'wb') as df:
             for chunk in iter(lambda: f.read(4096), b""):

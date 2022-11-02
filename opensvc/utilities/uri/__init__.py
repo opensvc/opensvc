@@ -1,4 +1,5 @@
 import os
+import sys
 
 from contextlib import contextmanager
 
@@ -55,10 +56,22 @@ class Uri(object):
         """
         kwargs = kwargs or {}
         if not self.secure:
-            try:
-                import ssl
+            kwargs.update(ssl_context_kwargs)
+        return kwargs
+
+def ssl_context_kwargs():
+        kwargs = {}
+        try:
+            import ssl
+            if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
+                # noinspection PyUnresolvedReferences
+                # pylint: disable=no-member
                 kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
-            except (ImportError, AttributeError):
-                pass
+            else:
+                kwargs["context"] = ssl._create_unverified_context()
+            kwargs["context"].set_ciphers("DEFAULT")
+            kwargs["allow_none"] = True
+        except (ImportError, AttributeError):
+            pass
         return kwargs
 
