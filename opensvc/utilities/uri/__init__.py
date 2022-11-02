@@ -9,11 +9,11 @@ except ImportError:
     # pylint false positive
     pass
 
-class Uri(object): 
-    def __init__(self, uri, secure=True): 
-        self.uri = uri 
+class Uri(object):
+    def __init__(self, uri, secure=True):
+        self.uri = uri
         self.secure = secure
-      
+
     @contextmanager
     def fetch(self):
         fpath = self._fetch_path()
@@ -56,22 +56,22 @@ class Uri(object):
         """
         kwargs = kwargs or {}
         if not self.secure:
-            kwargs.update(ssl_context_kwargs)
+            kwargs.update(ssl_context_kwargs())
         return kwargs
 
 def ssl_context_kwargs():
-        kwargs = {}
-        try:
-            import ssl
-            if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
-                # noinspection PyUnresolvedReferences
-                # pylint: disable=no-member
-                kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
-            else:
-                kwargs["context"] = ssl._create_unverified_context()
-            kwargs["context"].set_ciphers("DEFAULT")
-            kwargs["allow_none"] = True
-        except (ImportError, AttributeError):
-            pass
-        return kwargs
+    kwargs = {}
+    try:
+        import ssl
+        if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
+            # noinspection PyUnresolvedReferences
+            # pylint: disable=no-member
+            kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        else:
+            kwargs["context"] = ssl._create_unverified_context()
+        kwargs["context"].set_ciphers("DEFAULT")
+        kwargs["allow_none"] = True
+    except (ImportError, AttributeError):
+        pass
+    return kwargs
 
