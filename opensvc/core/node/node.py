@@ -2663,7 +2663,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if not api["url"].startswith("https"):
             raise ex.Error("refuse to submit auth tokens through a non-encrypted transport")
 
-        kwargs = self.set_ssl_context()
+        kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
         try:
             f = urlopen(request, **kwargs)
         except HTTPError as e:
@@ -2778,7 +2779,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     @staticmethod
     def set_ssl_context(kwargs):
         from utilities.uri import ssl_context_kwargs
-        return ssl_context_kwargs()
+        kwargs.update(ssl_context_kwargs())
+        return kwargs
 
     def collector_rest_request(self, rpath, data=None, path=None, get_method="GET"):
         """
