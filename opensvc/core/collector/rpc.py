@@ -22,6 +22,7 @@ from utilities.uri import ssl_context_kwargs
 socket.setdefaulttimeout(5)
 
 kwargs = ssl_context_kwargs()
+kwargs["allow_none"] = True
 
 try:
     import xmlrpclib

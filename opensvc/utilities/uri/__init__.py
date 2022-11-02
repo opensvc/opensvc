@@ -70,7 +70,6 @@ def ssl_context_kwargs():
         else:
             kwargs["context"] = ssl._create_unverified_context()
         kwargs["context"].set_ciphers("DEFAULT")
-        kwargs["allow_none"] = True
     except (ImportError, AttributeError):
         pass
     return kwargs
