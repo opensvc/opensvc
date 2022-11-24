@@ -129,7 +129,7 @@ class SyncBtrfssnap(Sync):
         suffix += ".snap.%Y-%m-%d.%H:%M:%S"
         snap += datetime.datetime.now().strftime(suffix)
         try:
-            btrfs.snapshot(orig, snap, readonly=True, recursive=False)
+            btrfs.snapshot(orig, snap, readonly=True)
         except utilities.subsystems.btrfs.ExistError:
             raise ex.Error('%s should not exist'%snap)
         except utilities.subsystems.btrfs.ExecError:
@@ -161,7 +161,7 @@ class SyncBtrfssnap(Sync):
             sorted_snaps.append(snaps[ds])
         for path in sorted_snaps[self.keep:]:
             try:
-                btrfs.subvol_delete(os.path.join(btrfs.rootdir, path), recursive=False)
+                btrfs.subvol_delete(os.path.join(btrfs.rootdir, path))
             except utilities.subsystems.btrfs.ExecError:
                 raise ex.Error
 

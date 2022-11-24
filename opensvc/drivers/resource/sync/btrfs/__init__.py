@@ -1,5 +1,6 @@
 import os
-import datetime
+import time
+import json
 
 from subprocess import *
 
@@ -9,6 +10,7 @@ import core.exceptions as ex
 from .. import Sync, notify
 from env import Env
 from utilities.converters import print_duration
+from utilities.string import bdecode
 from core.objects.svcdict import KEYS
 
 DRIVER_GROUP = "sync"
@@ -95,6 +97,9 @@ class SyncBtrfs(Sync):
         self.dst_btrfs = {}
         self.src_btrfs = None
 
+    def on_add(self):
+        self.statefile = os.path.join(self.var_d, "btrfs_state")
+
     def __str__(self):
         return "%s target=%s src=%s" % (
             super(SyncBtrfs, self).__str__(),\
@@ -133,7 +138,7 @@ class SyncBtrfs(Sync):
         if len(resources) == 0:
             return
 
-        if not action.startswith('sync'):
+        if not action.startswith("sync"):
             return
 
         self.pre_sync_check_svc_not_up()
@@ -141,7 +146,7 @@ class SyncBtrfs(Sync):
 
         self.init_src_btrfs()
         for i, r in enumerate(resources):
-            if 'delay_snap' in r.tags:
+            if "delay_snap" in r.tags:
                 continue
             r.get_targets(action)
             tgts = r.targets.copy()
@@ -149,27 +154,95 @@ class SyncBtrfs(Sync):
                 continue
 
             r.get_src_info()
+            tosends = []
 
-            if not r.src_btrfs.has_subvol(r.src_snap_tosend):
-                r.create_snap(r.src, r.src_snap_tosend)
+            for subvol in r.subvols():
+                src = r.src_btrfs.rootdir + "/" + subvol["path"]
+                dst = self.src_snap_tosend(subvol)
+                tosends.append((src, dst))
 
-    def create_snap(self, snap_orig, snap):
+            r.recreate_snaps(tosends)
+
+    def all_subvols(self):
+        """
+        sort by path so the subvols are sorted by path depth
+        """
+        if not self.src:
+            return []
+        if not self.recursive:
+            sub = self.src_btrfs.get_subvol(self.src)
+            if not sub:
+                return []
+            return [sub]
+        subvols = self.src_btrfs.get_subvols().values()
+        subvols = sorted(subvols, key=lambda x: x["path"])
+        return subvols
+
+    def subvols(self):
+        """
+        sort by path so the subvols are sorted by path depth
+        """
+        if not self.src:
+            return []
+        if not self.recursive:
+            sub = self.src_btrfs.get_subvol(self.src)
+            if not sub:
+                return []
+            return [sub]
+        subvols = []
+        for subvol in self.src_btrfs.get_subvols().values():
+            if subvol["path"].endswith("@tosend"):
+                continue
+            if subvol["path"].endswith("@sent"):
+                continue
+            if subvol["path"] == self.src_subvol:
+                subvols.append(subvol)
+            elif subvol["path"].startswith(self.src_subvol + "/"):
+                subvols.append(subvol)
+        subvols = sorted(subvols, key=lambda x: x["path"])
+        return subvols
+
+    def remote_subvols(self, node):
+        if not self.dst:
+            return []
+        if not self.recursive:
+            sub = self.dst_btrfs[node].get_subvol(self.dst)
+            if not sub:
+                return []
+            return [sub]
+        subvols = self.dst_btrfs[node].get_subvols().values()
+        subvols = sorted(subvols, key=lambda x: x["path"])
+        return subvols
+
+    def recreate_snaps(self, snaps):
         self.init_src_btrfs()
+        self.src_btrfs.subvol_delete([snap[1] for snap in snaps])
         try:
-            self.src_btrfs.snapshot(snap_orig, snap, readonly=True, recursive=self.recursive)
+            self.src_btrfs.snapshots(snaps, readonly=True)
         except utilities.subsystems.btrfs.ExistError:
-            self.log.error('%s should not exist'%snap)
+            self.log.error("%s should not exist"%snap)
             raise ex.Error
         except utilities.subsystems.btrfs.ExecError:
             raise ex.Error
 
     def get_src_info(self):
         self.init_src_btrfs()
-        subvol = self.src_subvol.replace('/','_')
-        base = self.src_btrfs.snapdir + '/' + subvol
-        self.src_snap_sent = base + '@sent'
-        self.src_snap_tosend = base + '@tosend'
         self.src = os.path.join(self.src_btrfs.rootdir, self.src_subvol)
+
+    def rel_src_snap_sent(self, subvol):
+        p = subvol["path"].replace("/","_")
+        base = self.src_btrfs.snapvol + "/" + p
+        return  base + "@sent"
+
+    def src_snap_sent(self, subvol):
+        p = subvol["path"].replace("/","_")
+        base = self.src_btrfs.snapdir + "/" + p
+        return  base + "@sent"
+
+    def src_snap_tosend(self, subvol):
+        p = subvol["path"].replace("/","_")
+        base = self.src_btrfs.snapdir + "/" + p
+        return base + "@tosend"
 
     def get_dst_info(self, node):
         if node not in self.dst_btrfs:
@@ -178,77 +251,76 @@ class SyncBtrfs(Sync):
             except utilities.subsystems.btrfs.ExecError as e:
                 raise ex.Error(str(e))
             #self.dst_btrfs[node].setup_snap()
-        subvol = self.src_subvol.replace('/','_')
-        base = self.dst_btrfs[node].snapdir + '/' + subvol
-        self.dst_snap_sent = base + '@sent'
-        self.dst_snap_tosend = base + '@tosend'
         self.dst = os.path.join(self.dst_btrfs[node].rootdir, self.dst_subvol)
+
+    def rel_dst_snap_tosend(self, subvol, node):
+        p = subvol["path"].replace("/","_")
+        base = self.dst_btrfs[node].snapvol + "/" + p
+        return base + "@tosend"
+
+    def dst_snap_tosend(self, subvol, node):
+        p = subvol["path"].replace("/","_")
+        base = self.dst_btrfs[node].snapdir + "/" + p
+        return base + "@tosend"
+
+    def rel_dst_snap_sent(self, subvol, node):
+        p = subvol["path"].replace("/","_")
+        base = self.dst_btrfs[node].snapvol + "/" + p
+        return base + "@sent"
+
+    def dst_snap_sent(self, subvol, node):
+        p = subvol["path"].replace("/","_")
+        base = self.dst_btrfs[node].snapdir + "/" + p
+        return base + "@sent"
 
     def get_peersenders(self):
         self.peersenders = set()
-        if 'nodes' == self.sender:
+        if "nodes" == self.sender:
             self.peersenders |= self.svc.nodes
             self.peersenders -= set([Env.nodename])
 
     def get_targets(self, action=None):
         self.targets = set()
-        if 'nodes' in self.target and action in (None, 'sync_nodes'):
+        if "nodes" in self.target and action in (None, "sync_nodes"):
             self.targets |= self.svc.nodes
-        if 'drpnodes' in self.target and action in (None, 'sync_drp'):
+        if "drpnodes" in self.target and action in (None, "sync_drp"):
             self.targets |= self.svc.drpnodes
         self.targets -= set([Env.nodename])
 
     def sync_nodes(self):
-        self._sync_update('sync_nodes')
+        self._sync_update("sync_nodes")
 
     def sync_drp(self):
-        self._sync_update('sync_drp')
+        self._sync_update("sync_drp")
 
     def sanity_checks(self):
         self.pre_sync_check_svc_not_up()
         self.pre_sync_check_flex_primary()
 
-    def sync_full(self):
-        self.init_src_btrfs()
-        try:
-            self.sanity_checks()
-        except ex.Error:
+    def btrfs_send_incremental(self, subvols, node):
+        if len(subvols) == 0:
             return
-        self.get_src_info()
-        if not self.src_btrfs.has_subvol(self.src_snap_tosend):
-            self.create_snap(self.src, self.src_snap_tosend)
-        self.get_targets()
-        for n in self.targets:
-            self.get_dst_info(n)
-            self.btrfs_send_initial(n)
-            self.rotate_snaps(n)
-            self.install_snaps(n)
-        self.rotate_snaps()
-        self.write_statefile()
-        for n in self.targets:
-            self.push_statefile(n)
+        send_cmd = ["btrfs", "send"]
+        for subvol in subvols:
+            send_cmd += [
+                    "-c", self.src_snap_sent(subvol),
+                    self.src_snap_tosend(subvol),
+            ]
 
-    def btrfs_send_incremental(self, node):
-        if self.recursive:
-            send_cmd = ['btrfs', 'send', '-R',
-                        '-c', self.src_snap_sent,
-                        '-p', self.src_snap_sent,
-                        self.src_snap_tosend]
-        else:
-            send_cmd = ['btrfs', 'send',
-                        '-c', self.src_snap_sent,
-                        '-p', self.src_snap_sent,
-                        self.src_snap_tosend]
-
-        receive_cmd = ['btrfs', 'receive', self.dst_btrfs[node].snapdir]
+        receive_cmd = ["btrfs", "receive", self.dst_btrfs[node].snapdir]
         if node is not None:
-            receive_cmd = Env.rsh.strip(' -n').split() + [node] + receive_cmd
+            receive_cmd = Env.rsh.strip(" -n").split() + [node] + receive_cmd
 
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE)
+        self.log.info(" ".join(send_cmd + ["|"] + receive_cmd))
+        p1 = Popen(send_cmd, stdout=PIPE, stderr=PIPE)
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
         p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE)
         buff = p2.communicate()
+        send_buff = p1.stderr.read()
+        if send_buff is not None and len(send_buff) > 0:
+            for line in bdecode(send_buff).split("\n"):
+                if line:
+                    self.log.info("| " + line)
         if p2.returncode == 0:
             stats_buff = pi.communicate()[1]
             stats = self.parse_dd(stats_buff)
@@ -259,19 +331,21 @@ class SyncBtrfs(Sync):
             self.log.error("sync update failed")
             raise ex.Error
         if buff[0] is not None and len(buff[0]) > 0:
-            self.log.info(buff[0])
+            for line in bdecode(buff[0]).split("\n"):
+                if line:
+                    self.log.info("| " + line)
 
-    def btrfs_send_initial(self, node=None):
-        if self.recursive:
-            send_cmd = ['btrfs', 'send', '-R', self.src_snap_tosend]
-        else:
-            send_cmd = ['btrfs', 'send', self.src_snap_tosend]
-
-        receive_cmd = ['btrfs', 'receive', self.dst_btrfs[node].snapdir]
+    def btrfs_send_initial(self, subvols, node):
+        if len(subvols) == 0:
+            return
+        send_cmd = ["btrfs", "send"]
+        for subvol in subvols:
+            send_cmd += [self.src_snap_tosend(subvol)]
+        receive_cmd = ["btrfs", "receive", self.dst_btrfs[node].snapdir]
         if node is not None:
-            receive_cmd = Env.rsh.strip(' -n').split() + [node] + receive_cmd
+            receive_cmd = Env.rsh.strip(" -n").split() + [node] + receive_cmd
 
-        self.log.info(' '.join(send_cmd + ["|"] + receive_cmd))
+        self.log.info(" ".join(send_cmd + ["|"] + receive_cmd))
         p1 = Popen(send_cmd, stdout=PIPE)
         pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
         p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE)
@@ -288,98 +362,126 @@ class SyncBtrfs(Sync):
         if buff[0] is not None and len(buff[0]) > 0:
             self.log.info(buff[0])
 
-    def remove_snap_tosend(self, node=None):
-        self.init_src_btrfs()
-        if node is not None:
-            o = self.dst_btrfs[node]
-            subvol = self.dst_snap_tosend
-        else:
-            o = self.src_btrfs
-            subvol = self.src_snap_tosend
+    def to_snap_path(self, p, node=None):
+        btr = self.get_btrfs(node)
+        snapdir = btr.snapdir
+        return os.path.join(snapdir, p.replace("/", "_"))
 
-        if not o.has_subvol(subvol):
-            return
+    def cleanup_remote(self, node, remote_subvols):
+        self.init_src_btrfs()
+        o = self.get_btrfs(node)
+        l = []
+        candidates = []
+        for subvol in self.subvols():
+            candidates.append(self.rel_dst_snap_tosend(subvol, node))
+            candidates.append(self.rel_dst_tmp(subvol, node))
+
+        for subvol in remote_subvols:
+            if subvol["path"] in candidates:
+                l.append(subvol["path"])
+
+        l = [o.rootdir+"/"+p for p in l]
 
         try:
-            o.subvol_delete(subvol, recursive=self.recursive)
+            o.subvol_delete(l)
         except utilities.subsystems.btrfs.ExecError:
             raise ex.Error()
 
-    def remove_snap(self, node=None):
-        self.init_src_btrfs()
+    def remove_snap(self, subvol, node=None):
+        #self.init_src_btrfs()
+        o = self.get_btrfs(node)
         if node is not None:
-            o = self.dst_btrfs[node]
-            subvol = self.dst_snap_sent
+            p = self.dst_snap_sent(subvol, node)
         else:
-            o = self.src_btrfs
-            subvol = self.src_snap_sent
+            p = self.src_snap_sent(subvol)
 
-        if not o.has_subvol(subvol):
-            return
+        if not o.has_subvol(p):
+            return []
 
-        try:
-            o.subvol_delete(subvol, recursive=self.recursive)
-        except utilities.subsystems.btrfs.ExecError:
-            raise ex.Error()
+        cmd = o.subvol_delete_cmd(p) or []
+        return [" ".join(cmd)]
 
-    def rename_snap(self, node=None):
+    def rename_snap(self, subvol, node=None):
         self.init_src_btrfs()
+        o = self.get_btrfs(node)
         if node is None:
-            o = self.src_btrfs
-            src = self.src_snap_tosend
-            dst = self.src_snap_sent
+            src = self.src_snap_tosend(subvol)
+            dst = self.src_snap_sent(subvol)
         else:
+            src = self.dst_snap_tosend(subvol, node)
+            dst = self.dst_snap_sent(subvol, node)
+
+        cmd = ["mv", "-v", src, dst]
+        return [" ".join(cmd)]
+
+    def remove_dst(self, subvol, node):
+        dst = os.path.join(self.dst, subvol["path"])
+        cmd = self.dst_btrfs[node].subvol_delete_cmd(dst)
+        if not cmd:
+            return []
+        return [" ".join(cmd)]
+
+    def rel_dst_tmp(self, subvol, node):
+        return os.path.join(
+            ".opensvc/tmp",
+            self.dst_subvol,
+            subvol["path"][len(self.src_subvol):].lstrip("/"),
+        ).rstrip("/")
+
+
+    def dst_tmp(self, subvol, node):
+        return os.path.join(
+                self.dst_btrfs[node].rootdir,
+                self.rel_dst_tmp(subvol, node),
+        )
+
+    def install_final(self, node):
+        cmds = []
+
+        subvols = self.dst_btrfs[node].get_subvols()
+        paths = [os.path.join(self.dst_btrfs[node].rootdir, s["path"]) for s in subvols.values() if s["path"].startswith(self.dst_subvol+"/") or s["path"] == self.dst_subvol]
+
+        head_subvol = self.subvols()[0]
+        src = self.dst_tmp(head_subvol, node)
+        cmd = self.dst_btrfs[node].subvol_delete_cmd(paths) or []
+        if cmd:
+            cmds.append(" ".join(cmd))
+        cmd = ["mv", "-v", src, self.dst]
+        cmds.append(" ".join(cmd))
+        return cmds
+
+    def install_dst(self, subvol, node):
+        src = self.dst_snap_sent(subvol, node)
+        dst = self.dst_tmp(subvol, node)
+        cmd = self.dst_btrfs[node].snapshot_cmd(src, dst, readonly=False)
+        if not cmd:
+            return []
+        return [" ".join(cmd)]
+
+    def install_snaps(self, subvol, node):
+        cmds = []
+        cmds += self.remove_dst(subvol, node)
+        cmds += self.install_dst(subvol, node)
+        return cmds
+
+    def rotate_snaps(self, subvol, node=None):
+        cmds = []
+        cmds += self.remove_snap(subvol, node)
+        cmds += self.rename_snap(subvol, node)
+        return cmds
+
+    def get_btrfs(self, node=None):
+        if node:
             o = self.dst_btrfs[node]
-            src = self.dst_snap_tosend
-            dst = self.dst_snap_sent
-
-        if o.has_subvol(dst):
-            self.log.error("%s should not exist"%self.dst_snap_sent)
-            raise ex.Error
-
-        if self.recursive :
-            # ??
-            cmd = ['mv', src, dst]
         else:
-            cmd = ['mv', src, dst]
+            o = self.src_btrfs
+        return o
 
-        if node is not None:
-            cmd = Env.rsh.split() + [node] + cmd
-        ret, out, err = self.vcall(cmd)
-
+    def do_cmds(self, cmds, node=None):
+        o = self.get_btrfs(node)
+        ret, out, err = o.vcall(" && ".join(cmds), shell=True)
         if ret != 0:
             raise ex.Error
-
-    def remove_dst(self, node=None):
-        if node is None:
-            return
-
-        subvols = self.dst_btrfs[node].get_subvols_in_path(self.dst)
-
-        try:
-            self.dst_btrfs[node].subvol_delete(subvols)
-        except utilities.subsystems.btrfs.ExecError:
-            raise ex.Error()
-
-    def install_dst(self, node=None):
-        if node is None:
-            return
-        try:
-            self.dst_btrfs[node].snapshot(self.dst_snap_sent, self.dst, readonly=False)
-        except utilities.subsystems.btrfs.ExistError:
-            self.log.error("%s should not exist on node %s", self.dst_snap_sent, node)
-            raise ex.Error()
-        except utilities.subsystems.btrfs.ExecError:
-            self.log.error("failed to install snapshot %s on node %s"%(self.dst, node))
-            raise ex.Error()
-
-    def install_snaps(self, node=None):
-        self.remove_dst(node)
-        self.install_dst(node)
-
-    def rotate_snaps(self, node=None):
-        self.remove_snap(node)
-        self.rename_snap(node)
 
     def _sync_update(self, action):
         self.init_src_btrfs()
@@ -391,25 +493,61 @@ class SyncBtrfs(Sync):
         if len(self.targets) == 0:
             return
         self.get_src_info()
-
-        if not self.src_btrfs.has_subvol(self.src_snap_tosend):
-            self.create_snap(self.src, self.src_snap_tosend)
+        subvols_paths = [s["path"] for s in self.all_subvols()]
+        src_cmds = []
 
         for n in self.targets:
             self.get_dst_info(n)
-            self.remove_snap_tosend(n)
-            if self.src_btrfs.has_subvol(self.src_snap_sent) and self.dst_btrfs[n].has_subvol(self.dst_snap_sent):
-                self.btrfs_send_incremental(n)
-            else:
-                self.btrfs_send_initial(n)
-            self.rotate_snaps(n)
-            self.install_snaps(n)
+            remote_subvols = self.remote_subvols(n)
+            self.cleanup_remote(n, remote_subvols)
+            rsubvols_paths = [s["path"] for s in remote_subvols]
+            cmds = []
+            incrs = []
+            fulls = []
+            for subvol in self.subvols():
+                if self.rel_dst_snap_sent(subvol, n) in rsubvols_paths and self.rel_src_snap_sent(subvol) in subvols_paths:
+                    incrs.append(subvol)
+                else:
+                    fulls.append(subvol)
+                cmds += self.rotate_snaps(subvol, n)
+                cmds += self.install_snaps(subvol, n)
+                src_cmds += self.rotate_snaps(subvol)
+            cmds += self.install_final(n)
+            self.btrfs_send_incremental(incrs, n)
+            self.btrfs_send_initial(fulls, n)
+            self.do_cmds(cmds, n)
 
-        self.rotate_snaps()
+        self.do_cmds(src_cmds)
         self.write_statefile()
         for n in self.targets:
             self.push_statefile(n)
         self.write_stats()
+
+    def sync_full(self):
+        self.init_src_btrfs()
+        try:
+            self.sanity_checks()
+        except ex.Error:
+            return
+        self.get_src_info()
+        self.get_targets()
+        src_cmds = []
+        for n in self.targets:
+            self.get_dst_info(n)
+            remote_subvols = self.remote_subvols(n)
+            self.cleanup_remote(n, remote_subvols)
+            cmds = []
+            for subvol in self.subvols():
+                cmds += self.rotate_snaps(subvol, n)
+                cmds += self.install_snaps(subvol, n)
+                src_cmds += self.rotate_snaps(subvol)
+            cmds += self.install_final(n)
+            self.btrfs_send_initial(self.subvols(), n)
+            self.do_cmds(cmds, n)
+        self.do_cmds(src_cmds)
+        self.write_statefile()
+        for n in self.targets:
+            self.push_statefile(n)
 
     def can_sync(self, target=None):
         return True
@@ -417,10 +555,12 @@ class SyncBtrfs(Sync):
     def sync_status(self, verbose=False):
         self.init_src_btrfs()
         try:
-            ls = self.get_local_state()
-            now = datetime.datetime.now()
-            last = datetime.datetime.strptime(ls['date'], "%Y-%m-%d %H:%M:%S.%f")
-            delay = datetime.timedelta(seconds=self.sync_max_delay)
+            last = os.path.getmtime(self.statefile)
+            now = time.time()
+            delay = self.sync_max_delay
+        except (KeyError, TypeError):
+            self.status_log("btrfs state file is corrupt")
+            return core.status.WARN
         except IOError:
             self.status_log("btrfs state file not found")
             return core.status.WARN
@@ -435,68 +575,36 @@ class SyncBtrfs(Sync):
             return core.status.WARN
         return core.status.UP
 
-    def check_remote(self, node):
-        rs = self.get_remote_state(node)
-        if self.snap_uuid != rs['uuid']:
-            self.log.error("%s last update uuid doesn't match snap uuid"%(node))
-            raise ex.Error
-
     def get_remote_state(self, node):
-        self.set_statefile()
-        cmd1 = ['cat', self.statefile]
+        cmd1 = ["cat", self.statefile]
         cmd = Env.rsh.split() + [node] + cmd1
         (ret, out, err) = self.call(cmd)
         if ret != 0:
             self.log.error("could not fetch %s last update uuid"%node)
             raise ex.Error
-        return self.parse_statefile(out, node=node)
+        return json.loads(out)
 
     def get_local_state(self):
-        self.set_statefile()
-        with open(self.statefile, 'r') as f:
+        with open(self.statefile, "r") as f:
             out = f.read()
-        return self.parse_statefile(out)
-
-    def get_snap_uuid(self, snap):
-        self.init_src_btrfs()
-        self.snap_uuid = self.src_btrfs.get_transid(snap)
-
-    def set_statefile(self):
-        self.statefile = os.path.join(self.var_d, 'btrfs_state')
+        return json.loads(out)
 
     def write_statefile(self):
-        self.set_statefile()
-        self.get_snap_uuid(self.src_snap_sent)
-        self.log.info("update state file with snap uuid %s"%self.snap_uuid)
-        with open(self.statefile, 'w') as f:
-             f.write(str(datetime.datetime.now())+';'+self.snap_uuid+'\n')
+        data = self.all_subvols(),
+        with open(self.statefile, "w") as f:
+            json.dump(data, f)
 
     def _push_statefile(self, node):
-        cmd = Env.rcp.split() + [self.statefile, node+':'+self.statefile.replace('#', r'\#')]
+        cmd = Env.rcp.split() + [self.statefile, node+":"+self.statefile.replace("#", r"\#")]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
 
     def push_statefile(self, node):
-        self.set_statefile()
         self._push_statefile(node)
         self.get_peersenders()
         for s in self.peersenders:
             self._push_statefile(s)
-
-    def parse_statefile(self, out, node=None):
-        self.set_statefile()
-        if node is None:
-            node = Env.nodename
-        lines = out.strip().split('\n')
-        if len(lines) != 1:
-            self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.Error
-        fields = lines[0].split(';')
-        if len(fields) != 2:
-            self.log.error("%s:%s is corrupted"%(node, self.statefile))
-            raise ex.Error
-        return dict(date=fields[0], uuid=fields[1])
 
     @notify
     def sync_all(self):

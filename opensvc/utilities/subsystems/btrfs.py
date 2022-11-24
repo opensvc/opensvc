@@ -32,14 +32,15 @@ def btrfs_devs(mnt):
 
 class Btrfs(object):
     log = None
-    #snapvol = ".osvcsnap"
-    snapvol = ""
+    snapvol = ".opensvc/snapshots"
+    tempvol = ".opensvc/tmp"
 
     def __init__(self, path=None, label=None, node=None, resource=None):
         self.path = path
         self.label = label
         self.node = node
         self.resource = resource
+        self.subvols = None
 
         if self.resource is None:
             if Btrfs.log is None:
@@ -58,27 +59,38 @@ class Btrfs(object):
         if self.label is None:
             raise InitError("failed to determine btrfs label")
 
-        self.setup_rootvol()
-        self.path = self.rootdir
+        self.rootdir = os.path.join(Env.paths.pathvar, 'btrfs', self.label)
         self.snapdir = os.path.join(self.rootdir, self.snapvol)
         self.snapdir = os.path.normpath(self.snapdir)
+        self.tempdir = os.path.join(self.rootdir, self.tempvol)
+        self.tempdir = os.path.normpath(self.tempdir)
+        self.path = self.rootdir
 
+        self.setup_rootvol()
 
     def get_dev(self):
         if hasattr(self, "dev"):
             return
         if self.node is None:
+            if self.resource is None:
+                tree = None
+            else:
+                tree = self.resource.svc.node.devtree
             try:
                 self.dev = utilities.devices.linux.label_to_dev(
                     "LABEL="+self.label,
-                    tree=self.resource.svc.node.devtree
+                    tree=tree,
                 )
             except ex.Error as exc:
                 self.dev = None
         else:
             return
-        if self.dev is None:
+        if self.dev is not None:
+            return
+        if self.label is not None:
             self.dev = "LABEL="+self.label
+            return
+        raise ex.Error("no dev nor label")
 
     def rmdir(self, path):
         cmd = ['rmdir', path]
@@ -95,21 +107,33 @@ class Btrfs(object):
             return False
         return True
 
+    def get_snaps_of(self, path, refresh=False):
+        """
+        Snaps are subvols with the same top as the subvol with <path>
+        """
+        self.get_subvols(refresh=refresh)
+        l = []
+        ref = None
+        for sv in self.subvols.values():
+            if sv["path"] == path:
+                ref = sv
+                break
+        if ref is None:
+            return []
+        for sv in self.subvols.values():
+            if sv["parent_uuid"] == ref["uuid"]:
+                l.append(sv)
+        return l
+
     def get_subvols(self, refresh=False):
         """
-        ID 256 parent 5 top level 5 path btrfssvc
-        ID 259 parent 256 top level 5 path btrfssvc/child
-        ID 260 parent 5 top level 5 path btrfssvc@sent
-        ID 261 parent 256 top level 5 path btrfssvc/child@sent
-        ID 262 parent 5 top level 5 path btrfssvc@tosend
-        ID 263 parent 256 top level 5 path btrfssvc/child@tosend
-        ID 264 parent 5 top level 5 path subdir/vol
-        ID 265 parent 256 top level 5 path btrfssvc/cross_mnt_snap
+        ID 1070 gen 1071 top level 5 parent_uuid 4a48e4ca-634f-7f40-8c9a-5df931ddfa3e uuid 1f92bd2b-f032-834c-ba70-481f2bb04ae0 path bt1_child1@sent
+           1        3              6             8                                         10                                        12   
         """
-        if not refresh and hasattr(self, "subvols"):
-            return
+        if not refresh and self.subvols is not None:
+            return self.subvols
         self.subvols = {}
-        cmd = ['btrfs', 'subvol', 'list', '-p', self.path]
+        cmd = ['btrfs', 'subvol', 'list', '-qu', self.path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             cmd_string = " ".join(cmd)
@@ -122,38 +146,52 @@ class Btrfs(object):
                 continue
             l = line.split()
             subvol = {}
-            subvol['id'] = l[1]
-            subvol['parent_id'] = l[3]
-            subvol['top'] = l[6]
+            subvol['id'] = int(l[1])
+            subvol['gen'] = int(l[3])
+            subvol['top'] = int(l[6])
+            subvol['parent_uuid'] = l[8]
+            subvol['uuid'] = l[10]
             subvol['path'] = line[line.index(" path ")+6:]
             self.subvols[subvol['id']] = subvol
+        return self.subvols
 
-    def subvol_delete(self, subvol=None, recursive=False):
+    def subvol_delete_cmd(self, subvol=None):
         if subvol is None:
             subvol = []
         opts = []
-        if recursive:
-            opts.append('-R')
 
         if isinstance(subvol, list):
             subvols = subvol
         else:
             subvols = [subvol]
 
+        # discard already deleted subvols
+        subvols = [subvol for subvol in subvols if self.has_subvol(subvol)]
+        if len(subvols) == 0:
+            return
+
         # delete in descending depth order
         subvols.sort(reverse=True)
 
-        cmd = []
-        for subvol in subvols:
-            if not self.has_subvol(subvol):
-                continue
-            cmd += ['btrfs', 'subvolume', 'delete'] + opts + [subvol, '&&']
+        cmd = ["btrfs", "subvolume", "delete"] + opts + subvols
+        return cmd
 
-        if len(cmd) == 0:
+    def subvol_delete(self, subvol=None):
+        cmd = self.subvol_delete_cmd(subvol)
+        if not cmd:
             return
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ExecError()
 
-        cmd = cmd[:-1]
+    def fsfreeze(self):
+        cmd = ["fsfreeze", "--freeze", self.rootdir]
+        ret, out, err = self.vcall(cmd)
+        if ret != 0:
+            raise ExecError()
 
+    def fsunfreeze(self):
+        cmd = ["fsfreeze", "--unfreeze", self.rootdir]
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ExecError()
@@ -167,17 +205,32 @@ class Btrfs(object):
                 subvols.append(self.rootdir+'/'+subvol['path'])
         return subvols
 
-    def snapshot(self, origin, snap, readonly=False, recursive=False):
-        if self.has_subvol(snap):
-            raise ExistError("snapshot %s already exists"%snap)
-
+    def snapshots(self, snaps, readonly=False):
         opts = []
-        if recursive:
-            opts.append('-R')
         if readonly:
             opts.append('-r')
 
+        cmds = []
+        for s in snaps:
+            origin = s[0]
+            snap = s[1]
+            cmd = ['btrfs', 'subvolume', 'snapshot'] + opts + [origin, snap]
+            cmds += [" ".join(cmd)]
+        ret, out, err = self.vcall(" && ".join(cmds), shell=True)
+        if ret != 0:
+            raise ExecError(err)
+
+    def snapshot_cmd(self, origin, snap, readonly=False):
+        opts = []
+        if readonly:
+            opts.append('-r')
         cmd = ['btrfs', 'subvolume', 'snapshot'] + opts + [origin, snap]
+        return cmd
+
+    def snapshot(self, origin, snap, readonly=False):
+        if self.has_subvol(snap):
+            raise ExistError("snapshot %s already exists"%snap)
+        cmd = self.snapshot_cmd(origin, snap, readonly)
         ret, out, err = self.vcall(cmd)
         if ret != 0:
             raise ExecError(err)
@@ -190,11 +243,21 @@ class Btrfs(object):
             return path.replace(self.rootdir+'/', "")
         return path
 
-    def has_subvol(self, subvol):
-        # refresh subvol list
-        self.get_subvols(refresh=True)
+    def get_subvol(self, subvol, refresh=False):
+        self.get_subvols(refresh=refresh)
 
         subvol = self.path_to_subvol(subvol)
+        for sub in self.subvols.values():
+            if sub['path'] == subvol:
+                return sub
+        return None
+
+    def has_subvol(self, subvol, refresh=False):
+        # refresh subvol list
+        self.get_subvols(refresh=refresh)
+
+        if isinstance(subvol, str):
+            subvol = self.path_to_subvol(subvol)
         for sub in self.subvols.values():
             if sub['path'] == subvol:
                 return True
@@ -248,12 +311,15 @@ class Btrfs(object):
         if error:
             raise ExecError("failed to create %s"%self.snapvol)
 
-    def vcall(self, cmd):
+    def vcall(self, cmd, shell=False):
         if self.node is not None:
-            cmd = [' '.join(cmd)]
-            cmd = Env.rsh.split() + [self.node] + cmd
+            if not shell:
+                cmd = ' '.join(cmd)
+                cmd = Env.rsh.split() + [self.node] + [cmd]
+            else:
+                cmd = "%s %s \"%s\"" %  (Env.rsh, self.node, cmd)
 
-        return vcall(cmd, log=self.log)
+        return vcall(cmd, log=self.log, shell=shell)
 
     def justcall(self, cmd):
         if self.node is not None:
@@ -293,8 +359,6 @@ class Btrfs(object):
         # verify this is the right subvol (missing: path->subvol name fn)
 
     def setup_rootvol(self):
-        self.rootdir = os.path.join(Env.paths.pathvar, 'btrfs', self.label)
-
         if not self.dir_exists(self.rootdir):
             cmd = ['mkdir', '-p', self.rootdir]
             ret, out, err = self.vcall(cmd)
@@ -302,6 +366,18 @@ class Btrfs(object):
                 raise ExecError("error creating dir %s:\n"%self.rootdir+err)
 
         self.mount_rootvol()
+
+        if not self.dir_exists(self.snapdir):
+            cmd = ['mkdir', '-p', self.snapdir]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ExecError("error creating dir %s:\n"%self.snapdir+err)
+
+        if not self.dir_exists(self.tempdir):
+            cmd = ['mkdir', '-p', self.tempdir]
+            ret, out, err = self.vcall(cmd)
+            if ret != 0:
+                raise ExecError("error creating dir %s:\n"%self.tempdir+err)
 
     def setup_snap(self):
         if not self.has_snapvol():
@@ -392,7 +468,7 @@ class Btrfs(object):
                 l = line.split()
                 self.devs[l[-1]] = (label, uuid)
 
-    def get_transid(self, path):
+    def get_subvol_path(self, path):
         """
         /opt/opensvc/var/btrfs/win2/win2@sent
                 Name:                   win2@sent
@@ -410,22 +486,24 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvolume', 'show', path]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ExecError("can't fetch %s transid:\n%s"%(path, err))
+            raise ExecError("get_subvol_path:\n%s"%(path, err))
         for line in out.split("\n"):
-            if "Generation" in line:
-                return line.split()[-1]
-        raise ExecError("can't find %s transid\n"%path)
+            return line
+        raise ExecError("can't find %s path relative to the btrfs root\n" % path)
 
     def __str__(self):
         self.get_subvols()
         s = "label: %s\n" % self.label
         s += "subvolumes:\n"
         for sub in self.subvols.values():
-            s += "id: %s parent_id: %s top: %s path: %s\n"%(sub['id'], sub['parent_id'], sub['top'], sub['path'])
+            s += "uuid: %s parent: %s top: %s path: %s\n"%(sub['uuid'], sub['parent_uuid'], sub['top'], sub['path'])
         return s
 
 if __name__ == "__main__":
     o = Btrfs(label=sys.argv[1])
-    print(o.get_transid("/opt/opensvc/var/btrfs/deb1/deb1@sent"))
+    #print(o)
+    for sub in o.get_snaps_of("bt1/child1/1a"):
+        print(sub)
+    #print(o.get_transid("/opt/opensvc/var/btrfs/deb1/deb1@sent"))
     #o.setup_snap()
 
