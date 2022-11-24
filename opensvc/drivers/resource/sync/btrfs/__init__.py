@@ -281,9 +281,9 @@ class SyncBtrfs(Sync):
 
     def get_targets(self, action=None):
         self.targets = set()
-        if "nodes" in self.target and action in (None, "sync_nodes"):
+        if "nodes" in self.target and action in (None, "sync_nodes", "sync_full"):
             self.targets |= self.svc.nodes
-        if "drpnodes" in self.target and action in (None, "sync_drp"):
+        if "drpnodes" in self.target and action in (None, "sync_drp", "sync_full"):
             self.targets |= self.svc.drpnodes
         self.targets -= set([Env.nodename])
 
@@ -458,18 +458,6 @@ class SyncBtrfs(Sync):
             return []
         return [" ".join(cmd)]
 
-    def install_snaps(self, subvol, node):
-        cmds = []
-        cmds += self.remove_dst(subvol, node)
-        cmds += self.install_dst(subvol, node)
-        return cmds
-
-    def rotate_snaps(self, subvol, node=None):
-        cmds = []
-        cmds += self.remove_snap(subvol, node)
-        cmds += self.rename_snap(subvol, node)
-        return cmds
-
     def get_btrfs(self, node=None):
         if node:
             o = self.dst_btrfs[node]
@@ -495,6 +483,7 @@ class SyncBtrfs(Sync):
         self.get_src_info()
         subvols_paths = [s["path"] for s in self.all_subvols()]
         src_cmds = []
+        subvols = self.subvols()
 
         for n in self.targets:
             self.get_dst_info(n)
@@ -504,14 +493,21 @@ class SyncBtrfs(Sync):
             cmds = []
             incrs = []
             fulls = []
-            for subvol in self.subvols():
+            for subvol in subvols:
                 if self.rel_dst_snap_sent(subvol, n) in rsubvols_paths and self.rel_src_snap_sent(subvol) in subvols_paths:
                     incrs.append(subvol)
                 else:
                     fulls.append(subvol)
-                cmds += self.rotate_snaps(subvol, n)
-                cmds += self.install_snaps(subvol, n)
-                src_cmds += self.rotate_snaps(subvol)
+            for subvol in subvols:
+                cmds += self.remove_snap(subvol, n)
+                src_cmds += self.remove_snap(subvol)
+            for subvol in subvols:
+                cmds += self.rename_snap(subvol, n)
+                src_cmds += self.rename_snap(subvol)
+            for subvol in subvols:
+                cmds += self.remove_dst(subvol, n)
+            for subvol in subvols:
+                cmds += self.install_dst(subvol, n)
             cmds += self.install_final(n)
             self.btrfs_send_incremental(incrs, n)
             self.btrfs_send_initial(fulls, n)
@@ -538,9 +534,16 @@ class SyncBtrfs(Sync):
             self.cleanup_remote(n, remote_subvols)
             cmds = []
             for subvol in self.subvols():
-                cmds += self.rotate_snaps(subvol, n)
-                cmds += self.install_snaps(subvol, n)
-                src_cmds += self.rotate_snaps(subvol)
+                cmds += self.remove_snap(subvol, n)
+                src_cmds += self.remove_snap(subvol, n)
+            for subvol in self.subvols():
+                cmds += self.rename_snap(subvol, n)
+                src_cmds += self.rename_snap(subvol, n)
+            for subvol in self.subvols():
+                cmds += self.remove_dst(subvol, n)
+            for subvol in self.subvols():
+                cmds += self.install_dst(subvol, n)
+
             cmds += self.install_final(n)
             self.btrfs_send_initial(self.subvols(), n)
             self.do_cmds(cmds, n)
