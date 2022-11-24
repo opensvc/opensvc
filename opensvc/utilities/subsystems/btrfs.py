@@ -235,9 +235,6 @@ class Btrfs(object):
         if ret != 0:
             raise ExecError(err)
 
-    def has_snapvol(self):
-        return self.has_subvol(self.snapvol)
-
     def path_to_subvol(self, path):
         if path.startswith('/'):
             return path.replace(self.rootdir+'/', "")
@@ -263,13 +260,6 @@ class Btrfs(object):
                 return True
         return False
 
-    def mount_snapvol(self):
-        self.get_dev()
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvol='+self.snapvol, self.dev, self.snapdir]
-        ret, out, err = self.vcall(cmd)
-        if ret != 0:
-            raise ExecError("error mounting %s subvol:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
-
     def mount_rootvol(self):
         if self.node:
             return
@@ -280,36 +270,6 @@ class Btrfs(object):
         out, err, ret = self.justcall(cmd)
         if ret != 0:
             raise ExecError("error mounting %s btrfs:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
-
-    def create_snapvol(self):
-        self.get_dev()
-        error = False
-
-        import tempfile
-        tmpdir = tempfile.mktemp()
-        cmd = ['mkdir', '-p', tmpdir]
-        out, err, ret = self.justcall(cmd)
-        if ret != 0:
-            raise ExecError("error creating dir %s:\n"%tmpdir+err)
-
-        cmd = ['mount', '-t', 'btrfs', '-o', 'subvolid=0', self.dev, tmpdir]
-        out, err, ret = self.justcall(cmd)
-        if ret != 0:
-            self.rmdir(tmpdir)
-            raise ExecError("error mounting %s btrfs:\ncmd: %s\n%s"%(self.label,' '.join(cmd),err))
-
-        try:
-            self.create_subvol(os.path.join(tmpdir, self.snapvol))
-        except:
-            error = True
-
-        cmd = ['umount', tmpdir]
-        out, err, ret = self.justcall(cmd)
-        if ret != 0:
-            raise ExecError("error umounting %s btrfs:\n"%self.label+err)
-        self.rmdir(tmpdir)
-        if error:
-            raise ExecError("failed to create %s"%self.snapvol)
 
     def vcall(self, cmd, shell=False):
         if self.node is not None:
@@ -333,31 +293,6 @@ class Btrfs(object):
         if ret != 0:
             raise ExecError("error creating %s subvol"%path)
 
-    def setup_snap_subvol(self):
-        # unused for now
-
-
-        if not self.dir_exists(self.snapdir):
-            cmd = ['mkdir', '-p', self.snapdir]
-            ret, out, err = self.vcall(cmd)
-            if ret != 0:
-                raise ExecError("error creating dir %s:\n"%self.snapdir+err)
-
-        if not self.has_snapvol():
-            self.create_snapvol()
-            self.mount_snapvol()
-
-        try:
-            o = Btrfs(self.snapdir)
-        except InitError:
-            self.mount_snapvol()
-            o = Btrfs(self.snapdir)
-
-        if o.label != self.label:
-            raise ExecError("wrong fs mounted in %s: %s"%(self.snapdir, o.label))
-
-        # verify this is the right subvol (missing: path->subvol name fn)
-
     def setup_rootvol(self):
         if not self.dir_exists(self.rootdir):
             cmd = ['mkdir', '-p', self.rootdir]
@@ -378,20 +313,6 @@ class Btrfs(object):
             ret, out, err = self.vcall(cmd)
             if ret != 0:
                 raise ExecError("error creating dir %s:\n"%self.tempdir+err)
-
-    def setup_snap(self):
-        if not self.has_snapvol():
-            self.create_subvol(self.snapdir)
-        try:
-            o = Btrfs(self.snapdir)
-        except InitError:
-            self.mount_snapvol()
-            o = Btrfs(self.snapdir)
-
-        if o.label != self.label:
-            raise ExecError("wrong fs mounted in %s: %s"%(self.snapdir, o.label))
-
-        # verify this is the right subvol (missing: path->subvol name fn)
 
     def get_mounts(self):
         """
@@ -505,5 +426,4 @@ if __name__ == "__main__":
     for sub in o.get_snaps_of("bt1/child1/1a"):
         print(sub)
     #print(o.get_transid("/opt/opensvc/var/btrfs/deb1/deb1@sent"))
-    #o.setup_snap()
 
