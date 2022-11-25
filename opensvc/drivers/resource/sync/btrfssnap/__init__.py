@@ -1,5 +1,6 @@
 import datetime
 import os
+import subprocess
 
 import core.status
 import utilities.subsystems.btrfs
@@ -178,7 +179,7 @@ class SyncBtrfssnap(Sync):
         cmd = btrfs.snapshot_cmd(orig, snap, readonly=True)
         if not cmd:
             return []
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def remove_snaps(self, label, subvol):
         btrfs = self.get_btrfs(label)
@@ -201,7 +202,7 @@ class SyncBtrfssnap(Sync):
         for path in sorted_snaps[self.keep:]:
             cmd = btrfs.subvol_delete_cmd(os.path.join(btrfs.rootdir, path))
             if cmd:
-                cmds.append(" ".join(cmd))
+                cmds.append(subprocess.list2cmdline(cmd))
         return cmds
 
     def _status_one(self, label, subvol):

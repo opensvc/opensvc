@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import subprocess
 
 import core.exceptions as ex
 import utilities.devices.linux
@@ -131,7 +132,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvol', 'list', '-qupR', self.path]
         out, err, ret = self.justcall(cmd)
         if ret != 0:
-            cmd_string = " ".join(cmd)
+            cmd_string = subprocess.list2cmdline(cmd)
             if self.node is not None:
                 self.log.warning("command failed on %s: %s", self.node, cmd_string)
             raise InitError("error running '%s': %s\n" % (cmd_string, err))
@@ -212,7 +213,7 @@ class Btrfs(object):
             origin = s[0]
             snap = s[1]
             cmd = ['btrfs', 'subvolume', 'snapshot'] + opts + [origin, snap]
-            cmds += [" ".join(cmd)]
+            cmds += [subprocess.list2cmdline(cmd)]
         ret, out, err = self.vcall(" && ".join(cmds), shell=True)
         if ret != 0:
             raise ExecError(err)
@@ -270,18 +271,21 @@ class Btrfs(object):
 
     def vcall(self, cmd, shell=False):
         if self.node is not None:
-            if not shell:
-                cmd = ' '.join(cmd)
-                cmd = Env.rsh.split() + [self.node] + [cmd]
+            lcmd = Env.rsh.split() + [self.node]
+            if shell:
+                rcmd = cmd
+                cmd = lcmd + [rcmd]
+                cmd = subprocess.list2cmdline(cmd)
             else:
-                cmd = "%s %s \"%s\"" %  (Env.rsh, self.node, cmd)
+                rcmd = subprocess.list2cmdline(cmd)
+                cmd = lcmd + [rcmd]
 
         return vcall(cmd, log=self.log, shell=shell)
 
     def justcall(self, cmd):
         if self.node is not None:
-            cmd = [' '.join(cmd)]
-            cmd = Env.rsh.split() + [self.node] + cmd
+            cmd = subprocess.list2cmdline(cmd)
+            cmd = Env.rsh.split() + [self.node, cmd]
         return justcall(cmd)
 
     def create_subvol(self, path):

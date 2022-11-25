@@ -1,8 +1,7 @@
 import os
 import time
 import json
-
-from subprocess import *
+import subprocess
 
 import core.status
 import utilities.subsystems.btrfs
@@ -113,7 +112,7 @@ class SyncBtrfs(Sync):
     def _info(self):
         data = [
           ["src", self.src],
-          ["target", " ".join(self.target) if self.target else ""],
+          ["target", subprocess.list2cmdline(self.target) if self.target else ""],
         ]
         data += self.stats_keys()
         return data
@@ -329,10 +328,10 @@ class SyncBtrfs(Sync):
         else:
             receive_cmd = ["btrfs", "receive", self.dst_next_dir(node)]
 
-        self.log.info(" ".join(send_cmd + ["|"] + receive_cmd))
-        p1 = Popen(send_cmd, stdout=PIPE, stderr=PIPE)
-        pi = Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=PIPE, stderr=PIPE)
-        p2 = Popen(receive_cmd, stdin=pi.stdout, stdout=PIPE, stderr=PIPE)
+        self.log.info(subprocess.list2cmdline(send_cmd) + " | " + subprocess.list2cmdline(receive_cmd))
+        p1 = subprocess.Popen(send_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        pi = subprocess.Popen(["dd", "bs=4096"], stdin=p1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p2 = subprocess.Popen(receive_cmd, stdin=pi.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         buff = p2.communicate()
         send_buff = p1.stderr.read()
         if send_buff is not None and len(send_buff) > 0:
@@ -380,7 +379,7 @@ class SyncBtrfs(Sync):
             raise ex.Error()
 
     def remove_dst_snap_temp(self, node):
-        return ["rm -rf %s" % self.dst_temp_dir(node)]
+        return [subprocess.list2cmdline(["rm", "-rf", self.dst_temp_dir(node)])]
 
     def remove_dst_snap_next(self, node):
         o = self.get_btrfs(node)
@@ -389,7 +388,7 @@ class SyncBtrfs(Sync):
         cmd = o.subvol_delete_cmd(subvols) or []
         if not cmd:
             return []
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def remove_dst_snap_last(self, node):
         o = self.get_btrfs(node)
@@ -398,7 +397,7 @@ class SyncBtrfs(Sync):
         cmd = o.subvol_delete_cmd(subvols) or []
         if not cmd:
             return []
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def remove_src_snap_last(self):
         o = self.get_btrfs()
@@ -407,20 +406,20 @@ class SyncBtrfs(Sync):
         cmd = o.subvol_delete_cmd(subvols) or []
         if not cmd:
             return []
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def rename_src_snap_next(self):
         src = self.src_next_dir()
         dst = self.src_last_dir()
         cmd = ["mv", "-v", src, dst]
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def rename_dst_snap_next(self, node):
         src = self.dst_next_dir(node)
         dst = self.dst_last_dir(node)
         cmds = [
-            "rm -rf %s" % dst,
-            "mv -v %s %s" % (src, dst),
+            subprocess.list2cmdline(["rm", "-rf", dst]),
+            subprocess.list2cmdline(["mv", "-v", src, dst]),
         ]
         return cmds
 
@@ -429,7 +428,7 @@ class SyncBtrfs(Sync):
         cmd = self.dst_btrfs[node].subvol_delete_cmd(dst)
         if not cmd:
             return []
-        return [" ".join(cmd)]
+        return [subprocess.list2cmdline(cmd)]
 
     def install_final(self, node):
         head_subvol = self.subvols()[0]
@@ -437,8 +436,8 @@ class SyncBtrfs(Sync):
         if protected_dir(self.dst):
             raise ex.Error("%s is a protected dir. refuse to remove" % self.dst)
         cmds = [
-            "rm -rf %s" % self.dst,
-            "mv -v %s %s" % (src, self.dst),
+            subprocess.list2cmdline(["rm", "-rf", self.dst]),
+            subprocess.list2cmdline(["mv", "-v", src, self.dst]),
         ]
         return cmds
 
@@ -450,8 +449,8 @@ class SyncBtrfs(Sync):
             cmd = self.dst_btrfs[node].snapshot_cmd(src, dst, readonly=False)
             if not cmd:
                 continue
-            cmds.append("mkdir -p %s" % os.path.dirname(dst))
-            cmds.append(" ".join(cmd))
+            cmds.append(subprocess.list2cmdline(["mkdir", "-p", os.path.dirname(dst)]))
+            cmds.append(subprocess.list2cmdline(cmd))
         return cmds
 
     def make_src_workdirs(self):
