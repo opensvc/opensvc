@@ -408,6 +408,15 @@ class SyncBtrfs(Sync):
             return []
         return [subprocess.list2cmdline(cmd)]
 
+    def remove_dst(self, node):
+        o = self.get_btrfs(node)
+        p = self.dst
+        subvols = o.get_subvols_in_path(p)
+        cmd = o.subvol_delete_cmd(subvols) or []
+        if not cmd:
+            return []
+        return [subprocess.list2cmdline(cmd)]
+
     def rename_src_snap_next(self):
         src = self.src_next_dir()
         dst = self.src_last_dir()
@@ -423,19 +432,13 @@ class SyncBtrfs(Sync):
         ]
         return cmds
 
-    def remove_dst(self, subvol, node):
-        dst = os.path.join(self.dst, subvol["path"])
-        cmd = self.dst_btrfs[node].subvol_delete_cmd(dst)
-        if not cmd:
-            return []
-        return [subprocess.list2cmdline(cmd)]
-
     def install_final(self, node):
         head_subvol = self.subvols()[0]
         src = os.path.join(self.dst_temp_dir(node), head_subvol["path"])
         if protected_dir(self.dst):
             raise ex.Error("%s is a protected dir. refuse to remove" % self.dst)
-        cmds = [
+        cmds = self.remove_dst(node)
+        cmds += [
             subprocess.list2cmdline(["rm", "-rf", self.dst]),
             subprocess.list2cmdline(["mv", "-v", src, self.dst]),
         ]
