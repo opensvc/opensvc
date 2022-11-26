@@ -53,6 +53,8 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+TIMEFMT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
 def driver_capabilities(node=None):
     from utilities.proc import which
     if which("btrfs"):
@@ -182,14 +184,28 @@ class SyncBtrfssnap(Sync):
         return [subprocess.list2cmdline(cmd)]
 
     def remove_snaps(self, label, subvol):
+        cmds = []
+        for sv in self.subvols(label, subvol):
+            if "/.snap/" in sv["path"]:
+                continue
+            cmds += self._remove_snaps(label, sv["path"])
+        return cmds
+
+    def _remove_snaps(self, label, subvol):
         btrfs = self.get_btrfs(label)
-        btrfs.get_subvols()
-        snaps = {}
-        for sv in self.subvols(label, subvol+"/.snap"):
+        snaps = {
+            datetime.datetime.utcnow().strftime(TIMEFMT): {"path": ""},
+        }
+        # does not contain the one we created due to cache
+        for sv in btrfs.get_subvols().values():
+            if not sv["path"].startswith(subvol+"/.snap/"):
+                continue
+            if not self.match_snap_name(sv["path"]):
+                continue
             ds = sv["path"].replace(subvol+"/.snap/", "")
             ds = ds.split(",")[0] # discard optional name
             try:
-                d = datetime.datetime.strptime(ds, "%Y-%m-%dT%H:%M:%S.%fZ")
+                d = datetime.datetime.strptime(ds, TIMEFMT)
                 snaps[ds] = sv["path"]
             except Exception as e:
                 pass
@@ -205,6 +221,15 @@ class SyncBtrfssnap(Sync):
                 cmds.append(subprocess.list2cmdline(cmd))
         return cmds
 
+    def match_snap_name(self, path):
+        if self.name != "":
+            if not path.endswith(","+self.name):
+                return False
+        else:
+            if not path.endswith("Z"):
+                return False
+        return True
+
     def _status_one(self, label, subvol):
         if self.test_btrfs(label) != 0:
             self.status_log("snap of %s suspended: not writable"%label, "info")
@@ -215,13 +240,15 @@ class SyncBtrfssnap(Sync):
             self.status_log("%s:%s %s" % (label, subvol, str(e)))
             return
         snaps = []
-        for sv in self.subvols(label, subvol):
-            if "/.snap/" not in subvol["path"]:
+        for sv in btrfs.get_subvols().values():
+            if not sv["path"].startswith(subvol+"/.snap/"):
+                continue
+            if not self.match_snap_name(sv["path"]):
                 continue
             ds = sv["path"].replace(subvol+"/.snap/", "")
             ds = ds.split(",")[0] # discard optional name
             try:
-                d = datetime.datetime.strptime(ds, "%Y-%m-%dT%H:%M:%S.%fZ")
+                d = datetime.datetime.strptime(ds, TIMEFMT)
                 snaps.append(d)
             except Exception as e:
                 pass
@@ -229,11 +256,11 @@ class SyncBtrfssnap(Sync):
             self.status_log("%s:%s has no snap" % (label, subvol))
             return
         if len(snaps) > self.keep:
-            self.status_log("%s:%s has %d too many snaps" % (label, subvol, len(snaps)-self.keep))
+            self.status_log("%s:%s has %d/%d snaps" % (label, subvol, len(snaps), self.keep))
         last = sorted(snaps, reverse=True)[0]
         limit = datetime.datetime.now() - datetime.timedelta(seconds=self.sync_max_delay)
         if last < limit:
-            self.status_log("%s:%s last snap is too old (%s)" % (label, subvol, last.strftime("%Y-%m-%dT%H:%M:%S.%fZ")))
+            self.status_log("%s:%s last snap is too old (%s)" % (label, subvol, last.strftime(TIMEFMT)))
 
     def _status(self, verbose=False):
         for s in self.subvol:
@@ -242,7 +269,10 @@ class SyncBtrfssnap(Sync):
             except:
                 self.status_log("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
                 continue
-            self._status_one(label, subvol)
+            for sv in self.subvols(label, subvol):
+                if "/.snap/" in sv["path"]:
+                    continue
+                self._status_one(label, sv["path"])
         messages = set(self.status_logs_get(["warn"])) - set([''])
         not_writable = set([r for r in messages if "not writable" in r])
         issues = messages - not_writable
