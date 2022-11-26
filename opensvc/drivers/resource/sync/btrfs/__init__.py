@@ -420,8 +420,10 @@ class SyncBtrfs(Sync):
     def rename_src_snap_next(self):
         src = self.src_next_dir()
         dst = self.src_last_dir()
-        cmd = ["mv", "-v", src, dst]
-        return [subprocess.list2cmdline(cmd)]
+        return [
+                subprocess.list2cmdline(["rm", "-rf", dst]),
+                subprocess.list2cmdline(["mv", "-v", src, dst]),
+        ]
 
     def rename_dst_snap_next(self, node):
         src = self.dst_next_dir(node)
