@@ -40,6 +40,14 @@ MODEL_ID = {
     "VSP F1500": "800000",
     "Virtual Storage Platform": "700000",
     "HUS VM": "730000",
+    "VSP 5100": "900000",
+    "VSP 5100H": "900000",
+    "VSP 5200": "900000",
+    "VSP 5200H": "900000",
+    "VSP 5500": "900000",
+    "VSP 5500H": "900000",
+    "VSP 5600": "900000",
+    "VSP 5600H": "900000",
 }
 RETRYABLE_ERROR_MSG_IDS = [
     "KART00003-E",
@@ -506,13 +514,14 @@ class Hcss(object):
             self.log = self.node.log
         done = []
         for s in self.node.conf_sections(cat="array"):
+            oname = s.split("#", 1)[-1]
             try:
                 name = self.node.oget(s, 'name')
             except Exception:
                 name = None
             if not name:
-                name = s.split("#", 1)[-1]
-            if name in done:
+                name = oname
+            if oname in done:
                 continue
             if self.filtering and name not in self.objects:
                 continue
@@ -542,6 +551,7 @@ class Hcss(object):
                 print("error decoding password: %s", exc, file=sys.stderr)
                 continue
             o = Hcs(
+                oname=oname,
                 name=name,
                 model=model,
                 api=api,
@@ -556,7 +566,7 @@ class Hcss(object):
                 log=self.log,
             )
             self.arrays.append(o)
-            done.append(name)
+            done.append(oname)
 
 
     def __iter__(self):
@@ -566,17 +576,18 @@ class Hcss(object):
 
     def get_hcs(self, name):
         for array in self.arrays:
-            if array.name == name:
+            if array.oname == name:
                 return array
         return None
 
 class Hcs(object):
 
-    def __init__(self, name=None, model=None, api=None,
+    def __init__(self, oname=None, name=None, model=None, api=None,
                  username=None, password=None, timeout=None,
                  http_proxy=None, https_proxy=None,
                  retry=30, delay=10,
                  node=None, log=None):
+        self.oname = oname
         self.node = node
         self.log = log
         self.name = name

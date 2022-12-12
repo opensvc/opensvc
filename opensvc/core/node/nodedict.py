@@ -1436,7 +1436,7 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
         "keyword": "model",
         "required": True,
         "example": "VSP G350",
-        "candidates": ['VSP G370', 'VSP G700', 'VSP G900', 'VSP F370', 'VSP F700', 'VSP F900', 'VSP G350', 'VSP F350', 'VSP G800', 'VSP F800', 'VSP G400', 'VSP G600', 'VSP F400', 'VSP F600', 'VSP G200', 'VSP G1000', 'VSP G1500', 'VSP F1500', 'Virtual Storage Platform', 'HUS VM'],
+        "candidates": ['VSP G370', 'VSP G700', 'VSP G900', 'VSP F370', 'VSP F700', 'VSP F900', 'VSP G350', 'VSP F350', 'VSP G800', 'VSP F800', 'VSP G400', 'VSP G600', 'VSP F400', 'VSP F600', 'VSP G200', 'VSP G1000', 'VSP G1500', 'VSP F1500', 'Virtual Storage Platform', 'HUS VM', 'VSP 5100', 'VSP 5100H', 'VSP 5200', 'VSP 5200H' 'VSP 5500', 'VSP 5500H', 'VSP 5600', 'VSP 5600H'],
         "text": "The array model"
     },
     {
