@@ -222,7 +222,7 @@ class SyncBtrfssnap(Sync):
         return cmds
 
     def match_snap_name(self, path):
-        if self.name != "":
+        if self.name:
             if not path.endswith(","+self.name):
                 return False
         else:

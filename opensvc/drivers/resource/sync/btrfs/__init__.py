@@ -296,9 +296,9 @@ class SyncBtrfs(Sync):
 
     def get_targets(self, action=None):
         self.targets = set()
-        if "nodes" in self.target and action in (None, "sync_nodes", "sync_full"):
+        if "nodes" in self.target and action in (None, "sync_nodes", "sync_full", "sync_all"):
             self.targets |= self.svc.nodes
-        if "drpnodes" in self.target and action in (None, "sync_drp", "sync_full"):
+        if "drpnodes" in self.target and action in (None, "sync_drp", "sync_full", "sync_all"):
             self.targets |= self.svc.drpnodes
         self.targets -= set([Env.nodename])
 
