@@ -158,7 +158,7 @@ class SyncBtrfs(Sync):
 
             for subvol in r.subvols():
                 src = r.src_btrfs.rootdir + "/" + subvol["path"]
-                dst = self.src_snap_next(subvol)
+                dst = r.src_snap_next(subvol)
                 tosends.append((src, dst))
 
             r.recreate_snaps(tosends)
