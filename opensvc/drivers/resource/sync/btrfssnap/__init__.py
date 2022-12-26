@@ -263,22 +263,37 @@ class SyncBtrfssnap(Sync):
             self.status_log("%s:%s last snap is too old (%s)" % (label, subvol, last.strftime(TIMEFMT)))
 
     def _status(self, verbose=False):
+        not_found = []
         for s in self.subvol:
             try:
                 label, subvol = s.split(":")
             except:
                 self.status_log("misformatted subvol entry %s (expected <label>:<subvol>)" % s)
                 continue
-            for sv in self.subvols(label, subvol):
+            try:
+                subvols = self.subvols(label, subvol)
+            except Exception as e:
+                if "mount" in str(e):
+                    self.status_log("%s not found" % subvol, "info")
+                    not_found.append(subvol)
+                    continue
+                else:
+                    self.status_log(str(e), "error")
+                    continue
+            for sv in subvols:
                 if "/.snap/" in sv["path"]:
                     continue
                 self._status_one(label, sv["path"])
         messages = set(self.status_logs_get(["warn"])) - set([''])
-        not_writable = set([r for r in messages if "not writable" in r])
+        not_writable = set([r for r in messages if "not writable" in r or "not found" in r])
         issues = messages - not_writable
 
         if len(not_writable) > 0 and len(not_writable) == len(messages):
             return core.status.NA
+        if len(not_found) == len(self.subvol):
+            return core.status.NA
+        if len(not_found) > 0:
+            return core.status.WARN
         if len(issues) == 0:
             return core.status.UP
         return core.status.WARN
