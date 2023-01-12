@@ -2,6 +2,7 @@ import os
 import time
 import json
 import subprocess
+import datetime
 
 import core.status
 import utilities.subsystems.btrfs
@@ -562,7 +563,7 @@ class SyncBtrfs(Sync):
             print(e[0], e[1], traceback.print_tb(e[2]))
             return core.status.WARN
         if last < now - delay:
-            self.status_log("Last sync on %s older than %s"%(last, print_duration(self.sync_max_delay)))
+            self.status_log("last sync on %s older than %s"%(datetime.datetime.fromtimestamp(last), print_duration(self.sync_max_delay)))
             return core.status.WARN
         return core.status.UP
 
