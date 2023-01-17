@@ -24,6 +24,10 @@ class Pool(BasePool):
         return self.oget("max_peers")
 
     @lazy
+    def network(self):
+        return self.oget("network")
+
+    @lazy
     def path(self):
         return self.oget("path") or os.path.join(Env.paths.pathvar, "pool", self.name)
 
@@ -48,6 +52,8 @@ class Pool(BasePool):
                 "disk": "/dev/%s/%s" % (self.vg, name),
                 "standby": True,
             }
+            if self.network:
+                disk["network"] = self.network
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)
@@ -70,6 +76,8 @@ class Pool(BasePool):
                 "disk": "/dev/%s/%s" % (self.zpool, name),
                 "standby": True,
             }
+            if self.network:
+                disk["network"] = self.network
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)
@@ -111,6 +119,8 @@ class Pool(BasePool):
                 "disk": "/dev/%s/lv" % name,
                 "standby": True,
             }
+            if self.network:
+                disk["network"] = self.network
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)

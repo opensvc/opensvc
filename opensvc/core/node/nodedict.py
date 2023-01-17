@@ -1123,6 +1123,12 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     {
         "section": "pool",
         "rtype": "drbd",
+        "keyword": "network",
+        "text": "The name of the backend network to use for drbd trafic. Set this keyword if some node names are resolved to NATed addresses."
+    },
+    {
+        "section": "pool",
+        "rtype": "drbd",
         "keyword": "vg",
         "text": "The name of the volume group to allocate the pool volumes logical volumes into."
     },

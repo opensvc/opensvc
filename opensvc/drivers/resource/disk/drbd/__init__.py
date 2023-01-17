@@ -64,6 +64,12 @@ KEYWORDS = BASE_KEYWORDS + [
         "text": "The port to use to connect a peer. The default",
         "default_text": "A port free on all nodes, allocated by the agent.",
     },
+    {
+        "keyword": "network",
+        "required": False,
+        "provisioning": True,
+        "text": "The name of the backend network to use for drbd trafic. Set this keyword if some node names are resolved to NATed addresses."
+    },
 ]
 DEPRECATED_SECTIONS = {
     "drbd": ["disk", "drbd"],
@@ -202,10 +208,11 @@ class DiskDrbd(Resource):
         Stop 'downs' the drbd devices.
     """
 
-    def __init__(self, res=None, disk=None, **kwargs):
+    def __init__(self, res=None, disk=None, network=None, **kwargs):
         super(DiskDrbd, self).__init__(type="disk.drbd", **kwargs)
         self.res = res
         self.disk = disk
+        self.network = network
         self.label = "drbd %s" % res
         self.drbdadm = None
         self.rollback_even_if_standby = True
@@ -800,6 +807,18 @@ class DiskDrbd(Resource):
             return self.format_config_v8(device, freeport)
 
     def get_node_addr(self, node):
+        if self.network:
+            return self.get_node_addr_with_network(node)
+        else:
+            return self.get_node_addr_with_getaddrinfo(node)
+
+    def get_node_addr_with_network(self, node):
+        from utilities.net.ipaddress import ip_network
+        ndata = self.svc.node.networks_data()[self.network]
+        subnet = ip_network(ndata["config"]["subnets"][node])
+        return str(subnet[1])
+
+    def get_node_addr_with_getaddrinfo(self, node):
         import socket
         addrinfo = socket.getaddrinfo(node, None)[0]
         return addrinfo[4][0]
