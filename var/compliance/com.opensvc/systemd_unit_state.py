@@ -138,7 +138,7 @@ class SystemdUnitState(CompObject):
         data = self.show(name)
         if data.get("LoadState") == "not-found":
             if verbose:
-                pinfo("systemd_unit_state: %s not found")
+                pinfo("systemd_unit_state: %s not found" % name)
             return RET_OK
 
         if "mask" in rule:
