@@ -636,7 +636,7 @@ class ContainerLxc(BaseContainer):
         path = which('lxc-info')
         if path is None:
             return
-        dpath = os.path.dirname(path)
+        dpath = os.path.dirname(os.path.realpath(path))
         if not dpath.endswith("bin"):
             return
         dpath = os.path.realpath(os.path.join(dpath, ".."))
