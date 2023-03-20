@@ -395,7 +395,7 @@ class Btrfs(object):
         cmd = ['btrfs', 'subvolume', 'show', path]
         out, err, ret = justcall(cmd)
         if ret != 0:
-            raise ExecError("get_subvol_path:\n%s"%(path, err))
+            raise ExecError("get_subvol_path: %s\n%s"%(path, err))
         for line in out.split("\n"):
             return line
         raise ExecError("can't find %s path relative to the btrfs root\n" % path)
