@@ -227,7 +227,7 @@ class SyncBtrfs(Sync):
         try:
             self.src_btrfs.snapshots(snaps, readonly=True)
         except utilities.subsystems.btrfs.ExistError:
-            self.log.error("%s should not exist"%snap)
+            self.log.error("%s should not exist"%snaps)
             raise ex.Error
         except utilities.subsystems.btrfs.ExecError:
             raise ex.Error
