@@ -9,6 +9,7 @@ import utilities.subsystems.btrfs
 import core.exceptions as ex
 from .. import Sync, notify
 from env import Env
+from utilities.chunker import chunker
 from utilities.converters import print_duration
 from utilities.string import bdecode
 from utilities.files import makedirs, protected_dir
@@ -155,7 +156,11 @@ class SyncBtrfs(Sync):
                 continue
 
             r.get_src_info()
+            r.remove_src_snap_next()
+
+        for i, r in enumerate(resources):
             tosends = []
+
 
             for subvol in r.subvols():
                 src = r.src_btrfs.rootdir + "/" + subvol["path"]
@@ -218,7 +223,7 @@ class SyncBtrfs(Sync):
     def recreate_snaps(self, snaps):
         self.make_src_workdirs()
         self.init_src_btrfs()
-        self.src_btrfs.subvol_delete([snap[1] for snap in snaps])
+        self.src_btrfs.subvol_delete([snap[1] for snap in snaps if os.path.exists(snap[1])])
         try:
             self.src_btrfs.snapshots(snaps, readonly=True)
         except utilities.subsystems.btrfs.ExistError:
@@ -399,6 +404,18 @@ class SyncBtrfs(Sync):
         if not cmd:
             return []
         return [subprocess.list2cmdline(cmd)]
+
+    def remove_src_snap_next(self):
+        o = self.get_btrfs()
+        p = self.src_next_dir()
+        subvols = o.get_subvols_in_path(p)
+        cmds = []
+        for bunch in chunker(subvols, 20):
+            cmd = o.subvol_delete_cmd(bunch) or []
+            if not cmd:
+                continue
+            cmds = [subprocess.list2cmdline(cmd)]
+            self.do_cmds(cmds)
 
     def remove_src_snap_last(self):
         o = self.get_btrfs()
