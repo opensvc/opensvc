@@ -911,6 +911,15 @@ class Crypt(object):
                                 "err": "timeout daemon request (recv_message error)",
                             }
                         time.sleep(PAUSE)
+                    except Exception as exc:
+                        # example: ValueError: filedescriptor out of range in select() during recv_message
+                        if not silent:
+                            self.log.error("%s comm error while %s: %s",
+                                           sp.to, progress, str(exc))
+                        return {
+                            "status": 1,
+                            "error": "raw_daemon_request exception:" + str(exc),
+                        }
         except socket.error as exc:
             if not silent:
                 self.log.error("%s comm error while %s: %s",

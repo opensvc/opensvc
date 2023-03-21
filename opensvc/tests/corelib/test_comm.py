@@ -116,7 +116,7 @@ class TestRawDaemonRequestWithNoTimeout:
     @pytest.mark.usefixtures('created_socket')
     def test_returns_status_1_when_recv_error(time_sleep, recv_message, crypt):
         recv_message.side_effect = [socket.timeout] * 2 + [socket.error('recv_error')]
-        expected_result = {'errno': None, 'error': 'recv_error', 'retryable': False, 'status': 1}
+        expected_result = {'error': 'raw_daemon_request exception:recv_error', 'status': 1}
         assert crypt.raw_daemon_request(data={}) == expected_result
         assert time_sleep.call_count == 2
 
