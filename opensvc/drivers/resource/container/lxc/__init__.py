@@ -1,6 +1,7 @@
 """
 The lxc v1, v2, v3 resource driver
 """
+import glob
 import os
 import shutil
 
@@ -450,7 +451,13 @@ class ContainerLxc(BaseContainer):
         except (OSError, IOError):
             # errno 17: file exists
             pass
-        paths = []
+        paths = [path]
+        for d in glob.glob(path+"/lxc.*"):
+            try:
+                os.rmdir(d)
+                self.log.info("removed leftover cgroup %s", d)
+            except Exception as exc:
+                self.log.debug("failed to remove leftover cgroup %s: %s", d, str(exc))
         while path != ppath:
             path = os.path.dirname(path)
             paths.append(path)
