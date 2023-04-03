@@ -873,6 +873,9 @@ class ExtConfigMixin(object):
 
     def handle_references(self, s, scope=False, impersonate=None, cd=None,
                           section=None, stack=None):
+        if s is None:
+            # avoid cache key collision with "None" values (typically node.dbopensvc)
+            return
         key = self.ref_cache_key(s, scope, impersonate)
         if key and key in self.ref_cache:
             return self.ref_cache[key]
