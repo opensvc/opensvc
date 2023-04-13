@@ -1258,7 +1258,7 @@ class ClientHandler(shared.OsvcThread):
         sending_progress = "sending %s /%s result" % (method, path)
         if path == "favicon.ico":
             self.parent.stats.sessions.alive[self.sid].progress = sending_progress
-            return 200, "image/x-icon", ICON
+            return self.favicon()
         elif path in ("", "index.html"):
             self.parent.stats.sessions.alive[self.sid].progress = sending_progress
             return self.index()
@@ -2116,6 +2116,16 @@ class ClientHandler(shared.OsvcThread):
     # App
     #
     ##########################################################################
+
+    @staticmethod
+    def ui():
+        return shared.NODE.oget("listener", "ui")
+
+    def favicon(self):
+        if not self.ui():
+            return 403, "", ""
+        return 200, "image/x-icon", ICON
+
     def serve_file(self, rpath, content_type):
         try:
             return 200, content_type, self.load_file(rpath)
@@ -2123,10 +2133,14 @@ class ClientHandler(shared.OsvcThread):
             return 404, content_type, "The webapp is not installed."
 
     def index(self):
+        if not self.ui():
+            return 403, "", ""
         #data = self.load_file("index.js")
         #self.h2_push_promise(stream_id, "/index.js", data, "application/javascript")
         return self.serve_file("index.html", "text/html")
 
     def index_js(self):
+        if not self.ui():
+            return 403, "", ""
         return self.serve_file("index.js", "application/javascript")
 

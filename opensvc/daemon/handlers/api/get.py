@@ -9,7 +9,10 @@ class Handler(daemon.handler.BaseHandler):
         (None, "get_api"),
     )
     prototype = []
-    access = {}
+    access = {
+      "roles": ["guest"],
+      "namespaces": "ANY",
+    }
 
     def action(self, nodename, thr=None, **kwargs):
         sigs = []

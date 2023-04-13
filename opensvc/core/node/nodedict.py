@@ -696,6 +696,13 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
         "text": "The url serving the well-known configuration of an openid provider. If set, the h2 listener will try to validate the Bearer token provided in the requests. If valid the user name is fetched from the 'preferred_username' claim (fallback on 'name'), and the user grants are fetched from the 'grant' claim. Grant can be a list, in which case a proper grant value is formatted via concatenation of the list elements."
     },
     {
+        "section": "listener",
+        "keyword": "ui",
+        "convert": "boolean",
+        "default": True,
+        "text": "Serve the ui webapp to browsers getting the api / path.",
+    },
+    {
         "section": "syslog",
         "keyword": "facility",
         "default": "daemon",

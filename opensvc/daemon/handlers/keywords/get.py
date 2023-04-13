@@ -20,7 +20,10 @@ class Handler(daemon.handler.BaseHandler):
             "desc": "The object kind or 'node'.",
         },
     ]
-    access = {}
+    access = {
+      "roles": ["guest"],
+      "namespaces": "ANY",
+    }
 
     def action(self, nodename, thr=None, **kwargs):
         options = self.parse_options(kwargs)
