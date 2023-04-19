@@ -219,7 +219,11 @@ class Daemon(object):
         except LockTimeout:
             self.log.error("abort start: a daemon is already running, and holding the daemon lock")
             sys.exit(1)
-        self.loop_forever()
+        try:
+            self.loop_forever()
+        finally:
+            self.set_last_shutdown()
+            pass
 
     def _already_running(self):
         if daemon_process_running():
