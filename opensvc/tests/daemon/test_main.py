@@ -57,6 +57,17 @@ class TestDaemonRun:
         main(['--debug', '-f'])
         assert loop_forever.call_count == 1
 
+    @staticmethod
+    def test_touch_last_shutdown_when_daemon_terminates(osvc_path_tests, loop_forever):
+        """ regression #54359d0ab90463829080ea84b8faab6bb0255143 breaks #5a5bff3739681cb507637b0c867828d4a440ed30 """
+        import os
+        last_shutdown = Env.paths.last_shutdown
+        with open(last_shutdown, 'w') as f:
+            f.write('')
+        last_shutdown_mtime = os.path.getmtime(last_shutdown)
+        main(['--debug', '-f'])
+        assert os.path.getmtime(last_shutdown) > last_shutdown_mtime, \
+            "expected last_shutdown touched after daemon stop (file is used for merge_frozen)"
 
     @staticmethod
     def test_run_loop_forever_when_daemon_is_dead(loop_forever):
