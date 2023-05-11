@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 try:
     from foreign.six.moves.urllib.request import Request, urlopen
+    from foreign.six.moves.urllib.parse import urlparse
 except ImportError:
     # pylint false positive
     pass
@@ -58,6 +59,19 @@ class Uri(object):
         if not self.secure:
             kwargs.update(ssl_context_kwargs())
         return kwargs
+
+    def host_header(self):
+        """
+        Format http Host header
+        """
+        hdr = None
+        if not self.uri:
+            return hdr
+        parsed = urlparse(self.uri)
+        hdr = parsed.hostname
+        if parsed.port:
+            hdr = hdr + ':' + str(parsed.port)
+        return hdr
 
 def ssl_context_kwargs():
     kwargs = {}

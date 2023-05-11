@@ -2708,6 +2708,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         data["url"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
         if not data["url"].startswith("http"):
             data["url"] = "https://%s" % data["url"]
+        from utilities.uri import Uri
+        data["hosthdr"] = Uri(data["url"]).host_header()
         return data
 
     def collector_auth_node(self):
@@ -2750,6 +2752,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         base64string = base64encode(auth_string)
         base64string = base64string.replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
+        if api["hosthdr"]:
+            request.add_header("Host", api["hosthdr"])
         return request
 
     def collector_rest_get(self, rpath, data=None, path=None):
