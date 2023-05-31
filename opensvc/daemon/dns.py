@@ -2,15 +2,17 @@
 Listener Thread
 """
 import errno
-import os
-import sys
-import socket
-import logging
-import threading
-import shutil
+import grp
 import json
+import logging
+import os
+import pwd
 import re
 import select
+import socket
+import shutil
+import sys
+import threading
 import time
 
 import foreign.six as six
@@ -29,6 +31,14 @@ if six.PY2:
     MAKEFILE_KWARGS = {"bufsize": 0}
 else:
     MAKEFILE_KWARGS = {"buffering": None}
+
+def record(qtype, qname, content, ttl=60):
+    return {
+        "qname": qname,
+        "qtype": qtype,
+        "content": content,
+        "ttl": ttl,
+    }
 
 class Dns(shared.OsvcThread):
     name = "dns"
@@ -58,6 +68,11 @@ class Dns(shared.OsvcThread):
             return
 
         self.log.info("listening on %s", Env.paths.dnsuxsock)
+
+        sock_uid = self.get_uid()
+        sock_gid = self.get_gid()
+        os.chown(Env.paths.dnsuxsock, sock_uid, sock_gid)
+        self.log.info("chown %s:%s %s", sock_uid, sock_gid, Env.paths.dnsuxsock)
 
         self.zone = "%s." % self.cluster_name.strip(".")
         self.suffix = ".%s" % self.zone
@@ -93,6 +108,32 @@ class Dns(shared.OsvcThread):
                 self.join_threads()
                 self.sock.close()
                 self.exit()
+
+    def get_gid(self):
+        s = shared.NODE.oget("listener", "dns_sock_gid")
+        try:
+            return int(s)
+        except ValueError:
+            return
+        try:
+            info = grp.getgrnam(s)
+            return info[2]
+        except KeyError:
+            return
+
+    def get_uid(self):
+        s = shared.NODE.oget("listener", "dns_sock_uid")
+        try:
+            return int(s)
+        except ValueError:
+            pass
+        else:
+            return
+        try:
+            info = pwd.getpwnam(s)
+            return info[2]
+        except KeyError:
+            return
 
     def wait_monitor(self):
         while True:
@@ -235,8 +276,23 @@ class Dns(shared.OsvcThread):
     def action_initialize(self, parameters):
         return True
 
+    def action_getAllDomainMetadata(self, parameters):
+        if parameters.get("name") != self.zone:
+            return {}
+        return {
+                "ALLOW-AXFR-FROM": ["0.0.0.0/0", "AUTO-NS"],
+        }
+
+    def action_getAllDomains(self, parameters):
+        return [
+            {
+                "zone": self.zone,
+            },
+        ]
+
     def action_getDomainMetadata(self, parameters):
         """
+        Example request:
         {
             "method": "getDomainMetadata",
             "parameters": {
@@ -245,6 +301,8 @@ class Dns(shared.OsvcThread):
             }
         }
         """
+        if parameters.get("name") != self.zone:
+            return []
         kind = parameters.get("kind")
         if kind == "ALLOW-AXFR-FROM":
             return ["0.0.0.0/0", "AUTO-NS"]
@@ -285,9 +343,8 @@ class Dns(shared.OsvcThread):
                    self.aaaa_record(parameters) + \
                    self.srv_record(parameters) + \
                    self.txt_record(parameters) + \
-                   self.cname_record(parameters)
-
-            return self._action_list(qname)
+                   self.cname_record(parameters) + \
+                   self.soa_record(parameters)
         return []
 
     def action_list(self, parameters):
@@ -300,12 +357,7 @@ class Dns(shared.OsvcThread):
             if not qname.endswith(suffix):
                 continue
             for content in contents:
-                data.append({
-                    "qtype": "A",
-                    "qname": qname,
-                    "content": content,
-                    "ttl": 60
-                })
+                data.append(record("A", qname, content))
         return data
 
     def _action_list(self, suffix):
@@ -313,46 +365,31 @@ class Dns(shared.OsvcThread):
         Empty suffix is what "dns dump" uses.
         """
         data = []
-        if suffix:
-            data += self.soa_record({"qname": suffix})
-            if len(data) == 0:
-                return data
-            # don't include NS record in dump, as those depend on suffix
-            data += self.zone_ns_records(suffix)
-        else:
-            data += self.zone_ns_records(self.zone)
+        if suffix == "":
+            suffix = self.zone
+        elif suffix != self.zone:
+            return []
+
+        data += self.soa_record({"qname": suffix})
+        data += self.zone_ns_records(suffix)
+
         for qname, contents in self.a_records().items():
             if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
                 qtype = "AAAA" if ":" in content else "A"
-                data.append({
-                    "qtype": qtype,
-                    "qname": qname,
-                    "content": content,
-                    "ttl": 60
-                })
+                data.append(record(qtype, qname, content))
         for qname, contents in self.srv_records().items():
             if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
-                data.append({
-                    "qtype": "SRV",
-                    "qname": qname,
-                    "content": content,
-                    "ttl": 60
-                })
+                data.append(record("SRV", qname, content))
         for qname, contents in self.ptr_records().items():
             if suffix and not qname.endswith(suffix):
                 continue
             for content in contents:
                 qtype = "PTR6" if ":" in qname else "PTR"
-                data.append({
-                    "qtype": "PTR",
-                    "qname": qname,
-                    "content": content,
-                    "ttl": 60
-                })
+                data.append(record(qtype, qname, content))
         return data
 
     def remove_suffix(self, qname):
@@ -375,13 +412,8 @@ class Dns(shared.OsvcThread):
     def zone_ns_records(self, zonename):
         data = []
         for i, dns in enumerate(shared.NODE.dns):
-            dns = "ns%d.%s" % (i, zonename)
-            data.append({
-                "qtype": "NS",
-                "qname": zonename,
-                "content": dns,
-                "ttl": 3600
-            })
+            content = "ns%d.%s" % (i, zonename)
+            data.append(record("NS", zonename, content, ttl=3600))
         return data
 
     def soa_records(self):
@@ -405,17 +437,7 @@ class Dns(shared.OsvcThread):
                 return []
         elif qname != self.zone:
             return []
-
-        data = [
-            {
-                "qtype": "SOA",
-                "qname": qname,
-                "content": self.soa_content,
-                "ttl": 60,
-                "domain_id": -1
-            }
-        ]
-        return data
+        return [record("SOA", qname, self.soa_content)]
 
     def cname_record(self, parameters):
         return []
@@ -427,52 +449,27 @@ class Dns(shared.OsvcThread):
         qname = parameters.get("qname").lower()
         if not qname.endswith(self.suffix):
             return []
-        return [{
-            "qtype": "SRV",
-            "qname": qname,
-            "content": content,
-            "ttl": 60
-        } for content in self.srv_records().get(qname, [])]
+        return [record("SRV", qname, content) for content in self.srv_records().get(qname, [])]
 
     def ptr_record(self, parameters):
         qname = parameters.get("qname").lower()
-        return [{
-            "qtype": "PTR",
-            "qname": qname,
-            "content": name,
-            "ttl": 60
-        } for name in self.ptr_records().get(qname, []) if "." in name]
+        return [record("PTR", qname, name) for name in self.ptr_records().get(qname, []) if "." in name]
 
     def ptr6_record(self, parameters):
         qname = parameters.get("qname").lower()
-        return [{
-            "qtype": "PTR6",
-            "qname": qname,
-            "content": name,
-            "ttl": 60
-        } for name in self.ptr_records().get(qname, []) if ":" in name]
+        return [record("PTR6", qname, name) for name in self.ptr_records().get(qname, []) if ":" in name]
 
     def a_record(self, parameters):
         qname = parameters.get("qname").lower()
         if not qname.endswith(self.suffix):
             return []
-        return [{
-            "qtype": "A",
-            "qname": qname,
-            "content": addr,
-            "ttl": 60
-        } for addr in self.a_records().get(qname, []) if "." in addr]
+        return [record("A", qname, addr) for addr in self.a_records().get(qname, []) if "." in addr]
 
     def aaaa_record(self, parameters):
         qname = parameters.get("qname").lower()
         if not qname.endswith(self.suffix):
             return []
-        return [{
-            "qtype": "AAAA",
-            "qname": qname,
-            "content": addr,
-            "ttl": 60
-        } for addr in self.a_records().get(qname, []) if ":" in addr]
+        return [record("AAAA", qname, addr) for addr in self.a_records().get(qname, []) if ":" in addr]
 
     def ptr_records(self):
         data = self.get_cache("ptr")
