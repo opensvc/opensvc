@@ -199,13 +199,12 @@ class Dns(shared.OsvcThread):
             sep = "\n"
         chunks = []
         while True:
+            chunk = None
             ready = select.select([conn], [], [conn], 1)
             if ready[0]:
                 chunk = conn.recv(1024)
-            else:
-                break
-            if ready[2]:
-                break
+            elif ready[2]:
+                raise socket.error
             if not chunk:
                 break
             chunks.append(chunk)
