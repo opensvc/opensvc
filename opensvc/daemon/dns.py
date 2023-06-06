@@ -100,7 +100,6 @@ class Dns(shared.OsvcThread):
         while True:
             try:
                 self.do()
-                self.update_status()
             except Exception as exc:
                 self.log.error("xx %s", exc)
                 import traceback
@@ -190,6 +189,7 @@ class Dns(shared.OsvcThread):
             if not (readable or writable or exceptional):
                 self.reload_config()
                 self.janitor_procs()
+                self.update_status()
                 continue
 
             for s in readable:
@@ -225,7 +225,7 @@ class Dns(shared.OsvcThread):
                     #print('=> output queue for', s.fileno(), 'is empty')
                     outputs.remove(s)
                 else:
-                    b = bencode(json.dumps(response) + "\n")
+                    b = bencode(json.dumps(next_msg) + "\n")
                     #print('=> sending "%s" to %s' % (b, s.fileno()))
                     s.sendall(b)
             for s in exceptional:
