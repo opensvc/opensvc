@@ -7,12 +7,12 @@ import json
 import logging
 import os
 import pwd
+import queue
 import re
 import select
 import socket
 import shutil
 import sys
-import threading
 import time
 
 import foreign.six as six
@@ -62,7 +62,6 @@ class Dns(shared.OsvcThread):
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sock.bind(Env.paths.dnsuxsock)
             self.sock.listen(1)
-            self.sock.settimeout(self.sock_tmo)
         except socket.error as exc:
             self.alert("error", "bind %s error: %s", Env.paths.dnsuxsock, exc)
             return
@@ -102,12 +101,15 @@ class Dns(shared.OsvcThread):
                 self.do()
                 self.update_status()
             except Exception as exc:
-                self.log.exception(exc)
+                self.log.error("xx %s", exc)
+                import traceback
+                traceback.print_stack()
+                time.sleep(0.2)
             if self.stopped():
-                self.log.debug("stop event received (%d handler threads to join)", len(self.threads))
-                self.join_threads()
-                self.sock.close()
-                self.exit()
+                break
+
+        self.sock.close()
+        self.exit()
 
     def get_gid(self):
         s = shared.NODE.oget("listener", "dns_sock_gid")
@@ -161,95 +163,106 @@ class Dns(shared.OsvcThread):
         return data
 
     def do(self):
-        self.reload_config()
-        self.janitor_procs()
-        self.janitor_threads()
-
-        try:
-            conn, addr = self.sock.accept()
-            #self.log.info("accept connection")
-            self.stats.sessions.accepted += 1
-        except socket.timeout:
-            return
-        try:
-            thr = threading.Thread(target=self.handle_client, args=(conn,))
-            thr.start()
-            self.threads.append(thr)
-        except RuntimeError as exc:
-            self.log.warning(exc)
-            conn.close()
-
-    def handle_client(self, conn):
-        conn.setblocking(False)
-        try:
-            self._handle_client(conn)
-        except Exception as exc:
-            self.log.exception(exc)
-        finally:
-            try:
-                conn.close()
-            except socket.error:
-                pass
-            sys.exit(0)
-
-    def recv(self, conn):
         if six.PY3:
             sep = b"\n"
+            emp = b""
         else:
             sep = "\n"
-        chunks = []
-        while True:
-            chunk = None
-            ready = select.select([conn], [], [conn], 1)
-            if ready[0]:
-                chunk = conn.recv(1024)
-            elif ready[2]:
-                raise socket.error
-            if not chunk:
-                break
-            chunks.append(chunk)
-            if chunk.endswith(sep):
-                break
-        if six.PY3:
-            data = b"".join(chunks)
-        else:
-            data = "".join(chunks)
-        return data
+            emp = ""
 
-    def _handle_client(self, conn):
-        while True:
+        message_queues = {}
+        data = {}
+        inputs = [self.sock]
+        outputs = []
+        closed = set()
+
+        while inputs or outputs:
             if self.stopped():
-                self.log.info("stop event received (handler thread)")
+                self.log.info("stop event received")
                 break
+            readable, writable, exceptional = select.select(inputs, outputs, inputs, self.sock_tmo)
+            #print(
+            #        "=> inputs", [s.fileno() for s in inputs], "=> outputs",  [s.fileno() for s in outputs],
+            #        "=>", "readable", [s.fileno() for s in readable], "writable", [s.fileno() for s in writable], "exceptional", [s.fileno() for s in exceptional],
+            #)
 
-            data = self.recv(conn)
-
-            if not data:
+            if not (readable or writable or exceptional):
+                self.reload_config()
+                self.janitor_procs()
                 continue
 
-            self.log.debug("received %s", data)
+            for s in readable:
+                if s is self.sock:
+                    conn, addr = s.accept()
+                    conn.setblocking(0)
+                    inputs.append(conn)
+                    message_queues[conn] = queue.Queue()
+                    data[conn] = emp
+                    #print("=> new conn", conn.fileno())
+                else:
+                    chunk = s.recv(1024)
+                    if chunk:
+                        self.stats.sessions.rx += len(chunk)
+                        data[s] += chunk
+                        if chunk.endswith(sep):
+                            #print("=> request", s.fileno(), data[s])
+                            response = self.handle(data[s])
+                            #print("=> response", s.fileno(), response)
+                            data[s] = emp
+                            self.stats.sessions.tx += len(response)
+                            message_queues[s].put(response)
+                            if s not in outputs:
+                                outputs.append(s)
+                    else:
+                        #print("=> close (no data)", s.fileno())
+                        closed.add(s)
+            for s in writable:
+                try:
+                    next_msg = message_queues[s].get_nowait()
+                except queue.Empty:
+                    # No messages waiting so stop checking for writability.
+                    #print('=> output queue for', s.fileno(), 'is empty')
+                    outputs.remove(s)
+                else:
+                    b = bencode(json.dumps(response) + "\n")
+                    #print('=> sending "%s" to %s' % (b, s.fileno()))
+                    s.sendall(b)
+            for s in exceptional:
+                #print("=> close (exceptional)", s.fileno())
+                closed.add(s)
+            for s in list(closed):
+                closed.remove(s)
+                if s in inputs:
+                    inputs.remove(s)
+                if s in outputs:
+                    outputs.remove(s)
+                del data[s]
+                del message_queues[s]
+                s.close()
 
-            try:
-                data = bdecode(data)
-                data = json.loads(data)
-            except Exception as exc:
-                self.log.error(exc)
-                data = None
+    def handle(self, data):
+        response = {"result": False}
+        if not data:
+            return response
 
-            if data is None or not isinstance(data, dict):
-                continue
+        self.log.debug("received %s", data)
 
-            try:
-                result = self.router(data)
-            except Exception as exc:
-                self.log.error("dns request: %s => handler error: %s", data, exc)
-                result = {"error": "unexpected backend error", "result": False}
-            data = ""
-            if result is not None:
-                message = bencode(json.dumps(result) + "\n")
-                self.log.debug("reply %s", message)
-                conn.sendall(message)
-                self.stats.sessions.tx += len(message)
+        try:
+            data = bdecode(data)
+            data = json.loads(data)
+        except Exception as exc:
+            self.log.error("error parsing request", exc)
+            data = None
+
+        if data is None or not isinstance(data, dict):
+            return response
+
+        try:
+            response = self.router(data)
+        except Exception as exc:
+            self.log.error("dns request: %s => handler error: %s", data, exc)
+            response = {"error": "unexpected backend error", "result": False}
+        return response
 
     #########################################################################
     #
