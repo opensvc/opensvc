@@ -17,6 +17,7 @@ import time
 import foreign.six as six
 import daemon.shared as shared
 from env import Env
+from foreign.six.moves import queue
 from utilities.net.ipaddress import ip_address
 from utilities.storage import Storage
 from utilities.naming import split_path
@@ -27,10 +28,8 @@ PTR_SUFFIX = ".in-addr.arpa."
 PTR6_SUFFIX = ".ip6.arpa."
 
 if six.PY2:
-    import Queue as queue
     MAKEFILE_KWARGS = {"bufsize": 0}
 else:
-    import queue
     MAKEFILE_KWARGS = {"buffering": None}
 
 def record(qtype, qname, content, ttl=60):
