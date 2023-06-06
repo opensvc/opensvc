@@ -684,6 +684,18 @@ If not set, or set to ``true``, the reboot flag is removed before reboot, and a 
     },
     {
         "section": "listener",
+        "keyword": "dns_sock_uid",
+        "default": "953",
+        "text": "The uid owning the unix socket serving the remote backend to the pdns authoritative server."
+    },
+    {
+        "section": "listener",
+        "keyword": "dns_sock_gid",
+        "default": "953",
+        "text": "The gid owning the unix socket serving the remote backend to the pdns authoritative server."
+    },
+    {
+        "section": "listener",
         "keyword": "port",
         "convert": "integer",
         "default": 1214,
