@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import pwd
-import queue
 import re
 import select
 import socket
@@ -28,8 +27,10 @@ PTR_SUFFIX = ".in-addr.arpa."
 PTR6_SUFFIX = ".ip6.arpa."
 
 if six.PY2:
+    import Queue as queue
     MAKEFILE_KWARGS = {"bufsize": 0}
 else:
+    import queue
     MAKEFILE_KWARGS = {"buffering": None}
 
 def record(qtype, qname, content, ttl=60):
