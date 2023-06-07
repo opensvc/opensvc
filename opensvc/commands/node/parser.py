@@ -294,6 +294,10 @@ OPT = Storage({
         "--tag", default=None,
         action="store", dest="tag",
         help="The tag name, as shown by :cmd:`om node collector list tags`."),
+    "tag_attach_data": Option(
+        "--tag-attach-data", default=None,
+        action="store", dest="tag_attach_data",
+        help="The data stored with the tag attachment. Typed tags, like <name>::<type> expect a particular data structure."),
     "target": Option(
         "--target", default=None, action="store", dest="target",
         help="Specify a target to scan for new block devices. Example: "
@@ -985,6 +989,7 @@ ACTIONS = {
             "msg": "Set a node tag (pointed by --tag).",
             "options": [
                 OPT.tag,
+                OPT.tag_attach_data,
             ],
         },
         "collector_untag": {
