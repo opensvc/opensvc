@@ -229,6 +229,7 @@ class CollectorActions(object):
     def collector_tag(self):
         opts = {}
         opts['tag_name'] = self.options.tag
+        opts['tag_attach_data'] = self.options.tag_attach_data
         if self.path:
             opts['svcname'] = self.path
         d = self.collector.call('collector_tag', opts)
@@ -236,6 +237,8 @@ class CollectorActions(object):
             raise ex.Error("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.Error(d['msg'])
+        elif d.get("msg"):
+            print(d.get("msg"))
 
     def collector_create_tag(self):
         opts = {}
