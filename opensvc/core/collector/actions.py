@@ -225,6 +225,8 @@ class CollectorActions(object):
             raise ex.Error("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.Error(d['msg'])
+        elif d.get("msg"):
+            print(d.get("msg"))
 
     def collector_tag(self):
         opts = {}
