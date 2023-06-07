@@ -628,6 +628,8 @@ class ExtConfigMixin(object):
                 val = self.node.cluster_name
             else:
                 val = self.cluster_name
+        elif _ref == "dns_janitor_major":
+            val = "1"
         elif _ref == "fqdn":
             if has_node:
                 ns = "root" if self.namespace is None else self.namespace
