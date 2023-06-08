@@ -107,6 +107,12 @@ KEYWORDS = [
         "example": "container#0"
     },
     {
+        "keyword": "user",
+        "at": True,
+        "text": "Sets the :cmd:`docker run --user` argument.",
+        "example": "guest"
+    },
+    {
         "keyword": "userns",
         "at": True,
         "candidates": ("host", None),
@@ -328,6 +334,7 @@ class ContainerDocker(BaseContainer):
                  detach=True,
                  entrypoint=None,
                  rm=None,
+                 user=None,
                  netns=None,
                  userns=None,
                  pidns=None,
@@ -361,6 +368,7 @@ class ContainerDocker(BaseContainer):
         self.detach = detach
         self.entrypoint = entrypoint
         self.rm = rm
+        self.user = user
         self.netns = netns
         self.userns = userns
         self.pidns = pidns
@@ -840,6 +848,10 @@ class ContainerDocker(BaseContainer):
             args = drop_option("--userns", args, drop_value=True)
         if self.userns == "host":
             args += ["--userns=host"]
+
+        if self.user is not None:
+            args = drop_option("--user", args, drop_value=True)
+            args += ["--user", self.user]
 
         if self.privileged is not None:
             args = drop_option("--privileged", args, drop_value=False)
