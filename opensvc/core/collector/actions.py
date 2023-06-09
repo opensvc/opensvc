@@ -280,6 +280,9 @@ class CollectorActions(object):
         opts = {}
         if self.path:
             opts['svcname'] = self.path
+        if self.options.verbose:
+            opts['full'] = True
+
         d = self.collector.call('collector_show_tags', opts)
         if d is None:
             raise ex.Error("xmlrpc unknown failure")
