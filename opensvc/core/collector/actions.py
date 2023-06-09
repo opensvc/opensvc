@@ -215,7 +215,7 @@ class CollectorActions(object):
 
         return d['data']
 
-    def collector_untag(self):
+    def collector_tag_detach(self):
         opts = {}
         opts['tag_name'] = self.options.tag
         if self.path:
@@ -228,7 +228,7 @@ class CollectorActions(object):
         elif d.get("msg"):
             print(d.get("msg"))
 
-    def collector_tag(self):
+    def collector_tag_attach(self):
         opts = {}
         opts['tag_name'] = self.options.tag
         opts['tag_attach_data'] = self.options.tag_attach_data
@@ -242,12 +242,14 @@ class CollectorActions(object):
         elif d.get("msg"):
             print(d.get("msg"))
 
-    def collector_create_tag(self):
+    def collector_tag_create(self):
         opts = {}
         opts['tag_name'] = self.options.tag
         if opts['tag_name'] is None:
             print("missing parameter: --tag", file=sys.stderr)
             return 1
+        opts['tag_data'] = self.options.tag_data
+        opts['tag_exclude'] = self.options.tag_exclude
         if self.path:
             opts['svcname'] = self.path
         d = self.collector.call('collector_create_tag', opts)
@@ -255,13 +257,15 @@ class CollectorActions(object):
             raise ex.Error("xmlrpc unknown failure")
         if d['ret'] != 0:
             raise ex.Error(d['msg'])
+        elif d.get("msg"):
+            print(d.get("msg"))
 
-    def collector_list_tags(self):
-        d = self._collector_list_tags()
+    def collector_tag_list(self):
+        d = self._collector_tag_list()
         for tag in d:
             print(tag)
 
-    def _collector_list_tags(self):
+    def _collector_tag_list(self):
         opts = {'pattern': self.options.like}
         if self.path:
             opts['svcname'] = self.path
@@ -272,7 +276,7 @@ class CollectorActions(object):
             raise ex.Error(d['msg'])
         return d['data']
 
-    def collector_show_tags(self):
+    def collector_tag_show(self):
         opts = {}
         if self.path:
             opts['svcname'] = self.path

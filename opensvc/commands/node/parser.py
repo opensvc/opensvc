@@ -294,6 +294,10 @@ OPT = Storage({
         "--tag", default=None,
         action="store", dest="tag",
         help="The tag name, as shown by :cmd:`om node collector list tags`."),
+    "tag_data": Option(
+        "--tag-data", default=None,
+        action="store", dest="tag_data",
+        help="The data stored with the tag. Typed tags, like <name>::<type> expect a particular data structure."),
     "tag_attach_data": Option(
         "--tag-attach-data", default=None,
         action="store", dest="tag_attach_data",
@@ -985,32 +989,36 @@ ACTIONS = {
                    "each node ip, complete with network information from the "
                    "IPAM database.",
         },
-        "collector_tag": {
+        "collector_tag_attach": {
             "msg": "Set a node tag (pointed by --tag).",
             "options": [
                 OPT.tag,
                 OPT.tag_attach_data,
             ],
         },
-        "collector_untag": {
+        "collector_tag_detach": {
             "msg": "Unset a node tag (pointed by --tag).",
             "options": [
                 OPT.tag,
             ],
         },
-        "collector_show_tags": {
+        "collector_tag_show": {
             "msg": "list all node tags",
+            "options": [
+                OPT.verbose,
+            ],
         },
-        "collector_list_tags": {
+        "collector_tag_list": {
             "msg": "List all available tags. Use :opt:`--like` to filter the output.",
             "options": [
                 OPT.like,
             ],
         },
-        "collector_create_tag": {
+        "collector_tag_create": {
             "msg": "Create a new tag with name specified by :opt:`--tag`.",
             "options": [
                 OPT.tag,
+                OPT.tag_data,
             ],
         },
         "collector_search": {

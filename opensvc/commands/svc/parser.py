@@ -95,6 +95,14 @@ OPT.update({
         "--tag", default=None,
         action="store", dest="tag",
         help="The tag name, as shown by :cmd:`collector list tags`."),
+    "tag_data": Option( 
+        "--tag-data", default=None,
+        action="store", dest="tag_data",
+        help="The data stored with the tag. Typed tags, like <name>::<type> expect a particular data structure."),
+    "tag_attach_data": Option(
+        "--tag-attach-data", default=None,
+        action="store", dest="tag_attach_data",
+        help="The data stored with the tag attachment. Typed tags, like <name>::<type> expect a particular data structure."),
     "to": Option(
         "--to", default=None,
         action="store", dest="to",
@@ -797,37 +805,36 @@ ACTIONS.update({
                 OPT.format,
             ],
         },
-        "collector_tag": {
-            "msg": "Set a service tag (pointed by --tag).",
+        "collector_tag_attach": {
+            "msg": "Set a node tag (pointed by --tag).",
+            "options": [
+                OPT.tag,
+                OPT.tag_attach_data,
+            ],
+        },
+        "collector_tag_detach": {
+            "msg": "Unset a node tag (pointed by --tag).",
             "options": [
                 OPT.tag,
             ],
         },
-        "collector_untag": {
-            "msg": "Unset a service tag (pointed by --tag).",
+        "collector_tag_show": {
+            "msg": "list all node tags",
             "options": [
-                OPT.tag,
+                OPT.verbose,
             ],
         },
-        "collector_show_tags": {
-            "msg": "List all service tags.",
-            "options": [
-                OPT.filter,
-                OPT.format,
-            ],
-        },
-        "collector_list_tags": {
+        "collector_tag_list": {
             "msg": "List all available tags. Use :opt:`--like` to filter the output.",
             "options": [
-                OPT.filter,
-                OPT.format,
                 OPT.like,
             ],
         },
-        "collector_create_tag": {
-            "msg": "Create a new tag.",
+        "collector_tag_create": {
+            "msg": "Create a new tag with name specified by :opt:`--tag`.",
             "options": [
                 OPT.tag,
+                OPT.tag_data,
             ],
         },
     },
