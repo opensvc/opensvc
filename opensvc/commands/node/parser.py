@@ -290,17 +290,17 @@ OPT = Storage({
              ":cmd:`om node pushasset --sync` before a compliance run makes sure "
              "the pushed data has hit the collector database before the "
              "rulesets are contextualized."),
-    "tag": Option(
-        "--tag", default=None,
-        action="store", dest="tag",
+    "tag_name": Option(
+        "--name", default=None,
+        action="store", dest="name",
         help="The tag name, as shown by :cmd:`om node collector list tags`."),
     "tag_data": Option(
-        "--tag-data", default=None,
-        action="store", dest="tag_data",
+        "--data", default=None,
+        action="store", dest="data",
         help="The data stored with the tag. Typed tags, like <name>::<type> expect a particular data structure."),
     "tag_attach_data": Option(
-        "--tag-attach-data", default=None,
-        action="store", dest="tag_attach_data",
+        "--attach-data", default=None,
+        action="store", dest="attach_data",
         help="The data stored with the tag attachment. Typed tags, like <name>::<type> expect a particular data structure."),
     "target": Option(
         "--target", default=None, action="store", dest="target",
@@ -992,14 +992,14 @@ ACTIONS = {
         "collector_tag_attach": {
             "msg": "Set a node tag (pointed by --tag).",
             "options": [
-                OPT.tag,
+                OPT.tag_name,
                 OPT.tag_attach_data,
             ],
         },
         "collector_tag_detach": {
             "msg": "Unset a node tag (pointed by --tag).",
             "options": [
-                OPT.tag,
+                OPT.tag_name,
             ],
         },
         "collector_tag_show": {
@@ -1017,7 +1017,7 @@ ACTIONS = {
         "collector_tag_create": {
             "msg": "Create a new tag with name specified by :opt:`--tag`.",
             "options": [
-                OPT.tag,
+                OPT.tag_name,
                 OPT.tag_data,
             ],
         },

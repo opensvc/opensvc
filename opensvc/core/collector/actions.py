@@ -217,7 +217,7 @@ class CollectorActions(object):
 
     def collector_tag_detach(self):
         opts = {}
-        opts['tag_name'] = self.options.tag
+        opts['tag_name'] = self.options.name
         if self.path:
             opts['svcname'] = self.path
         d = self.collector.call('collector_untag', opts)
@@ -230,8 +230,8 @@ class CollectorActions(object):
 
     def collector_tag_attach(self):
         opts = {}
-        opts['tag_name'] = self.options.tag
-        opts['tag_attach_data'] = self.options.tag_attach_data
+        opts['tag_name'] = self.options.name
+        opts['tag_attach_data'] = self.options.attach_data
         if self.path:
             opts['svcname'] = self.path
         d = self.collector.call('collector_tag', opts)
@@ -244,12 +244,12 @@ class CollectorActions(object):
 
     def collector_tag_create(self):
         opts = {}
-        opts['tag_name'] = self.options.tag
+        opts['tag_name'] = self.options.name
         if opts['tag_name'] is None:
             print("missing parameter: --tag", file=sys.stderr)
             return 1
-        opts['tag_data'] = self.options.tag_data
-        opts['tag_exclude'] = self.options.tag_exclude
+        opts['tag_data'] = self.options.data
+        opts['tag_exclude'] = self.options.exclude
         if self.path:
             opts['svcname'] = self.path
         d = self.collector.call('collector_create_tag', opts)
