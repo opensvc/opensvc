@@ -141,7 +141,7 @@ def print_table_default(data):
     for j, d in enumerate(data):
         print("-")
         for i, label in enumerate(labels):
-            val = '\n'.join(wrap(convert(d[i]),
+            val = '\n'.join(wrap(convert(d[i] or ""),
                        initial_indent = "",
                        subsequent_indent = subsequent_indent,
                        width=78
