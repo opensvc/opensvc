@@ -194,7 +194,10 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if self.use_mpathpersist(disk):
             return self.mpath_unregister(disk)
         else:
-            return self.path_unregister(disk)
+            ret = 0
+            for path in self.devs[disk]:
+                ret += self.path_unregister(path)
+            return ret
 
     def mpath_unregister(self, disk):
         self.set_read_only(0)
