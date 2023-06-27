@@ -233,12 +233,14 @@ class BaseDiskScsireserv(Resource):
         r = 0
         for d in self.devs:
             try:
-                if not self.disk_reserved(d):
-                    continue
-                r += getattr(self, "disk_clear_reservation")(d)
+                if self.disk_reserved(d):
+                    r += getattr(self, "disk_clear_reservation")(d)
+                elif self.disk_registered(d):
+                    r += self.disk_unregister(d)
             except ex.ScsiPrNotsupported as exc:
                 self.log.warning(str(exc))
                 continue
+
         return r
 
 

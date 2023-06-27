@@ -124,6 +124,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
                 n_registered += out.count(self.hostid)
             else:
                 for path in paths:
+                    self.ack_unit_attention(path)
                     ret, out, err = self.read_path_registrations(path)
                     if ret != 0:
                         continue
@@ -193,7 +194,10 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if self.use_mpathpersist(disk):
             return self.mpath_unregister(disk)
         else:
-            return self.path_unregister(disk)
+            ret = 0
+            for path in self.devs[disk]:
+                ret += self.path_unregister(path)
+            return ret
 
     def mpath_unregister(self, disk):
         self.set_read_only(0)
@@ -301,7 +305,16 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if self.use_mpathpersist(disk):
             return self.mpath_clear_reservation(disk)
         else:
-            return self.path_clear_reservation(disk)
+            ret = self.path_clear_reservation(disk)
+            if ret == 24:
+                self.log.warning("clear %s failed, will try clear on sub devs" % disk)
+                for path in self.devs[disk]:
+                    sub_ret = self.path_clear_reservation(path)
+                    if sub_ret != 0:
+                        self.log.warning("clear %s sub device %s failed" % (disk, path))
+                        continue
+                    return sub_ret
+            return ret
 
     def mpath_clear_reservation(self, disk):
         cmd = ["mpathpersist", "--out", "--clear", "--param-rk=" + self.hostid, disk]
