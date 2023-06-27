@@ -124,6 +124,7 @@ class DiskScsireservSg(BaseDiskScsireserv):
                 n_registered += out.count(self.hostid)
             else:
                 for path in paths:
+                    self.ack_unit_attention(path)
                     ret, out, err = self.read_path_registrations(path)
                     if ret != 0:
                         continue
