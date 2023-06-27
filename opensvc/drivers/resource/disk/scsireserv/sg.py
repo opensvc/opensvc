@@ -305,7 +305,16 @@ class DiskScsireservSg(BaseDiskScsireserv):
         if self.use_mpathpersist(disk):
             return self.mpath_clear_reservation(disk)
         else:
-            return self.path_clear_reservation(disk)
+            ret = self.path_clear_reservation(disk)
+            if ret == 24:
+                self.log.warning("clear %s failed, will try clear on sub devs" % disk)
+                for path in self.devs[disk]:
+                    sub_ret = self.path_clear_reservation(path)
+                    if sub_ret != 0:
+                        self.log.warning("clear %s sub device %s failed" % (disk, path))
+                        continue
+                    return sub_ret
+            return ret
 
     def mpath_clear_reservation(self, disk):
         cmd = ["mpathpersist", "--out", "--clear", "--param-rk=" + self.hostid, disk]
