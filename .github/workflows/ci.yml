@@ -15,8 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python-version: 2.7
-            PYTEST_EXTRA_ARGS: ""
           - python-version: 3.7
             PYTEST_EXTRA_ARGS: "--cov"
 
@@ -55,8 +53,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python-version: 2.7
-            PYTEST_EXTRA_ARGS: ""
           - python-version: 3.7
             PYTEST_EXTRA_ARGS: "--cov"
 
