@@ -12,7 +12,7 @@ class KvSec(KvAbstract):
         self.secpath = secpath
         self.node = node
 
-    @lazy
+    @property  # can't use lazy here: other subprocesses may update sec
     def sec(self):
         name, namespace, kind = split_path(self.secpath)
         return factory('sec')(name=name, namespace=namespace, node=self.node, log_handlers=["file"])
