@@ -39,14 +39,13 @@ class TestKvSimple:
         assert simple.read(key) == {"bar": 2}
 
     @staticmethod
-    def test_read_not_expired_remove_expired_key(simple):
+    def test_read_not_expired_does_not_remove_expired_key(simple):
         key = 'foo'
         simple.create(key, {"bar": 1})
         assert simple.read(key) == {"bar": 1}
         with pytest.raises(NoKey):
             simple.read_not_expired(key)
-        with pytest.raises(NoKey):
-            simple.read(key)
+        assert simple.read(key) == {"bar": 1}
 
     @staticmethod
     def test_read_not_expired_does_not_remove_not_expired_key():

@@ -20,11 +20,11 @@ class KvAbstract(object):
         raise NotImplementedError
 
     def read_not_expired(self, key):
+        """returns value for non expired key or raise NoKey"""
         try:
             data = self.read(key)
         except NoKey:
             raise
         if self.is_expired and self.is_expired(data):
-            self.delete(key)
             raise NoKey
         return data
