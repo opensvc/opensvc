@@ -34,7 +34,7 @@ class Mounts(BaseMounts):
         mounts = []
         for l in out.split('\n'):
             if len(l.split()) != 6:
-                break
+                continue
             dev, null, mnt, null, type, mnt_opt = l.split()
             m = Mount(dev, mnt, type, mnt_opt.strip('()'))
             mounts.append(m)
