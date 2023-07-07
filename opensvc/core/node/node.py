@@ -3476,8 +3476,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             server = Env.nodename
         for msg in self.daemon_events(server):
             if self.options.format == "json":
-                print(json.dumps(msg))
-                sys.stdout.flush()
+                try:
+                    print(json.dumps(msg))
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    return
             else:
                 kind = msg.get("kind")
                 print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), msg.get("nodename", ""), kind)
@@ -3488,8 +3491,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                             line = "  %s => %s" % (".".join([str(k) for k in key]), str(val))
                         except ValueError:
                             line = "  %s deleted" % ".".join([str(k) for k in event[0]])
-                        print(line)
-                        sys.stdout.flush()
+                        try:
+                            print(line)
+                            sys.stdout.flush()
+                        except BrokenPipeError:
+                            return
                 elif kind == "event":
                     for key, val in msg.get("data", {}).items():
                         print("  %s=%s" % (str(key).upper(), str(val)))
@@ -3524,16 +3530,22 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         for line in self.daemon_backlogs(server, node, backlog, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
-                print(line)
-                sys.stdout.flush()
+                try:
+                    print(line)
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    return
 
     def _followlogs(self, server=None, node=None, debug=False, auto=None):
         from utilities.render.color import colorize_log_line
         for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
-                print(line)
-                sys.stdout.flush()
+                try:
+                    print(line)
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    return
 
     def print_devs(self):
         if self.options.reverse:

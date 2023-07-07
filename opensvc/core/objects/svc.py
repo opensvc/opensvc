@@ -2256,8 +2256,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
             except Exception as exc:
                 print(exc, file=sys.stderr)
             if line:
-                print(line)
-                sys.stdout.flush()
+                try:
+                    print(line)
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    return
 
     def _followlogs(self, server=None, node=None, debug=False, auto=None):
         from utilities.render.color import colorize_log_line
@@ -2265,8 +2268,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
         for line in self.daemon_logs(server, node, debug):
             line = colorize_log_line(line, auto=auto)
             if line:
-                print(line)
-                sys.stdout.flush()
+                try:
+                    print(line)
+                    sys.stdout.flush()
+                except BrokenPipeError:
+                    return
 
     def support(self):
         """
