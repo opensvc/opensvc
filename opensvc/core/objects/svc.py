@@ -730,6 +730,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     @lazy
     def id(self):
+        """
+        return object id:
+        When object has no id a new id is created and if object is not volatile
+        the object config file is updated.
+        id should not be called on deleted object else new empty object will be created
+        """
         try:
             return self.conf_get("DEFAULT", "id")
         except ex.OptNotFound as exc:
@@ -2638,6 +2644,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
         format_instance(self.path, data, mon_data=mon_data, discard_disabled=discard_disabled, nodename=nodename)
 
     def purge(self):
+        # Set volatile value to True to prevent config file re-creation after deletion (call to self.id will
+        # update/create config file when DEFAULT.id option is not found)
+        self.volatile = True
         self.options.unprovision = True
         self.delete()
 
