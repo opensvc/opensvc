@@ -7,6 +7,19 @@ from commands.svc import Mgr
 @pytest.mark.ci
 @pytest.mark.usefixtures("osvc_path_tests")
 @pytest.mark.usefixtures("has_euid_0")
+class TestPurgeLocal:
+    @staticmethod
+    def test_object_is_not_recreated_after_local_purge():
+        svcname = "pytest"
+        assert Mgr()(argv=["-s", svcname, "create"]) == 0
+        assert Mgr()(argv=["-s", svcname, "ls"]) == 0
+        assert Mgr()(argv=["-s", svcname, "purge", "--local"]) == 0
+        assert Mgr()(argv=["-s", svcname, "ls"]) > 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+@pytest.mark.usefixtures("has_euid_0")
 class TestCreateWithKw:
     @staticmethod
     def test_create_id_refused_when_config_is_not_valid_env():
