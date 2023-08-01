@@ -96,6 +96,8 @@ class ContainerPodman(ContainerDocker):
                 pass
             elif "no container with name" in err:
                 pass
+            elif "no container with ID or name" in err:
+                pass
             elif "removal" in err and "already in progress" in err:
                 self.wait_for_removed()
             else:
