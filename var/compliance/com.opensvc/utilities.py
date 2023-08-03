@@ -21,6 +21,21 @@ def which(program):
             return exe_file
     return None
 
+def ssl_context_kwargs():
+    kwargs = {}
+    try:
+        import ssl
+        if [sys.version_info.major, sys.version_info.minor] >= [3, 10]:
+            # noinspection PyUnresolvedReferences
+            # pylint: disable=no-member
+            kwargs["context"] = ssl._create_unverified_context(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        else:
+            kwargs["context"] = ssl._create_unverified_context()
+        kwargs["context"].set_ciphers("DEFAULT")
+    except (ImportError, AttributeError):
+        pass
+    return kwargs
+
 if __name__ == "__main__":
     print("this file is for import into compliance objects", file=sys.stderr)
 
