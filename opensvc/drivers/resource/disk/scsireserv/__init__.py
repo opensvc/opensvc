@@ -110,13 +110,11 @@ class BaseDiskScsireserv(Resource):
     def disk_preempt_reservation(self, disk, oldkey):
         return self._disk_preempt_reservation(disk, oldkey)
 
-
     def get_devs(self):
         if len(self.devs) > 0:
             return
         peer_sub_devs = self.peer_resource.sub_devs()
         self.devs = self.mangle_devs(peer_sub_devs)
-
 
     def ack_all_unit_attention(self):
         self.get_devs()
