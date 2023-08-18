@@ -107,6 +107,11 @@ main() {
 		exec $SUDO $0 "$@"
 		exit
 	fi
+
+	if ! test -z "$OSVC_COMMAND_LOG"
+	then
+		log "$@" >/dev/null 2>&1
+	fi
 	OSVC_CWD=$PWD
 	export OSVC_CWD
 	cd $OSVC_ROOT_PATH
@@ -124,6 +129,23 @@ main() {
 		PYTHONPATH="$OSVC_ROOT_PATH:$PYTHONPATH" $INTER $OSVC_PYTHON_ARGS -m opensvc "$@"
 		;;
 	esac
+}
+
+log() {
+	OSVC_COMMAND_STRING="$0 $@"
+	if ! test -f $OSVC_COMMAND_LOG
+	then
+		touch $OSVC_COMMAND_LOG
+	fi
+	if test -w $OSVC_COMMAND_LOG
+	then
+		GREP=`which grep 2>/dev/null`
+		if test -x "$GREP"
+		then
+			echo "$OSVC_COMMAND_STRING" | $GREP -qE 'sec/|secret' && return
+			$GREP -qxF "$OSVC_COMMAND_STRING" $OSVC_COMMAND_LOG || echo "$OSVC_COMMAND_STRING" >> $OSVC_COMMAND_LOG
+		fi
+	fi
 }
 
 main "$@"
