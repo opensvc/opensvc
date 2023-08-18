@@ -14,4 +14,5 @@
 #OSVC_PYTHON=python
 #LD_LIBRARY_PATH=
 #LD_PRELOAD=
+#OSVC_COMMAND_LOG=/var/log/opensvc/node.commands.log
 
