@@ -1,5 +1,15 @@
 import os
 
+from drivers.resource.fs import KW_STAT_TIMEOUT
+from core.objects.svcdict import KEYS
+
+KEYS.register_driver(
+    "fs",
+    "flag",
+    name=__name__,
+    keywords=[KW_STAT_TIMEOUT],
+)
+
 import core.status
 from core.resource import Resource
 from env import Env
