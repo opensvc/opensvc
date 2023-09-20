@@ -1010,8 +1010,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
            action.startswith("json_"):
             return self.do_print_action(action, options)
 
-        if self.published_action(action, options):
+        def is_logged_action():
+            if self.options.cron and not self.node.oget("node", "dblogcron"):
+                return False
             if self.node.oget("node", "dblog") and self.node.collector_env.dbopensvc and self.node.collector_env.uuid:
+                return True
+            return False
+
+        if self.published_action(action, options):
+            if is_logged_action():
                 err = self.do_logged_action(action, options)
             else:
                 self.log_action_header(action, options)
