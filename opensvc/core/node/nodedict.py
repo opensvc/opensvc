@@ -420,7 +420,14 @@ KEYWORDS = [
         "keyword": "dblog",
         "convert": "boolean",
         "default": True,
-        "text": "If true and dbopensvc is set, the objects action logs are reported to the collector. Set to false to disable log reporting to the collector, event if dbopensvc is set."
+        "text": "If true and dbopensvc is set, the objects action logs are reported to the collector. Set to false to disable log reporting to the collector, even if dbopensvc is set."
+    },
+    {
+        "section": "node",
+        "keyword": "dblogcron",
+        "convert": "boolean",
+        "default": True,
+        "text": "If true and dbopensvc is set, the objects croned action logs are reported to the collector. Set to false to disable croned actions log reporting to the collector."
     },
     {
         "section": "node",
