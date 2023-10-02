@@ -9,6 +9,13 @@ from utilities.proc import justcall
 from utilities.net.getaddr import getaddr
 from utilities.storage import Storage
 
+KW_VIRTIO = {
+    "keyword": "virtio",
+    "candidates": (True, False),
+    "convert": "boolean",
+    "at": True,
+    "text": "Use vsock or vserial virtio to communicate with the container. In opensvc 2.1, this option requires qemu guest agent to be installed in the container.",
+}
 KW_START_TIMEOUT = {   
     "keyword": "start_timeout",
     "convert": "duration",
@@ -173,6 +180,8 @@ class BaseContainer(Resource):
         return hostname
 
     def getaddr(self, cache_fallback=False):
+        if hasattr(self, "virtio") and getattr(self, "virtio"):
+            return
         if hasattr(self, 'addr'):
             return
         try:
