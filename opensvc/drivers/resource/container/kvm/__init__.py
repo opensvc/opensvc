@@ -16,7 +16,8 @@ from .. import \
     KW_OSVC_ROOT_PATH, \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
-    KW_SCSIRESERV
+    KW_SCSIRESERV, \
+    KW_VIRTIO
 from core.resource import Resource
 from env import Env
 from utilities.cache import cache, clear_cache
@@ -43,6 +44,7 @@ KEYWORDS = [
     KW_GUESTOS,
     KW_PROMOTE_RW,
     KW_SCSIRESERV,
+    KW_VIRTIO,
 ]
 
 KEYS.register_driver(
@@ -66,6 +68,7 @@ class ContainerKvm(BaseContainer):
                  snap=None,
                  snapof=None,
                  virtinst=None,
+                 virtio=False,
                  **kwargs):
         super(ContainerKvm, self).__init__(type="container.kvm", **kwargs)
         self.refresh_provisioned_on_provision = True
@@ -73,6 +76,7 @@ class ContainerKvm(BaseContainer):
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
+        self.virtio = virtio
 
     @lazy
     def cf(self):
@@ -116,6 +120,8 @@ class ContainerKvm(BaseContainer):
         return True
 
     def ping(self):
+        if self.virtio:
+            return 
         return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
     def is_up_clear_cache(self):
@@ -374,6 +380,8 @@ class ContainerKvm(BaseContainer):
             raise ex.Error
 
     def setup_ips(self):
+        if self.virtio:
+            return
         self.purge_known_hosts()
         for resource in self.svc.get_resources("ip"):
             self.purge_known_hosts(resource.addr)
