@@ -121,8 +121,155 @@ class ContainerKvm(BaseContainer):
 
     def ping(self):
         if self.virtio:
-            return 
+            return
         return utilities.ping.check_ping(self.addr, timeout=1, count=1)
+
+    def virtio_exec_status(self, pid):
+        import json
+        import base64
+        from utilities.string import bdecode
+        payload = {
+            "execute": "guest-exec-status",
+            "arguments": {
+                "pid": pid
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            raise ex.Error(err)
+        data = json.loads(out)["return"]
+        data["out-data"] = bdecode(base64.b64decode(data.get("out-data", b"")))
+        data["err-data"] = bdecode(base64.b64decode(data.get("err-data", b"")))
+        return data
+
+    def virtio_operational(self):
+        import json
+        payload = {
+            "execute": "guest-exec",
+            "arguments": {
+                "path": "/usr/bin/pwd",
+                "arg": [],
+                "capture-output": True
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            self.log.debug(err)
+            return False
+        return True
+
+    def rcp_from(self, src, dst):
+        return "", "", 0
+
+    def rcp(self, src, dst):
+        if self.virtio:
+            return self.virtio_cp(src, dst)
+        else:
+            cmd = Env.rcp.split() + [src, self.name+':'+dst]
+            return justcall(cmd)
+
+    def virtio_cp(self, src, dst):
+        self.log.debug("virtio cp: %s to %s", src, dst)
+        import base64
+        import json
+        import time
+        payload = {
+            "execute":"guest-file-open",
+            "arguments":{
+                "path": dst,
+                "mode":"w"
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
+        if ret != 0:
+            raise ex.Error(err)
+        data = json.loads(out)
+        handle = data["return"]
+
+        with open(src, "rb") as f:
+            buff = base64.b64encode(f.read()).decode()
+
+        payload = {
+            "execute":"guest-file-write",
+            "arguments":{
+                "handle": handle,
+                "buf-b64": buff,
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
+        if ret != 0:
+            raise ex.Error(err)
+        data = json.loads(out)
+
+        payload = {
+            "execute":"guest-file-close",
+            "arguments":{
+                "handle": handle,
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
+        if ret != 0:
+            raise ex.Error(err)
+        return "", "", 0
+
+    def virtio_exec(self, cmd, verbose=False, timeout=60):
+        if verbose:
+            log = self.log.info
+        else:
+            log = self.log.debug
+        log("virtio exec: %s", " ".join(cmd))
+        import json
+        import time
+        payload = {
+            "execute": "guest-exec",
+            "arguments": {
+                "path": cmd[0],
+                "arg": cmd[1:],
+                "capture-output": True
+            }
+        }
+        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
+        out, err, ret = justcall(cmd)
+        if ret != 0:
+            self.log.debug(err)
+            return False
+        data = json.loads(out)
+        pid = data["return"]["pid"]
+        log("virtio exec: command started with pid %d", pid)
+        for i in range(timeout):
+            data = self.virtio_exec_status(pid)
+            if not data.get("exited"):
+                time.sleep(1)
+                continue
+            log("virtio exec: command exited with %d", data.get("exitcode"))
+            #log("virtio exec: out: %s", data.get("out-data"))
+            #log("virtio exec: err: %s", data.get("err-data"))
+            return data
+        raise ex.Error("timeout waiting for qemu guest exec result, pid %d", pid)
+
+    def rcmd(self, cmd):
+        if self.virtio:
+            data = self.virtio_exec(cmd)
+            return data.get("out-data", ""), data.get("err-data", ""), data.get("exitcode", 1)
+        elif hasattr(self, "runmethod"):
+            cmd = self.runmethod + cmd
+            return justcall(cmd, stdin=self.node.devnull)
+        else:
+            raise ex.EncapUnjoinable("undefined rcmd/runmethod in resource %s" % self.rid)
+
+    def operational(self):
+        if self.virtio:
+            return self.virtio_operational()
+        else:
+            return BaseContainer.operational(self)
 
     def is_up_clear_cache(self):
         clear_cache("virsh.dom_state.%s@%s" % (self.name, Env.nodename))
