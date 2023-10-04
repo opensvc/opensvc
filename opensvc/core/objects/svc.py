@@ -1318,7 +1318,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except ex.Error:
             self.log.error("rollback %s failed", action)
 
-    def dblogger(self, action, begin, end, actionlogfile):
+    def dblogger(self, action, begin, end, actionlogfile, err):
         """
         Send to the collector the service status after an action, and
         the action log.
@@ -1326,7 +1326,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             self.node.daemon_collector_xmlrpc("end_action", self.path, action,
                                               begin, end, self.options.cron,
-                                              actionlogfile)
+                                              actionlogfile, err)
         except Exception as exc:
             self.log.warning("failed to send logs to the collector: %s", exc)
 
@@ -1373,7 +1373,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.close()
         self.logger.removeHandler(actionlogfilehandler)
         end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.dblogger(action, begin, end, actionlogfile)
+        self.dblogger(action, begin, end, actionlogfile, err)
         return err
 
     def log_action_obfuscate_secret(self, options):

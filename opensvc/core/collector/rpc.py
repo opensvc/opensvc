@@ -329,8 +329,11 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.begin_action(*args)
 
-    def end_action(self, path, action, begin, end, cron, alogfile):
-        err = 'ok'
+    def end_action(self, path, action, begin, end, cron, alogfile, err):
+        if err == 0:
+            err = "ok"
+        else:
+            err = "err"
         res = None
         res_err = None
         pid = None
@@ -384,11 +387,8 @@ class CollectorRpc(object):
             if lvl is None or lvl == "DEBUG":
                 continue
             elif lvl == "ERROR":
-                err = "err"
                 res_err = "err"
-            elif lvl == "WARNING" and err != "err":
-                err = "warn"
-            elif lvl == "WARNING" and res_err != "err":
+            elif lvl == "WARNING":
                 res_err = "warn"
 
             try:
