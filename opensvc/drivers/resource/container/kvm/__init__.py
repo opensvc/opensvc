@@ -253,7 +253,7 @@ class ContainerKvm(BaseContainer):
             #log("qga exec: out: %s", data.get("out-data"))
             #log("qga exec: err: %s", data.get("err-data"))
             return data
-        raise ex.Error("timeout waiting for qemu guest exec result, pid %d", pid)
+        raise ex.Error("timeout waiting for qemu guest exec result, pid %d" % pid)
 
     def rcmd(self, cmd):
         if self.qga:
@@ -261,7 +261,7 @@ class ContainerKvm(BaseContainer):
             return data.get("out-data", ""), data.get("err-data", ""), data.get("exitcode", 1)
         elif hasattr(self, "runmethod"):
             cmd = self.runmethod + cmd
-            return justcall(cmd, stdin=self.node.devnull)
+            return justcall(cmd, stdin=self.svc.node.devnull)
         else:
             raise ex.EncapUnjoinable("undefined rcmd/runmethod in resource %s" % self.rid)
 
