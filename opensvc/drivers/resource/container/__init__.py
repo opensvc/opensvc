@@ -230,6 +230,8 @@ class BaseContainer(Resource):
         Wait for container to become alive, using a ping test.
         Also verify the container has not died since judged started.
         """
+        if hasattr(self, "virtio") and getattr(self, "virtio"):
+            return
         def fn():
             if hasattr(self, "is_up_clear_cache"):
                 getattr(self, "is_up_clear_cache")()
@@ -289,6 +291,8 @@ class BaseContainer(Resource):
         return
 
     def abort_start_ping(self):
+        if hasattr(self, "virtio") and getattr(self, "virtio"):
+            return
         if self.svc.get_resources("ip"):
             # we manage an ip, no need to try to ping the container
             return False
