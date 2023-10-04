@@ -17,7 +17,7 @@ from .. import \
     KW_GUESTOS, \
     KW_PROMOTE_RW, \
     KW_SCSIRESERV, \
-    KW_VIRTIO
+    KW_QGA
 from core.resource import Resource
 from env import Env
 from utilities.cache import cache, clear_cache
@@ -44,7 +44,7 @@ KEYWORDS = [
     KW_GUESTOS,
     KW_PROMOTE_RW,
     KW_SCSIRESERV,
-    KW_VIRTIO,
+    KW_QGA,
 ]
 
 KEYS.register_driver(
@@ -68,7 +68,7 @@ class ContainerKvm(BaseContainer):
                  snap=None,
                  snapof=None,
                  virtinst=None,
-                 virtio=False,
+                 qga=False,
                  **kwargs):
         super(ContainerKvm, self).__init__(type="container.kvm", **kwargs)
         self.refresh_provisioned_on_provision = True
@@ -76,7 +76,7 @@ class ContainerKvm(BaseContainer):
         self.snap = snap
         self.snapof = snapof
         self.virtinst = virtinst or []
-        self.virtio = virtio
+        self.qga = qga
 
     @lazy
     def cf(self):
@@ -120,11 +120,11 @@ class ContainerKvm(BaseContainer):
         return True
 
     def ping(self):
-        if self.virtio:
+        if self.qga:
             return
         return utilities.ping.check_ping(self.addr, timeout=1, count=1)
 
-    def virtio_exec_status(self, pid):
+    def qga_exec_status(self, pid):
         import json
         import base64
         from utilities.string import bdecode
@@ -143,7 +143,7 @@ class ContainerKvm(BaseContainer):
         data["err-data"] = bdecode(base64.b64decode(data.get("err-data", b"")))
         return data
 
-    def virtio_operational(self):
+    def qga_operational(self):
         import json
         payload = {
             "execute": "guest-exec",
@@ -164,14 +164,14 @@ class ContainerKvm(BaseContainer):
         return "", "", 0
 
     def rcp(self, src, dst):
-        if self.virtio:
-            return self.virtio_cp(src, dst)
+        if self.qga:
+            return self.qga_cp(src, dst)
         else:
             cmd = Env.rcp.split() + [src, self.name+':'+dst]
             return justcall(cmd)
 
-    def virtio_cp(self, src, dst):
-        self.log.debug("virtio cp: %s to %s", src, dst)
+    def qga_cp(self, src, dst):
+        self.log.debug("qga cp: %s to %s", src, dst)
         import base64
         import json
         import time
@@ -220,12 +220,12 @@ class ContainerKvm(BaseContainer):
             raise ex.Error(err)
         return "", "", 0
 
-    def virtio_exec(self, cmd, verbose=False, timeout=60):
+    def qga_exec(self, cmd, verbose=False, timeout=60):
         if verbose:
             log = self.log.info
         else:
             log = self.log.debug
-        log("virtio exec: %s", " ".join(cmd))
+        log("qga exec: %s", " ".join(cmd))
         import json
         import time
         payload = {
@@ -243,21 +243,21 @@ class ContainerKvm(BaseContainer):
             return False
         data = json.loads(out)
         pid = data["return"]["pid"]
-        log("virtio exec: command started with pid %d", pid)
+        log("qga exec: command started with pid %d", pid)
         for i in range(timeout):
-            data = self.virtio_exec_status(pid)
+            data = self.qga_exec_status(pid)
             if not data.get("exited"):
                 time.sleep(1)
                 continue
-            log("virtio exec: command exited with %d", data.get("exitcode"))
-            #log("virtio exec: out: %s", data.get("out-data"))
-            #log("virtio exec: err: %s", data.get("err-data"))
+            log("qga exec: command exited with %d", data.get("exitcode"))
+            #log("qga exec: out: %s", data.get("out-data"))
+            #log("qga exec: err: %s", data.get("err-data"))
             return data
         raise ex.Error("timeout waiting for qemu guest exec result, pid %d", pid)
 
     def rcmd(self, cmd):
-        if self.virtio:
-            data = self.virtio_exec(cmd)
+        if self.qga:
+            data = self.qga_exec(cmd)
             return data.get("out-data", ""), data.get("err-data", ""), data.get("exitcode", 1)
         elif hasattr(self, "runmethod"):
             cmd = self.runmethod + cmd
@@ -266,8 +266,8 @@ class ContainerKvm(BaseContainer):
             raise ex.EncapUnjoinable("undefined rcmd/runmethod in resource %s" % self.rid)
 
     def operational(self):
-        if self.virtio:
-            return self.virtio_operational()
+        if self.qga:
+            return self.qga_operational()
         else:
             return BaseContainer.operational(self)
 
@@ -527,7 +527,7 @@ class ContainerKvm(BaseContainer):
             raise ex.Error
 
     def setup_ips(self):
-        if self.virtio:
+        if self.qga:
             return
         self.purge_known_hosts()
         for resource in self.svc.get_resources("ip"):
