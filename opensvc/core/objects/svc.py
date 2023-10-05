@@ -1347,7 +1347,6 @@ class BaseSvc(Crypt, ExtConfigMixin):
         # Provision a database entry to store action log later
         try:
             argv = sys.argv[1:]
-            print(argv, has_option("--value", argv))
             if has_option("--value", argv):
                 drop_option("--value", argv, drop_value=True)
                 argv.append("--value=xxx")
