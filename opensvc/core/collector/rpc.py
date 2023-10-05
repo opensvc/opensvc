@@ -339,8 +339,8 @@ class CollectorRpc(object):
             err = "ok"
         else:
             err = "err"
-        res = None
-        res_err = None
+        rid = None
+        rid_err = None
         pid = None
         msg = None
         name, namespace, kind = split_path(path)
@@ -356,14 +356,16 @@ class CollectorRpc(object):
         2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL
         """
         vars = ["svcname",
-                "action",
+                "action",     # 1
                 "hostname",
                 "sid",
-                "pid",
+                "pid",        # 4
+                "rid",        # 5
+                "subset",
                 "begin",
                 "end",
-                "status_log",
-                "status",
+                "status_log", # 9
+                "status",     # 10
                 "cron"]
         vals = []
         last = []
@@ -372,11 +374,19 @@ class CollectorRpc(object):
                 continue
             if ";;status_history;;" in line:
                 continue
-            res_err = "ok"
-            date, res, lvl, msg, pid = line.split(";;")
-            res = res.lower().replace(Env.nodename+"."+kind+"."+name, "").replace(Env.nodename, "").lstrip(".")
-            res_action = res + " " + action
-            res_action = res_action.strip()
+            rid_err = "ok"
+            date, rid, lvl, msg, pid = line.split(";;")
+            rid = rid.lower()
+            rid = rid.replace(Env.nodename+"."+kind+"."+name, "")
+            rid = rid.replace(Env.nodename+"."+name, "")
+            rid = rid.replace(Env.nodename, "")
+            rid = rid.lstrip(".")
+            if ":" in rid:
+                rgrp, s = rid.split(":")
+                subset, rname = s.split("#")
+                rid = rgrp + "#" + rname
+            else:
+                subset = ""
             date = date.split(",")[0]
 
             # database overflow protection
@@ -391,14 +401,14 @@ class CollectorRpc(object):
             if lvl is None or lvl == "DEBUG":
                 continue
             elif lvl == "ERROR":
-                res_err = "err"
+                rid_err = "err"
             elif lvl == "WARNING":
-                res_err = "warn"
+                rid_err = "warn"
 
             try:
                 if last:
-                    if last[3] == pid and last[1] == res_action and last[7] == res_err:
-                        last[6] += "\n"+msg
+                    if last[1] == action and last[4] == pid and last[5] == rid and last[9] == rid_err:
+                        last[9] += "\n"+msg
                         continue
                     else:
                         vals.append(last)
@@ -408,14 +418,16 @@ class CollectorRpc(object):
             
             last = [
                 path,
-                res_action,
+                action,
                 Env.nodename,
                 sid,
                 pid,
+                rid,
+                subset,
                 date,
                 "",
                 msg,
-                res_err,
+                rid_err,
                 "1" if cron else "0"
             ]
 
@@ -429,11 +441,6 @@ class CollectorRpc(object):
 
         """Complete the wrap-up database entry
         """
-
-        """ If logfile is empty, default to current process pid
-        """
-        if len(pids) == 0:
-            pids = {os.getpid()}
 
         duration = datetime.strptime(end, "%Y-%m-%d %H:%M:%S") - \
                    datetime.strptime(begin, "%Y-%m-%d %H:%M:%S")
