@@ -311,7 +311,8 @@ class CollectorRpc(object):
                 return True
         return False
 
-    def begin_action(self, svcname, action, version, begin, cron):
+    def begin_action(self, svcname, action, version, begin, cron, sid, argv):
+        from subprocess import list2cmdline
         args = [
             ['svcname',
              'action',
@@ -319,19 +320,21 @@ class CollectorRpc(object):
              'sid',
              'version',
              'begin',
+             'status_log',
              'cron'],
             [str(svcname),
              str(action),
              str(Env.nodename),
-             Env.session_uuid,
+             sid,
              str(version),
              str(begin),
+             list2cmdline(argv),
              '1' if cron else '0']
         ]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.begin_action(*args)
 
-    def end_action(self, path, action, begin, end, cron, alogfile, err):
+    def end_action(self, path, action, begin, end, cron, sid, alogfile, err):
         if err == 0:
             err = "ok"
         else:
@@ -407,7 +410,7 @@ class CollectorRpc(object):
                 path,
                 res_action,
                 Env.nodename,
-                Env.session_uuid,
+                sid,
                 pid,
                 date,
                 "",
@@ -438,7 +441,6 @@ class CollectorRpc(object):
             ['svcname',
              'action',
              'hostname',
-             'sid',
              'begin',
              'end',
              'time',
@@ -447,7 +449,6 @@ class CollectorRpc(object):
             [str(path),
              str(action),
              str(Env.nodename),
-             Env.session_uuid,
              begin,
              end,
              str(duration.seconds),

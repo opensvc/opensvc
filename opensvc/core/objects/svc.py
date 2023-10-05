@@ -1325,7 +1325,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         """
         try:
             self.node.daemon_collector_xmlrpc("end_action", self.path, action,
-                                              begin, end, self.options.cron,
+                                              begin, end, self.options.cron, Env.session_uuid,
                                               actionlogfile, err)
         except Exception as exc:
             self.log.warning("failed to send logs to the collector: %s", exc)
@@ -1348,7 +1348,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         try:
             self.node.daemon_collector_xmlrpc("begin_action", self.path,
                                               action, self.node.agent_version,
-                                              begin, self.options.cron)
+                                              begin, self.options.cron, Env.session_uuid,
+                                              sys.argv[1:])
         except Exception as exc:
             self.log.warning("failed to init logs on the collector: %s", exc)
             self.log_action_header(action, options)
