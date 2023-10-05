@@ -316,12 +316,14 @@ class CollectorRpc(object):
             ['svcname',
              'action',
              'hostname',
+             'sid',
              'version',
              'begin',
              'cron'],
             [str(svcname),
              str(action),
              str(Env.nodename),
+             Env.session_uuid,
              str(version),
              str(begin),
              '1' if cron else '0']
@@ -353,6 +355,7 @@ class CollectorRpc(object):
         vars = ["svcname",
                 "action",
                 "hostname",
+                "sid",
                 "pid",
                 "begin",
                 "end",
@@ -366,8 +369,6 @@ class CollectorRpc(object):
                 continue
             if ";;status_history;;" in line:
                 continue
-            date = line.split(";;")[0]
-
             res_err = "ok"
             date, res, lvl, msg, pid = line.split(";;")
             res = res.lower().replace(Env.nodename+"."+kind+"."+name, "").replace(Env.nodename, "").lstrip(".")
@@ -406,6 +407,7 @@ class CollectorRpc(object):
                 path,
                 res_action,
                 Env.nodename,
+                Env.session_uuid,
                 pid,
                 date,
                 "",
@@ -436,7 +438,7 @@ class CollectorRpc(object):
             ['svcname',
              'action',
              'hostname',
-             'pid',
+             'sid',
              'begin',
              'end',
              'time',
@@ -445,7 +447,7 @@ class CollectorRpc(object):
             [str(path),
              str(action),
              str(Env.nodename),
-             ','.join(map(str, pids)),
+             Env.session_uuid,
              begin,
              end,
              str(duration.seconds),
