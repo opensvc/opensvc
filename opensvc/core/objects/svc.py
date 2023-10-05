@@ -36,7 +36,7 @@ from utilities.files import makedirs
 from utilities.lazy import lazy, set_lazy, unset_all_lazy, unset_lazy
 from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
                               svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory, split_path)
-from utilities.proc import (action_triggers, drop_option, find_editor,
+from utilities.proc import (action_triggers, drop_option, has_option, find_editor,
                             init_locale, justcall, lcall, vcall)
 from utilities.storage import Storage
 from utilities.string import is_string
@@ -1346,10 +1346,15 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         # Provision a database entry to store action log later
         try:
+            argv = sys.argv[1:]
+            print(argv, has_option("--value", argv))
+            if has_option("--value", argv):
+                drop_option("--value", argv, drop_value=True)
+                argv.append("--value=xxx")
             self.node.daemon_collector_xmlrpc("begin_action", self.path,
                                               action, self.node.agent_version,
                                               begin, self.options.cron, Env.session_uuid,
-                                              sys.argv[1:])
+                                              argv)
         except Exception as exc:
             self.log.warning("failed to init logs on the collector: %s", exc)
             self.log_action_header(action, options)
@@ -1388,7 +1393,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         if self.kind not in ("usr", "sec"):
             return data
         for k, v in data.items():
-            if k == "value":
+            if k == "value" and data[k]:
                 data["value"] = "xxx"
         return data
 
