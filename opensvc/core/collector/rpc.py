@@ -412,7 +412,7 @@ class CollectorRpc(object):
 
             try:
                 if last:
-                    if last[1] == action and last[4] == pid and last[5] == rid and last[9] == rid_err:
+                    if last[1] == action and last[4] == pid and last[5] == rid and last[10] == rid_err:
                         last[9] += "\n"+msg
                         continue
                     else:
