@@ -381,12 +381,17 @@ class CollectorRpc(object):
             rid = rid.replace(Env.nodename+"."+name, "")
             rid = rid.replace(Env.nodename, "")
             rid = rid.lstrip(".")
+            subset = ""
+
+            # container:front#nginx
+            # container#nginx
+            # task
             if ":" in rid:
-                rgrp, s = rid.split(":")
-                subset, rname = s.split("#")
-                rid = rgrp + "#" + rname
-            else:
-                subset = ""
+                rgrp, rid = rid.split(":")
+                if "#" in rid:
+                    subset, rname = rid.split("#")
+                    rid = rgrp + "#" + rname
+
             date = date.split(",")[0]
 
             # database overflow protection
