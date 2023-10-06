@@ -9,6 +9,13 @@ from utilities.proc import justcall
 from utilities.net.getaddr import getaddr
 from utilities.storage import Storage
 
+KW_QGA = {
+    "keyword": "qga",
+    "candidates": (True, False),
+    "convert": "boolean",
+    "at": True,
+    "text": "Use vsock or vserial to communicate with the container via the qemu guest agent. This option requires qemu guest agent to be installed in the container.",
+}
 KW_START_TIMEOUT = {   
     "keyword": "start_timeout",
     "convert": "duration",
@@ -173,6 +180,8 @@ class BaseContainer(Resource):
         return hostname
 
     def getaddr(self, cache_fallback=False):
+        if hasattr(self, "qga") and getattr(self, "qga"):
+            return
         if hasattr(self, 'addr'):
             return
         try:
@@ -221,6 +230,8 @@ class BaseContainer(Resource):
         Wait for container to become alive, using a ping test.
         Also verify the container has not died since judged started.
         """
+        if hasattr(self, "qga") and getattr(self, "qga"):
+            return
         def fn():
             if hasattr(self, "is_up_clear_cache"):
                 getattr(self, "is_up_clear_cache")()
@@ -280,6 +291,8 @@ class BaseContainer(Resource):
         return
 
     def abort_start_ping(self):
+        if hasattr(self, "qga") and getattr(self, "qga"):
+            return
         if self.svc.get_resources("ip"):
             # we manage an ip, no need to try to ping the container
             return False
