@@ -139,7 +139,11 @@ log() {
 	fi
 	if test -w $OSVC_COMMAND_LOG
 	then
-		GREP=`which grep 2>/dev/null`
+		if [ "`uname`" = "SunOS" ] ; then
+			GREP=`which ggrep 2>/dev/null`
+		else
+			GREP=`which grep 2>/dev/null`
+		fi
 		if test -x "$GREP"
 		then
 			echo "$OSVC_COMMAND_STRING" | $GREP -qE 'sec/|secret' && return
