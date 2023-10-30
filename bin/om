@@ -108,7 +108,7 @@ main() {
 		exit
 	fi
 
-	if ! test -z "$OSVC_COMMAND_LOG"
+	if [ ! -z "$OSVC_COMMAND_LOG" ]
 	then
 		log "$@" >/dev/null 2>&1
 	fi
@@ -133,7 +133,7 @@ main() {
 
 log() {
 	OSVC_COMMAND_STRING="$0 $@"
-	if ! test -f $OSVC_COMMAND_LOG
+	if [ ! -f "$OSVC_COMMAND_LOG" ]
 	then
 		touch $OSVC_COMMAND_LOG
 	fi
