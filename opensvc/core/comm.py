@@ -12,7 +12,7 @@ import zlib
 import time
 import select
 import sys
-from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY, EAGAIN
+from errno import ECONNREFUSED, EPIPE, EBUSY, EALREADY, EAGAIN, ETIMEDOUT
 
 
 DEFAULT_DAEMON_TIMEOUT = 5
@@ -54,14 +54,14 @@ else:
     ConnectionResetError = DummyException
     ConnectionRefusedError = DummyException
 
-# add ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, EHOSTUNREACH, ECONNREFUSED, ?
+# add ECONNRESET, ENOTFOUND, ETIMEDOUT, EHOSTUNREACH, ECONNREFUSED, ?
 RETRYABLE = (
     EAGAIN,
     EBUSY,
     EPIPE,
     EALREADY,
 )
-SOCK_TMO_REQUEST = 1.0
+SOCK_TMO_REQUEST = 1.5
 SOCK_TMO_STREAM = 6.2
 PAUSE = 0.2
 PING = ".".encode()
@@ -866,10 +866,24 @@ class Crypt(object):
                                 "status": 1,
                                 "err": "timeout daemon request (connect error)",
                             }
+                        else:
+                            raise
                     time.sleep(PAUSE)
                     continue
                 except socket.error as exc:
-                    if exc.errno in RETRYABLE and \
+                    if exc.errno == ETIMEDOUT:
+                        elapsed += SOCK_TMO_REQUEST + PAUSE
+                        if timeout == 0 or (timeout and elapsed >= timeout):
+                            if with_result:
+                                return {
+                                    "status": 1,
+                                    "err": "timeout daemon request (connect error)",
+                                }
+                            else:
+                                raise
+                        time.sleep(PAUSE)
+                        continue
+                    elif exc.errno in RETRYABLE and \
                        (timeout == 0 or (timeout and elapsed < timeout)):
                         # Resource temporarily unavailable (busy, overflow)
                         # Retry after a delay, if the daemon is still

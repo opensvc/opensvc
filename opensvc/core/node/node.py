@@ -4218,7 +4218,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             # relay must be tested from a cluster node
             data = self.daemon_node_action(action="ping", options={"node": node}, node="ANY", action_mode=False)
             status, error, info = self.parse_result(data)
-            return status
+            return status, error, info
         else:
             secret = None
             for section in self.conf_sections("arbitrator"):
@@ -4245,9 +4245,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             secret=secret,
             timeout=timeout,
         )
-        if data is None or "status" not in data or data["status"] != 0:
-            return 1
-        return 0
+        if data is None:
+            return 1, "", ""
+        elif "status" not in data or data["status"] != 0:
+            err = data.get("err", "")
+            return 1, err, ""
+        return 0, "", ""
 
     def ping(self):
         ret = 0
@@ -4264,7 +4267,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def ping_node(self, node):
         try:
-            ret = self._ping(node)
+            ret, error, _ = self._ping(node)
         except ex.Error as exc:
             print(exc)
             ret = 2
@@ -4273,7 +4276,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         if ret == 0:
             print("%s is alive" % node)
         elif ret == 1:
-            print("%s is not alive" % node)
+            if error != "":
+                print("%s is not alive: %s" % (node, error))
+            else:
+                print("%s is not alive" % node)
         return ret
 
     def drain(self):
