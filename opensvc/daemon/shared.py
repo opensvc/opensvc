@@ -892,9 +892,11 @@ class OsvcThread(threading.Thread, Crypt):
     def arbitrators_votes(self):
         votes = []
         for arbitrator in NODE.arbitrators:
-            ret = NODE._ping(arbitrator["name"], arbitrator["timeout"])
+            ret, error, _ = NODE._ping(arbitrator["name"], arbitrator["timeout"])
             if ret == 0:
                 votes.append(arbitrator["name"])
+            elif error != "":
+                self.log.warning("arbitrator %s stale, ping timeout %s: %s", arbitrator["name"], arbitrator["timeout"], error)
         return votes
 
     def live_nodes_count(self):
