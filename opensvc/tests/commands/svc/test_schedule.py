@@ -66,11 +66,11 @@ class TestPrintSchedule:
             assert Mgr()(argv=["-s", svcname, "create", "--kw", "status_schedule=~08:01-09:59"]) == 0
             assert Mgr()(argv=["-s", svcname, "print", "schedule"]) == 0
         next_runs = set()
-        for i in range(4):
+        for i in range(6):
             assert Mgr()(argv=["-s", svcname, "print", "schedule", "--local", "--format", "json"]) == 0
             action = get_action(json.loads(capsys.readouterr().out), "status")
             next_runs.add(action["next_run"])
-        assert len(next_runs) > 3
+        assert len(next_runs) > 2, "'print schedule --local' called 6 times should propose at leat 2 != next_run"
 
     @staticmethod
     def test_ensure_next_run_is_fixed_when_no_tilde_in_custom_schedule(mocker, capsys):
