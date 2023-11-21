@@ -70,6 +70,9 @@ class BaseCapabilities(object):
         if has_docker(["dockerd"]):
             tags.append("node.x.dockerd")
 
+        if "node.x.stat" in tags:
+            tags.append("drivers.resource.fs.check_readable")
+
         return {"tags": tags, "labels": labels}
     
     def need_refresh(self):
