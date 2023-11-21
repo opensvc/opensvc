@@ -134,6 +134,19 @@ KW_PERM = {
     "text": "The permissions the mnt directory should have. A string representing the octal permissions."
 }
 
+KW_CHECK_READ = {
+    "keyword": "check_read",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true`` then during resource status check the ``file system read check`` is used when"
+            " the file system is mounted and the ``file system write check`` is disabled."
+            " This can help detection of nfs stale file systems."
+            " The ``file system read check`` is: 'timeout {stat_timeout} stat -f {mnt}'"
+            " and requires following capability: ``drivers.resource.fs.check_readable``."
+            " The ``file system write check`` is disabled when ``fs_type`` is one of %s or mnt_opt contains ``ro``)."
+            % (Env.fs_net + ["tmpfs"])
+}
 
 KWS_VIRTUAL = [
     KW_MNT,
@@ -142,6 +155,7 @@ KWS_VIRTUAL = [
     KW_DEV,
     KW_STAT_TIMEOUT,
     KW_ZONE,
+    KW_CHECK_READ,
 ]
 
 KEYWORDS = [
@@ -161,6 +175,7 @@ KEYWORDS = [
     KW_USER,
     KW_GROUP,
     KW_PERM,
+    KW_CHECK_READ,
 ]
 
 KWS_POOLING = [
@@ -177,6 +192,7 @@ KWS_POOLING = [
     KW_USER,
     KW_GROUP,
     KW_PERM,
+    KW_CHECK_READ,
 ]
 
 DRIVER_GROUP = "fs"
@@ -208,6 +224,7 @@ class BaseFs(Resource):
                  user=None,
                  group=None,
                  perm=None,
+                 check_read=False,
                  **kwargs):
         super(BaseFs, self).__init__(type="fs", **kwargs)
         self.raw_mount_point = mount_point
@@ -227,6 +244,7 @@ class BaseFs(Resource):
         self.user = user
         self.group = group
         self.perm = perm
+        self.check_readable_enabled = check_read
 
     @lazy
     def mnt_dir(self):
@@ -392,26 +410,9 @@ class BaseFs(Resource):
         """
         return True
 
-    def check_stat(self):
-        if not capabilities.has("node.x.stat"):
-            return True
-
-        if self.device is None:
-            return True
-
-        proc = subprocess.Popen(['stat', self.device],
-                                stderr=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
-        for retry in range(self.stat_timeout*10, 0, -1):
-            if proc.poll() is None:
-                time.sleep(0.1)
-            else:
-                return True
-        try:
-            proc.kill()
-        except OSError:
-            pass
-        return False
+    def check_stat_device(self):
+        _, ok = stat_with_timeout(self.device, self.stat_timeout)
+        return ok
 
     def check_writable(self):
         if not self.can_check_writable():
@@ -450,6 +451,13 @@ class BaseFs(Resource):
 
         return True
 
+    def need_check_readable(self):
+        return self.check_readable_enabled
+
+    def check_readable(self):
+        stat_code, ok = stat_with_timeout(self.mount_point, self.stat_timeout, ["-f"])
+        return stat_code == 0 and ok
+
     def is_up(self):
         """
         Placeholder
@@ -458,12 +466,17 @@ class BaseFs(Resource):
 
     def _status(self, verbose=False):
         if self.is_up():
-            if not self.check_stat():
-                self.status_log("fs is not responding to stat")
+            if not self.check_stat_device():
+                self.status_log("fs dev is not responding to stat")
                 return core.status.WARN
-            if self.need_check_writable() and not self.check_writable():
-                self.status_log("fs is not writable")
-                return core.status.WARN
+            if self.need_check_writable():
+                if not self.check_writable():
+                    self.status_log("fs is not writable")
+                    return core.status.WARN
+            elif self.need_check_readable():
+                if not self.check_readable():
+                    self.status_log("fs is not readable")
+                    return core.status.WARN
             if self.fs_type not in ["zfs", "advfs"]:
                 self.mnt_dir._status()
                 self.status_logs += self.mnt_dir.status_logs
@@ -695,3 +708,41 @@ class BaseFs(Resource):
         if vg:
             self.unprovision_dev()
 
+
+def stat_with_timeout(name, timeout, options=None):
+    """
+    Run with timeout subprocess: stat [options] name
+
+    :param name: the File
+    :param timeout: maximum time to wait for stat subprocess completion
+    :param options: list of stat options or None
+
+    :return: stat exit code, True if stat command terminate before timeout
+    else kill subprocess and return 1, False
+    """
+    if not capabilities.has("node.x.stat"):
+        return 0, True
+
+    if name is None or name == "":
+        return 0, True
+    """
+
+    """
+    if options is None:
+        options = []
+    elif not isinstance(options, list):
+        raise ValueError("stat_with_timeout: invalid options")
+
+    proc = subprocess.Popen(["stat"] + options + [name],
+                            stderr=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
+    for retry in range(timeout * 10, 0, -1):
+        if proc.poll() is None:
+            time.sleep(0.1)
+        else:
+            return proc.returncode, True
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    return 1, False
