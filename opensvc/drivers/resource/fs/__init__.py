@@ -452,7 +452,16 @@ class BaseFs(Resource):
         return True
 
     def need_check_readable(self):
-        return self.check_readable_enabled
+        if self.check_readable_enabled:
+            if 'nointr' in self.mount_options.split(','):
+                """nointr is ignored after Linux kernel 2.6.25, Solaris default is intr,
+                having both nointr and check_readable_enabled is not accepted"""
+                self.status_log("config has both check_read and 'nointr' mount option", "warn")
+                self.log.debug("disable read check: mount options have 'nointr'")
+                return False
+            return True
+        else:
+            return False
 
     def check_readable(self):
         stat_code, ok = stat_with_timeout(self.mount_point, self.stat_timeout, ["-f"])
