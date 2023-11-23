@@ -529,14 +529,6 @@ class BaseFs(Resource):
             return self.rid < other.rid
         return (smnt, self.rid) < (omnt, other.rid)
 
-    """
-    Provisioning:
-
-    required attributes from child classes:
-    *  mkfs = ['mkfs.ext4', '-F']
-    *  queryfs = ['tune2fs', '-l']
-    """
-
     def check_fs(self):
         if not hasattr(self, "queryfs"):
             return True
@@ -551,6 +543,32 @@ class BaseFs(Resource):
 
     def lv_name(self):
         raise ex.Error
+
+    def loop_resource(self):
+        size = self.oget("size")
+        try:
+            mod = driver_import("resource", "disk", "loop")
+            if mod is None:
+                return
+        except ImportError:
+            return
+        res = mod.DiskLoop(rid="disk#", loopfile=self.device, size=size)
+        res.svc = self.svc
+        return res
+
+    def provision_loop(self):
+        res = self.loop_resource()
+        if not res:
+            return
+        if not res.size:
+            return
+        res.provisioner()
+
+    def unprovision_loop(self):
+        res = self.loop_resource()
+        if not res:
+            return
+        res.unprovisioner()
 
     def lv_resource(self):
         try:
@@ -569,13 +587,13 @@ class BaseFs(Resource):
         res.svc = self.svc
         return res
 
-    def provision_dev(self):
+    def provision_lv(self):
         res = self.lv_resource()
         if not res:
             return
         res.provisioner()
 
-    def unprovision_dev(self):
+    def unprovision_lv(self):
         res = self.lv_resource()
         if not res:
             return
@@ -623,6 +641,8 @@ class BaseFs(Resource):
                     raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
         elif Env.sysname == 'Linux':
             if os.path.isfile(self.mkfs_dev):
+                if "loop" in self.mount_options.split(","):
+                    return
                 import utilities.devices.linux
                 devs = utilities.devices.linux.file_to_loop(self.mkfs_dev)
                 if len(devs) == 1:
@@ -654,7 +674,9 @@ class BaseFs(Resource):
             except ex.OptNotFound:
                 vg = None
             if vg:
-                self.provision_dev()
+                self.provision_lv()
+            elif "loop" in self.mount_options.split(","):
+                self.provision_loop()
 
         self.get_mkfs_dev()
 
@@ -715,8 +737,10 @@ class BaseFs(Resource):
         except ex.OptNotFound:
             vg = None
         if vg:
-            self.unprovision_dev()
-
+            self.unprovision_lv()
+        if "loop" in self.mount_options.split(","):
+            if os.path.isfile(self.device):
+                self.unprovision_loop()
 
 def stat_with_timeout(name, timeout, options=None):
     """
