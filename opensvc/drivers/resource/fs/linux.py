@@ -153,6 +153,8 @@ class Fs(BaseFs):
             backfile = utilities.devices.linux.loop_to_file(self.device)
             if backfile and self.mounts.has_mount(backfile, os.path.realpath(self.mount_point)):
                 return True
+        elif os.path.isfile(self.device) and "loop" in self.mount_options.split(","):
+            return self.mounts.has_mount(self.device, os.path.realpath(self.mount_point))
 
         # might be a mount by label or uuid
         for dev in self.sub_devs():
