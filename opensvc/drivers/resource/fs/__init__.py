@@ -134,6 +134,19 @@ KW_PERM = {
     "text": "The permissions the mnt directory should have. A string representing the octal permissions."
 }
 
+KW_CHECK_READ = {
+    "keyword": "check_read",
+    "default": False,
+    "convert": "boolean",
+    "candidates": (True, False),
+    "text": "If set to ``true`` then during resource status check the ``file system read check`` is used when"
+            " the file system is mounted and the ``file system write check`` is disabled."
+            " This can help detection of nfs stale file systems."
+            " The ``file system read check`` is: 'timeout {stat_timeout} stat -f {mnt}'"
+            " and requires following capability: ``drivers.resource.fs.check_readable``."
+            " The ``file system write check`` is disabled when ``fs_type`` is one of %s or mnt_opt contains ``ro``)."
+            % (Env.fs_net + ["tmpfs"])
+}
 
 KWS_VIRTUAL = [
     KW_MNT,
@@ -142,6 +155,7 @@ KWS_VIRTUAL = [
     KW_DEV,
     KW_STAT_TIMEOUT,
     KW_ZONE,
+    KW_CHECK_READ,
 ]
 
 KEYWORDS = [
@@ -161,6 +175,7 @@ KEYWORDS = [
     KW_USER,
     KW_GROUP,
     KW_PERM,
+    KW_CHECK_READ,
 ]
 
 KWS_POOLING = [
@@ -177,6 +192,7 @@ KWS_POOLING = [
     KW_USER,
     KW_GROUP,
     KW_PERM,
+    KW_CHECK_READ,
 ]
 
 DRIVER_GROUP = "fs"
@@ -208,6 +224,7 @@ class BaseFs(Resource):
                  user=None,
                  group=None,
                  perm=None,
+                 check_read=False,
                  **kwargs):
         super(BaseFs, self).__init__(type="fs", **kwargs)
         self.raw_mount_point = mount_point
@@ -227,6 +244,7 @@ class BaseFs(Resource):
         self.user = user
         self.group = group
         self.perm = perm
+        self.check_readable_enabled = check_read
 
     @lazy
     def mnt_dir(self):
@@ -392,26 +410,9 @@ class BaseFs(Resource):
         """
         return True
 
-    def check_stat(self):
-        if not capabilities.has("node.x.stat"):
-            return True
-
-        if self.device is None:
-            return True
-
-        proc = subprocess.Popen(['stat', self.device],
-                                stderr=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
-        for retry in range(self.stat_timeout*10, 0, -1):
-            if proc.poll() is None:
-                time.sleep(0.1)
-            else:
-                return True
-        try:
-            proc.kill()
-        except OSError:
-            pass
-        return False
+    def check_stat_device(self):
+        _, ok = stat_with_timeout(self.device, self.stat_timeout)
+        return ok
 
     def check_writable(self):
         if not self.can_check_writable():
@@ -450,6 +451,22 @@ class BaseFs(Resource):
 
         return True
 
+    def need_check_readable(self):
+        if self.check_readable_enabled:
+            if 'nointr' in self.mount_options.split(','):
+                """nointr is ignored after Linux kernel 2.6.25, Solaris default is intr,
+                having both nointr and check_readable_enabled is not accepted"""
+                self.status_log("config has both check_read and 'nointr' mount option", "warn")
+                self.log.debug("disable read check: mount options have 'nointr'")
+                return False
+            return True
+        else:
+            return False
+
+    def check_readable(self):
+        stat_code, ok = stat_with_timeout(self.mount_point, self.stat_timeout, ["-f"])
+        return stat_code == 0 and ok
+
     def is_up(self):
         """
         Placeholder
@@ -458,12 +475,17 @@ class BaseFs(Resource):
 
     def _status(self, verbose=False):
         if self.is_up():
-            if not self.check_stat():
-                self.status_log("fs is not responding to stat")
+            if not self.check_stat_device():
+                self.status_log("fs dev is not responding to stat")
                 return core.status.WARN
-            if self.need_check_writable() and not self.check_writable():
-                self.status_log("fs is not writable")
-                return core.status.WARN
+            if self.need_check_writable():
+                if not self.check_writable():
+                    self.status_log("fs is not writable")
+                    return core.status.WARN
+            elif self.need_check_readable():
+                if not self.check_readable():
+                    self.status_log("fs is not readable")
+                    return core.status.WARN
             if self.fs_type not in ["zfs", "advfs"]:
                 self.mnt_dir._status()
                 self.status_logs += self.mnt_dir.status_logs
@@ -507,14 +529,6 @@ class BaseFs(Resource):
             return self.rid < other.rid
         return (smnt, self.rid) < (omnt, other.rid)
 
-    """
-    Provisioning:
-
-    required attributes from child classes:
-    *  mkfs = ['mkfs.ext4', '-F']
-    *  queryfs = ['tune2fs', '-l']
-    """
-
     def check_fs(self):
         if not hasattr(self, "queryfs"):
             return True
@@ -529,6 +543,32 @@ class BaseFs(Resource):
 
     def lv_name(self):
         raise ex.Error
+
+    def loop_resource(self):
+        size = self.oget("size")
+        try:
+            mod = driver_import("resource", "disk", "loop")
+            if mod is None:
+                return
+        except ImportError:
+            return
+        res = mod.DiskLoop(rid="disk#", loopfile=self.device, size=size)
+        res.svc = self.svc
+        return res
+
+    def provision_loop(self):
+        res = self.loop_resource()
+        if not res:
+            return
+        if not res.size:
+            return
+        res.provisioner()
+
+    def unprovision_loop(self):
+        res = self.loop_resource()
+        if not res:
+            return
+        res.unprovisioner()
 
     def lv_resource(self):
         try:
@@ -547,13 +587,13 @@ class BaseFs(Resource):
         res.svc = self.svc
         return res
 
-    def provision_dev(self):
+    def provision_lv(self):
         res = self.lv_resource()
         if not res:
             return
         res.provisioner()
 
-    def unprovision_dev(self):
+    def unprovision_lv(self):
         res = self.lv_resource()
         if not res:
             return
@@ -601,6 +641,8 @@ class BaseFs(Resource):
                     raise ex.Error("unable to find a device associated to %s" % self.mkfs_dev)
         elif Env.sysname == 'Linux':
             if os.path.isfile(self.mkfs_dev):
+                if "loop" in self.mount_options.split(","):
+                    return
                 import utilities.devices.linux
                 devs = utilities.devices.linux.file_to_loop(self.mkfs_dev)
                 if len(devs) == 1:
@@ -632,7 +674,9 @@ class BaseFs(Resource):
             except ex.OptNotFound:
                 vg = None
             if vg:
-                self.provision_dev()
+                self.provision_lv()
+            elif "loop" in self.mount_options.split(","):
+                self.provision_loop()
 
         self.get_mkfs_dev()
 
@@ -693,5 +737,45 @@ class BaseFs(Resource):
         except ex.OptNotFound:
             vg = None
         if vg:
-            self.unprovision_dev()
+            self.unprovision_lv()
+        if "loop" in self.mount_options.split(","):
+            if os.path.isfile(self.device):
+                self.unprovision_loop()
 
+def stat_with_timeout(name, timeout, options=None):
+    """
+    Run with timeout subprocess: stat [options] name
+
+    :param name: the File
+    :param timeout: maximum time to wait for stat subprocess completion
+    :param options: list of stat options or None
+
+    :return: stat exit code, True if stat command terminate before timeout
+    else kill subprocess and return 1, False
+    """
+    if not capabilities.has("node.x.stat"):
+        return 0, True
+
+    if name is None or name == "":
+        return 0, True
+    """
+
+    """
+    if options is None:
+        options = []
+    elif not isinstance(options, list):
+        raise ValueError("stat_with_timeout: invalid options")
+
+    proc = subprocess.Popen(["stat"] + options + [name],
+                            stderr=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
+    for retry in range(timeout * 10, 0, -1):
+        if proc.poll() is None:
+            time.sleep(0.1)
+        else:
+            return proc.returncode, True
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    return 1, False
