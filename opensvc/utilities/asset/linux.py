@@ -249,6 +249,9 @@ class Asset(BaseAsset):
 
     def _get_os_release(self):
         r = self._get_os_release_os_release()
+        if r == "Enterprise Linux" and self.os_release.version:
+           # prior to el8, the pretty name did not include the version
+           return r + " " + self.os_release.version
         if r and r not in (
            "/Linux",
            "Linux 7 (Core)" # centos7 poor pretty_name
