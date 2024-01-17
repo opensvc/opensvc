@@ -860,7 +860,6 @@ class PodmanLib(ContainerLib):
         self.docker_daemon_args = []
         self.docker_daemon_args += [
             "--cgroup-manager", "cgroupfs",
-            "--namespace", self.svc.path,
             "--cni-config-dir", self.svc.node.cni_config,
         ]
 
