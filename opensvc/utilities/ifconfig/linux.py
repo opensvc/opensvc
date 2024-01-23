@@ -259,6 +259,17 @@ class Ifconfig(BaseIfconfig):
         return data
 
     def parse_mcast_ip(self, out):
+        """
+        2:	wlp0s20f3
+            link  01:00:5e:00:00:01 users 2
+            link  01:00:5e:00:00:fb users 2
+            link  33:33:00:00:00:01 users 2
+            link  33:33:ff:c8:66:d7 users 2
+            link  33:33:00:00:00:fb users 2
+            link  33:33:ff:c5:a9:cb users 2
+            link  33:33:ff:77:d4:87 users 2
+            inet  224.0.0.1
+        """
         lines = out.splitlines()
         found = False
         data = {}
@@ -274,9 +285,12 @@ class Ifconfig(BaseIfconfig):
                     continue
                 data[name] = []
                 continue
-            if "inet" not in line:
+            try:
+                l = line.split()
+                if l[0] in ("inet", "inet6"):
+                    data[name].append(l[1])
+            except IndexError:
                 continue
-            data[name].append(line.split()[-1])
         return data
 
 if __name__ == "__main__":
