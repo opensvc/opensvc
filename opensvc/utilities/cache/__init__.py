@@ -50,13 +50,15 @@ def cache(sig, sid=None, ttl=0):
                 if ttl > 0 and is_expired(fpath, ttl):
                     raise Exception("cache TTL reached: %s" % fpath)
                 data = cache_get(fpath, log=log)
+                return data
             except Exception as e:
                 if log:
                     log.debug(str(e))
                 data = fn(*args, **kwargs)
                 cache_put(fpath, data, log=log)
-            utilities.lock.unlock(lfd)
-            return data
+                return data
+            finally:
+                utilities.lock.unlock(lfd)
 
         return decorator
 
