@@ -9,7 +9,7 @@ import time
 
 import daemon.shared as shared
 from env import Env
-from utilities.naming import svc_pathvar
+from utilities.naming import svc_pathvar, split_path
 
 MAX_QUEUED = 1000
 
