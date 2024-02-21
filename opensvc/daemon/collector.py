@@ -9,7 +9,7 @@ import time
 
 import daemon.shared as shared
 from env import Env
-from utilities.naming import svc_pathvar
+from utilities.naming import svc_pathvar, split_path
 
 MAX_QUEUED = 1000
 
@@ -120,6 +120,10 @@ class Collector(shared.OsvcThread):
         last_config = {}
         last_config_changed = {}
         for path, sdata in data["nodes"].get(Env.nodename, {}).get("services", {}).get("config", {}).items():
+            _, _, kind = split_path(path)
+            if kind in ("sec", "cfg", "ccfg", "usr"):
+                # the collector drops updates for these kinds, so save the calls
+                continue
             if path not in self.last_config:
                 # first time we see this path, try populating our cache from the object's config_sent.json
                 try:
