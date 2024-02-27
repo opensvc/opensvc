@@ -354,9 +354,9 @@ class SymMixin(object):
         elif "SYMCLI_CONNECT" in os.environ:
             del os.environ["SYMCLI_CONNECT"]
 
-    def symcmd(self, cmd, xml=True, log=False):
+    def symcmd(self, cmd, xml=True, log=False, sid=None):
         self.set_environ()
-        cmd += ['-sid', self.sid]
+        cmd += ['-sid', sid or self.sid]
         if xml:
             cmd += ['-output', 'xml_element']
         if log and self.node:
@@ -379,9 +379,9 @@ class SymMixin(object):
         cmd = ['/usr/symcli/bin/symconfigure'] + cmd
         return self.symcmd(cmd, xml=xml, log=log)
 
-    def symdev(self, cmd, xml=True, log=False):
+    def symdev(self, cmd, xml=True, log=False, sid=None):
         cmd = ['/usr/symcli/bin/symdev'] + cmd
-        return self.symcmd(cmd, xml=xml, log=log)
+        return self.symcmd(cmd, xml=xml, log=log, sid=sid)
 
     def symrdf(self, cmd, xml=True, log=False):
         cmd = ['/usr/symcli/bin/symrdf'] + cmd
@@ -390,6 +390,12 @@ class SymMixin(object):
     def get_sym_info(self):
         out, err, ret = self.symcfg(["list"])
         return out
+
+    def get_sym_rdfg_remote_sid(self, rdfg):
+        out, err, ret = self.symcfg(['-rdfg', rdfg, 'list'])
+        tree = fromstring(out)
+        for g in tree.iter('RdfGroup'):
+            return g.find('remote_symid').text
 
     def get_sym_rdfg_info(self):
         out, err, ret = self.symcfg(['-rdfg', 'all', 'list'])
@@ -805,11 +811,10 @@ class SymMixin(object):
         missing = tgt_gks - cur_gks
         if missing <= 0:
             return []
-        _cmd = "create gatekeeper count=%d,sg=%s,emulation=FBA;" % (missing, sg)
-        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        cmd = ["create", "-gk", "-N", str(missing), "-sg", sg]
+        out, err, ret = self.symdev(cmd, xml=False, log=True)
         result = [{
-            "cmd": ["symconfigure"] + cmd,
+            "cmd": ["symdev"] + cmd,
             "ret": ret,
             "out": out,
             "err": err,
@@ -826,16 +831,32 @@ class SymMixin(object):
         devs = self.parse_xml(out, key="Device", as_list=["Device"])
         if len(devs):
             return []
-        _cmd = "create dev count=1, sg=%s, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV, config=TDEV, device_name=%s;" % (sg, size, name)
-        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        out, err, ret = self.create_tdev(size, name, sg=sg)
         result = [{
-            "cmd": ["symconfigure"] + cmd,
+            "cmd": ["symdev"] + cmd,
             "ret": ret,
             "out": out,
             "err": err,
         }]
         return result
+
+    def create_tdev(self, size, name, sg=None, sid=None):
+        cmd = ["create", "-tdev", "-N", "1", "-cap", str(size), "-captype", "mb"]
+        if sg:
+            cmd += ["-sg", sg,]
+        cmd += ["-emulation", "FBA", "-device_name", name, "-noprompt", "-v"]
+        out, err, ret = self.symdev(cmd, xml=False, log=True, sid=sid)
+        return out, err, ret
+
+    def parse_create_tdev(self, out):
+        for line in out.splitlines():
+            if "devices created are" not in line:
+                continue
+            try:
+                return  line[line.index("[")+1:line.index("]")-1].split()
+            except IndexError:
+                pass
+        return []
 
     def add_devs(self, data):
         for i, dev in enumerate(data.get("dev", [])):
@@ -986,62 +1007,32 @@ class Vmax(SymMixin):
         return fpath
 
     def add_tdev(self, name=None, size=None, srdf=False, rdfg=None, **kwargs):
-        """
-             create dev count=<n>,
-                  size = <n> [MB | GB | CYL],
-                  emulation=<EmulationType>,
-                  config=<DevConfig>
-                  [, preallocate size = <ALL>
-                    [, allocate_type = PERSISTENT]]
-                  [, remote_config=<DevConfig>, ra_group=<n>]
-                  [, sg=<SgName> [, remote_sg=<SgName>]]
-                  [, mapping to dir <director_num:port>
-                    [starting] target = <scsi_target>,
-                    lun=<scsi_lun>, vbus=<fibre_vbus>
-                    [starting] base_address = <cuu_address>[,...]]
-                  [, device_attr =
-                    <SCSI3_PERSIST_RESERV | DIF1 |
-                      AS400_GK>[,...]]
-                  [, device_name='<DeviceName>'[,number=<n | SYMDEV> ]];
-        """
+        if srdf and rdfg is None:
+            raise ex.Error("--srdf is specified but --rdfg is not")
 
         if size is None:
             raise ex.Error("The '--size' parameter is mandatory")
+
         size = convert_size(size, _to="MB")
-        _cmd = "create dev count=1, size= %d MB, emulation=FBA, device_attr=SCSI3_PERSIST_RESERV" % size
 
-        if srdf and rdfg:
-            _cmd += ", config=RDF1+TDEV, remote_config=RDF2+TDEV, ra_group=%s" % str(rdfg)
-        elif srdf and rdfg is None:
-            raise ex.Error("--srdf is specified but --rdfg is not")
-        else:
-            _cmd += ", config=TDEV"
-
-        if name:
-            _cmd += ", device_name=%s" % name
-        _cmd += ";"
-        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        out, err, ret = self.create_tdev(size, name)
         if ret != 0:
             raise ex.Error(err)
-        """
-            out contains:
-            ...
-            New symdev:  003AF [TDEV]
-            ...
-        """
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith("New symdev:"):
-                l = line.split()
-                if len(l) < 3:
-                    raise ex.Error("unable to determine the created SymDevName")
-                dev = l[2]
-                if srdf:
-                    self.set_mode(dev)
-                data = self.get_sym_dev_wwn(dev)[0]
-                return data
-        raise ex.Error("unable to determine the created SymDevName")
+        r1dev = self.parse_create_tdev(out)[0]
+
+        if srdf and rdfg:
+            rsid = self.get_sym_rdfg_remote_sid(rdfg)
+            if not rsid:
+                raise ex.Error("can't find remote sid of rdfg %s" % rdfg)
+            out, err, ret = self.create_tdev(size, name, sid=rsid)
+            if ret != 0:
+                raise ex.Error(err)
+            r2dev = self.parse_create_tdev(out)[0]
+            self.createpair(r1dev+":"+r2dev, rdfg=rdfg, srdf_mode="sync", srdf_type="R1")
+
+        data = self.get_sym_dev_wwn(r1dev)[0]
+
+        return data
 
     def remote_dev_id(self, dev):
         data = self.get_dev_rdf(dev)
@@ -1131,9 +1122,9 @@ class Vmax(SymMixin):
             raise ex.Error("--dev is mandatory")
         if name is None:
             raise ex.Error("--name is mandatory")
-        _cmd = "set dev %s device_name='%s';" % (dev, name)
-        cmd = ["-cmd", _cmd, "commit", "-noprompt"]
-        out, err, ret = self.symconfigure(cmd, xml=False, log=True)
+        _cmd = "set dev %s -attribute device_name='%s'" % (dev, name)
+        cmd = [_cmd]
+        out, err, ret = self.symdev(cmd, xml=False, log=True)
         if ret != 0:
             raise ex.Error(err)
 
