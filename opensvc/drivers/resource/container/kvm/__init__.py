@@ -1,7 +1,10 @@
+from __future__ import print_function
+
 import os
 
 import core.exceptions as ex
 import utilities.ping
+
 
 from .. import \
     BaseContainer, \
@@ -281,7 +284,10 @@ class ContainerKvm(BaseContainer):
             raise ex.Error
 
     def virsh_undefine(self):
-        cmd = ['virsh', 'undefine', self.name]
+        if self.has_efi():
+            cmd = ['virsh', 'undefine', '--nvram', self.name]
+        else:
+            cmd = ['virsh', 'undefine', self.name]
         (ret, buff, err) = self.vcall(cmd)
         if ret != 0:
             raise ex.Error
@@ -475,6 +481,18 @@ class ContainerKvm(BaseContainer):
     def sub_devs(self):
         devs = set(map(lambda x: x[0], self.devmapping))
         return devs
+
+    def has_efi(self):
+        from xml.etree.ElementTree import ElementTree
+        tree = ElementTree()
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            return False
+        for xml_node in tree.findall("os"):
+            if xml_node.attrib.get("firmware") == "efi":
+                return True
+        return False
 
     @lazy
     def devmapping(self):
