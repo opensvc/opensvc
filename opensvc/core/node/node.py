@@ -1129,14 +1129,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The pushasset action entrypoint.
         Inventories the server properties.
         """
-        data = self.asset.get_asset_dict()
+        data = self.asset.get_system_dict()
         try:
             if self.options.format is None:
                 self.print_asset(data)
                 return
             self.print_data(data)
         finally:
-            self.collector.call('push_asset', self, data)
+            try:
+                self.collector_rest_post("/daemon/system", data, head="/api")
+            except Exception as exc:
+                raise ex.Error(str(exc))
 
     def print_asset(self, data):
         from utilities.render.forest import Forest
@@ -1146,10 +1149,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         head_node.add_column(Env.nodename, color.BOLD)
         head_node.add_column("Value", color.BOLD)
         head_node.add_column("Source", color.BOLD)
-        for key in sorted(data):
-            _data = data[key]
-            node = head_node.add_node()
-            if key not in ("targets", "lan", "uids", "gids", "hba", "hardware"):
+
+        if 'properties' in data:
+            for key in sorted(data["properties"]):
+                _data = data["properties"][key]
+                node = head_node.add_node()
                 if _data["value"] is None:
                     _data["value"] = ""
                 node.add_column(_data["title"], color.LIGHTBLUE)
@@ -2687,11 +2691,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         f.close()
         return buff
 
-    def collector_api(self, path=None):
+    def collector_api(self, path=None, head=None):
         """
         Prepare the authentication info, either as node or as user.
         Fetch and cache the collector's exposed rest api metadata.
         """
+        head = head if head is not None else "/init/rest/api"
         if self.collector_env.dbopensvc is None:
             raise ex.Error("node.dbopensvc is not set in node.conf")
         elif self.collector_env.dbopensvc_host == "none":
@@ -2705,7 +2710,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             username, password = self.collector_auth_user()
         data["username"] = username
         data["password"] = password
-        data["url"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", "/init/rest/api")
+        data["url"] = self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", head)
         if not data["url"].startswith("http"):
             data["url"] = "https://%s" % data["url"]
         from utilities.uri import Uri
@@ -2738,11 +2743,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             raise KeyboardInterrupt()
         return username, password
 
-    def collector_request(self, rpath, path=None):
+    def collector_request(self, rpath, path=None, head=None):
         """
         Make a request to the collector's rest api
         """
-        api = self.collector_api(path=path)
+        api = self.collector_api(path=path, head=head)
         url = api["url"]
         if not url.startswith("https"):
             raise ex.Error("refuse to submit auth tokens through a "
@@ -2762,11 +2767,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         return self.collector_rest_request(rpath, data=data, path=path)
 
-    def collector_rest_post(self, rpath, data=None, path=None):
+    def collector_rest_post(self, rpath, data=None, path=None, head=None):
         """
         Make a POST request to the collector's rest api
         """
-        return self.collector_rest_request(rpath, data, path=path, get_method="POST")
+        return self.collector_rest_request(rpath, data, path=path, head=head, get_method="POST")
 
     def collector_rest_put(self, rpath, data=None, path=None):
         """
@@ -2786,7 +2791,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         kwargs.update(ssl_context_kwargs())
         return kwargs
 
-    def collector_rest_request(self, rpath, data=None, path=None, get_method="GET"):
+    def collector_rest_request(self, rpath, data=None, head=None, path=None, get_method="GET"):
         """
         Make a request to the collector's rest api
         """
@@ -2797,14 +2802,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 rpath += "?" + urlencode(data)
                 data = None
 
-        request = self.collector_request(rpath, path=path)
+        request = self.collector_request(rpath, path=path, head=head)
         if get_method:
             request.get_method = lambda: get_method
         if data is not None:
             try:
-                request.add_data(urlencode(data))
+                request.add_data(json.dumps(data).encode('utf-8'))
             except AttributeError:
-                request.data = urlencode(data).encode('utf-8')
+                request.data = json.dumps(data).encode('utf-8')
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
         try:
@@ -2820,8 +2825,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if hasattr(exc, "reason"):
                 raise ex.Error(getattr(exc, "reason"))
             raise ex.Error(str(exc))
-        data = json.loads(ufile.read().decode("utf-8"))
-        ufile.close()
+        else:
+            try:
+                data = json.loads(ufile.read().decode("utf-8"))
+            except Exception:
+                return
+        finally:
+            ufile.close()
         return data
 
     def collector_rest_get_to_file(self, rpath, fpath):
