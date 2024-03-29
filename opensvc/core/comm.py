@@ -405,7 +405,7 @@ class Crypt(object):
                 loaded = json.loads(bdecode(data))
             except ValueError as exc:
                 loaded = data
-            if not isinstance(loaded, foreign.six.text_type):
+            if not isinstance(loaded, six.text_type):
                 loaded = data
             return msg_clustername, msg_nodename, loaded
         try:
