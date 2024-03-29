@@ -37,12 +37,20 @@ KEYWORDS = [
         "text": "Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
     },
     {
+        "keyword": "intermediary",
+        "at": True,
+        "default": True,
+        "convert": "boolean",
+        "candidates": (True, False),
+        "text": "Send snapshots created since the last update."
+    },
+    {
         "keyword": "recursive",
         "at": True,
         "default": True,
         "convert": "boolean",
         "candidates": (True, False),
-        "text": "Describes which nodes should receive this data sync from the PRD node where the service is up and running. SAN storage shared 'nodes' must not be sync to 'nodes'. SRDF-like paired storage must not be sync to 'drpnodes'."
+        "text": "Send datasets hosted under the src dataset."
     },
     {
         "keyword": "tags",
@@ -77,12 +85,14 @@ class SyncZfs(Sync):
                  src=None,
                  dst=None,
                  recursive = True,
+                 intermediary = True,
                  snap_size=0,
                  **kwargs):
         super(SyncZfs, self).__init__(type="sync.zfs", **kwargs)
         self.label = "zfs of %s to %s"%(src, ",".join(target))
         self.target = target
         self.recursive = recursive
+        self.intermediary = intermediary
         self.src = src
         self.dst = dst
         (self.src_pool, self.src_ds) = a2pool_dataset(src)
@@ -301,12 +311,18 @@ class SyncZfs(Sync):
     def zfs_send_incremental(self, node):
         if not self.snap_exists(self.dst_snap_sent, node):
             return self.zfs_send_initial(node)
+
+        send_cmd = [Env.syspaths.zfs, "send"]
+
         if self.recursive:
-            send_cmd = [Env.syspaths.zfs, "send", "-R", "-I",
-                        self.src_snap_sent, self.src_snap_tosend]
+            send_cmd.append("-R")
+
+        if self.intermediary:
+            send_cmd.append("-I")
         else:
-            send_cmd = [Env.syspaths.zfs, "send", "-I",
-                        self.src_snap_sent, self.src_snap_tosend]
+            send_cmd.append("-i")
+
+        send_cmd += [self.src_snap_sent, self.src_snap_tosend]
 
         if self.src_ds == self.dst_ds or ( self.src_ds == self.src_pool and self.dst_ds == self.dst_pool ):
             receive_cmd = [Env.syspaths.zfs, "receive", "-dF", self.dst_pool]
