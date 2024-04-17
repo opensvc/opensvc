@@ -93,7 +93,7 @@ class ContainerKvm(BaseContainer):
             # don't send the container cf to nodes that won't run it
             return []
         if os.path.exists(self.cf):
-            return [self.cf]
+            return [self.cf] + self.firmware_files()
         return []
 
     def files_to_sync(self):
@@ -482,6 +482,23 @@ class ContainerKvm(BaseContainer):
         devs = set(map(lambda x: x[0], self.devmapping))
         return devs
 
+    def firmware_files(self):
+        l = []
+        from xml.etree.ElementTree import ElementTree
+        tree = ElementTree()
+        try:
+            tree.parse(self.cf)
+        except Exception as exc:
+            return l
+        for xml_node in tree.findall("os"):
+            s = xml_node.find("loader")
+            if s is not None:
+                l.append(s.text)
+            s = xml_node.find("nvram")
+            if s is not None:
+                l.append(s.text)
+        return l
+
     def has_efi(self):
         from xml.etree.ElementTree import ElementTree
         tree = ElementTree()
@@ -491,6 +508,8 @@ class ContainerKvm(BaseContainer):
             return False
         for xml_node in tree.findall("os"):
             if xml_node.attrib.get("firmware") == "efi":
+                return True
+            if xml_node.find("nvram") is not None:
                 return True
         return False
 
