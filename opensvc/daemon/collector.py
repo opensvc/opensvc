@@ -9,10 +9,12 @@ import time
 
 import daemon.shared as shared
 from env import Env
+from utilities.lazy import lazy, unset_lazy
 from utilities.naming import svc_pathvar, split_path
+from utilities.semver import Semver
 
 MAX_QUEUED = 1000
-
+RESCAN_OC3_VERSION_INTERVAL = 24 * 60 * 60
 
 class Collector(shared.OsvcThread):
     name = "collector"
@@ -28,12 +30,20 @@ class Collector(shared.OsvcThread):
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.collector"), {"node": Env.nodename, "component": self.name})
         self.log.info("collector started")
         previous_interval_signature = ""
+        previous_oc3_version = Semver()
+        last_scan_oc3 = time.time()
         self.reset()
 
         while True:
             if self.stopped():
                 self.exit()
             try:
+
+                if time.time() - last_scan_oc3 > RESCAN_OC3_VERSION_INTERVAL:
+                    unset_lazy(self, "oc3_version")
+                if previous_oc3_version != self.oc3_version:
+                    self.log.info("collector oc3 detected version: %s", self.oc3_version)
+                    previous_oc3_version = self.oc3_version
                 self.do()
                 self.update_status()
                 interval_signature = "%d-%d-%d" % (self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
@@ -344,3 +354,20 @@ class Collector(shared.OsvcThread):
             elif self.last_comm <= now - self.db_min_ping_interval:
                 self.ping(data)
             self.last_status = last_status
+
+    @lazy
+    def oc3_version(self):
+        try:
+            resp, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
+            if isinstance(schema, dict) is False:
+                return Semver()
+            if resp.code == 200:
+                s = schema.get("version", "0.0.0")
+                v = Semver.parse(s)
+                self.log.info("collector oc3 api version: %s", v)
+                return v
+            self.log.debug("can't detect collector oc3 api: status code", resp.code)
+            return Semver()
+        except Exception as err:
+            self.log.debug("can't detect collector oc3 api: %s", str(err))
+            return Semver()
