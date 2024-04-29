@@ -13,11 +13,9 @@ from utilities.naming import svc_pathvar, split_path
 
 MAX_QUEUED = 1000
 
+
 class Collector(shared.OsvcThread):
     name = "collector"
-    update_interval = 300
-    min_update_interval = 10
-    min_ping_interval = 60
 
     def reset(self):
         self.last_comm = None
@@ -29,6 +27,7 @@ class Collector(shared.OsvcThread):
         self.set_tid()
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.collector"), {"node": Env.nodename, "component": self.name})
         self.log.info("collector started")
+        previous_interval_signature = ""
         self.reset()
 
         while True:
@@ -37,6 +36,11 @@ class Collector(shared.OsvcThread):
             try:
                 self.do()
                 self.update_status()
+                interval_signature = "%d-%d-%d" % (self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
+                if interval_signature != previous_interval_signature:
+                    self.log.info("collector thread config: update_interval=%d, min_update_interval=%d, min_ping_interval= %d",
+                                  self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
+                    previous_interval_signature = interval_signature
             except Exception as exc:
                 self.log.exception(exc)
                 time.sleep(1)
@@ -157,7 +161,7 @@ class Collector(shared.OsvcThread):
             self.unqueue_xmlrpc()
         if not self.stopped():
             with shared.COLLECTOR_TICKER:
-                shared.COLLECTOR_TICKER.wait(self.update_interval)
+                shared.COLLECTOR_TICKER.wait(self.db_update_interval)
 
     def queue_limit(self):
         overlimit = len(shared.COLLECTOR_XMLRPC_QUEUE) - MAX_QUEUED
@@ -331,15 +335,12 @@ class Collector(shared.OsvcThread):
             if self.last_comm is None:
                 self.send_daemon_status(data)
             elif self.last_status_changed:
-                if self.last_comm <= now - self.min_update_interval:
+                if self.last_comm <= now - self.db_min_update_interval:
                     self.send_daemon_status(data)
                     self.last_status_changed = set()
                 else:
                     # avoid storming the collector with daemon status updates
-                    #self.log.debug("last daemon status too soon: %d", self.last_comm)
                     pass
-            elif self.last_comm <= now - self.min_ping_interval:
+            elif self.last_comm <= now - self.db_min_ping_interval:
                 self.ping(data)
             self.last_status = last_status
-
-
