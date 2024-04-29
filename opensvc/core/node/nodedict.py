@@ -286,6 +286,10 @@ PRIVATE_KEYWORDS = [
     },
 ]
 
+DEFAULT_COLLECTOR_DB_UPDATE_INTERVAL = 300
+DEFAULT_COLLECTOR_DB_MIN_UPDATE_INTERVAL = 10
+DEFAULT_COLLECTOR_DB_MIN_PING_INTERVAL = 60
+
 KEYWORDS = [
     {
         "section": "node",
@@ -414,6 +418,31 @@ KEYWORDS = [
         "example": "https://collector.opensvc.com/init/compliance/call/xmlrpc",
         "default_text": "Same protocol, server and port as dbopensvc, but with an different path.",
         "text": "Set the uri of the collector's main xmlrpc server. The path part of the uri can be left unspecified."
+    },
+    {
+        "section": "node",
+        "keyword": "db_update_interval",
+        "convert": "duration",
+        "default": DEFAULT_COLLECTOR_DB_UPDATE_INTERVAL,
+        "text": "Set the maximum wait time before next collector thread iteration."
+                " Minimum value: %d" % DEFAULT_COLLECTOR_DB_UPDATE_INTERVAL,
+    },
+    {
+        "section": "node",
+        "keyword": "db_min_update_interval",
+        "convert": "duration",
+        "default": DEFAULT_COLLECTOR_DB_MIN_UPDATE_INTERVAL,
+        "text": "Set the minimum delay before next push daemon status changes to collector."
+                " Minimum value: %d" % DEFAULT_COLLECTOR_DB_MIN_UPDATE_INTERVAL,
+    },
+    {
+        "section": "node",
+        "keyword": "db_min_ping_interval",
+        "convert": "duration",
+        "default": DEFAULT_COLLECTOR_DB_MIN_PING_INTERVAL,
+        "text": "Set the minimum interval between 2 push daemon ping to collector."
+                " push daemon ping are called when there are no daemon status changes, but we want to send alive status to collector."
+                " Minimum value: %d" % DEFAULT_COLLECTOR_DB_MIN_PING_INTERVAL,
     },
     {
         "section": "node",
