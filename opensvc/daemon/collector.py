@@ -251,7 +251,12 @@ class Collector(shared.OsvcThread):
         else:
             self.log.debug("send daemon status, resync")
         try:
-            shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
+            if self.oc3_version >= Semver(1, 0, 0):
+                begin = time.time()
+                shared.NODE.collector_oc3_request("POST", "/oc3/daemon/status", data=data, headers={"XDaemonChange":  " ".join(list(self.last_status_changed))})
+                self.log.debug("dbg collector post /oc3/daemon/status %0.3f", time.time()-begin)
+            else:
+                shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
             self.log.error("call push_daemon_status: %s", exc)
             shared.NODE.collector.disable()
@@ -262,10 +267,20 @@ class Collector(shared.OsvcThread):
             return
         self.log.debug("ping the collector")
         try:
-            result = shared.NODE.collector.call("daemon_ping")
-            if result and result.get("info") == "resync":
-                self.log.info("ping rejected, collector ask for resync")
-                self.send_daemon_status(data)
+            if self.oc3_version >= Semver(1, 0, 0):
+                begin = time.time()
+                code, _ = shared.NODE.collector_oc3_request("POST", "/oc3/daemon/ping")
+                self.log.debug("post /oc3/daemon/ping %0.3f", time.time()-begin)
+                if code == 202:
+                    pass
+                elif code == 204:
+                    self.log.debug("ping rejected, collector ask for resync")
+                    self.send_daemon_status(data)
+            else:
+                result = shared.NODE.collector.call("daemon_ping")
+                if result and result.get("info") == "resync":
+                    self.log.info("ping rejected, collector ask for resync")
+                    self.send_daemon_status(data)
         except Exception as exc:
             self.log.error("call daemon_ping: %s", exc)
             shared.NODE.collector.disable()
