@@ -2851,6 +2851,51 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 ofile.write(chunk)
         ufile.close()
 
+    def collector_url(self, rpath):
+        return self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", rpath)
+
+    def collector_basic_node(self):
+        username, password = self.collector_auth_node()
+        return base64encode('%s:%s' % (username, password)).replace("\n", "")
+
+    def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, **kwargs):
+        """
+        Make a request to the collector's oc3 api
+        """
+        if base_url is None:
+            url = self.collector_url(rpath)
+        else:
+            url = "%s%s" % (base_url, rpath)
+        if not url.startswith("https://"):
+            raise ex.Error("need https protocol, got %s" % url)
+
+        if headers is None:
+            headers = {"Accept": "application/json"}
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+
+        request = Request(url, headers=headers)
+        request.get_method = lambda: method
+        request.add_header("Authorization", "Basic %s" % self.collector_basic_node())
+
+        if data is not None:
+            try:
+                request.add_data(json.dumps(data).encode('utf-8'))
+            except AttributeError:
+                request.data = json.dumps(data).encode('utf-8')
+
+        kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
+        try:
+            resp = urlopen(request, **kwargs)
+        except HTTPError as err:
+            raise ex.Error("oc3 http error %s %s %s" % (method, url, str(err)))
+        except Exception as err:
+            raise ex.Error("oc3 %s %s %s" % (method, url, str(err)))
+        data = json.loads(resp.read().decode("utf-8"))
+        resp.close()
+        return resp, data
+
     def svc_conf_from_templ(self, name, namespace, kind, template):
         """
         Download a provisioning template from the collector's rest api,
