@@ -54,6 +54,7 @@ from utilities.proc import call, justcall, vcall, which, check_privs, daemon_pro
     init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
+from utilities.semver import Semver
 from utilities.storage import Storage
 from utilities.string import bdecode, base64encode
 
@@ -2884,9 +2885,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         try:
             resp = urlopen(request, **kwargs)
         except HTTPError as err:
-            raise ex.Error("oc3 http error %s %s %s" % (method, url, str(err)))
+            return err, None
         except Exception as err:
-            raise ex.Error("oc3 %s %s %s" % (method, url, str(err)))
+            raise ex.Error("oc3 %s %s error: %s" % (method, url, str(err)))
         data = json.loads(resp.read().decode("utf-8"))
         resp.close()
         return resp, data
