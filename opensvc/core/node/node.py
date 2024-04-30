@@ -1111,6 +1111,14 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.asset import Asset
         return Asset(self)
 
+    def oc3_version(self):
+        "return cached oc3 version (value is maintained by collector thread)"
+        try:
+            with open(Env.paths.oc3_version, 'r') as f:
+                return Semver.parse(json.load(f).get("version", ""))
+        except:
+            return Semver()
+
     def pushpkg(self):
         """
         The pushpkg action entrypoint.

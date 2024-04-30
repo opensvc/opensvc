@@ -30,9 +30,10 @@ class Collector(shared.OsvcThread):
         self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd.collector"), {"node": Env.nodename, "component": self.name})
         self.log.info("collector started")
         previous_interval_signature = ""
-        previous_oc3_version = Semver()
+        previous_oc3_version = shared.NODE.oc3_version()
         last_scan_oc3 = time.time()
         self.reset()
+        self.log.info("collector oc3 detected version: %s", self.oc3_version)
 
         while True:
             if self.stopped():
@@ -42,8 +43,12 @@ class Collector(shared.OsvcThread):
                 if time.time() - last_scan_oc3 > RESCAN_OC3_VERSION_INTERVAL:
                     unset_lazy(self, "oc3_version")
                 if previous_oc3_version != self.oc3_version:
-                    self.log.info("collector oc3 detected version: %s", self.oc3_version)
+                    self.log.info("collector oc3 refresh version file %s: %s -> %s",
+                                  Env.paths.oc3_version, previous_oc3_version, self.oc3_version)
                     previous_oc3_version = self.oc3_version
+                    with open(Env.paths.oc3_version, 'w') as f:
+                        json.dump({"version": str(self.oc3_version)}, f)
+
                 self.do()
                 self.update_status()
                 interval_signature = "%d-%d-%d" % (self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
@@ -372,17 +377,31 @@ class Collector(shared.OsvcThread):
 
     @lazy
     def oc3_version(self):
+        """
+        returns the oc3 version from GET /oc3/version.
+
+        returned values:
+            status code 200 => version from body
+            status code 404 => null version 0.0.0
+            else fallback to previous cached version value (that may be version 0.0.0 if no previous cache)
+        """
+        null_version = Semver(0, 0, 0)
+        version = shared.NODE.oc3_version()
         try:
             resp, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
-            if isinstance(schema, dict) is False:
-                return Semver()
             if resp.code == 200:
-                s = schema.get("version", "0.0.0")
-                v = Semver.parse(s)
-                self.log.info("collector oc3 api version: %s", v)
-                return v
-            self.log.debug("can't detect collector oc3 api: status code", resp.code)
-            return Semver()
+                if isinstance(schema, dict):
+                    s = schema.get("version", "0.0.0")
+                    version = Semver.parse(s)
+            elif resp.code in [404]:
+                if version != Semver():
+                    # collector has no anymore oc3 configured, reset to null
+                    self.log.warning("oc3 version skip cache (GET /oc3/version http status code %d)", resp.code)
+                version = null_version
+            else:
+                # 502 Bad Gateway, 503 Service Unavailable: oc3 is not yet ready
+                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)",resp.code)
         except Exception as err:
-            self.log.debug("can't detect collector oc3 api: %s", str(err))
-            return Semver()
+            if version > null_version:
+                self.log.warning("oc3 version preserve cache (GET /oc3/version error: %s)", str(err))
+        return version
