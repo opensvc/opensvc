@@ -767,3 +767,15 @@ class BaseAsset(object):
         if gids is not None:
             data['gids'] = gids
         return data
+
+    @classmethod
+    def system_dict_to_asset_dict(cls, system_dict):
+        system_dict = system_dict or {}
+        data = {}
+        for k, v in system_dict.get("properties", {}):
+            data[k] = v
+        for k, v in system_dict:
+            if k == "properties":
+                continue
+            data[k] = v
+        return data
