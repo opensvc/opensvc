@@ -637,7 +637,7 @@ class BaseAsset(object):
             "source": self.s_probe
         }
 
-    def get_asset_dict(self):
+    def get_asset_properties(self):
         data = {}
         data['nodename'] = {
             "title": "nodename",
@@ -721,6 +721,33 @@ class BaseAsset(object):
         team_support = self.get_team_support()
         if team_support is not None:
             data['team_support'] = team_support
+        return data
+
+    def get_asset_dict(self):
+        data = self.get_asset_properties()
+        hardware = self.get_hardware()
+        if hardware is not None:
+            data['hardware'] = hardware
+        hba = self.get_hba()
+        if hba is not None:
+            data['hba'] = hba
+        targets = self.get_targets()
+        if targets is not None:
+            data['targets'] = targets
+        lan = self.get_lan()
+        if lan is not None:
+            data['lan'] = lan
+        uids = self.get_uids()
+        if uids is not None:
+            data['uids'] = uids
+        gids = self.get_gids()
+        if gids is not None:
+            data['gids'] = gids
+        return data
+
+    def get_system_dict(self):
+        data = {}
+        data["properties"] = self.get_asset_properties()
         hardware = self.get_hardware()
         if hardware is not None:
             data['hardware'] = hardware

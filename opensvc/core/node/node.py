@@ -1138,14 +1138,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The pushasset action entrypoint.
         Inventories the server properties.
         """
-        data = self.asset.get_asset_dict()
+        data = self.asset.get_system_dict()
         try:
             if self.options.format is None:
                 self.print_asset(data)
                 return
             self.print_data(data)
         finally:
-            self.collector.call('push_asset', self, data)
+            try:
+                # TODO: handle oc2
+                self.collector_rest_post("/daemon/system", data, head="/api")
+            except Exception as exc:
+                raise ex.Error(str(exc))
 
     def print_asset(self, data):
         from utilities.render.forest import Forest
@@ -1155,10 +1159,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         head_node.add_column(Env.nodename, color.BOLD)
         head_node.add_column("Value", color.BOLD)
         head_node.add_column("Source", color.BOLD)
-        for key in sorted(data):
-            _data = data[key]
-            node = head_node.add_node()
-            if key not in ("targets", "lan", "uids", "gids", "hba", "hardware"):
+
+        if 'properties' in data:
+            for key in sorted(data["properties"]):
+                _data = data["properties"][key]
+                node = head_node.add_node()
                 if _data["value"] is None:
                     _data["value"] = ""
                 node.add_column(_data["title"], color.LIGHTBLUE)
