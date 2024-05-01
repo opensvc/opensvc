@@ -1138,16 +1138,21 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The pushasset action entrypoint.
         Inventories the server properties.
         """
-        data = self.asset.get_system_dict()
+        system_dict = self.asset.get_system_dict()
         try:
             if self.options.format is None:
-                self.print_asset(data)
+                self.print_asset(system_dict)
                 return
-            self.print_data(data)
+            self.print_data(system_dict)
         finally:
             try:
-                # TODO: handle oc2
-                self.collector_rest_post("/daemon/system", data, head="/api")
+                if self.oc3_version() >= Semver(1, 0, 0):
+                    resp, data = self.collector_oc3_request("POST", "/oc3/daemon/system", data=system_dict)
+                    if resp.code != 204:
+                        raise ex.Error("POST /oc3/daemon/system unexpected status code: %d" % resp.code)
+                else:
+                    asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
+                    self.collector.call('push_asset', self, asset_dict)
             except Exception as exc:
                 raise ex.Error(str(exc))
 
