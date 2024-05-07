@@ -629,27 +629,8 @@ class BaseAsset(object):
         return str(os.path.getmtime("/proc/1"))
 
     def get_last_boot(self):
-        cmd = ["/usr/bin/uptime"]
-        out, err, ret = justcall(cmd)
-        l = out.split()
-
-        i = 0
-        for s in ("days,", "day(s),", "day,", "days", "day"):
-            try:
-                i = l.index(s)
-                break
-            except:
-                pass
-
-        if i == 0:
-            last = datetime.datetime.now()
-        else:
-            try:
-                last = datetime.datetime.now() - datetime.timedelta(days=int(l[i-1]))
-            except:
-                return
-
-        last = last.strftime("%Y-%m-%d")
+        last = os.path.getmtime("/proc/1")
+        last = datetime.datetime.fromtimestamp(last).strftime("%Y-%m-%d %H:%M:%S")
         return {
             "title": "last boot",
             "value": last,
