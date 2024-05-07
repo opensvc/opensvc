@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 
@@ -746,6 +747,18 @@ class Asset(BaseAsset):
                     if line.startswith("btime "):
                         return line.split()[-1]
         return super(Asset, self).get_boot_id()
+
+    def get_last_boot(self):
+        with open("/proc/uptime", "r") as f:
+                s = f.readline().split()[0]
+        last = datetime.datetime.now() - datetime.timedelta(seconds=float(s))
+        last = last.replace(microsecond=0)
+        return {
+            "title": "last boot",
+            "value": last,
+            "source": self.s_probe
+        }
+
 
 if __name__ == "__main__":
     from env import Env
