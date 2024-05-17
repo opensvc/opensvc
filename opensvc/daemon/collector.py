@@ -256,10 +256,10 @@ class Collector(shared.OsvcThread):
         else:
             self.log.debug("send daemon status, resync")
         try:
-            if self.oc3_version >= Semver(1, 0, 0):
+            if self.oc3_version >= Semver(1, 0, 1):
                 begin = time.time()
-                shared.NODE.collector_oc3_request("POST", "/oc3/daemon/status", data=data, headers={"XDaemonChange":  " ".join(list(self.last_status_changed))})
-                self.log.debug("dbg collector post /oc3/daemon/status %0.3f", time.time()-begin)
+                shared.NODE.collector_oc3_request("POST", "/oc3/feed/daemon/status", data=data, headers={"XDaemonChange":  " ".join(list(self.last_status_changed))})
+                self.log.debug("dbg collector post /oc3/feed/daemon/status %0.3f", time.time()-begin)
             else:
                 shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
@@ -272,10 +272,10 @@ class Collector(shared.OsvcThread):
             return
         self.log.debug("ping the collector")
         try:
-            if self.oc3_version >= Semver(1, 0, 0):
+            if self.oc3_version >= Semver(1, 0, 1):
                 begin = time.time()
-                code, _ = shared.NODE.collector_oc3_request("POST", "/oc3/daemon/ping")
-                self.log.debug("post /oc3/daemon/ping %0.3f", time.time()-begin)
+                code, _ = shared.NODE.collector_oc3_request("POST", "/oc3/feed/daemon/ping")
+                self.log.debug("post /oc3/feed/daemon/ping %0.3f", time.time()-begin)
                 if code == 202:
                     pass
                 elif code == 204:
