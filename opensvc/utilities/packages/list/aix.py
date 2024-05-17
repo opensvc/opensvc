@@ -3,6 +3,10 @@ from utilities.proc import justcall
 
 
 def listpkg():
+    """
+    Return a list of ips packages installed.
+    where pkg is (nodename, pkgname, version, "")
+    """
     cmd = ['lslpp', '-Lc']
     out, err, ret = justcall(cmd)
     if ret != 0:
@@ -17,6 +21,7 @@ def listpkg():
         x = [Env.nodename, pkgname, pkgvers, '']
         lines.append(x)
     return lines
+
 
 def listpatch():
     return []

@@ -1,4 +1,3 @@
-import datetime
 import os
 from stat import ST_MTIME
 
@@ -9,6 +8,8 @@ from utilities.proc import justcall, which
 def listpkg_ips():
     """
     Return a list of ips packages installed.
+    where pkg is (nodename, pkgname, version, arch, "ips", None)
+    Note: installed date is omitted (None)
     """
 
     #
@@ -37,13 +38,15 @@ def listpkg_ips():
         elems = line.split()
         if len(elems) != 3:
             continue
-        data = [Env.nodename, elems[0], elems[1], arc, "ips", ""]
+        data = [Env.nodename, elems[0], elems[1], arc, "ips", None]
         lines.append(data)
     return lines
+
 
 def listpkg_legacy():
     """
     Return a list of legacy packages installed.
+    where pkg is (nodename, pkgname, version, arch, pkg, installed_epoch or None)
     """
     if which('pkginfo') is None:
         return []
@@ -56,7 +59,7 @@ def listpkg_legacy():
             continue
         key, val = [elem.strip() for elem in elems]
         if key == "PKGINST":
-            data = [Env.nodename, val, "", "", "pkg", ""]
+            data = [Env.nodename, val, "", "", "pkg", None]
         elif key == "VERSION":
             data[2] = val
         elif key == "ARCH":
@@ -67,18 +70,20 @@ def listpkg_legacy():
         # pkg install date
         try:
             mtime = os.stat("/var/sadm/pkg/"+line[1])[ST_MTIME]
-            mtime = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
-            mtime = ""
+            mtime = None
         lines[idx][5] = mtime
 
     return lines
 
+
 def listpkg():
     """
     Return a list of ips and legacy packages installed.
+    where pkg is (nodename, pkgname, version, arch, "ips" or "pkg", installed_epoch or None)
     """
     return listpkg_legacy() + listpkg_ips()
+
 
 def listpatch():
     """
@@ -99,18 +104,18 @@ def listpatch():
             if len(_elems) != 2:
                 continue
             else:
-                lines.append([nodename , _elems[0], _elems[1]])
+                lines.append([nodename, _elems[0], _elems[1]])
 
     for idx, line in enumerate(lines):
         # pkg install date
         try:
             mtime = os.stat("/var/sadm/patch/"+line[1])[ST_MTIME]
-            mtime = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
-            mtime = ""
+            mtime = None
         lines[idx].append(mtime)
 
     return lines
 
-if __name__ == "__main__" :
+
+if __name__ == "__main__":
     print(listpkg())
