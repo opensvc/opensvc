@@ -2938,6 +2938,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return err, None
         except Exception as err:
             raise ex.Error("oc3 %s %s error: %s" % (method, url, str(err)))
+        if resp.code == 204:
+            resp.close()
+            return resp, None
         data = json.loads(resp.read().decode("utf-8"))
         resp.close()
         return resp, data
